@@ -17,10 +17,15 @@
 package org.keycloak.testsuite.model.parameters;
 
 import com.google.common.collect.ImmutableSet;
+import org.jboss.logging.Logger;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.authorization.store.StoreFactorySpi;
+import org.keycloak.events.EventStoreSpi;
+import org.keycloak.models.ActionTokenStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.map.storage.MapStorageSpi;
@@ -39,6 +44,8 @@ import java.util.Set;
  * @author Alexander Schwartz
  */
 public class LdapMapStorage extends KeycloakModelParameters {
+
+    private static final Logger LOG = Logger.getLogger(LdapMapStorage.class.getName());
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
             .build();
@@ -79,7 +86,8 @@ public class LdapMapStorage extends KeycloakModelParameters {
                 .config("role.object.classes", "groupOfNames")
                 .config("role.attributes", "ou")
                 .config("mode", "LDAP_ONLY")
-                .config("use.realm.roles.mapping", "true");
+                .config("use.realm.roles.mapping", "true")
+                .config(LDAPConstants.CONNECTION_POOLING, "true");
 
         cf.spi("client").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi("clientScope").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
@@ -89,11 +97,15 @@ public class LdapMapStorage extends KeycloakModelParameters {
                 .spi(DeploymentStateSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(StoreFactorySpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi("user").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                .spi(UserSessionSpi.NAME).config("map.storage-user-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                .spi(UserSessionSpi.NAME).config("map.storage-client-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi(UserSessionSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(UserLoginFailureSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi("authorizationPersister").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                .spi("authenticationSessions").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
+                .spi("authenticationSessions").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi(EventStoreSpi.NAME).config("map.storage-admin-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi(EventStoreSpi.NAME).config("map.storage-auth-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi(ActionTokenStoreSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi(SingleUseObjectSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi("publicKeyStorage").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
 
     }
 

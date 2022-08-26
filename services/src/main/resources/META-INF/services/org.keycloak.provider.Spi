@@ -27,3 +27,5 @@ org.keycloak.encoding.ResourceEncodingSpi
 org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelSpi
 org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolverSpi
 org.keycloak.protocol.oidc.rar.AuthorizationRequestParserSpi
+org.keycloak.services.resources.admin.ext.AdminRealmResourceSpi
+org.keycloak.services.legacysessionsupport.LegacySessionSupportSpi

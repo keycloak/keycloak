@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
-import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -37,6 +36,10 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
@@ -135,27 +138,12 @@ public class MapRealmProvider implements RealmProvider {
 
         if (realm == null) return false;
 
-        session.users().preRemove(realm);
-        session.clients().removeClients(realm);
-        session.clientScopes().removeClientScopes(realm);
-        session.roles().removeRoles(realm);
-        realm.getTopLevelGroupsStream().forEach(realm::removeGroup);
-
-        // TODO: Sending an event should be extracted to store layer
-        session.getKeycloakSessionFactory().publish(new RealmModel.RealmRemovedEvent() {
-            @Override
-            public RealmModel getRealm() {
-                return realm;
-            }
-
-            @Override
-            public KeycloakSession getKeycloakSession() {
-                return session;
-            }
-        });
-        // TODO: ^^^^^^^ Up to here
+        session.invalidate(REALM_BEFORE_REMOVE, realm);
 
         tx.delete(id);
+
+        session.invalidate(REALM_AFTER_REMOVE, realm);
+
         return true;
     }
 

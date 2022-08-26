@@ -95,13 +95,13 @@ public class IckleQueryOperators {
     }
 
     private static String iLike(String modelFieldName, Object[] values, Map<String, Object> parameters) {
-        String sanitizedValue = (String) IckleQueryMapModelCriteriaBuilder.sanitize(values[0]);
+        String sanitizedValue = (String) IckleQueryMapModelCriteriaBuilder.sanitizeNonAnalyzed(values[0]);
         return singleValueOperator(ModelCriteriaBuilder.Operator.ILIKE)
                 .combine(modelFieldName + "Lowercase", new String[] {sanitizedValue.toLowerCase()}, parameters);
     }
 
     private static String like(String modelFieldName, Object[] values, Map<String, Object> parameters) {
-        String sanitizedValue = (String) IckleQueryMapModelCriteriaBuilder.sanitize(values[0]);
+        String sanitizedValue = (String) IckleQueryMapModelCriteriaBuilder.sanitizeNonAnalyzed(values[0]);
         return singleValueOperator(ModelCriteriaBuilder.Operator.LIKE)
                 .combine(modelFieldName, new String[] {sanitizedValue}, parameters);
     }

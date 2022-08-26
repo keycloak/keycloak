@@ -31,10 +31,7 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import javax.ws.rs.core.Response;
 import javax.xml.soap.MessageFactory;
-import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
-
-import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -253,7 +250,7 @@ public class SOAPBindingTest extends AbstractSamlTest {
                         SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
                         String faultDetail = soapMessage.getSOAPBody().getFault().getDetail().getValue();
                         assertThat(faultDetail, is(equalTo("Client is not allowed to use ECP profile.")));
-                    } catch (SOAPException | IOException e) {
+                    } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 });

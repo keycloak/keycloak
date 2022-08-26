@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<persistence version="2.1" xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
+  <persistence-unit name="keycloak-default">
+    <!--auth-sessions-->
+    <class>org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionEntity</class>
+    <!--authz-->
+    <class>org.keycloak.models.map.storage.jpa.authorization.resourceServer.entity.JpaResourceServerEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.resource.entity.JpaResourceEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.resource.entity.JpaResourceAttributeEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.scope.entity.JpaScopeEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.permission.entity.JpaPermissionEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyConfigEntity</class>
+    <!--client-scopes-->
+    <class>org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeAttributeEntity</class>
+    <!--clients-->
+    <class>org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.client.entity.JpaClientAttributeEntity</class>
+    <!--events-->
+    <class>org.keycloak.models.map.storage.jpa.event.admin.entity.JpaAdminEventEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventDetailEntity</class>
+    <!--groups-->
+    <class>org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.group.entity.JpaGroupAttributeEntity</class>
+    <!-- realms -->
+    <class>org.keycloak.models.map.storage.jpa.realm.entity.JpaComponentEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmAttributeEntity</class>
+    <!--roles-->
+    <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleAttributeEntity</class>
+    <!--single-use-objects-->
+    <class>org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectNoteEntity</class>
+    <!--user-login-failures-->
+    <class>org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity</class>
+    <!--user-sessions-->
+    <class>org.keycloak.models.map.storage.jpa.userSession.entity.JpaClientSessionEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.userSession.entity.JpaClientSessionNoteEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.userSession.entity.JpaUserSessionEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.userSession.entity.JpaUserSessionNoteEntity</class>
+    <!--users-->
+    <class>org.keycloak.models.map.storage.jpa.user.entity.JpaUserEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.user.entity.JpaUserAttributeEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.user.entity.JpaUserConsentEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.user.entity.JpaUserFederatedIdentityEntity</class>
+  </persistence-unit>
+</persistence>

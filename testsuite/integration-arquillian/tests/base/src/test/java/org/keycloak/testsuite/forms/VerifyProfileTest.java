@@ -533,6 +533,63 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testAdminOnlyAttributeNotVisibleToUser() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + "},"
+                + "{\"name\": \"requiredAttrToTriggerVerifyPage\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test6", "password");
+
+        verifyProfilePage.assertCurrent();
+        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+        Assert.assertFalse("Admin-only attribute should not be visible for user", verifyProfilePage.isDepartmentPresent());
+    }
+
+
+    @Test
+    public void testUsernameReadOnlyInProfile() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"username\"," + PERMISSIONS_ADMIN_EDITABLE + "},"
+                + "{\"name\": \"requiredAttrToTriggerVerifyPage\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test6", "password");
+
+        verifyProfilePage.assertCurrent();
+        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+
+        Assert.assertFalse("username should not be editable by user", verifyProfilePage.isUsernameEnabled());
+    }
+
+    @Test
+    public void testUsernameReadNotVisibleInProfile() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"username\"," + PERMISSIONS_ADMIN_ONLY + "},"
+                + "{\"name\": \"requiredAttrToTriggerVerifyPage\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test6", "password");
+
+        verifyProfilePage.assertCurrent();
+        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+
+        Assert.assertFalse("username should not be shown to user", verifyProfilePage.isUsernamePresent());
+    }
+
+    @Test
     public void testAttributeNotVisible() {
 
         setUserProfileConfiguration("{\"attributes\": ["

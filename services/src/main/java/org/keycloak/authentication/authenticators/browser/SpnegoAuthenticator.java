@@ -86,7 +86,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         String spnegoToken = tokens[1];
         UserCredentialModel spnegoCredential = UserCredentialModel.kerberos(spnegoToken);
 
-        CredentialValidationOutput output = context.getSession().userCredentialManager().authenticate(context.getSession(), context.getRealm(), spnegoCredential);
+        CredentialValidationOutput output = context.getSession().users().getUserByCredential(context.getRealm(), spnegoCredential);
 
         if (output == null) {
             logger.warn("Received kerberos token, but there is no user storage provider that handles kerberos credentials.");

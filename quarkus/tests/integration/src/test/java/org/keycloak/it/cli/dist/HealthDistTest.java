@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
 import static io.restassured.RestAssured.when;
-import static org.hamcrest.Matchers.containsString;
 
 @DistributionTest(keepAlive =true)
 public class HealthDistTest {
@@ -32,9 +31,15 @@ public class HealthDistTest {
     void testHealthEndpointNotEnabled() {
         when().get("/health").then()
                 .statusCode(404);
+        when().get("/q/health").then()
+                .statusCode(404);
         when().get("/health/live").then()
                 .statusCode(404);
+        when().get("/q/health/live").then()
+                .statusCode(404);
         when().get("/health/ready").then()
+                .statusCode(404);
+        when().get("/q/health/ready").then()
                 .statusCode(404);
     }
 
@@ -47,14 +52,7 @@ public class HealthDistTest {
                 .statusCode(200);
         when().get("/health/ready").then()
                 .statusCode(200);
-        // Metrics is endpoint independent
-        when().get("/metrics").then()
-                .statusCode(404);
-    }
-
-    @Test
-    @Launch({ "start-dev", "--health-enabled=true" })
-    void testHealthEndpointDoesNotEnableMetrics() {
+        // Metrics should not be enabled
         when().get("/metrics").then()
                 .statusCode(404);
     }

@@ -36,28 +36,27 @@ import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
-import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.sessions.CommonClientSessionModel;
 
 /**
  * Entity represents individual authentication session. 
- * 
- * It implements {@link JpaRootEntity} as it contains json field. 
- * 
- * Authentication session is modified from multiple transactions within one request, 
- * via {@code KeycloakModelUtils.runJobInTransaction}. Therefore it doesn't 
- * implement {@code JpaRootVersionedEntity} nor {@code JpaChildEntity}.
  */
 @Entity
 @Table(name = "kc_auth_session")
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapAuthenticationSessionEntity, JpaRootEntity {
+public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapAuthenticationSessionEntity, JpaRootVersionedEntity {
 
     @Id
     @Column
     @GeneratedValue
     private UUID id;
+
+    //used for implicit optimistic locking
+    @Version
+    @Column
+    private int version;
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
@@ -108,6 +107,11 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
     }
 
     @Override
+    public int getVersion() {
+        return version;
+    }
+
+    @Override
     public String getTabId() {
         return metadata.getTabId();
     }
@@ -153,12 +157,12 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
     }
 
     @Override
-    public Integer getTimestamp() {
+    public Long getTimestamp() {
         return metadata.getTimestamp();
     }
 
     @Override
-    public void setTimestamp(Integer timestamp) {
+    public void setTimestamp(Long timestamp) {
         metadata.setTimestamp(timestamp);
     }
 

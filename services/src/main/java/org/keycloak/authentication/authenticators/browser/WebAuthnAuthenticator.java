@@ -203,9 +203,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
                 signature
                 );
 
-        AuthenticationParameters authenticationParameters = new AuthenticationParameters(
+        WebAuthnCredentialModelInput.KeycloakWebAuthnAuthenticationParameters authenticationParameters = new WebAuthnCredentialModelInput.KeycloakWebAuthnAuthenticationParameters(
                 server,
-                null, // here authenticator cannot be fetched, set it afterwards in WebAuthnCredentialProvider.isValid()
                 isUVFlagChecked
                 );
 
@@ -216,7 +215,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
         boolean result = false;
         try {
-            result = session.userCredentialManager().isValid(context.getRealm(), user, cred);
+            result = user.credentialManager().isValid(cred);
         } catch (WebAuthnException wae) {
             setErrorResponse(context, WEBAUTHN_ERROR_AUTH_VERIFICATION, wae.getMessage());
             return;
@@ -244,7 +243,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
     }
 
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.userCredentialManager().isConfiguredFor(realm, user, getCredentialType());
+        return user.credentialManager().isConfiguredFor(getCredentialType());
     }
 
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {

@@ -38,14 +38,14 @@
             for reference
         -->
         <resteasy.version>4.7.5.Final</resteasy.version>
-        <jackson.version>2.13.1</jackson.version>
-        <jackson.databind.version>${jackson.version}</jackson.databind.version>
+        <jackson.version>2.13.3</jackson.version>
+        <jackson.databind.version>2.13.3</jackson.databind.version>
         <hibernate.core.version>5.6.5.Final</hibernate.core.version>
         <mysql.driver.version>8.0.28</mysql.driver.version>
         <postgresql.version>42.3.3</postgresql.version>
         <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <infinispan.version>13.0.6.Final</infinispan.version>
+        <wildfly-elytron.version>1.18.3.Final</wildfly-elytron.version>
 
         <!--
             Java EE dependencies. Not available from JDK 11+.
@@ -58,7 +58,7 @@
         <!--
             Quarkiverse dependency versions
          -->
-        <io.quarkiverse.vault.version>1.0.2</io.quarkiverse.vault.version>
+        <io.quarkiverse.vault.version>1.1.0</io.quarkiverse.vault.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
@@ -66,6 +66,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
+        <!-- Needs to be aligned with Quarkus, see e.g. https://github.com/quarkusio/quarkus-quickstarts/blob/2.7.6.Final/getting-started-async/pom.xml#L14 -->
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
     </properties>
 
@@ -157,6 +158,7 @@
     </build>
     
     <modules>
+        <module>config-api</module>
         <module>runtime</module>
         <module>deployment</module>
         <module>server</module>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,6 +48,7 @@ import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.utils.MediaType;
+import org.keycloak.utils.StringUtil;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -186,12 +187,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                 if (!realm.isUserManagedAccessAllowed()) {
                     return Response.status(Status.FORBIDDEN).build();
                 }
-                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+                attributes.put("authorization", new AuthorizationBean(session, realm, user, uriInfo));
             case RESOURCE_DETAIL:
                 if (!realm.isUserManagedAccessAllowed()) {
                     return Response.status(Status.FORBIDDEN).build();
                 }
-                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+                attributes.put("authorization", new AuthorizationBean(session, realm, user, uriInfo));
         }
 
         return processTemplate(theme, page, attributes, locale);
@@ -218,6 +219,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     protected Properties handleThemeResources(Theme theme, Locale locale, Map<String, Object> attributes) {
         Properties messagesBundle = new Properties();
         try {
+            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
+            {
+                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+            }
             messagesBundle.putAll(theme.getMessages(locale));
             messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));

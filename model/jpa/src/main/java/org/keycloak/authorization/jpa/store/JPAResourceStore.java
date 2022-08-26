@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,8 +21,10 @@ import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -80,7 +81,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(RealmModel realm, String id) {
         ResourceEntity resource = entityManager.getReference(ResourceEntity.class, id);
         if (resource == null) return;
 
@@ -89,7 +90,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findById(ResourceServer resourceServer, String id) {
+    public Resource findById(RealmModel realm, ResourceServer resourceServer, String id) {
         if (id == null) {
             return null;
         }
@@ -100,17 +101,8 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByOwner(ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer) {
+    public void findByOwner(RealmModel realm, ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer) {
         findByOwnerFilter(ownerId, resourceServer, consumer, -1, -1);
-    }
-
-    @Override
-    public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, Integer firstResult, Integer maxResults) {
-        List<Resource> list = new LinkedList<>();
-
-        findByOwnerFilter(ownerId, resourceServer, list::add, firstResult, maxResults);
-
-        return list;
     }
 
     private void findByOwnerFilter(String ownerId, ResourceServer resourceServer, Consumer<Resource> consumer, int firstResult, int maxResult) {
@@ -136,30 +128,7 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
-        closing(query.getResultStream().map(id -> resourceStore.findById(resourceServer, id.getId()))).forEach(consumer);
-    }
-
-    @Override
-    public List<Resource> findByUri(ResourceServer resourceServer, String uri) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByUri", String.class);
-
-        query.setFlushMode(FlushModeType.COMMIT);
-        query.setParameter("uri", uri);
-        query.setParameter("serverId", resourceServer == null ? null : resourceServer.getId());
-
-        List<String> result = query.getResultList();
-        List<Resource> list = new LinkedList<>();
-        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
-
-        for (String id : result) {
-            Resource resource = resourceStore.findById(resourceServer, id);
-
-            if (resource != null) {
-                list.add(resource);
-            }
-        }
-
-        return list;
+        closing(query.getResultStream().map(id -> resourceStore.findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id.getId()))).forEach(consumer);
     }
 
     @Override
@@ -173,7 +142,7 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            Resource resource = resourceStore.findById(resourceServer, id);
+            Resource resource = resourceStore.findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id);
 
             if (resource != null) {
                 list.add(resource);
@@ -184,7 +153,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+    public List<Resource> find(RealmModel realm, ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ResourceEntity> querybuilder = builder.createQuery(ResourceEntity.class);
         Root<ResourceEntity> root = querybuilder.from(ResourceEntity.class);
@@ -237,7 +206,7 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            Resource resource = resourceStore.findById(resourceServer, id);
+            Resource resource = resourceStore.findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id);
 
             if (resource != null) {
                 list.add(resource);

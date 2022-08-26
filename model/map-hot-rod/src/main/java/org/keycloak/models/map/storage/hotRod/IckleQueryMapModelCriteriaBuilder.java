@@ -17,10 +17,16 @@
 
 package org.keycloak.models.map.storage.hotRod;
 
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.events.Event;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.storage.SearchableModelField;
@@ -31,12 +37,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.C;
 import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.findAvailableNamedParam;
-import static org.keycloak.models.map.storage.hotRod.common.ProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE;
+import static org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE;
 
 public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M> implements ModelCriteriaBuilder<M, IckleQueryMapModelCriteriaBuilder<E, M>> {
 
@@ -44,10 +51,10 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
     private final Class<E> hotRodEntityClass;
     private final StringBuilder whereClauseBuilder = new StringBuilder(INITIAL_BUILDER_CAPACITY);
     private final Map<String, Object> parameters;
+    private static final Pattern LIKE_PATTERN_DELIMITER = Pattern.compile("%+");
     private static final Pattern NON_ANALYZED_FIELD_REGEX = Pattern.compile("[%_\\\\]");
     // private static final Pattern ANALYZED_FIELD_REGEX = Pattern.compile("[+!^\"~*?:\\\\]"); // TODO reevaluate once https://github.com/keycloak/keycloak/issues/9295 is fixed
     private static final Pattern ANALYZED_FIELD_REGEX = Pattern.compile("\\\\"); // escape "\" with extra "\"
-    private static final Pattern SINGLE_PERCENT_CHARACTER = Pattern.compile("^%+$");
     public static final Map<SearchableModelField<?>, String> INFINISPAN_NAME_OVERRIDES = new HashMap<>();
     public static final Set<SearchableModelField<?>> ANALYZED_MODEL_FIELDS = new HashSet<>();
 
@@ -68,6 +75,21 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.ASSIGNED_GROUP, "groupsMembership");
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.ATTRIBUTE, "attributes");
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.IDP_AND_USER, "federatedIdentities");
+
+        INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS, "clientInitialAccesses");
+        INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, "components.providerType");
+
+        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.IS_OFFLINE, "offline");
+        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.CLIENT_ID, "authenticatedClientSessions.clientId");
+
+        INFINISPAN_NAME_OVERRIDES.put(Resource.SearchableFields.SCOPE_ID, "scopeIds");
+
+        INFINISPAN_NAME_OVERRIDES.put(Policy.SearchableFields.RESOURCE_ID, "resourceIds");
+        INFINISPAN_NAME_OVERRIDES.put(Policy.SearchableFields.SCOPE_ID, "scopeIds");
+        INFINISPAN_NAME_OVERRIDES.put(Policy.SearchableFields.ASSOCIATED_POLICY_ID, "associatedPolicyIds");
+        INFINISPAN_NAME_OVERRIDES.put(Policy.SearchableFields.CONFIG, "configs");
+
+        INFINISPAN_NAME_OVERRIDES.put(Event.SearchableFields.EVENT_TYPE, "type");
     }
 
     static {
@@ -76,6 +98,8 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.FIRST_NAME);
         ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.LAST_NAME);
         ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.EMAIL);
+        ANALYZED_MODEL_FIELDS.add(Policy.SearchableFields.TYPE);
+        ANALYZED_MODEL_FIELDS.add(Resource.SearchableFields.TYPE);
     }
 
     public IckleQueryMapModelCriteriaBuilder(Class<E> hotRodEntityClass, StringBuilder whereClauseBuilder, Map<String, Object> parameters) {
@@ -202,21 +226,9 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         return whereClauseBuilder;
     }
 
-    public static Object sanitize(Object value) {
+    public static Object sanitizeNonAnalyzed(Object value) {
         if (value instanceof String) {
-            String sValue = (String) value;
-
-            if(SINGLE_PERCENT_CHARACTER.matcher(sValue).matches()) {
-                return value;
-            }
-
-            boolean anyBeginning = sValue.startsWith("%");
-            boolean anyEnd = sValue.endsWith("%");
-
-            String sanitizedString = NON_ANALYZED_FIELD_REGEX.matcher(sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0)))
-                    .replaceAll("\\\\\\\\" + "$0");
-
-            return (anyBeginning ? "%" : "") + sanitizedString + (anyEnd ? "%" : "");
+            return sanitizeEachUnitAndReplaceDelimiter((String) value, IckleQueryMapModelCriteriaBuilder::sanitizeSingleUnitNonAnalyzed, "%");
         }
 
         return value;
@@ -224,25 +236,30 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
 
     public static Object sanitizeAnalyzed(Object value) {
         if (value instanceof String) {
-            String sValue = (String) value;
-            boolean anyBeginning = sValue.startsWith("%");
-            boolean anyEnd = sValue.endsWith("%");
-
-            if(SINGLE_PERCENT_CHARACTER.matcher(sValue).matches()) {
-                return "*";
-            }
-
-            String sanitizedString = ANALYZED_FIELD_REGEX.matcher(sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0)))
-                    .replaceAll("\\\\\\\\"); // escape "\" with extra "\"
-            //      .replaceAll("\\\\\\\\" + "$0"); skipped for now because Infinispan is not able to escape
-            //      special characters for analyzed fields
-            //      TODO reevaluate once https://github.com/keycloak/keycloak/issues/9295 is fixed
-
-            return (anyBeginning ? "*" : "") + sanitizedString + (anyEnd ? "*" : "");
+            return sanitizeEachUnitAndReplaceDelimiter((String) value, IckleQueryMapModelCriteriaBuilder::sanitizeSingleUnitAnalyzed, "*");
         }
 
         return value;
     }
+
+    private static String sanitizeEachUnitAndReplaceDelimiter(String value, UnaryOperator<String> sanitizeSingleUnit, String replacement) {
+        return LIKE_PATTERN_DELIMITER.splitAsStream(value)
+                .map(sanitizeSingleUnit)
+                .collect(Collectors.joining(replacement))
+                + (value.endsWith("%") ? replacement : "");
+    }
+
+    private static String sanitizeSingleUnitNonAnalyzed(String value) {
+        return NON_ANALYZED_FIELD_REGEX.matcher(value).replaceAll("\\\\\\\\" + "$0");
+    }
+
+    private static String sanitizeSingleUnitAnalyzed(String value) {
+        return ANALYZED_FIELD_REGEX.matcher(value).replaceAll("\\\\\\\\"); // escape "\" with extra "\"
+        //      .replaceAll("\\\\\\\\" + "$0"); skipped for now because Infinispan is not able to escape
+        //      special characters for analyzed fields
+        //      TODO reevaluate once https://github.com/keycloak/keycloak/issues/9295 is fixed
+    }
+
 
     public static boolean isAnalyzedModelField(SearchableModelField<?> modelField) {
         return ANALYZED_MODEL_FIELDS.contains(modelField);

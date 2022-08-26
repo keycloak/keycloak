@@ -45,6 +45,52 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         return KcOidcBrokerConfiguration.INSTANCE;
     }
 
+    private void checkFirstLoginEvents(RealmResource providerRealm, RealmResource consumerRealm, String providerUserId, String consumerUserId) {
+        events.expect(EventType.LOGIN)
+                .realm(providerRealm.toRepresentation().getId())
+                .user(providerUserId)
+                .client(bc.getIDPClientIdInProviderRealm())
+                .session(Matchers.any(String.class))
+                .detail(Details.USERNAME, bc.getUserLogin())
+                .assertEvent();
+
+        events.expect(EventType.CODE_TO_TOKEN)
+                .session(Matchers.any(String.class))
+                .realm(providerRealm.toRepresentation().getId())
+                .user(providerUserId)
+                .client(bc.getIDPClientIdInProviderRealm())
+                .assertEvent();
+
+        events.expect(EventType.USER_INFO_REQUEST)
+                .session(Matchers.any(String.class))
+                .realm(providerRealm.toRepresentation().getId())
+                .user(providerUserId)
+                .client(bc.getIDPClientIdInProviderRealm())
+                .assertEvent();
+
+        events.expect(EventType.REGISTER)
+                .realm(consumerRealm.toRepresentation().getId())
+                .client("account")
+                .user(consumerUserId == null? Matchers.any(String.class) : Matchers.is(consumerUserId))
+                .session((String) null)
+                .detail(Details.USERNAME, bc.getUserLogin())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                .assertEvent();
+
+        events.expect(EventType.LOGIN)
+                .realm(consumerRealm.toRepresentation().getId())
+                .client("account")
+                .user(consumerUserId == null? Matchers.any(String.class) : Matchers.is(consumerUserId))
+                .session(Matchers.any(String.class))
+                .detail(Details.USERNAME, bc.getUserLogin())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                .assertEvent();
+
+        events.clear();
+    }
+
     private void checkLoginEvents(RealmResource providerRealm, RealmResource consumerRealm, String providerUserId, String consumerUserId) {
         events.expect(EventType.LOGIN)
                 .realm(providerRealm.toRepresentation().getId())
@@ -111,7 +157,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
 
         super.loginUser();
 
-        checkLoginEvents(providerRealm, consumerRealm, providerUser.getId(), null);
+        checkFirstLoginEvents(providerRealm, consumerRealm, providerUser.getId(), null);
     }
 
     private void loginUserAfterError() {
@@ -136,7 +182,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         UserRepresentation consumerUser = users.iterator().next();
         Assert.assertEquals(bc.getUserEmail(), consumerUser.getEmail());
 
-        checkLoginEvents(providerRealm, consumerRealm, providerUser.getId(), consumerUser.getId());
+        checkFirstLoginEvents(providerRealm, consumerRealm, providerUser.getId(), consumerUser.getId());
     }
 
     @Override

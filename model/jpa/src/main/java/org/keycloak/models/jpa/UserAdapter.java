@@ -19,11 +19,13 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
@@ -34,6 +36,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -46,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
-import javax.persistence.LockModeType;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -513,6 +515,11 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
         user.setServiceAccountClientLink(clientInternalId);
+    }
+
+    @Override
+    public SubjectCredentialManager credentialManager() {
+        return new LegacyUserCredentialManager(session, realm, this);
     }
 
 

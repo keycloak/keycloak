@@ -49,23 +49,23 @@ public class ClientSecretRotationExecutor implements
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
-        if (!session.getContext().getClient().isPublicClient() && !session.getContext().getClient()
-                .isBearerOnly()) {
-            session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED, Boolean.TRUE);
-            switch (context.getEvent()) {
-                case REGISTERED:
-                case UPDATED:
+        switch (context.getEvent()) {
+            case REGISTERED:
+            case UPDATED:
+                if(isClientWithSecret(session.getContext().getClient())) {
+                    session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED, Boolean.TRUE);
                     executeOnClientCreateOrUpdate((ClientCRUDContext) context);
-                    break;
-
-                case AUTHORIZATION_REQUEST:
-                case TOKEN_REQUEST:
+                }
+                break;
+            case AUTHORIZATION_REQUEST:
+            case TOKEN_REQUEST:
+                if(isClientWithSecret(session.getContext().getClient())) {
+                    session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED, Boolean.TRUE);
                     executeOnAuthRequest();
-                    return;
-
-                default:
-                    return;
-            }
+                }
+                break;
+            default:
+                return;
         }
     }
 
@@ -78,6 +78,11 @@ public class ClientSecretRotationExecutor implements
             configuration = config.parseWithDefaultValues();
         }
 
+    }
+
+    private boolean isClientWithSecret(ClientModel client) {
+        if (client == null) return false;
+        return (!client.isPublicClient() && !client.isBearerOnly());
     }
 
     private void executeOnAuthRequest() {

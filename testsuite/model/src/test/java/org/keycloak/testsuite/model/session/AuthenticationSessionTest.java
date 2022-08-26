@@ -25,7 +25,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -65,7 +64,6 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
     }
 
     @Test
-    @RequireProvider(value = AuthenticationSessionProvider.class, only = InfinispanAuthenticationSessionProviderFactory.PROVIDER_ID)
     public void testLimitAuthSessions() {
         AtomicReference<String> rootAuthSessionId = new AtomicReference<>();
         List<String> tabIds = withRealm(realmId, (session, realm) -> {
@@ -81,13 +79,21 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
                     .collect(Collectors.toList());
         });
 
-        withRealm(realmId, (session, realm) -> {
+        String tabId = withRealm(realmId, (session, realm) -> {
             RootAuthenticationSessionModel ras = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
             ClientModel client = realm.getClientByClientId("test-app");
 
             // create 301st auth session
-            AuthenticationSessionModel as = ras.createAuthenticationSession(client);
-            Assert.assertEquals(as, ras.getAuthenticationSession(client, as.getTabId()));
+            return ras.createAuthenticationSession(client).getTabId();
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel ras = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
+            ClientModel client = realm.getClientByClientId("test-app");
+
+            assertThat(ras.getAuthenticationSessions(), Matchers.aMapWithSize(300));
+
+            Assert.assertEquals(tabId, ras.getAuthenticationSession(client, tabId).getTabId());
 
             // assert the first authentication session was deleted
             Assert.assertNull(ras.getAuthenticationSession(client, tabIds.get(0)));

@@ -22,7 +22,6 @@ import org.keycloak.saml.processing.core.parsers.util.HasQName;
 
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
-import java.util.function.BiFunction;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
@@ -249,9 +248,13 @@ public class StaxParserUtilTest {
         }
     }
 
+    private interface StartElementHasQNameBooleanBiFunction {
+        Boolean apply(StartElement el, HasQName qName);
+    }
+
     @Test
     public void testGetBooleanAttributeValue() throws XMLStreamException, ParsingException {
-        testGetBooleanAttributeValue(new BiFunction<StartElement, HasQName, Boolean>() {
+        testGetBooleanAttributeValue(new StartElementHasQNameBooleanBiFunction() {
             @Override
             public Boolean apply(StartElement t, HasQName u) {
                 return StaxParserUtil.getBooleanAttributeValue(t, u);
@@ -261,7 +264,7 @@ public class StaxParserUtilTest {
 
     @Test
     public void testGetBooleanAttributeValueRP() throws XMLStreamException, ParsingException {
-        testGetBooleanAttributeValue(new BiFunction<StartElement, HasQName, Boolean>() {
+        testGetBooleanAttributeValue(new StartElementHasQNameBooleanBiFunction() {
             @Override
             public Boolean apply(StartElement t, HasQName u) {
                 return StaxParserUtil.getBooleanAttributeValueRP(t, u);
@@ -269,7 +272,7 @@ public class StaxParserUtilTest {
         });
     }
 
-    private void testGetBooleanAttributeValue(BiFunction<StartElement, HasQName, Boolean> predicate) throws XMLStreamException, ParsingException {
+    private void testGetBooleanAttributeValue(StartElementHasQNameBooleanBiFunction predicate) throws XMLStreamException, ParsingException {
         testGetBooleanAttributeValue("<a AllowCreate=\"false\">text</a>", predicate, false);
         testGetBooleanAttributeValue("<a AllowCreate=\"true\">text</a>", predicate, true);
         testGetBooleanAttributeValue("<a AllowCreate=\"0\">text</a>", predicate, false);
@@ -278,7 +281,7 @@ public class StaxParserUtilTest {
         testGetBooleanAttributeValue("<a>text</a>", predicate, null);
     }
 
-    private void testGetBooleanAttributeValue(String xml, BiFunction<StartElement, HasQName, Boolean> predicate, Boolean expectedResult) throws XMLStreamException, ParsingException {
+    private void testGetBooleanAttributeValue(String xml, StartElementHasQNameBooleanBiFunction predicate, Boolean expectedResult) throws XMLStreamException, ParsingException {
         XMLEventReader reader = StaxParserUtil.getXMLEventReader(IOUtils.toInputStream(xml, Charset.defaultCharset()));
 
         assertThat(reader.nextEvent(), instanceOf(StartDocument.class));

@@ -23,6 +23,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
@@ -35,8 +37,8 @@ public class DeviceActivityPage extends AbstractLoggedInPage {
     @FindBy(id = "sign-out-all")
     private WebElement signOutAllBtn;
 
-    @FindBy(xpath = "//div[@rowid='sessions']/div[contains(@class,'-m-3-')]")
-    private List<WebElement> sessionsFirstCol; // this represents first column of each session (which contains the browser icon)
+    @FindBy(className = "signed-in-device-grid")
+    private List<WebElement> sessions;
 
     @Override
     public String getPageId() {
@@ -57,58 +59,76 @@ public class DeviceActivityPage extends AbstractLoggedInPage {
     }
 
     public int getSessionsCount() {
-        return sessionsFirstCol.size();
+        return sessions.size();
     }
 
-    public Session getSessionByIndex(int index) {
-        // get the session ID from browser icon (which we know is always present)
-        String sessionId = sessionsFirstCol.get(index)
-                .findElement(By.xpath("//*[contains(@id,'-icon-')]"))
-                .getAttribute("id")
-                .split("-")[1];
-
-        return getSession(sessionId);
+    public Optional<Session> getSessionByIndex(int index) {
+        try {
+            return Optional.of(new Session(sessions.get(index)));
+        } catch (Exception e) {
+            log.warn(e.getMessage());
+            return Optional.empty();
+        }
     }
 
-    public Session getSession(String sessionId) {
-        return new Session(sessionId);
+    public Optional<Session> getSession(String sessionId) {
+        try {
+            return Optional.of(new Session(getSessionElement(sessionId)));
+        } catch (Exception e) {
+            log.warn(e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private WebElement getSessionElement(String sessionId) {
+        return sessions.stream()
+                .filter(f -> getTrimmedSessionId(sessionId).equals(getSessionId(f)))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static String getSessionId(WebElement sessionElement) {
+        if (sessionElement == null) return null;
+        return sessionElement.getAttribute("id").split("-")[1]; // the id looks like session-71891504-item
+    }
+
+    public static String getTrimmedSessionId(String fullSessionId) {
+        return fullSessionId.substring(0, 7);
     }
 
     // We cannot use standard Page Fragment as there's no root element. Even though the sessions are placed in rows,
     // there's no element that would encapsulate it. Hence we cannot simply use e.g. @FindBy annotations.
     public class Session {
         private static final String SESSION = "session";
-        private static final String BROWSER = "browser";
+        private static final String DEVICE_ICON = "device-icon";
         private static final String IP = "ip";
         private static final String SIGN_OUT = "sign-out";
 
+        private final WebElement element;
         private final String sessionId;
-        private final String fullSessionId;
 
         // we don't want Session to be instantiated outside DeviceActivityPage
-        private Session(String sessionId) {
-            this.fullSessionId = sessionId;
-            this.sessionId = sessionId.substring(0,7);
+        private Session(WebElement element) {
+            this.element = element;
+            this.sessionId = DeviceActivityPage.getSessionId(element);
         }
 
         public String getSessionId() {
             return sessionId;
         }
 
-        public String getFullSessionId() {
-            return fullSessionId;
-        }
-
         public boolean isPresent() {
             return isItemDisplayed(IP); // no root element hence this workaround
         }
 
-        public String getBrowserIconName() {
-            String id = driver
-                    .findElement(By.xpath(String.format("//*[contains(@id,'%s')]", getFullItemId("icon"))))
-                    .getAttribute("id");
+        public String getIcon() {
+            final WebElement icon = (WebElement) Optional.ofNullable(element.findElement(By.className(DEVICE_ICON)))
+                    .map(f -> (WebElement) f)
+                    .map(f -> f.findElement(By.tagName("svg")))
+                    .orElse(null);
 
-            return id.split("-")[3]; // the id looks like session-71891504-icon-chrome
+            if (icon == null) return "";
+            return icon.getAttribute("id").split("-")[3]; // the id looks like session-71891504-icon-desktop
         }
 
         public String getIp() {
@@ -120,38 +140,56 @@ public class DeviceActivityPage extends AbstractLoggedInPage {
         }
 
         public boolean isBrowserDisplayed() {
-            return isItemDisplayed(BROWSER);
+            return !"".equals(getBrowser());
+        }
+
+        public String getTitle() {
+            return getTextFromElement(element.findElement(By.className("session-title")));
         }
 
         public String getBrowser() {
-            return getTextFromItem(BROWSER);
+            try {
+                return getTitle().split("/", 2)[1].trim();
+            } catch (Exception e) {
+                return "";
+            }
         }
 
         public String getLastAccess() {
-            String lastAccessedText = getTextFromElement(
-                    driver.findElement(By.cssSelector("[id*='last-access'] strong")));
-
-            return getTextFromItem("last-access").substring(lastAccessedText.length()).trim();
+            return getTextFromItem("last-access");
         }
 
         public String getClients() {
-            return getTextFromItem("clients").split("Clients ")[1];
+            return getTextFromItem("clients");
         }
 
         public String getStarted() {
-            return getTextFromItem("started").split("Started at ")[1];
+            return getTextFromItem("started");
         }
 
         public String getExpires() {
-            return getTextFromItem("expires").split("Expires at ")[1];
+            return getTextFromItem("expires");
         }
 
         public boolean isSignOutDisplayed() {
-            return isItemDisplayed(SIGN_OUT);
+            return getSignOutButton() != null;
         }
 
         public void clickSignOut() {
-            clickLink(getItemElement(SIGN_OUT));
+            WebElement signOutButton = getSignOutButton();
+            if (signOutButton != null) {
+                clickLink(signOutButton);
+            } else {
+                log.warn("Cannot click sign out button; not present");
+            }
+        }
+
+        private WebElement getSignOutButton() {
+            try {
+                return driver.findElement(By.xpath(String.format("//button[@id='%s']", getFullItemId(SIGN_OUT))));
+            } catch (NoSuchElementException e) {
+                return null;
+            }
         }
 
         private String getFullItemId(String itemId) {
@@ -159,18 +197,17 @@ public class DeviceActivityPage extends AbstractLoggedInPage {
         }
 
         private WebElement getItemElement(String itemId) {
-            return driver.findElement(By.id(getFullItemId(itemId)));
+            return element.findElement(By.id(getFullItemId(itemId)));
         }
 
         private String getTextFromItem(String itemId) {
-            return getTextFromElement(getItemElement(itemId));
+            return getTextFromElement(getItemElement(itemId).findElement(By.tagName("div")));
         }
 
         private boolean isItemDisplayed(String itemId) {
             try {
                 return getItemElement(itemId).isDisplayed();
-            }
-            catch (NoSuchElementException e) {
+            } catch (NoSuchElementException e) {
                 return false;
             }
         }

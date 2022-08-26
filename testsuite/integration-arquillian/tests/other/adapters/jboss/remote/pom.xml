@@ -175,14 +175,6 @@
             </build>
         </profile>
         <profile>
-            <id>app-server-remote-as7-eap6</id>
-            <!--this profile is required if remote app server is AS7 or EAP6-->
-            <properties>
-                <app.server.management.protocol>remote</app.server.management.protocol>
-                <app.server.management.port>${app.server.management.port.jmx}</app.server.management.port>
-            </properties>
-        </profile>
-        <profile>
             <id>no-offset</id>
             <properties>
                 <app.server.port.offset>0</app.server.port.offset>

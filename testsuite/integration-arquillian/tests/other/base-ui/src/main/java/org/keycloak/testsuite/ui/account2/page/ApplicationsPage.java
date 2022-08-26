@@ -59,7 +59,7 @@ public class ApplicationsPage extends AbstractLoggedInPage {
         boolean userConsentRequired = !UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-internal-" + clientId + "']"))).equals("Internal");
         boolean inUse = UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-status-" + clientId + "']"))).equals("In use");
         boolean applicationDetailsVisible = app.findElement(By.xpath("//section[@id='application-expandable-" + clientId + "']")).isDisplayed();
-        String effectiveURL = UIUtils.getTextFromElement(app.findElement(By.xpath("//span[@id='application-effectiveurl-" + clientId + "']")));
+        String effectiveURL = UIUtils.getTextFromElement(app.findElement(By.id("application-effectiveurl-" + clientId)));
         return new ClientRepresentation(clientId, clientName, userConsentRequired, inUse, effectiveURL, applicationDetailsVisible);
     }
 

@@ -387,6 +387,14 @@ module.factory('RealmSpecificLocalizationTexts', function($resource) {
     return $resource(authUrl + '/admin/realms/:id/localization/:locale', {
         id : '@realm',
         locale : '@locale'
+    }, {
+        get: {
+            isArray: false,
+                method: 'GET',
+                params: {
+                    useRealmDefaultLocaleFallback: '@useRealmDefaultLocaleFallback'
+                }
+        }
     });
 });
 

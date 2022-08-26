@@ -62,11 +62,12 @@ public class PublicKeyStorageManager {
         return keyStorage.getFirstPublicKey(modelKey, algAlgorithm, loader);
     }
 
-    public static PublicKey getIdentityProviderPublicKey(KeycloakSession session, RealmModel realm, OIDCIdentityProviderConfig idpConfig, JWSInput input) {
+    public static KeyWrapper getIdentityProviderKeyWrapper(KeycloakSession session, RealmModel realm, OIDCIdentityProviderConfig idpConfig, JWSInput input) {
         boolean keyIdSetInConfiguration = idpConfig.getPublicKeySignatureVerifierKeyId() != null
           && ! idpConfig.getPublicKeySignatureVerifierKeyId().trim().isEmpty();
 
         String kid = input.getHeader().getKeyId();
+        String alg = input.getHeader().getRawAlgorithm();
 
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
 
@@ -85,9 +86,14 @@ public class PublicKeyStorageManager {
             loader = new HardcodedPublicKeyLoader(
               keyIdSetInConfiguration
                 ? idpConfig.getPublicKeySignatureVerifierKeyId().trim()
-                : kid, pem);
+                : kid, pem, alg);
         }
 
-        return (PublicKey)keyStorage.getPublicKey(modelKey, kid, loader).getPublicKey();
+        return keyStorage.getPublicKey(modelKey, kid, loader);
+    }
+
+    public static PublicKey getIdentityProviderPublicKey(KeycloakSession session, RealmModel realm, OIDCIdentityProviderConfig idpConfig, JWSInput input) {
+        KeyWrapper key = getIdentityProviderKeyWrapper(session, realm, idpConfig, input);
+        return key != null? (PublicKey) key.getPublicKey() : null;
     }
 }

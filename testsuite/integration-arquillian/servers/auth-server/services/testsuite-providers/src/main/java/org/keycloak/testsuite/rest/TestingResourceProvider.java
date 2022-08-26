@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.Config;
+import org.keycloak.authorization.policy.evaluation.Realm;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
@@ -57,6 +58,7 @@ import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
@@ -112,6 +114,7 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.UUID;
+import org.keycloak.services.ErrorResponse;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -198,7 +201,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/revert-testing-infinispan-time-service")
     @Produces(MediaType.APPLICATION_JSON)
     public Response revertTestingInfinispanTimeService() {
-        InfinispanTestUtil.revertTimeService();
+        InfinispanTestUtil.revertTimeService(session);
         return Response.noContent().build();
     }
 
@@ -298,7 +301,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clear(realmId);
+        RealmModel realm = session.realms().getRealm(realmId);
+
+        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+
+        eventStore.clear(realm);
         return Response.noContent().build();
     }
 
@@ -421,7 +428,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clearAdmin(realmId);
+        RealmModel realm = session.realms().getRealm(realmId);
+
+        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+
+        eventStore.clearAdmin(realm);
         return Response.noContent().build();
     }
 
@@ -430,7 +441,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clearAdmin(realmId, olderThan);
+        RealmModel realm = session.realms().getRealm(realmId);
+
+        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+
+        eventStore.clearAdmin(realm, olderThan);
         return Response.noContent().build();
     }
 
@@ -612,11 +627,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/valid-credentials")
     @Produces(MediaType.APPLICATION_JSON)
     public boolean validCredentials(@QueryParam("realmName") String realmName, @QueryParam("userName") String userName, @QueryParam("password") String password) {
-        RealmModel realm = session.realms().getRealm(realmName);
+        RealmModel realm = session.realms().getRealmByName(realmName);
         if (realm == null) return false;
         UserProvider userProvider = session.getProvider(UserProvider.class);
         UserModel user = userProvider.getUserByUsername(realm, userName);
-        return session.userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
+        return user.credentialManager().isValid(UserCredentialModel.password(password));
     }
 
     @GET
@@ -985,7 +1000,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
      * See URLUtils.sendPOSTWithWebDriver for more details
      *
      * @param postRequestUrl Absolute URL. It can include query parameters etc. The POST request will be send to this URL
-     * @param encodedFormParameters Encoded parameters in the form of "param1=value1:param2=value2"
+     * @param encodedFormParameters Encoded parameters in the form of "param1=value1&param2=value2"
      * @return
      */
     @GET
@@ -1033,6 +1048,18 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .type(javax.ws.rs.core.MediaType.TEXT_HTML_TYPE)
                 .entity(builder.toString()).build();
 
+    }
+
+    /**
+     * Display message to Error Page - for testing purposes
+     *
+     * @param message message
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/display-error-message")
+    public Response displayErrorMessage(@QueryParam("message") String message) {
+        return ErrorPage.error(session, session.getContext().getAuthenticationSession(), Response.Status.BAD_REQUEST, message == null ? "" : message);
     }
 
     private RealmModel getRealmByName(String realmName) {

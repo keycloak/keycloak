@@ -22,7 +22,7 @@ import org.keycloak.models.UserModel;
 
 /**
  * This is an optional capability interface that is intended to be implemented by any
- * {@link org.keycloak.storage.UserStorageProvider UserStorageProvider} that supports addition of new users. You must
+ * <code>UserStorageProvider</code> that supports addition of new users. You must
  * implement this interface if you want to use this storage for registering new users.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

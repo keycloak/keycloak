@@ -54,6 +54,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.common.util.Retry;
@@ -98,6 +99,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
               .directAccessGrants()
               .redirectUris("*")
               .addWebOrigin("*")
+              .attribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+")
               .secret("password")
               .build();
 

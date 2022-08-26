@@ -28,6 +28,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.user.UserRegistrationProvider;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -183,8 +184,8 @@ public class UserModelTest extends KeycloakModelTest {
         });
 
         withRealm(realmId, (session, realm) -> {
-            if (session.userCache() != null) {
-                session.userCache().clear();
+            if (UserStorageUtil.userCache(session) != null) {
+                UserStorageUtil.userCache(session).clear();
             }
             final UserModel user = session.users().getUserByUsername(realm, "user-A");
             assertThat("User should not be found in the main store", user, Matchers.nullValue());
@@ -216,16 +217,7 @@ public class UserModelTest extends KeycloakModelTest {
             log.debugf("Removing selected users from backend");
             IntStream.range(FIRST_DELETED_USER_INDEX, LAST_DELETED_USER_INDEX).forEach(j -> {
                 final UserModel user = session.users().getUserByUsername(realm, "user-" + j);
-                try {
-                    ((UserRegistrationProvider) instance).removeUser(realm, user);
-                } catch (ModelException ex) {
-                    // removing user might have failed for an LDAP reason
-                    // as this is not the main subject under test, retry once more to delete the entry
-                    if (ex.getMessage().contains("Could not unbind DN") && ex.getCause() instanceof NamingException) {
-                        log.warn("removing failed, retrying", ex);
-                        ((UserRegistrationProvider) instance).removeUser(realm, user);
-                    }
-                }
+                ((UserRegistrationProvider) instance).removeUser(realm, user);
             });
             return null;
         });
@@ -243,8 +235,8 @@ public class UserModelTest extends KeycloakModelTest {
             // because they are not present in any storage. However, when we get users by id cache may still be hit
             // since it is not alerted in any way when users are removed from external provider. Hence we need to clear
             // the cache manually.
-            if (session.userCache() != null) {
-                session.userCache().clear();
+            if (UserStorageUtil.userCache(session) != null) {
+                UserStorageUtil.userCache(session).clear();
             }
             return null;
         });

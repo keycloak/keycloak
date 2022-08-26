@@ -1,6 +1,8 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import java.util.Arrays;
+import org.keycloak.config.HealthOptions;
+
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 
 final class HealthPropertyMappers {
@@ -9,18 +11,11 @@ final class HealthPropertyMappers {
 
     public static PropertyMapper[] getHealthPropertyMappers() {
         return new PropertyMapper[] {
-                builder().from("health-enabled")
-                        .to("quarkus.datasource.health.enabled")
-                        .isBuildTimeProperty(true)
-                        .defaultValue(Boolean.FALSE.toString())
-                        .description("If the server should expose health check endpoints. If enabled, health checks are available at the '/health', '/health/ready' and '/health/live' endpoints.")
+                fromOption(HealthOptions.HEALTH_ENABLED)
+                        .to("quarkus.health.extensions.enabled")
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .expectedValues(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()))
                         .build()
         };
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.HEALTH);
-    }
 }

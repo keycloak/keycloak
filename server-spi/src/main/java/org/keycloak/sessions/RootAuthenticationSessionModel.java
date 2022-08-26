@@ -34,7 +34,6 @@ public interface RootAuthenticationSessionModel {
     public static class SearchableFields {
         public static final SearchableModelField<RootAuthenticationSessionModel> ID              = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<RootAuthenticationSessionModel> REALM_ID        = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<RootAuthenticationSessionModel> EXPIRATION       = new SearchableModelField<>("expiration", Long.class);
     }
 
     /**

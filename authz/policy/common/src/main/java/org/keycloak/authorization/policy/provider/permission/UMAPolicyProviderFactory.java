@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -125,6 +125,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
     public void onUpdate(Policy policy, UmaPermissionRepresentation representation, AuthorizationProvider authorization) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
         Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+        RealmModel realm = policy.getResourceServer().getRealm();
 
         for (Policy associatedPolicy : associatedPolicies) {
             AbstractPolicyRepresentation associatedRep = ModelToRepresentation.toRepresentation(associatedPolicy, authorization, false, false);
@@ -143,18 +144,18 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 }
 
                 if (rep.getRoles().isEmpty()) {
-                    policyStore.delete(associatedPolicy.getId());
+                    policyStore.delete(realm, associatedPolicy.getId());
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
-            } else if ("js".equals(associatedRep.getType())) {
+            } else if (associatedRep instanceof JSPolicyRepresentation) {
                 JSPolicyRepresentation rep = JSPolicyRepresentation.class.cast(associatedRep);
 
                 if (representation.getCondition() != null) {
-                    rep.setCode(representation.getCondition());
+                    rep.setType(representation.getCondition());
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 } else {
-                    policyStore.delete(associatedPolicy.getId());
+                    policyStore.delete(realm, associatedPolicy.getId());
                 }
             } else if ("group".equals(associatedRep.getType())) {
                 GroupPolicyRepresentation rep = GroupPolicyRepresentation.class.cast(associatedRep);
@@ -170,7 +171,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 }
 
                 if (rep.getGroups().isEmpty()) {
-                    policyStore.delete(associatedPolicy.getId());
+                    policyStore.delete(realm, associatedPolicy.getId());
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
@@ -188,7 +189,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 }
 
                 if (rep.getClients().isEmpty()) {
-                    policyStore.delete(associatedPolicy.getId());
+                    policyStore.delete(realm, associatedPolicy.getId());
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
@@ -206,7 +207,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 }
 
                 if (rep.getUsers().isEmpty()) {
-                    policyStore.delete(associatedPolicy.getId());
+                    policyStore.delete(realm, associatedPolicy.getId());
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
@@ -291,7 +292,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
             boolean createPolicy = true;
 
             for (Policy associatedPolicy : associatedPolicies) {
-                if ("js".equals(associatedPolicy.getType())) {
+                if (associatedPolicy.getType().startsWith("script-")) {
                     createPolicy = false;
                 }
             }
@@ -329,9 +330,9 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                         representation.addRole(role.getName());
                     }
                 }
-            } else if ("js".equals(associatedRep.getType())) {
+            } else if (associatedRep instanceof JSPolicyRepresentation) {
                 JSPolicyRepresentation rep = JSPolicyRepresentation.class.cast(associatedRep);
-                representation.setCondition(rep.getCode());
+                representation.setCondition(rep.getType());
             } else if ("group".equals(associatedRep.getType())) {
                 GroupPolicyRepresentation rep = GroupPolicyRepresentation.class.cast(associatedRep);
 
@@ -364,9 +365,10 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
     @Override
     public void onRemove(Policy policy, AuthorizationProvider authorization) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+        RealmModel realm = policy.getResourceServer().getRealm();
 
         for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
-            policyStore.delete(associatedPolicy.getId());
+            policyStore.delete(realm, associatedPolicy.getId());
         }
     }
 
@@ -394,7 +396,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         JSPolicyRepresentation rep = new JSPolicyRepresentation();
 
         rep.setName(KeycloakModelUtils.generateId());
-        rep.setCode(condition);
+        rep.setType(condition);
 
         Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 

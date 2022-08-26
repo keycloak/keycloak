@@ -19,7 +19,7 @@ package org.keycloak.operator;
 import java.util.Map;
 
 public final class Constants {
-    public static final String CRDS_GROUP = "keycloak.org";
+    public static final String CRDS_GROUP = "k8s.keycloak.org";
     public static final String CRDS_VERSION = "v2alpha1";
     public static final String SHORT_NAME = "kc";
     public static final String NAME = "keycloak";
@@ -51,4 +51,6 @@ public final class Constants {
 
     public static final String INSECURE_DISABLE = "INSECURE-DISABLE";
     public static final String CERTIFICATES_FOLDER = "/mnt/certificates";
+
+    public static String KEYCLOAK_HTTP_RELATIVE_PATH_KEY = "http-relative-path";
 }

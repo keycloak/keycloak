@@ -65,11 +65,13 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
 
         AtomicReference<UserModel> r1user1Atomic = new AtomicReference<>();
 
+        String id1 = KeycloakModelUtils.generateId();
+        String id2 = KeycloakModelUtils.generateId();
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTestUser1) -> {
             KeycloakSession currentSession = sessionTestUser1;
 
-            RealmModel realm1 = currentSession.realms().createRealm("id1", "realm1");
-            RealmModel realm2 = currentSession.realms().createRealm("id2", "realm2");
+            RealmModel realm1 = currentSession.realms().createRealm(id1, "realm1");
+            RealmModel realm2 = currentSession.realms().createRealm(id2,"realm2");
 
             realm1.setDefaultRole(currentSession.roles().addRealmRole(realm1, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm1.getName()));
             realm2.setDefaultRole(currentSession.roles().addRealmRole(realm2, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm2.getName()));
@@ -86,13 +88,13 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             Assert.assertNotEquals(r1user1.getId(), r2user1.getId());
 
             // Test password
-            currentSession.userCredentialManager().updateCredential(realm1, r1user1, UserCredentialModel.password("pass1"));
-            currentSession.userCredentialManager().updateCredential(realm2, r2user1, UserCredentialModel.password("pass2"));
+            r1user1.credentialManager().updateCredential(UserCredentialModel.password("pass1"));
+            r2user1.credentialManager().updateCredential(UserCredentialModel.password("pass2"));
 
-            Assert.assertTrue(currentSession.userCredentialManager().isValid(realm1, r1user1, UserCredentialModel.password("pass1")));
-            Assert.assertFalse(currentSession.userCredentialManager().isValid(realm1, r1user1, UserCredentialModel.password("pass2")));
-            Assert.assertFalse(currentSession.userCredentialManager().isValid(realm2, r2user1, UserCredentialModel.password("pass1")));
-            Assert.assertTrue(currentSession.userCredentialManager().isValid(realm2, r2user1, UserCredentialModel.password("pass2")));
+            Assert.assertTrue(r1user1.credentialManager().isValid(UserCredentialModel.password("pass1")));
+            Assert.assertFalse(r1user1.credentialManager().isValid(UserCredentialModel.password("pass2")));
+            Assert.assertFalse(r2user1.credentialManager().isValid(UserCredentialModel.password("pass1")));
+            Assert.assertTrue(r2user1.credentialManager().isValid(UserCredentialModel.password("pass2")));
 
             // Test searching
             Assert.assertEquals(2, currentSession.users().searchForUserStream(realm1, "user").count());
@@ -101,8 +103,8 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTestUser2) -> {
             KeycloakSession currentSession = sessionTestUser2;
 
-            RealmModel realm1 = currentSession.realms().getRealm("id1");
-            RealmModel realm2 = currentSession.realms().getRealm("id2");
+            RealmModel realm1 = currentSession.realms().getRealm(id1);
+            RealmModel realm2 = currentSession.realms().getRealm(id2);
 
             UserModel r1user1 = r1user1Atomic.get();
 
@@ -127,8 +129,8 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTestUser3) -> {
             KeycloakSession currentSession = sessionTestUser3;
-            currentSession.realms().removeRealm("id1");
-            currentSession.realms().removeRealm("id2");
+            currentSession.realms().removeRealm(id1);
+            currentSession.realms().removeRealm(id2);
         });
     }
 
@@ -138,8 +140,10 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionById) -> {
             KeycloakSession currentSession = sessionById;
 
-            RealmModel realm1 = currentSession.realms().createRealm("id1", "realm1");
-            RealmModel realm2 = currentSession.realms().createRealm("id2", "realm2");
+            String id1 = KeycloakModelUtils.generateId();
+            String id2 = KeycloakModelUtils.generateId();
+            RealmModel realm1 = currentSession.realms().createRealm(id1, "realm1");
+            RealmModel realm2 = currentSession.realms().createRealm(id2, "realm2");
 
             realm1.setDefaultRole(currentSession.roles().addRealmRole(realm1, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm1.getName()));
             realm2.setDefaultRole(currentSession.roles().addRealmRole(realm2, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm2.getName()));
@@ -147,9 +151,9 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             createObjects(currentSession, realm1);
             createObjects(currentSession, realm2);
 
-            Assert.assertEquals(realm1, currentSession.realms().getRealm("id1"));
+            Assert.assertEquals(realm1, currentSession.realms().getRealm(id1));
             Assert.assertEquals(realm1, currentSession.realms().getRealmByName("realm1"));
-            Assert.assertEquals(realm2, currentSession.realms().getRealm("id2"));
+            Assert.assertEquals(realm2, currentSession.realms().getRealm(id2));
             Assert.assertEquals(realm2, currentSession.realms().getRealmByName("realm2"));
 
             ClientModel r1app1 = realm1.getClientByClientId("app1");
@@ -185,8 +189,8 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
                 um.removeUser(realm2, user1a);
             }
 
-            currentSession.realms().removeRealm("id1");
-            currentSession.realms().removeRealm("id2");
+            currentSession.realms().removeRealm(id1);
+            currentSession.realms().removeRealm(id2);
         });
     }
 

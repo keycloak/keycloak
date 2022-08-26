@@ -17,35 +17,61 @@
 
 package org.keycloak.models.map.storage.hotRod.client;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodPair;
 import org.keycloak.models.map.client.MapClientEntity;
+import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.client.MapClientEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity.AbstractHotRodClientEntityDelegate"
+        inherits = "org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity.AbstractHotRodClientEntityDelegate",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.models.ClientModel"
 )
 @ProtoDoc("@Indexed")
+@ProtoDoc("schema-version: " + HotRodClientEntity.VERSION)
 public class HotRodClientEntity extends AbstractHotRodEntity {
 
-    @ProtoField(number = 1, required = true)
-    public int entityVersion = 1;
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodClientEntity.class,
+                    HotRodProtocolMapperEntity.class,
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
+            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class}
+    )
+    public interface HotRodClientEntitySchema extends GeneratedSchema {
+        HotRodClientEntitySchema INSTANCE = new HotRodClientEntitySchemaImpl();
+    }
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 2, required = true)
+    @ProtoField(number = 1)
+    public Integer entityVersion = VERSION;
+
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @ProtoField(number = 2)
     public String id;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
@@ -75,7 +101,7 @@ public class HotRodClientEntity extends AbstractHotRodEntity {
 
     @ProtoField(number = 9)
     public Boolean enabled;
-    
+
     @ProtoField(number = 10)
     public Boolean alwaysDisplayInConsole;
 
@@ -108,7 +134,7 @@ public class HotRodClientEntity extends AbstractHotRodEntity {
     public Boolean frontchannelLogout;
 
     @ProtoField(number = 20)
-    public Integer notBefore;
+    public Long notBefore;
 
     @ProtoField(number = 21)
     public Set<String> scope;
@@ -188,6 +214,20 @@ public class HotRodClientEntity extends AbstractHotRodEntity {
             return clientScopes == null ? Stream.empty() : clientScopes.entrySet().stream()
                     .filter(me -> Objects.equals(me.getValue(), defaultScope))
                     .map(Map.Entry::getKey);
+        }
+
+        @Override
+        public Optional<MapProtocolMapperEntity> getProtocolMapper(String id) {
+            Set<MapProtocolMapperEntity> mappers = getProtocolMappers();
+            if (mappers == null || mappers.isEmpty()) return Optional.empty();
+
+            return mappers.stream().filter(m -> Objects.equals(m.getId(), id)).findFirst();
+        }
+
+        @Override
+        public void removeProtocolMapper(String id) {
+            HotRodClientEntity entity = getHotRodEntity();
+            entity.updated |= entity.protocolMappers != null && entity.protocolMappers.removeIf(m -> Objects.equals(m.id, id));
         }
     }
 

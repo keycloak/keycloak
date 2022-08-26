@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -30,6 +31,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -61,6 +63,11 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
         return ldapRule;
     }
 
+    @Before
+    public void before() {
+        // don't run this test when map storage is enabled, as map storage doesn't support the legacy style federation
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

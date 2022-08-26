@@ -16,13 +16,14 @@
  */
 package org.keycloak.models.map.storage.jpa;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
+import javax.persistence.LockModeType;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
@@ -30,27 +31,40 @@ import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
+
 import org.jboss.logging.Logger;
-import org.keycloak.connections.jpa.PersistenceExceptionConverter;
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.chm.MapFieldPredicates;
+import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
+import org.keycloak.utils.LockObjectsForModification;
+
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
+import static org.keycloak.models.map.storage.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E extends AbstractEntity, M> implements MapKeycloakTransaction<E, M> {
 
     private static final Logger logger = Logger.getLogger(JpaMapKeycloakTransaction.class);
+    private final KeycloakSession session;
     private final Class<RE> entityType;
+    private final Class<M> modelType;
+    private final boolean isExpirableEntity;
     protected EntityManager em;
 
-    @SuppressWarnings("unchecked")
-    public JpaMapKeycloakTransaction(Class<RE> entityType, EntityManager em) {
+    public JpaMapKeycloakTransaction(KeycloakSession session, Class<RE> entityType, Class<M> modelType, EntityManager em) {
+        this.session = session;
         this.em = em;
         this.entityType = entityType;
+        this.modelType = modelType;
+        this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(entityType);
     }
 
     protected abstract Selection<? extends RE> selectCbConstruct(CriteriaBuilder cb, Root<RE> root);
@@ -58,26 +72,46 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     protected abstract JpaModelCriteriaBuilder createJpaModelCriteriaBuilder();
     protected abstract E mapToEntityDelegate(RE original);
 
+    private final HashMap<String, E> cacheWithinSession = new HashMap<>();
+
+    /**
+     * Use the cache within the session to ensure that there is only one instance per entity within the current session.
+     */
+    private E mapToEntityDelegateUnique(RE original) {
+        if (original == null) {
+            return null;
+        }
+        E entity = cacheWithinSession.get(original.getId());
+        if (entity == null) {
+            entity = mapToEntityDelegate(original);
+            cacheWithinSession.put(original.getId(), entity);
+        }
+        return entity;
+    }
+
     @Override
-    @SuppressWarnings("unchecked")
     public E create(E mapEntity) {
-        JpaRootEntity jpaEntity = entityType.cast(CLONER.from(mapEntity));
+        RE jpaEntity = entityType.cast(CLONER.from(mapEntity));
         if (mapEntity.getId() == null) {
             jpaEntity.setId(StringKeyConverter.UUIDKey.INSTANCE.yieldNewUniqueKey().toString());
         }
         logger.tracef("tx %d: create entity %s", hashCode(), jpaEntity.getId());
         setEntityVersion(jpaEntity);
         em.persist(jpaEntity);
-        return (E) jpaEntity;
+        return mapToEntityDelegateUnique(jpaEntity);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public E read(String key) {
         if (key == null) return null;
         UUID uuid = StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return null;
-        return (E) em.find(entityType, uuid);
+        E e = mapToEntityDelegateUnique(
+                LockObjectsForModification.isEnabled(session, modelType) ?
+                        em.find(entityType, uuid, LockModeType.PESSIMISTIC_WRITE) :
+                        em.find(entityType, uuid)
+        );
+        return e != null && isExpirableEntity && isExpired((ExpirableEntity) e, true) ? null : e;
     }
 
     @Override
@@ -90,6 +124,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         CriteriaQuery<RE> query = cb.createQuery(entityType);
         Root<RE> root = query.from(entityType);
         query.select(selectCbConstruct(cb, root));
+        if (mcb.isDistinct()) query.distinct(true);
 
         //ordering
         if (!queryParameters.getOrderBy().isEmpty()) {
@@ -109,11 +144,19 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
             query.orderBy(orderByList);
         }
 
-        BiFunction<CriteriaBuilder, Root<RE>, Predicate> predicateFunc = mcb.getPredicateFunc();
-        if (predicateFunc != null) query.where(predicateFunc.apply(cb, root));
+        JpaPredicateFunction<RE> predicateFunc = mcb.getPredicateFunc();
+        if (this.isExpirableEntity) {
+            predicateFunc = predicateFunc != null ? predicateFunc.andThen(predicate -> cb.and(predicate, notExpired(cb, query::subquery, root)))
+                                                  : this::notExpired;
+        }
+        if (predicateFunc != null) query.where(predicateFunc.apply(cb, query::subquery, root));
 
-        return closing(paginateQuery(em.createQuery(query), queryParameters.getOffset(), queryParameters.getLimit()).getResultStream())
-                .map(this::mapToEntityDelegate);
+        TypedQuery<RE> emQuery = em.createQuery(query);
+        if (LockObjectsForModification.isEnabled(session, modelType)) {
+            emQuery = emQuery.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        }
+        return closing(paginateQuery(emQuery, queryParameters.getOffset(), queryParameters.getLimit()).getResultStream())
+                .map(this::mapToEntityDelegateUnique);
     }
 
     @Override
@@ -128,8 +171,8 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         Root<RE> root = countQuery.from(entityType);
         countQuery.select(cb.count(root));
 
-        BiFunction<CriteriaBuilder, Root<RE>, Predicate> predicateFunc = mcb.getPredicateFunc();
-        if (predicateFunc != null) countQuery.where(predicateFunc.apply(cb, root));
+        JpaPredicateFunction<RE> predicateFunc = mcb.getPredicateFunc();
+        if (predicateFunc != null) countQuery.where(predicateFunc.apply(cb, countQuery::subquery, root));
 
         return em.createQuery(countQuery).getSingleResult();
     }
@@ -140,6 +183,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         if (key == null) return false;
         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return false;
+        cacheWithinSession.remove(key);
         em.remove(em.getReference(entityType, uuid));
         logger.tracef("tx %d: delete entity %s", hashCode(), key);
         return true;
@@ -153,36 +197,47 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
+        // Remove all entities that are in the persistence context and that match the criteria.
+        // This avoids calling flush and clear which would detach all other unrelated entities as well.
+        int[] removed = {0};
+        MapModelCriteriaBuilder<String, E, M> mapMcb = queryParameters.getModelCriteriaBuilder().flashToModelCriteriaBuilder(createCriteriaBuilderMap());
+        cacheWithinSession.entrySet().removeIf(entry -> {
+            if (mapMcb.getKeyFilter().test(entry.getKey()) && mapMcb.getEntityFilter().test(entry.getValue())) {
+                em.remove(em.getReference(entityType, UUIDKey.INSTANCE.fromString(entry.getKey())));
+                removed[0]++;
+                return true;
+            } else {
+                return false;
+            }
+        });
+
         CriteriaDelete<RE> deleteQuery = cb.createCriteriaDelete(entityType);
 
         Root<RE> root = deleteQuery.from(entityType);
 
-        BiFunction<CriteriaBuilder, Root<RE>, Predicate> predicateFunc = mcb.getPredicateFunc();
-        if (predicateFunc != null) deleteQuery.where(predicateFunc.apply(cb, root));
+        JpaPredicateFunction<RE> predicateFunc = mcb.getPredicateFunc();
+        if (predicateFunc != null) deleteQuery.where(predicateFunc.apply(cb, deleteQuery::subquery, root));
 
-        return em.createQuery(deleteQuery).executeUpdate();
+        return em.createQuery(deleteQuery).executeUpdate() + removed[0];
+    }
+
+    private MapModelCriteriaBuilder<String, E, M> createCriteriaBuilderMap() {
+        return new MapModelCriteriaBuilder<>(StringKeyConverter.StringKey.INSTANCE, MapFieldPredicates.getPredicates(modelType));
     }
 
     @Override
     public void begin() {
-        logger.tracef("tx %d: begin", hashCode());
-        em.getTransaction().begin();
+        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
     }
 
     @Override
     public void commit() {
-        try {
-            logger.tracef("tx %d: commit", hashCode());
-            em.getTransaction().commit();
-        } catch (PersistenceException e) {
-            throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
-        }
+        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
     }
 
     @Override
     public void rollback() {
-        logger.tracef("tx %d: rollback", hashCode());
-        em.getTransaction().rollback();
+        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
     }
 
     @Override
@@ -198,5 +253,10 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     @Override
     public boolean isActive() {
         return em.getTransaction().isActive();
+    }
+
+    private Predicate notExpired(final CriteriaBuilder cb, final JpaSubqueryProvider query, final Root<RE> root) {
+        return cb.or(cb.greaterThan(root.get("expiration"), Time.currentTimeMillis()),
+                    cb.isNull(root.get("expiration")));
     }
 }

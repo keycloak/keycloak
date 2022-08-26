@@ -77,7 +77,7 @@ Testing allows 2 methods specified in the property `test.operator.deployment` : 
 mvn clean verify \
   -Dquarkus.container-image.build=true \
   -Dquarkus.container-image.tag=test \
-  -Dquarkus.kubernetes.deployment-target=kubernetes \
+  -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
   -Dtest.operator.deployment=remote
 ```
 
@@ -101,4 +101,19 @@ And run the tests passing an extra Java property:
 
 ```bash
 -Dtest.operator.custom.image=custom-keycloak:latest
+```
+
+### Testing using a pre-built operator image from a remote registry
+You can run the testsuite using an already built operator image from a remote image registry. 
+
+To do this, you need to set `quarkus.container-image.build=false` and specify the desired image 
+you want to use by setting `quarkus.container-image.image=<your-image>:<your-tag>`
+
+#### Example:
+
+```bash
+ mvn clean verify \
+      -Dquarkus.container-image.build=false \
+      -Dquarkus.container-image.image=quay.io/keycloak/keycloak-operator:nightly \
+      -Dtest.operator.deployment=remote
 ```

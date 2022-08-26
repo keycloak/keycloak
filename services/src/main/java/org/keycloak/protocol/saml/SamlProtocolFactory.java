@@ -68,24 +68,6 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     public void init(Config.Scope config) {
         //PicketLinkCoreSTS sts = PicketLinkCoreSTS.instance();
         //sts.installDefaultConfiguration();
-
-        this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
-    }
-
-    @Override
-    public String getId() {
-        return SamlProtocol.LOGIN_PROTOCOL;
-    }
-
-    @Override
-    public Map<String, ProtocolMapperModel> getBuiltinMappers() {
-        return builtins;
-    }
-
-    static Map<String, ProtocolMapperModel> builtins = new HashMap<>();
-    static List<ProtocolMapperModel> defaultBuiltins = new ArrayList<>();
-
-    static {
         ProtocolMapperModel model;
         model = UserPropertyAttributeStatementMapper.createAttributeMapper("X500 email",
                 "email",
@@ -111,9 +93,21 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         model = RoleListMapper.create("role list", "Role", AttributeStatementHelper.BASIC, null, false);
         builtins.put("role list", model);
         defaultBuiltins.add(model);
-
+        this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
     }
 
+    @Override
+    public String getId() {
+        return SamlProtocol.LOGIN_PROTOCOL;
+    }
+
+    @Override
+    public Map<String, ProtocolMapperModel> getBuiltinMappers() {
+        return builtins;
+    }
+
+    private Map<String, ProtocolMapperModel> builtins = new HashMap<>();
+    private List<ProtocolMapperModel> defaultBuiltins = new ArrayList<>();
 
     @Override
     protected void createDefaultClientScopesImpl(RealmModel newRealm) {

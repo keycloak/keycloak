@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,19 +74,23 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     private void disablePermissions(RoleModel role) {
         ResourceServer server = resourceServer(role);
         if (server == null) return;
+
+        RealmModel realm = server.getRealm();
+
         Policy policy = mapRolePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
         policy = mapClientScopePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
         policy = mapCompositePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
 
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getRoleResourceName(role));
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(realm, resource.getId());
     }
 
     @Override
     public Map<String, String> getPermissions(RoleModel role) {
+        if (authz == null) return null;
         initialize(role);
         Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(RolePermissionManagement.MAP_ROLE_SCOPE, mapRolePermission(role).getId());
@@ -120,9 +124,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public Resource resource(RoleModel role) {
-        ResourceStore resourceStore = authz.getStoreFactory().getResourceStore();
         ResourceServer server = resourceServer(role);
         if (server == null) return null;
+        ResourceStore resourceStore = authz.getStoreFactory().getResourceStore();
         return  resourceStore.findByName(server, getRoleResourceName(role));
     }
 
@@ -543,6 +547,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (server == null) {
             ClientModel client = getRoleClient(role);
             server = root.findOrCreateResourceServer(client);
+            if (server == null ) return;
         }
         Scope mapRoleScope = mapRoleScope(server);
         if (mapRoleScope == null) {
@@ -597,11 +602,6 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     private String getMapCompositePermissionName(RoleModel role) {
         return MAP_ROLE_COMPOSITE_SCOPE + ".permission." + role.getId();
-    }
-
-    private ResourceServer sdfgetResourceServer(RoleModel role) {
-        ClientModel client = getRoleClient(role);
-        return root.findOrCreateResourceServer(client);
     }
 
     private static String getRoleResourceName(RoleModel role) {

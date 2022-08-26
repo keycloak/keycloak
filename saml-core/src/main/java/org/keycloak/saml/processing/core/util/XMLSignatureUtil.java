@@ -107,7 +107,6 @@ public class XMLSignatureUtil {
 
     // Set some system properties and Santuario providers. Run this block before any other class initialization.
     static {
-        ProvidersUtil.ensure();
         SystemPropertiesUtil.ensure();
         String keyInfoProp = SecurityActions.getSystemProperty("picketlink.xmlsig.includeKeyInfo", null);
         if (StringUtil.isNotNull(keyInfoProp)) {

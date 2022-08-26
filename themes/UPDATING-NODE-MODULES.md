@@ -14,7 +14,7 @@ cd -
 ## For the new account console
 
 ```bash
-cd src/main/resources/theme/keycloak.v2/account/resources
+cd src/main/resources/theme/keycloak.v2/account/src
 npm install some-package-name@version
 git add package-lock.json
 cd -

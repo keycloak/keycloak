@@ -16,31 +16,57 @@
  */
 package org.keycloak.scripting;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-import javax.script.ScriptEngineManager;
+import javax.script.ScriptEngine;
 
 /**
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
 public class DefaultScriptingProviderFactory implements ScriptingProviderFactory {
 
-    static final String ID = "script-based-auth";
+    private static final Logger logger = Logger.getLogger(DefaultScriptingProviderFactory.class);
 
-    private ScriptEngineManager scriptEngineManager;
+    static final String ID = "default";
+
+    private boolean enableScriptEngineCache;
+
+    // Key is mime-type. Value is engine for the particular mime-type. Cache can be used when the scriptEngine can be shared across multiple threads / requests (which is the case for nashorn)
+    private Map<String, ScriptEngine> scriptEngineCache;
+
+    private Config.Scope config;
 
     @Override
     public ScriptingProvider create(KeycloakSession session) {
-        lazyInit();
-
-        return new DefaultScriptingProvider(scriptEngineManager);
+        return new DefaultScriptingProvider(this);
     }
 
     @Override
     public void init(Config.Scope config) {
-        //NOOP
+        this.config = config;
+        this.enableScriptEngineCache = config.getBoolean("enable-script-engine-cache", true);
+        logger.debugf("Enable script engine cache: %b", this.enableScriptEngineCache);
+        if (enableScriptEngineCache) {
+            scriptEngineCache = new ConcurrentHashMap<>();
+        }
+    }
+
+    boolean isEnableScriptEngineCache() {
+        return enableScriptEngineCache;
+    }
+
+    Map<String, ScriptEngine> getScriptEngineCache() {
+        return scriptEngineCache;
+    }
+
+    Config.Scope getConfig() {
+        return config;
     }
 
     @Override
@@ -56,16 +82,6 @@ public class DefaultScriptingProviderFactory implements ScriptingProviderFactory
     @Override
     public String getId() {
         return ID;
-    }
-
-    private void lazyInit() {
-        if (scriptEngineManager == null) {
-            synchronized (this) {
-                if (scriptEngineManager == null) {
-                    scriptEngineManager = new ScriptEngineManager();
-                }
-            }
-        }
     }
 
 }

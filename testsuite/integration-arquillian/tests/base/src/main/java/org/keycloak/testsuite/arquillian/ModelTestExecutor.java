@@ -26,6 +26,7 @@ import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.spi.TestResult;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -49,19 +50,23 @@ public class ModelTestExecutor extends LocalTestExecuter {
             super.execute(event);
         } else {
             TestResult result = new TestResult();
+            if (annotation.skipForMapStorage() && Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+                result = TestResult.skipped();
+            }
+            else {
+                try {
+                    // Model test - wrap the call inside the
+                    TestContext ctx = testContext.get();
+                    KeycloakTestingClient testingClient = ctx.getTestingClient();
+                    testingClient.server().runModelTest(testMethod.getDeclaringClass().getName(), testMethod.getName());
 
-            try {
-                // Model test - wrap the call inside the
-                TestContext ctx = testContext.get();
-                KeycloakTestingClient testingClient = ctx.getTestingClient();
-                testingClient.server().runModelTest(testMethod.getDeclaringClass().getName(), testMethod.getName());
-                
-                result.setStatus(TestResult.Status.PASSED);
-            } catch (Throwable e) {
-                result.setStatus(TestResult.Status.FAILED);
-                result.setThrowable(e);
-            } finally {
-                result.setEnd(System.currentTimeMillis());
+                    result.setStatus(TestResult.Status.PASSED);
+                } catch (Throwable e) {
+                    result.setStatus(TestResult.Status.FAILED);
+                    result.setThrowable(e);
+                } finally {
+                    result.setEnd(System.currentTimeMillis());
+                }
             }
 
             // Need to use reflection this way...

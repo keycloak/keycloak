@@ -16,6 +16,24 @@
  */
 package org.keycloak.forms.login.freemarker;
 
+import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
+
+import java.io.IOException;
+import java.net.URI;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -32,6 +50,7 @@ import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodeInputLoginBean
 import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodesBean;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
 import org.keycloak.forms.login.freemarker.model.CodeBean;
+import org.keycloak.forms.login.freemarker.model.EmailBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
@@ -73,25 +92,7 @@ import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
-
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-
-import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -102,7 +103,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     protected String accessCode;
     protected Response.Status status;
-    protected javax.ws.rs.core.MediaType contentType;
     protected List<AuthorizationDetails> clientScopesRequested;
     protected Map<String, String> httpResponseHeaders = new HashMap<>();
     protected URI actionUri;
@@ -159,8 +159,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_RECOVERY_AUTHN_CODES_CONFIG;
                 break;
             case UPDATE_PROFILE:
-                UpdateProfileContext userBasedContext = new UserUpdateProfileContext(realm, user);
-                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, userBasedContext);
+                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, new UserUpdateProfileContext(realm, user));
 
                 actionMessage = Messages.UPDATE_PROFILE;
                 if(isDynamicUserProfile()) {
@@ -168,6 +167,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 } else {
                     page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 }
+                break;
+            case UPDATE_EMAIL:
+                actionMessage = Messages.UPDATE_EMAIL;
+                page = LoginFormsPages.UPDATE_EMAIL;
                 break;
             case UPDATE_PASSWORD:
                 boolean isRequestedByAdmin = user.getRequiredActionsStream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
@@ -236,6 +239,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case LOGIN_UPDATE_PROFILE:
                 UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
                 attributes.put("user", new ProfileBean(userCtx, formData));
+                break;
+            case UPDATE_EMAIL:
+                attributes.put("email", new EmailBean(user, formData));
                 break;
             case LOGIN_IDP_LINK_CONFIRM:
             case LOGIN_IDP_LINK_EMAIL:
@@ -362,6 +368,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected Properties handleThemeResources(Theme theme, Locale locale) {
         Properties messagesBundle = new Properties();
         try {
+            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
+            {
+                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+            }
             messagesBundle.putAll(theme.getMessages(locale));
             messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
@@ -424,25 +434,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return formatMessage(msg, messagesBundle, locale);
     }
 
-    @Override
-    public String getMessage(String message, String... parameters) {
-        Theme theme;
-        try {
-            theme = getTheme();
-        } catch (IOException e) {
-            logger.error("Failed to create theme", e);
-            throw new RuntimeException("Failed to create theme");
-        }
-
-        Locale locale = session.getContext().resolveLocale(user);
-        Properties messagesBundle = handleThemeResources(theme, locale);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
-        messagesBundle.putAll(localizationTexts);
-        FormMessage msg = new FormMessage(message, (Object[]) parameters);
-        return formatMessage(msg, messagesBundle, locale);
-    }
-
-
     /**
      * Create common attributes used in all templates.
      * 
@@ -488,6 +479,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         case REGISTER:
                             b = UriBuilder.fromUri(Urls.realmRegisterPage(baseUri, realm.getName()));
                             break;
+                        case LOGOUT_CONFIRM:
+                            b = UriBuilder.fromUri(Urls.logoutConfirm(baseUri, realm.getName()));
+                            break;
                         default:
                             b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
                             break;
@@ -528,8 +522,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected Response processTemplate(Theme theme, String templateName, Locale locale) {
         try {
             String result = freeMarker.processTemplate(attributes, templateName, theme);
-            javax.ws.rs.core.MediaType mediaType = contentType == null ? MediaType.TEXT_HTML_UTF_8_TYPE : contentType;
-            Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(mediaType).language(locale).entity(result);
+            Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
@@ -809,12 +802,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setStatus(Response.Status status) {
         this.status = status;
-        return this;
-    }
-
-    @Override
-    public LoginFormsProvider setMediaType(javax.ws.rs.core.MediaType type) {
-        this.contentType = type;
         return this;
     }
 

@@ -24,14 +24,17 @@ import picocli.CommandLine;
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
 
+    // remove this once auto-build is removed
     public static final String AUTO_BUILD_OPTION_LONG = "--auto-build";
     public static final String AUTO_BUILD_OPTION_SHORT = "-b";
+    public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
+    public static final String DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION = "WARNING: The '" + AUTO_BUILD_OPTION_LONG + "' option for 'start' command is DEPRECATED and no longer needed. When executing the '" + Start.NAME + "' command, a new server image is automatically built based on the configuration. If you want to disable this behavior and achieve an optimal startup time, use the '" + OPTIMIZED_BUILD_OPTION_LONG + "' option instead.";
 
     @Override
     public void run() {
         doBeforeRun();
         CommandLine cmd = spec.commandLine();
-        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr());
+        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
     }
 
     protected void doBeforeRun() {

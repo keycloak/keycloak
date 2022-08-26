@@ -137,11 +137,30 @@ public final class Configuration {
         return ARG_PREFIX + key;
     }
 
+    public static String toDashCase(String key) {
+        StringBuilder sb = new StringBuilder(key.length());
+        boolean l = false;
+
+        for (int i = 0; i < key.length(); i++) {
+            char c = key.charAt(i);
+            if (l && Character.isUpperCase(c)) {
+                sb.append('-');
+                c = Character.toLowerCase(c);
+                l = false;
+            } else {
+                l = Character.isLowerCase(c);
+            }
+            sb.append(c);
+        }
+
+        return sb.toString();
+    }
+
     private static String getValue(ConfigSource configSource, String name) {
-        String value = configSource.getValue(name);
+        String value = configSource.getValue("%".concat(getProfileOrDefault("prod").concat(".").concat(name)));
 
         if (value == null) {
-            value = configSource.getValue("%".concat(getProfileOrDefault("prod").concat(".").concat(name)));
+            value = configSource.getValue(name);
         }
 
         return value;

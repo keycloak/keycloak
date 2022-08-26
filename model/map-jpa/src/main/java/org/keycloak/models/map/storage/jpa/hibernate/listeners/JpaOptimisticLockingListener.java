@@ -26,6 +26,7 @@ import org.hibernate.event.spi.PreInsertEventListener;
 import org.hibernate.event.spi.PreUpdateEvent;
 import org.hibernate.event.spi.PreUpdateEventListener;
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
+import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 
 import javax.persistence.LockModeType;
 import java.util.Objects;
@@ -49,6 +50,9 @@ public class JpaOptimisticLockingListener implements PreInsertEventListener, Pre
                 root = ((JpaChildEntity<?>) entity).getParent();
                 Objects.requireNonNull(root, "children must always return their parent, never null");
             }
+
+            // do not lock if root doesn't implement implicit optimistic locking mechanism 
+            if (! (root instanceof JpaRootVersionedEntity)) return;
 
             // a session would not contain the entity if it has been deleted
             // if the entity has been deleted JPA would throw an IllegalArgumentException with the message

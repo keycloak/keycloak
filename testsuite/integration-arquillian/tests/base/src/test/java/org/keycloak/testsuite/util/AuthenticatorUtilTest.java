@@ -50,7 +50,7 @@ public class AuthenticatorUtilTest extends AbstractTestRealmKeycloakTest {
     public void variousFactoryProviders() {
         testingClient.server().run(session -> {
 
-            RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
+            RealmModel realm = session.realms().getRealmByName(TEST_REALM_NAME);
             assertThat(realm, notNullValue());
 
             ClientModel client = realm.getClientByClientId("test-app");

@@ -709,6 +709,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     public void close() {
     }
 
+    @Override
+    public int getStartupTime(RealmModel realm) {
+        // TODO: take realm.getNotBefore() into account?
+        return session.getProvider(ClusterProvider.class).getClusterStartupTime();
+    }
+
     protected void removeUserSession(UserSessionEntity sessionEntity, boolean offline) {
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(offline);

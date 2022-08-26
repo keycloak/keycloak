@@ -24,6 +24,7 @@ import java.util.Set;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.PemException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.KeycloakSession;
@@ -185,11 +186,11 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
             // Adding the list of intermediate certificates + end user certificate
             intermediateCerts.add(end_user_auth_cert);
             CollectionCertStoreParameters intermediateCA_userCert = new CollectionCertStoreParameters(intermediateCerts);
-            CertStore intermediateCertStore = CertStore.getInstance("Collection", intermediateCA_userCert, "BC");
+            CertStore intermediateCertStore = CertStore.getInstance("Collection", intermediateCA_userCert, BouncyIntegration.PROVIDER);
             pkixParams.addCertStore(intermediateCertStore);
 
             // Build and verify the certification chain (revocation status excluded)
-            CertPathBuilder certPathBuilder = CertPathBuilder.getInstance("PKIX","BC");
+            CertPathBuilder certPathBuilder = CertPathBuilder.getInstance("PKIX",BouncyIntegration.PROVIDER);
             CertPath certPath = certPathBuilder.build(pkixParams).getCertPath();
             log.debug("Certification path building OK, and contains " + certPath.getCertificates().size() + " X509 Certificates");
 

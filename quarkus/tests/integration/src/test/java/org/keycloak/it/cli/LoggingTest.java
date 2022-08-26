@@ -15,7 +15,7 @@ public class LoggingTest {
     @Launch({ CONFIG_FILE_LONG_NAME+"=src/test/resources/LoggingTest/keycloak.conf", "start-dev" })
     void failUnknownHandlersInConfFile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertMessage("Invalid values in list for key: log Values: foo,console. Possible values are a combination of: console,file");
+        cliResult.assertMessage("Invalid values in list for key: log Values: foo,console. Possible values are a combination of: console,file,gelf");
     }
 
     @Test
