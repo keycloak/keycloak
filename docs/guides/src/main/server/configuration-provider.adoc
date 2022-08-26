@@ -42,8 +42,6 @@ Provider configuration options are provided when starting the server, as shown i
 .Setting the `connection-pool-size` for the `default` provider of the `connections-http-client` SPI
 <@kc.start parameters="--spi-connections-http-client-default-connection-pool-size=10"/>
 
-As usual, the configuration options can also be set in `conf/keycloak.conf` with follow-up start `build` option.
-
 == Configuring a default provider
 
 Depending on the SPI, multiple provider implementations can co-exist but only one of them is going to be used at runtime.
