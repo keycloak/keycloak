@@ -164,7 +164,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, long priority) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId("test");
+        rep.setParentId(adminClient.realm("test").toRepresentation().getId());
         rep.setProviderId(JavaKeystoreKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

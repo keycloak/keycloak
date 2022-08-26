@@ -310,6 +310,15 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testSamlAttributes(migrationRealm);
     }
 
+    protected void testMigrationTo18_0_0() {
+        // check that all expected scopes exist in the migrated realm.
+        testRealmDefaultClientScopes(migrationRealm);
+    }
+
+    protected void testMigrationTo19_0_0() {
+        testPostLogoutRedirectUrisSet(migrationRealm);
+    }
+
     protected void testDeleteAccount(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
         ClientResource accountResource = realm.clients().get(accountClient.getId());
@@ -508,16 +517,17 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testExtractRealmKeysMasterRealm(RealmResource masterRealm) {
         log.info("testing extract realm keys");
         String expectedMasterRealmKey = "MIIEowIBAAKCAQEAiU54OXoCbHy0L0gHn1yasctcnKHRU1pHFIJnWvaI7rClJydet9dDJaiYXOxMKseiBm3eYznfN3cPyU8udYmRnMuKjiocZ77LT2IEttAjXb6Ggazx7loriFHRy0IOJeX4KxXhAPWmxqa3mkFNfLBEvFqVaBgUDHQ60cmnPvNSHYudBTW9K80s8nvmP2pso7HTwWJ1+Xatj1Ey/gTmB3CXlyqBegGWC9TeuErEYpYhdh+11TVWasgMBZyUCtL3NRPaBuhaPg1LpW8lWGk05nS+YM6dvTk3Mppv+z2RygEpxyO09oT3b4G+Zfwit1STqn0AvDTGzINdoKcNtFScV0j8TwIDAQABAoIBAHcbPKsPLZ8SJfOF1iblW8OzFulAbaaSf2pJHIMJrQrw7LKkMkPjVXoLX+/rgr7xYZmWIP2OLBWfEHCeYTzQUyHiZpSf7vgHx7Fa45/5uVQOe/ttHIiYa37bCtP4vvEdJkOpvP7qGPvljwsebqsk9Ns28LfVez66bHOjK5Mt2yOIulbTeEs7ch//h39YwKJv96vc+CHbV2O6qoOxZessO6y+287cOBvbFXmS2GaGle5Nx/EwncBNS4b7czoetmm70+9ht3yX+kxaP311YUT31KQjuaJt275kOiKsrXr27PvgO++bsIyGuSzqyS7G7fmxF2zUyphEqEpalyDGMKMnrAECgYEA1fCgFox03rPDjm0MhW/ThoS2Ld27sbWQ6reS+PBMdUTJZVZIU1D2//h6VXDnlddhk6avKjA4smdy1aDKzmjz3pt9AKn+kgkXqtTC2fD3wp+fC9hND0z+rQPGe/Gk7ZUnTdsqnfyowxr+woIgzdnRukOUrG+xQiP3RUUT7tt6NQECgYEApEz2xvgqMm+9/f/YxjLdsFUfLqc4WlafB863stYEVqlCYy5ujyo0VQ0ahKSKJkLDnf52+aMUqPOpwaGePpu3O6VkvpcKfPY2MUlZW7/6Sa9et9hxNkdTS7Gui2d1ELpaCBe1Bc62sk8EA01iHXE1PpvyUqDWrhNh+NrDICA9oU8CgYBgGDYACtTP11TmW2r9YK5VRLUDww30k4ZlN1GnyV++aMhBYVEZQ0u+y+A/EnijIFwu0vbo70H4OGknNZMCxbeMbLDoJHM5KyZbUDe5ZvgSjloFGwH59m6KTiDQOUkIgi9mVCQ/VGaFRFHcElEjxUvj60kTbxPijn8ZuR5r8l9hAQKBgQCQ9jL5pHWeoIayN20smi6M6N2lTPbkhe60dcgQatHTIG2pkosLl8IqlHAkPgSB84AiwyR351JQKwRJCm7TcJI/dxMnMZ6YWKfB3qSP1hdfsfJRJQ/mQxIUBAYrizF3e+P5peka4aLCOgMhYsJBlePThMZN7wja99EGPwXQL4IQ8wKBgB8Nis1lQK6Z30GCp9u4dYleGfEP71Lwqvk/eJb89/uz0fjF9CTpJMULFc+nA5u4yHP3LFnRg3zCU6aEwfwUyk4GH9lWGV/qIAisQtgrCEraVe4qxz0DVE59C7qjO26IhU2U66TEzPAqvQ3zqey+woDn/cz/JMWK1vpcSk+TKn3K";
-        List<ComponentRepresentation> components = masterRealm.components().query(MASTER, KeyProvider.class.getName());
+        String realmId = masterRealm.toRepresentation().getId();
+        List<ComponentRepresentation> components = masterRealm.components().query(realmId, KeyProvider.class.getName());
         assertEquals(3, components.size());
 
-        components = masterRealm.components().query(MASTER, KeyProvider.class.getName(), "rsa");
+        components = masterRealm.components().query(realmId, KeyProvider.class.getName(), "rsa");
         assertEquals(1, components.size());
 
         ComponentRepresentation component = testingClient.server(MASTER).fetch(RunHelpers.internalComponent(components.get(0).getId()));
         assertEquals(expectedMasterRealmKey, component.getConfig().getFirst("privateKey"));
 
-        components = masterRealm.components().query(MASTER, KeyProvider.class.getName(), "hmac-generated");
+        components = masterRealm.components().query(realmId, KeyProvider.class.getName(), "hmac-generated");
         assertEquals(1, components.size());
 
     }
@@ -525,17 +535,17 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testExtractRealmKeysMigrationRealm(RealmResource migrationRealm) {
         log.info("testing extract realm keys");
         String expectedMigrationRealmKey = "MIIEpAIBAAKCAQEApt6gCllWkVTZ7fy/oRIx6Bxjt9x3eKKyKGFXvN4iaafrNqpYU9lcqPngWJ9DyXGqUf8RpjPaQWiLWLxjw3xGBqLk2E1/Frb9e/dy8rj//fHGq6bujN1iguzyFwxPGT5Asd7jflRI3qU04M8JE52PArqPhGL2Fn+FiSK5SWRIGm+hVL7Ck/E/tVxM25sFG1/UTQqvrROm4q76TmP8FsyZaTLVf7cCwW2QPIX0N5HTVb3QbBb5KIsk4kKmk/g7uUxS9r42tu533LISzRr5CTyWZAL2XFRuF2RrKdE8gwqkEubw6sDmB2mE0EoPdY1DUhBQgVP/5rwJrCtTsUBR2xdEYQIDAQABAoIBAFbbsNBSOlZBpYJUOmcb8nBQPrOYhXN8tGGCccn0klMOvcdhmcJjdPDbyCQ5Gm7DxJUTwNsTSHsdcNMKlJ9Pk5+msJnKlOl87KrXXbTsCQvlCrWUmb0nCzz9GvJWTOHl3oT3cND0DE4gDksqWR4luCgCdevCGzgQvrBoK6wBD+r578uEW3iw10hnJ0+wnGiw8IvPzE1a9xbY4HD8/QrYdaLxuLb/aC1PDuzrz0cOjnvPkrws5JrbUSnbFygJiOv1z4l2Q00uGIxlHtXdwQBnTZZjVi4vOec2BYSHffgwDYEZIglw1mnrV7y0N1nnPbtJK/cegIkXoBQHXm8Q99TrWMUCgYEA9au86qcwrXZZg5H4BpR5cpy0MSkcKDbA1aRL1cAyTCqJxsczlAtLhFADF+NhnlXj4y7gwDEYWrz064nF73I+ZGicvCiyOy+tCTugTyTGS+XR948ElDMS6PCUUXsotS3dKa0b3c9wd2mxeddTjq/ArfgEVZJ6fE1KtjLt9dtfA+8CgYEAreK3JsvjR5b/Xct28TghYUU7Qnasombb/shqqy8FOMjYUr5OUm/OjNIgoCqhOlE8oQDJ4dOZofNSa7tL+oM8Gmbal+E3fRzxnx/9/EC4QV6sVaPLTIyk7EPfKTcZuzH7+BNZtAziTxJw9d6YJQRbkpg92EZIEoR8iDj2Xs5xrK8CgYEAwMVWwwYX8zT3vn7ukTM2LRH7bsvkVUXJgJqgCwT6Mrv6SmkK9vL5+cPS+Y6pjdW1sRGauBSOGL1Grf/4ug/6F03jFt4UJM8fRyxreU7Q7sNSQ6AMpsGA6BnHODycz7ZCYa59PErG5FyiL4of/cm5Nolz1TXQOPNpWZiTEqVlZC8CgYA4YPbjVF4nuxSnU64H/hwMjsbtAM9uhI016cN0J3W4+J3zDhMU9X1x+Tts0wWdg/N1fGz4lIQOl3cUyRCUc/KL2OdtMS+tmDHbVyMho9ZaE5kq10W2Vy+uDz+O/HeSU12QDK4cC8Vgv+jyPy7zaZtLR6NduUPrBRvfiyCOkr8WrwKBgQCY0h4RCdNFhr0KKLLmJipAtV8wBCGcg1jY1KoWKQswbcykfBKwHbF6EooVqkRW0ITjWB7ZZCf8TnSUxe0NXCUAkVBrhzS4DScgtoSZYOOUaSHgOxpfwgnQ3oYotKi98Yg3IsaLs1j4RuPG5Sp1z6o+ELP1uvr8azyn9YlLa+523Q==";
-
-        List<ComponentRepresentation> components = migrationRealm.components().query(MIGRATION, KeyProvider.class.getName());
+        String realmId = migrationRealm.toRepresentation().getId();
+        List<ComponentRepresentation> components = migrationRealm.components().query(realmId, KeyProvider.class.getName());
         assertEquals(3, components.size());
 
-        components = migrationRealm.components().query(MIGRATION, KeyProvider.class.getName(), "rsa");
+        components = migrationRealm.components().query(realmId, KeyProvider.class.getName(), "rsa");
         assertEquals(1, components.size());
 
         ComponentRepresentation component = testingClient.server(MIGRATION).fetch(RunHelpers.internalComponent(components.get(0).getId()));
         assertEquals(expectedMigrationRealmKey, component.getConfig().getFirst("privateKey"));
 
-        components = migrationRealm.components().query(MIGRATION, KeyProvider.class.getName(), "hmac-generated");
+        components = migrationRealm.components().query(realmId, KeyProvider.class.getName(), "hmac-generated");
         assertEquals(1, components.size());
     }
 
@@ -720,6 +730,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void testClientDefaultClientScopes(RealmResource realm) {
         log.info("Testing default client scopes transferred from client scope in realm: " + realm.toRepresentation().getRealm());
         ExportImportUtil.testClientDefaultClientScopes(realm);
+    }
+
+    private void testPostLogoutRedirectUrisSet(RealmResource realm) {
+        log.info("Testing that POST_LOGOUT_REDIRECT_URI is set to '+' for all clients in " + realm.toRepresentation().getRealm());
+        ExportImportUtil.testDefaultPostLogoutRedirectUris(realm);
     }
 
     private void testOfflineScopeAddedToClient() {
@@ -929,6 +944,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo12_0_0();
         testMigrationTo13_0_0(testRealmAttributesMigration);
         testMigrationTo14_0_0();
+    }
+
+    protected void testMigrationTo18_x() {
+        testMigrationTo18_0_0();
+    }
+
+    protected void testMigrationTo19_x() {
+        testMigrationTo19_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {

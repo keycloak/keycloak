@@ -22,10 +22,12 @@ import javax.transaction.TransactionManager;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
-public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManagerLookup {
+public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManagerLookup, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(QuarkusJtaTransactionManagerLookup.class);
 
@@ -64,5 +66,10 @@ public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManager
     @Override
     public int order() {
         return 100;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

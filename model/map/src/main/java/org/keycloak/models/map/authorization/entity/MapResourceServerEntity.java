@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,68 +17,48 @@
 
 package org.keycloak.models.map.authorization.entity;
 
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
-import java.util.Objects;
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.authorization.entity.MapResourceServerEntity.AbstractMapResourceServerEntity"
+)
+@DeepCloner.Root
+public interface MapResourceServerEntity extends UpdatableEntity, AbstractEntity {
 
-public class MapResourceServerEntity extends UpdatableEntity.Impl implements AbstractEntity {
+    public abstract class AbstractMapResourceServerEntity extends UpdatableEntity.Impl implements MapResourceServerEntity {
 
-    private String id;
+        private String id;
 
-    private boolean allowRemoteResourceManagement;
-    private PolicyEnforcementMode policyEnforcementMode = PolicyEnforcementMode.ENFORCING;
-    private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
+        @Override
+        public String getId() {
+            return this.id;
+        }
 
-    public MapResourceServerEntity(String id) {
-        this.id = id;
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
     }
 
-    public MapResourceServerEntity() {}
+    String getRealmId();
+    void setRealmId(String realmId);
 
-    @Override
-    public String getId() {
-        return id;
-    }
+    String getClientId();
+    void setClientId(String clientId);
 
-    @Override
-    public void setId(String id) {
-        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
-        this.id = id;
-        this.updated |= id != null;
-    }
+    Boolean isAllowRemoteResourceManagement();
+    void setAllowRemoteResourceManagement(Boolean allowRemoteResourceManagement);
 
-    public boolean isAllowRemoteResourceManagement() {
-        return allowRemoteResourceManagement;
-    }
+    PolicyEnforcementMode getPolicyEnforcementMode();
+    void setPolicyEnforcementMode(PolicyEnforcementMode policyEnforcementMode);
 
-    public void setAllowRemoteResourceManagement(boolean allowRemoteResourceManagement) {
-        this.updated |= this.allowRemoteResourceManagement != allowRemoteResourceManagement;
-        this.allowRemoteResourceManagement = allowRemoteResourceManagement;
-    }
-
-    public PolicyEnforcementMode getPolicyEnforcementMode() {
-        return policyEnforcementMode;
-    }
-
-    public void setPolicyEnforcementMode(PolicyEnforcementMode policyEnforcementMode) {
-        this.updated |= !Objects.equals(this.policyEnforcementMode, policyEnforcementMode);
-        this.policyEnforcementMode = policyEnforcementMode;
-    }
-
-    public DecisionStrategy getDecisionStrategy() {
-        return decisionStrategy;
-    }
-
-    public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
-        this.updated |= !Objects.equals(this.decisionStrategy, decisionStrategy);
-        this.decisionStrategy = decisionStrategy;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s@%08x", getId(), System.identityHashCode(this));
-    }
+    DecisionStrategy getDecisionStrategy();
+    void setDecisionStrategy(DecisionStrategy decisionStrategy);
 }

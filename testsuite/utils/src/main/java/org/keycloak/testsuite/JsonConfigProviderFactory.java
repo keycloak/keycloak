@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import javax.servlet.ServletContext;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.util.JsonSerialization;
 
@@ -38,7 +38,7 @@ public class JsonConfigProviderFactory extends org.keycloak.services.util.JsonCo
 
     private Map<String, String> getPropertyOverrides() {
 
-        ServletContext context = ResteasyProviderFactory.getContextData(ServletContext.class);
+        ServletContext context = Resteasy.getContextData(ServletContext.class);
         Map<String, String> propertyOverridesMap = new HashMap<>();
         String propertyOverrides = context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES);
 

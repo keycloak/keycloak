@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 
@@ -45,13 +46,14 @@ public class GroupSynchronizer implements Synchronizer<GroupModel.GroupRemovedEv
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         GroupModel group = event.getGroup();
+        RealmModel realm = event.getRealm();
         Map<Policy.FilterOption, String[]> attributes = new EnumMap<>(Policy.FilterOption.class);
 
         attributes.put(Policy.FilterOption.TYPE, new String[] {"group"});
         attributes.put(Policy.FilterOption.CONFIG, new String[] {"groups", group.getId()});
         attributes.put(Policy.FilterOption.ANY_OWNER, Policy.FilterOption.EMPTY_FILTER);
 
-        List<Policy> search = policyStore.findByResourceServer(attributes, null, -1, -1);
+        List<Policy> search = policyStore.find(realm, null, attributes, null, null);
 
         for (Policy policy : search) {
             PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());
@@ -62,7 +64,7 @@ public class GroupSynchronizer implements Synchronizer<GroupModel.GroupRemovedEv
 
             if (groups.isEmpty()) {
                 policyFactory.onRemove(policy, authorizationProvider);
-                policyStore.delete(policy.getId());
+                policyStore.delete(realm, policy.getId());
             } else {
                 policyFactory.onUpdate(policy, representation, authorizationProvider);
             }

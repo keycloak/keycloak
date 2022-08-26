@@ -44,7 +44,6 @@
         <module name="org.jboss.as.version" optional="true"/>
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.keycloak.keycloak-server-spi-private"/>
-        <module name="org.keycloak.keycloak-wildfly-adapter" optional="true"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-server-spi"/>

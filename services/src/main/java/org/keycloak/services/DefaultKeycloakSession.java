@@ -16,41 +16,38 @@
  */
 package org.keycloak.services;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.StackUtil;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
-import org.keycloak.models.UserLoginFailureProvider;
-import org.keycloak.models.TokenManager;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.ThemeManager;
+import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserCredentialManager;
+import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
+import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
-import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
+import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.sessions.AuthenticationSessionProvider;
-import org.keycloak.storage.ClientStorageManager;
-import org.keycloak.storage.ClientScopeStorageManager;
-import org.keycloak.storage.GroupStorageManager;
-import org.keycloak.storage.RoleStorageManager;
-import org.keycloak.storage.UserStorageManager;
+import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.vault.DefaultVaultTranscriber;
 import org.keycloak.vault.VaultProvider;
@@ -73,28 +70,21 @@ import java.util.stream.Collectors;
  */
 public class DefaultKeycloakSession implements KeycloakSession {
 
+    private final static Logger log = Logger.getLogger(DefaultKeycloakSession.class);
     private final DefaultKeycloakSessionFactory factory;
     private final Map<Integer, Provider> providers = new HashMap<>();
     private final List<Provider> closable = new LinkedList<>();
     private final DefaultKeycloakTransactionManager transactionManager;
     private final Map<String, Object> attributes = new HashMap<>();
     private final Map<InvalidableObjectType, Set<Object>> invalidationMap = new HashMap<>();
-    private RealmProvider model;
-    private ClientProvider clientProvider;
-    private ClientScopeProvider clientScopeProvider;
-    private GroupProvider groupProvider;
-    private RoleProvider roleProvider;
-    private UserStorageManager userStorageManager;
-    private ClientStorageManager clientStorageManager;
-    private ClientScopeStorageManager clientScopeStorageManager;
-    private RoleStorageManager roleStorageManager;
-    private GroupStorageManager groupStorageManager;
-    private UserCredentialStoreManager userCredentialStorageManager;
+    private DatastoreProvider datastoreProvider;
+    @Deprecated
+    private UserCredentialManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
     private UserLoginFailureProvider userLoginFailureProvider;
     private AuthenticationSessionProvider authenticationSessionProvider;
     private UserFederatedStorageProvider userFederatedStorageProvider;
-    private KeycloakContext context;
+    private final KeycloakContext context;
     private KeyManager keyManager;
     private ThemeManager themeManager;
     private TokenManager tokenManager;
@@ -112,65 +102,29 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return context;
     }
 
-    private RealmProvider getRealmProvider() {
-        CacheRealmProvider cache = getProvider(CacheRealmProvider.class);
-        if (cache != null) {
-            return cache;
-        } else {
-            return getProvider(RealmProvider.class);
+    private DatastoreProvider getDatastoreProvider() {
+        if (this.datastoreProvider == null) {
+            this.datastoreProvider = getProvider(DatastoreProvider.class);
         }
-    }
-
-    private ClientProvider getClientProvider() {
-        // TODO: Extract ClientProvider from CacheRealmProvider and use that instead
-        ClientProvider cache = getProvider(CacheRealmProvider.class);
-        if (cache != null) {
-            return cache;
-        } else {
-            return clientStorageManager();
-        }
-    }
-
-    private ClientScopeProvider getClientScopeProvider() {
-        // TODO: Extract ClientScopeProvider from CacheRealmProvider and use that instead
-        ClientScopeProvider cache = getProvider(CacheRealmProvider.class);
-        if (cache != null) {
-            return cache;
-        } else {
-            return clientScopeStorageManager();
-        }
-    }
-
-    private GroupProvider getGroupProvider() {
-        // TODO: Extract GroupProvider from CacheRealmProvider and use that instead
-        GroupProvider cache = getProvider(CacheRealmProvider.class);
-        if (cache != null) {
-            return cache;
-        } else {
-            return groupStorageManager();
-        }
-    }
-
-    private RoleProvider getRoleProvider() {
-        // TODO: Extract RoleProvider from CacheRealmProvider and use that instead
-        RoleProvider cache = getProvider(CacheRealmProvider.class);
-        if (cache != null) {
-            return cache;
-        } else {
-            return roleStorageManager();
-        }
+        return this.datastoreProvider;
     }
 
     @Override
-    public UserCache userCache() {
-        return getProvider(UserCache.class);
-
+    @Deprecated
+    public UserProvider userCache() {
+        LegacySessionSupportProvider provider = this.getProvider(LegacySessionSupportProvider.class);
+        if (provider == null) {
+            throw new IllegalStateException("legacy support for userCache is not enabled");
+        }
+        return provider.userCache();
     }
 
     @Override
     public void invalidate(InvalidableObjectType type, Object... ids) {
-        factory.invalidate(type, ids);
-        invalidationMap.computeIfAbsent(type, o -> new HashSet<>()).addAll(Arrays.asList(ids));
+        factory.invalidate(this, type, ids);
+        if (type == ObjectType.PROVIDER_FACTORY) {
+            invalidationMap.computeIfAbsent(type, o -> new HashSet<>()).addAll(Arrays.asList(ids));
+        }
     }
 
     @Override
@@ -211,6 +165,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @Deprecated
     public UserFederatedStorageProvider userFederatedStorage() {
         if (userFederatedStorageProvider == null) {
             userFederatedStorageProvider = getProvider(UserFederatedStorageProvider.class);
@@ -219,87 +174,86 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @Deprecated
     public UserProvider userLocalStorage() {
-        return getProvider(UserProvider.class);
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
+    @Deprecated
     public RealmProvider realmLocalStorage() {
-        return getProvider(RealmProvider.class);
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
+    @Deprecated
     public ClientProvider clientLocalStorage() {
-        return getProvider(ClientProvider.class);
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
+    @Deprecated
     public ClientScopeProvider clientScopeLocalStorage() {
-        return getProvider(ClientScopeProvider.class);
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
+    @Deprecated
     public GroupProvider groupLocalStorage() {
-        return getProvider(GroupProvider.class);
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
+    @Deprecated
     public ClientProvider clientStorageManager() {
-        if (clientStorageManager == null) {
-            clientStorageManager = new ClientStorageManager(this, factory.getClientStorageProviderTimeout());
-        }
-        return clientStorageManager;
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
+    @Deprecated
     public ClientScopeProvider clientScopeStorageManager() {
-        if (clientScopeStorageManager == null) {
-            clientScopeStorageManager = new ClientScopeStorageManager(this);
-        }
-        return clientScopeStorageManager;
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
+    @Deprecated
     public RoleProvider roleLocalStorage() {
-        return getProvider(RoleProvider.class);
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
+    @Deprecated
     public RoleProvider roleStorageManager() {
-        if (roleStorageManager == null) {
-            roleStorageManager = new RoleStorageManager(this, factory.getRoleStorageProviderTimeout());
-        }
-        return roleStorageManager;
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
+    @Deprecated
     public GroupProvider groupStorageManager() {
-        if (groupStorageManager == null) {
-            groupStorageManager = new GroupStorageManager(this);
-        }
-        return groupStorageManager;
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
-
     @Override
+    @Deprecated
     public UserProvider userStorageManager() {
-        if (userStorageManager == null) userStorageManager = new UserStorageManager(this);
-        return userStorageManager;
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     public UserProvider users() {
-        UserCache cache = getProvider(UserCache.class);
-        if (cache != null) {
-            return cache;
-        } else {
-            return userStorageManager();
-        }
+        return getDatastoreProvider().users();
     }
 
     @Override
+    @Deprecated
     public UserCredentialManager userCredentialManager() {
-        if (userCredentialStorageManager == null) userCredentialStorageManager = new UserCredentialStoreManager(this);
+        if (userCredentialStorageManager == null) {
+            LegacySessionSupportProvider provider = this.getProvider(LegacySessionSupportProvider.class);
+            if (provider == null) {
+                throw new IllegalStateException("legacy support for a UserCredentialManager is not enabled");
+            }
+            userCredentialStorageManager = provider.userCredentialManager();
+        }
         return userCredentialStorageManager;
     }
 
@@ -383,7 +337,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
             return null;
         }
 
-        @SuppressWarnings("unchecked")
         ComponentFactory<T, T> componentFactory = (ComponentFactory<T, T>) providerFactory;
         T provider = componentFactory.create(this, componentModel);
         enlistForClose(provider);
@@ -410,42 +363,27 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public RealmProvider realms() {
-        if (model == null) {
-            model = getRealmProvider();
-        }
-        return model;
+        return getDatastoreProvider().realms();
     }
 
     @Override
     public ClientProvider clients() {
-        if (clientProvider == null) {
-            clientProvider = getClientProvider();
-        }
-        return clientProvider;
+        return getDatastoreProvider().clients();
     }
 
     @Override
     public ClientScopeProvider clientScopes() {
-        if (clientScopeProvider == null) {
-            clientScopeProvider = getClientScopeProvider();
-        }
-        return clientScopeProvider;
+        return getDatastoreProvider().clientScopes();
     }
 
     @Override
     public GroupProvider groups() {
-        if (groupProvider == null) {
-            groupProvider = getGroupProvider();
-        }
-        return groupProvider;
+        return getDatastoreProvider().groups();
     }
 
     @Override
     public RoleProvider roles() {
-        if (roleProvider == null) {
-            roleProvider = getRoleProvider();
-        }
-        return roleProvider;
+        return getDatastoreProvider().roles();
     }
 
 
@@ -524,7 +462,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         providers.values().forEach(safeClose);
         closable.forEach(safeClose);
         for (Entry<InvalidableObjectType, Set<Object>> me : invalidationMap.entrySet()) {
-            factory.invalidate(me.getKey(), me.getValue().toArray());
+            factory.invalidate(this, me.getKey(), me.getValue().toArray());
         }
     }
 

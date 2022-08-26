@@ -17,5 +17,18 @@
 
 package org.keycloak.models.map.storage.hotRod.common;
 
-public interface AbstractHotRodEntity {
+import org.keycloak.models.map.common.UpdatableEntity;
+
+public abstract class AbstractHotRodEntity implements UpdatableEntity {
+    public boolean updated;
+
+    @Override
+    public boolean isUpdated() {
+        return this.updated;
+    }
+
+    @Override
+    public void clearUpdatedFlag() {
+        this.updated = false;
+    }
 }

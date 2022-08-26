@@ -1,35 +1,26 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.models.map.realm;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
@@ -44,1004 +35,457 @@ import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 
-public class MapRealmEntity extends UpdatableEntity.Impl implements AbstractEntity, EntityWithAttributes {
-
-    private String id;
-    private String name;
-
-    private Boolean enabled = false;
-    private Boolean registrationAllowed = false;
-    private Boolean registrationEmailAsUsername = false;
-    private Boolean verifyEmail = false;
-    private Boolean resetPasswordAllowed = false;
-    private Boolean loginWithEmailAllowed = false;
-    private Boolean duplicateEmailsAllowed = false;
-    private Boolean rememberMe = false;
-    private Boolean editUsernameAllowed = false;
-    private Boolean revokeRefreshToken = false;
-    private Boolean adminEventsEnabled = false;
-    private Boolean adminEventsDetailsEnabled = false;
-    private Boolean internationalizationEnabled = false;
-    private Boolean allowUserManagedAccess = false;
-    private Boolean offlineSessionMaxLifespanEnabled = false;
-    private Boolean eventsEnabled = false;
-    private Integer refreshTokenMaxReuse = 0;
-    private Integer ssoSessionIdleTimeout = 0;
-    private Integer ssoSessionMaxLifespan = 0;
-    private Integer ssoSessionIdleTimeoutRememberMe = 0;
-    private Integer ssoSessionMaxLifespanRememberMe = 0;
-    private Integer offlineSessionIdleTimeout = 0;
-    private Integer accessTokenLifespan = 0;
-    private Integer accessTokenLifespanForImplicitFlow = 0;
-    private Integer accessCodeLifespan = 0;
-    private Integer accessCodeLifespanUserAction = 0;
-    private Integer accessCodeLifespanLogin = 0;
-    private Integer notBefore = 0;
-    private Integer clientSessionIdleTimeout = 0;
-    private Integer clientSessionMaxLifespan = 0;
-    private Integer clientOfflineSessionIdleTimeout = 0;
-    private Integer clientOfflineSessionMaxLifespan = 0;
-    private Integer actionTokenGeneratedByAdminLifespan = 0;
-    private Integer offlineSessionMaxLifespan = 0;
-    private Long eventsExpiration = 0l;
-    private String displayName;
-    private String displayNameHtml;
-    private String passwordPolicy;
-    private String sslRequired;
-    private String loginTheme;
-    private String accountTheme;
-    private String adminTheme;
-    private String emailTheme;
-    private String masterAdminClient;
-    private String defaultRoleId;
-    private String defaultLocale;
-    private String browserFlow;
-    private String registrationFlow;
-    private String directGrantFlow;
-    private String resetCredentialsFlow;
-    private String clientAuthenticationFlow;
-    private String dockerAuthenticationFlow;
-    private MapOTPPolicyEntity otpPolicy = MapOTPPolicyEntity.fromModel(OTPPolicy.DEFAULT_POLICY);;
-    private MapWebAuthnPolicyEntity webAuthnPolicy = MapWebAuthnPolicyEntity.defaultWebAuthnPolicy();;
-    private MapWebAuthnPolicyEntity webAuthnPolicyPasswordless = MapWebAuthnPolicyEntity.defaultWebAuthnPolicy();;
-
-    private Set<String> eventsListeners = new HashSet<>();
-    private Set<String> enabledEventTypes = new HashSet<>();
-    private Set<String> supportedLocales = new HashSet<>();
-    private Map<String, String> browserSecurityHeaders = new HashMap<>();
-    private Map<String, String> smtpConfig = new HashMap<>();
-
-    private final Set<String> defaultGroupIds = new HashSet<>();
-    private final Set<String> defaultClientScopes = new HashSet<>();
-    private final Set<String> optionalClientScopes = new HashSet<>();
-    private final Map<String, List<String>> attributes = new HashMap<>();
-    private final Map<String, Map<String, String>> localizationTexts = new HashMap<>();
-    private final Map<String, MapClientInitialAccessEntity> clientInitialAccesses = new HashMap<>();
-    private final Map<String, MapComponentEntity> components = new HashMap<>();
-    private final Map<String, MapAuthenticationFlowEntity> authenticationFlows = new HashMap<>();
-    private final Map<String, MapAuthenticationExecutionEntity> authenticationExecutions = new HashMap<>();
-    private final Map<String, MapRequiredCredentialEntity> requiredCredentials = new HashMap<>();
-    private final Map<String, MapAuthenticatorConfigEntity> authenticatorConfigs = new HashMap<>();
-    private final Map<String, MapIdentityProviderEntity> identityProviders = new HashMap<>();
-    private final Map<String, MapIdentityProviderMapperEntity> identityProviderMappers = new HashMap<>();
-    private final Map<String, MapRequiredActionProviderEntity> requiredActionProviders = new HashMap<>();
-
-    /**
-     * Flag signalizing that any of the setters has been meaningfully used.
-     */
-
-    public MapRealmEntity() {}
-
-    public MapRealmEntity(String id) {
-        this.id = id;
-    }
-
-    @Override
-    public String getId() {
-        return this.id;
-    }
-
-    @Override
-    public void setId(String id) {
-        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
-        this.id = id;
-        this.updated |= id != null;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return this.updated
-                || authenticationExecutions.values().stream().anyMatch(MapAuthenticationExecutionEntity::isUpdated)
-                || authenticationFlows.values().stream().anyMatch(MapAuthenticationFlowEntity::isUpdated)
-                || authenticatorConfigs.values().stream().anyMatch(MapAuthenticatorConfigEntity::isUpdated)
-                || clientInitialAccesses.values().stream().anyMatch(MapClientInitialAccessEntity::isUpdated)
-                || components.values().stream().anyMatch(MapComponentEntity::isUpdated)
-                || identityProviders.values().stream().anyMatch(MapIdentityProviderEntity::isUpdated)
-                || identityProviderMappers.values().stream().anyMatch(MapIdentityProviderMapperEntity::isUpdated)
-                || requiredActionProviders.values().stream().anyMatch(MapRequiredActionProviderEntity::isUpdated)
-                || requiredCredentials.values().stream().anyMatch(MapRequiredCredentialEntity::isUpdated)
-                || otpPolicy.isUpdated()
-                || webAuthnPolicy.isUpdated()
-                || webAuthnPolicyPasswordless.isUpdated();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.updated |= ! Objects.equals(this.name, name);
-        this.name = name;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.updated |= ! Objects.equals(this.displayName, displayName);
-        this.displayName = displayName;
-    }
-
-    public String getDisplayNameHtml() {
-        return displayNameHtml;
-    }
-
-    public void setDisplayNameHtml(String displayNameHtml) {
-        this.updated |= ! Objects.equals(this.displayNameHtml, displayNameHtml);
-        this.displayNameHtml = displayNameHtml;
-    }
-
-    public Boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.updated |= ! Objects.equals(this.enabled, enabled);
-        this.enabled = enabled;
-    }
-
-    public Boolean isRegistrationAllowed() {
-        return registrationAllowed;
-    }
-
-    public void setRegistrationAllowed(Boolean registrationAllowed) {
-        this.updated |= ! Objects.equals(this.registrationAllowed, registrationAllowed);
-        this.registrationAllowed = registrationAllowed;
-    }
-
-    public Boolean isRegistrationEmailAsUsername() {
-        return registrationEmailAsUsername;
-    }
-
-    public void setRegistrationEmailAsUsername(Boolean registrationEmailAsUsername) {
-        this.updated |= ! Objects.equals(this.registrationEmailAsUsername, registrationEmailAsUsername);
-        this.registrationEmailAsUsername = registrationEmailAsUsername;
-    }
-
-    public Boolean isVerifyEmail() {
-        return verifyEmail;
-    }
-
-    public void setVerifyEmail(Boolean verifyEmail) {
-        this.updated |= ! Objects.equals(this.verifyEmail, verifyEmail);
-        this.verifyEmail = verifyEmail;
-    }
-    
-
-    public Boolean isResetPasswordAllowed() {
-        return resetPasswordAllowed;
-    }
-
-    public void setResetPasswordAllowed(Boolean resetPasswordAllowed) {
-        this.updated |= ! Objects.equals(this.resetPasswordAllowed, resetPasswordAllowed);
-        this.resetPasswordAllowed = resetPasswordAllowed;
-    }
-
-    public Boolean isLoginWithEmailAllowed() {
-        return loginWithEmailAllowed;
-    }
-
-    public void setLoginWithEmailAllowed(Boolean loginWithEmailAllowed) {
-        this.updated |= ! Objects.equals(this.loginWithEmailAllowed, loginWithEmailAllowed);
-        this.loginWithEmailAllowed = loginWithEmailAllowed;
-    }
-
-    public Boolean isDuplicateEmailsAllowed() {
-        return duplicateEmailsAllowed;
-    }
-
-    public void setDuplicateEmailsAllowed(Boolean duplicateEmailsAllowed) {
-        this.updated |= ! Objects.equals(this.duplicateEmailsAllowed, duplicateEmailsAllowed);
-        this.duplicateEmailsAllowed = duplicateEmailsAllowed;
-    }
-
-    public Boolean isRememberMe() {
-        return rememberMe;
-    }
-
-    public void setRememberMe(Boolean rememberMe) {
-        this.updated |= ! Objects.equals(this.rememberMe, rememberMe);
-        this.rememberMe = rememberMe;
-    }
-
-    public Boolean isEditUsernameAllowed() {
-        return editUsernameAllowed;
-    }
-
-    public void setEditUsernameAllowed(Boolean editUsernameAllowed) {
-        this.updated |= ! Objects.equals(this.editUsernameAllowed, editUsernameAllowed);
-        this.editUsernameAllowed = editUsernameAllowed;
-    }
-
-    public Boolean isRevokeRefreshToken() {
-        return revokeRefreshToken;
-    }
-
-    public void setRevokeRefreshToken(Boolean revokeRefreshToken) {
-        this.updated |= ! Objects.equals(this.revokeRefreshToken, revokeRefreshToken);
-        this.revokeRefreshToken = revokeRefreshToken;
-    }
-
-    public Boolean isAdminEventsEnabled() {
-        return adminEventsEnabled;
-    }
-
-    public void setAdminEventsEnabled(Boolean adminEventsEnabled) {
-        this.updated |= ! Objects.equals(this.adminEventsEnabled, adminEventsEnabled);
-        this.adminEventsEnabled = adminEventsEnabled;
-    }
-
-    public Boolean isAdminEventsDetailsEnabled() {
-        return adminEventsDetailsEnabled;
-    }
-
-    public void setAdminEventsDetailsEnabled(Boolean adminEventsDetailsEnabled) {
-        this.updated |= ! Objects.equals(this.adminEventsDetailsEnabled, adminEventsDetailsEnabled);
-        this.adminEventsDetailsEnabled = adminEventsDetailsEnabled;
-    }
-
-    public Boolean isInternationalizationEnabled() {
-        return internationalizationEnabled;
-    }
-
-    public void setInternationalizationEnabled(Boolean internationalizationEnabled) {
-        this.updated |= ! Objects.equals(this.internationalizationEnabled, internationalizationEnabled);
-        this.internationalizationEnabled = internationalizationEnabled;
-    }
-
-    public Boolean isAllowUserManagedAccess() {
-        return allowUserManagedAccess;
-    }
-
-    public void setAllowUserManagedAccess(Boolean allowUserManagedAccess) {
-        this.updated |= ! Objects.equals(this.allowUserManagedAccess, allowUserManagedAccess);
-        this.allowUserManagedAccess = allowUserManagedAccess;
-    }
-
-    public Boolean isOfflineSessionMaxLifespanEnabled() {
-        return offlineSessionMaxLifespanEnabled;
-    }
-
-    public void setOfflineSessionMaxLifespanEnabled(Boolean offlineSessionMaxLifespanEnabled) {
-        this.updated |= ! Objects.equals(this.offlineSessionMaxLifespanEnabled, offlineSessionMaxLifespanEnabled);
-        this.offlineSessionMaxLifespanEnabled = offlineSessionMaxLifespanEnabled;
-    }
-
-    public Boolean isEventsEnabled() {
-        return eventsEnabled;
-    }
-
-    public void setEventsEnabled(Boolean eventsEnabled) {
-        this.updated |= ! Objects.equals(this.eventsEnabled, eventsEnabled);
-        this.eventsEnabled = eventsEnabled;
-    }
-
-    public Integer getRefreshTokenMaxReuse() {
-        return refreshTokenMaxReuse;
-    }
-
-    public void setRefreshTokenMaxReuse(Integer refreshTokenMaxReuse) {
-        this.updated |= ! Objects.equals(this.refreshTokenMaxReuse, refreshTokenMaxReuse);
-        this.refreshTokenMaxReuse = refreshTokenMaxReuse;
-    }
-
-    public Integer getSsoSessionIdleTimeout() {
-        return ssoSessionIdleTimeout;
-    }
-
-    public void setSsoSessionIdleTimeout(Integer ssoSessionIdleTimeout) {
-        this.updated |= ! Objects.equals(this.ssoSessionIdleTimeout, ssoSessionIdleTimeout);
-        this.ssoSessionIdleTimeout = ssoSessionIdleTimeout;
-    }
-
-    public Integer getSsoSessionMaxLifespan() {
-        return ssoSessionMaxLifespan;
-    }
-
-    public void setSsoSessionMaxLifespan(Integer ssoSessionMaxLifespan) {
-        this.updated |= ! Objects.equals(this.ssoSessionMaxLifespan, ssoSessionMaxLifespan);
-        this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
-    }
-
-    public Integer getSsoSessionIdleTimeoutRememberMe() {
-        return ssoSessionIdleTimeoutRememberMe;
-    }
-
-    public void setSsoSessionIdleTimeoutRememberMe(Integer ssoSessionIdleTimeoutRememberMe) {
-        this.updated |= ! Objects.equals(this.ssoSessionIdleTimeoutRememberMe, ssoSessionIdleTimeoutRememberMe);
-        this.ssoSessionIdleTimeoutRememberMe = ssoSessionIdleTimeoutRememberMe;
-    }
-
-    public Integer getSsoSessionMaxLifespanRememberMe() {
-        return ssoSessionMaxLifespanRememberMe;
-    }
-
-    public void setSsoSessionMaxLifespanRememberMe(Integer ssoSessionMaxLifespanRememberMe) {
-        this.updated |= ! Objects.equals(this.ssoSessionMaxLifespanRememberMe, ssoSessionMaxLifespanRememberMe);
-        this.ssoSessionMaxLifespanRememberMe = ssoSessionMaxLifespanRememberMe;
-    }
-
-    public Integer getOfflineSessionIdleTimeout() {
-        return offlineSessionIdleTimeout;
-    }
-
-    public void setOfflineSessionIdleTimeout(Integer offlineSessionIdleTimeout) {
-        this.updated |= ! Objects.equals(this.offlineSessionIdleTimeout, offlineSessionIdleTimeout);
-        this.offlineSessionIdleTimeout = offlineSessionIdleTimeout;
-    }
-
-    public Integer getAccessTokenLifespan() {
-        return accessTokenLifespan;
-    }
-
-    public void setAccessTokenLifespan(Integer accessTokenLifespan) {
-        this.updated |= ! Objects.equals(this.accessTokenLifespan, accessTokenLifespan);
-        this.accessTokenLifespan = accessTokenLifespan;
-    }
-
-    public Integer getAccessTokenLifespanForImplicitFlow() {
-        return accessTokenLifespanForImplicitFlow;
-    }
-
-    public void setAccessTokenLifespanForImplicitFlow(Integer accessTokenLifespanForImplicitFlow) {
-        this.updated |= ! Objects.equals(this.accessTokenLifespanForImplicitFlow, accessTokenLifespanForImplicitFlow);
-        this.accessTokenLifespanForImplicitFlow = accessTokenLifespanForImplicitFlow;
-    }
-
-    public Integer getAccessCodeLifespan() {
-        return accessCodeLifespan;
-    }
-
-    public void setAccessCodeLifespan(Integer accessCodeLifespan) {
-        this.updated |= ! Objects.equals(this.accessCodeLifespan, accessCodeLifespan);
-        this.accessCodeLifespan = accessCodeLifespan;
-    }
-
-    public Integer getAccessCodeLifespanUserAction() {
-        return accessCodeLifespanUserAction;
-    }
-
-    public void setAccessCodeLifespanUserAction(Integer accessCodeLifespanUserAction) {
-        this.updated |= ! Objects.equals(this.accessCodeLifespanUserAction, accessCodeLifespanUserAction);
-        this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
-    }
-
-    public Integer getAccessCodeLifespanLogin() {
-        return accessCodeLifespanLogin;
-    }
-
-    public void setAccessCodeLifespanLogin(Integer accessCodeLifespanLogin) {
-        this.updated |= ! Objects.equals(this.accessCodeLifespanLogin, accessCodeLifespanLogin);
-        this.accessCodeLifespanLogin = accessCodeLifespanLogin;
-    }
-
-    public Integer getNotBefore() {
-        return notBefore;
-    }
-
-    public void setNotBefore(Integer notBefore) {
-        this.updated |= ! Objects.equals(this.notBefore, notBefore);
-        this.notBefore = notBefore;
-    }
-
-    public Integer getClientSessionIdleTimeout() {
-        return clientSessionIdleTimeout;
-    }
-
-    public void setClientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
-        this.updated |= ! Objects.equals(this.clientSessionIdleTimeout, clientSessionIdleTimeout);
-        this.clientSessionIdleTimeout = clientSessionIdleTimeout;
-    }
-
-    public Integer getClientSessionMaxLifespan() {
-        return clientSessionMaxLifespan;
-    }
-
-    public void setClientSessionMaxLifespan(Integer clientSessionMaxLifespan) {
-        this.updated |= ! Objects.equals(this.clientSessionMaxLifespan, clientSessionMaxLifespan);
-        this.clientSessionMaxLifespan = clientSessionMaxLifespan;
-    }
-
-    public Integer getClientOfflineSessionIdleTimeout() {
-        return clientOfflineSessionIdleTimeout;
-    }
-
-    public void setClientOfflineSessionIdleTimeout(Integer clientOfflineSessionIdleTimeout) {
-        this.updated |= ! Objects.equals(this.clientOfflineSessionIdleTimeout, clientOfflineSessionIdleTimeout);
-        this.clientOfflineSessionIdleTimeout = clientOfflineSessionIdleTimeout;
-    }
-
-    public Integer getClientOfflineSessionMaxLifespan() {
-        return clientOfflineSessionMaxLifespan;
-    }
-
-    public void setClientOfflineSessionMaxLifespan(Integer clientOfflineSessionMaxLifespan) {
-        this.updated |= ! Objects.equals(this.clientOfflineSessionMaxLifespan, clientOfflineSessionMaxLifespan);
-        this.clientOfflineSessionMaxLifespan = clientOfflineSessionMaxLifespan;
-    }
-
-    public Integer getActionTokenGeneratedByAdminLifespan() {
-        return actionTokenGeneratedByAdminLifespan;
-    }
-
-    public void setActionTokenGeneratedByAdminLifespan(Integer actionTokenGeneratedByAdminLifespan) {
-        this.updated |= ! Objects.equals(this.actionTokenGeneratedByAdminLifespan, actionTokenGeneratedByAdminLifespan);
-        this.actionTokenGeneratedByAdminLifespan = actionTokenGeneratedByAdminLifespan;
-    }
-
-    public Integer getOfflineSessionMaxLifespan() {
-        return offlineSessionMaxLifespan;
-    }
-
-    public void setOfflineSessionMaxLifespan(Integer offlineSessionMaxLifespan) {
-        this.updated |= ! Objects.equals(this.offlineSessionMaxLifespan, offlineSessionMaxLifespan);
-        this.offlineSessionMaxLifespan = offlineSessionMaxLifespan;
-    }
-
-    public Long getEventsExpiration() {
-        return eventsExpiration;
-    }
-
-    public void setEventsExpiration(Long eventsExpiration) {
-        this.updated |= ! Objects.equals(this.eventsExpiration, eventsExpiration);
-        this.eventsExpiration = eventsExpiration;
-    }
-
-    public String getPasswordPolicy() {
-        return passwordPolicy;
-    }
-
-    public void setPasswordPolicy(String passwordPolicy) {
-        this.updated |= ! Objects.equals(this.passwordPolicy, passwordPolicy);
-        this.passwordPolicy = passwordPolicy;
-    }
-
-    public String getSslRequired() {
-        return sslRequired;
-    }
-
-    public void setSslRequired(String sslRequired) {
-        this.updated |= ! Objects.equals(this.sslRequired, sslRequired);
-        this.sslRequired = sslRequired;
-    }
-
-    public String getLoginTheme() {
-        return loginTheme;
-    }
-
-    public void setLoginTheme(String loginTheme) {
-        this.updated |= ! Objects.equals(this.loginTheme, loginTheme);
-        this.loginTheme = loginTheme;
-    }
-
-    public String getAccountTheme() {
-        return accountTheme;
-    }
-
-    public void setAccountTheme(String accountTheme) {
-        this.updated |= ! Objects.equals(this.accountTheme, accountTheme);
-        this.accountTheme = accountTheme;
-    }
-
-    public String getAdminTheme() {
-        return adminTheme;
-    }
-
-    public void setAdminTheme(String adminTheme) {
-        this.updated |= ! Objects.equals(this.adminTheme, adminTheme);
-        this.adminTheme = adminTheme;
-    }
-
-    public String getEmailTheme() {
-        return emailTheme;
-    }
-
-    public void setEmailTheme(String emailTheme) {
-        this.updated |= ! Objects.equals(this.emailTheme, emailTheme);
-        this.emailTheme = emailTheme;
-    }
-
-    public String getMasterAdminClient() {
-        return masterAdminClient;
-    }
-
-    public void setMasterAdminClient(String masterAdminClient) {
-        this.updated |= ! Objects.equals(this.masterAdminClient, masterAdminClient);
-        this.masterAdminClient = masterAdminClient;
-    }
-
-    public String getDefaultRoleId() {
-        return defaultRoleId;
-    }
-
-    public void setDefaultRoleId(String defaultRoleId) {
-        this.updated |= ! Objects.equals(this.defaultRoleId, defaultRoleId);
-        this.defaultRoleId = defaultRoleId;
-    }
-
-    public String getDefaultLocale() {
-        return defaultLocale;
-    }
-
-    public void setDefaultLocale(String defaultLocale) {
-        this.updated |= ! Objects.equals(this.defaultLocale, defaultLocale);
-        this.defaultLocale = defaultLocale;
-    }
-
-    public String getBrowserFlow() {
-        return browserFlow;
-    }
-
-    public void setBrowserFlow(String browserFlow) {
-        this.updated |= ! Objects.equals(this.browserFlow, browserFlow);
-        this.browserFlow = browserFlow;
-    }
-
-    public String getRegistrationFlow() {
-        return registrationFlow;
-    }
-
-    public void setRegistrationFlow(String registrationFlow) {
-        this.updated |= ! Objects.equals(this.registrationFlow, registrationFlow);
-        this.registrationFlow = registrationFlow;
-    }
-
-    public String getDirectGrantFlow() {
-        return directGrantFlow;
-    }
-
-    public void setDirectGrantFlow(String directGrantFlow) {
-        this.updated |= ! Objects.equals(this.directGrantFlow, directGrantFlow);
-        this.directGrantFlow = directGrantFlow;
-    }
-
-    public String getResetCredentialsFlow() {
-        return resetCredentialsFlow;
-    }
-
-    public void setResetCredentialsFlow(String resetCredentialsFlow) {
-        this.updated |= ! Objects.equals(this.resetCredentialsFlow, resetCredentialsFlow);
-        this.resetCredentialsFlow = resetCredentialsFlow;
-    }
-
-    public String getClientAuthenticationFlow() {
-        return clientAuthenticationFlow;
-    }
-
-    public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
-        this.updated |= ! Objects.equals(this.clientAuthenticationFlow, clientAuthenticationFlow);
-        this.clientAuthenticationFlow = clientAuthenticationFlow;
-    }
-
-    public String getDockerAuthenticationFlow() {
-        return dockerAuthenticationFlow;
-    }
-
-    public void setDockerAuthenticationFlow(String dockerAuthenticationFlow) {
-        this.updated |= ! Objects.equals(this.dockerAuthenticationFlow, dockerAuthenticationFlow);
-        this.dockerAuthenticationFlow = dockerAuthenticationFlow;
-    }
-
-    public MapOTPPolicyEntity getOTPPolicy() {
-        return otpPolicy;
-    }
-
-    public void setOTPPolicy(MapOTPPolicyEntity otpPolicy) {
-        this.updated |= ! Objects.equals(this.otpPolicy, otpPolicy);
-        this.otpPolicy = otpPolicy;
-    }
-
-    public MapWebAuthnPolicyEntity getWebAuthnPolicy() {
-        return webAuthnPolicy;
-    }
-
-    public void setWebAuthnPolicy(MapWebAuthnPolicyEntity webAuthnPolicy) {
-        this.updated |= ! Objects.equals(this.webAuthnPolicy, webAuthnPolicy);
-        this.webAuthnPolicy = webAuthnPolicy;
-    }
-
-    public MapWebAuthnPolicyEntity getWebAuthnPolicyPasswordless() {
-        return webAuthnPolicyPasswordless;
-    }
-
-    public void setWebAuthnPolicyPasswordless(MapWebAuthnPolicyEntity webAuthnPolicyPasswordless) {
-        this.updated |= ! Objects.equals(this.webAuthnPolicyPasswordless, webAuthnPolicyPasswordless);
-        this.webAuthnPolicyPasswordless = webAuthnPolicyPasswordless;
-    }
-
-    @Override
-    public void setAttribute(String name, List<String> values) {
-        this.updated |= ! Objects.equals(this.attributes.put(name, values), values);
-    }
-
-    @Override
-    public void removeAttribute(String name) {
-        this.updated |= attributes.remove(name) != null;
-    }
-
-    @Override
-    public List<String> getAttribute(String name) {
-        return attributes.getOrDefault(name, Collections.EMPTY_LIST);
-    }
-
-    @Override
-    public Map<String, List<String>> getAttributes() {
-        return attributes;
-    }
-
-    @Override
-    public void setAttributes(Map<String, List<String>> attributes) {
-        this.attributes.clear();
-        this.attributes.putAll(attributes);
-        this.updated = true;
-    }
-
-    public void addDefaultClientScope(String scopeId) {
-        this.updated |= this.defaultClientScopes.add(scopeId);
-    }
-
-    public Stream<String> getDefaultClientScopeIds() {
-        return defaultClientScopes.stream();
-    }
-
-    public void addOptionalClientScope(String scopeId) {
-        this.updated |= this.optionalClientScopes.add(scopeId);
-    }
-
-    public Stream<String> getOptionalClientScopeIds() {
-        return optionalClientScopes.stream();
-    }
-
-    public void removeDefaultOrOptionalClientScope(String scopeId) {
-        if (this.defaultClientScopes.remove(scopeId)) {
-            this.updated = true;
-            return ;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
+
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.realm.MapRealmEntity.AbstractRealmEntity"
+)
+@DeepCloner.Root
+public interface MapRealmEntity extends UpdatableEntity, AbstractEntity, EntityWithAttributes {
+
+    public abstract class AbstractRealmEntity extends UpdatableEntity.Impl implements MapRealmEntity {
+
+        private String id;
+
+        @Override
+        public String getId() {
+            return this.id;
         }
-        this.updated |= this.optionalClientScopes.remove(scopeId);
-    }
 
-    public Stream<String> getDefaultGroupIds() {
-        return defaultGroupIds.stream();
-    }
-
-    public void addDefaultGroup(String groupId) {
-        this.updated |= this.defaultGroupIds.add(groupId);
-    }
-
-    public void removeDefaultGroup(String groupId) {
-        this.updated |= this.defaultGroupIds.remove(groupId);
-    }
-
-    public Set<String> getEventsListeners() {
-        return eventsListeners;
-    }
-
-    public void setEventsListeners(Set<String> eventsListeners) {
-        if (eventsListeners == null) return;
-        this.updated |= ! Objects.equals(eventsListeners, this.eventsListeners);
-        this.eventsListeners = eventsListeners;
-    }
-
-    public Set<String> getEnabledEventTypes() {
-        return enabledEventTypes;
-    }
-
-    public void setEnabledEventTypes(Set<String> enabledEventTypes) {
-        if (enabledEventTypes == null) return;
-        this.updated |= ! Objects.equals(enabledEventTypes, this.enabledEventTypes);
-        this.enabledEventTypes = enabledEventTypes;
-    }
-
-    public Set<String> getSupportedLocales() {
-        return supportedLocales;
-    }
-
-    public void setSupportedLocales(Set<String> supportedLocales) {
-        if (supportedLocales == null) return;
-        this.updated |= ! Objects.equals(supportedLocales, this.supportedLocales);
-        this.supportedLocales = supportedLocales;
-    }
-
-    public Map<String, Map<String, String>> getLocalizationTexts() {
-        return localizationTexts;
-    }
-
-    public Map<String, String> getLocalizationText(String locale) {
-        if (localizationTexts.containsKey(locale)) {
-            return localizationTexts.get(locale);
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
         }
-        return Collections.emptyMap();
-    }
 
-    public void addLocalizationTexts(String locale, Map<String, String> texts) {
-        if (! localizationTexts.containsKey(locale)) {
-            updated = true;
-            localizationTexts.put(locale, texts);
+        @Override
+        public boolean isUpdated() {
+            return this.updated
+                    || Optional.ofNullable(getAuthenticationExecutions()).orElseGet(Collections::emptySet).stream().anyMatch(MapAuthenticationExecutionEntity::isUpdated)
+                    || Optional.ofNullable(getAuthenticationFlows()).orElseGet(Collections::emptySet).stream().anyMatch(MapAuthenticationFlowEntity::isUpdated)
+                    || Optional.ofNullable(getAuthenticatorConfigs()).orElseGet(Collections::emptySet).stream().anyMatch(MapAuthenticatorConfigEntity::isUpdated)
+                    || Optional.ofNullable(getClientInitialAccesses()).orElseGet(Collections::emptySet).stream().anyMatch(MapClientInitialAccessEntity::isUpdated)
+                    || Optional.ofNullable(getComponents()).orElseGet(Collections::emptySet).stream().anyMatch(MapComponentEntity::isUpdated)
+                    || Optional.ofNullable(getIdentityProviders()).orElseGet(Collections::emptySet).stream().anyMatch(MapIdentityProviderEntity::isUpdated)
+                    || Optional.ofNullable(getIdentityProviderMappers()).orElseGet(Collections::emptySet).stream().anyMatch(MapIdentityProviderMapperEntity::isUpdated)
+                    || Optional.ofNullable(getRequiredActionProviders()).orElseGet(Collections::emptySet).stream().anyMatch(MapRequiredActionProviderEntity::isUpdated)
+                    || Optional.ofNullable(getRequiredCredentials()).orElseGet(Collections::emptySet).stream().anyMatch(MapRequiredCredentialEntity::isUpdated)
+                    || Optional.ofNullable(getOTPPolicy()).map(MapOTPPolicyEntity::isUpdated).orElse(false)
+                    || Optional.ofNullable(getWebAuthnPolicy()).map(MapWebAuthnPolicyEntity::isUpdated).orElse(false)
+                    || Optional.ofNullable(getWebAuthnPolicyPasswordless()).map(MapWebAuthnPolicyEntity::isUpdated).orElse(false);
+        }
+
+        @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+            Optional.ofNullable(getAuthenticationExecutions()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getAuthenticationFlows()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getAuthenticatorConfigs()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getClientInitialAccesses()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getComponents()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getIdentityProviders()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getIdentityProviderMappers()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getRequiredActionProviders()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getRequiredCredentials()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getOTPPolicy()).ifPresent(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getWebAuthnPolicy()).ifPresent(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getWebAuthnPolicyPasswordless()).ifPresent(UpdatableEntity::clearUpdatedFlag);
+        }
+
+        @Override
+        public Optional<MapComponentEntity> getComponent(String componentId) {
+            Set<MapComponentEntity> cs = getComponents();
+            if (cs == null || cs.isEmpty()) return Optional.empty();
+
+            return cs.stream().filter(c -> Objects.equals(c.getId(), componentId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeComponent(String componentId) {
+            Set<MapComponentEntity> cs = getComponents();
+            boolean removed = cs != null && cs.removeIf(c -> Objects.equals(c.getId(), componentId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public Optional<MapAuthenticationFlowEntity> getAuthenticationFlow(String flowId) {
+            Set<MapAuthenticationFlowEntity> afs = getAuthenticationFlows();
+            if (afs == null || afs.isEmpty()) return Optional.empty();
+
+            return afs.stream().filter(afe -> Objects.equals(afe.getId(), flowId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeAuthenticationFlow(String flowId) {
+            Set<MapAuthenticationFlowEntity> afs = getAuthenticationFlows();
+            boolean removed = afs != null && afs.removeIf(af -> Objects.equals(af.getId(), flowId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public Optional<MapAuthenticationExecutionEntity> getAuthenticationExecution(String executionId) {
+            Set<MapAuthenticationExecutionEntity> aes = getAuthenticationExecutions();
+            if (aes == null || aes.isEmpty()) return Optional.empty();
+
+            return aes.stream().filter(ae -> Objects.equals(ae.getId(), executionId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeAuthenticationExecution(String executionId) {
+            Set<MapAuthenticationExecutionEntity> aes = getAuthenticationExecutions();
+            boolean removed = aes != null && aes.removeIf(ae -> Objects.equals(ae.getId(), executionId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public Optional<MapAuthenticatorConfigEntity> getAuthenticatorConfig(String authenticatorConfigId) {
+            Set<MapAuthenticatorConfigEntity> acs = getAuthenticatorConfigs();
+            if (acs == null || acs.isEmpty()) return Optional.empty();
+
+            return acs.stream().filter(ac -> Objects.equals(ac.getId(), authenticatorConfigId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeAuthenticatorConfig(String authenticatorConfigId) {
+            Set<MapAuthenticatorConfigEntity> acs = getAuthenticatorConfigs();
+            boolean removed = acs != null && acs.removeIf(ac -> Objects.equals(ac.getId(), authenticatorConfigId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public Optional<MapRequiredActionProviderEntity> getRequiredActionProvider(String requiredActionProviderId) {
+            Set<MapRequiredActionProviderEntity> raps = getRequiredActionProviders();
+            if (raps == null || raps.isEmpty()) return Optional.empty();
+
+            return raps.stream().filter(ac -> Objects.equals(ac.getId(), requiredActionProviderId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeRequiredActionProvider(String requiredActionProviderId) {
+            Set<MapRequiredActionProviderEntity> raps = getRequiredActionProviders();
+            boolean removed = raps != null && raps.removeIf(rap -> Objects.equals(rap.getId(), requiredActionProviderId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public Boolean removeIdentityProvider(String identityProviderId) {
+            Set<MapIdentityProviderEntity> ips = getIdentityProviders();
+            boolean removed = ips != null && ips.removeIf(ip -> Objects.equals(ip.getId(), identityProviderId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public Optional<MapIdentityProviderMapperEntity> getIdentityProviderMapper(String identityProviderMapperId) {
+            Set<MapIdentityProviderMapperEntity> ipms = getIdentityProviderMappers();
+            if (ipms == null || ipms.isEmpty()) return Optional.empty();
+
+            return ipms.stream().filter(ipm -> Objects.equals(ipm.getId(), identityProviderMapperId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeIdentityProviderMapper(String identityProviderMapperId) {
+            Set<MapIdentityProviderMapperEntity> ipms = getIdentityProviderMappers();
+            boolean removed = ipms != null && ipms.removeIf(ipm -> Objects.equals(ipm.getId(), identityProviderMapperId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public Optional<MapClientInitialAccessEntity> getClientInitialAccess(String clientInitialAccessId) {
+            Set<MapClientInitialAccessEntity> cias = getClientInitialAccesses();
+            if (cias == null || cias.isEmpty()) return Optional.empty();
+
+            return cias.stream().filter(cia -> Objects.equals(cia.getId(), clientInitialAccessId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeClientInitialAccess(String clientInitialAccessId) {
+            Set<MapClientInitialAccessEntity> cias = getClientInitialAccesses();
+            boolean removed = cias != null && cias.removeIf(cia -> Objects.equals(cia.getId(), clientInitialAccessId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public void removeExpiredClientInitialAccesses() {
+            Set<MapClientInitialAccessEntity> cias = getClientInitialAccesses();
+            if (cias != null)
+                cias.stream()
+                    .filter(this::checkIfExpired)
+                    .map(MapClientInitialAccessEntity::getId)
+                    .collect(Collectors.toSet())
+                    .forEach(this::removeClientInitialAccess);
+        }
+
+        @Override
+        public boolean hasClientInitialAccess() {
+            Set<MapClientInitialAccessEntity> cias = getClientInitialAccesses();
+            return cias != null && !cias.isEmpty();
+        }
+
+        private boolean checkIfExpired(MapClientInitialAccessEntity cia) {
+            return cia.getRemainingCount() < 1 || isExpired(cia, true);
         }
     }
 
-    public void updateLocalizationTexts(String locale, Map<String, String> texts) {
-        this.updated |= localizationTexts.replace(locale, texts) != null;
-    }
+    String getName();
+    void setName(String name);
 
-    public boolean removeLocalizationTexts(String locale) {
-        boolean removed = localizationTexts.remove(locale) != null;
-        updated |= removed;
-        return removed;
-    }
+    String getDisplayName();
+    void setDisplayName(String displayName);
 
-    public Map<String, String> getBrowserSecurityHeaders() {
-        return browserSecurityHeaders;
-    }
+    String getDisplayNameHtml();
+    void setDisplayNameHtml(String displayNameHtml);
 
-    public void setBrowserSecurityHeaders(Map<String, String> headers) {
-        if (headers == null) return;
-        this.updated |= ! Objects.equals(this.browserSecurityHeaders, headers);
-        this.browserSecurityHeaders = headers;
-    }
+    Boolean isEnabled();
+    void setEnabled(Boolean enabled);
 
-    public Map<String, String> getSmtpConfig() {
-        return smtpConfig;
-    }
+    Boolean isRegistrationAllowed();
+    void setRegistrationAllowed(Boolean registrationAllowed);
 
-    public void setSmtpConfig(Map<String, String> smtpConfig) {
-        if (smtpConfig == null) return;
-        this.updated |= ! Objects.equals(this.smtpConfig, smtpConfig);
-        this.smtpConfig = smtpConfig;
-    }
+    Boolean isRegistrationEmailAsUsername();
+    void setRegistrationEmailAsUsername(Boolean registrationEmailAsUsername);
 
-    public Stream<MapRequiredCredentialEntity> getRequiredCredentials() {
-        return requiredCredentials.values().stream();
-    }
+    Boolean isVerifyEmail();
+    void setVerifyEmail(Boolean verifyEmail);
 
-    public void addRequiredCredential(MapRequiredCredentialEntity requiredCredential) {
-        if (requiredCredentials.containsKey(requiredCredential.getType())) {
-            throw new ModelDuplicateException("An RequiredCredential with given type already exists");
-        }
-        this.updated = true;
-        requiredCredentials.put(requiredCredential.getType(), requiredCredential);
-    }
+    Boolean isResetPasswordAllowed();
+    void setResetPasswordAllowed(Boolean resetPasswordAllowed);
 
-    public void updateRequiredCredential(MapRequiredCredentialEntity requiredCredential) {
-        this.updated |= requiredCredentials.replace(requiredCredential.getType(), requiredCredential) != null;
-    }
+    Boolean isLoginWithEmailAllowed();
+    void setLoginWithEmailAllowed(Boolean loginWithEmailAllowed);
 
-    public Stream<MapComponentEntity> getComponents() {
-        return components.values().stream();
-    }
+    Boolean isDuplicateEmailsAllowed();
+    void setDuplicateEmailsAllowed(Boolean duplicateEmailsAllowed);
 
-    public MapComponentEntity getComponent(String id) {
-        return components.get(id);
-    }
+    Boolean isRememberMe();
+    void setRememberMe(Boolean rememberMe);
 
-    public void addComponent(MapComponentEntity component) {
-        if (components.containsKey(component.getId())) {
-            throw new ModelDuplicateException("A Component with given id already exists");
-        }
-        this.updated = true;
-        components.put(component.getId(), component);
-    }
+    Boolean isEditUsernameAllowed();
+    void setEditUsernameAllowed(Boolean editUsernameAllowed);
 
-    public void updateComponent(MapComponentEntity component) {
-        this.updated |= components.replace(component.getId(), component) != null;
-    }
+    Boolean isRevokeRefreshToken();
+    void setRevokeRefreshToken(Boolean revokeRefreshToken);
 
-    public boolean removeComponent(String id) {
-        boolean removed = this.components.remove(id) != null;
-        this.updated |= removed;
-        return removed;
-    }
+    Boolean isAdminEventsEnabled();
+    void setAdminEventsEnabled(Boolean adminEventsEnabled);
 
-    public Stream<MapAuthenticationFlowEntity> getAuthenticationFlows() {
-        return authenticationFlows.values().stream();
-    }
+    Boolean isAdminEventsDetailsEnabled();
+    void setAdminEventsDetailsEnabled(Boolean adminEventsDetailsEnabled);
 
-    public MapAuthenticationFlowEntity getAuthenticationFlow(String flowId) {
-        return authenticationFlows.get(flowId);
-    }
+    Boolean isInternationalizationEnabled();
+    void setInternationalizationEnabled(Boolean internationalizationEnabled);
 
-    public void addAuthenticationFlow(MapAuthenticationFlowEntity authenticationFlow) {
-        if (authenticationFlows.containsKey(authenticationFlow.getId())) {
-            throw new ModelDuplicateException("An AuthenticationFlow with given id already exists");
-        }
-        this.updated = true;
-        authenticationFlows.put(authenticationFlow.getId(), authenticationFlow);
-    }
+    Boolean isAllowUserManagedAccess();
+    void setAllowUserManagedAccess(Boolean allowUserManagedAccess);
 
-    public boolean removeAuthenticationFlow(String flowId) {
-        boolean removed = this.authenticationFlows.remove(flowId) != null;
-        updated |= removed;
-        return removed;
-    }
+    Boolean isOfflineSessionMaxLifespanEnabled();
+    void setOfflineSessionMaxLifespanEnabled(Boolean offlineSessionMaxLifespanEnabled);
 
-    public void updateAuthenticationFlow(MapAuthenticationFlowEntity authenticationFlow) {
-        this.updated |= authenticationFlows.replace(authenticationFlow.getId(), authenticationFlow) != null;
-    }
+    Boolean isEventsEnabled();
+    void setEventsEnabled(Boolean eventsEnabled);
 
-    public void addAuthenticatonExecution(MapAuthenticationExecutionEntity authenticationExecution) {
-        if (authenticationExecutions.containsKey(authenticationExecution.getId())) {
-            throw new ModelDuplicateException("An RequiredActionProvider with given id already exists");
-        }
+    Integer getRefreshTokenMaxReuse();
+    void setRefreshTokenMaxReuse(Integer refreshTokenMaxReuse);
 
-        this.updated = true;
-        authenticationExecutions.put(authenticationExecution.getId(), authenticationExecution);
-    }
+    Integer getSsoSessionIdleTimeout();
+    void setSsoSessionIdleTimeout(Integer ssoSessionIdleTimeout);
 
-    public void updateAuthenticatonExecution(MapAuthenticationExecutionEntity authenticationExecution) {
-        this.updated |= authenticationExecutions.replace(authenticationExecution.getId(), authenticationExecution) != null;
-    }
+    Integer getSsoSessionMaxLifespan();
+    void setSsoSessionMaxLifespan(Integer ssoSessionMaxLifespan);
 
-    public boolean removeAuthenticatonExecution(String id) {
-        boolean removed = this.authenticationExecutions.remove(id) != null;
-        updated |= removed;
-        return removed;
-    }
+    Integer getSsoSessionIdleTimeoutRememberMe();
+    void setSsoSessionIdleTimeoutRememberMe(Integer ssoSessionIdleTimeoutRememberMe);
 
-    public MapAuthenticationExecutionEntity getAuthenticationExecution(String id) {
-        return authenticationExecutions.get(id);
-    }
+    Integer getSsoSessionMaxLifespanRememberMe();
+    void setSsoSessionMaxLifespanRememberMe(Integer ssoSessionMaxLifespanRememberMe);
 
-    public Stream<MapAuthenticationExecutionEntity> getAuthenticationExecutions() {
-        return authenticationExecutions.values().stream();
-    }
+    Integer getOfflineSessionIdleTimeout();
+    void setOfflineSessionIdleTimeout(Integer offlineSessionIdleTimeout);
 
-    public Stream<MapAuthenticatorConfigEntity> getAuthenticatorConfigs() {
-        return authenticatorConfigs.values().stream();
-    }
+    Integer getAccessTokenLifespan();
+    void setAccessTokenLifespan(Integer accessTokenLifespan);
 
-    public void addAuthenticatorConfig(MapAuthenticatorConfigEntity authenticatorConfig) {
-        this.updated |= ! Objects.equals(authenticatorConfigs.put(authenticatorConfig.getId(), authenticatorConfig), authenticatorConfig);
-    }
+    Integer getAccessTokenLifespanForImplicitFlow();
+    void setAccessTokenLifespanForImplicitFlow(Integer accessTokenLifespanForImplicitFlow);
 
-    public void updateAuthenticatorConfig(MapAuthenticatorConfigEntity authenticatorConfig) {
-        this.updated |= authenticatorConfigs.replace(authenticatorConfig.getId(), authenticatorConfig) != null;
-    }
+    Integer getAccessCodeLifespan();
+    void setAccessCodeLifespan(Integer accessCodeLifespan);
 
-    public boolean removeAuthenticatorConfig(String id) {
-        boolean removed = this.authenticatorConfigs.remove(id) != null;
-        updated |= removed;
-        return removed;
-    }
+    Integer getAccessCodeLifespanUserAction();
+    void setAccessCodeLifespanUserAction(Integer accessCodeLifespanUserAction);
 
-    public MapAuthenticatorConfigEntity getAuthenticatorConfig(String id) {
-        return authenticatorConfigs.get(id);
-    }
+    Integer getAccessCodeLifespanLogin();
+    void setAccessCodeLifespanLogin(Integer accessCodeLifespanLogin);
 
-    public Stream<MapRequiredActionProviderEntity> getRequiredActionProviders() {
-        return requiredActionProviders.values().stream();
-    }
+    Long getNotBefore();
+    void setNotBefore(Long notBefore);
 
-    public void addRequiredActionProvider(MapRequiredActionProviderEntity requiredActionProvider) {
-        if (requiredActionProviders.containsKey(requiredActionProvider.getId())) {
-            throw new ModelDuplicateException("An RequiredActionProvider with given id already exists");
-        }
+    Integer getClientSessionIdleTimeout();
+    void setClientSessionIdleTimeout(Integer clientSessionIdleTimeout);
 
-        this.updated = true;
-        requiredActionProviders.put(requiredActionProvider.getId(), requiredActionProvider);
-    }
+    Integer getClientSessionMaxLifespan();
+    void setClientSessionMaxLifespan(Integer clientSessionMaxLifespan);
 
-    public void updateRequiredActionProvider(MapRequiredActionProviderEntity requiredActionProvider) {
-        this.updated |= requiredActionProviders.replace(requiredActionProvider.getId(), requiredActionProvider) != null;
-    }
+    Integer getClientOfflineSessionIdleTimeout();
+    void setClientOfflineSessionIdleTimeout(Integer clientOfflineSessionIdleTimeout);
 
-    public boolean removeRequiredActionProvider(String id) {
-        boolean removed = this.requiredActionProviders.remove(id) != null;
-        updated |= removed;
-        return removed;
-    }
+    Integer getClientOfflineSessionMaxLifespan();
+    void setClientOfflineSessionMaxLifespan(Integer clientOfflineSessionMaxLifespan);
 
-    public MapRequiredActionProviderEntity getRequiredActionProvider(String id) {
-        return requiredActionProviders.get(id);
-    }
+    Integer getActionTokenGeneratedByAdminLifespan();
+    void setActionTokenGeneratedByAdminLifespan(Integer actionTokenGeneratedByAdminLifespan);
 
-    public Stream<MapIdentityProviderEntity> getIdentityProviders() {
-        return identityProviders.values().stream();
-    }
+    Integer getOfflineSessionMaxLifespan();
+    void setOfflineSessionMaxLifespan(Integer offlineSessionMaxLifespan);
 
-    public void addIdentityProvider(MapIdentityProviderEntity identityProvider) {
-        if (identityProviders.containsKey(identityProvider.getId())) {
-            throw new ModelDuplicateException("An IdentityProvider with given id already exists");
-        }
+    Long getEventsExpiration();
+    void setEventsExpiration(Long eventsExpiration);
 
-        this.updated = true;
-        identityProviders.put(identityProvider.getId(), identityProvider);
-    }
+    String getPasswordPolicy();
+    void setPasswordPolicy(String passwordPolicy);
 
-    public boolean removeIdentityProvider(String id) {
-        boolean removed = this.identityProviders.remove(id) != null;
-        updated |= removed;
-        return removed;
-    }
+    String getSslRequired();
+    void setSslRequired(String sslRequired);
 
-    public void updateIdentityProvider(MapIdentityProviderEntity identityProvider) {
-        this.updated |= identityProviders.replace(identityProvider.getId(), identityProvider) != null;
-    }
+    String getLoginTheme();
+    void setLoginTheme(String loginTheme);
 
-    public Stream<MapIdentityProviderMapperEntity> getIdentityProviderMappers() {
-        return identityProviderMappers.values().stream();
-    }
+    String getAccountTheme();
+    void setAccountTheme(String accountTheme);
 
-    public void addIdentityProviderMapper(MapIdentityProviderMapperEntity identityProviderMapper) {
-        if (identityProviderMappers.containsKey(identityProviderMapper.getId())) {
-            throw new ModelDuplicateException("An IdentityProviderMapper with given id already exists");
-        }
+    String getAdminTheme();
+    void setAdminTheme(String adminTheme);
 
-        this.updated = true;
-        identityProviderMappers.put(identityProviderMapper.getId(), identityProviderMapper);
-    }
+    String getEmailTheme();
+    void setEmailTheme(String emailTheme);
 
-    public boolean removeIdentityProviderMapper(String id) {
-        boolean removed = this.identityProviderMappers.remove(id) != null;
-        updated |= removed;
-        return removed;
-    }
+    String getMasterAdminClient();
+    void setMasterAdminClient(String masterAdminClient);
 
-    public void updateIdentityProviderMapper(MapIdentityProviderMapperEntity identityProviderMapper) {
-        this.updated |= identityProviderMappers.replace(identityProviderMapper.getId(), identityProviderMapper) != null;
-    }
+    String getDefaultRoleId();
+    void setDefaultRoleId(String defaultRoleId);
 
-    public MapIdentityProviderMapperEntity getIdentityProviderMapper(String id) {
-        return identityProviderMappers.get(id);
-    }
+    String getDefaultLocale();
+    void setDefaultLocale(String defaultLocale);
 
-    public boolean hasClientInitialAccess() {
-        return !clientInitialAccesses.isEmpty();
-    }
+    String getBrowserFlow();
+    void setBrowserFlow(String browserFlow);
 
-    public void removeExpiredClientInitialAccesses() {
-        clientInitialAccesses.values().stream()
-            .filter(this::checkIfExpired)
-            .map(MapClientInitialAccessEntity::getId)
-            .collect(Collectors.toSet())
-            .forEach(this::removeClientInitialAccess);
-    }
+    String getRegistrationFlow();
+    void setRegistrationFlow(String registrationFlow);
 
-    private boolean checkIfExpired(MapClientInitialAccessEntity cia) {
-        return cia.getRemainingCount() < 1 || 
-                (cia.getExpiration() > 0 && (cia.getTimestamp() + cia.getExpiration()) < Time.currentTime());
-    }
+    String getDirectGrantFlow();
+    void setDirectGrantFlow(String directGrantFlow);
 
-    public void addClientInitialAccess(MapClientInitialAccessEntity clientInitialAccess) {
-        this.updated = true;
-        clientInitialAccesses.put(clientInitialAccess.getId(), clientInitialAccess);
-    }
+    String getResetCredentialsFlow();
+    void setResetCredentialsFlow(String resetCredentialsFlow);
 
-    public void updateClientInitialAccess(MapClientInitialAccessEntity clientInitialAccess) {
-        this.updated |= clientInitialAccesses.replace(clientInitialAccess.getId(), clientInitialAccess) != null;
-    }
+    String getClientAuthenticationFlow();
+    void setClientAuthenticationFlow(String clientAuthenticationFlow);
 
-    public MapClientInitialAccessEntity getClientInitialAccess(String id) {
-        return clientInitialAccesses.get(id);
-    }
+    String getDockerAuthenticationFlow();
+    void setDockerAuthenticationFlow(String dockerAuthenticationFlow);
 
-    public boolean removeClientInitialAccess(String id) {
-        boolean removed = this.clientInitialAccesses.remove(id) != null;
-        updated |= removed;
-        return removed;
-    }
+    MapOTPPolicyEntity getOTPPolicy();
+    void setOTPPolicy(MapOTPPolicyEntity otpPolicy);
 
-    public Collection<MapClientInitialAccessEntity> getClientInitialAccesses() {
-        return clientInitialAccesses.values();
-    }
+    MapWebAuthnPolicyEntity getWebAuthnPolicy();
+    void setWebAuthnPolicy(MapWebAuthnPolicyEntity webAuthnPolicy);
+
+    MapWebAuthnPolicyEntity getWebAuthnPolicyPasswordless();
+    void setWebAuthnPolicyPasswordless(MapWebAuthnPolicyEntity webAuthnPolicyPasswordless);
+
+    Set<String> getDefaultClientScopeIds();
+    void addDefaultClientScopeId(String scopeId);
+    Boolean removeDefaultClientScopeId(String scopeId);
+
+    Set<String> getOptionalClientScopeIds();
+    void addOptionalClientScopeId(String scopeId);
+    Boolean removeOptionalClientScopeId(String scopeId);
+
+    Set<String> getDefaultGroupIds();
+    void addDefaultGroupId(String groupId);
+    void removeDefaultGroupId(String groupId);
+
+    Set<String> getEventsListeners();
+    void setEventsListeners(Set<String> eventsListeners);
+
+    Set<String> getEnabledEventTypes();
+    void setEnabledEventTypes(Set<String> enabledEventTypes);
+
+    Set<String> getSupportedLocales();
+    void setSupportedLocales(Set<String> supportedLocales);
+
+    Map<String, Map<String, String>> getLocalizationTexts();
+    Map<String, String> getLocalizationText(String locale);
+    void setLocalizationText(String locale, Map<String, String> texts);
+    Boolean removeLocalizationText(String locale);
+
+    Map<String, String> getBrowserSecurityHeaders();
+    void setBrowserSecurityHeaders(Map<String, String> headers);
+    void setBrowserSecurityHeader(String name, String value);
+
+    Map<String, String> getSmtpConfig();
+    void setSmtpConfig(Map<String, String> smtpConfig);
+
+    Set<MapRequiredCredentialEntity> getRequiredCredentials();
+    void addRequiredCredential(MapRequiredCredentialEntity requiredCredential);
+
+    Set<MapComponentEntity> getComponents();
+    Optional<MapComponentEntity> getComponent(String id);
+    void addComponent(MapComponentEntity component);
+    Boolean removeComponent(String componentId);
+
+    Set<MapAuthenticationFlowEntity> getAuthenticationFlows();
+    Optional<MapAuthenticationFlowEntity> getAuthenticationFlow(String flowId);
+    void addAuthenticationFlow(MapAuthenticationFlowEntity authenticationFlow);
+    Boolean removeAuthenticationFlow(String flowId);
+
+    Set<MapAuthenticationExecutionEntity> getAuthenticationExecutions();
+    Optional<MapAuthenticationExecutionEntity> getAuthenticationExecution(String id);
+    void addAuthenticationExecution(MapAuthenticationExecutionEntity authenticationExecution);
+    Boolean removeAuthenticationExecution(String executionId);
+
+    Set<MapAuthenticatorConfigEntity> getAuthenticatorConfigs();
+    void addAuthenticatorConfig(MapAuthenticatorConfigEntity authenticatorConfig);
+    Optional<MapAuthenticatorConfigEntity> getAuthenticatorConfig(String authenticatorConfigId);
+    Boolean removeAuthenticatorConfig(String authenticatorConfigId);
+
+    Set<MapRequiredActionProviderEntity> getRequiredActionProviders();
+    void addRequiredActionProvider(MapRequiredActionProviderEntity requiredActionProvider);
+    Optional<MapRequiredActionProviderEntity> getRequiredActionProvider(String requiredActionProviderId);
+    Boolean removeRequiredActionProvider(String requiredActionProviderId);
+
+    Set<MapIdentityProviderEntity> getIdentityProviders();
+    void addIdentityProvider(MapIdentityProviderEntity identityProvider);
+    Boolean removeIdentityProvider(String identityProviderId);
+
+    Set<MapIdentityProviderMapperEntity> getIdentityProviderMappers();
+    void addIdentityProviderMapper(MapIdentityProviderMapperEntity identityProviderMapper);
+    Boolean removeIdentityProviderMapper(String identityProviderMapperId);
+    Optional<MapIdentityProviderMapperEntity> getIdentityProviderMapper(String identityProviderMapperId);
+
+    Set<MapClientInitialAccessEntity> getClientInitialAccesses();
+    void addClientInitialAccess(MapClientInitialAccessEntity clientInitialAccess);
+    Optional<MapClientInitialAccessEntity> getClientInitialAccess(String clientInitialAccessId);
+    Boolean removeClientInitialAccess(String clientInitialAccessId);
+    @IgnoreForEntityImplementationGenerator
+    void removeExpiredClientInitialAccesses();
+    @IgnoreForEntityImplementationGenerator
+    boolean hasClientInitialAccess();
 }

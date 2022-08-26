@@ -21,13 +21,12 @@ fi
 
 DIRNAME=`dirname "$RESOLVED_NAME"`
 
+if [ "x$JAVA" = "x" ]; then
+    if [ "x$JAVA_HOME" != "x" ]; then
+        JAVA="$JAVA_HOME/bin/java"
+    else
+        JAVA="java"
+    fi
+fi
 
-# Uncomment out these lines if you are integrating with `kcinit`
-#if [ "$1" = "config" ]; then
-#    java $KC_OPTS -cp $DIRNAME/client/keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain "$@"
-#else
-#    java $KC_OPTS -cp $DIRNAME/client/keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain "$@" --noconfig --token $(kcinit token admin-cli) --server $(kcinit show server)
-#fi
-# Remove the next line if you have enabled kcinit
-java $KC_OPTS -cp $DIRNAME/client/keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain "$@"
-
+"$JAVA" $KC_OPTS -cp $DIRNAME/client/keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain "$@"

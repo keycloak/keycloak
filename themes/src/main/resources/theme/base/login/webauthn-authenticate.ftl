@@ -5,34 +5,76 @@
     <#elseif section = "header">
         ${kcSanitize(msg("webauthn-login-title"))?no_esc}
     <#elseif section = "form">
+        <div id="kc-form-webauthn" class="${properties.kcFormClass!}">
+            <form id="webauth" action="${url.loginAction}" method="post">
+                <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
+                <input type="hidden" id="authenticatorData" name="authenticatorData"/>
+                <input type="hidden" id="signature" name="signature"/>
+                <input type="hidden" id="credentialId" name="credentialId"/>
+                <input type="hidden" id="userHandle" name="userHandle"/>
+                <input type="hidden" id="error" name="error"/>
+            </form>
 
-    <form id="webauth" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
-        <div class="${properties.kcFormGroupClass!}">
-            <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
-            <input type="hidden" id="authenticatorData" name="authenticatorData"/>
-            <input type="hidden" id="signature" name="signature"/>
-            <input type="hidden" id="credentialId" name="credentialId"/>
-            <input type="hidden" id="userHandle" name="userHandle"/>
-            <input type="hidden" id="error" name="error"/>
-        </div>
-    </form>
+            <div class="${properties.kcFormGroupClass!} no-bottom-margin">
+                <#if authenticators??>
+                    <form id="authn_select" class="${properties.kcFormClass!}">
+                        <#list authenticators.authenticators as authenticator>
+                            <input type="hidden" name="authn_use_chk" value="${authenticator.credentialId}"/>
+                        </#list>
+                    </form>
 
-    <#if authenticators??>
-        <form id="authn_select" class="${properties.kcFormClass!}">
-            <#list authenticators.authenticators as authenticator>
-                <input type="hidden" name="authn_use_chk" value="${authenticator.credentialId}"/>
-            </#list>
-        </form>
-    </#if>
+                    <#if shouldDisplayAuthenticators?? && shouldDisplayAuthenticators>
+                        <#if authenticators.authenticators?size gt 1>
+                            <p class="${properties.kcSelectAuthListItemTitle!}">${kcSanitize(msg("webauthn-available-authenticators"))?no_esc}</p>
+                        </#if>
 
-    <form class="${properties.kcFormClass!}">
-        <div class="${properties.kcFormGroupClass!}">
-            <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                <input id="authenticateWebAuthnButton" type="button" onclick="webAuthnAuthenticate()" value="${kcSanitize(msg("webauthn-doAuthenticate"))}"
-                   class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}">
+                        <div class="${properties.kcFormClass!}">
+                            <#list authenticators.authenticators as authenticator>
+                                <div id="kc-webauthn-authenticator" class="${properties.kcSelectAuthListItemClass!}">
+                                    <div class="${properties.kcSelectAuthListItemIconClass!}">
+                                        <i class="${(properties['${authenticator.transports.iconClass}'])!'${properties.kcWebAuthnDefaultIcon!}'} ${properties.kcSelectAuthListItemIconPropertyClass!}"></i>
+                                    </div>
+                                    <div class="${properties.kcSelectAuthListItemBodyClass!}">
+                                        <div id="kc-webauthn-authenticator-label"
+                                             class="${properties.kcSelectAuthListItemHeadingClass!}">
+                                            ${kcSanitize(msg('${authenticator.label}'))?no_esc}
+                                        </div>
+
+                                        <#if authenticator.transports?? && authenticator.transports.displayNameProperties?has_content>
+                                            <div id="kc-webauthn-authenticator-transport"
+                                                 class="${properties.kcSelectAuthListItemDescriptionClass!}">
+                                                <#list authenticator.transports.displayNameProperties as nameProperty>
+                                                    <span>${kcSanitize(msg('${nameProperty!}'))?no_esc}</span>
+                                                    <#if nameProperty?has_next>
+                                                        <span>, </span>
+                                                    </#if>
+                                                </#list>
+                                            </div>
+                                        </#if>
+
+                                        <div class="${properties.kcSelectAuthListItemDescriptionClass!}">
+                                            <span id="kc-webauthn-authenticator-created-label">
+                                                ${kcSanitize(msg('webauthn-createdAt-label'))?no_esc}
+                                            </span>
+                                            <span id="kc-webauthn-authenticator-created">
+                                                ${kcSanitize(authenticator.createdAt)?no_esc}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="${properties.kcSelectAuthListItemFillClass!}"></div>
+                                </div>
+                            </#list>
+                        </div>
+                    </#if>
+                </#if>
+
+                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                    <input id="authenticateWebAuthnButton" type="button" onclick="webAuthnAuthenticate()" autofocus="autofocus"
+                           value="${kcSanitize(msg("webauthn-doAuthenticate"))}"
+                           class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"/>
+                </div>
             </div>
         </div>
-    </form>
 
     <script type="text/javascript" src="${url.resourcesCommonPath}/node_modules/jquery/dist/jquery.min.js"></script>
     <script type="text/javascript" src="${url.resourcesPath}/js/base64url.js"></script>
@@ -85,6 +127,9 @@
             rpId : rpId,
             challenge: base64url.decode(challenge, { loose: true })
         };
+
+        let createTimeout = ${createTimeout};
+        if (createTimeout !== 0) publicKey.timeout = createTimeout * 1000;
 
         if (allowCredentials.length) {
             publicKey.allowCredentials = allowCredentials;

@@ -42,8 +42,10 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         }
 
         CONFIG_SOURCES.add(new ConfigArgsConfigSource());
-        CONFIG_SOURCES.add(new SysPropConfigSource());
         CONFIG_SOURCES.add(new KcEnvConfigSource());
+
+        CONFIG_SOURCES.addAll(new QuarkusPropertiesConfigSource().getConfigSources(Thread.currentThread().getContextClassLoader()));
+
         CONFIG_SOURCES.add(PersistedConfigSource.getInstance());
 
         CONFIG_SOURCES.addAll(new KeycloakPropertiesConfigSource.InFileSystem().getConfigSources(Thread.currentThread().getContextClassLoader()));
@@ -63,6 +65,9 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
 
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader forClassLoader) {
+        if(Environment.isTestLaunchMode()) {
+            reload();
+        }
         return CONFIG_SOURCES;
     }
 }

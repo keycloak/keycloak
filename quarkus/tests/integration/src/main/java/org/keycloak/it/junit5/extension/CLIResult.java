@@ -20,25 +20,31 @@ package org.keycloak.it.junit5.extension;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.List;
 
-import org.keycloak.quarkus.runtime.cli.Picocli;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
-import picocli.CommandLine;
+import org.approvaltests.namer.NamedEnvironment;
+import org.keycloak.it.junit5.extension.approvalTests.KcNamerFactory;
 
 public interface CLIResult extends LaunchResult {
 
-    static Object create(List<String> outputStream, List<String> errStream, int exitCode, boolean distribution) {
+    static CLIResult create(List<String> outputStream, List<String> errStream, int exitCode) {
         return new CLIResult() {
             @Override
             public List<String> getOutputStream() {
                 return outputStream;
+            }
+
+            @Override
+            public String getErrorOutput() {
+                return String.join("\n", errStream).replace("\r","");
             }
 
             @Override
@@ -50,15 +56,8 @@ public interface CLIResult extends LaunchResult {
             public int exitCode() {
                 return exitCode;
             }
-
-            @Override
-            public boolean isDistribution() {
-                return distribution;
-            }
         };
     }
-
-    boolean isDistribution();
 
     default void assertStarted() {
         assertFalse(getOutput().contains("The delayed handler's queue was overrun and log record(s) were lost (Did you forget to configure logging?)"), () -> "The standard Output:\n" + getOutput() + "should not contain a warning about log queue overrun.");
@@ -67,13 +66,13 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertNotDevMode() {
-        assertFalse(getOutput().contains("Running the server in dev mode."),
-                () -> "The standard output:\n" + getOutput() + "does include the Start Dev output");
+        assertFalse(getOutput().contains("Running the server in development mode."),
+                () -> "The standard output:\n" + getOutput() + "\ndoes include the Start Dev output");
     }
 
     default void assertStartedDevMode() {
-        assertTrue(getOutput().contains("Running the server in dev mode."),
-                () -> "The standard output:\n" + getOutput() + "doesn't include the Start Dev output");
+        assertTrue(getOutput().contains("Running the server in development mode."),
+                () -> "The standard output:\n" + getOutput() + "\ndoesn't include the Start Dev output");
     }
 
     default void assertError(String msg) {
@@ -81,32 +80,74 @@ public interface CLIResult extends LaunchResult {
                 () -> "The Error Output:\n " + getErrorOutput() + "\ndoesn't contains " + msg);
     }
 
-    default void assertHelp(String command) {
-        if (command == null) {
-            fail("No command provided");
-        }
-
-        CommandLine cmd = Picocli.createCommandLine(Arrays.asList(command, "--help"));
-
-        if (isDistribution()) {
-            cmd.setCommandName("kc.sh");
-        }
-
-        try (
-                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                PrintStream printStream = new PrintStream(outStream, true)
-        ) {
-            if ("kc.sh".equals(command)) {
-                cmd.usage(printStream);
-            } else {
-                cmd.getSubcommands().get(command).usage(printStream);
-            }
-
-            // not very reliable, we should be comparing the output with some static reference to the help message.
-            assertTrue(getOutput().trim().equals(outStream.toString().trim()),
-                    () -> "The Output:\n " + getOutput() + "\ndoesnt't contains " + outStream.toString().trim());
-        } catch (IOException cause) {
+    default void assertHelp() {
+        try (NamedEnvironment env = KcNamerFactory.asWindowsOsSpecificTest()) {
+            Approvals.verify(getOutput());
+        } catch (Exception cause) {
             throw new RuntimeException("Failed to assert help", cause);
         }
     }
+
+    default void assertMessage(String message) {
+        assertThat(getOutput(), containsString(message));
+    }
+
+    default void assertNoMessage(String message) {
+        assertThat(getOutput(), not(containsString(message)));
+    }
+
+    default void assertMessageWasShownExactlyNumberOfTimes(String message, long numberOfShownTimes) {
+        long msgCount = getOutput().lines().filter(oneMessage -> oneMessage.contains(message)).count();
+        assertThat(msgCount, equalTo(numberOfShownTimes));
+    }
+
+    default void assertBuild() {
+        assertMessage("Server configuration updated and persisted");
+    }
+
+    default void assertNoBuild() {
+        assertFalse(getOutput().contains("Server configuration updated and persisted"));
+    }
+
+    default void assertBuildRuntimeMismatchWarning(String quarkusBuildtimePropKey) {
+        assertTrue(getOutput().contains(" - " + quarkusBuildtimePropKey + " is set to 'true' but it is build time fixed to 'false'. Did you change the property " + quarkusBuildtimePropKey + " after building the application?"));
+    }
+
+    default boolean isClustered() {
+        return getOutput().contains("Starting JGroups channel `ISPN`");
+    }
+
+    default void assertLocalCache() {
+        assertFalse(isClustered());
+    }
+
+    default void assertClusteredCache() {
+        assertTrue(isClustered());
+    }
+
+    default void assertJsonLogDefaultsApplied() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String[] splittedOutput = getOutput().split("\n");
+
+        int counter = 0;
+
+        for (String line: splittedOutput) {
+            if (!line.trim().startsWith("{")) {
+                counter++;
+                //we ignore non-json output for now. Problem: the build done by start-dev does not know about the runtime configuration,
+                // so when invoking start-dev and a build is done, the output is not json but unstructured console output
+                continue;
+            }
+            JsonNode json = objectMapper.readTree(line);
+            assertTrue(json.has("timestamp"));
+            assertTrue(json.has("message"));
+            assertTrue(json.has("level"));
+        }
+
+        if (counter == splittedOutput.length) {
+            fail("No JSON found in output.");
+        }
+    }
+
 }

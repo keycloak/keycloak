@@ -21,6 +21,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.vault.AbstractVaultProviderFactory;
 import org.keycloak.vault.VaultProvider;
 
@@ -77,7 +78,7 @@ public class QuarkusVaultProviderFactory extends AbstractVaultProviderFactory im
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return !config.getPropertyNames().isEmpty();
+        return getId().equals(Configuration.getRawValue("kc.vault"));
     }
 
     @Override

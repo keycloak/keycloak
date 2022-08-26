@@ -46,7 +46,9 @@
                 isEventsEnabled : ${isEventsEnabled?c},
                 isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
                 isTotpConfigured : ${isTotpConfigured?c},
-                deleteAccountAllowed : ${deleteAccountAllowed?c}
+                deleteAccountAllowed : ${deleteAccountAllowed?c},
+                updateEmailFeatureEnabled: ${updateEmailFeatureEnabled?c},
+                updateEmailActionEnabled: ${updateEmailActionEnabled?c}
             }
 
             var availableLocales = [];
@@ -62,7 +64,9 @@
 
             <#if msg??>
                 var locale = '${locale}';
-                var l18nMsg = JSON.parse('${msgJSON?no_esc}');
+                <#outputformat "JavaScript">
+                var l18nMsg = JSON.parse('${msgJSON?js_string}');
+                </#outputformat>
             <#else>
                 var locale = 'en';
                 var l18Msg = {};
@@ -110,8 +114,10 @@
             </#list>
         </#if>
 
+        
         <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/react-core/dist/styles/base.css"/>
         <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/react-core/dist/styles/app.css"/>
+        <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/patternfly/patternfly-addons.css"/>
         <link href="${resourceUrl}/public/layout.css" rel="stylesheet"/>
     </head>
 
@@ -145,19 +151,18 @@
 
 <div id="spinner_screen" style="display:block; height:100%">
     <div style="width: 320px; height: 328px; text-align: center; position: absolute; top:0;	bottom: 0; left: 0;	right: 0; margin: auto;">
-                <#if properties.logo?has_content>
-                <img src="${resourceUrl}${properties.logo}" alt="Logo" class="brand">
-                <#else>
-                <img src="${resourceUrl}/public/logo.svg" alt="Logo" class="brand">
-                </#if>
-                <p>${msg("loadingMessage")}</p>
-                <div >
-                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="margin: auto; background: rgb(255, 255, 255); display: block; shape-rendering: auto;" width="200px" height="200px" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
-                    <path d="M10 50A40 40 0 0 0 90 50A40 42 0 0 1 10 50" fill="#5DBCD2" stroke="none" transform="rotate(16.3145 50 51)">
-                        <animateTransform attributeName="transform" type="rotate" dur="1s" repeatCount="indefinite" keyTimes="0;1" values="0 50 51;360 50 51"></animateTransform>
-                    </path>
-                </div>
-            </div>
+        <#if properties.logo?has_content>
+        <img src="${resourceUrl}${properties.logo}" alt="Logo" class="brand">
+        <#else>
+        <img src="${resourceUrl}/public/logo.svg" alt="Logo" class="brand">
+        </#if>
+        <p>${msg("loadingMessage")}</p>
+        <div>
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="margin: auto; background: rgb(255, 255, 255); display: block; shape-rendering: auto;" width="200px" height="200px" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
+                <path d="M10 50A40 40 0 0 0 90 50A40 42 0 0 1 10 50" fill="#5DBCD2" stroke="none" transform="rotate(16.3145 50 51)">
+                    <animateTransform attributeName="transform" type="rotate" dur="1s" repeatCount="indefinite" keyTimes="0;1" values="0 50 51;360 50 51"></animateTransform>
+                </path>
+            </svg>
         </div>
     </div>
 </div>
@@ -180,18 +185,23 @@
         </div>
         <div class="pf-c-page__header-tools">
             <#if referrer?has_content && referrer_uri?has_content>
-            <div class="pf-c-page__header-tools-group pf-m-icons">
-              <a id="landingReferrerLink" href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
+            <div class="pf-c-page__header-tools-group pf-m-icons pf-u-display-none pf-u-display-flex-on-md">
+              <a id="landingReferrerLink" href="${referrer_uri}" class="pf-c-button pf-m-link" tabindex="0">
+                  <span class="pf-c-button__icon pf-m-start">
+                      <i class="pf-icon pf-icon-arrow" aria-hidden="true"></i>
+                  </span>
+                  ${msg("backTo",referrerName)}
+              </a>
             </div>
             </#if>
 
-            <div class="pf-c-page__header-tools-group pf-m-icons">
+            <div class="pf-c-page__header-tools-group pf-m-icons pf-u-display-none pf-u-display-flex-on-md pf-u-mr-md">
               <button id="landingSignInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doSignIn")}</button>
               <button id="landingSignOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
             </div>
 
             <!-- Kebab for mobile -->
-            <div class="pf-c-page__header-tools-group">
+            <div class="pf-c-page__header-tools-group pf-u-display-none-on-md">
                 <div id="landingMobileKebab" class="pf-c-dropdown pf-m-mobile" onclick="toggleMobileDropdown();"> <!-- pf-m-expanded -->
                     <button aria-label="Actions" tabindex="0" id="landingMobileKebabButton" class="pf-c-dropdown__toggle pf-m-plain" type="button" aria-expanded="true" aria-haspopup="true">
                         <svg fill="currentColor" height="1em" width="1em" viewBox="0 0 192 512" aria-hidden="true" role="img" style="vertical-align: -0.125em;"><path d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z" transform=""></path></svg>
@@ -219,45 +229,51 @@
       </header>
 
       <main role="main" class="pf-c-page__main">
-        <section class="pf-c-page__main-section pf-m-light">
-          <div class="pf-c-content" id="landingWelcomeMessage">
-            <h1>${msg("accountManagementWelcomeMessage")}</h1>
-          </div>
-        </section>
-        <section class="pf-c-page__main-section">
-          <div class="pf-l-gallery pf-m-gutter">
-            <#assign content=theme.apply("content.json")?eval>
-            <#list content as item>
-              <div class="pf-l-gallery__item pf-c-card" id="landing-${item.id}">
-                <div>
-                  <div class="pf-c-card__header pf-c-content">
-                      <h2>
-                        <#if item.icon??>
-                          <i class="pf-icon ${item.icon}"></i>&nbsp;
-                        <#elseif item.iconSvg??>
-                          <img src="${item.iconSvg}" alt="icon"/>&nbsp;
-                        </#if>
-                        ${msg(item.label)}
-                      </h2>
-                      <#if item.descriptionLabel??>
-                        <p>${msg(item.descriptionLabel)}</p>
-                      </#if>
-                  </div>
-                  <div class="pf-c-card__body pf-c-content">
-                    <#if item.content??>
-                      <#list item.content as sub>
-                        <div id="landing-${sub.id}">
-                          <a onclick="toggleReact(); window.location.hash='${sub.path}'">${msg(sub.label)}</a>
-                        </div>
-                      </#list>
-                    <#else>
-                      <a id="landing-${item.id}" onclick="toggleReact(); window.location.hash = '${item.path}'">${msg(item.label)}</a>
-                    </#if>
-                  </div>
+        <section class="pf-c-page__main-section pf-m-limit-width pf-m-light pf-m-shadow-bottom">
+            <div class="pf-c-page__main-body">
+                <div class="pf-c-content" id="landingWelcomeMessage">
+                    <h1>${msg("accountManagementWelcomeMessage")}</h1>
                 </div>
-              </div>
-            </#list>
-          </div>
+            </div>
+        </section>
+        <section class="pf-c-page__main-section pf-m-limit-width pf-m-overflow-scroll">
+            <div class="pf-c-page__main-body">
+                <div class="pf-l-gallery pf-m-gutter">
+                    <#assign content=theme.apply("content.json")?eval>
+                    <#list content as item>
+                        <div class="pf-l-gallery__item" id="landing-${item.id}">
+                            <div class="pf-c-card pf-m-full-height">
+                                <div>
+                                    <div class="pf-c-card__title pf-c-content">
+                                        <h2 class="pf-u-display-flex pf-u-w-100 pf-u-flex-direction-column">
+                                            <#if item.icon??>
+                                                <i class="pf-icon ${item.icon}"></i>
+                                            <#elseif item.iconSvg??>
+                                                <img src="${item.iconSvg}" alt="icon"/>
+                                            </#if>
+                                            ${msg(item.label)}
+                                        </h2>
+                                    </div>
+                                    <div class="pf-c-card__body">
+                                        <#if item.descriptionLabel??>
+                                            <p class="pf-u-mb-md">${msg(item.descriptionLabel)}</p>
+                                        </#if>
+                                        <#if item.content??>
+                                            <#list item.content as sub>
+                                                <div id="landing-${sub.id}">
+                                                    <a onclick="toggleReact(); window.location.hash='${sub.path}'">${msg(sub.label)}</a>
+                                                </div>
+                                            </#list>
+                                        <#else>
+                                            <a id="landing-${item.id}" onclick="toggleReact(); window.location.hash = '${item.path}'">${msg(item.label)}</a>
+                                        </#if>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </#list>
+                </div>
+            </div>
         </section>
       </main>
     </div>

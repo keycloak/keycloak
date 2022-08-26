@@ -56,13 +56,31 @@ public interface TestingLDAPResource {
     void prepareGroupsLDAPTest();
 
     /**
-     * Prepare groups LDAP tests. Creates some LDAP mappers as well as some built-in GRoups and users in LDAP
+     * Prepare hardcoded groups LDAP tests. Creates some LDAP mappers as well as some built-in Groups and users in LDAP
+     */
+    @POST
+    @Path("/configure-hardcoded-groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    void prepareHardcodedGroupsLDAPTest();
+
+    /**
+     * Prepare groups LDAP tests. Creates some LDAP mappers as well as some built-in Groups and users in LDAP
      */
     @POST
     @Path("/configure-roles")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     void prepareRolesLDAPTest();
+
+    /**
+     * Prepare hardcoded roles LDAP tests. Creates some LDAP mappers as well as some hardcoded roles and users in LDAP
+     */
+    @POST
+    @Path("/configure-hardcoded-roles")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    void prepareHardcodedRolesLDAPTest();
 
     /**
      * Remove specified user directly just from the LDAP server

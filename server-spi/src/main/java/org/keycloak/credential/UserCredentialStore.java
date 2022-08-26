@@ -17,6 +17,7 @@
 package org.keycloak.credential;
 
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
@@ -31,11 +32,22 @@ import java.util.stream.Stream;
 public interface UserCredentialStore extends Provider {
     void updateCredential(RealmModel realm, UserModel user, CredentialModel cred);
     CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred);
+
+    /**
+     * Removes credential with the {@code id} for the {@code user}.
+     *
+     * @param realm realm.
+     * @param user user
+     * @param id id
+     * @return {@code true} if the credential was removed, {@code false} otherwise
+     *
+     * TODO: Make this method return Boolean so that store can return "I don't know" answer, this can be used for example in async stores
+     */
     boolean removeStoredCredential(RealmModel realm, UserModel user, String id);
     CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id);
 
     /**
-     * @deprecated Use {@link #getStoredCredentialsStream(RealmModel, UserModel) getStoredCredentialsStream} instead.
+     * @deprecated Use {@link SubjectCredentialManager#getStoredCredentialsStream()} instead.
      */
     @Deprecated
     List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user);
@@ -53,7 +65,7 @@ public interface UserCredentialStore extends Provider {
     }
 
     /**
-     * @deprecated Use {@link #getStoredCredentialsByTypeStream(RealmModel, UserModel, String) getStoredCredentialsByTypeStream}
+     * @deprecated Use {@link SubjectCredentialManager#getStoredCredentialsByTypeStream(String)}
      * instead.
      */
     @Deprecated
@@ -68,7 +80,7 @@ public interface UserCredentialStore extends Provider {
      * @return a non-null {@link Stream} of credentials.
      */
     default Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
-        List<CredentialModel> result = this.getStoredCredentialsByType(realm, user, type);
+        List<CredentialModel> result = user.credentialManager().getStoredCredentialsByTypeStream(type).collect(Collectors.toList());
         return result != null ? result.stream() : Stream.empty();
     }
 
@@ -87,7 +99,7 @@ public interface UserCredentialStore extends Provider {
     interface Streams extends UserCredentialStore {
         @Override
         default List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-            return this.getStoredCredentialsStream(realm, user).collect(Collectors.toList());
+            return user.credentialManager().getStoredCredentialsStream().collect(Collectors.toList());
         }
 
         @Override
@@ -95,7 +107,7 @@ public interface UserCredentialStore extends Provider {
 
         @Override
         default List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-            return this.getStoredCredentialsByTypeStream(realm, user, type).collect(Collectors.toList());
+            return user.credentialManager().getStoredCredentialsByTypeStream(type).collect(Collectors.toList());
         }
 
         @Override

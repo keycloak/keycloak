@@ -26,6 +26,8 @@ import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.*;
 import org.keycloak.models.cache.infinispan.events.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.LegacyStoreManagers;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
@@ -119,11 +121,13 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     protected boolean clearAll;
     protected final long startupRevision;
+    private final LegacyStoreManagers datastoreProvider;
 
     public RealmCacheSession(RealmCacheManager cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
         this.startupRevision = cache.getCurrentCounter();
+        this.datastoreProvider = (LegacyStoreManagers) session.getProvider(DatastoreProvider.class);
         session.getTransactionManager().enlistPrepare(getPrepareTransaction());
         session.getTransactionManager().enlistAfterCompletion(getAfterTransaction());
     }
@@ -146,31 +150,31 @@ public class RealmCacheSession implements CacheRealmProvider {
     public RealmProvider getRealmDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (realmDelegate != null) return realmDelegate;
-        realmDelegate = session.realmLocalStorage();
+        realmDelegate = session.getProvider(RealmProvider.class);
         return realmDelegate;
     }
     public ClientProvider getClientDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (clientDelegate != null) return clientDelegate;
-        clientDelegate = session.clientStorageManager();
+        clientDelegate = this.datastoreProvider.clientStorageManager();
         return clientDelegate;
     }
     public ClientScopeProvider getClientScopeDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (clientScopeDelegate != null) return clientScopeDelegate;
-        clientScopeDelegate = session.clientScopeStorageManager();
+        clientScopeDelegate = this.datastoreProvider.clientScopeStorageManager();
         return clientScopeDelegate;
     }
     public RoleProvider getRoleDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (roleDelegate != null) return roleDelegate;
-        roleDelegate = session.roleStorageManager();
+        roleDelegate = this.datastoreProvider.roleStorageManager();
         return roleDelegate;
     }
     public GroupProvider getGroupDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (groupDelegate != null) return groupDelegate;
-        groupDelegate = session.groupStorageManager();
+        groupDelegate = this.datastoreProvider.groupStorageManager();
         return groupDelegate;
     }
 
@@ -1312,7 +1316,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public void removeClientScopes(RealmModel realm) {
-        realm.getClientScopesStream().map(ClientScopeModel::getId).forEach(id -> removeClientScope(realm, id));
+        getClientScopesStream(realm).map(ClientScopeModel::getId).forEach(id -> removeClientScope(realm, id));
     }
 
     @Override

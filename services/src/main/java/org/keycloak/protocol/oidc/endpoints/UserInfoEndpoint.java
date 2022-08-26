@@ -25,6 +25,9 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.CekManagementProvider;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -32,7 +35,12 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -58,6 +66,8 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
@@ -68,6 +78,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.Key;
 import java.util.Collections;
 import java.util.Map;
 
@@ -174,7 +187,7 @@ public class UserInfoEndpoint {
             cors.allowedOrigins(session, clientModel);
 
             TokenVerifier.createWithoutSignature(token)
-                    .withChecks(NotBeforeCheck.forModel(clientModel))
+                    .withChecks(NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
                     .verify();
         } catch (VerificationException e) {
             if (clientModel == null) {
@@ -245,10 +258,35 @@ public class UserInfoEndpoint {
 
             String signedUserInfo = new JWSBuilder().type("JWT").jsonContent(claims).sign(signer);
 
-            responseBuilder = Response.ok(signedUserInfo).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
-
+            try {
+                responseBuilder = Response.ok(cfg.isUserInfoEncryptionRequired() ? jweFromContent(signedUserInfo, "JWT") :
+                        signedUserInfo).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
+            } catch (RuntimeException re) {
+                if ("can not get encryption KEK".equals(re.getMessage())) {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                            "can not get encryption KEK", Response.Status.BAD_REQUEST);
+                } else {
+                    throw re;
+                }
+            }
             event.detail(Details.SIGNATURE_REQUIRED, "true");
-            event.detail(Details.SIGNATURE_ALGORITHM, cfg.getUserInfoSignedResponseAlg().toString());
+            event.detail(Details.SIGNATURE_ALGORITHM, cfg.getUserInfoSignedResponseAlg());
+        } else if (cfg.isUserInfoEncryptionRequired()) {
+            try {
+                responseBuilder = Response.ok(jweFromContent(JsonSerialization.writeValueAsString(claims), null))
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
+            } catch (RuntimeException re) {
+                if ("can not get encryption KEK".equals(re.getMessage())) {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                            "can not get encryption KEK", Response.Status.BAD_REQUEST);
+                } else {
+                    throw re;
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            event.detail(Details.SIGNATURE_REQUIRED, "false");
         } else {
             responseBuilder = Response.ok(claims).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -258,6 +296,35 @@ public class UserInfoEndpoint {
         event.success();
 
         return cors.builder(responseBuilder).build();
+    }
+
+    private String jweFromContent(String content, String jweContentType) {
+        String encryptedToken = null;
+
+        String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.USERINFO);
+        String encAlgorithm = session.tokens().encryptAlgorithm(TokenCategory.USERINFO);
+
+        CekManagementProvider cekManagementProvider = session.getProvider(CekManagementProvider.class, algAlgorithm);
+        JWEAlgorithmProvider jweAlgorithmProvider = cekManagementProvider.jweAlgorithmProvider();
+
+        ContentEncryptionProvider contentEncryptionProvider = session.getProvider(ContentEncryptionProvider.class, encAlgorithm);
+        JWEEncryptionProvider jweEncryptionProvider = contentEncryptionProvider.jweEncryptionProvider();
+
+        ClientModel client = session.getContext().getClient();
+
+        KeyWrapper keyWrapper = PublicKeyStorageManager.getClientPublicKeyWrapper(session, client, JWK.Use.ENCRYPTION, algAlgorithm);
+        if (keyWrapper == null) {
+            throw new RuntimeException("can not get encryption KEK");
+        }
+        Key encryptionKek = keyWrapper.getPublicKey();
+        String encryptionKekId = keyWrapper.getKid();
+        try {
+            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, content.getBytes("UTF-8"), algAlgorithm,
+                    encAlgorithm, encryptionKekId, jweAlgorithmProvider, jweEncryptionProvider, jweContentType);
+        } catch (JWEException | UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        return encryptedToken;
     }
 
     private UserSessionModel createTransientSessionForClient(AccessToken token, ClientModel client) {

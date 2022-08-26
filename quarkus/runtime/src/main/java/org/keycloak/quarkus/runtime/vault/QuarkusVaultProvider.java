@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import org.keycloak.vault.AbstractVaultProvider;
 import org.keycloak.vault.VaultKeyResolver;
 import org.keycloak.vault.VaultRawSecret;

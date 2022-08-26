@@ -30,6 +30,7 @@ public interface Errors {
     String CLIENT_DISABLED = "client_disabled";
     String INVALID_CLIENT_CREDENTIALS = "invalid_client_credentials";
     String INVALID_CLIENT = "invalid_client";
+    String UNAUTHORIZED_CLIENT ="unauthorized_client";
     String CONSENT_DENIED = "consent_denied";
     String RESOLVE_REQUIRED_ACTIONS = "resolve_required_actions";
 
@@ -110,4 +111,6 @@ public interface Errors {
     String EXPIRED_OAUTH2_DEVICE_CODE = "expired_oauth2_device_code";
     String INVALID_OAUTH2_USER_CODE = "invalid_oauth2_user_code";
     String SLOW_DOWN = "slow_down";
+    String GENERIC_AUTHENTICATION_ERROR= "generic_authentication_error";
+
 }

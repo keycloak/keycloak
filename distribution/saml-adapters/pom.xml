@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <name>SAML Adapters Distribution Parent</name>
@@ -43,22 +43,10 @@
                 </property>
             </activation>
             <modules>
-                <module>jetty92-adapter-zip</module>
-                <module>jetty93-adapter-zip</module>
                 <module>jetty94-adapter-zip</module>
                 <module>tomcat-adapter-zip</module>
-                <module>tomcat7-adapter-zip</module>
             </modules>
         </profile>
-        <profile>
-             <id>AS7</id>
-             <activation>
-                 <jdk>(,9]</jdk>
-             </activation>
-             <modules>
-                 <module>as7-eap6-adapter</module>
-             </modules>
-         </profile>
     </profiles>
 
 </project>

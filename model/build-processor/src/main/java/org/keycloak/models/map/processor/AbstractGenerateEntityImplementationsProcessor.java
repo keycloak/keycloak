@@ -26,6 +26,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.NoType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -45,13 +46,22 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
 import static org.keycloak.models.map.processor.FieldAccessorType.GETTER;
 import static org.keycloak.models.map.processor.Util.getGenericsDeclaration;
 import static org.keycloak.models.map.processor.Util.isMapType;
+import static org.keycloak.models.map.processor.Util.isSetType;
+import static org.keycloak.models.map.processor.Util.singularToPlural;
 
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public abstract class AbstractGenerateEntityImplementationsProcessor extends AbstractProcessor {
 
     protected static final String FQN_DEEP_CLONER = "org.keycloak.models.map.common.DeepCloner";
+    protected static final String FQN_ENTITY_FIELD = "org.keycloak.models.map.common.EntityField";
+    protected static final String FQN_HAS_ENTITY_FIELD_DELEGATE = "org.keycloak.models.map.common.delegate.HasEntityFieldDelegate";
+    protected static final String FQN_ENTITY_FIELD_DELEGATE = "org.keycloak.models.map.common.delegate.EntityFieldDelegate";
+
     protected Elements elements;
     protected Types types;
 
@@ -100,24 +110,27 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
 //          );
     }
 
+    protected Stream<ExecutableElement> getAllAbstractMethods(TypeElement e) {
+        return elements.getAllMembers(e).stream()
+          .filter(el -> el.getKind() == ElementKind.METHOD)
+          .filter(el -> el.getModifiers().contains(Modifier.ABSTRACT))
+          .filter(ExecutableElement.class::isInstance)
+          .map(ExecutableElement.class::cast);
+    }
+
     protected Map<String, HashSet<ExecutableElement>> methodsPerAttributeMapping(TypeElement e) {
-        final List<? extends Element> allMembers = elements.getAllMembers(e);
-        Map<String, HashSet<ExecutableElement>> methodsPerAttribute = allMembers.stream()
-                .filter(el -> el.getKind() == ElementKind.METHOD)
-                .filter(el -> el.getModifiers().contains(Modifier.ABSTRACT))
-                .filter(Util::isNotIgnored)
-                .filter(ExecutableElement.class::isInstance)
-                .map(ExecutableElement.class::cast)
-                .filter(ee -> ! (ee.getReceiverType() instanceof NoType))
-                .collect(Collectors.toMap(this::determineAttributeFromMethodName, v -> new HashSet(Arrays.asList(v)), (a, b) -> { a.addAll(b); return a; }));
+        Map<String, HashSet<ExecutableElement>> methodsPerAttribute = getAllAbstractMethods(e)
+          .filter(Util::isNotIgnored)
+          .filter(ee -> !(ee.getReceiverType() instanceof NoType && ee.getReceiverType().getKind() != TypeKind.NONE))
+          .collect(Collectors.toMap(this::determineAttributeFromMethodName, v -> new HashSet<>(Arrays.asList(v)), (a,b) -> { a.addAll(b); return a; }));
 
         // Merge plurals with singulars
         methodsPerAttribute.keySet().stream()
-                .filter(key -> methodsPerAttribute.containsKey(key + "s"))
+                .filter(key -> methodsPerAttribute.containsKey(singularToPlural(key)))
                 .collect(Collectors.toSet())
                 .forEach(key -> {
                     HashSet<ExecutableElement> removed = methodsPerAttribute.remove(key);
-                    methodsPerAttribute.get(key + "s").addAll(removed);
+                    methodsPerAttribute.get(singularToPlural(key)).addAll(removed);
                 });
 
         return methodsPerAttribute;
@@ -129,7 +142,7 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
         FORBIDDEN_PREFIXES.put("delete", "remove");
     }
 
-    private String determineAttributeFromMethodName(ExecutableElement e) {
+    protected String determineAttributeFromMethodName(ExecutableElement e) {
         Name name = e.getSimpleName();
         Matcher m = BEAN_NAME.matcher(name.toString());
         if (m.matches()) {
@@ -153,7 +166,10 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
     }
 
     protected boolean isImmutableFinalType(TypeMirror fieldType) {
-        return isPrimitiveType(fieldType) || isBoxedPrimitiveType(fieldType) || Objects.equals("java.lang.String", fieldType.toString());
+        return isPrimitiveType(fieldType)
+                || isBoxedPrimitiveType(fieldType)
+                || isEnumType(fieldType)
+                || Objects.equals("java.lang.String", fieldType.toString());
     }
 
     protected boolean isKnownCollectionOfImmutableFinalTypes(TypeMirror fieldType) {
@@ -192,8 +208,26 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
                             ", (o1, o2) -> o1" +
                             ", java.util.HashMap::new" +
                     "))";
+        } else if (isCollection(typeElement.asType())) {
+            TypeMirror collectionType = getGenericsDeclaration(fieldType).get(0);
+            return parameterName + " == null ? null : " + parameterName + ".stream().map(entry -> " + deepClone(collectionType, "entry") + ").collect(java.util.stream.Collectors.toCollection(" + (isSetType(typeElement) ? "java.util.HashSet::new" : "java.util.LinkedList::new") + "))";
         }
         return "deepClone(" + parameterName + ")";
+    }
+
+    protected String removeUndefined(TypeMirror fieldType, String parameterName) {
+        TypeElement typeElement = elements.getTypeElement(types.erasure(fieldType).toString());
+        boolean isMapType = isMapType(typeElement);
+
+        return parameterName + (isMapType ? ".values()" : "") + ".removeIf(org.keycloak.models.map.common.UndefinedValuesUtils::isUndefined)";
+    }
+
+    protected String isUndefined(String parameterName) {
+        return "org.keycloak.models.map.common.UndefinedValuesUtils.isUndefined(" + parameterName + ")";
+    }
+
+    protected boolean isEnumType(TypeMirror fieldType) {
+        return types.asElement(fieldType).getKind() == ElementKind.ENUM;
     }
 
     protected boolean isPrimitiveType(TypeMirror fieldType) {

@@ -81,11 +81,11 @@
     <dependency>
       <groupId>org.liquibase</groupId>
       <artifactId>liquibase-core</artifactId>
-      <version>3.5.5</version>
+      <version>4.8.0</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/liquibase/liquibase/liquibase-parent-3.5.5/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/liquibase/liquibase/v4.8.0/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
@@ -136,22 +136,22 @@
     <dependency>
       <groupId>com.webauthn4j</groupId>
       <artifactId>webauthnj4-core</artifactId>
-      <version>0.12.0.RELEASE</version>
+      <version>0.20.0.RELEASE</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.12.0.RELEASE/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.20.0.RELEASE/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.webauthn4j</groupId>
       <artifactId>webauthnj4-util</artifactId>
-      <version>0.12.0.RELEASE</version>
+      <version>0.20.0.RELEASE</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.12.0.RELEASE/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.20.0.RELEASE/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>

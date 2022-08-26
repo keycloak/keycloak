@@ -40,7 +40,6 @@ import org.keycloak.testsuite.arquillian.containers.InfinispanServerDeployableCo
  * @author hmlnarik
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_CLUSTER)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
 @InitialDcState(authServers = ServerSetup.FIRST_NODE_IN_EVERY_DC, cacheServers = ServerSetup.FIRST_NODE_IN_EVERY_DC)
 public class SAMLAdapterCrossDCTest extends AbstractSAMLAdapterClusteredTest {

@@ -22,12 +22,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * {@link RawDistOnly} is used to signal that the annotated tests class is only enabled when running tests using the {@link DistributionType#RAW}.
+ * {@link RawDistOnly} is used to signal that the annotated test class
+ * is only enabled when running tests using the {@link DistributionType#RAW}
+ * or running tests in whitebox mode in the same jvm using {@link CLITest}
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @EnabledIfSystemProperty(named = "kc.quarkus.tests.dist", matches = "^$|raw")
 public @interface RawDistOnly {

@@ -21,7 +21,7 @@ import org.keycloak.models.RoleModel;
 
 /**
  * This is an optional capability interface that is intended to be implemented by any
- * {@link org.keycloak.storage.UserStorageProvider UserStorageProvider} that supports bulk operations.
+ * <code>UserStorageProvider</code> that supports bulk operations.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $

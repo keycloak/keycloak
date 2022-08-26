@@ -68,6 +68,9 @@ public class AbstractAuthenticationExecutionRepresentation implements Serializab
      * @return
      */
     @Deprecated
+    private boolean autheticatorFlow;
+
+    @Deprecated
     public boolean isAutheticatorFlow() {
         return authenticatorFlow;
     }

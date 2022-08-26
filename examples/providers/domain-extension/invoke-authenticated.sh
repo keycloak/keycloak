@@ -11,7 +11,7 @@ echo -e "\n\nACCESS TOKEN IS \"$ACCESS_TOKEN\"";
 echo -e "\n\nSENDING UN-AUTHENTICATED REQUEST. THIS SHOULD FAIL WITH 401: ";
 curl -i --request POST http://localhost:8080/auth/realms/master/example/companies-auth --data "{ \"name\": \"auth foo company\" }" --header "Content-type: application/json"
 
-echo -e "\n\nSENDING AUTHENTICATED REQUEST. THIS SHOULD SUCCESSFULY CREATE COMPANY AND SUCCESS WITH 201: ";
+echo -e "\n\nSENDING AUTHENTICATED REQUEST. THIS SHOULD SUCCESSFULLY CREATE COMPANY AND SUCCESS WITH 201: ";
 curl -i --request POST http://localhost:8080/auth/realms/master/example/companies-auth --data "{ \"name\": \"auth foo company\" }" --header "Content-type: application/json" --header "Authorization: Bearer $ACCESS_TOKEN";
 
 echo -e "\n\nSEARCH COMPANIES: ";

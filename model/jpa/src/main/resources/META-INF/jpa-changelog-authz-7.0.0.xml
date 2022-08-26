@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
     <changeSet author="psilva@redhat.com" id="authz-7.0.0-KEYCLOAK-10443">
+        <validCheckSum>7:b9710f74515a6ccb51b72dc0d19df8c4</validCheckSum>
         <addColumn tableName="RESOURCE_SERVER">
             <column name="DECISION_STRATEGY" type="TINYINT" defaultValue="1">
                 <constraints nullable="false"/>

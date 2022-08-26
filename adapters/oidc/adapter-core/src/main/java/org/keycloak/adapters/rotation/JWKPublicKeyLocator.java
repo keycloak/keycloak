@@ -63,7 +63,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
                 sendRequest(deployment);
                 lastRequestTime = currentTime;
             } else {
-                log.debug("Won't send request to realm jwks url. Last request time was " + lastRequestTime);
+                log.debugf("Won't send request to realm jwks url. Last request time was %d. Current time is %d.", lastRequestTime, currentTime);
             }
 
             return lookupCachedKey(publicKeyCacheTtl, currentTime, kid);
@@ -76,6 +76,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
         synchronized (this) {
             sendRequest(deployment);
             lastRequestTime = Time.currentTime();
+            log.debugf("Reset time offset to %d.", lastRequestTime);
         }
     }
 

@@ -22,6 +22,6 @@ import org.keycloak.provider.ProviderFactory;
  *
  * @author hmlnarik
  */
-public interface ActionTokenStoreProviderFactory extends ProviderFactory<ActionTokenStoreProvider> {
+public interface ActionTokenStoreProviderFactory<T extends ActionTokenStoreProvider> extends ProviderFactory<T> {
 
 }

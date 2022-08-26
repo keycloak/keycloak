@@ -1,32 +1,21 @@
+/** @type {import('eslint').Linter.Config } */
 module.exports = {
-  parser: '@typescript-eslint/parser',
-  env: {
-    browser: true,
-    es6: true,
-  },
-  extends: ['plugin:@typescript-eslint/recommended', 'react-app'],
-  globals: {
-    Atomics: 'readonly',
-    SharedArrayBuffer: 'readonly',
-  },
-  parserOptions: {
-    ecmaFeatures: {
-      jsx: true,
-      impliedStrict: true
-    },
-    ecmaVersion: 2019,
-    sourceType: 'module',
-  },
-  plugins: [
-    'react',
+  extends: [
+    'react-app',
+    'plugin:jsx-a11y/recommended',
+    'plugin:react/recommended',
+    'plugin:@typescript-eslint/recommended',
   ],
-  rules: {
-      "no-useless-constructor":  "off",
-      "@typescript-eslint/indent": "off",
-      "@typescript-eslint/no-empty-interface": "off",
-      "@typescript-eslint/no-non-null-assertion": "off",
-      "@typescript-eslint/no-parameter-properties": "off",
-      "@typescript-eslint/explicit-member-accessibility": "off",
-      "no-restricted-properties": "off"
+  settings: {
+    react: {
+      version: '16',
+    }
   },
+  rules: {
+    '@typescript-eslint/ban-types': 'warn',
+    '@typescript-eslint/no-empty-interface': 'warn',
+    '@typescript-eslint/no-extra-semi': 'warn',
+    'prefer-const': 'warn',
+    'react/prop-types': 'warn',
+  }
 };

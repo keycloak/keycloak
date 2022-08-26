@@ -19,7 +19,7 @@
     <parent>
         <artifactId>keycloak-docs-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -28,12 +28,13 @@
     <name>Keycloak Guides</name>
     <artifactId>keycloak-guides</artifactId>
     <description>Keycloak Guides</description>
+    <packaging>pom</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-guides-maven-plugin</artifactId>
-            <version>16.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -42,6 +43,7 @@
             <plugin>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-guides-maven-plugin</artifactId>
+                <version>${project.version}</version>
                 <executions>
                     <execution>
                         <id>generate-asciidoc</id>
@@ -57,7 +59,7 @@
                 <version>1.5.5</version>
                 <executions>
                     <execution>
-                        <id>asciidoc-to-html</id>
+                        <id>server-asciidoc-to-html</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>process-asciidoc</goal>
@@ -65,6 +67,7 @@
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/server</sourceDirectory>
                             <sourceDocumentName>index.adoc</sourceDocumentName>
+                            <outputDirectory>${project.build.directory}/generated-docs/server</outputDirectory>
                             <backend>html5</backend>
                             <sourceHighlighter>coderay</sourceHighlighter>
 
@@ -79,6 +82,48 @@
                                 <docinfo1>true</docinfo1>
                             </attributes>
                         </configuration>
+                    </execution>
+                    <execution>
+                        <id>operator-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/operator</sourceDirectory>
+                            <sourceDocumentName>index.adoc</sourceDocumentName>
+                            <outputDirectory>${project.build.directory}/generated-docs/operator</outputDirectory>
+                            <backend>html5</backend>
+                            <sourceHighlighter>coderay</sourceHighlighter>
+
+                            <attributes>
+                                <imagesdir>./</imagesdir>
+                                <toc>left</toc>
+                                <toc>left</toc>
+                                <icons>font</icons>
+                                <sectanchors>true</sectanchors>
+                                <idprefix/>
+                                <idseparator>-</idseparator>
+                                <docinfo1>true</docinfo1>
+                            </attributes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>create-archive</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

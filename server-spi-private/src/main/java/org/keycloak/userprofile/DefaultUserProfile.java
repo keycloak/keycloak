@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserModel;
@@ -113,13 +114,13 @@ public final class DefaultUserProfile implements UserProfile {
                 List<String> currentValue = user.getAttributeStream(name).filter(Objects::nonNull).collect(Collectors.toList());
                 List<String> updatedValue = attribute.getValue().stream().filter(Objects::nonNull).collect(Collectors.toList());
 
-                if (currentValue.size() != updatedValue.size() || !currentValue.containsAll(updatedValue)) {
+                if (!CollectionUtil.collectionEquals(currentValue, updatedValue)) {
                     user.setAttribute(name, updatedValue);
-                    
-                    if(UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
+
+                    if (UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
                         user.setEmailVerified(false);
                     }
-                    
+
                     for (AttributeChangeListener listener : changeListener) {
                         listener.onChange(name, user, currentValue);
                     }
@@ -138,10 +139,10 @@ public final class DefaultUserProfile implements UserProfile {
                     if (this.attributes.isReadOnly(attr)) {
                         continue;
                     }
-                    
+
                     List<String> currentValue = user.getAttributeStream(attr).filter(Objects::nonNull).collect(Collectors.toList());
                     user.removeAttribute(attr);
-                    
+
                     for (AttributeChangeListener listener : changeListener) {
                         listener.onChange(attr, user, currentValue);
                     }

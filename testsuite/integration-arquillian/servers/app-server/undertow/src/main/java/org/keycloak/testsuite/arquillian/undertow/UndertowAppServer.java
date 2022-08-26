@@ -49,6 +49,7 @@ import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.core.ResteasyDeploymentImpl;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.shrinkwrap.api.Archive;
@@ -139,7 +140,7 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
             } else if (applicationClassNode.isPresent()) {
                 String applicationPath = applicationClassNode.get().getPath().get();
 
-                ResteasyDeployment deployment = new ResteasyDeployment();
+                ResteasyDeployment deployment = new ResteasyDeploymentImpl();
                 deployment.setApplicationClass(extractClassName(applicationPath));
                 di = new UndertowDeployerHelper().getDeploymentInfo(configuration, (WebArchive) archive, undertow.undertowDeployment(deployment));
             } else {
@@ -253,7 +254,7 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
                 .filter(clazz -> clazz.isAnnotationPresent(Path.class))
                 .collect(Collectors.toSet());
 
-        ResteasyDeployment deployment = new ResteasyDeployment();
+        ResteasyDeployment deployment = new ResteasyDeploymentImpl();
         deployment.setApplication(new RestSamlApplicationConfig(classes));
         return deployment;
     }

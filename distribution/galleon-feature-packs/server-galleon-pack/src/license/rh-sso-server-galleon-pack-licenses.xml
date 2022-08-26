@@ -81,11 +81,11 @@
     <dependency>
       <groupId>org.liquibase</groupId>
       <artifactId>liquibase-core</artifactId>
-      <version>3.5.5.redhat-1</version>
+      <version>4.8.0.redhat-00001</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/liquibase/liquibase/liquibase-parent-3.5.5/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/liquibase/liquibase/v4.8.0/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>

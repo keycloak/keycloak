@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 /**
  *
  * This is an optional capability interface that is intended to be implemented by any
- * {@link org.keycloak.storage.UserStorageProvider UserStorageProvider} that supports complex user querying. You must
+ * <code>UserStorageProvider</code> that supports complex user querying. You must
  * implement this interface if you want to view and manage users from the administration console.
  * <p/>
  * Note that all methods in this interface should limit search only to data available within the storage that is

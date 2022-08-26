@@ -55,11 +55,12 @@ public class KcVirtualAuthenticator {
         private final boolean hasUserVerification;
         private final boolean isUserConsenting;
         private final boolean isUserVerified;
+        private final Map<String, Object> map;
 
         private Options(VirtualAuthenticatorOptions options) {
             this.options = options;
 
-            final Map<String, Object> map = options.toMap();
+            this.map = options.toMap();
             this.protocol = protocolFromMap(map);
             this.transport = transportFromMap(map);
             this.hasResidentKey = (Boolean) map.get("hasResidentKey");
@@ -94,6 +95,10 @@ public class KcVirtualAuthenticator {
 
         public VirtualAuthenticatorOptions clone() {
             return options;
+        }
+
+        public Map<String, Object> asMap() {
+            return map;
         }
 
         private static VirtualAuthenticatorOptions.Protocol protocolFromMap(Map<String, Object> map) {

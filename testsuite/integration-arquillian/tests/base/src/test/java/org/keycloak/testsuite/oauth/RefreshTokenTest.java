@@ -17,11 +17,9 @@
 package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -33,7 +31,6 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.RealmModel;
@@ -76,7 +73,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
-import java.security.Security;
 import java.util.List;
 
 import static org.hamcrest.Matchers.allOf;
@@ -89,14 +85,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN;
 import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -114,11 +109,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
-    }
-
-    @BeforeClass
-    public static void addBouncyCastleProvider() {
-        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
     }
 
     @Before
@@ -753,7 +743,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         setTimeOffset(2);
 
         // Continue with login
-        oauth.fillLoginForm("test-user@localhost", "password");
+        WaitUtils.waitForPageToLoad();
+        loginPage.login("password");
 
         assertFalse(loginPage.isCurrent());
 
@@ -786,7 +777,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         setTimeOffset(2);
 
         // Continue with login
-        oauth.fillLoginForm("test-user@localhost", "password");
+        WaitUtils.waitForPageToLoad();
+        loginPage.login("password");
 
         assertFalse(loginPage.isCurrent());
 
@@ -822,7 +814,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             setTimeOffset(2);
 
             // Continue with login
-            oauth.fillLoginForm("test-user@localhost", "password");
+            WaitUtils.waitForPageToLoad();
+            loginPage.login("password");
 
             assertFalse(loginPage.isCurrent());
 
@@ -1500,6 +1493,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         driver.navigate().to(loginFormUri);
 
         loginPage.assertCurrent();
+        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
 
         return refreshToken;
     }

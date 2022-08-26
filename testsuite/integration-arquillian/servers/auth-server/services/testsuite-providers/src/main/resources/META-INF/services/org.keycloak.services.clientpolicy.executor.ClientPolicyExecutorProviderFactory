@@ -1,1 +1,1 @@
-org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory
+org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory

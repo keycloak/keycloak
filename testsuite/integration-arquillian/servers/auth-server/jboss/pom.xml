@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -146,6 +146,25 @@
                                             <type>jar</type>
                                             <outputDirectory>${auth.server.home}/modules</outputDirectory>
                                             <includes>**/module.xml</includes>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>deploy-testsuite-providers-deployment</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.testsuite</groupId>
+                                            <artifactId>integration-arquillian-testsuite-providers-deployment</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>jar</type>
+                                            <overWrite>false</overWrite>
+                                            <outputDirectory>${auth.server.home}/standalone/deployments</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>
@@ -534,6 +553,8 @@
                 <ant.scenario>scenario-crossdc</ant.scenario>
 
                 <h2.jdbc.url>jdbc:h2:tcp://localhost:9092/mem:keycloak-dc-shared;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</h2.jdbc.url>
+
+                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
             </properties>
             <build>
                 <plugins>
@@ -709,6 +730,63 @@
             <properties>
                 <crossdc.cache.auth>true</crossdc.cache.auth>
             </properties>
+        </profile>
+
+        <!-- Nashorn script engine needs to be manually added for the new Java versions as it is not part of the JDK anymore  -->
+        <profile>
+            <id>jdk15</id>
+            <activation>
+                <jdk>[15,)</jdk>
+            </activation>
+
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-nashorn-module</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>copy</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.openjdk.nashorn</groupId>
+                                                <artifactId>nashorn-core</artifactId>
+                                                <version>${nashorn.version}</version>
+                                                <type>jar</type>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <outputDirectory>${project.build.directory}/nashorn</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-antrun-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>deploy-nashorn-module</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>run</goal>
+                                    </goals>
+                                    <configuration>
+                                        <target>
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="deploy-nashorn-module" />
+                                        </target>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
 
     </profiles>

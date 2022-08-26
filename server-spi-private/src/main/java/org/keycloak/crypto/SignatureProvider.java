@@ -21,9 +21,27 @@ import org.keycloak.provider.Provider;
 
 public interface SignatureProvider extends Provider {
 
+    static void checkKeyForSignature(KeyWrapper key, String algorithm, String type) throws SignatureException {
+        if (!type.equals(key.getType()) || !algorithm.equals(key.getAlgorithmOrDefault())) {
+            throw new SignatureException(String.format("Key with algorithm %s and type %s is incorrect for provider algorithm %s",
+                    key.getAlgorithm(), key.getType(), algorithm));
+        }
+    }
+
+    static void checkKeyForVerification(KeyWrapper key, String algorithm, String type) throws VerificationException {
+        if (!type.equals(key.getType()) || !algorithm.equals(key.getAlgorithmOrDefault())) {
+            throw new VerificationException(String.format("Key with algorithm %s and type %s is incorrect for provider algorithm %s",
+                    key.getAlgorithm(), key.getType(), algorithm));
+        }
+    }
+
     SignatureSignerContext signer() throws SignatureException;
 
+    SignatureSignerContext signer(KeyWrapper key) throws SignatureException;
+
     SignatureVerifierContext verifier(String kid) throws VerificationException;
+
+    SignatureVerifierContext verifier(KeyWrapper key) throws VerificationException;
 
     boolean isAsymmetricAlgorithm();
 

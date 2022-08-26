@@ -25,11 +25,14 @@ import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -42,14 +45,15 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
+
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -64,9 +68,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.keycloak.models.AccountRoles;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -76,6 +82,9 @@ import java.util.function.Function;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public final class KeycloakModelUtils {
+
+    public static final String AUTH_TYPE_CLIENT_SECRET = "client-secret";
+    public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
 
     private KeycloakModelUtils() {
     }
@@ -146,13 +155,15 @@ public final class KeycloakModelUtils {
     }
 
     public static String generateSecret(ClientModel client) {
-        String secret = SecretGenerator.getInstance().randomString();
+        int secretLength = getSecretLengthByAuthenticationType(client.getClientAuthenticatorType(), client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG));
+        String secret = SecretGenerator.getInstance().randomString(secretLength);
         client.setSecret(secret);
+        client.setAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME, String.valueOf(Time.currentTime()));
         return secret;
     }
 
     public static String getDefaultClientAuthenticatorType() {
-        return "client-secret";
+        return AUTH_TYPE_CLIENT_SECRET;
     }
 
     public static String generateCodeSecret() {
@@ -204,7 +215,7 @@ public final class KeycloakModelUtils {
 
         Set<RoleModel> compositeRoles = composite.getCompositesStream().collect(Collectors.toSet());
         return compositeRoles.contains(role) ||
-                        compositeRoles.stream().anyMatch(x -> x.isComposite() && searchFor(role, x, visited));
+                compositeRoles.stream().anyMatch(x -> x.isComposite() && searchFor(role, x, visited));
     }
 
     /**
@@ -389,24 +400,6 @@ public final class KeycloakModelUtils {
     // USER FEDERATION RELATED STUFF
 
 
-    public static UserStorageProviderModel findUserStorageProviderByName(String displayName, RealmModel realm) {
-        if (displayName == null) {
-            return null;
-        }
-
-        return realm.getUserStorageProvidersStream()
-                .filter(fedProvider -> Objects.equals(fedProvider.getName(), displayName))
-                .findFirst()
-                .orElse(null);
-    }
-
-    public static UserStorageProviderModel findUserStorageProviderById(String fedProviderId, RealmModel realm) {
-        return realm.getUserStorageProvidersStream()
-                .filter(fedProvider -> Objects.equals(fedProvider.getId(), fedProviderId))
-                .findFirst()
-                .orElse(null);
-    }
-
     public static ComponentModel createComponentModel(String name, String parentId, String providerId, String providerType, String... config) {
         ComponentModel mapperModel = new ComponentModel();
         mapperModel.setParentId(parentId);
@@ -434,12 +427,13 @@ public final class KeycloakModelUtils {
     // END USER FEDERATION RELATED STUFF
 
     public static String toLowerCaseSafe(String str) {
-        return str==null ? null : str.toLowerCase();
+        return str == null ? null : str.toLowerCase();
     }
 
     /**
      * Creates default role for particular realm with the given name.
-     * @param realm Realm
+     *
+     * @param realm           Realm
      * @param defaultRoleName Name of the newly created defaultRole
      */
     public static void setupDefaultRole(RealmModel realm, String defaultRoleName) {
@@ -494,7 +488,7 @@ public final class KeycloakModelUtils {
 
     }
 
-    public static List<String>  resolveAttribute(GroupModel group, String name) {
+    public static List<String> resolveAttribute(GroupModel group, String name) {
         List<String> values = group.getAttributeStream(name).collect(Collectors.toList());
         if (!values.isEmpty()) return values;
         if (group.getParentId() == null) return null;
@@ -535,8 +529,7 @@ public final class KeycloakModelUtils {
             if (groupName.equals(pathSegments[index])) {
                 if (pathSegments.length == index + 1) {
                     return group;
-                }
-                else {
+                } else {
                     if (index + 1 < pathSegments.length) {
                         GroupModel found = findSubGroup(pathSegments, index + 1, group);
                         if (found != null) return found;
@@ -551,8 +544,8 @@ public final class KeycloakModelUtils {
      * Given the {@code pathParts} of a group with the given {@code groupName}, format the {@pathParts} in order to ignore
      * group names containing a {@code /} character.
      *
-     * @param segments the path segments
-     * @param index the index pointing to the position to start looking for the group name
+     * @param segments  the path segments
+     * @param index     the index pointing to the position to start looking for the group name
      * @param groupName the groupName
      * @return a new array of strings with the correct segments in case the group has a name containing slashes
      */
@@ -605,8 +598,7 @@ public final class KeycloakModelUtils {
             if (groupName.equals(pathSegments[0])) {
                 if (pathSegments.length == 1) {
                     return group;
-                }
-                else {
+                } else {
                     if (pathSegments.length > 1) {
                         GroupModel subGroup = findSubGroup(pathSegments, 1, group);
                         if (subGroup != null) return subGroup;
@@ -619,10 +611,10 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * @deprecated Use {@link #getClientScopeMappingsStream(ClientModel, ScopeContainerModel)}  getClientScopeMappingsStream} instead.
-     * @param client {@link ClientModel}
+     * @param client    {@link ClientModel}
      * @param container {@link ScopeContainerModel}
      * @return
+     * @deprecated Use {@link #getClientScopeMappingsStream(ClientModel, ScopeContainerModel)}  getClientScopeMappingsStream} instead.
      */
     @Deprecated
     public static Set<RoleModel> getClientScopeMappings(ClientModel client, ScopeContainerModel container) {
@@ -688,7 +680,7 @@ public final class KeycloakModelUtils {
 
         return realm.getIdentityProvidersStream().anyMatch(idp ->
                 Objects.equals(idp.getFirstBrokerLoginFlowId(), model.getId()) ||
-                Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
+                        Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
     }
 
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {
@@ -704,9 +696,13 @@ public final class KeycloakModelUtils {
      * if underlying model is clientScope or client
      */
     public static ClientScopeModel findClientScopeById(RealmModel realm, ClientModel client, String clientScopeId) {
+        if (client.getId().equals(clientScopeId)) {
+            return client;
+        }
+
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
 
-        if (clientScope ==  null) {
+        if (clientScope == null) {
             // as fallback we try to resolve dynamic scopes
             clientScope = client.getDynamicClientScope(clientScopeId);
         }
@@ -718,7 +714,9 @@ public final class KeycloakModelUtils {
         }
     }
 
-    /** Replace spaces in the name with underscore, so that scope name can be used as value of scope parameter **/
+    /**
+     * Replace spaces in the name with underscore, so that scope name can be used as value of scope parameter
+     **/
     public static String convertClientScopeName(String previousName) {
         if (previousName.contains(" ")) {
             return previousName.replaceAll(" ", "_");
@@ -738,7 +736,7 @@ public final class KeycloakModelUtils {
     }
 
     public static void suspendJtaTransaction(KeycloakSessionFactory factory, Runnable runnable) {
-        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)factory.getProviderFactory(JtaTransactionManagerLookup.class);
+        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup) factory.getProviderFactory(JtaTransactionManagerLookup.class);
         Transaction suspended = null;
         try {
             if (lookup != null) {
@@ -785,6 +783,21 @@ public final class KeycloakModelUtils {
     public static boolean isRealmProviderJpa(KeycloakSession session) {
         Set<String> providerIds = session.listProviderIds(RealmProvider.class);
         return providerIds != null && providerIds.size() == 1 && providerIds.iterator().next().equals("jpa");
+    }
+
+    /**
+     * @param clientAuthenticatorType
+     * @return secret size based on authentication type
+     */
+    public static int getSecretLengthByAuthenticationType(String clientAuthenticatorType, String signingAlg) {
+        if (clientAuthenticatorType != null)
+            switch (clientAuthenticatorType) {
+                case AUTH_TYPE_CLIENT_SECRET_JWT: {
+                    if (Algorithm.HS384.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_384_BITS;
+                    if (Algorithm.HS512.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_512_BITS;
+                }
+            }
+        return SecretGenerator.SECRET_LENGTH_256_BITS;
     }
 
 }

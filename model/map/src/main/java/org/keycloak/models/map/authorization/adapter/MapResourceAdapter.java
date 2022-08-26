@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,21 +17,33 @@
 
 package org.keycloak.models.map.authorization.adapter;
 
+import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.PermissionTicketStore;
+import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity> {
 
-    public MapResourceAdapter(MapResourceEntity entity, StoreFactory storeFactory) {
+    private final RealmModel realm;
+    private ResourceServer resourceServer;
+
+    public MapResourceAdapter(RealmModel realm, ResourceServer resourceServer, MapResourceEntity entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
+        Objects.requireNonNull(realm);
+        this.realm = realm;
+        this.resourceServer = resourceServer;
     }
 
     @Override
@@ -63,7 +75,8 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
 
     @Override
     public Set<String> getUris() {
-        return entity.getUris();
+        Set<String> uris = entity.getUris();
+        return uris == null ? Collections.emptySet() : entity.getUris();
     }
 
     @Override
@@ -85,9 +98,11 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
 
     @Override
     public List<Scope> getScopes() {
-        return entity.getScopeIds().stream()
+        Set<String> ids = entity.getScopeIds();
+        ResourceServer resourceServer = getResourceServer();
+        return ids == null ? Collections.emptyList() : ids.stream()
                 .map(id -> storeFactory
-                        .getScopeStore().findById(id, entity.getResourceServerId()))
+                        .getScopeStore().findById(realm, resourceServer, id))
                 .collect(Collectors.toList());
     }
 
@@ -103,8 +118,11 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
     }
 
     @Override
-    public String getResourceServer() {
-        return entity.getResourceServerId();
+    public ResourceServer getResourceServer() {
+        if (resourceServer == null) {
+            resourceServer = storeFactory.getResourceServerStore().findById(realm, entity.getResourceServerId());
+        }
+        return resourceServer;
     }
 
     @Override
@@ -114,7 +132,8 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
 
     @Override
     public boolean isOwnerManagedAccess() {
-        return entity.isOwnerManagedAccess();
+        Boolean isOMA = entity.isOwnerManagedAccess();
+        return isOMA == null ? false : isOMA;
     }
 
     @Override
@@ -126,12 +145,32 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
     @Override
     public void updateScopes(Set<Scope> scopes) {
         throwExceptionIfReadonly();
+
+        PermissionTicketStore permissionStore = storeFactory.getPermissionTicketStore();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+
+        for (Scope scope : getScopes()) {
+            if (!scopes.contains(scope)) {
+                // The scope^ was removed from the Resource
+
+                // Remove permission tickets based on the scope
+                List<PermissionTicket> permissions = permissionStore.findByScope(getResourceServer(), scope);
+                for (PermissionTicket permission : permissions) {
+                    permissionStore.delete(realm, permission.getId());
+                }
+
+                // Remove the scope from each Policy for this Resource
+                policyStore.findByResource(getResourceServer(), this, policy -> policy.removeScope(scope));
+            }
+        }
+
         entity.setScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toSet()));
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return Collections.unmodifiableMap(new HashMap<>(entity.getAttributes()));
+        Map<String, List<String>> attrs = entity.getAttributes();
+        return attrs == null ? Collections.emptyMap() : Collections.unmodifiableMap(new HashMap<>(attrs));
     }
 
     @Override

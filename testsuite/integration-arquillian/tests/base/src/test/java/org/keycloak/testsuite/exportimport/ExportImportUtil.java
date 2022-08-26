@@ -32,6 +32,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
@@ -720,6 +721,7 @@ public class ExportImportUtil {
           OIDCLoginProtocolFactory.ROLES_SCOPE,
           OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE,
           OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE,
+          OIDCLoginProtocolFactory.ACR_SCOPE,
           SamlProtocolFactory.SCOPE_ROLE_LIST
         ));
 
@@ -740,7 +742,8 @@ public class ExportImportUtil {
           OAuth2Constants.SCOPE_PROFILE,
           OAuth2Constants.SCOPE_EMAIL,
           OIDCLoginProtocolFactory.ROLES_SCOPE,
-          OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE
+          OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE,
+          OIDCLoginProtocolFactory.ACR_SCOPE
         ));
 
         Set<String> optionalClientScopes = realm.getDefaultOptionalClientScopes()
@@ -751,5 +754,15 @@ public class ExportImportUtil {
           OAuth2Constants.OFFLINE_ACCESS,
           OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE
         ));
+    }
+
+    public static void testDefaultPostLogoutRedirectUris(RealmResource realm) {
+        for (ClientRepresentation client : realm.clients().findAll()) {
+            List<String> redirectUris = client.getRedirectUris();
+            if(redirectUris != null && !redirectUris.isEmpty()) {
+                String postLogoutRedirectUris = client.getAttributes().get(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+                Assert.assertEquals("+", postLogoutRedirectUris);
+            }
+        }
     }
 }

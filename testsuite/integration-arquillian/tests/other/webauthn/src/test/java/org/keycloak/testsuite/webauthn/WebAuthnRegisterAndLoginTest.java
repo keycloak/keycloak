@@ -16,9 +16,9 @@
  */
 package org.keycloak.testsuite.webauthn;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -31,64 +31,43 @@ import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterF
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
-import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
-import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.events.EventType.CUSTOM_REQUIRED_ACTION;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 
 public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected WebAuthnLoginPage webAuthnLoginPage;
-
-    @Page
-    protected RegisterPage registerPage;
-
     @Page
     protected ErrorPage errorPage;
-
-    @Page
-    protected WebAuthnRegisterPage webAuthnRegisterPage;
 
     @Page
     protected LoginUsernameOnlyPage loginUsernamePage;
@@ -99,15 +78,21 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     @Page
     protected SelectAuthenticatorPage selectAuthenticatorPage;
 
-    private static final String ALL_ZERO_AAGUID = "00000000-0000-0000-0000-000000000000";
-
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+
     }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/webauthn/testrealm-webauthn.json"), RealmRepresentation.class);
+
+        List<String> acceptableAaguids = new ArrayList<>();
+        acceptableAaguids.add("00000000-0000-0000-0000-000000000000");
+        acceptableAaguids.add("6d44ba9b-f6ec-2e49-b930-0c8fe920cb73");
+
+        realmRepresentation.setWebAuthnPolicyAcceptableAaguids(acceptableAaguids);
+
         testRealms.add(realmRepresentation);
     }
 
@@ -139,7 +124,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             // confirm that registration is successfully completed
             userId = events.expectRegister(username, email).assertEvent().getUserId();
             // confirm registration event
-            EventRepresentation eventRep = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+            EventRepresentation eventRep = events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
@@ -160,9 +145,11 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             events.clear();
 
             // logout by user
-            appPage.logout();
+            logout();
+
             // confirm logout event
             events.expectLogout(sessionId)
+                    .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
                     .assertEvent();
 
@@ -171,6 +158,11 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             loginPage.login(username, password);
 
             webAuthnLoginPage.assertCurrent();
+
+            final WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            assertThat(authenticators.getLabels(), Matchers.contains(authenticatorLabel));
+
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();
@@ -181,14 +173,16 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             sessionId = events.expectLogin()
                     .user(userId)
                     .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, regPubKeyCredentialId)
-                    .detail("web_authn_authenticator_user_verification_checked", Boolean.FALSE.toString())
+                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, Boolean.FALSE.toString())
                     .assertEvent().getSessionId();
 
             events.clear();
             // logout by user
-            appPage.logout();
+            logout();
+
             // confirm logout event
             events.expectLogout(sessionId)
+                    .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
                     .assertEvent();
         } finally {
@@ -197,7 +191,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    public void testWebAuthnPasswordlessAlternativeWithWebAuthnAndPassword() throws IOException {
+    public void webAuthnPasswordlessAlternativeWithWebAuthnAndPassword() throws IOException {
         String userId = null;
 
         final String WEBAUTHN_LABEL = "webauthn";
@@ -239,13 +233,13 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             appPage.assertCurrent();
 
-            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+            events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, PASSWORDLESS_LABEL)
                     .assertEvent();
 
-            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+            events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL)
@@ -258,9 +252,10 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             events.clear();
 
-            appPage.logout();
+            logout();
 
             events.expectLogout(sessionID)
+                    .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
                     .assertEvent();
 
@@ -273,10 +268,15 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             passwordPage.login("password");
 
             webAuthnLoginPage.assertCurrent();
+
+            final WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            assertThat(authenticators.getLabels(), Matchers.contains(WEBAUTHN_LABEL));
+
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();
-            appPage.logout();
+            logout();
 
             // Only passwordless login
             loginUsernamePage.open();
@@ -292,10 +292,12 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.SECURITY_KEY);
 
             webAuthnLoginPage.assertCurrent();
+            assertThat(webAuthnLoginPage.getAuthenticators().getCount(), is(0));
+
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();
-            appPage.logout();
+            logout();
         } finally {
             removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL);
             removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_PASSWORDLESS, PASSWORDLESS_LABEL);
@@ -303,7 +305,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    public void testWebAuthnTwoFactorAndWebAuthnPasswordlessTogether() throws IOException {
+    public void webAuthnTwoFactorAndWebAuthnPasswordlessTogether() throws IOException {
         // Change binding to browser-webauthn-passwordless. This is flow, which contains both "webauthn" and "webauthn-passwordless" authenticator
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setBrowserFlow("browser-webauthn-passwordless").update()) {
             // Login as test-user@localhost with password
@@ -417,13 +419,16 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         final CredentialRepresentation credentialRep = userResource.credentials()
                 .stream()
+                .filter(Objects::nonNull)
                 .filter(credential -> credentialType.equals(credential.getType()))
-                .findFirst().orElse(null);
+                .findFirst()
+                .orElse(null);
 
-        assertThat(credentialRep, notNullValue());
-        if (assertUserLabel != null) {
-            assertThat(credentialRep.getUserLabel(), is(assertUserLabel));
+        if (credentialRep != null) {
+            if (assertUserLabel != null) {
+                assertThat(credentialRep.getUserLabel(), is(assertUserLabel));
+            }
+            userResource.removeCredential(credentialRep.getId());
         }
-        userResource.removeCredential(credentialRep.getId());
     }
 }

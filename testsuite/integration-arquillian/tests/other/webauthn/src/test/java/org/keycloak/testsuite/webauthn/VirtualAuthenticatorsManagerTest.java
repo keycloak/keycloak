@@ -20,11 +20,13 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.KcVirtualAuthenticator;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -37,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  *
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@IgnoreBrowserDriver(FirefoxDriver.class)
 public class VirtualAuthenticatorsManagerTest extends AbstractWebAuthnVirtualTest {
 
     @Drone
@@ -44,7 +47,7 @@ public class VirtualAuthenticatorsManagerTest extends AbstractWebAuthnVirtualTes
     WebDriver driver2;
 
     @Test
-    public void testAddVirtualAuthenticator() {
+    public void addVirtualAuthenticator() {
         final VirtualAuthenticatorManager manager = new VirtualAuthenticatorManager(driver);
         assertThat(manager, notNullValue());
 
@@ -52,23 +55,23 @@ public class VirtualAuthenticatorsManagerTest extends AbstractWebAuthnVirtualTes
         assertAuthenticatorOptions(authenticator);
 
         manager.removeAuthenticator();
-        assertThat(manager.getActualAuthenticator(), Matchers.nullValue());
+        assertThat(manager.getCurrent(), Matchers.nullValue());
 
         authenticator = useDefaultTestingAuthenticator(manager);
         assertAuthenticatorOptions(authenticator);
 
         manager.removeAuthenticator();
-        assertThat(manager.getActualAuthenticator(), Matchers.nullValue());
+        assertThat(manager.getCurrent(), Matchers.nullValue());
     }
 
     @Test
-    public void testOverrideUsedAuthenticator() {
+    public void overrideUsedAuthenticator() {
         final VirtualAuthenticatorManager manager = new VirtualAuthenticatorManager(driver);
         assertThat(manager, notNullValue());
 
         KcVirtualAuthenticator defaultTesting = useDefaultTestingAuthenticator(manager);
         assertAuthenticatorOptions(defaultTesting);
-        assertThat(manager.getActualAuthenticator(), is(defaultTesting));
+        assertThat(manager.getCurrent(), is(defaultTesting));
 
         VirtualAuthenticatorOptions defaultBleOptions = DefaultVirtualAuthOptions.DEFAULT_BLE.getOptions();
         assertThat(defaultBleOptions, notNullValue());
@@ -77,22 +80,40 @@ public class VirtualAuthenticatorsManagerTest extends AbstractWebAuthnVirtualTes
         assertThat(defaultBLE, notNullValue());
         assertAuthenticatorOptions(defaultTesting);
 
-        assertThat(manager.getActualAuthenticator(), is(defaultBLE));
-        assertThat(manager.getActualAuthenticator().getOptions().clone(), is(defaultBleOptions));
+        assertThat(manager.getCurrent(), is(defaultBLE));
+        assertThat(manager.getCurrent().getOptions().clone(), is(defaultBleOptions));
     }
 
     @Test
-    public void testDifferentDriver() {
+    public void differentDriver() {
         final VirtualAuthenticatorManager manager = new VirtualAuthenticatorManager(driver);
         assertThat(manager, notNullValue());
 
         KcVirtualAuthenticator authenticator = useDefaultTestingAuthenticator(manager);
         assertThat(authenticator, notNullValue());
-        assertThat(manager.getActualAuthenticator(), notNullValue());
+        assertThat(manager.getCurrent(), notNullValue());
 
         final VirtualAuthenticatorManager manager2 = new VirtualAuthenticatorManager(driver2);
         assertThat(manager2, notNullValue());
-        assertThat(manager2.getActualAuthenticator(), nullValue());
+        assertThat(manager2.getCurrent(), nullValue());
+    }
+
+    @Test
+    public void singleResponsibleAuthOptions() {
+        VirtualAuthenticatorOptions options = DefaultVirtualAuthOptions.DEFAULT_BLE.getOptions();
+        options.setTransport(VirtualAuthenticatorOptions.Transport.NFC);
+
+        final VirtualAuthenticatorManager manager = new VirtualAuthenticatorManager(driver);
+        assertThat(manager, notNullValue());
+
+        manager.useAuthenticator(options);
+
+        assertThat(manager.getCurrent().getOptions().getTransport(), is(VirtualAuthenticatorOptions.Transport.NFC));
+
+        options = DefaultVirtualAuthOptions.DEFAULT_BLE.getOptions();
+        manager.useAuthenticator(options);
+
+        assertThat(manager.getCurrent().getOptions().getTransport(), is(VirtualAuthenticatorOptions.Transport.BLE));
     }
 
     @Override
@@ -104,7 +125,7 @@ public class VirtualAuthenticatorsManagerTest extends AbstractWebAuthnVirtualTes
         KcVirtualAuthenticator authenticator = manager.useAuthenticator(defaultTestingAuthenticatorOptions());
         assertThat(authenticator, notNullValue());
 
-        assertThat(manager.getActualAuthenticator(), is(authenticator));
+        assertThat(manager.getCurrent(), is(authenticator));
 
         return authenticator;
     }

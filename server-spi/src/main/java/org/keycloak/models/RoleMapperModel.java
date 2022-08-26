@@ -80,6 +80,7 @@ public interface RoleMapperModel {
      * For example, {@code true} is returned for hasRole(R) if:
      * <ul>
      *  <li>R is directly assigned to this object</li>
+     *  <li>R is indirectly assigned to this object via composites</li>
      *  <li>R is not assigned to this object but this object belongs to a group G which is assigned the role R</li>
      *  <li>R is not assigned to this object but this object belongs to a group G, and G belongs to group H which is assigned the role R</li>
      * </ul>

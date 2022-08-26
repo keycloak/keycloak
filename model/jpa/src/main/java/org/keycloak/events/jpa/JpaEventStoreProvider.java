@@ -30,6 +30,7 @@ import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -70,13 +71,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     }
 
     @Override
-    public void clear(String realmId) {
-        em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realmId).executeUpdate();
+    public void clear(RealmModel realm) {
+        em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
-    public void clear(String realmId, long olderThan) {
-        em.createQuery("delete from EventEntity where realmId = :realmId and time < :time").setParameter("realmId", realmId).setParameter("time", olderThan).executeUpdate();
+    public void clear(RealmModel realm, long olderThan) {
+        em.createQuery("delete from EventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
     }
 
     @Override
@@ -105,7 +106,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
             session.realms().getRealmsStream().forEach(realm -> {
                 if (realm.isEventsEnabled() && realm.getEventsExpiration() > 0) {
                     long olderThan = Time.currentTimeMillis() - realm.getEventsExpiration() * 1000;
-                    clear(realm.getId(), olderThan);
+                    clear(realm, olderThan);
                 }
             });
         }
@@ -127,13 +128,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     }
 
     @Override
-    public void clearAdmin(String realmId) {
-        em.createQuery("delete from AdminEventEntity where realmId = :realmId").setParameter("realmId", realmId).executeUpdate();
+    public void clearAdmin(RealmModel realm) {
+        em.createQuery("delete from AdminEventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
-    public void clearAdmin(String realmId, long olderThan) {
-        em.createQuery("delete from AdminEventEntity where realmId = :realmId and time < :time").setParameter("realmId", realmId).setParameter("time", olderThan).executeUpdate();
+    public void clearAdmin(RealmModel realm, long olderThan) {
+        em.createQuery("delete from AdminEventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
     }
 
     @Override

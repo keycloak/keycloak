@@ -24,10 +24,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.Profile;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
@@ -44,6 +47,9 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.forms.BrowserFlowTest;
+import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -58,6 +64,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -128,6 +135,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
             // Support standard + implicit + hybrid flow
             assertContains(oidcConfig.getResponseTypesSupported(), OAuth2Constants.CODE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
+            assertEquals(oidcConfig.getGrantTypesSupported().size(),7);
             assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT,
                 OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment", "form_post", "jwt", "query.jwt", "fragment.jwt", "form_post.jwt");
@@ -149,6 +157,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             Assert.assertNames(oidcConfig.getIdTokenEncryptionEncValuesSupported(), JWEConstants.A128CBC_HS256, JWEConstants.A128GCM, JWEConstants.A192CBC_HS384, JWEConstants.A192GCM, JWEConstants.A256CBC_HS512, JWEConstants.A256GCM);
             Assert.assertNames(oidcConfig.getAuthorizationEncryptionAlgValuesSupported(), JWEConstants.RSA1_5, JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256);
             Assert.assertNames(oidcConfig.getAuthorizationEncryptionEncValuesSupported(), JWEConstants.A128CBC_HS256, JWEConstants.A128GCM, JWEConstants.A192CBC_HS384, JWEConstants.A192GCM, JWEConstants.A256CBC_HS512, JWEConstants.A256GCM);
+            Assert.assertNames(oidcConfig.getUserInfoEncryptionAlgValuesSupported(), JWEConstants.RSA1_5, JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256);
+            Assert.assertNames(oidcConfig.getUserInfoEncryptionEncValuesSupported(), JWEConstants.A128CBC_HS256, JWEConstants.A128GCM, JWEConstants.A192CBC_HS384, JWEConstants.A192GCM, JWEConstants.A256CBC_HS512, JWEConstants.A256GCM);
 
             // Client authentication
             Assert.assertNames(oidcConfig.getTokenEndpointAuthMethodsSupported(), "client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt", "tls_client_auth");
@@ -298,6 +308,57 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     @AuthServerContainerExclude(REMOTE)
+    public void testAcrValuesSupported() throws IOException {
+        Client client = AdminClientUtil.createResteasyClient();
+        try {
+            // Default values when no "acr-to-loa" mapping and no authentication flow configured
+            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+            Assert.assertNames(oidcConfig.getAcrValuesSupported(), "0", "1");
+
+            // Update authentication flow and see it uses "acr" values from it
+            LevelOfAssuranceFlowTest.configureStepUpFlow(testingClient);
+            oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+            Assert.assertNames(oidcConfig.getAcrValuesSupported(), "0", "1", "2", "3");
+
+            // Configure "ACR-To-Loa" mapping and check it has both configured values and numbers from authentication flow
+            RealmResource testRealm = adminClient.realm("test");
+            RealmRepresentation realmRep = testRealm.toRepresentation();
+            Map<String, Integer> acrToLoa = new HashMap<>();
+            acrToLoa.put("poor", 0);
+            acrToLoa.put("silver", 1);
+            acrToLoa.put("gold", 2);
+            String acrToLoaAttr = JsonSerialization.writeValueAsString(acrToLoa);
+            realmRep.getAttributes().put(Constants.ACR_LOA_MAP, acrToLoaAttr);
+            testRealm.update(realmRep);
+
+            oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+            Assert.assertNames(oidcConfig.getAcrValuesSupported(), "poor", "silver", "gold", "0", "1", "2", "3");
+
+            // Use mappings even with values not included in the authentication flow
+            acrToLoa = new HashMap<>();
+            acrToLoa.put("poor", 0);
+            acrToLoa.put("silver", 1);
+            acrToLoa.put("gold", 2);
+            acrToLoa.put("platinum", 3);
+            acrToLoa.put("diamond", 4);
+            acrToLoaAttr = JsonSerialization.writeValueAsString(acrToLoa);
+            realmRep.getAttributes().put(Constants.ACR_LOA_MAP, acrToLoaAttr);
+            testRealm.update(realmRep);
+
+            oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+            Assert.assertNames(oidcConfig.getAcrValuesSupported(), "poor", "silver", "gold", "platinum", "diamond", "0", "1", "2", "3");
+
+            // Revert realm and flow
+            realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
+            testRealm.update(realmRep);
+            BrowserFlowTest.revertFlows(testRealm, "browser -  Level of Authentication FLow");
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    @AuthServerContainerExclude(REMOTE)
     public void testDefaultProviderCustomizations() throws IOException {
         Client client = AdminClientUtil.createResteasyClient();
         try {
@@ -326,9 +387,22 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+    public void testGrantTypesSupportedWithTokenExchange() throws IOException {
+        Client client = AdminClientUtil.createResteasyClient();
+        try {
+            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+            assertEquals(oidcConfig.getGrantTypesSupported().size(),8);
+            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+        } finally {
+            client.close();
+        }
+    }
+
     private void assertScopesSupportedMatchesWithRealm(OIDCConfigurationRepresentation oidcConfig) {
         Assert.assertNames(oidcConfig.getScopesSupported(), OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS,
-                OAuth2Constants.SCOPE_PROFILE, OAuth2Constants.SCOPE_EMAIL, OAuth2Constants.SCOPE_PHONE, OAuth2Constants.SCOPE_ADDRESS,
+                OAuth2Constants.SCOPE_PROFILE, OAuth2Constants.SCOPE_EMAIL, OAuth2Constants.SCOPE_PHONE, OAuth2Constants.SCOPE_ADDRESS, OIDCLoginProtocolFactory.ACR_SCOPE,
                 OIDCLoginProtocolFactory.ROLES_SCOPE, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE, OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE);
     }
 

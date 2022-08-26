@@ -24,6 +24,10 @@ public class ServerAsymmetricSignatureSignerContext extends AsymmetricSignatureS
         super(getKey(session, algorithm));
     }
 
+    public ServerAsymmetricSignatureSignerContext(KeyWrapper key) throws SignatureException {
+        super(key);
+    }
+
     static KeyWrapper getKey(KeycloakSession session, String algorithm) {
         KeyWrapper key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, algorithm);
         if (key == null) {

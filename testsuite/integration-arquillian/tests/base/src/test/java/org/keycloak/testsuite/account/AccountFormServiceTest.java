@@ -487,8 +487,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserById(realm, uId);
             assertThat(user, Matchers.notNullValue());
-            List<CredentialModel> storedCredentials = session.userCredentialManager()
-                    .getStoredCredentialsStream(realm, user).collect(Collectors.toList());
+            List<CredentialModel> storedCredentials = user.credentialManager().getStoredCredentialsStream().collect(Collectors.toList());
             assertThat(storedCredentials, Matchers.hasSize(expectedNumberOfStoredCredentials));
         });
     }
@@ -847,6 +846,80 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         assertEquals(1, list.size());
 
         UserRepresentation user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        // Revert
+
+        user.setUsername("test-user@localhost");
+        user.setFirstName("Tom");
+        user.setLastName("Brady");
+        user.setEmail("test-user@localhost");
+        adminClient.realm("test").users().get(user.getId()).update(user);
+
+        setRegistrationEmailAsUsername(false);
+        setEditUsernameAllowed(false);
+    }
+
+    // KEYCLOAK-8893
+    @Test
+    public void caseInsensitiveSearchWorksWithoutForcingLowercaseOnEmailAttribute() throws Exception {
+        setEditUsernameAllowed(true);
+        setRegistrationEmailAsUsername(true);
+
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertFalse(driver.findElements(By.id("username")).size() > 0);
+
+        profilePage.updateProfile("New First", "New Last", "New-Email@email");
+
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+        Assert.assertEquals("New First", profilePage.getFirstName());
+        Assert.assertEquals("New Last", profilePage.getLastName());
+        Assert.assertEquals("new-email@email", profilePage.getEmail()); // verify attribute is lower case after save
+
+        List<UserRepresentation> list = adminClient.realm("test").users().search(null, null, null, "nEw-emAil@eMail", null, null);
+        assertEquals(1, list.size());
+
+        UserRepresentation user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        list = adminClient.realm("test").users().search("nEw-emAil@eMail", null, null, null, null, null);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        list = adminClient.realm("test").users().search(null, "new fIrSt", null, null, null, null);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        list = adminClient.realm("test").users().search(null, null, "NEw LaST", null, null, null);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        assertEquals("New First", user.getFirstName());
+        assertEquals("New Last", user.getLastName());
+
+        list = adminClient.realm("test").users().search("nEw-emAil@eMail", 0, 1);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        list = adminClient.realm("test").users().search("nEw", 0, 1);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
 
         assertEquals("new-email@email", user.getUsername());
 
@@ -1276,6 +1349,16 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    //KEYCLOAK-17256
+    @Test
+    public void testHomographicUsername() {
+        loginPage.open();
+        loginPage.clickRegister();
+        String username = "b"+"\u043E"+"b";
+        registerPage.register("bob", "spoof", "bob@spoof.com", username, "password", "password");
+        events.expectRegisterError(username, "bob@spoof.com").error("invalid_registration").assertEvent();
+    }
+
     // KEYCLOAK-5155
     @Test
     public void testConsoleListedInApplications() {
@@ -1283,7 +1366,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("realm-admin", "password");
         Assert.assertTrue(applicationsPage.isCurrent());
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), hasItems("Admin CLI", "Security Admin Console"));
+        Assert.assertThat(apps.keySet(), hasItems("Admin CLI", "security admin console"));
         events.clear();
     }
 

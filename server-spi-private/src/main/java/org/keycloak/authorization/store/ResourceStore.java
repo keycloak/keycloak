@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,11 +18,14 @@ package org.keycloak.authorization.store;
 
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.RealmModel;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -36,178 +38,168 @@ public interface ResourceStore {
     /**
      * <p>Creates a {@link Resource} instance backed by this persistent storage implementation.
      *
+     * @param resourceServer the resource server to where the given resource belongs to. Cannot be {@code null}.
      * @param name the name of this resource. It must be unique.
-     * @param resourceServer the resource server to where the given resource belongs to
      * @param owner the owner of this resource or null if the resource server is the owner
      * @return an instance backed by the underlying storage implementation
      */
-    default Resource create(String name, ResourceServer resourceServer, String owner) {
-        return create(null, name, resourceServer, owner);
+    default Resource create(ResourceServer resourceServer, String name, String owner) {
+        return create(resourceServer, null, name, owner);
     }
 
     /**
      * <p>Creates a {@link Resource} instance backed by this persistent storage implementation.
      *
+     * @param resourceServer the resource server to where the given resource belongs to. Cannot be {@code null}.
      * @param id the id of this resource. It must be unique. Will be randomly generated if null.
      * @param name the name of this resource. It must be unique.
-     * @param resourceServer the resource server to where the given resource belongs to
      * @param owner the owner of this resource or null if the resource server is the owner
      * @return an instance backed by the underlying storage implementation
      */
-    Resource create(String id, String name, ResourceServer resourceServer, String owner);
+    Resource create(ResourceServer resourceServer, String id, String name, String owner);
 
     /**
      * Removes a {@link Resource} instance, with the given {@code id} from the persistent storage.
      *
+     * @param realm the realm. Cannot be {@code null}.
      * @param id the identifier of an existing resource instance
      */
-    void delete(String id);
+    void delete(RealmModel realm, String id);
 
     /**
      * Returns a {@link Resource} instance based on its identifier.
      *
+     *
+     * @param realm the realm. Cannot be {@code null}.
+     * @param resourceServer the resource server. Ignored if {@code null}
      * @param id the identifier of an existing resource instance
      * @return the resource instance with the given identifier or null if no instance was found
      */
-    Resource findById(String id, String resourceServerId);
+    Resource findById(RealmModel realm, ResourceServer resourceServer, String id);
 
     /**
      * Finds all {@link Resource} instances with the given {@code ownerId}.
      *
+     *
+     *
+     * @param realm the realm. Cannot be {@code null}.
+     * @param resourceServer resource server. Ignored if {@code null}
      * @param ownerId the identifier of the owner
      * @return a list with all resource instances owned by the given owner
      */
-    default List<Resource> findByOwner(String ownerId, String resourceServerId) {
+    default List<Resource> findByOwner(RealmModel realm, ResourceServer resourceServer, String ownerId) {
         List<Resource> list = new LinkedList<>();
 
-        findByOwner(ownerId, resourceServerId, list::add);
+        findByOwner(realm, resourceServer, ownerId, list::add);
 
         return list;
     }
-
-    void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer);
-
-    List<Resource> findByOwner(String ownerId, String resourceServerId, int first, int max);
-
-    /**
-     * Finds all {@link Resource} instances with the given uri.
-     *
-     * @param uri the identifier of the uri
-     * @return a list with all resource instances owned by the given owner
-     */
-    List<Resource> findByUri(String uri, String resourceServerId);
+    void findByOwner(RealmModel realm, ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer);
 
     /**
      * Finds all {@link Resource} instances associated with a given resource server.
      *
-     * @param resourceServerId the identifier of the resource server
+     * @param resourceServer the identifier of the resource server. Cannot be {@code null}.
      * @return a list with all resources associated with the given resource server
      */
-    List<Resource> findByResourceServer(String resourceServerId);
+    List<Resource> findByResourceServer(ResourceServer resourceServer);
 
     /**
      * Finds all {@link Resource} instances associated with a given resource server.
      *
+     *
+     * @param realm the realm. Cannot be {@code null}.
+     * @param resourceServer the identifier of the resource server. Ignored if {@code null}.
      * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Resource.FilterOption}
-     * @param resourceServerId the identifier of the resource server
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list with all resources associated with the given resource server
      *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
+    List<Resource> find(RealmModel realm, ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults);
 
     /**
      * Finds all {@link Resource} associated with a given scope.
      *
-     * @param id one or more scope identifiers
+     *
+     * @param resourceServer the resource server. Cannot be {@code null}.
+     * @param scopes one or more scope identifiers
      * @return a list of resources associated with the given scope(s)
      */
-    default List<Resource> findByScope(List<String> id, String resourceServerId) {
+    default List<Resource> findByScopes(ResourceServer resourceServer, Set<Scope> scopes) {
         List<Resource> result = new ArrayList<>();
 
-        findByScope(id, resourceServerId, result::add);
+        findByScopes(resourceServer, scopes, result::add);
 
         return result;
     }
-
-    void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer);
+    void findByScopes(ResourceServer resourceServer, Set<Scope> scopes, Consumer<Resource> consumer);
 
     /**
      * Find a {@link Resource} by its name where the owner is the resource server itself.
      *
+     * @param resourceServer the resource server. Cannot be {@code null}.
      * @param name the name of the resource
-     * @param resourceServerId the identifier of the resource server
      * @return a resource with the given name
      */
-    Resource findByName(String name, String resourceServerId);
+    default Resource findByName(ResourceServer resourceServer, String name) {
+        return findByName(resourceServer, name, resourceServer.getClientId());
+    }
 
     /**
      * Find a {@link Resource} by its name where the owner is the given <code>ownerId</code>.
      *
+     * @param resourceServer the identifier of the resource server. Cannot be {@code null}.
      * @param name the name of the resource
      * @param ownerId the owner id
-     * @param resourceServerId the identifier of the resource server
      * @return a resource with the given name
      */
-    Resource findByName(String name, String ownerId, String resourceServerId);
+    Resource findByName(ResourceServer resourceServer, String name, String ownerId);
 
     /**
-     * Finds all {@link Resource} with the given type.
+     * Finds all {@link Resource} from {@link ResourceServer} with the given type.
      *
+     *
+     * @param resourceServer the resource server. Cannot be {@code null}.
      * @param type the type of the resource
      * @return a list of resources with the given type
      */
-    default List<Resource> findByType(String type, String resourceServerId) {
+    default List<Resource> findByType(ResourceServer resourceServer, String type) {
         List<Resource> list = new LinkedList<>();
 
-        findByType(type, resourceServerId, list::add);
+        findByType(resourceServer, type, list::add);
 
         return list;
     }
 
     /**
-     * Finds all {@link Resource} with the given type.
+     * Finds all {@link Resource} from {@link ResourceServer} with the given type.
      *
+     * @param resourceServer the resource server id. Cannot be {@code null}.
      * @param type the type of the resource
-     * @param owner the resource owner or null for any resource with a given type
-     * @return a list of resources with the given type
-     */
-    default List<Resource> findByType(String type, String owner, String resourceServerId) {
-        List<Resource> list = new LinkedList<>();
-
-        findByType(type, owner, resourceServerId, list::add);
-
-        return list;
-    }
-
-    /**
-     * Finds all {@link Resource} with the given type.
-     *
-     * @param type the type of the resource
-     * @param resourceServerId the resource server id
      * @param consumer the result consumer
      * @return a list of resources with the given type
      */
-    void findByType(String type, String resourceServerId, Consumer<Resource> consumer);
+    void findByType(ResourceServer resourceServer, String type, Consumer<Resource> consumer);
 
     /**
      * Finds all {@link Resource} with the given type.
      *
+     * @param resourceServer the resource server id. Cannot be {@code null}
      * @param type the type of the resource
      * @param owner the resource owner or null for any resource with a given type
-     * @param resourceServerId the resource server id
      * @param consumer the result consumer
      * @return a list of resources with the given type
      */
-    void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer);
+    void findByType(ResourceServer resourceServer, String type, String owner, Consumer<Resource> consumer);
 
-    default List<Resource> findByTypeInstance(String type, String resourceServerId) {
-        List<Resource> list = new LinkedList<>();
-
-        findByTypeInstance(type, resourceServerId, list::add);
-
-        return list;
-    }
-
-    void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer);
+    /**
+     * Finds all {@link Resource} by type where client represented by the {@code resourceServer} is not the owner
+     *
+     * @param resourceServer the resourceServer. Cannot be {@code null}.
+     * @param type searched type
+     * @param consumer a consumer that will be fed with the resulting resources
+     */
+    void findByTypeInstance(ResourceServer resourceServer, String type, Consumer<Resource> consumer);
 }

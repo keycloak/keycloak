@@ -1,0 +1,1 @@
+var x = {'int':42, 'bool': true, 'string': 'test'}; x

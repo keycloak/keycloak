@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.jpa.updater.liquibase;
 
+import liquibase.Scope;
 import liquibase.database.DatabaseConnection;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.exception.DatabaseException;
@@ -61,9 +62,8 @@ public class PostgresPlusDatabase extends PostgresDatabase {
     @Override
     protected String getConnectionSchemaName() {
         try {
-            String currentSchema = ExecutorService.getInstance().getExecutor(this)
+            return Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor(LiquibaseConstants.JDBC_EXECUTOR, this)
                     .queryForObject(new RawSqlStatement("select current_schema"), String.class);
-            return currentSchema;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to get current schema", e);
