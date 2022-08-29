@@ -14,12 +14,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
@@ -87,7 +87,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
             Locale locale = session.getContext().resolveLocale(null);
 
-            FreeMarkerUtil freeMarker = new FreeMarkerUtil();
+            FreeMarkerProvider freeMarker = session.getProvider(FreeMarkerProvider.class);
             Map<String, Object> attributes = initAttributes(session, realm, theme, locale, statusCode);
 
             String templateName = "error.ftl";

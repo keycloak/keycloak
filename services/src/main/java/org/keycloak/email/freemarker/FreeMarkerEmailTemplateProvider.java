@@ -43,10 +43,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LinkExpirationFormatterMethod;
 import org.keycloak.theme.beans.MessageFormatterMethod;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.utils.StringUtil;
 
 /**
@@ -60,14 +60,14 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
      * etc.)!
      */
     protected AuthenticationSessionModel authenticationSession;
-    protected FreeMarkerUtil freeMarker;
+    protected FreeMarkerProvider freeMarker;
     protected RealmModel realm;
     protected UserModel user;
     protected final Map<String, Object> attributes = new HashMap<>();
 
-    public FreeMarkerEmailTemplateProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
+    public FreeMarkerEmailTemplateProvider(KeycloakSession session) {
         this.session = session;
-        this.freeMarker = freeMarker;
+        this.freeMarker = session.getProvider(FreeMarkerProvider.class);
     }
 
     @Override
