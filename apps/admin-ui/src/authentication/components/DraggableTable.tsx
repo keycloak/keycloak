@@ -231,7 +231,7 @@ export function DraggableTable<T>({
                       ? { ...action, isDisabled: !isActionable(row) }
                       : action
                   )}
-                  rowData={row}
+                  rowData={row!}
                 />
               </Td>
             )}

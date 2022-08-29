@@ -121,14 +121,16 @@ export const convertToFormValues = (
   });
 };
 
-export function convertFormValuesToObject<T, G = T>(obj: T): G {
+export function convertFormValuesToObject<T extends Record<string, any>, G = T>(
+  obj: T
+): G {
   const result: any = {};
   Object.entries(obj).map(([key, value]) => {
     if (isAttributeArray(value)) {
       result[key] = keyValueToArray(value as KeyValueType[]);
     } else if (key === "config" || key === "attributes") {
       result[key] = Object.fromEntries(
-        Object.entries(value).map(([k, v]) => [
+        Object.entries(value as Record<string, unknown>).map(([k, v]) => [
           convertFormNameToAttribute(k),
           v,
         ])

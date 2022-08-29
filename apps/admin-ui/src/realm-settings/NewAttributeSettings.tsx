@@ -131,7 +131,7 @@ export default function NewAttributeSettings() {
         ) || {};
       convertToFormValues(values, form.setValue);
       Object.entries(
-        flatten({ permissions, selector, required }, { safe: true })
+        flatten<any, any>({ permissions, selector, required }, { safe: true })
       ).map(([key, value]) => form.setValue(key, value));
       form.setValue("annotations", convert(annotations));
       form.setValue("validations", convert(validations));

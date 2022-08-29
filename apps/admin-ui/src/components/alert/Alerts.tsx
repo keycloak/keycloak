@@ -87,7 +87,7 @@ function getErrorMessage(
     return error.message;
   }
 
-  const responseData = error.response?.data ?? {};
+  const responseData = (error.response?.data ?? {}) as Record<string, unknown>;
 
   for (const key of ["error_description", "errorMessage", "error"]) {
     const value = responseData[key];
