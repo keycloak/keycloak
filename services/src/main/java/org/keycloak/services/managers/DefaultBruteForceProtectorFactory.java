@@ -44,7 +44,7 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        initProtector(factory);
+        protector = new DefaultBruteForceProtector(factory);
         protector.start();
 
     }
