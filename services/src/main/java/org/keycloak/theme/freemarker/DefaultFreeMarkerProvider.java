@@ -1,27 +1,12 @@
-/*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.keycloak.theme;
+package org.keycloak.theme.freemarker;
 
 import freemarker.cache.URLTemplateLoader;
 import freemarker.core.HTMLOutputFormat;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-import org.keycloak.Config;
+import org.keycloak.theme.FreeMarkerException;
+import org.keycloak.theme.KeycloakSanitizerMethod;
+import org.keycloak.theme.Theme;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -30,29 +15,25 @@ import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public class FreeMarkerUtil {
+public class DefaultFreeMarkerProvider implements FreeMarkerProvider {
+    private final ConcurrentHashMap<String, Template> cache;
+    private final KeycloakSanitizerMethod kcSanitizeMethod;
 
-    private ConcurrentHashMap<String, Template> cache;
-    private final KeycloakSanitizerMethod kcSanitizeMethod = new KeycloakSanitizerMethod();
-
-    public FreeMarkerUtil() {
-        if (Config.scope("theme").getBoolean("cacheTemplates", true)) {
-            cache = new ConcurrentHashMap<>();
-        }
+    public DefaultFreeMarkerProvider(ConcurrentHashMap<String, Template> cache, KeycloakSanitizerMethod kcSanitizeMethod) {
+        this.cache = cache;
+        this.kcSanitizeMethod = kcSanitizeMethod;
     }
 
+    @Override
     public String processTemplate(Object data, String templateName, Theme theme) throws FreeMarkerException {
         if (data instanceof Map) {
             ((Map)data).put("kcSanitize", kcSanitizeMethod);
         }
-        
+
         try {
             Template template;
             if (cache != null) {
-                String key = theme.getName() + "/" + templateName;
+                String key = theme.getType().toString().toLowerCase() + "/" + theme.getName() + "/" + templateName;
                 template = cache.get(key);
                 if (template == null) {
                     template = getTemplate(templateName, theme);
@@ -80,7 +61,7 @@ public class FreeMarkerUtil {
         if (templateName.toLowerCase().endsWith(".ftl")) {
             cfg.setOutputFormat(HTMLOutputFormat.INSTANCE);
         }
-        
+
         cfg.setTemplateLoader(new ThemeTemplateLoader(theme));
         return cfg.getTemplate(templateName, "UTF-8");
     }
@@ -104,4 +85,8 @@ public class FreeMarkerUtil {
 
     }
 
+    @Override
+    public void close() {
+
+    }
 }
