@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.model.events;
 
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
@@ -159,7 +158,7 @@ public class EventQueryTest extends KeycloakModelTest {
             return null;
         });
 
-        Time.setOffset(10);
+        setTimeOffset(10);
 
         try {
             withRealm(realmId, (session, realm) -> {
@@ -173,7 +172,7 @@ public class EventQueryTest extends KeycloakModelTest {
                 return null;
             });
         } finally {
-            Time.setOffset(0);
+            setTimeOffset(0);
         }
 
 

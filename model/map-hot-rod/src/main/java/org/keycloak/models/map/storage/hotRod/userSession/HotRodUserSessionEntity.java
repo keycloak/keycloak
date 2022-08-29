@@ -109,7 +109,6 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
     @ProtoField(number = 12)
     public Long lastSessionRefresh;
 
-    @Basic(sortable = true)
     @ProtoField(number = 13)
     public Long expiration;
 

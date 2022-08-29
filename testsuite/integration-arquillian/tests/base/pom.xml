@@ -327,6 +327,18 @@
                              </artifactItems>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-testsuite-providers-to-base-testsuite</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeGroupIds>org.keycloak.testsuite</includeGroupIds>
+                            <includeArtifactIds>integration-arquillian-testsuite-providers</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -957,6 +969,7 @@
                                 <keycloak.authEventsStore.map.storage.provider>hotrod</keycloak.authEventsStore.map.storage.provider>
                                 <keycloak.singleUseObject.map.storage.provider>hotrod</keycloak.singleUseObject.map.storage.provider>
                                 <infinispan.version>${infinispan.version}</infinispan.version>
+                                <project.version>${project.version}</project.version>
                                 <keycloak.testsuite.start-hotrod-container>${keycloak.testsuite.start-hotrod-container}</keycloak.testsuite.start-hotrod-container>
                                 <auth.server.quarkus.mapStorage.profile.config>hotrod</auth.server.quarkus.mapStorage.profile.config>
                                 <keycloak.globalLock.provider>hotrod</keycloak.globalLock.provider>

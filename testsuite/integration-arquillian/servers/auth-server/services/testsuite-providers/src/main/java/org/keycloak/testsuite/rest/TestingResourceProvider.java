@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.rest;
 
+import org.infinispan.client.hotrod.RemoteCache;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
@@ -45,6 +46,13 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UserSessionSpi;
+import org.keycloak.models.map.common.AbstractMapProviderFactory;
+import org.keycloak.models.map.storage.MapStorageProvider;
+import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
+import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
@@ -237,6 +245,18 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> setTimeOffset(Map<String, String> time) {
         int offset = Integer.parseInt(time.get("offset"));
+
+        // move time on Hot Rod server if present
+        // determine usage of Infinispan based on user sessions config
+        String userSessionProvider = Config.scope(UserSessionSpi.NAME, MapUserSessionProviderFactory.PROVIDER_ID, AbstractMapProviderFactory.CONFIG_STORAGE).get("provider");
+        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE) && "hotrod".equals(userSessionProvider)) {
+            RemoteCache<Object, Object> scriptCache = session.getProvider(HotRodConnectionProvider.class).getRemoteCache(DefaultHotRodConnectionProviderFactory.SCRIPT_CACHE);
+            if (scriptCache != null) {
+                Map<String, Object> param = new HashMap<>();
+                param.put("timeService", offset);
+                scriptCache.execute("InfinispanTimeServiceTask", param);
+            }
+        }
 
         Time.setOffset(offset);
 

@@ -20,7 +20,6 @@ package org.keycloak.testsuite.model.session;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -72,7 +71,7 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             ClientModel client = realm.getClientByClientId("test-app");
             return IntStream.range(0, 300)
                     .mapToObj(i -> {
-                        Time.setOffset(i);
+                        setTimeOffset(i);
                         return ras.createAuthenticationSession(client);
                     })
                     .map(AuthenticationSessionModel::getTabId)
@@ -184,7 +183,7 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
             Assert.assertNotNull(rootAuthSession);
 
-            Time.setOffset(1900);
+            setTimeOffset(1900);
 
             return null;
         });
