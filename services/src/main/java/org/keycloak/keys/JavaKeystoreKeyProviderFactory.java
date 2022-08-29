@@ -75,8 +75,7 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
                 .checkSingle(KEY_PASSWORD_PROPERTY, true);
 
         try {
-            new JavaKeystoreKeyProvider(session.getContext().getRealm(), model)
-                    .loadKey(session.getContext().getRealm(), model);
+            new JavaKeystoreKeyProvider(realm, model).loadKey(realm, model);
         } catch (Throwable t) {
             logger.error("Failed to load keys.", t);
             throw new ComponentValidationException("Failed to load keys. " + t.getMessage(), t);
