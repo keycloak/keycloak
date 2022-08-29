@@ -26,11 +26,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  * @version $Revision: 1 $
  */
 public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFactory {
-    protected DefaultBruteForceProtector protector;
-
-    protected void initProtector(KeycloakSessionFactory factory) {
-        protector = new DefaultBruteForceProtector(factory);
-    }
+    DefaultBruteForceProtector protector;
 
     @Override
     public BruteForceProtector create(KeycloakSession session) {
