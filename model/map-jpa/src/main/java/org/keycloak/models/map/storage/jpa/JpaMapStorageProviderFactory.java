@@ -259,6 +259,7 @@ public class JpaMapStorageProviderFactory implements
         if (provider == null) {
             provider = new JpaMapStorageProvider(this, session, getEntityManager(), this.sessionTxKey);
             session.setAttribute(this.sessionProviderKey, provider);
+            session.enlistForClose(provider);
         }
         return provider;
     }
