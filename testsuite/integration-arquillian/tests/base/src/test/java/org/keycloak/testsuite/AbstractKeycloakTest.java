@@ -644,6 +644,7 @@ public abstract class AbstractKeycloakTest {
 
     /**
      * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
+     * Moves time on the remote Infinispan server as well if the HotRod storage is used.
      *
      * @param offset
      */

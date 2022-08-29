@@ -26,12 +26,14 @@ import org.infinispan.commons.marshall.ProtoStreamMarshaller;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.map.storage.hotRod.locking.HotRodLocksUtils;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodVersionUtils;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -49,9 +51,10 @@ import static org.keycloak.models.map.storage.hotRod.common.HotRodVersionUtils.i
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionProviderFactory {
+public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "default";
+    public static final String SCRIPT_CACHE = "___script_cache";
     public static final String HOT_ROD_LOCKS_CACHE_NAME = "locks";
     private static final String HOT_ROD_INIT_LOCK_NAME = "HOT_ROD_INIT_LOCK";
     private static final Logger LOG = Logger.getLogger(DefaultHotRodConnectionProviderFactory.class);
@@ -266,5 +269,10 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
                     .nearCacheMaxEntries(config.scope(cacheName).getInt("nearCacheMaxEntries", config.getInt("nearCacheMaxEntries", 10000)))
                     .nearCacheUseBloomFilter(config.scope(cacheName).getBoolean("nearCacheBloomFilter", config.getBoolean("nearCacheBloomFilter", false)));
         };
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }
