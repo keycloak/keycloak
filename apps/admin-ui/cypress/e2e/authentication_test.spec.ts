@@ -52,7 +52,7 @@ describe("Authentication test", () => {
     duplicateFlowModal.fill("Copy of browser");
 
     masthead.checkNotificationMessage("Flow successfully duplicated");
-    listingPage.itemExist("Copy of browser");
+    detailPage.flowExists("Copy of browser");
   });
 
   it("Should fail duplicate with empty flow name", () => {

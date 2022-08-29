@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom-v5-compat";
 import {
   AlertVariant,
   Button,
@@ -13,6 +14,8 @@ import {
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { NameDescription } from "./form/NameDescription";
+import { toFlow } from "./routes/Flow";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type DuplicateFlowModalProps = {
   name: string;
@@ -34,6 +37,8 @@ export const DuplicateFlowModal = ({
   const { setValue, trigger, getValues } = form;
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const navigate = useNavigate();
+  const { realm } = useRealm();
 
   useEffect(() => {
     setValue("description", description);
@@ -48,11 +53,11 @@ export const DuplicateFlowModal = ({
         flow: name,
         newName: form.alias,
       });
-      if (form.description !== description) {
-        const newFlow = (
-          await adminClient.authenticationManagement.getFlows()
-        ).find((flow) => flow.alias === form.alias)!;
+      const newFlow = (
+        await adminClient.authenticationManagement.getFlows()
+      ).find((flow) => flow.alias === form.alias)!;
 
+      if (form.description !== description) {
         newFlow.description = form.description;
         await adminClient.authenticationManagement.updateFlow(
           { flowId: newFlow.id! },
@@ -60,6 +65,14 @@ export const DuplicateFlowModal = ({
         );
       }
       addAlert(t("copyFlowSuccess"), AlertVariant.success);
+      navigate(
+        toFlow({
+          realm,
+          id: newFlow.id!,
+          usedBy: "notInUse",
+          builtIn: newFlow.builtIn ? "builtIn" : undefined,
+        })
+      );
     } catch (error) {
       addError("authentication:copyFlowError", error);
     }
