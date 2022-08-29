@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.console.page.clients.CreateClientForm;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
@@ -262,6 +263,7 @@ public class ClientSettingsForm extends CreateClientForm {
         public static final String SAML_ASSERTION_CONSUMER_URL_REDIRECT = "saml_assertion_consumer_url_redirect";
         public static final String SAML_FORCE_NAME_ID_FORMAT = "saml_force_name_id_format";
         public static final String SAML_NAME_ID_FORMAT = "saml_name_id_format";
+        public static final String SAML_ALLOW_ECP_FLOW = SamlConfigAttributes.SAML_ALLOW_ECP_FLOW;
         public static final String SAML_SIGNATURE_CANONICALIZATION_METHOD = "saml_signature_canonicalization_method";
         public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_POST = "saml_single_logout_service_url_post";
         public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT = "saml_single_logout_service_url_redirect";

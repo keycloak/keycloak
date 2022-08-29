@@ -20,10 +20,10 @@ package org.keycloak.testsuite.page;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
 import org.openqa.selenium.By;
-import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -56,9 +56,17 @@ public abstract class AbstractPatternFlyAlert {
     }
 
     public static void waitUntilDisplayed() {
-        new WebDriverWait(getCurrentDriver(), PAGELOAD_TIMEOUT_MILLIS / 1000).until(
-                ExpectedConditions.visibilityOfElementLocated(By.className(ALERT_CLASS_NAME))
-        );
+       waitUntilDisplayedOrHidden(true);
+    }
+
+    public static void waitUntilHidden() {
+       waitUntilDisplayedOrHidden(false);
+    }
+
+    private static void waitUntilDisplayedOrHidden(boolean displayed) {
+        ExpectedCondition condition = ExpectedConditions.visibilityOfElementLocated(By.className(ALERT_CLASS_NAME));
+        condition = displayed ? condition : ExpectedConditions.not(condition);
+        new WebDriverWait(getCurrentDriver(), PAGELOAD_TIMEOUT_MILLIS / 1000).until(condition);
     }
 
     public String getText() {

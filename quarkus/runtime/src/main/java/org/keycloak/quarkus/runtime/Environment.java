@@ -17,36 +17,43 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
 import org.apache.commons.lang3.SystemUtils;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
     public static final String IMPORT_EXPORT_MODE = "import_export";
-    public static final String CLI_ARGS = "kc.config.args";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
-    public static final String DATA_PATH = "/data";
-    public static final String DEFAULT_THEMES_PATH = "/themes";
+    public static final String DATA_PATH = File.separator + "data";
+    public static final String DEFAULT_THEMES_PATH = File.separator +  "themes";
     public static final String DEV_PROFILE_VALUE = "dev";
-    public static final String USER_INVOKED_CLI_COMMAND = "picocli.invoked.command";
+    public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
-
     private Environment() {}
 
     public static Boolean isRebuild() {
         return Boolean.getBoolean("quarkus.launch.rebuild");
+    }
+
+    public static Boolean isRuntimeMode() {
+        return !isRebuild();
     }
 
     public static String getHomeDir() {
@@ -82,44 +89,11 @@ public final class Environment {
     }
 
     public static String getCommand() {
-        String homeDir = getHomeDir();
-
-        if (homeDir == null) {
-            return "java -jar $KEYCLOAK_HOME/lib/quarkus-run.jar";
-        }
-
         if (isWindows()) {
             return "kc.bat";
         }
 
         return "kc.sh";
-    }
-
-    /**
-     * Sets the originally invoked cli args. Useful to verify the originally invoked command
-     * when calling another cli command internally (e.g. start-dev calls build internally)
-     */
-    public static void setUserInvokedCliArgs(List<String> cliArgs) {
-        System.setProperty(USER_INVOKED_CLI_COMMAND, String.join(",", cliArgs));
-    }
-
-    /**
-     * Reads the previously set system property for the originally command.
-     * Use the System variable, when you trigger other command executions internally, but need a reference to the
-     * actually invoked command.
-     *
-     * @return the invoked command from the CLI, or empty List if not set.
-     */
-    public static List<String> getUserInvokedCliArgs() {
-        if(System.getProperty(USER_INVOKED_CLI_COMMAND) == null) {
-            return Collections.emptyList();
-        }
-
-        return List.of(System.getProperty(USER_INVOKED_CLI_COMMAND).split(","));
-    }
-
-    public static String getConfigArgs() {
-        return System.getProperty(CLI_ARGS, "");
     }
 
     public static String getProfile() {
@@ -134,11 +108,18 @@ public final class Environment {
 
     public static void setProfile(String profile) {
         System.setProperty(PROFILE, profile);
-        System.setProperty("quarkus.profile", profile);
+        System.setProperty(ProfileManager.QUARKUS_PROFILE_PROP, profile);
         if (isTestLaunchMode()) {
             System.setProperty("mp.config.profile", profile);
-            System.setProperty(ProfileManager.QUARKUS_TEST_PROFILE_PROP, profile);
         }
+    }
+
+    public static String getCurrentOrPersistedProfile() {
+        String profile = getProfile();
+        if(profile == null) {
+            profile = PersistedConfigSource.getInstance().getValue(PROFILE);
+        }
+        return profile;
     }
 
     public static String getProfileOrDefault(String defaultProfile) {
@@ -156,7 +137,7 @@ public final class Environment {
             return true;
         }
 
-        return DEV_PROFILE_VALUE.equals(getBuiltTimeProperty(PROFILE).orElse(null));
+        return DEV_PROFILE_VALUE.equals(getBuildTimeProperty(PROFILE).orElse(null));
     }
 
     public static boolean isDevProfile(){
@@ -208,7 +189,48 @@ public final class Environment {
         System.setProperty(LAUNCH_MODE, "test");
     }
 
+    /**
+     * We want to hide the "profiles" from Quarkus to not make things unnecessarily complicated for users,
+     * so this method returns the equivalent launch mode instead. For use in e.g. CLI Output.
+     *
+     * @param profile the internal profile string used
+     * @return the mapped launch mode, none when nothing is given or the profile as is when its
+     * neither null/empty nor matching the quarkus default profiles we use.
+     */
+    public static String getKeycloakModeFromProfile(String profile) {
+
+        if(profile == null || profile.isEmpty()) {
+            return "none";
+        }
+
+        if(profile.equals(LaunchMode.DEVELOPMENT.getDefaultProfile())) {
+            return "development";
+        }
+
+        if(profile.equals(LaunchMode.TEST.getDefaultProfile())) {
+            return "test";
+        }
+
+        if(profile.equals(LaunchMode.NORMAL.getDefaultProfile())) {
+            return "production";
+        }
+
+        //when no profile is matched and not empty, just return the profile name.
+        return profile;
+    }
+
     public static boolean isDistribution() {
-        return Environment.getCommand().startsWith("kc.");
+        if (isQuarkusDevMode()) {
+            return false;
+        }
+        return getHomeDir() != null;
+    }
+
+    public static boolean isRebuildCheck() {
+        return Boolean.getBoolean("kc.config.build-and-exit");
+    }
+
+    public static boolean isRebuilt() {
+        return Boolean.getBoolean("kc.config.built");
     }
 }

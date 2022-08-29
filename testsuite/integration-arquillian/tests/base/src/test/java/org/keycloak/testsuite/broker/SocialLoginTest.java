@@ -232,7 +232,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         AdminPermissionManagement management = AdminPermissions.management(session, realm);
         management.users().setPermissionsEnabled(true);
         ResourceServer server = management.realmResourceServer();
-        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientPolicyRep, server);
+        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientPolicyRep);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientPolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
         realm.getIdentityProvidersStream().forEach(idp -> {

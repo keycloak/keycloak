@@ -25,6 +25,10 @@ public class ServerAsymmetricSignatureVerifierContext extends AsymmetricSignatur
         super(getKey(session, kid, algorithm));
     }
 
+    public ServerAsymmetricSignatureVerifierContext(KeyWrapper key) throws VerificationException {
+        super(key);
+    }
+
     static KeyWrapper getKey(KeycloakSession session, String kid, String algorithm) throws VerificationException {
         KeyWrapper key = session.keys().getKey(session.getContext().getRealm(), kid, KeyUse.SIG, algorithm);
         if (key == null) {

@@ -17,12 +17,14 @@
 package org.keycloak.models.map.client;
 
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
@@ -36,7 +38,7 @@ import org.keycloak.models.map.common.DeepCloner;
   inherits = "org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity"
 )
 @DeepCloner.Root
-public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
+public interface MapClientEntity extends AbstractEntity, UpdatableEntity, EntityWithAttributes {
 
     public abstract class AbstractClientEntity extends UpdatableEntity.Impl implements MapClientEntity {
 
@@ -55,11 +57,37 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
         }
 
         @Override
+        public boolean isUpdated() {
+            return this.updated
+                    || Optional.ofNullable(getProtocolMappers()).orElseGet(Collections::emptySet).stream().anyMatch(MapProtocolMapperEntity::isUpdated);
+        }
+
+        @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+            Optional.ofNullable(getProtocolMappers()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+        }
+
+        @Override
         public Stream<String> getClientScopes(boolean defaultScope) {
             final Map<String, Boolean> clientScopes = getClientScopes();
             return clientScopes == null ? Stream.empty() : clientScopes.entrySet().stream()
               .filter(me -> Objects.equals(me.getValue(), defaultScope))
               .map(Entry::getKey);
+        }
+
+        @Override
+        public Optional<MapProtocolMapperEntity> getProtocolMapper(String id) {
+            Set<MapProtocolMapperEntity> mappers = getProtocolMappers();
+            if (mappers == null || mappers.isEmpty()) return Optional.empty();
+
+            return mappers.stream().filter(mapper -> Objects.equals(mapper.getId(), id)).findFirst();
+        }
+
+        @Override
+        public void removeProtocolMapper(String id) {
+            Set<MapProtocolMapperEntity> mappers = getProtocolMappers();
+            this.updated |= mappers != null && mappers.removeIf(mapper -> Objects.equals(mapper.getId(), id));
         }
     }
 
@@ -68,9 +96,9 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
     void setClientScope(String id, Boolean defaultScope);
     void removeClientScope(String id);
 
-    MapProtocolMapperEntity getProtocolMapper(String id);
-    Map<String, MapProtocolMapperEntity> getProtocolMappers();
-    void setProtocolMapper(String id, MapProtocolMapperEntity mapping);
+    Optional<MapProtocolMapperEntity> getProtocolMapper(String id);
+    Set<MapProtocolMapperEntity> getProtocolMappers();
+    void addProtocolMapper(MapProtocolMapperEntity mapping);
     void removeProtocolMapper(String id);
 
     void addRedirectUri(String redirectUri);
@@ -86,14 +114,6 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
     Set<String> getWebOrigins();
     void removeWebOrigin(String webOrigin);
     void setWebOrigins(Set<String> webOrigins);
-
-    default List<String> getAttribute(String name) { return getAttributes() == null ? null : getAttributes().get(name); }
-    Map<String, List<String>> getAttributes();
-    void removeAttribute(String name);
-    void setAttribute(String name, List<String> values);
-
-    Map<String, String> getAuthFlowBindings();
-    void setAuthFlowBindings(Map<String, String> authFlowBindings);
 
     String getAuthenticationFlowBindingOverride(String binding);
     Map<String, String> getAuthenticationFlowBindingOverrides();
@@ -114,7 +134,7 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
     Integer getNodeReRegistrationTimeout();
 
-    Integer getNotBefore();
+    Long getNotBefore();
 
     String getProtocol();
 
@@ -182,7 +202,7 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
     void setNodeReRegistrationTimeout(Integer nodeReRegistrationTimeout);
 
-    void setNotBefore(Integer notBefore);
+    void setNotBefore(Long notBefore);
 
     void setProtocol(String protocol);
 

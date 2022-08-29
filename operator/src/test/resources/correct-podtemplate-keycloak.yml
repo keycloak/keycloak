@@ -1,0 +1,40 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-podtemplate-kc
+spec:
+  instances: 1
+  serverConfiguration:
+    - name: db
+      value: postgres
+    - name: db-url-host
+      value: postgres-db
+    - name: db-username
+      value: postgres
+    - name: db-password
+      value: testpassword
+  hostname: example.com
+  tlsSecret: INSECURE-DISABLE
+  unsupported:
+    podTemplate:
+      metadata:
+        labels:
+          foo: "bar"
+      spec:
+        containers:
+          - volumeMounts:
+              - name: test-volume
+                mountPath: /mnt/test
+            command: [ "/bin/bash", "-c", "cat /mnt/test/test.txt && /opt/keycloak/bin/kc.sh start-dev" ]
+        volumes:
+          - name: test-volume
+            secret:
+              secretName: keycloak-podtemplate-secret
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-podtemplate-secret
+data:
+  test.txt: "SGVsbG8gV29ybGQK" # Hello World
+type: Opaque

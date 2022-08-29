@@ -19,5 +19,5 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderFactory;
 
-public interface ClientProviderFactory extends ProviderFactory<ClientProvider> {
+public interface ClientProviderFactory<T extends ClientProvider> extends ProviderFactory<T> {
 }

@@ -23,6 +23,7 @@ import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -58,6 +59,7 @@ import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
@@ -67,7 +69,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
-public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
+public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserSessionProviderFactory.class);
 
@@ -78,6 +80,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public static final String CLIENT_REMOVED_SESSION_EVENT = "CLIENT_REMOVED_SESSION_SESSIONS";
 
     public static final String REMOVE_USER_SESSIONS_EVENT = "REMOVE_USER_SESSIONS_EVENT";
+
+    private boolean preloadOfflineSessionsFromDatabase;
 
     private Config.Scope config;
 
@@ -95,15 +99,14 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
 
-        boolean loadOfflineSessionsStatsFromDatabase = !isPreloadingOfflineSessionsFromDatabaseEnabled();
-
         return new InfinispanUserSessionProvider(session, remoteCacheInvoker, lastSessionRefreshStore, offlineLastSessionRefreshStore,
-                persisterLastSessionRefreshStore, keyGenerator, cache, offlineSessionsCache, clientSessionCache, offlineClientSessionsCache, loadOfflineSessionsStatsFromDatabase);
+                persisterLastSessionRefreshStore, keyGenerator, cache, offlineSessionsCache, clientSessionCache, offlineClientSessionsCache, !preloadOfflineSessionsFromDatabase);
     }
 
     @Override
     public void init(Config.Scope config) {
         this.config = config;
+        preloadOfflineSessionsFromDatabase = config.getBoolean("preloadOfflineSessionsFromDatabase", false);
     }
 
     @Override
@@ -147,10 +150,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         });
     }
 
-    private boolean isPreloadingOfflineSessionsFromDatabaseEnabled() {
-        return config.getBoolean("preloadOfflineSessionsFromDatabase", true);
-    }
-
     // Max count of worker errors. Initialization will end with exception when this number is reached
     private int getMaxErrors() {
         return config.getInt("maxErrors", 20);
@@ -175,7 +174,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             @Override
             public void run(KeycloakSession session) {
 
-                if (isPreloadingOfflineSessionsFromDatabaseEnabled()) {
+                if (preloadOfflineSessionsFromDatabase) {
                     // only preload offline-sessions if necessary
                     log.debug("Start pre-loading userSessions from persistent storage");
 
@@ -340,7 +339,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         log.debugf("Pre-loading sessions from remote cache '%s' finished", cacheName);
     }
 
-
     @Override
     public void close() {
     }
@@ -353,6 +351,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public int order() {
         return PROVIDER_PRIORITY;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }
 

@@ -21,7 +21,7 @@
 
 <%
     String logoutUri = KeycloakUriBuilder.fromUri("/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-            .queryParam("redirect_uri", "/ldap-portal").build("ldap-demo").toString();
+            .build("ldap-demo").toString();
 
     KeycloakSecurityContext securityContext = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
     IDToken idToken = securityContext.getIdToken();

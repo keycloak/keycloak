@@ -17,8 +17,11 @@
 
 package org.keycloak.sessions;
 
+import java.util.Map;
+import java.util.Objects;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.util.EnumWithStableIndex;
 
 /**
  * Predecesor of AuthenticationSessionModel, ClientLoginSessionModel and ClientSessionModel (then action tickets). Maybe we will remove it later...
@@ -48,14 +51,31 @@ public interface CommonClientSessionModel {
         USER_CODE_VERIFICATION
     }
 
-    enum ExecutionStatus {
-        FAILED,
-        SUCCESS,
-        SETUP_REQUIRED,
-        ATTEMPTED,
-        SKIPPED,
-        CHALLENGED,
-        EVALUATED_TRUE,
-        EVALUATED_FALSE
+    enum ExecutionStatus implements EnumWithStableIndex {
+        FAILED(0),
+        SUCCESS(1),
+        SETUP_REQUIRED(2),
+        ATTEMPTED(3),
+        SKIPPED(4),
+        CHALLENGED(5),
+        EVALUATED_TRUE(6),
+        EVALUATED_FALSE(7);
+
+        private final int stableIndex;
+        private static final Map<Integer, ExecutionStatus> BY_ID = EnumWithStableIndex.getReverseIndex(values());
+
+        private ExecutionStatus(int stableIndex) {
+            Objects.requireNonNull(stableIndex);
+            this.stableIndex = stableIndex;
+        }
+
+        @Override
+        public int getStableIndex() {
+            return stableIndex;
+        }
+
+        public static ExecutionStatus valueOfInteger(Integer id) {
+            return id == null ? null : BY_ID.get(id);
+        }
     }
 }

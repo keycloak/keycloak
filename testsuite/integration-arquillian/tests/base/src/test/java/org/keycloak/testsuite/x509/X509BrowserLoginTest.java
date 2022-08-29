@@ -106,7 +106,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginConfirmationPage.open();
 
         Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed.\n" +
-                "Key Usage bit 'dataEncipherment' is not set."));
+                "Certificate revoked or incorrect."));
     }
 
     @Test

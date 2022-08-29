@@ -20,7 +20,6 @@ package org.keycloak.it.cli.dist;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
@@ -30,6 +29,15 @@ import io.quarkus.test.junit.main.Launch;
 public class MetricsDistTest {
 
     @Test
+    @Launch({ "start-dev" })
+    void testMetricsEndpointNotEnabled() {
+        when().get("/metrics").then()
+                .statusCode(404);
+        when().get("/q/metrics").then()
+                .statusCode(404);
+    }
+
+    @Test
     @Launch({ "start-dev", "--metrics-enabled=true" })
     void testMetricsEndpoint() {
         when().get("/metrics").then()
@@ -37,12 +45,18 @@ public class MetricsDistTest {
                 .body(containsString("base_gc_total"));
     }
 
-    @Disabled("https://github.com/keycloak/keycloak/pull/8878")
     @Test
     @Launch({ "start-dev", "--http-relative-path=/auth", "--metrics-enabled=true" })
     void testMetricsEndpointUsingRelativePath() {
         when().get("/auth/metrics").then()
                 .statusCode(200)
                 .body(containsString("base_gc_total"));
+    }
+
+    @Test
+    @Launch({ "start-dev", "--metrics-enabled=true" })
+    void testMetricsEndpointDoesNotEnableHealth() {
+        when().get("/health").then()
+                .statusCode(404);
     }
 }

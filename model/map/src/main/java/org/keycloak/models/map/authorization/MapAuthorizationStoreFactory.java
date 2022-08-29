@@ -29,6 +29,7 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
@@ -37,58 +38,54 @@ import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
+import org.keycloak.provider.InvalidationHandler;
+
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.RESOURCE_SERVER_BEFORE_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.uniqueCounter;
 
 /**
  * @author mhajas
  */
-public class MapAuthorizationStoreFactory implements AmphibianProviderFactory<StoreFactory>, AuthorizationStoreFactory, EnvironmentDependentProviderFactory {
+public class MapAuthorizationStoreFactory implements AmphibianProviderFactory<StoreFactory>, AuthorizationStoreFactory, EnvironmentDependentProviderFactory, InvalidationHandler {
 
     public static final String PROVIDER_ID = AbstractMapProviderFactory.PROVIDER_ID;
 
     private Config.Scope storageConfigScope;
+    private final String uniqueKey = MapAuthorizationStoreFactory.class.getName() + uniqueCounter.incrementAndGet();
 
     @Override
     public StoreFactory create(KeycloakSession session) {
-        MapStorageProviderFactory storageProviderFactory = (MapStorageProviderFactory) getComponentFactory(session.getKeycloakSessionFactory(),
-          MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
-        final MapStorageProvider mapStorageProvider = storageProviderFactory.create(session);
+        MapAuthorizationStore authzStore = session.getAttribute(uniqueKey, MapAuthorizationStore.class);
+
+        if (authzStore != null) return authzStore;
+
+        final MapStorageProvider mapStorageProvider = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScope).create(session);
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
 
+        MapStorage<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore = mapStorageProvider.getStorage(PermissionTicket.class);
+        MapStorage<MapPolicyEntity, Policy> policyStore = mapStorageProvider.getStorage(Policy.class);
+        MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore = mapStorageProvider.getStorage(ResourceServer.class);
+        MapStorage<MapResourceEntity, Resource> resourceStore = mapStorageProvider.getStorage(Resource.class);
+        MapStorage<MapScopeEntity, Scope> scopeStore = mapStorageProvider.getStorage(Scope.class);
 
-        MapStorage permissionTicketStore;
-        MapStorage policyStore;
-        MapStorage resourceServerStore;
-        MapStorage resourceStore;
-        MapStorage scopeStore;
+        authzStore = new MapAuthorizationStore(session,
+            permissionTicketStore,
+            policyStore,
+            resourceServerStore,
+            resourceStore,
+            scopeStore,
+            provider
+        );
 
-        permissionTicketStore = mapStorageProvider.getStorage(PermissionTicket.class);
-        policyStore = mapStorageProvider.getStorage(Policy.class);
-        resourceServerStore = mapStorageProvider.getStorage(ResourceServer.class);
-        resourceStore = mapStorageProvider.getStorage(Resource.class);
-        scopeStore = mapStorageProvider.getStorage(Scope.class);
-        
-        return new MapAuthorizationStore(session,
-                    permissionTicketStore,
-                    policyStore,
-                    resourceServerStore,
-                    resourceStore,
-                    scopeStore,
-                    provider
-                );
+        session.setAttribute(uniqueKey, authzStore);
+        return authzStore;
     }
 
     @Override
     public void init(org.keycloak.Config.Scope config) {
         this.storageConfigScope = config.scope("storage");
-    }
-
-    @Override
-    public void close() {
-
     }
 
     @Override
@@ -104,5 +101,27 @@ public class MapAuthorizationStoreFactory implements AmphibianProviderFactory<St
     @Override
     public boolean isSupported() {
         return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+    }
+
+    @Override
+    public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
+        if (type == REALM_BEFORE_REMOVE) {
+            MapAuthorizationStore authorizationStore = (MapAuthorizationStore) session.getProvider(StoreFactory.class);
+            RealmModel realm = (RealmModel) params[0];
+
+            authorizationStore.getScopeStore().preRemove(realm);
+            authorizationStore.getPolicyStore().preRemove(realm);
+            authorizationStore.getResourceStore().preRemove(realm);
+            authorizationStore.getPermissionTicketStore().preRemove(realm);
+            authorizationStore.getResourceServerStore().preRemove(realm);
+        } else if (type == RESOURCE_SERVER_BEFORE_REMOVE) {
+            MapAuthorizationStore authorizationStore = (MapAuthorizationStore) session.getProvider(StoreFactory.class);
+            ResourceServer resourceServer = (ResourceServer) params[0];
+
+            authorizationStore.getScopeStore().preRemove(resourceServer);
+            authorizationStore.getPolicyStore().preRemove(resourceServer);
+            authorizationStore.getResourceStore().preRemove(resourceServer);
+            authorizationStore.getPermissionTicketStore().preRemove(resourceServer);
+        }
     }
 }

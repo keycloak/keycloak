@@ -19,8 +19,6 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 
-import org.keycloak.quarkus.runtime.Environment;
-
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
@@ -29,10 +27,6 @@ public abstract class AbstractCommand {
 
     @Spec
     protected CommandSpec spec;
-
-    protected void devProfileNotAllowedError(String cmd) {
-        executionError(spec.commandLine(), String.format("You can not '%s' the server using the '%s' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production.%n", cmd, Environment.DEV_PROFILE_VALUE));
-    }
 
     protected void executionError(CommandLine cmd, String message) {
         executionError(cmd, message, null);

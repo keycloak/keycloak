@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,35 +18,60 @@
 package org.keycloak.models.map.storage.hotRod.common;
 
 import org.infinispan.protostream.WrappedMessage;
+import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 
+import java.util.Objects;
+
+import static org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer.COMMON_PRIMITIVES_VERSION;
+
+/**
+ * !!! Please do not change this class !!!
+ *
+ * If some change is needed please create a new version of this class and solve the migration on top-level entities.
+ *
+ */
+@ProtoDoc("schema-version: " + COMMON_PRIMITIVES_VERSION)
 public class HotRodPair<T, V> {
 
     @ProtoField(number = 1)
-    public WrappedMessage firstWrapped;
+    public WrappedMessage key;
     @ProtoField(number = 2)
-    public WrappedMessage secondWrapped;
+    public WrappedMessage value;
 
     public HotRodPair() {}
 
     public HotRodPair(T first, V second) {
-        this.firstWrapped = new WrappedMessage(first);
-        this.secondWrapped = new WrappedMessage(second);
+        this.key = new WrappedMessage(first);
+        this.value = new WrappedMessage(second);
     }
 
-    public T getFirst() {
-        return firstWrapped == null ? null : (T) firstWrapped.getValue();
+    public T getKey() {
+        return key == null ? null : (T) key.getValue();
     }
 
-    public V getSecond() {
-        return secondWrapped == null ? null : (V) secondWrapped.getValue();
+    public V getValue() {
+        return value == null ? null : (V) value.getValue();
     }
 
-    public void setFirst(T first) {
-        this.firstWrapped = new WrappedMessage(first);
+    public void setKey(T first) {
+        this.key = new WrappedMessage(first);
     }
 
-    public void setSecond(V second) {
-        this.secondWrapped = new WrappedMessage(second);
+    public void setValue(V second) {
+        this.value = new WrappedMessage(second);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HotRodPair<?, ?> that = (HotRodPair<?, ?>) o;
+        return Objects.equals(key, that.key) && Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key, value);
     }
 }

@@ -100,6 +100,7 @@ public class ClientTest extends AbstractAdminTest {
         rep.setClientId("my-app");
         rep.setDescription("my-app description");
         rep.setEnabled(true);
+        rep.setPublicClient(true);
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
@@ -112,6 +113,37 @@ public class ClientTest extends AbstractAdminTest {
         rep.setId(id);
 
         return rep;
+    }
+    
+    private ClientRepresentation createClientNonPublic() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("my-app");
+        rep.setDescription("my-app description");
+        rep.setEnabled(true);
+        rep.setPublicClient(false);
+        Response response = realm.clients().create(rep);
+        response.close();
+        String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
+        ClientRepresentation found = ApiUtil.findClientResourceByClientId(realm, "my-app").toRepresentation();
+
+        assertEquals("my-app", found.getClientId());
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
+
+        rep.setId(id);
+
+        return rep;
+    }
+    
+    @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
+    public void createClientVerifyWithSecret() {
+        String id = createClientNonPublic().getId();
+
+        ClientResource client = realm.clients().get(id);
+        assertNotNull(client);
+        assertNotNull(client.toRepresentation().getSecret());
+        Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     @Test

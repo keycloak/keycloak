@@ -90,7 +90,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true).setServiceAccountsEnabled(true);
         /*
          * Configure the default client ID. Seems like OAuthClient is keeping the state of clientID
          * For example: If some test case configure oauth.clientId("sample-public-client"), other tests
@@ -190,6 +190,11 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
         testIdTokenSignatureAndEncryption(Algorithm.PS512, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
     }
 
+    @Test
+    public void testIdTokenEncryptionAlgRSA_OAEPEncDefault() {
+        testIdTokenSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA_OAEP, null);
+    }
+
     private void testIdTokenSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
@@ -230,6 +235,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("JWT", jweHeader.getContentType());
 
             // verify and decrypt JWE
+            if (encAlgorithm == null) encAlgorithm = JWEConstants.A128CBC_HS256;
             JWEAlgorithmProvider algorithmProvider = getJweAlgorithmProvider(algAlgorithm);
             JWEEncryptionProvider encryptionProvider = getJweEncryptionProvider(encAlgorithm);
             byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStr, algorithmProvider, encryptionProvider);
@@ -256,12 +262,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
     }
 
     private JWEAlgorithmProvider getJweAlgorithmProvider(String algAlgorithm) {
-        JWEAlgorithmProvider jweAlgorithmProvider = null;
-        if (JWEConstants.RSA1_5.equals(algAlgorithm) || JWEConstants.RSA_OAEP.equals(algAlgorithm) ||
-                JWEConstants.RSA_OAEP_256.equals(algAlgorithm)) {
-            jweAlgorithmProvider = new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
-        }
-        return jweAlgorithmProvider;
+        return new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
     }
     private JWEEncryptionProvider getJweEncryptionProvider(String encAlgorithm) {
         JWEEncryptionProvider jweEncryptionProvider = null;
@@ -291,7 +292,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     @UncaughtServerErrorExpected
-    public void testIdTokenEncryptionWithoutEncryptionKEK() {
+    public void testIdTokenEncryptionWithoutEncryptionKEK() throws Exception{
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
@@ -310,13 +311,18 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
             clientResource.update(clientRep);
- 
+
             // get id token but failed
             OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
             AccessTokenResponse atr = oauth.doAccessTokenRequest(response.getCode(), "password");
             Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, atr.getError());
             Assert.assertEquals("can not get encryption KEK", atr.getErrorDescription());
 
+            // get id token but failed with client_credentials grant type
+            oauth.scope("openid");
+            OAuthClient.AccessTokenResponse responseClientCredentials = oauth.doClientCredentialsGrantAccessTokenRequest(clientRep.getSecret());
+            Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, responseClientCredentials.getError());
+            Assert.assertEquals("can not get encryption KEK", responseClientCredentials.getErrorDescription());
         } finally {
             // Revert
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");

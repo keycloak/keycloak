@@ -16,46 +16,47 @@
  */
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
+import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
+import org.keycloak.models.map.authSession.MapAuthenticationSessionEntityImpl;
+import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
+import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
+import org.keycloak.models.map.authorization.entity.MapPolicyEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapResourceEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapResourceServerEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapScopeEntity;
+import org.keycloak.models.map.authorization.entity.MapScopeEntityImpl;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.Config.Scope;
-import org.keycloak.authorization.model.PermissionTicket;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModelScope;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserLoginFailureModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
-import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
-import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
-import org.keycloak.models.map.authorization.entity.MapResourceEntity;
-import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
-import org.keycloak.models.map.authorization.entity.MapScopeEntity;
-import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.client.MapClientEntityImpl;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
-import org.keycloak.models.map.clientscope.MapClientScopeEntity;
+import org.keycloak.models.map.clientscope.MapClientScopeEntityImpl;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.group.MapGroupEntity;
+import org.keycloak.models.map.events.MapAdminEventEntity;
+import org.keycloak.models.map.events.MapAdminEventEntityImpl;
+import org.keycloak.models.map.events.MapAuthEventEntity;
+import org.keycloak.models.map.events.MapAuthEventEntityImpl;
 import org.keycloak.models.map.group.MapGroupEntityImpl;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
+import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntityImpl;
 import org.keycloak.models.map.realm.MapRealmEntity;
-import org.keycloak.models.map.role.MapRoleEntity;
+import org.keycloak.models.map.realm.MapRealmEntityImpl;
+import org.keycloak.models.map.realm.entity.*;
 import org.keycloak.models.map.role.MapRoleEntityImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import java.io.File;
@@ -65,20 +66,28 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.logging.Logger;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntityImpl;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.user.MapUserConsentEntityImpl;
+import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
+import org.keycloak.models.map.user.MapUserEntityImpl;
+import org.keycloak.models.map.user.MapUserFederatedIdentityEntityImpl;
+import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
-import org.keycloak.models.map.user.MapUserEntity;
+import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntityImpl;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
+import org.keycloak.models.map.userSession.MapUserSessionEntityImpl;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelName;
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelNames;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
@@ -94,89 +103,57 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     private final ConcurrentHashMap<String, ConcurrentHashMapStorage<?,?,?>> storages = new ConcurrentHashMap<>();
 
-    private final Map<String, StringKeyConvertor> keyConvertors = new HashMap<>();
+    private final Map<String, StringKeyConverter> keyConverters = new HashMap<>();
 
     private File storageDirectory;
 
     private String suffix;
 
-    private StringKeyConvertor defaultKeyConvertor;
+    private StringKeyConverter defaultKeyConverter;
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
       .genericCloner(Serialization::from)
-      .constructorDC(MapClientEntityImpl.class,         MapClientEntityImpl::new)
-      .constructor(MapProtocolMapperEntity.class,       MapProtocolMapperEntityImpl::new)
-      .constructor(MapGroupEntityImpl.class,            MapGroupEntityImpl::new)
-      .constructor(MapRoleEntityImpl.class,             MapRoleEntityImpl::new)
+      .constructor(MapClientEntityImpl.class,                       MapClientEntityImpl::new)
+      .constructor(MapProtocolMapperEntity.class,                   MapProtocolMapperEntityImpl::new)
+      .constructor(MapGroupEntityImpl.class,                        MapGroupEntityImpl::new)
+      .constructor(MapRoleEntityImpl.class,                         MapRoleEntityImpl::new)
+      .constructor(MapUserEntityImpl.class,                         MapUserEntityImpl::new)
+      .constructor(MapUserCredentialEntityImpl.class,               MapUserCredentialEntityImpl::new)
+      .constructor(MapUserFederatedIdentityEntityImpl.class,        MapUserFederatedIdentityEntityImpl::new)
+      .constructor(MapUserConsentEntityImpl.class,                  MapUserConsentEntityImpl::new)
+      .constructor(MapClientScopeEntityImpl.class,                  MapClientScopeEntityImpl::new)
+      .constructor(MapResourceServerEntityImpl.class,               MapResourceServerEntityImpl::new)
+      .constructor(MapResourceEntityImpl.class,                     MapResourceEntityImpl::new)
+      .constructor(MapScopeEntity.class,                            MapScopeEntityImpl::new)
+      .constructor(MapPolicyEntity.class,                           MapPolicyEntityImpl::new)
+      .constructor(MapPermissionTicketEntity.class,                 MapPermissionTicketEntityImpl::new)
+      .constructor(MapRealmEntity.class,                            MapRealmEntityImpl::new)
+      .constructor(MapAuthenticationExecutionEntity.class,          MapAuthenticationExecutionEntityImpl::new)
+      .constructor(MapAuthenticationFlowEntity.class,               MapAuthenticationFlowEntityImpl::new)
+      .constructor(MapAuthenticatorConfigEntity.class,              MapAuthenticatorConfigEntityImpl::new)
+      .constructor(MapClientInitialAccessEntity.class,              MapClientInitialAccessEntityImpl::new)
+      .constructor(MapComponentEntity.class,                        MapComponentEntityImpl::new)
+      .constructor(MapIdentityProviderEntity.class,                 MapIdentityProviderEntityImpl::new)
+      .constructor(MapIdentityProviderMapperEntity.class,           MapIdentityProviderMapperEntityImpl::new)
+      .constructor(MapOTPPolicyEntity.class,                        MapOTPPolicyEntityImpl::new)
+      .constructor(MapRequiredActionProviderEntity.class,           MapRequiredActionProviderEntityImpl::new)
+      .constructor(MapRequiredCredentialEntity.class,               MapRequiredCredentialEntityImpl::new)
+      .constructor(MapWebAuthnPolicyEntity.class,                   MapWebAuthnPolicyEntityImpl::new)
+      .constructor(MapRootAuthenticationSessionEntity.class,        MapRootAuthenticationSessionEntityImpl::new)
+      .constructor(MapAuthenticationSessionEntity.class,            MapAuthenticationSessionEntityImpl::new)
+      .constructor(MapUserLoginFailureEntity.class,                 MapUserLoginFailureEntityImpl::new)
+      .constructor(MapUserSessionEntity.class,                      MapUserSessionEntityImpl::new)
+      .constructor(MapAuthenticatedClientSessionEntity.class,       MapAuthenticatedClientSessionEntityImpl::new)
+      .constructor(MapAuthEventEntity.class,                        MapAuthEventEntityImpl::new)
+      .constructor(MapAdminEventEntity.class,                       MapAdminEventEntityImpl::new)
+      .constructor(MapSingleUseObjectEntity.class,                  MapSingleUseObjectEntityImpl::new)
       .build();
 
-    public static final Map<Class<?>, String> MODEL_TO_NAME = new HashMap<>();
+    private static final Map<String, StringKeyConverter> KEY_CONVERTERS = new HashMap<>();
     static {
-        MODEL_TO_NAME.put(AuthenticatedClientSessionModel.class, "client-sessions");
-        MODEL_TO_NAME.put(ClientScopeModel.class, "client-scopes");
-        MODEL_TO_NAME.put(ClientModel.class, "clients");
-        MODEL_TO_NAME.put(GroupModel.class, "groups");
-        MODEL_TO_NAME.put(RealmModel.class, "realms");
-        MODEL_TO_NAME.put(RoleModel.class, "roles");
-        MODEL_TO_NAME.put(RootAuthenticationSessionModel.class, "auth-sessions");
-        MODEL_TO_NAME.put(UserLoginFailureModel.class, "user-login-failures");
-        MODEL_TO_NAME.put(UserModel.class, "users");
-        MODEL_TO_NAME.put(UserSessionModel.class, "user-sessions");
-
-        // authz
-        MODEL_TO_NAME.put(PermissionTicket.class, "authz-permission-tickets");
-        MODEL_TO_NAME.put(Policy.class, "authz-policies");
-        MODEL_TO_NAME.put(ResourceServer.class, "authz-resource-servers");
-        MODEL_TO_NAME.put(Resource.class, "authz-resources");
-        MODEL_TO_NAME.put(org.keycloak.authorization.model.Scope.class, "authz-scopes");
-    }
-    
-    public static final Map<Class<?>, Class<? extends AbstractEntity>> MODEL_TO_VALUE_TYPE = new HashMap<>();
-    static {
-        MODEL_TO_VALUE_TYPE.put(AuthenticatedClientSessionModel.class, MapAuthenticatedClientSessionEntity.class);
-        MODEL_TO_VALUE_TYPE.put(ClientScopeModel.class, MapClientScopeEntity.class);
-        MODEL_TO_VALUE_TYPE.put(ClientModel.class, MapClientEntity.class);
-        MODEL_TO_VALUE_TYPE.put(GroupModel.class, MapGroupEntity.class);
-        MODEL_TO_VALUE_TYPE.put(RealmModel.class, MapRealmEntity.class);
-        MODEL_TO_VALUE_TYPE.put(RoleModel.class, MapRoleEntity.class);
-        MODEL_TO_VALUE_TYPE.put(RootAuthenticationSessionModel.class, MapRootAuthenticationSessionEntity.class);
-        MODEL_TO_VALUE_TYPE.put(UserLoginFailureModel.class, MapUserLoginFailureEntity.class);
-        MODEL_TO_VALUE_TYPE.put(UserModel.class, MapUserEntity.class);
-        MODEL_TO_VALUE_TYPE.put(UserSessionModel.class, MapUserSessionEntity.class);
-
-        // authz
-        MODEL_TO_VALUE_TYPE.put(PermissionTicket.class, MapPermissionTicketEntity.class);
-        MODEL_TO_VALUE_TYPE.put(Policy.class, MapPolicyEntity.class);
-        MODEL_TO_VALUE_TYPE.put(ResourceServer.class, MapResourceServerEntity.class);
-        MODEL_TO_VALUE_TYPE.put(Resource.class, MapResourceEntity.class);
-        MODEL_TO_VALUE_TYPE.put(org.keycloak.authorization.model.Scope.class, MapScopeEntity.class);
-    }
-    
-    public static final Map<Class<?>, Class<?>> INTERFACE_TO_IMPL = new HashMap<>();
-    static {
-        INTERFACE_TO_IMPL.put(MapClientEntity.class, MapClientEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapClientScopeEntity.class, MapClientScopeEntityImpl.class);
-        INTERFACE_TO_IMPL.put(MapGroupEntity.class, MapGroupEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapRealmEntity.class, MapRealmEntityImpl.class);
-        INTERFACE_TO_IMPL.put(MapRoleEntity.class, MapRoleEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapRootAuthenticationSessionEntity.class, MapRootAuthenticationSessionEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapUserLoginFailureEntity.class, MapUserLoginFailureEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapUserEntity.class, MapUserEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapUserSessionEntity.class, MapUserSessionEntityImpl.class);
-//
-//        // authz
-//        INTERFACE_TO_IMPL.put(MapPermissionTicketEntity.class, MapPermissionTicketEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapPolicyEntity.class, MapPolicyEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapResourceServerEntity.class, MapResourceServerEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapResourceEntity.class, MapResourceEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapScopeEntity.class, MapScopeEntityImpl.class);
-    }
-
-    private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();
-    static {
-        KEY_CONVERTORS.put("uuid", StringKeyConvertor.UUIDKey.INSTANCE);
-        KEY_CONVERTORS.put("string", StringKeyConvertor.StringKey.INSTANCE);
-        KEY_CONVERTORS.put("ulong", StringKeyConvertor.ULongKey.INSTANCE);
+        KEY_CONVERTERS.put("uuid", StringKeyConverter.UUIDKey.INSTANCE);
+        KEY_CONVERTERS.put("string", StringKeyConverter.StringKey.INSTANCE);
+        KEY_CONVERTERS.put("ulong", StringKeyConverter.ULongKey.INSTANCE);
     }
 
     @Override
@@ -194,9 +171,9 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         }
     
         final String keyType = config.get("keyType", "uuid");
-        defaultKeyConvertor = getKeyConvertor(keyType);
-        for (String name : MODEL_TO_NAME.values()) {
-            keyConvertors.put(name, getKeyConvertor(config.get("keyType." + name, keyType)));
+        defaultKeyConverter = getKeyConverter(keyType);
+        for (String name : getModelNames()) {
+            keyConverters.put(name, getKeyConverter(config.get("keyType." + name, keyType)));
         }
 
         final String dir = config.get("dir");
@@ -220,8 +197,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         }
     }
 
-    private StringKeyConvertor getKeyConvertor(final String keyType) throws IllegalArgumentException {
-        StringKeyConvertor res = KEY_CONVERTORS.get(keyType);
+    private StringKeyConverter getKeyConverter(final String keyType) throws IllegalArgumentException {
+        StringKeyConverter res = KEY_CONVERTERS.get(keyType);
         if (res == null) {
             throw new IllegalArgumentException("Unknown key type: " + keyType);
         }
@@ -258,14 +235,13 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     @SuppressWarnings("unchecked")
     private <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> loadMap(String mapName,
       Class<M> modelType, EnumSet<Flag> flags) {
-        final StringKeyConvertor kc = keyConvertors.getOrDefault(mapName, defaultKeyConvertor);
-        Class<?> valueType = MODEL_TO_VALUE_TYPE.get(modelType);
+        final StringKeyConverter kc = keyConverters.getOrDefault(mapName, defaultKeyConverter);
+        Class<?> valueType = ModelEntityUtil.getEntityType(modelType);
         LOG.debugf("Initializing new map storage: %s", mapName);
 
         ConcurrentHashMapStorage<K, V, M> store;
-        if (modelType == UserSessionModel.class) {
-            ConcurrentHashMapStorage clientSessionStore = getStorage(AuthenticatedClientSessionModel.class);
-            store = new UserSessionConcurrentHashMapStorage(clientSessionStore, kc, CLONER) {
+        if(modelType == ActionTokenValueModel.class) {
+            store = new SingleUseObjectConcurrentHashMapStorage(kc, CLONER) {
                 @Override
                 public String toString() {
                     return "ConcurrentHashMapStorage(" + mapName + suffix + ")";
@@ -285,7 +261,10 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
             if (f != null && f.exists()) {
                 try {
                     LOG.debugf("Restoring contents from %s", f.getCanonicalPath());
-                    Class<?> valueImplType = INTERFACE_TO_IMPL.getOrDefault(valueType, valueType);
+                    Class<?> valueImplType = CLONER.newInstanceType(valueType);
+                    if (valueImplType == null) {
+                        valueImplType = valueType;
+                    }
                     JavaType type = Serialization.MAPPER.getTypeFactory().constructCollectionType(LinkedList.class, valueImplType);
 
                     List<V> values = Serialization.MAPPER.readValue(f, type);
@@ -308,18 +287,11 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     public <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> getStorage(
       Class<M> modelType, Flag... flags) {
         EnumSet<Flag> f = flags == null || flags.length == 0 ? EnumSet.noneOf(Flag.class) : EnumSet.of(flags[0], flags);
-        String name = MODEL_TO_NAME.getOrDefault(modelType, modelType.getSimpleName());
+        String name = getModelName(modelType, modelType.getSimpleName());
         /* From ConcurrentHashMapStorage.computeIfAbsent javadoc:
          *
          *   "... the computation [...] must not attempt to update any other mappings of this map."
-         *
-         * For UserSessionModel, there is a separate clientSessionStore in this CHM implementation. Thus
-         * we cannot guarantee that this won't be the case e.g. for user and client sessions. Hence we need
-         * to prepare clientSessionStore outside computeIfAbsent, otherwise deadlock occurs.
          */
-        if (modelType == UserSessionModel.class) {
-            getStorage(AuthenticatedClientSessionModel.class, flags);
-        }
         return (ConcurrentHashMapStorage<K, V, M>) storages.computeIfAbsent(name, n -> loadMap(name, modelType, f));
     }
 

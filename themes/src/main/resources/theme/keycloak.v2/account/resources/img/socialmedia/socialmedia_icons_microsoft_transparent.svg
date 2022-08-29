@@ -1,0 +1,34 @@
+<svg id="bf5a9f86-a166-4609-aea2-c789db71fd48" data-name="Microsoft" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .fe82c64e-6d2d-42d3-aeec-ae7ea0741e78 {
+        fill: #ededed;
+      }
+
+      .be49cf2d-e5c3-4773-b2c7-b422380b776a {
+        fill: #7fba00;
+      }
+
+      .a9f66f41-846e-499a-af6d-5503813bb401 {
+        fill: #ffb900;
+      }
+
+      .a8084a6b-0b46-4437-8e12-638c29ccbea1 {
+        fill: #f25022;
+      }
+
+      .bb872b1d-e833-4ba3-99af-3b105ed602a0 {
+        fill: #00a4ef;
+      }
+    </style>
+  </defs>
+  <g id="e0b7e64b-db07-46e0-9f19-72b142175f6b" data-name="Full color">
+    <rect class="fe82c64e-6d2d-42d3-aeec-ae7ea0741e78" width="32" height="32" rx="1.19"/>
+    <g>
+      <rect class="be49cf2d-e5c3-4773-b2c7-b422380b776a" x="16.47" y="6.5" width="9.03" height="9.03" rx="0.1"/>
+      <rect class="a9f66f41-846e-499a-af6d-5503813bb401" x="16.47" y="16.47" width="9.03" height="9.03" rx="0.1"/>
+      <rect class="a8084a6b-0b46-4437-8e12-638c29ccbea1" x="6.5" y="6.5" width="9.03" height="9.03" rx="0.1"/>
+      <rect class="bb872b1d-e833-4ba3-99af-3b105ed602a0" x="6.5" y="16.47" width="9.03" height="9.03" rx="0.1"/>
+    </g>
+  </g>
+</svg>

@@ -21,7 +21,7 @@ import org.keycloak.quarkus.runtime.cli.Help;
 
 import picocli.CommandLine;
 
-final class HelpAllMixin {
+public final class HelpAllMixin {
 
     @CommandLine.Spec
     private CommandLine.Model.CommandSpec spec;

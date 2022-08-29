@@ -5,6 +5,7 @@
         <feature spec="subsystem.infinispan.cache-container">
             <param name="cache-container" value="hibernate"/>
             <param name="modules" value="[org.infinispan.hibernate-cache]"/>
+            <param name="marshaller" value="JBOSS"/>
             <feature spec="subsystem.infinispan.cache-container.local-cache">
                 <param name="local-cache" value="local-query"/>
                 <feature spec="subsystem.infinispan.cache-container.local-cache.component.expiration">

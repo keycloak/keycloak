@@ -165,7 +165,7 @@ public class ConcurrencyJDGCachePutTest {
     }
 
     public static int getClusterStartupTime(Cache<String, Integer> cache, String cacheKey, EntryInfo wrapper, int myThreadId) {
-        Integer startupTime = myThreadId==1 ? Integer.parseInt(cacheKey.substring(4)) : Integer.parseInt(cacheKey.substring(4)) * 2;
+        Integer startupTime = myThreadId==1 ? Integer.valueOf(cacheKey.substring(4)) : Integer.valueOf(cacheKey.substring(4)) * 2;
 
         // Concurrency doesn't work correctly with this
         //Integer existingClusterStartTime = (Integer) cache.putIfAbsent(cacheKey, startupTime);

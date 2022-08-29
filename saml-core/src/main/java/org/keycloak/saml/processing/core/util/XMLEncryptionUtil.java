@@ -24,7 +24,6 @@ import org.apache.xml.security.utils.EncryptionConstants;
 
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StringUtil;
@@ -86,7 +85,7 @@ public class XMLEncryptionUtil {
      *
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
-    public static EncryptedKey encryptKey(Document document, SecretKey keyToBeEncrypted, PublicKey keyUsedToEncryptSecretKey,
+    private static EncryptedKey encryptKey(Document document, SecretKey keyToBeEncrypted, PublicKey keyUsedToEncryptSecretKey,
                                           int keySize) throws ProcessingException {
         XMLCipher keyCipher;
         String pubKeyAlg = keyUsedToEncryptSecretKey.getAlgorithm();
@@ -195,176 +194,6 @@ public class XMLEncryptionUtil {
             // Add the encrypted key as a child of the wrapping element
             wrappingElement.appendChild(encryptedKeyElement);
         }
-    }
-
-    /**
-     * <p>
-     * Encrypts an element in a XML document using the specified public key, secret key, and key size. This method
-     * doesn't wrap
-     * the encrypted element in a new element. Instead, it replaces the element with its encrypted version.
-     * </p>
-     * <p>
-     * For example, calling this method to encrypt the <tt><b>inner</b></tt> element in the following XML document
-     *
-     * <pre>
-     *    &lt;root&gt;
-     *       &lt;outer&gt;
-     *          &lt;inner&gt;
-     *             ...
-     *          &lt;/inner&gt;
-     *       &lt;/outer&gt;
-     *    &lt;/root&gt;
-     * </pre>
-     *
-     * would result in a document similar to
-     *
-     * <pre>
-     *    &lt;root&gt;
-     *       &lt;outer&gt;
-     *          &lt;xenc:EncryptedData xmlns:xenc="..."&gt;
-     *             ...
-     *          &lt;/xenc:EncryptedData&gt;
-     *       &lt;/outer&gt;
-     *    &lt;/root&gt;
-     * </pre>
-     *
-     * </p>
-     *
-     * @param document the {@code Document} that contains the element to be encrypted.
-     * @param element the {@code Element} to be encrypted.
-     * @param publicKey the {@code PublicKey} that must be used to encrypt the secret key.
-     * @param secretKey the {@code SecretKey} used to encrypt the specified element.
-     * @param keySize the size (in bits) of the secret key.
-     *
-     * @throws ProcessingException if an error occurs while encrypting the element with the specified params.
-     */
-    public static void encryptElement(Document document, Element element, PublicKey publicKey, SecretKey secretKey, int keySize)
-            throws ProcessingException {
-        if (element == null)
-            throw logger.nullArgumentError("element");
-        if (document == null)
-            throw logger.nullArgumentError("document");
-
-        XMLCipher cipher = null;
-        EncryptedKey encryptedKey = encryptKey(document, secretKey, publicKey, keySize);
-        String encryptionAlgorithm = getXMLEncryptionURL(secretKey.getAlgorithm(), keySize);
-
-        // Encrypt the Document
-        try {
-            cipher = XMLCipher.getInstance(encryptionAlgorithm);
-            cipher.init(XMLCipher.ENCRYPT_MODE, secretKey);
-        } catch (XMLEncryptionException e1) {
-            throw logger.processingError(e1);
-        }
-
-        Document encryptedDoc;
-        try {
-            encryptedDoc = cipher.doFinal(document, element);
-        } catch (Exception e) {
-            throw logger.processingError(e);
-        }
-
-        // The EncryptedKey element is added
-        Element encryptedKeyElement = cipher.martial(document, encryptedKey);
-
-        // Outer ds:KeyInfo Element to hold the EncryptionKey
-        Element sigElement = encryptedDoc.createElementNS(XMLSignature.XMLNS, DS_KEY_INFO);
-        sigElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:ds", XMLSignature.XMLNS);
-        sigElement.appendChild(encryptedKeyElement);
-
-        // Insert the Encrypted key before the CipherData element
-        NodeList nodeList = encryptedDoc.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_CIPHERDATA);
-        if (nodeList == null || nodeList.getLength() == 0)
-            throw logger.domMissingElementError("xenc:CipherData");
-        Element cipherDataElement = (Element) nodeList.item(0);
-        Node cipherParent = cipherDataElement.getParentNode();
-        cipherParent.insertBefore(sigElement, cipherDataElement);
-    }
-
-    /**
-     * Encrypt the root document element inside a Document. <b>NOTE:</b> The document root element will be replaced by
-     * the
-     * wrapping element.
-     *
-     * @param document Document that contains an element to encrypt
-     * @param publicKey The Public Key used to encrypt the secret encryption key
-     * @param secretKey The secret encryption key
-     * @param keySize Length of key
-     * @param wrappingElementQName QName of the element to be used to wrap around the cipher data.
-     * @param addEncryptedKeyInKeyInfo Should the encrypted key be inside a KeyInfo or added as a peer of Cipher Data
-     *
-     * @return An element that has the wrappingElementQName
-     *
-     * @throws ProcessingException
-     * @throws org.keycloak.saml.common.exceptions.ConfigurationException
-     */
-    public static Element encryptElementInDocument(Document document, PublicKey publicKey, SecretKey secretKey, int keySize,
-                                                   QName wrappingElementQName, boolean addEncryptedKeyInKeyInfo) throws ProcessingException, ConfigurationException {
-        String wrappingElementPrefix = wrappingElementQName.getPrefix();
-        if (wrappingElementPrefix == null || "".equals(wrappingElementPrefix))
-            throw logger.wrongTypeError("Wrapping element prefix invalid");
-
-        XMLCipher cipher = null;
-        EncryptedKey encryptedKey = encryptKey(document, secretKey, publicKey, keySize);
-
-        String encryptionAlgorithm = getXMLEncryptionURL(secretKey.getAlgorithm(), keySize);
-        // Encrypt the Document
-        try {
-            cipher = XMLCipher.getInstance(encryptionAlgorithm);
-            cipher.init(XMLCipher.ENCRYPT_MODE, secretKey);
-        } catch (XMLEncryptionException e1) {
-            throw logger.configurationError(e1);
-        }
-
-        Document encryptedDoc;
-        try {
-            encryptedDoc = cipher.doFinal(document, document.getDocumentElement());
-        } catch (Exception e) {
-            throw logger.processingError(e);
-        }
-
-        // The EncryptedKey element is added
-        Element encryptedKeyElement = cipher.martial(document, encryptedKey);
-
-        final String wrappingElementName;
-
-        if (StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
-            wrappingElementName = wrappingElementQName.getLocalPart();
-        } else {
-            wrappingElementName = wrappingElementPrefix + ":" + wrappingElementQName.getLocalPart();
-        }
-        // Create the wrapping element and set its attribute NS
-        Element wrappingElement = encryptedDoc.createElementNS(wrappingElementQName.getNamespaceURI(), wrappingElementName);
-
-        if (! StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
-            wrappingElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:" + wrappingElementPrefix, wrappingElementQName.getNamespaceURI());
-        }
-
-        Element encryptedDocRootElement = encryptedDoc.getDocumentElement();
-        // Bring in the encrypted wrapping element to wrap the root node
-        encryptedDoc.replaceChild(wrappingElement, encryptedDocRootElement);
-
-        wrappingElement.appendChild(encryptedDocRootElement);
-
-        if (addEncryptedKeyInKeyInfo) {
-            // Outer ds:KeyInfo Element to hold the EncryptionKey
-            Element sigElement = encryptedDoc.createElementNS(XMLSignature.XMLNS, DS_KEY_INFO);
-            sigElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:ds", XMLSignature.XMLNS);
-            sigElement.appendChild(encryptedKeyElement);
-
-            // Insert the Encrypted key before the CipherData element
-            NodeList nodeList = encryptedDocRootElement.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_CIPHERDATA);
-            if (nodeList == null || nodeList.getLength() == 0)
-                throw logger.domMissingElementError("xenc:CipherData");
-
-            Element cipherDataElement = (Element) nodeList.item(0);
-            encryptedDocRootElement.insertBefore(sigElement, cipherDataElement);
-        } else {
-            // Add the encrypted key as a child of the wrapping element
-            wrappingElement.appendChild(encryptedKeyElement);
-        }
-
-        return encryptedDoc.getDocumentElement();
     }
 
     /**

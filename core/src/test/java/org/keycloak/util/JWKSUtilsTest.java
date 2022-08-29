@@ -17,30 +17,25 @@
 
 package org.keycloak.util;
 
+import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.*;
+import org.keycloak.rule.CryptoInitRule;
 
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.security.cert.X509Certificate;
-import java.security.spec.ECGenParameterSpec;
 import java.util.Map;
 
 import static org.junit.Assert.*;
 
 
-public class JWKSUtilsTest {
+public abstract class JWKSUtilsTest {
+
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     @Test
     public void publicRs256() throws Exception {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
         String kidRsa1 = "key1";
         String kidRsa2 = "key2";

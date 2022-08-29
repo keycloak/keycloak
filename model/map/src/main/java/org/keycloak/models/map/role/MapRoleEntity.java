@@ -16,19 +16,18 @@
  */
 package org.keycloak.models.map.role;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 
 @GenerateEntityImplementations(
   inherits = "org.keycloak.models.map.role.MapRoleEntity.AbstractRoleEntity"
 )
 @DeepCloner.Root
-public interface MapRoleEntity extends AbstractEntity, UpdatableEntity {
+public interface MapRoleEntity extends AbstractEntity, UpdatableEntity, EntityWithAttributes {
 
     public abstract class AbstractRoleEntity extends UpdatableEntity.Impl implements MapRoleEntity {
 
@@ -46,10 +45,10 @@ public interface MapRoleEntity extends AbstractEntity, UpdatableEntity {
             this.updated |= id != null;
         }
 
-    }
-
-    default Boolean isComposite() {
-        return ! (getCompositeRoles() == null || getCompositeRoles().isEmpty());
+        @Override
+        public Boolean isClientRole() {
+            return getClientId() != null;
+        }
     }
 
     Boolean isClientRole();
@@ -76,10 +75,4 @@ public interface MapRoleEntity extends AbstractEntity, UpdatableEntity {
     void setCompositeRoles(Set<String> compositeRoles);
     void addCompositeRole(String roleId);
     void removeCompositeRole(String roleId);
-
-    Map<String, List<String>> getAttributes();
-    void setAttributes(Map<String, List<String>> attributes);
-    void setAttribute(String name, List<String> values);
-    void removeAttribute(String name);
-
 }

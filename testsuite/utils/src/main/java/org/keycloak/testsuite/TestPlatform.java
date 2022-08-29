@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.platform.PlatformProvider;
 
 public class TestPlatform implements PlatformProvider {
@@ -69,5 +70,11 @@ public class TestPlatform implements PlatformProvider {
             }
         }
         return tmpDir;
+    }
+
+    @Override
+    public ClassLoader getScriptEngineClassLoader(Config.Scope scriptProviderConfig) {
+        // It is fine to return null as nashorn should be automatically included on the classpath of testsuite utils
+        return null;
     }
 }

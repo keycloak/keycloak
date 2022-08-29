@@ -60,8 +60,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SamlArtifactSessionMappingModel;
-import org.keycloak.models.SamlArtifactSessionMappingStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
@@ -137,6 +136,7 @@ import java.security.PublicKey;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -145,6 +145,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.parsers.ParserConfigurationException;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 
 /**
@@ -255,7 +256,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             session.getContext().setClient(client);
             logger.debug("logout response");
-            Response response = authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, null);
+            Response response = authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
             event.success();
             return response;
         }
@@ -580,7 +581,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 }
 
                 logger.debug("browser Logout");
-                return authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, null);
+                return authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
             } else if (logoutRequest.getSessionIndex() != null) {
                 for (String sessionIndex : logoutRequest.getSessionIndex()) {
 
@@ -1104,8 +1105,8 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
 
-    private SamlArtifactSessionMappingStoreProvider getArtifactSessionMappingStore() {
-        return session.getProvider(SamlArtifactSessionMappingStoreProvider.class);
+    private SingleUseObjectProvider getSingleUseStore() {
+        return session.getProvider(SingleUseObjectProvider.class);
     }
 
     /**
@@ -1136,26 +1137,27 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         // Obtain details of session that issued artifact and check if it corresponds to issuer of Resolve message
-        SamlArtifactSessionMappingModel sessionMapping = getArtifactSessionMappingStore().get(artifact);
+        Map<String, String> sessionMapping = getSingleUseStore().get(artifact);
 
         if (sessionMapping == null) {
             logger.errorf("No data stored for artifact %s", artifact);
             return emptyArtifactResponseMessage(artifactResolveMessage, null);
         }
 
-        UserSessionModel userSessionModel = session.sessions().getUserSession(realm, sessionMapping.getUserSessionId());
+        UserSessionModel userSessionModel = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, sessionMapping.get(SamlProtocol.USER_SESSION_ID)));
         if (userSessionModel == null) {
-            logger.errorf("UserSession with id: %s, that corresponds to artifact: %s does not exist.", sessionMapping.getUserSessionId(), artifact);
+            logger.errorf("UserSession with id: %s, that corresponds to artifact: %s does not exist.", sessionMapping.get(SamlProtocol.USER_SESSION_ID), artifact);
             return emptyArtifactResponseMessage(artifactResolveMessage, null);
         }
 
-        AuthenticatedClientSessionModel clientSessionModel = userSessionModel.getAuthenticatedClientSessions().get(sessionMapping.getClientSessionId());
+        AuthenticatedClientSessionModel clientSessionModel = userSessionModel.getAuthenticatedClientSessions().get(sessionMapping.get(SamlProtocol.CLIENT_SESSION_ID));
         if (clientSessionModel == null) {
-            logger.errorf("ClientSession with id: %s, that corresponds to artifact: %s and UserSession: %s does not exist.", sessionMapping.getClientSessionId(), artifact, sessionMapping.getUserSessionId());
+            logger.errorf("ClientSession with id: %s, that corresponds to artifact: %s and UserSession: %s does not exist.",
+                    sessionMapping.get(SamlProtocol.CLIENT_SESSION_ID), artifact, sessionMapping.get(SamlProtocol.USER_SESSION_ID));
             return emptyArtifactResponseMessage(artifactResolveMessage, null);
         }
 
-        ClientModel clientModel = getAndCheckClientModel(sessionMapping.getClientSessionId(), artifactResolveMessage.getIssuer().getValue());
+        ClientModel clientModel = getAndCheckClientModel(sessionMapping.get(SamlProtocol.CLIENT_SESSION_ID), artifactResolveMessage.getIssuer().getValue());
         SamlClient samlClient = new SamlClient(clientModel);
 
         // Check signature within ArtifactResolve request if client requires it
@@ -1178,7 +1180,9 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         // Artifact is successfully resolved, we can remove session mapping from storage
-        getArtifactSessionMappingStore().remove(artifact);
+        if (getSingleUseStore().remove(artifact) == null) {
+            logger.debugf("Artifact %s was already removed", artifact);
+        }
 
         Document artifactResponseDocument = null;
         ArtifactResponseType artifactResponseType = null;
@@ -1352,7 +1356,7 @@ public class SamlService extends AuthorizationEndpointBase {
             Resteasy.pushContext(ClientConnection.class, connection);
 
             RealmManager realmManager = new RealmManager(session);
-            RealmModel realm = realmManager.getRealmByName(realmId);
+            RealmModel realm = realmManager.getRealm(realmId);
             if (realm == null) {
                 throw new NotFoundException("Realm does not exist");
             }

@@ -17,35 +17,21 @@
 
 package org.keycloak.models.map.storage.hotRod.common;
 
-import java.util.List;
-import java.util.stream.Stream;
+import org.infinispan.protostream.GeneratedSchema;
 
-public class HotRodEntityDescriptor<EntityType> {
-    private final Class<?> modelTypeClass;
-    private final Class<EntityType> entityTypeClass;
-    private final List<Class<?>> hotRodClasses;
-    private final String cacheName;
+import java.util.function.Function;
 
-    public HotRodEntityDescriptor(Class<?> modelTypeClass, Class<EntityType> entityTypeClass, List<Class<?>> hotRodClasses, String cacheName) {
-        this.modelTypeClass = modelTypeClass;
-        this.entityTypeClass = entityTypeClass;
-        this.hotRodClasses = hotRodClasses;
-        this.cacheName = cacheName;
-    }
+public interface HotRodEntityDescriptor<E extends AbstractHotRodEntity, D extends HotRodEntityDelegate<E>> {
 
-    public Class<?> getModelTypeClass() {
-        return modelTypeClass;
-    }
+    Class<?> getModelTypeClass();
 
-    public Class<EntityType> getEntityTypeClass() {
-        return entityTypeClass;
-    }
+    Class<E> getEntityTypeClass();
 
-    public Stream<Class<?>> getHotRodClasses() {
-        return hotRodClasses.stream();
-    }
+    String getCacheName();
 
-    public String getCacheName() {
-        return cacheName;
-    }
+    Function<E, D> getHotRodDelegateProvider();
+
+    Integer getCurrentVersion();
+
+    GeneratedSchema getProtoSchema();
 }

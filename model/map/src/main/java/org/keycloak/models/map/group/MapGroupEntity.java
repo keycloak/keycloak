@@ -20,17 +20,16 @@ package org.keycloak.models.map.group;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @GenerateEntityImplementations(
         inherits = "org.keycloak.models.map.group.MapGroupEntity.AbstractGroupEntity"
 )
 @DeepCloner.Root
-public interface MapGroupEntity extends UpdatableEntity, AbstractEntity {
+public interface MapGroupEntity extends UpdatableEntity, AbstractEntity, EntityWithAttributes {
 
     public abstract class AbstractGroupEntity extends UpdatableEntity.Impl implements MapGroupEntity {
 
@@ -49,12 +48,6 @@ public interface MapGroupEntity extends UpdatableEntity, AbstractEntity {
         }
 
     }
-
-    Map<String, List<String>> getAttributes();
-    void setAttributes(Map<String, List<String>> attributes);
-    List<String> getAttribute(String name);
-    void setAttribute(String name, List<String> value);
-    void removeAttribute(String name);
 
     String getName();
     void setName(String name);

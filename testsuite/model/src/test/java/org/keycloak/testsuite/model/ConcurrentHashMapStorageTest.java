@@ -29,7 +29,7 @@ import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -93,9 +93,9 @@ public class ConcurrentHashMapStorageTest extends KeycloakModelTest {
             assertThat(storage1, notNullValue());
             assertThat(storage2, notNullValue());
 
-            final StringKeyConvertor<K> kcMain = storageMain.getKeyConvertor();
-            final StringKeyConvertor<K1> kc1 = storage1.getKeyConvertor();
-            final StringKeyConvertor<K2> kc2 = storage2.getKeyConvertor();
+            final StringKeyConverter<K> kcMain = storageMain.getKeyConverter();
+            final StringKeyConverter<K1> kc1 = storage1.getKeyConverter();
+            final StringKeyConverter<K2> kc2 = storage2.getKeyConverter();
 
             String idMain = kcMain.keyToString(kcMain.yieldNewUniqueKey());
             String id1    = kc1.keyToString(kc1.yieldNewUniqueKey());
@@ -143,11 +143,11 @@ public class ConcurrentHashMapStorageTest extends KeycloakModelTest {
         assertClientsPersisted(component1Id, component2Id, idMain, id1, id2);
 
         // Invalidate one component and check that the storage still contains what it should
-        getFactory().invalidate(ObjectType.COMPONENT, component1Id);
+        getFactory().invalidate(null, ObjectType.COMPONENT, component1Id);
         assertClientsPersisted(component1Id, component2Id, idMain, id1, id2);
 
         // Invalidate whole realm and check that the storage still contains what it should
-        getFactory().invalidate(ObjectType.REALM, realmId);
+        getFactory().invalidate(null, ObjectType.REALM, realmId);
         assertClientsPersisted(component1Id, component2Id, idMain, id1, id2);
 
         // Refresh factory (akin server restart) and check that the storage still contains what it should
@@ -155,7 +155,7 @@ public class ConcurrentHashMapStorageTest extends KeycloakModelTest {
         assertClientsPersisted(component1Id, component2Id, idMain, id1, id2);
     }
 
-    private <K,K1> void assertClientDoesNotExist(ConcurrentHashMapStorage<K, MapClientEntity, ClientModel> storage, String id, final StringKeyConvertor<K1> kc, final StringKeyConvertor<K> kcStorage) {
+    private <K,K1> void assertClientDoesNotExist(ConcurrentHashMapStorage<K, MapClientEntity, ClientModel> storage, String id, final StringKeyConverter<K1> kc, final StringKeyConverter<K> kcStorage) {
         // Assert that the other stores do not contain the to-be-created clients (if they use compatible key format)
         try {
             assertThat(storage.read(id), nullValue());
@@ -174,9 +174,9 @@ public class ConcurrentHashMapStorageTest extends KeycloakModelTest {
             @SuppressWarnings("unchecked")
             ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel> storage2 = (ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getStorage(ClientModel.class);
 
-            final StringKeyConvertor<K> kcMain = storageMain.getKeyConvertor();
-            final StringKeyConvertor<K1> kc1 = storage1.getKeyConvertor();
-            final StringKeyConvertor<K2> kc2 = storage2.getKeyConvertor();
+            final StringKeyConverter<K> kcMain = storageMain.getKeyConverter();
+            final StringKeyConverter<K1> kc1 = storage1.getKeyConverter();
+            final StringKeyConverter<K2> kc2 = storage2.getKeyConverter();
 
             // Assert that the stores contain the created clients
             assertThat(storageMain.read(idMain), notNullValue());

@@ -143,7 +143,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         }
 
         @Override
-        public UserIdentity login(String username, Object credentials) {
+        public UserIdentity login(String username, Object credentials, ServletRequest var3) {
             return null;
         }
 

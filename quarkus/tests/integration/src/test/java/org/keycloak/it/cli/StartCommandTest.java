@@ -18,6 +18,7 @@
 package org.keycloak.it.cli;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -37,16 +38,9 @@ public class StartCommandTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true" })
-    void failNoHostnameNotSet(LaunchResult result) {
-        assertTrue(result.getOutput().contains("ERROR: Strict hostname resolution configured but no hostname was set"),
-                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
-    }
-
-    @Test
     @Launch({ "--profile=dev", "start" })
     void failUsingDevProfile(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
+        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
 
@@ -58,9 +52,9 @@ public class StartCommandTest {
     }
 
     @Test
-    @Launch({ "-v", "start", "--db=h2-mem" })
+    @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
     void failBuildPropertyNotAvailable(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Unknown option: '--db=h2-mem'");
+        cliResult.assertError("Unknown option: '--db'");
     }
 }

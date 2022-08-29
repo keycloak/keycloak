@@ -1,0 +1,92 @@
+version: v1.22.2
+ignore:
+  SNYK-JAVA-ORGKEYCLOAK-1062507:
+    - "*":
+        reason: >
+          The Keycloak core module is not affected by Open Redirect
+          Vulnerability (CVE-2020-1723), that relates to Gatekeeper, an old
+          project already decommissioned from our org. More details:
+            - https://issues.redhat.com/browse/KEYCLOAK-11318
+            - https://www.keycloak.org/2020/08/sunsetting-louketo-project.adoc
+            - https://hub.docker.com/r/keycloak/keycloak-gatekeeper
+  SNYK-JAVA-ORGKEYCLOAK-1088339:
+    - "*":
+        reason: >
+          The Keycloak services module is not affected by CVE-2021-3461 anymore,  
+          the issue was fixed on Keycloak 14.0.0 last year. More details:
+            - https://issues.redhat.com/browse/KEYCLOAK-17495
+  SNYK-JAVA-IONETTY-1042268:
+    - "*":
+        reason: >
+          There is no fixed version for io.netty:netty-handler. More details:
+            - https://github.com/netty/netty/issues/10806
+            - https://github.com/netty/netty/issues/8537
+            - https://github.com/netty/netty/issues/9930
+            - https://github.com/netty/netty/issues/10362
+          Netty Handler is a transitive dependency coming from Quarkus,
+          according to the Netty team, the fix should be available on Netty 5.
+          The expiry date was set as a reminder for us to upgrade, once they
+          provide the fix.
+        expires: 2022-05-31T00:00:00.000Z
+  SNYK-JAVA-ORGWILDFLYSECURITY-1316682:
+    - "*":
+        reason: >
+          WildFly Elytron was upgraded and Keycloak is no longer affected 
+          by CVE-2021-3642. The issue was fixed on Elytron 1.10.14.Final, 
+          1.15.5.Final and 1.16.1.Final last year. More details:
+            - https://issues.redhat.com/browse/ELY-2147   
+            - https://nvd.nist.gov/vuln/detail/CVE-2021-3642
+            - https://github.com/keycloak/keycloak/pull/11250
+            - https://github.com/keycloak/keycloak/pull/11197
+  SNYK-JAVA-ORGKEYCLOAK-1658295:
+    - "*":
+        reason: >
+          Keycloak is no longer vulnerable. The issue was fixed on Keycloak 18.0.0
+          More details:
+            - https://github.com/keycloak/keycloak/security/advisories/GHSA-4pc7-vqv5-5r3v   
+            - https://access.redhat.com/security/cve/cve-2021-3827
+  SNYK-JAVA-ORGKEYCLOAK-1083276:
+    - "*":
+        reason: >
+          Keycloak is no longer vulnerable. The issue was fixed on Keycloak 18.0.0
+          More details:
+            - https://github.com/keycloak/keycloak/security/advisories/GHSA-mwm4-5qwr-g9pf   
+            - https://access.redhat.com/security/cve/cve-2021-3424                       
+  # License warnings
+  snyk:lic:maven:org.eclipse.sisu:org.eclipse.sisu.plexus:EPL-1.0:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from arquillian-phantom-driver.
+  snyk:lic:maven:org.eclipse.sisu:org.eclipse.sisu.inject:EPL-1.0:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from arquillian-phantom-driver.
+  snyk:lic:maven:com.openshift:openshift-restclient-java:EPL-1.0:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Required by keycloak-services.
+  snyk:lic:maven:org.mariadb.jdbc:mariadb-java-client:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from quarkus-jdbc-mariadb.
+  snyk:lic:maven:org.jboss.narayana.jts:narayana-jts-integration:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from quarkus-hibernate-orm.
+  snyk:lic:maven:org.jboss.narayana.jta:narayana-jta:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from quarkus-hibernate-orm.
+
+  snyk:lic:maven:org.hibernate:hibernate-graalvm:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from quarkus-hibernate-orm.
+  snyk:lic:maven:org.hibernate:hibernate-core:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Required by keycloak-model-jpa.
+  snyk:lic:maven:org.hibernate.common:hibernate-commons-annotations:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Required by keycloak-model-jpa.

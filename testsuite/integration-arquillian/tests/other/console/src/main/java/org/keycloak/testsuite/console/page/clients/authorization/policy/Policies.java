@@ -28,6 +28,7 @@ import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -89,8 +90,8 @@ public class Policies extends Form {
         } else if ("aggregate".equals(type)) {
             aggregatePolicy.form().populate((AggregatePolicyRepresentation) expected, save);
             return (P) aggregatePolicy;
-        } else if ("js".equals(type)) {
-            jsPolicy.form().populate((JSPolicyRepresentation) expected, save);
+        } else if ("js".equals(type) || type.startsWith("script-")) {
+//            jsPolicy.form().populate((JSPolicyRepresentation) expected, save);
             return (P) jsPolicy;
         } else if ("time".equals(type)) {
             timePolicy.form().populate((TimePolicyRepresentation) expected, save);
@@ -123,7 +124,7 @@ public class Policies extends Form {
                     userPolicy.form().populate((UserPolicyRepresentation) representation, true);
                 } else if ("aggregate".equals(type)) {
                     aggregatePolicy.form().populate((AggregatePolicyRepresentation) representation, true);
-                } else if ("js".equals(type)) {
+                } else if ("js".equals(type) || type.startsWith("script-")) {
                     jsPolicy.form().populate((JSPolicyRepresentation) representation, true);
                 } else if ("time".equals(type)) {
                     timePolicy.form().populate((TimePolicyRepresentation) representation, true);
@@ -150,7 +151,7 @@ public class Policies extends Form {
                     return (P) userPolicy;
                 } else if ("aggregate".equals(type)) {
                     return (P) aggregatePolicy;
-                } else if ("js".equals(type)) {
+                } else if ("js".equals(type) || type.startsWith("script-")) {
                     return (P) jsPolicy;
                 } else if ("time".equals(type)) {
                     return (P) timePolicy;
@@ -178,7 +179,7 @@ public class Policies extends Form {
                     userPolicy.form().delete();
                 } else if ("aggregate".equals(type)) {
                     aggregatePolicy.form().delete();
-                } else if ("js".equals(type)) {
+                } else if ("js".equals(type) || type.startsWith("script-")) {
                     jsPolicy.form().delete();
                 } else if ("time".equals(type)) {
                     timePolicy.form().delete();
@@ -197,7 +198,7 @@ public class Policies extends Form {
         for (WebElement row : policies().rows()) {
             PolicyRepresentation actual = policies().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("td")).get(4).click();
+                row.findElements(tagName("td")).get(4).findElements(By.tagName("button")).get(0).click();
                 modalDialog.confirmDeletion();
                 return;
             }

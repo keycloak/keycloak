@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <activeProfiles>
+        <activeProfile>keycloak-rel</activeProfile>
+    </activeProfiles>
+    <profiles>
+        <profile>
+            <id>keycloak-rel</id>
+            <repositories>
+                <repository>
+                    <id>${env.MAVEN_ID}</id>
+                    <url>${env.MAVEN_URL}</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                    <releases>
+                        <enabled>true</enabled>
+                  </releases>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+    <servers>
+        <server>
+            <id>${env.MAVEN_ID}</id>
+            <username>${env.MAVEN_USERNAME}</username>
+           <password>${env.MAVEN_PASSWORD}</password>
+        </server>
+        <server>
+            <id>gpg.passphrase</id>
+            <passphrase>${env.MAVEN_GPG_PASSPHRASE}</passphrase>
+        </server>
+    </servers>
+
+</settings>

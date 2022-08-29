@@ -1,0 +1,211 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Basic Keycloak Deployment"
+priority=20
+summary="How to install Keycloak using the Operator on Kubernetes or OpenShift">
+
+== Basic Keycloak Deployment
+In this guide we will show how to have a basic Keycloak Deployment on Kubernetes or OpenShift using the Operator.
+We assume that the Operator is correctly installed and running in the cluster namespace.
+
+=== Pre-requisites
+
+* Database
+* Hostname
+* TLS Certificate and associated keys
+
+==== Database
+
+A database should be available and accessible from the cluster namespace where you want to install Keycloak.
+Please refer to <@links.server id="db"/> for the list of supported databases.
+The Keycloak Operator does not manage the database and you need to provision it yourself, we suggest to verify your cloud provider offering or use a database Operator such as https://access.crunchydata.com/documentation/postgres-operator/latest/[Crunchy].
+
+
+For development purposes you can use an ephemeral Postgres pod installation.
+You can provision it using the following commands:
+
+[source,bash]
+----
+cat <<EOF >> example-postgres.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql-db
+spec:
+  serviceName: postgresql-db-service
+  selector:
+    matchLabels:
+      app: postgresql-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgresql-db
+    spec:
+      containers:
+        - name: postgresql-db
+          image: postgres:latest
+          env:
+            - name: POSTGRES_PASSWORD
+              value: testpassword
+            - name: PGDATA
+              value: /data/pgdata
+            - name: POSTGRES_DB
+              value: keycloak
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db
+spec:
+  selector:
+    app: postgresql-db
+  type: LoadBalancer
+  ports:
+  - port: 5432
+    targetPort: 5432
+EOF
+kubectl apply -f example-postgres.yaml
+----
+
+==== Hostname
+
+To have a production ready installation you need to provide the hostname that will be used to contact Keycloak.
+Please refer to <@links.server id="hostname"/> for the available configurations.
+
+For development purposes we will use from now on `test.keycloak.org`.
+
+==== TLS Certificate and key
+
+Please refer to Certification Authority of choice to obtain the certificate and the key.
+
+For development purposes you can use this command to obtain a self-signed certificate:
+
+[source,bash]
+----
+openssl req -subj '/CN=test.keycloak.org/O=Test Keycloak./C=US' -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
+----
+
+and you should install it in the cluster namespace as a Secret by running:
+
+[source,bash]
+----
+kubectl create secret tls example-tls-secret --cert certificate.pem --key key.pem
+----
+
+=== Deploying Keycloak
+
+To deploy Keycloak you have to create a Custom Resource (CR from now on) shaped after the Keycloak Custom Resource Definition (CRD).
+
+We suggest you to first store the Database credentials in a separate Secret, you can do it for example by running:
+[source,bash]
+----
+kubectl create secret generic keycloak-db-secret \
+  --from-literal=username=[your_database_username] \
+  --from-literal=password=[your_database_password]
+----
+
+The Keycloak CRD allow you to customize several fields but, for a simple deployment you can use the following example:
+
+[source,bash]
+----
+cat <<EOF >> example-kc.yaml
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  instances: 1
+  serverConfiguration:
+    - name: db
+      value: postgres
+    - name: db-url-host
+      value: postgres-db
+    - name: db-username
+      secret:
+        name: keycloak-db-secret
+        key: username
+    - name: db-password
+      secret:
+        name: keycloak-db-secret
+        key: password
+  hostname: test.keycloak.org
+  tlsSecret: example-tls-secret
+EOF
+kubectl apply -f example-kc.yaml
+----
+
+And you can check that the Keycloak instance has been provisioned in the cluster by looking at the status of the created CR:
+
+[source,bash]
+----
+kubectl get keycloaks/example-kc -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'
+----
+
+When the Deployment is ready the output will look like the following:
+
+[source,bash]
+----
+CONDITION: Ready
+  STATUS: true
+  MESSAGE: 
+CONDITION: HasErrors
+  STATUS: false
+  MESSAGE: 
+CONDITION: RollingUpdate
+  STATUS: false
+  MESSAGE:
+----
+
+=== Accessing the Keycloak Deployment
+
+The Keycloak deployment is, by default, exposed through a basic nginx ingress and it will be accessible through the provided hostname.
+If the default ingress doesn't fit your use-case you can disable it by setting `disableDefaultIngress: true`:
+
+[source,bash]
+----
+cat <<EOF >> example-kc.yaml
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+    ...
+    disableDefaultIngress: true
+EOF
+kubectl apply -f example-kc.yaml
+----
+And you can provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`.
+
+For debugging and development purposes we suggest you to directly connect to the Keycloak service using a port forward:
+
+[source,bash]
+----
+kubectl port-forward service/example-kc-service 8443:8443
+----
+
+==== Accessing the Admin Console
+
+When deploying Keycloak, the operator generates an arbitrary initial admin `username` and `password` and stores those credentials as a Kubernetes basic-auth Secret in the same namespace as the CR.
+
+.Warning:
+[NOTE]
+Change the default admin credentials and enable MFA in Keycloak before going to production.
+
+To fetch the initial admin credentials you have to read and decode a Kubernetes Secret.
+The Secret name is derived from the Keycloak CR name plus the fixed suffix `-initial-admin`.
+To get the username and password for the `example-kc` CR use the following command:
+
+[source,bash]
+----
+kubectl get secret example-kc-initial-admin -o jsonpath='{.data.username}' | base64 --decode
+kubectl get secret example-kc-initial-admin -o jsonpath='{.data.password}' | base64 --decode
+----
+
+You can use those credentials to access the Admin Console or the Admin REST API.
+
+</@tmpl.guide>

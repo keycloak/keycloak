@@ -20,7 +20,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
@@ -86,7 +85,6 @@ import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhotozJavascriptExecutorTest {
 
     protected static final String RESOURCE_SERVER_ID = "photoz-restful-api";
@@ -229,7 +227,7 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
         log.debugf("--logging in as '%s' with password: '%s'; scopes: %s", user.getUsername(), user.getCredentials().get(0).getValue(), Arrays.toString(scopes));
 
         if (testExecutor.isLoggedIn()) {
-            testExecutor.logout(this::assertOnTestAppUrl);
+            testExecutor.logout(this::assertOnTestAppUrl, logoutConfirmPage);
             jsDriver.manage().deleteAllCookies();
 
             jsDriver.navigate().to(testRealmLoginPage.toString());

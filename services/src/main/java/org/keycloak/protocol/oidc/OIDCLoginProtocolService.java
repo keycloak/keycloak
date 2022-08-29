@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.crypto.KeyType;
@@ -78,9 +79,10 @@ public class OIDCLoginProtocolService {
 
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocolService.class);
 
-    private RealmModel realm;
-    private TokenManager tokenManager;
-    private EventBuilder event;
+    private final RealmModel realm;
+    private final TokenManager tokenManager;
+    private final EventBuilder event;
+    private final OIDCProviderConfig providerConfig;
 
     @Context
     private KeycloakSession session;
@@ -94,10 +96,11 @@ public class OIDCLoginProtocolService {
     @Context
     private ClientConnection clientConnection;
 
-    public OIDCLoginProtocolService(RealmModel realm, EventBuilder event) {
+    public OIDCLoginProtocolService(RealmModel realm, EventBuilder event, OIDCProviderConfig providerConfig) {
         this.realm = realm;
         this.tokenManager = new TokenManager();
         this.event = event;
+        this.providerConfig = providerConfig;
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
@@ -122,11 +125,6 @@ public class OIDCLoginProtocolService {
     public static UriBuilder registrationsUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "registrations");
-    }
-
-    public static UriBuilder delegatedUrl(UriInfo uriInfo) {
-        UriBuilder uriBuilder = tokenServiceBaseUrl(uriInfo);
-        return uriBuilder.path(OIDCLoginProtocolService.class, "kcinitBrowserLoginComplete");
     }
 
     public static UriBuilder tokenUrl(UriBuilder baseUriBuilder) {
@@ -266,7 +264,7 @@ public class OIDCLoginProtocolService {
     * https://issues.redhat.com/browse/KEYCLOAK-2940 */
     @Path("logout")
     public Object logout() {
-        LogoutEndpoint endpoint = new LogoutEndpoint(tokenManager, realm, event);
+        LogoutEndpoint endpoint = new LogoutEndpoint(tokenManager, realm, event, providerConfig);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
@@ -286,33 +284,6 @@ public class OIDCLoginProtocolService {
             return forms.setClientSessionCode(code).createCode();
         } else {
             return forms.setError(error).createCode();
-        }
-    }
-
-    /**
-     * For KeycloakInstalled and kcinit login where command line login is delegated to a browser.
-     * This clears login cookies and outputs login success or failure messages.
-     *
-     * @param error
-     * @return
-     */
-    @GET
-    @Path("delegated")
-    public Response kcinitBrowserLoginComplete(@QueryParam("error") boolean error) {
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
-        AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), clientConnection);
-        if (error) {
-            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
-            return forms
-                    .setAttribute("messageHeader", forms.getMessage(Messages.DELEGATION_FAILED_HEADER))
-                    .setAttribute(Constants.SKIP_LINK, true).setError(Messages.DELEGATION_FAILED).createInfoPage();
-
-        } else {
-            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
-            return forms
-                    .setAttribute("messageHeader", forms.getMessage(Messages.DELEGATION_COMPLETE_HEADER))
-                    .setAttribute(Constants.SKIP_LINK, true)
-                    .setSuccess(Messages.DELEGATION_COMPLETE).createInfoPage();
         }
     }
 

@@ -24,6 +24,10 @@ public class ServerMacSignatureSignerContext extends MacSignatureSignerContext {
         super(getKey(session, algorithm));
     }
 
+    public ServerMacSignatureSignerContext(KeyWrapper key) throws SignatureException {
+        super(key);
+    }
+
     private static KeyWrapper getKey(KeycloakSession session, String algorithm) {
         KeyWrapper key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, algorithm);
         if (key == null) {
