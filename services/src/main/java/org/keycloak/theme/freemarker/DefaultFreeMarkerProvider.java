@@ -33,7 +33,7 @@ public class DefaultFreeMarkerProvider implements FreeMarkerProvider {
         try {
             Template template;
             if (cache != null) {
-                String key = theme.getName() + "/" + templateName;
+                String key = theme.getType().toString().toLowerCase() + "/" + theme.getName() + "/" + templateName;
                 template = cache.get(key);
                 if (template == null) {
                     template = getTemplate(templateName, theme);
