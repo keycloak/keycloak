@@ -33,7 +33,7 @@ jobs:
 
       - name: Build Keycloak
         run: |
-           ./mvnw clean install -nsu -B -e -DskipTests -Pdistribution
+           ./mvnw clean install -nsu -B -e -DskipTests -Pdistribution -DincludeWildFly    # QuickStarts tests need WildFly distribution to be present
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
 
