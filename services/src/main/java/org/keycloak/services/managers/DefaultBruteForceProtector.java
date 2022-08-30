@@ -99,7 +99,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         this.factory = factory;
     }
 
-    public void failure(KeycloakSession session, LoginEvent event) {
+    protected void failure(KeycloakSession session, LoginEvent event) {
         logger.debug("failure");
         RealmModel realm = getRealmModel(session, event);
         logFailure(event);
@@ -252,7 +252,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         }
     }
 
-    private void success(KeycloakSession session, LoginEvent event) {
+    protected void success(KeycloakSession session, LoginEvent event) {
         String userId = event.userId;
 
         UserLoginFailureModel user = getUserModel(session, event);
@@ -295,13 +295,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     @Override
     public void successfulLogin(final RealmModel realm, final UserModel user, final ClientConnection clientConnection) {
-        try {
-            SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
-            queue.offer(event);
-
-            event.latch.await(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-        }
+        SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
+        queue.offer(event);
         logger.trace("sent success event");
     }
 
