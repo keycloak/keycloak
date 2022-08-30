@@ -168,13 +168,7 @@ public class TokenEndpoint {
     public Response processGrantRequest() {
         cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
-        MultivaluedMap<String, String> formParameters = request.getDecodedFormParameters();
-
-        if (formParameters == null) {
-            formParameters = new MultivaluedHashMap<>();
-        }
-        
-        formParams = formParameters;
+        formParams = getDecodedFormParameters();
         grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
 
         // https://tools.ietf.org/html/rfc6749#section-5.1
@@ -186,6 +180,7 @@ public class TokenEndpoint {
 
         checkSsl();
         checkRealm();
+        checkFormParameters();
         checkGrantType();
 
         if (!action.equals(Action.PERMISSION)) {
@@ -231,7 +226,34 @@ public class TokenEndpoint {
         }
         return Cors.add(request, Response.ok()).auth().preflight().allowedMethods("POST", "OPTIONS").build();
     }
-
+    
+    private MultivaluedMap<String, String> getDecodedFormParameters() {
+    	MultivaluedMap<String, String> formParameters = new MultivaluedHashMap<>();
+    	
+    	try {
+    		formParameters = request.getDecodedFormParameters();
+    	} catch(Exception e) {
+    		throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Form data not found", Response.Status.BAD_REQUEST);
+    	}
+    	
+    	return formParameters;
+    }
+    
+    /**
+     * <p>Validate form data according to <a>https://openid.net/specs/openid-connect-core-1_0.html</a> (3.1.3.1. Token Request)</p>
+     */
+    private void checkFormParameters() {
+    	String message = "Missing form parameter: {0}";
+    	
+    	if (formParams.get(OIDCLoginProtocol.GRANT_TYPE_PARAM) == null) {
+    		throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, message.replace("{0}", OIDCLoginProtocol.GRANT_TYPE_PARAM), Response.Status.BAD_REQUEST);
+    	}
+    	
+    	if (formParams.get(OIDCLoginProtocol.CODE_PARAM) == null) {
+    		throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, message.replace("{0}", OIDCLoginProtocol.CODE_PARAM), Response.Status.BAD_REQUEST);
+    	}
+    }
+  
     private void checkSsl() {
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required", Response.Status.FORBIDDEN);
@@ -254,15 +276,12 @@ public class TokenEndpoint {
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
-
-
     }
-
+    
+    /**
+     *	<p>This function assumes that the <code>grantType == null</code> check was already performed</p>
+     */
     private void checkGrantType() {
-        if (grantType == null) {
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing form parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
-        }
-
         if (grantType.equals(OAuth2Constants.AUTHORIZATION_CODE)) {
             event.event(EventType.CODE_TO_TOKEN);
             action = Action.AUTHORIZATION_CODE;
