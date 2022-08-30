@@ -1,4 +1,3 @@
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { DropdownItem, PageSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,9 +21,6 @@ export default function SessionsSection() {
   const { realm } = useRealm();
 
   const [revocationModalOpen, setRevocationModalOpen] = useState(false);
-  const [activeClientDetails, setActiveClientDetails] = useState<
-    ClientRepresentation[]
-  >([]);
   const [noSessions, setNoSessions] = useState(false);
 
   const handleRevocationModalToggle = () => {
@@ -42,14 +38,6 @@ export default function SessionsSection() {
     ).flat();
 
     setNoSessions(clientSessions.length === 0);
-
-    const allClients = await adminClient.clients.find();
-
-    const getActiveClientDetails = allClients.filter((x) =>
-      activeClients.map((y) => y.id).includes(x.id)
-    );
-
-    setActiveClientDetails(getActiveClientDetails);
 
     const userIds = Array.from(
       new Set(clientSessions.map((session) => session.userId))
@@ -110,7 +98,6 @@ export default function SessionsSection() {
         {revocationModalOpen && (
           <RevocationModal
             handleModalToggle={handleRevocationModalToggle}
-            activeClients={activeClientDetails}
             save={() => {
               handleRevocationModalToggle();
             }}
