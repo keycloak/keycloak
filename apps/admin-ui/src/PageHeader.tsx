@@ -89,6 +89,8 @@ export const Header = () => {
   ];
 
   const headerTools = () => {
+    const adminClient = useAdminClient();
+    const picture = adminClient.keycloak.tokenParsed?.picture;
     return (
       <PageHeaderTools>
         <PageHeaderToolsGroup
@@ -120,7 +122,7 @@ export const Header = () => {
           </PageHeaderToolsItem>
         </PageHeaderToolsGroup>
         <Avatar
-          src={environment.resourceUrl + "/img_avatar.svg"}
+          src={picture || environment.resourceUrl + "/img_avatar.svg"}
           alt="Avatar image"
         />
       </PageHeaderTools>
