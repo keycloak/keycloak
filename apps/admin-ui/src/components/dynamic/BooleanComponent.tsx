@@ -39,6 +39,7 @@ export const BooleanComponent = ({
             isChecked={value === "true" || value === true}
             onChange={(value) => onChange("" + value)}
             data-testid={name}
+            aria-label={t(label!)}
           />
         )}
       />

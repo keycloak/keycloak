@@ -159,6 +159,7 @@ export const LdapSettingsConnection = ({
                 isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
+                aria-label={t("enableStartTls")}
               />
             )}
           ></Controller>
@@ -222,6 +223,7 @@ export const LdapSettingsConnection = ({
                 isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
+                aria-label={t("connectionPooling")}
               />
             )}
           ></Controller>

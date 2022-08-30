@@ -133,6 +133,7 @@ const GoogleFields = () => {
               labelOff={t("common:off")}
               isChecked={value === "true"}
               onChange={(value) => onChange(value.toString())}
+              aria-label={t("google.userIp")}
             />
           )}
         />
@@ -158,6 +159,7 @@ const GoogleFields = () => {
               labelOff={t("common:off")}
               isChecked={value === "true"}
               onChange={(value) => onChange(value.toString())}
+              aria-label={t("google.offlineAccess")}
             />
           )}
         />
@@ -227,6 +229,7 @@ const PaypalFields = () => {
             labelOff={t("common:off")}
             isChecked={value === "true"}
             onChange={(value) => onChange(value.toString())}
+            aria-label={t("paypal.sandbox")}
           />
         )}
       />

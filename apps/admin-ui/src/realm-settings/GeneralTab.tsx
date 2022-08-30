@@ -200,6 +200,7 @@ export const RealmSettingsGeneralTab = ({
                 labelOff={t("common:off")}
                 isChecked={value}
                 onChange={onChange}
+                aria-label={t("userManagedAccess")}
               />
             )}
           />
@@ -228,6 +229,7 @@ export const RealmSettingsGeneralTab = ({
                   labelOff={t("common:off")}
                   isChecked={value === "true"}
                   onChange={(value) => onChange(value.toString())}
+                  aria-label={t("userProfileEnabled")}
                 />
               )}
             />

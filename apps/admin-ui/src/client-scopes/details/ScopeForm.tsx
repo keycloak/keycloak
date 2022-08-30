@@ -223,6 +223,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               labelOff={t("common:off")}
               isChecked={value === "true"}
               onChange={(value) => onChange("" + value)}
+              aria-label={t("displayOnConsentScreen")}
             />
           )}
         />
@@ -268,6 +269,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               labelOff={t("common:off")}
               isChecked={value === "true"}
               onChange={(value) => onChange("" + value)}
+              aria-label={t("includeInTokenScope")}
             />
           )}
         />

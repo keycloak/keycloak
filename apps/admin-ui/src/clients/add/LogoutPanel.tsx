@@ -59,6 +59,7 @@ export const LogoutPanel = ({
               labelOff={t("common:off")}
               isChecked={value}
               onChange={onChange}
+              aria-label={t("frontchannelLogout")}
             />
           )}
         />
@@ -167,6 +168,7 @@ export const LogoutPanel = ({
                   labelOff={t("common:off")}
                   isChecked={value === "true"}
                   onChange={(value) => onChange(value.toString())}
+                  aria-label={t("backchannelLogoutSessionRequired")}
                 />
               )}
             />
@@ -195,6 +197,7 @@ export const LogoutPanel = ({
                   labelOff={t("common:off")}
                   isChecked={value === "true"}
                   onChange={(value) => onChange(value.toString())}
+                  aria-label={t("backchannelLogoutRevokeOfflineSessions")}
                 />
               )}
             />

@@ -96,6 +96,7 @@ export const PolicyRow = ({
               labelOff={t("common:off")}
               isChecked
               isDisabled
+              aria-label={displayName}
             />
           )}
         </SplitItem>

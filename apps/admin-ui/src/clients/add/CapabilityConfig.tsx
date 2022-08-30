@@ -77,6 +77,7 @@ export const CapabilityConfig = ({
                       );
                     }
                   }}
+                  aria-label={t("clientAuthentication")}
                 />
               )}
             />
@@ -111,6 +112,7 @@ export const CapabilityConfig = ({
                     }
                   }}
                   isDisabled={clientAuthentication}
+                  aria-label={t("clientAuthorization")}
                 />
               )}
             />
@@ -300,6 +302,7 @@ export const CapabilityConfig = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={onChange}
+                  aria-label={t("encryptAssertions")}
                 />
               )}
             />
@@ -329,6 +332,7 @@ export const CapabilityConfig = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={onChange}
+                  aria-label={t("clientSignature")}
                 />
               )}
             />

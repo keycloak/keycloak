@@ -36,6 +36,7 @@ export const SwitchField = ({
               onChange(fieldType === "string" ? "" + value : value)
             }
             isDisabled={isReadOnly}
+            aria-label={label}
           />
         )}
       />

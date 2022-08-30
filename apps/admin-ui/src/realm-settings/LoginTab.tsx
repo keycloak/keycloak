@@ -74,6 +74,7 @@ export const RealmSettingsLoginTab = ({
               onChange={(value) => {
                 updateSwitchValue({ registrationAllowed: value });
               }}
+              aria-label={t("registrationAllowed")}
             />
           </FormGroup>
           <FormGroup
@@ -98,6 +99,7 @@ export const RealmSettingsLoginTab = ({
               onChange={(value) => {
                 updateSwitchValue({ resetPasswordAllowed: value });
               }}
+              aria-label={t("resetPasswordAllowed")}
             />
           </FormGroup>
           <FormGroup
@@ -121,6 +123,7 @@ export const RealmSettingsLoginTab = ({
               onChange={(value) => {
                 updateSwitchValue({ rememberMe: value });
               }}
+              aria-label={t("rememberMe")}
             />
           </FormGroup>
         </FormAccess>
@@ -155,6 +158,7 @@ export const RealmSettingsLoginTab = ({
                   },
                 ]);
               }}
+              aria-label={t("registrationEmailAsUsername")}
             />
           </FormGroup>
           <FormGroup
@@ -183,6 +187,7 @@ export const RealmSettingsLoginTab = ({
                   { duplicateEmailsAllowed: false },
                 ]);
               }}
+              aria-label={t("loginWithEmailAllowed")}
             />
           </FormGroup>
           <FormGroup
@@ -214,6 +219,7 @@ export const RealmSettingsLoginTab = ({
               isDisabled={
                 realm.loginWithEmailAllowed || realm.registrationEmailAsUsername
               }
+              aria-label={t("duplicateEmailsAllowed")}
             />
           </FormGroup>
           <FormGroup
@@ -238,6 +244,7 @@ export const RealmSettingsLoginTab = ({
               onChange={(value) => {
                 updateSwitchValue({ verifyEmail: value });
               }}
+              aria-label={t("verifyEmail")}
             />
           </FormGroup>
         </FormAccess>
@@ -268,6 +275,7 @@ export const RealmSettingsLoginTab = ({
               onChange={(value) => {
                 updateSwitchValue({ editUsernameAllowed: value });
               }}
+              aria-label={t("editUsernameAllowed")}
             />
           </FormGroup>
         </FormAccess>

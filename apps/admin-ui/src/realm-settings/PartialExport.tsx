@@ -111,6 +111,7 @@ export const PartialExportDialog = ({
             onChange={setExportGroupsAndRoles}
             label={t("common:on")}
             labelOff={t("common:off")}
+            aria-label={t("includeGroupsAndRoles")}
           />
         </FormGroup>
         <FormGroup
@@ -125,6 +126,7 @@ export const PartialExportDialog = ({
             isChecked={exportClients}
             label={t("common:on")}
             labelOff={t("common:off")}
+            aria-label={t("includeClients")}
           />
         </FormGroup>
       </Form>

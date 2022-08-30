@@ -103,6 +103,7 @@ export const AdvancedSettings = ({
                   labelOff={t("common:off")}
                   isChecked={value === "true"}
                   onChange={(value) => onChange("" + value)}
+                  aria-label={t("oAuthMutual")}
                 />
               )}
             />
@@ -168,6 +169,7 @@ export const AdvancedSettings = ({
                   labelOff={t("common:off")}
                   isChecked={value === "true"}
                   onChange={(value) => onChange(value.toString())}
+                  aria-label={t("pushedAuthorizationRequestRequired")}
                 />
               )}
             />

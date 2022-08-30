@@ -69,6 +69,7 @@ export const BruteForceDetection = ({
                 labelOff={t("common:off")}
                 isChecked={value}
                 onChange={onChange}
+                aria-label={t("common:enabled")}
               />
             )}
           />
@@ -120,6 +121,7 @@ export const BruteForceDetection = ({
                     labelOff={t("common:off")}
                     isChecked={value}
                     onChange={onChange}
+                    aria-label={t("permanentLockout")}
                   />
                 )}
               />

@@ -50,6 +50,7 @@ export const OpenIdConnectCompatibilityModes = ({
               labelOff={t("common:off")}
               isChecked={value === "true"}
               onChange={(value) => onChange(value.toString())}
+              aria-label={t("excludeSessionStateFromAuthenticationResponse")}
             />
           )}
         />
@@ -76,6 +77,7 @@ export const OpenIdConnectCompatibilityModes = ({
               labelOff={t("common:off")}
               isChecked={value === "true"}
               onChange={(value) => onChange(value.toString())}
+              aria-label={t("useRefreshTokens")}
             />
           )}
         />
@@ -104,6 +106,7 @@ export const OpenIdConnectCompatibilityModes = ({
               labelOff={t("common:off")}
               isChecked={value === "true"}
               onChange={(value) => onChange(value.toString())}
+              aria-label={t("useRefreshTokenForClientCredentialsGrant")}
             />
           )}
         />
@@ -132,6 +135,7 @@ export const OpenIdConnectCompatibilityModes = ({
               labelOff={t("common:off")}
               isChecked={value === "true"}
               onChange={(value) => onChange(value.toString())}
+              aria-label={t("useLowerCaseBearerType")}
             />
           )}
         />

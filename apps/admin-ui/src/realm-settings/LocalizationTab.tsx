@@ -371,6 +371,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                       : "internationalization-disabled"
                   }
                   onChange={onChange}
+                  aria-label={t("internationalization")}
                 />
               )}
             />

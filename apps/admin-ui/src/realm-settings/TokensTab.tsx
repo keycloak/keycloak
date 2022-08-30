@@ -169,7 +169,7 @@ export const RealmSettingsTokensTab = ({
                 <Switch
                   id="kc-revoke-refresh-token"
                   data-testid="revoke-refresh-token-switch"
-                  aria-label="revoke-refresh-token-switch"
+                  aria-label={t("revokeRefreshToken")}
                   label={t("common:enabled")}
                   labelOff={t("common:disabled")}
                   isChecked={value}

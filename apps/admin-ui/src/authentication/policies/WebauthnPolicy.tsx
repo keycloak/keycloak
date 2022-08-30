@@ -332,6 +332,7 @@ export const WebauthnPolicy = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={onChange}
+                  aria-label={t("webAuthnPolicyAvoidSameAuthenticatorRegister")}
                 />
               )}
             />

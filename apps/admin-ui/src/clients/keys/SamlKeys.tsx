@@ -110,6 +110,7 @@ const KeySection = ({
                       onGenerate(attr, false);
                     }
                   }}
+                  aria-label={t(key)}
                 />
               )}
             />

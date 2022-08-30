@@ -157,6 +157,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                     toggleDisableDialog();
                   }
                 }}
+                aria-label={t("permissionsEnabled")}
               />
             </FormGroup>
           </Form>

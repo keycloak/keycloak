@@ -100,6 +100,7 @@ export const DedicatedScope = ({
             labelOff={t("common:off")}
             isChecked={client.fullScopeAllowed}
             onChange={update}
+            aria-label={t("fullScopeAllowed")}
           />
         </FormGroup>
       </FormAccess>

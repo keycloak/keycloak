@@ -130,6 +130,7 @@ export const ViewHeader = ({
                       className="pf-u-mr-lg"
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
+                      aria-label={t("common:enabled")}
                       onChange={(value) => {
                         onToggle(value);
                       }}

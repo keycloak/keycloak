@@ -93,6 +93,9 @@ export const DiscoveryEndpointField = ({
             clearErrors("discoveryError");
             setDiscovery(checked);
           }}
+          aria-label={t(
+            id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor"
+          )}
         />
       </FormGroup>
       {discovery && (

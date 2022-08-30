@@ -145,6 +145,7 @@ export const RequiredActions = () => {
               onChange={() => {
                 updateAction(row.data, "enabled");
               }}
+              aria-label={toKey(row.name)}
             />
           ),
         },
@@ -161,6 +162,7 @@ export const RequiredActions = () => {
               onChange={() => {
                 updateAction(row.data, "defaultAction");
               }}
+              aria-label={toKey(row.name)}
             />
           ),
         },

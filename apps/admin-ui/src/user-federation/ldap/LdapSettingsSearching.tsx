@@ -372,6 +372,7 @@ export const LdapSettingsSearching = ({
                 isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
+                aria-label={t("pagination")}
               />
             )}
           ></Controller>

@@ -92,7 +92,7 @@ export const ClientDescription = ({
         />
       </FormGroup>
       <FormGroup
-        label={t("clients:alwaysDisplayInConsole")}
+        label={t("alwaysDisplayInConsole")}
         labelIcon={
           <HelpItem
             helpText="clients-help:alwaysDisplayInConsole"
@@ -113,6 +113,7 @@ export const ClientDescription = ({
               labelOff={t("common:off")}
               isChecked={value}
               onChange={onChange}
+              aria-label={t("alwaysDisplayInConsole")}
             />
           )}
         />

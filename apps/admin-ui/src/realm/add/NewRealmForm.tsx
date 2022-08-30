@@ -105,6 +105,7 @@ export default function NewRealmForm() {
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={onChange}
+                  aria-label={t("enabled")}
                 />
               )}
             />

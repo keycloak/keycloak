@@ -249,6 +249,7 @@ export const UserForm = ({
               isChecked={value}
               label={t("common:on")}
               labelOff={t("common:off")}
+              aria-label={t("emailVerified")}
             />
           )}
         />
@@ -304,6 +305,7 @@ export const UserForm = ({
             isDisabled={!locked}
             label={t("common:on")}
             labelOff={t("common:off")}
+            aria-label={t("temporaryLocked")}
           />
         </FormGroup>
       )}
@@ -326,6 +328,7 @@ export const UserForm = ({
               isChecked={value}
               label={t("common:on")}
               labelOff={t("common:off")}
+              aria-label={t("common:enabled")}
             />
           )}
         />

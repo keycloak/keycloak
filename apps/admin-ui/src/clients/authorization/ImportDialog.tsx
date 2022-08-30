@@ -122,6 +122,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                 labelOff={t("common:off")}
                 isChecked={imported.allowRemoteResourceManagement}
                 isDisabled
+                aria-label={t("allowRemoteResourceManagement")}
               />
             </FormGroup>
           </Form>

@@ -69,7 +69,7 @@ export const HelpHeader = () => {
         <SplitItem>
           <Switch
             id="enableHelp"
-            aria-label="Help is enabled"
+            aria-label={t("common:enableHelp")}
             isChecked={help.enabled}
             label=""
             className="keycloak_help-header-switch"

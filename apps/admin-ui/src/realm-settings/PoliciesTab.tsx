@@ -132,6 +132,7 @@ export const PoliciesTab = () => {
                   saveStatus();
                 }
               }}
+              aria-label={clientPolicy.name!}
             />
           )}
         />

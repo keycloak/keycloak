@@ -158,6 +158,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
                 labelOff={t("common:off")}
                 isChecked={value}
                 onChange={onChange}
+                aria-label={t("allowRemoteResourceManagement")}
               />
             )}
           />

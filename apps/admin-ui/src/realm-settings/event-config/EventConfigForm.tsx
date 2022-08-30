@@ -77,6 +77,7 @@ export const EventConfigForm = ({
                   onChange(value);
                 }
               }}
+              aria-label={t("saveEvents")}
             />
           )}
         />
@@ -107,6 +108,7 @@ export const EventConfigForm = ({
                     labelOff={t("common:off")}
                     isChecked={value}
                     onChange={onChange}
+                    aria-label={t("includeRepresentation")}
                   />
                 )}
               />

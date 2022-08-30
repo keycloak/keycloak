@@ -59,6 +59,7 @@ export const LdapSettingsSynchronization = ({
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
                 isDisabled={false}
+                aria-label={t("importUsers")}
               />
             )}
           ></Controller>
@@ -107,6 +108,7 @@ export const LdapSettingsSynchronization = ({
                 label={t("common:on")}
                 labelOff={t("common:off")}
                 ref={form.register}
+                aria-label={t("periodicFullSync")}
               />
             )}
           ></Controller>
@@ -159,6 +161,7 @@ export const LdapSettingsSynchronization = ({
                 label={t("common:on")}
                 labelOff={t("common:off")}
                 ref={form.register}
+                aria-label={t("periodicChangedUsersSync")}
               />
             )}
           ></Controller>

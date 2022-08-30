@@ -260,6 +260,7 @@ export default function PermissionDetails() {
                 labelOff={t("common:off")}
                 isChecked={applyToResourceTypeFlag}
                 onChange={setApplyToResourceTypeFlag}
+                aria-label={t("applyToResourceTypeFlag")}
               />
             </FormGroup>
             {applyToResourceTypeFlag ? (

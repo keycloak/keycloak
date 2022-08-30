@@ -209,6 +209,7 @@ export const ResetPasswordDialog = ({
                   isChecked={value}
                   label={t("common:on")}
                   labelOff={t("common:off")}
+                  aria-label={t("common:temporaryPassword")}
                 />
               )}
             />

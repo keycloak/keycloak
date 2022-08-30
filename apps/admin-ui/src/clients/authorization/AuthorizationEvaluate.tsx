@@ -269,6 +269,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                 labelOff={t("common:off")}
                 isChecked={applyToResourceType}
                 onChange={setApplyToResourceType}
+                aria-label={t("applyToResourceType")}
               />
             </FormGroup>
 

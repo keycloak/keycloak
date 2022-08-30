@@ -286,7 +286,7 @@ export const RealmSettingsSessionsTab = ({
                 <Switch
                   id="kc-offline-session-max"
                   data-testid="offline-session-max-switch"
-                  aria-label="offline-session-max-switch"
+                  aria-label={t("offlineSessionMaxLimited")}
                   label={t("common:enabled")}
                   labelOff={t("common:disabled")}
                   isChecked={value}

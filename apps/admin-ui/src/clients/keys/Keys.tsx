@@ -155,6 +155,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                     labelOff={t("common:off")}
                     isChecked={value === "true"}
                     onChange={(value) => onChange(`${value}`)}
+                    aria-label={t("useJwksUrl")}
                   />
                 )}
               />

@@ -335,6 +335,7 @@ export const RealmSettingsEmailTab = ({
                     onChange={(value) => {
                       onChange("" + value);
                     }}
+                    aria-label={t("authentication")}
                   />
                 )}
               />

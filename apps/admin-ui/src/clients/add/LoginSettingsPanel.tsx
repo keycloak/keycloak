@@ -94,6 +94,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
               labelOff={t("common:off")}
               isChecked={value}
               onChange={onChange}
+              aria-label={t("consentRequired")}
             />
           )}
         />
@@ -123,6 +124,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
               isChecked={value === "true"}
               onChange={(value) => onChange("" + value)}
               isDisabled={!consentRequired}
+              aria-label={t("displayOnClient")}
             />
           )}
         />

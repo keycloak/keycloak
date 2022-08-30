@@ -42,6 +42,7 @@ export const Toggle = ({ name, label }: { name: string; label: string }) => {
             labelOff={t("common:off")}
             isChecked={value === "true"}
             onChange={(value) => onChange(value.toString())}
+            aria-label={t(label)}
           />
         )}
       />

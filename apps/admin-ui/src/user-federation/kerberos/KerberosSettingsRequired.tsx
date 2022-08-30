@@ -241,6 +241,7 @@ export const KerberosSettingsRequired = ({
                 isChecked={value?.[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
+                aria-label={t("debug")}
               />
             )}
           />
@@ -269,6 +270,7 @@ export const KerberosSettingsRequired = ({
                 isChecked={value?.[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
+                aria-label={t("allowPasswordAuthentication")}
               />
             )}
           />
@@ -338,6 +340,7 @@ export const KerberosSettingsRequired = ({
                 isChecked={value?.[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
+                aria-label={t("updateFirstLogin")}
               />
             )}
           />

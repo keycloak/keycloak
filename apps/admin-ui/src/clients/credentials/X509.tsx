@@ -38,6 +38,7 @@ export const X509 = () => {
               labelOff={t("common:off")}
               isChecked={value === "true"}
               onChange={(value) => onChange(value.toString())}
+              aria-label={t("allowRegexComparison")}
             />
           )}
         />
