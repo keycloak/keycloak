@@ -46,6 +46,7 @@ public class TokenManager {
 
     private AccessTokenResponse currentToken;
     private long expirationTime;
+    private long refreshExpirationTime;
     private long minTokenValidity = DEFAULT_MIN_VALIDITY;
     private final Config config;
     private final TokenService tokenService;
@@ -97,12 +98,13 @@ public class TokenManager {
         synchronized (this) {
             currentToken = tokenService.grantToken(config.getRealm(), form.asMap());
             expirationTime = requestTime + currentToken.getExpiresIn();
+            refreshExpirationTime = requestTime + currentToken.getRefreshExpiresIn();
         }
         return currentToken;
     }
 
     public synchronized AccessTokenResponse refreshToken() {
-        if (currentToken.getRefreshToken() == null) {
+        if (currentToken.getRefreshToken() == null || refreshTokenExpired()) {
             return grantToken();
         }
 
@@ -131,6 +133,8 @@ public class TokenManager {
     private synchronized boolean tokenExpired() {
         return (Time.currentTime() + minTokenValidity) >= expirationTime;
     }
+
+    private synchronized boolean refreshTokenExpired() { return (Time.currentTime() + minTokenValidity) >= refreshExpirationTime; }
 
     /**
      * Invalidates the current token, but only when it is equal to the token passed as an argument.
