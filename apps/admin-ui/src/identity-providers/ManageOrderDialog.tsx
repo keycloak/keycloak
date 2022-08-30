@@ -120,7 +120,7 @@ export const ManageOrderDialog = ({
           >
             <DataListItemRow>
               <DataListControl>
-                <DataListDragButton aria-label={t("manageOrderItemAria")} />
+                <DataListDragButton aria-label={t("common-help:dragHelp")} />
               </DataListControl>
               <DataListItemCells
                 dataListCells={[
