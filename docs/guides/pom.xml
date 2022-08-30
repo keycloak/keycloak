@@ -30,6 +30,10 @@
     <description>Keycloak Guides</description>
     <packaging>pom</packaging>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
