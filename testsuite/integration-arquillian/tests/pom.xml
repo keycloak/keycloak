@@ -2092,10 +2092,6 @@
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-authz-client</artifactId>
                 </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-wildfly-adduser</artifactId>
-                </dependency>
 
                 <!--UNDERTOW-->
 
