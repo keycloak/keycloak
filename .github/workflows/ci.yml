@@ -457,59 +457,6 @@ jobs:
           path: reports-quarkus-tests.zip
           if-no-files-found: ignore
 
-  quickstarts-tests:
-    name: Quickstarts Tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          repository: keycloak/keycloak-quickstarts
-          ref: main # default is "latest"
-
-      - uses: actions/checkout@v3
-        with:
-          path: keycloak
-
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: 8
-          cache: 'maven'
-
-      - name: Update maven settings
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Cleanup org.keycloak artifacts
-        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
-      - name: Download built keycloak
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-
-      - name: Prepare Keycloak
-        run: keycloak/.github/scripts/quickstarts/prepare-server.sh
-
-      - name: Build Quickstarts
-        run: scripts/build-quickstarts.sh
-
-      - name: Start Keycloak
-        run: scripts/start-local-server.sh
-
-      - name: Run tests
-        run: scripts/run-tests.sh
-
-      - name: Archive logs
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: quickstarts-test-logs
-          retention-days: 2
-          path: |
-            test-logs
-            keycloak.log
-
 # NOTE: WebAuthn tests can be enabled once the issue #12621 is resolved
 #
 #  webauthn-test:
