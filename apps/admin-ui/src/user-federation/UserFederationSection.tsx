@@ -120,41 +120,40 @@ export default function UserFederationSection() {
   };
 
   if (userFederations) {
-    cards = userFederations.sort(cardSorter).map((userFederation, index) => {
-      const ufCardDropdownItems = [
-        <DropdownItem
-          key={`${index}-cardDelete`}
-          onClick={() => {
-            toggleDeleteForCard(userFederation.id!);
-          }}
-          data-testid="card-delete"
-        >
-          {t("common:delete")}
-        </DropdownItem>,
-      ];
-      return (
-        <GalleryItem
-          key={index}
-          className="keycloak-admin--user-federation__gallery-item"
-        >
-          <KeycloakCard
-            id={userFederation.id!}
-            dropdownItems={ufCardDropdownItems}
-            providerId={userFederation.providerId!}
-            title={userFederation.name!}
-            footerText={toUpperCase(userFederation.providerId!)}
-            labelText={
-              userFederation.config!["enabled"][0] !== "false"
-                ? `${t("common:enabled")}`
-                : `${t("common:disabled")}`
-            }
-            labelColor={
-              userFederation.config!["enabled"][0] !== "false" ? "blue" : "gray"
-            }
-          />
-        </GalleryItem>
-      );
-    });
+    cards = userFederations.sort(cardSorter).map((userFederation, index) => (
+      <GalleryItem
+        key={index}
+        className="keycloak-admin--user-federation__gallery-item"
+      >
+        <KeycloakCard
+          id={userFederation.id!}
+          dropdownItems={[
+            <DropdownItem
+              key={`${index}-cardDelete`}
+              onClick={() => {
+                toggleDeleteForCard(userFederation.id!);
+              }}
+              data-testid="card-delete"
+            >
+              {t("common:delete")}
+            </DropdownItem>,
+          ]}
+          providerId={userFederation.providerId!}
+          title={userFederation.name!}
+          footerText={toUpperCase(userFederation.providerId!)}
+          labelText={
+            userFederation.config?.["enabled"]?.[0] !== "false"
+              ? `${t("common:enabled")}`
+              : `${t("common:disabled")}`
+          }
+          labelColor={
+            userFederation.config?.["enabled"]?.[0] !== "false"
+              ? "blue"
+              : "gray"
+          }
+        />
+      </GalleryItem>
+    ));
   }
 
   return (
