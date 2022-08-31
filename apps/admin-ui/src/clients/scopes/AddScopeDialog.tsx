@@ -150,6 +150,7 @@ export const AddScopeDialog = ({
                   onAdd(scopes);
                   toggleDialog();
                 }}
+                isDisabled={rows.length === 0}
               >
                 {t("common:add")}
               </Button>,
