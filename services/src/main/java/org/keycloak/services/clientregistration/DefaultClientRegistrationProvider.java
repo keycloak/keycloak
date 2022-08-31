@@ -19,7 +19,9 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -68,7 +70,9 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateDefault(@PathParam("clientId") String clientId, ClientRepresentation client) {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
+        ResourceServerRepresentation authorizationSettings = client.getAuthorizationSettings();
         client = update(clientId, context);
+        updateAuthorizationSettings(client, authorizationSettings);
         validateClient(client, false);
         return Response.ok(client).build();
     }
@@ -77,5 +81,11 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Path("{clientId}")
     public void deleteDefault(@PathParam("clientId") String clientId) {
         delete(clientId);
+    }
+
+    private void updateAuthorizationSettings(ClientRepresentation rep, ResourceServerRepresentation authorizationSettings) {
+        rep.setAuthorizationSettings(authorizationSettings);
+        ClientModel client = session.getContext().getRealm().getClientByClientId(rep.getClientId());
+        RepresentationToModel.importAuthorizationSettings(rep, client, session);
     }
 }
