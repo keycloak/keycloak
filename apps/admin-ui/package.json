@@ -32,6 +32,7 @@
     "react-flow-renderer": "^9.7.4",
     "react-hook-form": "^6.15.8",
     "react-i18next": "^11.18.5",
+    "react-router": "^5.3.3",
     "react-router-dom": "^5.3.3",
     "react-router-dom-v5-compat": "^6.3.0",
     "use-react-router-breadcrumbs": "^2.0.2"
@@ -64,6 +65,7 @@
     "del": "^7.0.0",
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
+    "jsdom": "^20.0.0",
     "node-fetch": "^3.2.10",
     "progress-promise": "^0.0.6",
     "tar-fs": "^2.1.1",

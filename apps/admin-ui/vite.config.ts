@@ -11,6 +11,7 @@ export default defineConfig({
   resolve: {
     // Resolve the 'module' entrypoint at all times (not the default due to Node.js compatibility issues).
     mainFields: ["module"],
+    dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
     // Enable optimization of dependencies using esbuild (see https://vitejs.dev/guide/migration.html#using-esbuild-deps-optimization-at-build-time).
