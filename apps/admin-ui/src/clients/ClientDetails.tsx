@@ -1,5 +1,4 @@
 import {
-  Alert,
   AlertVariant,
   ButtonVariant,
   Divider,
@@ -372,6 +371,7 @@ export default function ClientDetails() {
     <>
       <ConfirmDialogModal
         continueButtonLabel="common:yes"
+        cancelButtonLabel="common:no"
         titleKey={t("changeAuthenticatorConfirmTitle", {
           clientAuthenticatorType: clientAuthenticatorType,
         })}
@@ -383,9 +383,6 @@ export default function ClientDetails() {
           {t("changeAuthenticatorConfirm", {
             clientAuthenticatorType: clientAuthenticatorType,
           })}
-          {clientAuthenticatorType === "client-jwt" && (
-            <Alert variant="info" isInline title={t("signedJWTConfirm")} />
-          )}
         </>
       </ConfirmDialogModal>
       <DeleteConfirm />
