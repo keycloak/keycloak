@@ -8,6 +8,14 @@ import CreateProviderPage from "../support/pages/admin_console/manage/identity_p
 import ModalUtils from "../support/util/ModalUtils";
 import OrderDialog from "../support/pages/admin_console/manage/identity_providers/OrderDialog";
 import AddMapperPage from "../support/pages/admin_console/manage/identity_providers/AddMapperPage";
+import ProviderFacebookGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderFacebookGeneralSettings";
+import ProviderBaseGeneralSettingsPage from "../support/pages/admin_console/manage/identity_providers/ProviderBaseGeneralSettingsPage";
+import ProviderGithubGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderGithubGeneralSettings";
+import ProviderGoogleGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderGoogleGeneralSettings";
+import ProviderOpenshiftGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderOpenshiftGeneralSettings";
+import ProviderPaypalGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderPaypalGeneralSettings";
+import ProviderStackoverflowGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderStackoverflowGeneralSettings";
+import adminClient from "../support/util/AdminClient";
 
 describe("Identity provider test", () => {
   const loginPage = new LoginPage();
@@ -25,13 +33,93 @@ describe("Identity provider test", () => {
   const deletePrompt = "Delete provider?";
   const deleteSuccessMsg = "Provider successfully deleted.";
 
+  beforeEach(() => {
+    keycloakBefore();
+    loginPage.logIn();
+    sidebarPage.goToIdentityProviders();
+  });
+
+  const socialLoginIdentityProvidersWithCustomFiels = {
+    Facebook: new ProviderFacebookGeneralSettings(),
+    Github: new ProviderGithubGeneralSettings(),
+    Google: new ProviderGoogleGeneralSettings(),
+    "Openshift-v3": new ProviderOpenshiftGeneralSettings(),
+    "Openshift-v4": new ProviderOpenshiftGeneralSettings(),
+    Paypal: new ProviderPaypalGeneralSettings(),
+    Stackoverflow: new ProviderStackoverflowGeneralSettings(),
+  };
+  function getSocialIdpClassInstance(idpTestName: string) {
+    let instance = new ProviderBaseGeneralSettingsPage();
+    Object.entries(socialLoginIdentityProvidersWithCustomFiels).find(
+      ([key, value]) => {
+        if (key === idpTestName) {
+          instance = value;
+          return true;
+        }
+        return false;
+      }
+    );
+    return instance;
+  }
+
   describe("Identity provider creation", () => {
     const identityProviderName = "github";
 
-    beforeEach(() => {
-      keycloakBefore();
-      loginPage.logIn();
-      sidebarPage.goToIdentityProviders();
+    describe("Custom fields tests", () => {
+      const socialLoginIdentityProviders = [
+        { testName: "Bitbucket", displayName: "BitBucket", alias: "bitbucket" },
+        { testName: "Facebook", displayName: "Facebook", alias: "facebook" },
+        { testName: "Github", displayName: "GitHub", alias: "github" },
+        { testName: "Gitlab", displayName: "Gitlab", alias: "gitlab" },
+        { testName: "Google", displayName: "Google", alias: "google" },
+        { testName: "Instagram", displayName: "Instagram", alias: "instagram" },
+        { testName: "Linkedin", displayName: "LinkedIn", alias: "linkedin" },
+        { testName: "Microsoft", displayName: "Microsoft", alias: "microsoft" },
+        {
+          testName: "Openshift-v3",
+          displayName: "Openshift v3",
+          alias: "openshift-v3",
+        },
+        {
+          testName: "Openshift-v4",
+          displayName: "Openshift v4",
+          alias: "openshift-v4",
+        },
+        { testName: "Paypal", displayName: "PayPal", alias: "paypal" },
+        {
+          testName: "Stackoverflow",
+          displayName: "StackOverflow",
+          alias: "stackoverflow",
+        },
+        { testName: "Twitter", displayName: "Twitter", alias: "twitter" },
+      ];
+
+      after(async () => {
+        await Promise.all(
+          socialLoginIdentityProviders.map((idp) =>
+            adminClient.deleteIdentityProvider(idp.alias)
+          )
+        );
+      });
+
+      socialLoginIdentityProviders.forEach(($idp, linkedIdpsCount) => {
+        it(`should create social login provider ${$idp.testName} with custom fields`, () => {
+          if (linkedIdpsCount == 0) {
+            createProviderPage.clickCard($idp.alias);
+          } else {
+            createProviderPage.clickCreateDropdown().clickItem($idp.alias);
+          }
+          const instance = getSocialIdpClassInstance($idp.testName);
+          instance
+            .typeDisplayOrder("0")
+            .clickAdd()
+            .assertRequiredFieldsErrorsExist()
+            .fillData($idp.testName)
+            .clickAdd()
+            .assertNotificationIdpCreated()
+            .assertFilledDataEqual($idp.testName);
+        });
+      });
     });
 
     it("should create provider", () => {
