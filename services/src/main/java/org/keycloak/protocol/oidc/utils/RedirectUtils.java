@@ -183,7 +183,7 @@ public class RedirectUtils {
                 String vrScheme = validRedirect.substring(0, vrHostnamePosStart);
                 String vrHostname = validRedirect.substring(vrHostnamePosStart);
 
-                int vrHostnamePosEnd = vrHostname.indexOf("/");
+                int vrHostnamePosEnd = vrHostname.contains(":") ? vrHostname.indexOf(":") : vrHostname.indexOf("/");
                 String vrPath = vrHostname.substring(vrHostnamePosEnd);
                 vrHostname = vrHostname.substring(0, vrHostnamePosEnd);
 
@@ -195,7 +195,7 @@ public class RedirectUtils {
                     int rHostnamePos = redirect.indexOf("//") + 2;
                     String rHostname = redirect.substring(rHostnamePos);
 
-                    int rHostnamePosEnd = rHostname.indexOf("/");
+                    int rHostnamePosEnd = rHostname.contains(":") ? rHostname.indexOf(":") : rHostname.indexOf("/");
                     rHostname = rHostname.substring(0, rHostnamePosEnd);
 
                     if (rHostname.startsWith(vrHostnameStart) && rHostname.endsWith(vrHostnameEnd)) {
