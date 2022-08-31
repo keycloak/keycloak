@@ -3,11 +3,13 @@ import { Link } from "react-router-dom-v5-compat";
 import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
+  Alert,
   AlertVariant,
   ButtonVariant,
   DescriptionList,
   Dropdown,
   DropdownItem,
+  DropdownSeparator,
   DropdownToggle,
   PageSection,
   ToolbarItem,
@@ -228,6 +230,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                     >
                       {t("createResourceBasedPermission")}
                     </DropdownItem>,
+                    <DropdownSeparator key="separator" />,
                     <DropdownItem
                       data-testid="create-scope"
                       key="createScopeBasedPermission"
@@ -244,6 +247,15 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                       }
                     >
                       {t("createScopeBasedPermission")}
+                      {disabledCreate?.scopes && (
+                        <Alert
+                          className="pf-u-mt-sm"
+                          variant="warning"
+                          isInline
+                          isPlain
+                          title={t("noScopeCreateHint")}
+                        />
+                      )}
                     </DropdownItem>,
                   ]}
                 />

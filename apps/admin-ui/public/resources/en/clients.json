@@ -128,7 +128,7 @@
   "createResource": "Create resource",
   "emptyPermissions": "No permissions",
   "emptyPermissionInstructions": "If you want to create a permission, please click the button below to create a resource-based or scope-based permission.",
-  "noScopeCreateHint": "There is no authorization scope you can't create scope-based permission",
+  "noScopeCreateHint": "You'll need to create an authorization scope first.",
   "noResourceCreateHint": "There are no resources you can't create resource-based permission",
   "createResourceBasedPermission": "Create resource-based permission",
   "createScopeBasedPermission": "Create scope-based permission",
