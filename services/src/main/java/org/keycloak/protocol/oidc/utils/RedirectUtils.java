@@ -177,6 +177,36 @@ public class RedirectUtils {
 
     private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
         for (String validRedirect : validRedirects) {
+            // check wildcard hostname
+            if (!validRedirect.startsWith("/")) {
+                int vrHostnamePosStart = validRedirect.indexOf("//") + 2;
+                String vrScheme = validRedirect.substring(0, vrHostnamePosStart);
+                String vrHostname = validRedirect.substring(vrHostnamePosStart);
+
+                int vrHostnamePosEnd = vrHostname.indexOf("/");
+                String vrPath = vrHostname.substring(vrHostnamePosEnd);
+                vrHostname = vrHostname.substring(0, vrHostnamePosEnd);
+
+                if (vrHostname.contains("*")) {
+                    int vrWildcardPos = vrHostname.indexOf("*");
+                    String vrHostnameStart = vrHostname.substring(0, vrWildcardPos);
+                    String vrHostnameEnd = vrHostname.substring(vrWildcardPos + 1);
+
+                    int rHostnamePos = redirect.indexOf("//") + 2;
+                    String rHostname = redirect.substring(rHostnamePos);
+
+                    int rHostnamePosEnd = rHostname.indexOf("/");
+                    rHostname = rHostname.substring(0, rHostnamePosEnd);
+
+                    if (rHostname.startsWith(vrHostnameStart) && rHostname.endsWith(vrHostnameEnd)) {
+                        // replace wildcard hostname with actual hostname for further checks
+                        validRedirect = vrScheme + rHostname + vrPath;
+                    } else {
+                        continue;
+                    }
+                }
+            }
+
             if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
                 // strip off the query component - we don't check them when wildcards are effective
                 String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
