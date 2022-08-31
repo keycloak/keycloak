@@ -187,7 +187,7 @@ public class RedirectUtils {
                 String vrPath = vrHostname.substring(vrHostnamePosEnd);
                 vrHostname = vrHostname.substring(0, vrHostnamePosEnd);
 
-                if (vrHostname.contains("*")) {
+                if (vrHostname.contains("*") && vrHostname.length() > 1) {
                     int vrWildcardPos = vrHostname.indexOf("*");
                     String vrHostnameStart = vrHostname.substring(0, vrWildcardPos);
                     String vrHostnameEnd = vrHostname.substring(vrWildcardPos + 1);
