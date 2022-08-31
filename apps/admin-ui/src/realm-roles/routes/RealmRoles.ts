@@ -8,7 +8,7 @@ export type RealmRolesParams = { realm: string };
 export const RealmRolesRoute: RouteDef = {
   path: "/:realm/roles",
   component: lazy(() => import("../RealmRolesSection")),
-  breadcrumb: (t) => t("roles:roleList"),
+  breadcrumb: (t) => t("roles:realmRolesList"),
   access: "view-realm",
 };
 

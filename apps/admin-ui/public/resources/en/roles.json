@@ -21,6 +21,7 @@
   "deleteRole": "Delete this role",
   "inheritedFrom": "Inherited from",
   "roleList": "Role list",
+  "realmRolesList": "Realm roles",
   "searchFor": "Search role by name",
   "generalSettings": "General Settings",
   "capabilityConfig": "Capability config",
