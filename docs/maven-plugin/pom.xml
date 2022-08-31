@@ -30,7 +30,9 @@
     <artifactId>keycloak-guides-maven-plugin</artifactId>
     <description>Keycloak Guides Maven Plugin</description>
     <packaging>maven-plugin</packaging>
-
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
