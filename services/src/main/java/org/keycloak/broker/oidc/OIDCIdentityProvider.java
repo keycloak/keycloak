@@ -387,6 +387,20 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         JsonWebToken idToken = validateToken(encodedIdToken);
 
+        if (getConfig().isPassMaxAge()) {
+            AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+
+            if (isAuthTimeExpired(idToken, authSession)) {
+                throw new IdentityBrokerException("User not re-authenticated by the target OpenID Provider");
+            }
+
+            Object authTime = idToken.getOtherClaims().get(IDToken.AUTH_TIME);
+
+            if (authTime != null) {
+                authSession.setClientNote(AuthenticationManager.AUTH_TIME_BROKER, authTime.toString());
+            }
+        }
+
         try {
             BrokeredIdentityContext identity = extractIdentity(tokenResponse, accessToken, idToken);
             
@@ -409,6 +423,25 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not fetch attributes from userinfo endpoint.", e);
         }
+    }
+
+    protected boolean isAuthTimeExpired(JsonWebToken idToken, AuthenticationSessionModel authSession) {
+        String maxAge = authSession.getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
+
+        if (maxAge == null) {
+            return false;
+        }
+
+        String authTime = idToken.getOtherClaims().getOrDefault(IDToken.AUTH_TIME, "0").toString();
+        int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
+        int maxAgeInt = Integer.parseInt(maxAge);
+
+        if (authTimeInt + maxAgeInt < Time.currentTime()) {
+            logger.debugf("Invalid auth_time claim. User not re-authenticated by the target OP.");
+            return true;
+        }
+
+        return false;
     }
 
     private static final MediaType APPLICATION_JWT_TYPE = MediaType.valueOf("application/jwt");
@@ -813,6 +846,12 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
         uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
+
+        String maxAge = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
+
+        if (getConfig().isPassMaxAge() && maxAge != null) {
+            uriBuilder.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
+        }
 
         return uriBuilder;
     }

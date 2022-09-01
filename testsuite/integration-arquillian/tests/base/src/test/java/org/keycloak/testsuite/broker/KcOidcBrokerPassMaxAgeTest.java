@@ -2,15 +2,17 @@ package org.keycloak.testsuite.broker;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
 
 import java.util.Map;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -31,13 +33,13 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
         
         @Override
         public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
+            IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, TestKeycloakOidcIdentityProviderFactory.ID);
 
             Map<String, String> config = idp.getConfig();
             applyDefaultConfiguration(config, syncMode);
             config.put(IdentityProviderModel.LOGIN_HINT, "false");
-
             config.put(IdentityProviderModel.PASS_MAX_AGE, "true");
+            config.remove(OAuth2Constants.PROMPT);
 
             return idp;
         }
@@ -89,6 +91,51 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
         // reauthenticate with password
         loginPage.login(bc.getUserPassword());
         waitForPage(driver, "account management", true);
+
+        testSingleLogout();
+    }
+
+    @Test
+    public void testEnforceReAuthenticationWhenMaxAgeIsSet() {
+        // login as brokered user user, perform profile update on first broker login and logout user
+        loginUser();
+        testSingleLogout();
+
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        accountUpdateProfilePage.assertCurrent();
+
+        IdentityProviderResource idpResource = realmsResouce().realm(bc.consumerRealmName()).identityProviders()
+                .get(bc.getIDPAlias());
+        IdentityProviderRepresentation idpRep = idpResource.toRepresentation();
+
+        TestKeycloakOidcIdentityProviderFactory.setIgnoreMaxAgeParam(idpRep);
+
+        idpResource.update(idpRep);
+
+        setTimeOffset(2);
+
+        // trigger re-auth with max_age while we are still authenticated
+        String loginUrlWithMaxAge = getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "account") + "&max_age=1";
+        driver.navigate().to(loginUrlWithMaxAge);
+
+        // we should now see the login page of the consumer
+        waitForPage(driver, "sign in to", true);
+        loginPage.assertCurrent(bc.consumerRealmName());
+        Assert.assertTrue("Driver should be on the consumer realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/auth"));
+
+        loginPage.clickSocial(bc.getIDPAlias());
+        // we should see the login page of the provider, since the max_age was propagated
+        waitForPage(driver, "sign in to", true);
+        loginPage.getError();
+        Assert.assertEquals("Unexpected error when authenticating with identity provider",
+                loginPage.getInstruction());
 
         testSingleLogout();
     }

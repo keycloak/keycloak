@@ -138,6 +138,10 @@ public class AuthenticationManager {
 
     // userSession note with authTime (time when authentication flow including requiredActions was finished)
     public static final String AUTH_TIME = "AUTH_TIME";
+
+    // authSession client note set during brokering indicating the time when the authentication happened at the IdP
+    public static final String AUTH_TIME_BROKER = "AUTH_TIME_BROKER";
+
     // clientSession note with flag that clientSession was authenticated through SSO cookie
     public static final String SSO_AUTH = "SSO_AUTH";
 
@@ -956,7 +960,7 @@ public class AuthenticationManager {
             clientSession.setNote(SSO_AUTH, "true");
             authSession.removeAuthNote(SSO_AUTH);
         } else {
-            int authTime = Time.currentTime();
+            int authTime = Optional.ofNullable(authSession.getClientNote(AUTH_TIME_BROKER)).map(Integer::parseInt).orElse(Time.currentTime());
             userSession.setNote(AUTH_TIME, String.valueOf(authTime));
             clientSession.removeNote(SSO_AUTH);
         }
