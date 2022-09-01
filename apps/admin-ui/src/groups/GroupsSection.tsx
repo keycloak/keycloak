@@ -6,7 +6,6 @@ import {
   DropdownItem,
   PageSection,
   PageSectionVariants,
-  AlertVariant,
   Tab,
   TabTitleText,
   Tabs,
@@ -15,7 +14,6 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
 
 import { useSubGroups } from "./SubGroupsContext";
@@ -32,6 +30,8 @@ import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { useAccess } from "../context/access/Access";
 import { GroupTree } from "./components/GroupTree";
 import { ViewType } from "./components/GroupToolbar";
+import { DeleteGroup } from "./components/DeleteGroup";
+import useToggle from "../utils/useToggle";
 
 import "./GroupsSection.css";
 
@@ -41,11 +41,11 @@ export default function GroupsSection() {
 
   const { adminClient } = useAdminClient();
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
-  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
   const [rename, setRename] = useState<string>();
   const [viewType, setViewType] = useState<ViewType>(ViewType.Table);
+  const [deleteOpen, toggleDeleteOpen] = useToggle();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,18 +60,6 @@ export default function GroupsSection() {
   const canManageGroup =
     hasAccess("manage-users") || currentGroup()?.access?.manage;
   const canManageRoles = hasAccess("manage-users");
-
-  const deleteGroup = async (group: GroupRepresentation) => {
-    try {
-      await adminClient.groups.del({
-        id: group.id!,
-      });
-      addAlert(t("groupDeleted", { count: 1 }), AlertVariant.success);
-    } catch (error) {
-      addError("groups:groupDeleteError", error);
-    }
-    return true;
-  };
 
   useFetch(
     async () => {
@@ -114,6 +102,12 @@ export default function GroupsSection() {
 
   return (
     <>
+      <DeleteGroup
+        show={deleteOpen}
+        toggleDialog={toggleDeleteOpen}
+        selectedRows={[currentGroup()!]}
+        refresh={() => navigate(toGroups({ realm }))}
+      />
       {rename && (
         <GroupsModal
           id={id}
@@ -143,10 +137,7 @@ export default function GroupsSection() {
                 <DropdownItem
                   data-testid="deleteGroup"
                   key="deleteGroup"
-                  onClick={async () => {
-                    await deleteGroup({ id });
-                    navigate(toGroups({ realm }));
-                  }}
+                  onClick={toggleDeleteOpen}
                 >
                   {t("deleteGroup")}
                 </DropdownItem>,

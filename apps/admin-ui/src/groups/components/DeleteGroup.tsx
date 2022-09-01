@@ -40,7 +40,10 @@ export const DeleteGroup = ({
   return (
     <ConfirmDialogModal
       titleKey={t("deleteConfirmTitle", { count: selectedRows.length })}
-      messageKey={t("deleteConfirm", { count: selectedRows.length })}
+      messageKey={t("deleteConfirm", {
+        count: selectedRows.length,
+        groupName: selectedRows[0]?.name,
+      })}
       continueButtonLabel="common:delete"
       continueButtonVariant={ButtonVariant.danger}
       onConfirm={multiDelete}

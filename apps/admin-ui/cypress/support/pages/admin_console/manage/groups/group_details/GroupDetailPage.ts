@@ -54,6 +54,7 @@ export default class GroupDetailPage extends GroupPage {
       "",
       cy.findByTestId(this.actionDrpDwnItemDeleteGroup)
     );
+    modalUtils.confirmModal();
     return this;
   }
 
