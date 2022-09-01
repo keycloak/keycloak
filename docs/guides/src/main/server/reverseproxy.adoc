@@ -165,6 +165,9 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 
 |certificate-chain-length
 | The maximum length of the certificate chain.
+
+|trust-proxy-verification
+| Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to keycloak and verifying it in keycloak.
 |===
 
 ==== Configuring the NGINX provider
