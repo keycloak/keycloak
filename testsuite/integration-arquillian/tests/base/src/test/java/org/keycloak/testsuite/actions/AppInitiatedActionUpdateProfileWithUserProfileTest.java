@@ -1,0 +1,53 @@
+/*
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.testsuite.actions;
+
+import org.junit.Before;
+import org.keycloak.common.Profile;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
+
+/**
+ * Only covers basic use cases for App Initialized actions. Complete dynamic user profile behavior is tested in {@link RequiredActionUpdateProfileWithUserProfileTest} as it shares same code as the App initialized action.   
+ * 
+ * @author Vlastimil Elias <velias@redhat.com>
+ *
+ */
+@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
+public class AppInitiatedActionUpdateProfileWithUserProfileTest extends AppInitiatedActionUpdateProfileTest {
+    
+    @Override
+    protected boolean isDynamicForm() {
+        return true;
+    }
+    
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        super.configureTestRealm(testRealm);
+        VerifyProfileTest.enableDynamicUserProfile(testRealm);
+    }
+    
+    @Before
+    public void beforeTest() {
+        VerifyProfileTest.setUserProfileConfiguration(testRealm(),null);        
+        super.beforeTest();
+    }
+
+}

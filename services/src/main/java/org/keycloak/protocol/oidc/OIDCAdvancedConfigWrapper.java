@@ -17,31 +17,24 @@
 
 package org.keycloak.protocol.oidc;
 
-import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.models.CibaConfig;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.representations.idm.ClientRepresentation;
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
+import org.keycloak.models.ClientModel;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.utils.StringUtil;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCAdvancedConfigWrapper {
-
-    private final ClientModel clientModel;
-    private final ClientRepresentation clientRep;
+public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     private OIDCAdvancedConfigWrapper(ClientModel client, ClientRepresentation clientRep) {
-        this.clientModel = client;
-        this.clientRep = clientRep;
+        super(client,clientRep);
     }
-
 
     public static OIDCAdvancedConfigWrapper fromClientModel(ClientModel client) {
         return new OIDCAdvancedConfigWrapper(client, null);
@@ -52,30 +45,62 @@ public class OIDCAdvancedConfigWrapper {
     }
 
 
-    public Algorithm getUserInfoSignedResponseAlg() {
-        String alg = getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
-        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+    public String getUserInfoSignedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
     }
 
-    public void setUserInfoSignedResponseAlg(Algorithm alg) {
-        String algStr = alg==null ? null : alg.toString();
-        setAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, algStr);
+    public void setUserInfoSignedResponseAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, algorithm);
     }
 
     public boolean isUserInfoSignatureRequired() {
         return getUserInfoSignedResponseAlg() != null;
     }
 
-    public Algorithm getRequestObjectSignatureAlg() {
-        String alg = getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG);
-        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+    public void setUserInfoEncryptedResponseAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ALG, algorithm);
     }
 
-    public void setRequestObjectSignatureAlg(Algorithm alg) {
-        String algStr = alg==null ? null : alg.toString();
-        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG, algStr);
+    public String getUserInfoEncryptedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ALG);
     }
-    
+
+    public String getUserInfoEncryptedResponseEnc() {
+        return getAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ENC);
+    }
+
+    public void setUserInfoEncryptedResponseEnc(String algorithm) {
+        setAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ENC, algorithm);
+    }
+
+    public boolean isUserInfoEncryptionRequired() {
+        return getUserInfoEncryptedResponseAlg() != null;
+    }
+
+    public String getRequestObjectSignatureAlg() {
+        return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG);
+    }
+
+    public void setRequestObjectSignatureAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG, algorithm);
+    }
+
+    public void setRequestObjectEncryptionAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_ENCRYPTION_ALG, algorithm);
+    }
+
+    public String getRequestObjectEncryptionAlg() {
+        return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_ENCRYPTION_ALG);
+    }
+
+    public String getRequestObjectEncryptionEnc() {
+        return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_ENCRYPTION_ENC);
+    }
+
+    public void setRequestObjectEncryptionEnc(String algorithm) {
+        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_ENCRYPTION_ENC, algorithm);
+    }
+
     public String getRequestObjectRequired() {
         return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED);
     }
@@ -110,6 +135,24 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.JWKS_URL, jwksUrl);
     }
 
+    public boolean isUseJwksString() {
+        String useJwksString = getAttribute(OIDCConfigAttributes.USE_JWKS_STRING);
+        return Boolean.parseBoolean(useJwksString);
+    }
+
+    public void setUseJwksString(boolean useJwksString) {
+        String val = String.valueOf(useJwksString);
+        setAttribute(OIDCConfigAttributes.USE_JWKS_STRING, val);
+    }
+
+    public String getJwksString() {
+        return getAttribute(OIDCConfigAttributes.JWKS_STRING);
+    }
+
+    public void setJwksString(String jwksString) {
+        setAttribute(OIDCConfigAttributes.JWKS_STRING, jwksString);
+    }
+
     public boolean isExcludeSessionStateFromAuthResponse() {
         String excludeSessionStateFromAuthResponse = getAttribute(OIDCConfigAttributes.EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE);
         return Boolean.parseBoolean(excludeSessionStateFromAuthResponse);
@@ -142,6 +185,14 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, val);
     }
 
+    public boolean isUseLowerCaseInTokenResponse() {
+        return Boolean.parseBoolean(getAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, "false"));
+    }
+
+    public void setUseLowerCaseInTokenResponse(boolean useRefreshToken) {
+        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useRefreshToken));
+    }
+
     /**
      * If true, then Client Credentials Grant generates refresh token and creates user session. This is not per specs, so it is false by default
      * For the details @see https://tools.ietf.org/html/rfc6749#section-4.4.3
@@ -162,6 +213,16 @@ public class OIDCAdvancedConfigWrapper {
 
     public void setTlsClientAuthSubjectDn(String tls_client_auth_subject_dn) {
         setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
+    }
+
+    public boolean getAllowRegexPatternComparison() {
+        String attrVal = getAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON);
+        // Allow Regex Pattern Comparison by default due the backwards compatibility
+        return attrVal == null || Boolean.parseBoolean(attrVal);
+    }
+
+    public void setAllowRegexPatternComparison(boolean allowRegexPatternComparison) {
+        setAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, String.valueOf(allowRegexPatternComparison));
     }
 
     public String getPkceCodeChallengeMethod() {
@@ -193,6 +254,29 @@ public class OIDCAdvancedConfigWrapper {
 
     public void setIdTokenEncryptedResponseEnc(String encName) {
         setAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, encName);
+    }
+
+    public String getAuthorizationSignedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.AUTHORIZATION_SIGNED_RESPONSE_ALG);
+    }
+    public void setAuthorizationSignedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.AUTHORIZATION_SIGNED_RESPONSE_ALG, algName);
+    }
+
+    public String getAuthorizationEncryptedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG);
+    }
+
+    public void setAuthorizationEncryptedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG, algName);
+    }
+
+    public String getAuthorizationEncryptedResponseEnc() {
+        return getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC);
+    }
+
+    public void setAuthorizationEncryptedResponseEnc(String encName) {
+        setAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC, encName);
     }
 
     public String getTokenEndpointAuthSigningAlg() {
@@ -231,56 +315,68 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS, val);
     }
 
-    private String getAttribute(String attrKey) {
+    public void setFrontChannelLogoutUrl(String frontChannelLogoutUrl) {
+        if (clientRep != null) {
+            clientRep.setFrontchannelLogout(StringUtil.isNotBlank(frontChannelLogoutUrl));
+        }
         if (clientModel != null) {
-            return clientModel.getAttribute(attrKey);
-        } else {
-            return clientRep.getAttributes()==null ? null : clientRep.getAttributes().get(attrKey);
+            clientModel.setFrontchannelLogout(StringUtil.isNotBlank(frontChannelLogoutUrl));
         }
+        setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, frontChannelLogoutUrl);
     }
 
-    private String getAttribute(String attrKey, String defaultValue) {
-        String value = getAttribute(attrKey);
-        if (value == null) {
-            return defaultValue;
-        }
-        return value;
+    public boolean isFrontChannelLogoutEnabled() {
+        return clientModel != null && clientModel.isFrontchannelLogout() && StringUtil.isNotBlank(getFrontChannelLogoutUrl());
     }
 
-    private void setAttribute(String attrKey, String attrValue) {
-        if (clientModel != null) {
-            if (attrValue != null) {
-                clientModel.setAttribute(attrKey, attrValue);
-            } else {
-                clientModel.removeAttribute(attrKey);
+    public String getFrontChannelLogoutUrl() {
+        return getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI);
+    }
+
+    public boolean isFrontChannelLogoutSessionRequired() {
+        String frontChannelLogoutSessionRequired = getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED);
+        // Include session by default for backwards compatibility
+        return frontChannelLogoutSessionRequired == null ? true : Boolean.parseBoolean(frontChannelLogoutSessionRequired);
+    }
+
+    public void setFrontChannelLogoutSessionRequired(boolean frontChannelLogoutSessionRequired) {
+        String val = String.valueOf(frontChannelLogoutSessionRequired);
+        setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED, val);
+    }
+
+    public void setLogoUri(String logoUri) {
+        setAttribute(ClientModel.LOGO_URI, logoUri);
+    }
+
+    public void setPolicyUri(String policyUri) {
+        setAttribute(ClientModel.POLICY_URI, policyUri);
+    }
+
+    public void setTosUri(String tosUri) {
+        setAttribute(ClientModel.TOS_URI, tosUri);
+    }
+
+    public List<String> getPostLogoutRedirectUris() {
+        List<String> postLogoutRedirectUris = getAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+        if(postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) {
+            return null;
+        }
+        else if (postLogoutRedirectUris.get(0).equals("+")) {
+            if(clientModel != null) {
+                return new ArrayList(clientModel.getRedirectUris());
             }
-        } else {
-            if (attrValue != null) {
-                if (clientRep.getAttributes() == null) {
-                    clientRep.setAttributes(new HashMap<>());
-                }
-                clientRep.getAttributes().put(attrKey, attrValue);
-            } else {
-                if (clientRep.getAttributes() != null) {
-                    clientRep.getAttributes().put(attrKey, null);
-                }
+            else if(clientRep != null) {
+                return clientRep.getRedirectUris();
             }
+            return null;
+        }
+        else {
+            return postLogoutRedirectUris;
         }
     }
 
-    private List<String> getAttributeMultivalued(String attrKey) {
-        String attrValue = getAttribute(attrKey);
-        if (attrValue == null) return Collections.emptyList();
-        return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
+    public void setPostLogoutRedirectUris(List<String> postLogoutRedirectUris) {
+        setAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutRedirectUris);
     }
 
-    private void setAttributeMultivalued(String attrKey, List<String> attrValues) {
-        if (attrValues == null || attrValues.size() == 0) {
-            // Remove attribute
-            setAttribute(attrKey, null);
-        } else {
-            String attrValueFull = String.join(Constants.CFG_DELIMITER, attrValues);
-            setAttribute(attrKey, attrValueFull);
-        }
-    }
 }

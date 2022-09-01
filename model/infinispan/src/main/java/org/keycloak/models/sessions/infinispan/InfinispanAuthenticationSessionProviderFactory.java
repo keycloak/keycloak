@@ -33,10 +33,13 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,7 +57,13 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     private volatile Cache<String, RootAuthenticationSessionEntity> authSessionsCache;
 
+    private int authSessionsLimit;
+
     public static final String PROVIDER_ID = "infinispan";
+
+    public static final String AUTH_SESSIONS_LIMIT = "authSessionsLimit";
+
+    public static final int DEFAULT_AUTH_SESSIONS_LIMIT = 300;
 
     public static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
 
@@ -64,7 +73,10 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public void init(Config.Scope config) {
-
+        // get auth sessions limit from config or use default if not provided
+        int configInt = config.getInt(AUTH_SESSIONS_LIMIT, DEFAULT_AUTH_SESSIONS_LIMIT);
+        // use default if provided value is not a positive number
+        authSessionsLimit = (configInt <= 0) ? DEFAULT_AUTH_SESSIONS_LIMIT : configInt;
     }
 
 
@@ -86,6 +98,17 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
         });
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("authSessionsLimit")
+                .type("int")
+                .helpText("The maximum number of concurrent authentication sessions per RootAuthenticationSession.")
+                .defaultValue(DEFAULT_AUTH_SESSIONS_LIMIT)
+                .add()
+                .build();
+    }
 
     protected void registerClusterListeners(KeycloakSession session) {
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
@@ -115,7 +138,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     @Override
     public AuthenticationSessionProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, authSessionsCache);
+        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, authSessionsCache, authSessionsLimit);
     }
 
     private void updateAuthNotes(ClusterEvent clEvent) {

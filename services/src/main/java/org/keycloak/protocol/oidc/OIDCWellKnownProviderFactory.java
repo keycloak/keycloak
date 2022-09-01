@@ -17,9 +17,19 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.util.FindFile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
 
@@ -30,13 +40,36 @@ public class OIDCWellKnownProviderFactory implements WellKnownProviderFactory {
 
     public static final String PROVIDER_ID = "openid-configuration";
 
+    private static final Logger logger = Logger.getLogger(OIDCWellKnownProviderFactory.class);
+
+    private Map<String, Object> openidConfigOverride = null;
+    private boolean includeClientScopes = true;
+
     @Override
     public WellKnownProvider create(KeycloakSession session) {
-        return new OIDCWellKnownProvider(session);
+        return new OIDCWellKnownProvider(session, openidConfigOverride, includeClientScopes);
     }
 
     @Override
     public void init(Config.Scope config) {
+        String openidConfigurationOverride = config.get("openid-configuration-override");
+        this.includeClientScopes = config.getBoolean("include-client-scopes", true);
+        logger.debugf("Include Client Scopes in OIDC Well-known endpoint: %s", this.includeClientScopes);
+        if (openidConfigurationOverride != null) {
+            initConfigOverrideFromFile(openidConfigurationOverride);
+        }
+    }
+
+    protected void initConfigOverrideFromFile(String openidConfigurationOverrideFile) {
+        try {
+            InputStream is = FindFile.findFile(openidConfigurationOverrideFile);
+            this.openidConfigOverride = JsonSerialization.readValue(is, Map.class);
+            logger.infof("Overriding default OIDC well-known endpoint configuration with the options from file '%s'", openidConfigurationOverrideFile);
+        } catch (RuntimeException re) {
+            logger.warnf(re, "Unable to find file specified for openid-configuration-override on custom location '%s'. Will stick to the default configuration for OIDC WellKnown endpoint", openidConfigurationOverrideFile);
+        } catch (IOException ioe) {
+            logger.warnf(ioe, "Error when trying to deserialize JSON from the file '%s'. Check the JSON format. Will stick to the default configuration for OIDC WellKnown endpoint", openidConfigurationOverrideFile);
+        }
     }
 
     @Override
@@ -52,4 +85,30 @@ public class OIDCWellKnownProviderFactory implements WellKnownProviderFactory {
         return PROVIDER_ID;
     }
 
+    // Custom implementation with alias "openid-configuration" should win over this default one
+    @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("openid-configuration-override")
+                .type("string")
+                .helpText("The file path from where the metadata should be loaded from. You can use an absolute file path or, if the file is in the server classpath, use the 'classpath:' prefix to load the file from the classpath.")
+                .add()
+                .property()
+                .name("include-client-scopes")
+                .type("boolean")
+                .helpText("If client scopes should be used to calculate the list of supported scopes.")
+                .defaultValue(true)
+                .add()
+                .build();
+    }
+
+    protected Map<String, Object> getOpenidConfigOverride() {
+        return openidConfigOverride;
+    }
 }

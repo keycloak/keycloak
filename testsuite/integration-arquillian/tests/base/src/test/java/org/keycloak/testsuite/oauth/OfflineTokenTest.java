@@ -392,8 +392,15 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .clearDetails()
                 .assertEvent();
 
-        // Refresh with new refreshToken is successful now
-        testRefreshWithOfflineToken(token, offlineToken2, offlineTokenString2, offlineToken2.getSessionState(), userId);
+        // Refresh with new refreshToken fails as well (client session was invalidated because of attempt to refresh with revoked refresh token)
+        OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(offlineTokenString2, "secret1");
+        Assert.assertEquals(400, response2.getStatusCode());
+        events.expectRefresh(offlineToken2.getId(), offlineToken2.getSessionState())
+                .client("offline-client")
+                .error(Errors.INVALID_TOKEN)
+                .user(userId)
+                .clearDetails()
+                .assertEvent();
 
         RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
     }
@@ -497,7 +504,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         setTimeOffset(86400);
 
         // Remove expired sessions. This will remove "normal" userSession
-        testingClient.testing().removeUserSessions(appRealm.toRepresentation().getId());
+        testingClient.testing().removeUserSessions("test");
 
         // Refresh with the offline token
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret1");

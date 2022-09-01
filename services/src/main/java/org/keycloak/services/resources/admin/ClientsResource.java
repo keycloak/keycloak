@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -56,7 +57,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
@@ -86,9 +86,11 @@ public class ClientsResource {
     }
 
     /**
-     * Get clients belonging to the realm
+     * Get clients belonging to the realm.
      *
-     * Returns a list of clients belonging to the realm
+     * If a client can't be retrieved from the storage due to a problem with the underlying storage,
+     * it is silently removed from the returned list.
+     * This ensures that concurrent modifications to the list don't prevent callers from retrieving this list.
      *
      * @param clientId filter by clientId
      * @param viewableOnly filter clients that cannot be viewed in full by admin
@@ -105,17 +107,17 @@ public class ClientsResource {
                                                  @QueryParam("q") String searchQuery,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults) {
+        auth.clients().requireList();
+
         boolean canView = auth.clients().canView();
         Stream<ClientModel> clientModels = Stream.empty();
 
         if (searchQuery != null) {
-            auth.clients().requireList();
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
             clientModels = canView
                     ? realm.searchClientByAttributes(attributes, firstResult, maxResults)
                     : realm.searchClientByAttributes(attributes, -1, -1);
         } else if (clientId == null || clientId.trim().equals("")) {
-            auth.clients().requireList();
             clientModels = canView
                     ? realm.getClientsStream(firstResult, maxResults)
                     : realm.getClientsStream();
@@ -130,8 +132,8 @@ public class ClientsResource {
             }
         }
 
-        Stream<ClientRepresentation> s = clientModels
-                .map(c -> {
+        Stream<ClientRepresentation> s = ModelToRepresentation.filterValidRepresentations(clientModels,
+                c -> {
                     ClientRepresentation representation = null;
                     if (canView || auth.clients().canView(c)) {
                         representation = ModelToRepresentation.toRepresentation(c, session);
@@ -144,8 +146,7 @@ public class ClientsResource {
                     }
 
                     return representation;
-                })
-                .filter(Objects::nonNull);
+                });
 
         if (!canView) {
             s = paginatedStream(s, firstResult, maxResults);
@@ -186,7 +187,7 @@ public class ClientsResource {
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
-            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+            if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 AuthorizationService authorizationService = getAuthorizationService(clientModel);
 
                 authorizationService.enable(true);
@@ -194,7 +195,7 @@ public class ClientsResource {
                 ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
 
                 if (authorizationSettings != null) {
-                    authorizationService.resourceServer().importSettings(authorizationSettings);
+                    authorizationService.getResourceServerService().importSettings(authorizationSettings);
                 }
             }
 
@@ -206,6 +207,7 @@ public class ClientsResource {
                         Response.Status.BAD_REQUEST);
             });
 
+            session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();

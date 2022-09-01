@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.keycloak.json.StringListMapDeserializer;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -286,5 +287,29 @@ public class UserRepresentation {
 
     public void setAccess(Map<String, Boolean> access) {
         this.access = access;
+    }
+
+    public Map<String, List<String>> toAttributes() {
+        Map<String, List<String>> attrs = new HashMap<>();
+
+        if (getAttributes() != null) attrs.putAll(getAttributes());
+
+        if (getUsername() != null)
+            attrs.put("username", Collections.singletonList(getUsername()));
+        else
+            attrs.remove("username");
+
+        if (getEmail() != null)
+            attrs.put("email", Collections.singletonList(getEmail()));
+        else
+            attrs.remove("email");
+
+        if (getLastName() != null)
+            attrs.put("lastName", Collections.singletonList(getLastName()));
+
+        if (getFirstName() != null)
+            attrs.put("firstName", Collections.singletonList(getFirstName()));
+
+        return attrs;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,19 +74,19 @@ public class AbstractPermissionService {
                     throw new ErrorResponseException("invalid_resource_id", "Resource id or name not provided.", Response.Status.BAD_REQUEST);
                 }
             } else {
-                Resource resource = resourceStore.findById(resourceSetId, resourceServer.getId());
+                Resource resource = resourceStore.findById(resourceServer.getRealm(), resourceServer, resourceSetId);
 
                 if (resource != null) {
                     resources.add(resource);
                 } else {
-                    Resource userResource = resourceStore.findByName(resourceSetId, identity.getId(), this.resourceServer.getId());
+                    Resource userResource = resourceStore.findByName(this.resourceServer, resourceSetId, identity.getId());
 
                     if (userResource != null) {
                         resources.add(userResource);
                     }
 
                     if (!identity.isResourceServer()) {
-                        Resource serverResource = resourceStore.findByName(resourceSetId, this.resourceServer.getId());
+                        Resource serverResource = resourceStore.findByName(this.resourceServer, resourceSetId);
 
                         if (serverResource != null) {
                             resources.add(serverResource);
@@ -127,13 +127,13 @@ public class AbstractPermissionService {
                 scope = resource.getScopes().stream().filter(scope1 -> scope1.getName().equals(scopeName)).findFirst().orElse(null);
 
                 if (scope == null && resource.getType() != null) {
-                    scope = resourceStore.findByType(resource.getType(), resourceServer.getId()).stream()
-                            .filter(baseResource -> baseResource.getOwner().equals(resource.getResourceServer()))
+                    scope = resourceStore.findByType(resourceServer, resource.getType()).stream()
+                            .filter(baseResource -> baseResource.getOwner().equals(resourceServer.getClientId()))
                             .flatMap(resource1 -> resource1.getScopes().stream())
                             .filter(baseScope -> baseScope.getName().equals(scopeName)).findFirst().orElse(null);
                 }
             } else {
-                scope = authorization.getStoreFactory().getScopeStore().findByName(scopeName, resourceServer.getId());
+                scope = authorization.getStoreFactory().getScopeStore().findByName(resourceServer, scopeName);
             }
 
             if (scope == null) {

@@ -52,6 +52,8 @@ import org.wildfly.extras.creaper.core.online.OnlineOptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+
 import org.jboss.shrinkwrap.api.Archive;
 import org.keycloak.testsuite.util.ContainerAssume;
 
@@ -142,6 +144,10 @@ public class KeycloakContainerEventsController extends ContainerEventController 
         if (restartContainer.withoutKeycloakAddUserFile()) {
             removeKeycloakAddUserFile();
         }
+
+        if (restartContainer.initializeDatabase()) {
+            clearMapStorageFiles();
+        }
     }
 
     /**
@@ -199,6 +205,17 @@ public class KeycloakContainerEventsController extends ContainerEventController 
 
         }
 
+    }
+
+    private void clearMapStorageFiles() {
+        String filePath = System.getProperty("project.build.directory", "target/map");
+
+        File f = new File(filePath);
+        if (!f.exists()) return;
+
+        Arrays.stream(f.listFiles())
+                .filter(file -> file.getName().startsWith("map-") && file.getName().endsWith(".json"))
+                .forEach(File::delete);
     }
 
     /**

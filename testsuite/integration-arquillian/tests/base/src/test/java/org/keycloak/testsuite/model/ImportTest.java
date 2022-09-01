@@ -24,6 +24,9 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.common.Profile;
+import org.keycloak.exportimport.Strategy;
+import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -31,14 +34,25 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.config.UPAttribute;
+import org.keycloak.userprofile.config.UPAttributeSelector;
+import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
@@ -122,6 +136,8 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-12640
     @Test
     public void importAuthorizationSettings() throws Exception {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/model/authz-bug.json"), RealmRepresentation.class);
         adminClient.realms().create(testRealm);
 
@@ -129,8 +145,40 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.realms().getRealmByName("authz-bug");
             AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
             ClientModel client = realm.getClientByClientId("appserver");
-            ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findById(client.getId());
+            ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client);
             Assert.assertEquals("AFFIRMATIVE", resourceServer.getDecisionStrategy().name());
+        });
+    }
+
+    @Test
+    @EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
+    public void importUserProfile() throws Exception {
+        final String realmString = IOUtils.toString(getClass().getResourceAsStream("/model/import-userprofile.json"), StandardCharsets.UTF_8);
+
+        testingClient.server().run(session -> {
+            RealmRepresentation realmRep = JsonSerialization.readValue(realmString, RealmRepresentation.class);
+
+            // make sure the import happens within the context of the realm being imported
+            session.getContext().setRealm(null);
+            ImportUtils.importRealm(session, realmRep, Strategy.OVERWRITE_EXISTING, true);
+
+            RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
+
+            session.getContext().setRealm(realm);
+
+            UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+            UPConfig config = UPConfigUtils.readConfig(new ByteArrayInputStream(provider.getConfiguration().getBytes()));
+
+            Assert.assertTrue(config.getAttributes().stream().map(UPAttribute::getName).anyMatch("email"::equals));
+            Assert.assertTrue(config.getAttributes().stream().map(UPAttribute::getName).anyMatch("test"::equals));
+            Assert.assertTrue(config.getAttributes().stream().map(UPAttribute::getSelector)
+                    .filter(Objects::nonNull)
+                    .map(UPAttributeSelector::getScopes)
+                    .filter(Objects::nonNull)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList())
+                    .contains("microprofile-jwt")
+            );
         });
     }
 

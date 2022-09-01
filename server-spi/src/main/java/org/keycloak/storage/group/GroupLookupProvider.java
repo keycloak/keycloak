@@ -50,13 +50,17 @@ public interface GroupLookupProvider {
     }
 
     /**
-     * Returns groups with the given string in name for the given realm.
+     * Returns the group hierarchy with the given string in name for the given realm.
+     *
+     * For a matching group node the parent group is fetched by id (with all children) and added to the result stream.
+     * This is done until the group node does not have a parent (root group)
      *
      * @param realm Realm.
      * @param search Case sensitive searched string.
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return Stream of groups with the given string in name. Never returns {@code null}.
+     * @return Stream of root groups that have the given string in their name themself or a group in their child-collection has.
+     * The returned hierarchy contains siblings that do not necessarily have a matching name. Never returns {@code null}.
      */
     Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults);
 

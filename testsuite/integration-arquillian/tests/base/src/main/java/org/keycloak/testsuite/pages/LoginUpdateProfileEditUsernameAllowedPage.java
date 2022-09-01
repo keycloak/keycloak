@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -24,10 +26,8 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
     @FindBy(id = "username")
     private WebElement usernameInput;
 
-    public void update(String firstName, String lastName, String email, String username) {
-        usernameInput.clear();
-        usernameInput.sendKeys(username);
-        update(firstName, lastName, email);
+    public Update prepareUpdate() {
+        return new Update(this);
     }
 
     public String getUsername() {
@@ -37,10 +37,43 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Update Account Information");
     }
+    
+    public boolean isUsernamePresent() {
+        try {
+            return driver.findElement(By.id("username")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
 
     @Override
     public void open() {
         throw new UnsupportedOperationException();
+    }
+
+    public static class Update extends LoginUpdateProfilePage.Update {
+
+        private final LoginUpdateProfileEditUsernameAllowedPage page;
+        private String username;
+
+        protected Update(LoginUpdateProfileEditUsernameAllowedPage page) {
+            super(page);
+            this.page = page;
+        }
+
+        public Update username(String username) {
+            this.username = username;
+            return this;
+        }
+
+        @Override
+        public void submit() {
+            if (username != null) {
+                page.usernameInput.clear();
+                page.usernameInput.sendKeys(username);
+            }
+            super.submit();
+        }
     }
 
 }

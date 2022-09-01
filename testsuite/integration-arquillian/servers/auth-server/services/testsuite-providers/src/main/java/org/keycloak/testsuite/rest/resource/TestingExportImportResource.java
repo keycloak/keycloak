@@ -28,7 +28,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.File;
+import java.nio.file.Files;
 
 import static org.keycloak.exportimport.ExportImportConfig.ACTION;
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_PER_FILE;
@@ -46,6 +46,7 @@ import org.keycloak.exportimport.Strategy;
 public class TestingExportImportResource {
 
     private final KeycloakSession session;
+    private static String tempDir;
 
     public TestingExportImportResource(KeycloakSession session) {
         this.session = session;
@@ -142,10 +143,11 @@ public class TestingExportImportResource {
     @Path("/get-test-dir")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public String getExportImportTestDirectory() {
-        System.setProperty("project.build.directory", "target");
-        String absolutePath = new File(System.getProperty("project.build.directory", "target")).getAbsolutePath();
-        return absolutePath;
+    public String getExportImportTestDirectory() throws Exception {
+        if (tempDir == null) {
+            tempDir = Files.createTempDirectory("kc-tests").toAbsolutePath().toString();
+        }
+        return tempDir;
     }
 
     @GET

@@ -19,12 +19,14 @@ package org.keycloak.testsuite.admin.realm;
 
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
@@ -33,6 +35,8 @@ import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
+import org.keycloak.models.ParConfig;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -47,6 +51,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -189,8 +194,9 @@ public class RealmTest extends AbstractAdminTest {
 
             Map<String, String> attributes = rep2.getAttributes();
             assertTrue("Attributes expected to be present oauth2DeviceCodeLifespan, oauth2DevicePollingInterval, found: " + String.join(", ", attributes.keySet()),
-                attributes.size() == 2 && attributes.containsKey(OAuth2DeviceConfig.OAUTH2_DEVICE_CODE_LIFESPAN)
-                    && attributes.containsKey(OAuth2DeviceConfig.OAUTH2_DEVICE_POLLING_INTERVAL));
+                attributes.size() == 3 && attributes.containsKey(OAuth2DeviceConfig.OAUTH2_DEVICE_CODE_LIFESPAN)
+                    && attributes.containsKey(OAuth2DeviceConfig.OAUTH2_DEVICE_POLLING_INTERVAL)
+                    && attributes.containsKey(ParConfig.PAR_REQUEST_URI_LIFESPAN));
         } finally {
             adminClient.realm("attributes").remove();
         }
@@ -285,6 +291,7 @@ public class RealmTest extends AbstractAdminTest {
     @Test
     public void createRealmWithPasswordPolicyFromJsonWithValidPasswords() {
         RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/import/testrealm-keycloak-6146.json"), RealmRepresentation.class);
+        rep.setId(KeycloakModelUtils.generateId());
         try (Creator<RealmResource> c = Creator.create(adminClient, rep)) {
             RealmRepresentation created = c.resource().toRepresentation();
             assertRealm(rep, created);
@@ -439,7 +446,11 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(Boolean.TRUE, rep.isRegistrationAllowed());
         assertEquals(Boolean.TRUE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.TRUE, rep.isEditUsernameAllowed());
-        assertEquals(Boolean.TRUE, rep.isUserManagedAccessAllowed());
+        if (ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            assertEquals(Boolean.TRUE, rep.isUserManagedAccessAllowed());
+        } else {
+            assertEquals(Boolean.FALSE, rep.isUserManagedAccessAllowed());
+        }
 
         // second change
         rep.setRegistrationAllowed(false);
@@ -675,6 +686,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearRealmCache() {
+        Assume.assumeTrue("Realm cache disabled.", isRealmCacheEnabled());
         RealmRepresentation realmRep = realm.toRepresentation();
         assertTrue(testingClient.testing().cache("realms").contains(realmRep.getId()));
 
@@ -686,6 +698,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearUserCache() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         UserRepresentation user = new UserRepresentation();
         user.setUsername("clearcacheuser");
         Response response = realm.users().create(user);

@@ -20,6 +20,7 @@ package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -31,6 +32,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -242,6 +244,50 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         assertEquals("invalid_request", response.getError());
         Assert.assertThat(response.getErrorDescription(), containsString("Certificate has been revoked, certificate's subject:"));
 
+    }
+
+    @Test
+    public void loginCertificateNotExpired() throws Exception {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                    .setCertValidationEnabled(true)
+                    .setConfirmationPageAllowed(true)
+                    .setMappingSourceType(SUBJECTDN_EMAIL)
+                    .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void loginCertificateExpired() throws Exception {
+        Assume.assumeFalse("Time offset is causing integer overflow. With the old store it works, because root authentication session has also timestamp overflown, this is not true for the new store so the test is failing.", keycloakUsingProviderWithId(AuthenticationSessionProvider.class, "map"));
+
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                    .setCertValidationEnabled(true)
+                    .setConfirmationPageAllowed(true)
+                    .setMappingSourceType(SUBJECTDN_EMAIL)
+                    .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        setTimeOffset(50 * 365 * 24 * 60 * 60);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        setTimeOffset(0);
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
+        Assert.assertThat(response.getErrorDescription(), containsString("has expired on:"));
     }
 
     private void loginForceTemporaryAccountLock() throws Exception {

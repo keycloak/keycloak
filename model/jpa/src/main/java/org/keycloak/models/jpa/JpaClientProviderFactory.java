@@ -23,11 +23,13 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 
 import javax.persistence.EntityManager;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
@@ -36,6 +38,11 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
 
     private Set<String> clientSearchableAttributes = null;
 
+    private static final List<String> REQUIRED_SEARCHABLE_ATTRIBUTES = Arrays.asList(
+        "saml_idp_initiated_sso_url_name",
+        SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER
+    );
+
     @Override
     public void init(Config.Scope config) {
         String[] searchableAttrsArr = config.getArray("searchableAttributes");
@@ -43,12 +50,11 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
             String s = System.getProperty("keycloak.client.searchableAttributes");
             searchableAttrsArr = s == null ? null : s.split("\\s*,\\s*");
         }
+        HashSet<String> s = new HashSet<>(REQUIRED_SEARCHABLE_ATTRIBUTES);
         if (searchableAttrsArr != null) {
-            clientSearchableAttributes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(searchableAttrsArr)));
+            s.addAll(Arrays.asList(searchableAttrsArr));
         }
-        else {
-            clientSearchableAttributes = Collections.emptySet();
-        }
+        clientSearchableAttributes = Collections.unmodifiableSet(s);
     }
 
     @Override

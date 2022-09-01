@@ -40,10 +40,10 @@
         <fieldset>
             <table class="table table-striped table-bordered">
                 <thead>
-                <tr>
+                <tr data-ng-show="access.manageRealm">
                     <th class="kc-table-actions" colspan="6">
                         <div class="form-inline">
-                            <div class="pull-right" data-ng-show="access.manageRealm">
+                            <div class="pull-right">
                                 <a href="#/realms/{{realm.realm}}/client-policies/policy-create" class="btn btn-default">{{:: 'create' | translate}}</a>
                             </div>
                         </div>
@@ -61,8 +61,8 @@
                     <td><a href="#/realms/{{realm.realm}}/client-policies/policies-update/{{clientPolicy.name}}">{{clientPolicy.name}}</a></td>
                     <td>{{clientPolicy.description}}</td>
                     <td translate="{{clientPolicy.enabled}}"></td>
-                    <td class="kc-action-cell" data-ng-hide="clientPolicy.builtin" kc-open="/realms/{{realm.realm}}/client-policies/policies-update/{{clientPolicy.name}}">{{:: 'edit' | translate}}</td>
-                    <td class="kc-action-cell" data-ng-hide="clientPolicy.builtin" data-ng-click="removeClientPolicy(clientPolicy)">{{:: 'delete' | translate}}</td>
+                    <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/client-policies/policies-update/{{clientPolicy.name}}">{{:: 'edit' | translate}}</td>
+                    <td class="kc-action-cell" data-ng-click="removeClientPolicy(clientPolicy)" data-ng-show="access.manageRealm">{{:: 'delete' | translate}}</td>
                 </tr>
                 </tbody>
             </table>

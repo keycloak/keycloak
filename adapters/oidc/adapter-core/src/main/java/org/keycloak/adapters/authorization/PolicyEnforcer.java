@@ -191,12 +191,16 @@ public class PolicyEnforcer {
 
             if (resource != null) {
                 pathConfig.setId(resource.getId());
-                // if the resource is staticly bound to a resource it means the config can not be invalidated
+                // if the resource is statically bound to a resource it means the config can not be invalidated
                 if (resourceName != null) {
                     pathConfig.setStatic(true);
                 }
             }
-            
+
+            if (PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
+                pathConfig.setStatic(true);
+            }
+
             PathConfig existingPath = null;
 
             for (PathConfig current : paths.values()) {
@@ -281,13 +285,17 @@ public class PolicyEnforcer {
                             Map<String, Map<String, Object>> cipConfig = null;
                             PolicyEnforcerConfig.EnforcementMode enforcementMode = PolicyEnforcerConfig.EnforcementMode.ENFORCING;
                             ResourceRepresentation targetResource = matchingResources.get(0);
+                            List<PolicyEnforcerConfig.MethodConfig> methodConfig = null;
+                            boolean isStatic = false;
 
                             if (pathConfig != null) {
                                 cipConfig = pathConfig.getClaimInformationPointConfig();
                                 enforcementMode = pathConfig.getEnforcementMode();
+                                methodConfig = pathConfig.getMethods();
+                                isStatic = pathConfig.isStatic();
                             } else {
                                 for (PathConfig existingPath : paths.values()) {
-                                    if (existingPath.getId().equals(targetResource.getId()) 
+                                    if (targetResource.getId().equals(existingPath.getId())
                                             && existingPath.isStatic()
                                             && !PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(existingPath.getEnforcementMode())) {
                                         return null;
@@ -300,7 +308,12 @@ public class PolicyEnforcer {
                             if (cipConfig != null) {
                                 pathConfig.setClaimInformationPointConfig(cipConfig);
                             }
-                            
+
+                            if (methodConfig != null) {
+                                pathConfig.setMethods(methodConfig);
+                            }
+
+                            pathConfig.setStatic(isStatic);
                             pathConfig.setEnforcementMode(enforcementMode);
                         }
                     } catch (Exception cause) {

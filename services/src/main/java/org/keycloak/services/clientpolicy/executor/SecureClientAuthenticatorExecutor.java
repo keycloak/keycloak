@@ -93,6 +93,7 @@ public class SecureClientAuthenticatorExecutor implements ClientPolicyExecutorPr
             validateDuringClientCRUD(clientUpdateContext.getProposedClientRepresentation());
             break;
         case TOKEN_REQUEST:
+        case SERVICE_ACCOUNT_TOKEN_REQUEST:
         case TOKEN_REFRESH:
         case TOKEN_REVOKE:
         case TOKEN_INTROSPECT:

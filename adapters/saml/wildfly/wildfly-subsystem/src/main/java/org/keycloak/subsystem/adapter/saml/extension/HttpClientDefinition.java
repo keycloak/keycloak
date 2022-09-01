@@ -78,8 +78,26 @@ abstract class HttpClientDefinition {
                     .setAllowExpression(true)
                     .build();
 
+    private static final SimpleAttributeDefinition SOCKET_TIMEOUT =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.SOCKET_TIMEOUT, ModelType.LONG, true)
+                    .setXmlName(Constants.XML.SOCKET_TIMEOUT)
+                    .setAllowExpression(true)
+                    .build();
+
+    private static final SimpleAttributeDefinition CONNECTION_TIMEOUT =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.CONNECTION_TIMEOUT, ModelType.LONG, true)
+                    .setXmlName(Constants.XML.CONNECTION_TIMEOUT)
+                    .setAllowExpression(true)
+                    .build();
+
+    private static final SimpleAttributeDefinition CONNECTION_TTL =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.CONNECTION_TTL, ModelType.LONG, true)
+                    .setXmlName(Constants.XML.CONNECTION_TTL)
+                    .setAllowExpression(true)
+                    .build();
+
     static final SimpleAttributeDefinition[] ATTRIBUTES = {ALLOW_ANY_HOSTNAME, CLIENT_KEYSTORE, CLIENT_KEYSTORE_PASSWORD,
-            CONNECTION_POOL_SIZE, DISABLE_TRUST_MANAGER, PROXY_URL, TRUSTSTORE, TRUSTSTORE_PASSWORD};
+            CONNECTION_POOL_SIZE, DISABLE_TRUST_MANAGER, PROXY_URL, TRUSTSTORE, TRUSTSTORE_PASSWORD, SOCKET_TIMEOUT, CONNECTION_TIMEOUT, CONNECTION_TTL};
 
     private static final HashMap<String, SimpleAttributeDefinition> ATTRIBUTE_MAP = new HashMap<>();
 

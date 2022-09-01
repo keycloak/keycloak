@@ -106,12 +106,17 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginConfirmationPage.open();
 
         Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed.\n" +
-                "Key Usage bit 'dataEncipherment' is not set."));
+                "Certificate revoked or incorrect."));
     }
 
     @Test
     public void loginWithNonSupportedCertExtendedKeyUsage() throws Exception {
         x509BrowserLogin(createLoginSubjectEmailWithExtendedKeyUsage("serverAuth"), userId, "test-user@localhost", "test-user@localhost");
+    }
+
+    @Test
+    public void loginWithRevalidateCertEnabledCertIsTrusted() throws Exception {
+        x509BrowserLogin(createLoginSubjectEmailWithRevalidateCert(true), userId, "test-user@localhost", "test-user@localhost");
     }
 
     @Test

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="infinispan-dist-hibernate" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="subsystem.infinispan">
+
+        <feature spec="subsystem.infinispan.cache-container">
+            <param name="cache-container" value="hibernate"/>
+            <param name="modules" value="[org.infinispan.hibernate-cache]"/>
+            <param name="marshaller" value="JBOSS"/>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="local-query"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.expiration">
+                    <param name="max-idle" value="100000"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.transport.jgroups">
+                <param name="lock-timeout" value="60000"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.replicated-cache">
+                <param name="replicated-cache" value="timestamps"/>
+                <param name="mode" value="ASYNC"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.invalidation-cache">
+                <param name="invalidation-cache" value="entity"/>
+                <feature spec="subsystem.infinispan.cache-container.invalidation-cache.component.transaction">
+                    <param name="mode" value="NON_XA"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.invalidation-cache.component.expiration">
+                    <param name="max-idle" value="100000"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.invalidation-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="pending-puts"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.expiration">
+                    <param name="max-idle" value="60000"/>
+                </feature>
+            </feature>
+        </feature>
+
+    </feature>
+</feature-group-spec>

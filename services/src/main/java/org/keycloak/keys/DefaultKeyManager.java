@@ -81,7 +81,7 @@ public class DefaultKeyManager implements KeyManager {
             }
         }
 
-        logger.errorv("Failed to create fallback key for realm: realm={0} algorithm={1} use={2", realm.getName(), algorithm, use.name());
+        logger.errorv("Failed to create fallback key for realm: realm={0} algorithm={1} use={2}", realm.getName(), algorithm, use.name());
         throw new RuntimeException("Failed to find key: realm=" + realm.getName() + " algorithm=" + algorithm + " use=" + use.name());
     }
 
@@ -244,7 +244,7 @@ public class DefaultKeyManager implements KeyManager {
     }
 
     private boolean matches(KeyWrapper key, KeyUse use, String algorithm) {
-        return use.equals(key.getUse()) && key.getAlgorithm().equals(algorithm);
+        return use.equals(key.getUse()) && key.getAlgorithmOrDefault().equals(algorithm);
     }
 
     private List<KeyProvider> getProviders(RealmModel realm) {

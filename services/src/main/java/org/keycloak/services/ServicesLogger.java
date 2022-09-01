@@ -459,4 +459,12 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=104, value="Not creating user %s. It already exists.")
     void notCreatingExistingUser(String userName);
 
+    @LogMessage(level = ERROR)
+    @Message(id=105, value="Response_mode 'query.jwt' is allowed only when the authorization response token is encrypted")
+    void responseModeQueryJwtNotAllowed();
+
+    @LogMessage(level = INFO)
+    @Message(id=106, value="Created script engine '%s', version '%s' for the mime type '%s'")
+    @Once
+    void scriptEngineCreated(String engineName, String engineVersion, String mimeType);
 }

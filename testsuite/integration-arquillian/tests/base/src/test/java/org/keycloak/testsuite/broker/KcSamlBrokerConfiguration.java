@@ -23,6 +23,7 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +73,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createProviderClients() {
         String clientId = getIDPClientIdInProviderRealm();
-        return Arrays.asList(createProviderClient(clientId));
+        return new LinkedList<>(Collections.singleton(createProviderClient(clientId)));
     }
 
     private ClientRepresentation createProviderClient(String clientId) {

@@ -2,6 +2,9 @@ package org.keycloak.saml.processing.core.saml.v2.writers;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.dom.saml.v2.assertion.AuthnContextClassRefType;
+import org.keycloak.dom.saml.v2.assertion.AuthnContextDeclType;
+import org.keycloak.dom.saml.v2.assertion.AuthnContextType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -10,6 +13,7 @@ import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 
 public class SAMLAssertionWriterTest {
     @Test
@@ -33,5 +37,34 @@ public class SAMLAssertionWriterTest {
         String expectedXMLAttribute = "SessionNotOnOrAfter=\"" + sessionExpirationDate.toString() + "\"";
 
         Assert.assertTrue(serializedAssertion.contains(expectedXMLAttribute));
+    }
+
+    @Test
+    public void testAuthnContextTypeWithAuthnContextClassRefAndAuthnContextDecl() throws ProcessingException {
+        String uriSmartCard = "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI";
+        String expectedAuthnContextDecl = "AuthnContextDecl>"+uriSmartCard+"<";
+        String expectedAuthnContextClassRef = "AuthnContextClassRef>"+uriSmartCard+"<";
+
+        AuthnContextClassRefType authnContextClassRef = new AuthnContextClassRefType(URI.create(uriSmartCard));
+        AuthnContextDeclType authnContextDecl = new AuthnContextDeclType(URI.create(uriSmartCard));
+
+        XMLGregorianCalendar issueInstant = XMLTimeUtil.getIssueInstant();
+        AuthnStatementType authnStatementType = new AuthnStatementType(issueInstant);
+        AuthnContextType authnContextType = new AuthnContextType();
+        AuthnContextType.AuthnContextTypeSequence sequence = new AuthnContextType.AuthnContextTypeSequence();
+        sequence.setAuthnContextDecl(authnContextDecl);
+        sequence.setClassRef(authnContextClassRef);
+        authnContextType.setSequence(sequence);
+        authnStatementType.setAuthnContext(authnContextType);
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        SAMLAssertionWriter samlAssertionWriter = new SAMLAssertionWriter(StaxUtil.getXMLStreamWriter(byteArrayOutputStream));
+
+        samlAssertionWriter.write(authnStatementType, true);
+
+        String serializedAssertion = new String(byteArrayOutputStream.toByteArray(), GeneralConstants.SAML_CHARSET);
+
+        Assert.assertTrue(serializedAssertion.contains(expectedAuthnContextClassRef));
+        Assert.assertTrue(serializedAssertion.contains(expectedAuthnContextDecl));
     }
 }

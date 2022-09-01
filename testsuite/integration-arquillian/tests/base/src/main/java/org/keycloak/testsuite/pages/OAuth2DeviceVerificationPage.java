@@ -26,6 +26,8 @@ import org.openqa.selenium.support.FindBy;
  */
 public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
 
+    private static final String CONSENT_DENIED_MESSAGE = "Consent denied for connecting the device.";
+    
     @FindBy(id = "device-user-code")
     private WebElement userCodeInput;
 
@@ -74,6 +76,11 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
             isInvalidUserCodePage());
     }
 
+    public void assertExpiredUserCodePage() {
+        Assert.assertTrue("Expected expired user code page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
+                isExpiredUserCodePage());
+    }
+
     private boolean isApprovedPage() {
         if (driver.getTitle().startsWith("Sign in to ")) {
             try {
@@ -88,9 +95,8 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     private boolean isDeniedPage() {
         if (driver.getTitle().startsWith("Sign in to ")) {
             try {
-                driver.findElement(By.id("kc-page-title")).getText().equals("Device Login Failed");
-                driver.findElement(By.className("instruction")).getText().equals("Consent denied for connecting the device.");
-                return true;
+                return driver.findElement(By.id("kc-page-title")).getText().equals("Device Login Failed")
+                        && driver.findElement(By.className("instruction")).getText().equals(CONSENT_DENIED_MESSAGE);
             } catch (Throwable t) {
             }
         }
@@ -101,9 +107,20 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
         if (driver.getTitle().startsWith("Sign in to ")) {
             try {
                 driver.findElement(By.id("device-user-code"));
-                driver.findElement(By.id("kc-page-title")).getText().equals("Device Login");
-                driver.findElement(By.className("kc-feedback-text")).getText().equals("Invalid code, please try again.");
-                return true;
+                return driver.findElement(By.id("kc-page-title")).getText().equals("Device Login")
+                        && driver.findElement(By.className("kc-feedback-text")).getText().equals("Invalid code, please try again.");
+            } catch (Throwable t) {
+            }
+        }
+        return false;
+    }
+
+    private boolean isExpiredUserCodePage() {
+        if (driver.getTitle().startsWith("Sign in to ")) {
+            try {
+                driver.findElement(By.id("device-user-code"));
+                return driver.findElement(By.id("kc-page-title")).getText().equals("Device Login")
+                        && driver.findElement(By.className("kc-feedback-text")).getText().equals("The code has expired. Please go back to your device and try connecting again.");
             } catch (Throwable t) {
             }
         }

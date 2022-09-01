@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<!-- actual content of this package comes from artifact=org.keycloak:keycloak-client-cli-dist:zip
+     See pom.xml execution/id: unpack-cli.
+-->
+<package-spec xmlns="urn:jboss:galleon:package:2.0" name="client-cli">
+</package-spec>

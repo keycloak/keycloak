@@ -18,7 +18,6 @@
 package org.keycloak.models.jpa.entities;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import javax.persistence.Column;
@@ -27,17 +26,14 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.jpa.converter.MapStringConverter;
 
 @Entity
 @IdClass(RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey.class)
 @Table(name = "REALM_LOCALIZATIONS")
 public class RealmLocalizationTextsEntity {
-
-    // TODO: Remove this constant once the quarkus issue is fixed and use the @Convert annotation in the proper JPA way. Ideally see the github history and revert whole commit,
-    // which adds this "TODO" once the quarkus issue is fixed
-    private static final MapStringConverter MAP_STRING_CONVERTER = new MapStringConverter();
-
     static public class RealmLocalizationTextEntityKey implements Serializable {
         private String realmId;
         private String locale;
@@ -81,26 +77,17 @@ public class RealmLocalizationTextsEntity {
     @Column(name = "LOCALE")
     private String locale;
 
+    @Nationalized
     @Column(name = "TEXTS")
-    private String texts;
-    // TODO: The @Convert does not work as expected on quarkus. It doesn't update the "texts" in case that updated map has same keys (but different values) as old map had
-//    @Convert(converter = MapStringConverter.class)
-//    private Map<String,String> texts;
+    @Convert(converter = MapStringConverter.class)
+    private Map<String,String> texts;
 
     public Map<String,String> getTexts() {
-        if (texts == null) {
-            return Collections.emptyMap();
-        } else {
-            return Collections.unmodifiableMap(MAP_STRING_CONVERTER.convertToEntityAttribute(texts));
-        }
+        return texts;
     }
 
     public void setTexts(Map<String,String> texts) {
-        if (texts == null) {
-            this.texts = null;
-        } else {
-            this.texts = MAP_STRING_CONVERTER.convertToDatabaseColumn(texts);
-        }
+        this.texts = texts;
     }
 
     public String getLocale() {

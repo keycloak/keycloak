@@ -92,6 +92,19 @@ public class OIDCResponseType {
         return responseTypes.contains(responseType);
     }
 
+    /**
+     * Checks whether the given {@code responseType} is the only value within the requested response types.
+     *
+     * @param responseType the response type
+     * @return {@code true} if the given response type if within the list of response types. Otherwise, {@code false}
+     */
+    public boolean hasSingleResponseType(String responseType) {
+        if (responseTypes.size() > 1) {
+            return false;
+        }
+        return responseTypes.contains(responseType);
+    }
+
 
     public boolean isImplicitOrHybridFlow() {
         return hasResponseType(TOKEN) || hasResponseType(ID_TOKEN);

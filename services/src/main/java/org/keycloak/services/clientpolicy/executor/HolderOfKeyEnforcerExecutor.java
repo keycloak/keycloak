@@ -90,6 +90,8 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
                 validate(clientUpdateContext.getProposedClientRepresentation());
                 break;
             case TOKEN_REQUEST:
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
+            case BACKCHANNEL_TOKEN_REQUEST:
                 AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
                 if (certConf == null) {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding");
@@ -180,7 +182,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
         }
 
         if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
-            throw new ClientPolicyException(Errors.NOT_ALLOWED, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.UNAUTHORIZED);
+            throw new ClientPolicyException(OAuthErrorException.INVALID_GRANT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.BAD_REQUEST);
         }
     }
 

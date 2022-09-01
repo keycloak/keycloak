@@ -18,6 +18,7 @@ package org.keycloak.testsuite.adapter.example.authorization;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
@@ -28,7 +29,9 @@ import java.net.URL;
 import java.util.List;
 
 import org.jboss.arquillian.container.test.api.Deployer;
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -38,7 +41,10 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
+import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
@@ -53,6 +59,17 @@ public class AbstractServletPolicyEnforcerTest extends AbstractExampleAdapterTes
 
     @ArquillianResource
     private Deployer deployer;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
+
+    @Page
+    protected InfoPage infoPage;
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
@@ -540,6 +557,10 @@ public class AbstractServletPolicyEnforcerTest extends AbstractExampleAdapterTes
     private void logOut() {
         navigateTo();
         UIUtils.clickLink(driver.findElement(By.xpath("//a[text() = 'Sign Out']")));
+
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
+        infoPage.assertCurrent();
     }
 
     private  void login(String username, String password) {

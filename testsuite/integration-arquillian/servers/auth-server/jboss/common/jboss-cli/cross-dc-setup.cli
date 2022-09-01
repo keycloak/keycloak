@@ -145,3 +145,7 @@ echo *** Update undertow subsystem ***
 
 echo *** Update keycloak-server subsystem, infinispan remoteStoreSecurity ***
 /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:map-put(name=properties,key=remoteStoreSecurityEnabled,value=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled:true})
+
+echo *** Enable offline user session preloading ***
+/subsystem=keycloak-server/spi=userSessions:add(default-provider=infinispan)
+/subsystem=keycloak-server/spi=userSessions/provider=infinispan:add(properties={preloadOfflineSessionsFromDatabase => @PRELOADING_ENABLED@},enabled=true)

@@ -32,6 +32,8 @@ public class KeycloakModelParameters {
     private final Set<Class<? extends Spi>> allowedSpis;
     private final Set<Class<? extends ProviderFactory>> allowedFactories;
 
+    protected static final String STORAGE_CONFIG = "storage.provider";
+
     public KeycloakModelParameters(Set<Class<? extends Spi>> allowedSpis, Set<Class<? extends ProviderFactory>> allowedFactories) {
         this.allowedSpis = allowedSpis;
         this.allowedFactories = allowedFactories;
@@ -67,4 +69,11 @@ public class KeycloakModelParameters {
         return base;
     }
 
+    public void beforeSuite(Config cf) {
+
+    }
+
+    public void afterSuite() {
+
+    }
 }

@@ -1,0 +1,10 @@
+<#list ctx.guides as guide>
+:links_server_${guide.id}_name: ${guide.title}
+:links_server_${guide.id}_url: #${guide.id}
+</#list>
+
+= Keycloak server guide
+
+<#list ctx.guides as guide>
+include::${guide.template}[leveloffset=+1]
+</#list>

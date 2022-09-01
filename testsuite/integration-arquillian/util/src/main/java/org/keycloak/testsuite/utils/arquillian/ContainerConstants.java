@@ -24,9 +24,6 @@ public interface ContainerConstants {
     public static final String APP_SERVER_WILDFLY = APP_SERVER_PREFIX + "wildfly";
     public static final String APP_SERVER_WILDFLY_CLUSTER = APP_SERVER_WILDFLY + "-ha-node-1;" + APP_SERVER_WILDFLY + "-ha-node-2";
 
-    public static final String APP_SERVER_WILDFLY_DEPRECATED = APP_SERVER_PREFIX + "wildfly-deprecated";
-    public static final String APP_SERVER_WILDFLY_DEPRECATED_CLUSTER = APP_SERVER_WILDFLY_DEPRECATED + "-ha-node-1;" + APP_SERVER_WILDFLY_DEPRECATED + "-ha-node-2";
-
     public static final String APP_SERVER_EAP = APP_SERVER_PREFIX + "eap";
     public static final String APP_SERVER_EAP_CLUSTER = APP_SERVER_EAP + "-ha-node-1;" + APP_SERVER_EAP + "-ha-node-2";
 
@@ -35,14 +32,8 @@ public interface ContainerConstants {
     public static final String APP_SERVER_EAP6 = APP_SERVER_PREFIX + "eap6";
     public static final String APP_SERVER_EAP6_CLUSTER = APP_SERVER_EAP6 + "-ha-node-1;" + APP_SERVER_EAP6 + "-ha-node-2";
 
-    public static final String APP_SERVER_FUSE63 = APP_SERVER_PREFIX + "fuse63";
-    public static final String APP_SERVER_FUSE7X = APP_SERVER_PREFIX + "fuse7x";
-
     public static final String APP_SERVER_JETTY94 = APP_SERVER_PREFIX + "jetty94";
-    public static final String APP_SERVER_JETTY93 = APP_SERVER_PREFIX + "jetty93";
-    public static final String APP_SERVER_JETTY92 = APP_SERVER_PREFIX + "jetty92";
 
-    public static final String APP_SERVER_TOMCAT7 = APP_SERVER_PREFIX + "tomcat7";
     public static final String APP_SERVER_TOMCAT8 = APP_SERVER_PREFIX + "tomcat8";
     public static final String APP_SERVER_TOMCAT9 = APP_SERVER_PREFIX + "tomcat9";
 

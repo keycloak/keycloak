@@ -30,6 +30,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -66,14 +67,17 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     protected RealmPermissions realmPermissions;
     protected ClientPermissions clientPermissions;
     protected IdentityProviderPermissions idpPermissions;
+    protected RolePermissions rolePermissions;
 
 
     MgmtPermissions(KeycloakSession session, RealmModel realm) {
         this.session = session;
         this.realm = realm;
         KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
-        AuthorizationProviderFactory factory = (AuthorizationProviderFactory) keycloakSessionFactory.getProviderFactory(AuthorizationProvider.class);
-        this.authz = factory.create(session, realm);
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+            AuthorizationProviderFactory factory = (AuthorizationProviderFactory) keycloakSessionFactory.getProviderFactory(AuthorizationProvider.class);
+            this.authz = factory.create(session, realm);
+        }
     }
 
     MgmtPermissions(KeycloakSession session, RealmModel realm, AdminAuth auth) {
@@ -200,7 +204,9 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     @Override
     public RolePermissions roles() {
-        return new RolePermissions(session, realm, authz, this);
+        if (rolePermissions!=null) return rolePermissions;
+        rolePermissions = new RolePermissions(session, realm, authz, this);
+        return rolePermissions;
     }
 
     @Override
@@ -248,21 +254,23 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     @Override
     public ResourceServer realmResourceServer() {
+        if (authz == null) return null;
         if (realmResourceServer != null) return realmResourceServer;
         ClientModel client = getRealmManagementClient();
         if (client == null) return null;
-        ResourceServerStore resourceServerStore = authz.getStoreFactory().getResourceServerStore();
-        realmResourceServer = resourceServerStore.findById(client.getId());
+        realmResourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client);
         return realmResourceServer;
 
     }
 
     public ResourceServer initializeRealmResourceServer() {
+        if (authz == null) return null;
         if (realmResourceServer != null) return realmResourceServer;
         ClientModel client = getRealmManagementClient();
-        realmResourceServer = authz.getStoreFactory().getResourceServerStore().findById(client.getId());
+        if (client == null) return null;
+        realmResourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client);
         if (realmResourceServer == null) {
-            realmResourceServer = authz.getStoreFactory().getResourceServerStore().create(client.getId());
+            realmResourceServer = authz.getStoreFactory().getResourceServerStore().create(client);
         }
         return realmResourceServer;
     }
@@ -272,23 +280,26 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     public void initializeRealmDefaultScopes() {
         ResourceServer server = initializeRealmResourceServer();
+        if (server == null) return;
         manageScope = initializeRealmScope(MgmtPermissions.MANAGE_SCOPE);
         viewScope = initializeRealmScope(MgmtPermissions.VIEW_SCOPE);
     }
 
     public Scope initializeRealmScope(String name) {
         ResourceServer server = initializeRealmResourceServer();
-        Scope scope  = authz.getStoreFactory().getScopeStore().findByName(name, server.getId());
+        if (server == null) return null;
+        Scope scope  = authz.getStoreFactory().getScopeStore().findByName(server, name);
         if (scope == null) {
-            scope = authz.getStoreFactory().getScopeStore().create(name, server);
+            scope = authz.getStoreFactory().getScopeStore().create(server, name);
         }
         return scope;
     }
 
     public Scope initializeScope(String name, ResourceServer server) {
-        Scope scope  = authz.getStoreFactory().getScopeStore().findByName(name, server.getId());
+        if (authz == null) return null;
+        Scope scope  = authz.getStoreFactory().getScopeStore().findByName(server, name);
         if (scope == null) {
-            scope = authz.getStoreFactory().getScopeStore().create(name, server);
+            scope = authz.getStoreFactory().getScopeStore().create(server, name);
         }
         return scope;
     }
@@ -311,7 +322,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     public Scope realmScope(String scope) {
         ResourceServer server = realmResourceServer();
         if (server == null) return null;
-        return authz.getStoreFactory().getScopeStore().findByName(scope, server.getId());
+        return authz.getStoreFactory().getScopeStore().findByName(server, scope);
     }
 
     public boolean evaluatePermission(Resource resource, ResourceServer resourceServer, Scope... scope) {

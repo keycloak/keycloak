@@ -16,12 +16,16 @@
  */
 package org.keycloak.testsuite.migration;
 
+import org.keycloak.common.Profile.Feature;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import org.junit.Assert;
 import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import org.keycloak.testsuite.ProfileAssume;
+import org.junit.BeforeClass;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
@@ -31,6 +35,11 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrationTest {
     protected RealmRepresentation masterRep;
     protected String masterTestClientId;
+
+    @BeforeClass
+    public static void checkNotMapStorage() {
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
+    }
 
     @Before
     public void beforeMigrationTest() {
@@ -43,8 +52,8 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
      * The method will throw javax.ws.rs.NotFoundException in case the realm is not successfully imported
      */
     protected void checkRealmsImported() {
-        Assert.assertThat(migrationRealm.toRepresentation().getRealm(), is(equalTo("Migration")));
-        Assert.assertThat(migrationRealm2.toRepresentation().getRealm(), is(equalTo("Migration2")));
+        assertThat(migrationRealm.toRepresentation().getRealm(), is(equalTo("Migration")));
+        assertThat(migrationRealm2.toRepresentation().getRealm(), is(equalTo("Migration2")));
     }
 
     @Override

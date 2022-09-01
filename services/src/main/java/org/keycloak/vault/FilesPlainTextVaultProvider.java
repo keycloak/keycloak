@@ -25,7 +25,7 @@ import java.util.Optional;
  * the default resolver when none is defined). Other layouts are available through different resolvers.
  *
  * See https://kubernetes.io/docs/concepts/configuration/secret/
- * See https://github.com/keycloak/keycloak-community/blob/master/design/secure-credentials-store.md#plain-text-file-per-secret-kubernetes--openshift
+ * See https://github.com/keycloak/keycloak-community/blob/main/design/secure-credentials-store.md#plain-text-file-per-secret-kubernetes--openshift
  *
  * @author Sebastian Łaskawiec
  */

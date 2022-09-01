@@ -1,0 +1,46 @@
+{
+	"attributes": [
+		{
+			"name": "username",
+			"displayName": "${username}",
+			"validations": {
+				"length": { "min": 3, "max": 255 },
+				"username-prohibited-characters": {}
+			}
+		},
+		{
+			"name": "email",
+			"displayName": "${email}",
+			"validations": {
+				"email" : {},
+				"length": { "max": 255 }
+			}
+		},
+		{
+			"name": "firstName",
+			"displayName": "${firstName}",
+	        "required": {"roles" : ["user"]},
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			},
+			"validations": {
+				"length": { "max": 255 },
+				"person-name-prohibited-characters": {}
+			}
+		},
+		{
+			"name": "lastName",
+			"displayName": "${lastName}",
+	        "required": {"roles" : ["user"]},
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			},
+			"validations": {
+				"length": { "max": 255 },
+				"person-name-prohibited-characters": {}
+			}
+		}
+	]
+}

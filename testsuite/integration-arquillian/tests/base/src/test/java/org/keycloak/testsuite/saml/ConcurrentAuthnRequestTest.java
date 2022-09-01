@@ -17,9 +17,14 @@
 package org.keycloak.testsuite.saml;
 
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.saml.SAMLRequestParser;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.saml.LoginBuilder;
 import org.keycloak.testsuite.utils.io.IOUtil;
@@ -43,6 +48,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.keycloak.testsuite.util.SamlClient.*;
 
 /**
@@ -55,20 +62,22 @@ public class ConcurrentAuthnRequestTest extends AbstractSamlTest {
     public static final int ITERATIONS = 10000;
     public static final int CONCURRENT_THREADS = 5;
 
-    private static void loginRepeatedly(UserRepresentation user, URI samlEndpoint,
-      Document samlRequest, String relayState, Binding requestBinding) {
+    private void loginRepeatedly(UserRepresentation user, URI samlEndpoint,
+      String relayState, Binding requestBinding) {
         CloseableHttpResponse response = null;
         SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
         ExecutorService threadPool = Executors.newFixedThreadPool(CONCURRENT_THREADS);
 
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
-            HttpUriRequest post = requestBinding.createSamlUnsignedRequest(samlEndpoint, relayState, samlRequest);
             
             Collection<Callable<Void>> futures = new LinkedList<>();
             for (int i = 0; i < ITERATIONS; i ++) {
                 final int j = i;
+                AuthnRequestType loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, REALM_NAME);
+                Document samlRequest = SAML2Request.convert(loginRep);
+                HttpUriRequest post = requestBinding.createSamlUnsignedRequest(samlEndpoint, relayState, samlRequest);
                 Callable<Void> f = () -> {
-                    performLogin(post, samlEndpoint, relayState, samlRequest, response, client, user, strategy);
+                    performLogin(post, samlEndpoint, relayState, loginRep.getID(), samlRequest, response, client, user, strategy);
                     return null;
                 };
                 futures.add(f);
@@ -81,7 +90,7 @@ public class ConcurrentAuthnRequestTest extends AbstractSamlTest {
     }
 
     public static void performLogin(HttpUriRequest post, URI samlEndpoint, String relayState,
-      Document samlRequest, CloseableHttpResponse response, final CloseableHttpClient client,
+      String requestId, Document samlRequest, CloseableHttpResponse response, final CloseableHttpClient client,
       UserRepresentation user,
       RedirectStrategyWithSwitchableFollowRedirect strategy) {
         try {
@@ -95,6 +104,9 @@ public class ConcurrentAuthnRequestTest extends AbstractSamlTest {
 
             strategy.setRedirectable(false);
             response = client.execute(loginRequest, context);
+            SAMLDocumentHolder parseResponsePostBinding = SAMLRequestParser.parseResponsePostBinding(EntityUtils.toString(response.getEntity()));
+            assertThat(parseResponsePostBinding.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+            assertThat(((ResponseType) parseResponsePostBinding.getSamlObject()).getInResponseTo(), is(requestId));
             response.close();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -117,9 +129,7 @@ public class ConcurrentAuthnRequestTest extends AbstractSamlTest {
     }
 
     private void testLogin(Binding requestBinding) throws Exception {
-        AuthnRequestType loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, REALM_NAME);
-        Document samlRequest = SAML2Request.convert(loginRep);
-        loginRepeatedly(bburkeUser, getAuthServerSamlEndpoint(REALM_NAME), samlRequest, null, requestBinding);
+        loginRepeatedly(bburkeUser, getAuthServerSamlEndpoint(REALM_NAME), null, requestBinding);
     }
 
     @Test

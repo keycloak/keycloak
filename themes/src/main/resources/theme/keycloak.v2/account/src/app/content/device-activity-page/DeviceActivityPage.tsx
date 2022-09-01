@@ -21,28 +21,30 @@ import { AccountServiceContext } from '../../account-service/AccountServiceConte
 import TimeUtil from '../../util/TimeUtil';
 
 import {
-  Bullseye,
+  Button,
   DataList,
   DataListItem,
   DataListItemRow,
-  DataListCell,
-  DataListItemCells,
+  DataListContent,
+  DescriptionList,
+  DescriptionListTerm,
+  DescriptionListDescription,
+  DescriptionListGroup,
   Grid,
   GridItem,
-  Stack,
-  StackItem
+  Label,
+  PageSection,
+  PageSectionVariants,
+  Title,
+  Tooltip,
+  SplitItem,
+  Split
 } from '@patternfly/react-core';
 
 import {
-        AmazonIcon,
-        ChromeIcon,
-        EdgeIcon,
-        FirefoxIcon,
-        GlobeIcon,
-        InternetExplorerIcon,
-        OperaIcon,
-        SafariIcon,
-        YandexInternationalIcon,
+        DesktopIcon,
+        MobileAltIcon,
+        SyncAltIcon,
 } from '@patternfly/react-icons';
 
 import {Msg} from '../../widgets/Msg';
@@ -161,22 +163,15 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
       return TimeUtil.format(time * 1000);
     }
 
-    private elementId(item: string, session: Session): string {
-        return `session-${session.id.substring(0,7)}-${item}`;
+    private elementId(item: string, session: Session, element: string='session'): string {
+        return `${element}-${session.id.substring(0,7)}-${item}`;
     }
 
-    private findBrowserIcon(session: Session): React.ReactNode {
-      const browserName: string = session.browser.toLowerCase();
-      if (browserName.includes("chrom")) return (<ChromeIcon id={this.elementId('icon-chrome', session)} size='lg'/>); // chrome or chromium
-      if (browserName.includes("firefox")) return (<FirefoxIcon id={this.elementId('icon-firefox', session)} size='lg'/>);
-      if (browserName.includes("edge")) return (<EdgeIcon id={this.elementId('icon-edge', session)} size='lg'/>);
-      if (browserName.startsWith("ie/")) return (<InternetExplorerIcon id={this.elementId('icon-ie', session)} size='lg'/>);
-      if (browserName.includes("safari")) return (<SafariIcon id={this.elementId('icon-safari', session)} size='lg'/>);
-      if (browserName.includes("opera")) return (<OperaIcon id={this.elementId('icon-opera', session)} size='lg'/>);
-      if (browserName.includes("yandex")) return (<YandexInternationalIcon id={this.elementId('icon-yandex', session)} size='lg'/>);
-      if (browserName.includes("amazon")) return (<AmazonIcon id={this.elementId('icon-amazon', session)} size='lg'/>);
+    private findDeviceTypeIcon(session: Session, device: Device): React.ReactNode {
+      const deviceType: boolean = device.mobile;
+      if (deviceType === true) return (<MobileAltIcon id={this.elementId('icon-mobile', session, 'device')} />);
 
-      return (<GlobeIcon id={this.elementId('icon-default', session)} size='lg'/>);
+      return (<DesktopIcon id={this.elementId('icon-desktop', session, 'device')} />);
     }
 
     private findOS(device: Device): string {
@@ -220,74 +215,62 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     public render(): React.ReactNode {
 
       return (
-        <ContentPage title="device-activity" onRefresh={this.fetchDevices.bind(this)}>
-          <Stack gutter="md">
-            <StackItem isFilled>
-              <DataList aria-label={Msg.localize('signedInDevices')}>
-                  <DataListItem key="SignedInDevicesHeader" aria-labelledby="signedInDevicesTitle" isExpanded={false}>
-                      <DataListItemRow>
-                          <DataListItemCells
-                              dataListCells={[
-                                <DataListCell key='signedInDevicesTitle' width={4}>
-                                  <div id="signedInDevicesTitle" className="pf-c-content">
-                                      <h2><Msg msgKey="signedInDevices"/></h2>
-                                      <p>
-                                          <Msg msgKey="signedInDevicesExplanation"/>
-                                      </p>
-                                  </div>
-                                </DataListCell>,
-                                <KeycloakContext.Consumer>
-                                { (keycloak: KeycloakService) => (
-                                  <DataListCell key='signOutAllButton' width={1}>
-                                    {this.isShowSignOutAll(this.state.devices) &&
-                                      <ContinueCancelModal buttonTitle='signOutAllDevices'
-                                                    buttonId='sign-out-all'
-                                                    modalTitle='signOutAllDevices'
-                                                    modalMessage='signOutAllDevicesWarning'
-                                                    onContinue={() => this.signOutAll(keycloak)}
-                                      />
-                                    }
-                                  </DataListCell>
-                                )}
-                                </KeycloakContext.Consumer>
-                              ]}
-                          />
-                      </DataListItemRow>
-                  </DataListItem>
-
-                  <DataListItem aria-labelledby='sessions'>
-                  <DataListItemRow>
-                    <Grid gutter='sm'>
-                      <GridItem span={12} /> {/* <-- top spacing */}
-                      {this.state.devices.map((device: Device, deviceIndex: number) => {
+          <ContentPage 
+            title="device-activity" 
+            introMessage="signedInDevicesExplanation" 
+          >
+            <PageSection isFilled variant={PageSectionVariants.light}>
+            <Split hasGutter className="pf-u-mb-lg">
+              <SplitItem isFilled>
+                <div id="signedInDevicesTitle" className="pf-c-content"><Title headingLevel="h2" size="xl"><Msg msgKey="signedInDevices"/></Title></div>
+              </SplitItem>
+              <SplitItem>
+                <Tooltip content={<Msg msgKey="refreshPage" />}>
+                  <Button
+                    aria-describedby="refresh page"
+                    id="refresh-page"
+                    variant="link"
+                    onClick={this.fetchDevices.bind(this)}
+                    icon={<SyncAltIcon />}
+                  >
+                    Refresh
+                  </Button>
+                </Tooltip>
+              </SplitItem>
+              <SplitItem>
+              <KeycloakContext.Consumer>
+                { (keycloak: KeycloakService) => (
+                    this.isShowSignOutAll(this.state.devices) &&
+                      <ContinueCancelModal buttonTitle='signOutAllDevices'
+                                    buttonId='sign-out-all'
+                                    modalTitle='signOutAllDevices'
+                                    modalMessage='signOutAllDevicesWarning'
+                                    onContinue={() => this.signOutAll(keycloak)}
+                      />
+                )}
+              </KeycloakContext.Consumer>
+              </SplitItem>
+            </Split>
+            <DataList className="signed-in-device-list" aria-label={Msg.localize('signedInDevices')}>
+              <DataListItem aria-labelledby='sessions' id='device-activity-sessions'>
+                {this.state.devices.map((device: Device, deviceIndex: number) => {
+                  return (
+                    <React.Fragment>
+                      {device.sessions.map((session: Session, sessionIndex: number) => {
                         return (
-                          <React.Fragment>
-                            {device.sessions.map((session: Session, sessionIndex: number) => {
-                              return (
-                                <React.Fragment key={'device-' + deviceIndex + '-session-' + sessionIndex}>
-
-                                  <GridItem md={3}>
-                                    <Stack>
-                                      <StackItem isFilled={false}>
-                                        <Bullseye>{this.findBrowserIcon(session)}</Bullseye>
-                                      </StackItem>
-                                      <StackItem isFilled={false}>
-                                        <Bullseye id={this.elementId('ip', session)}>{session.ipAddress}</Bullseye>
-                                      </StackItem>
-                                      {session.current &&
-                                        <StackItem isFilled={false}>
-                                          <Bullseye id={this.elementId('current-badge', session)}><strong className='pf-c-badge pf-m-read'><Msg msgKey="currentSession" /></strong></Bullseye>
-                                        </StackItem>
-                                      }
-                                    </Stack>
+                          <React.Fragment key={'device-' + deviceIndex + '-session-' + sessionIndex}>
+                            <DataListItemRow>
+                              <DataListContent aria-label="device-sessions-content" isHidden={false} className="pf-u-flex-grow-1">
+                                <Grid id={this.elementId("item",session)} className="signed-in-device-grid" hasGutter>
+                                  <GridItem className="device-icon" span={1} rowSpan={2}>
+                                    <span>{this.findDeviceTypeIcon(session, device)}</span>
                                   </GridItem>
-                                  <GridItem md={9}>
-                                  {!session.browser.toLowerCase().includes('unknown') &&
-                                    <p id={this.elementId('browser', session)}><strong>{session.browser} / {this.findOS(device)} {this.findOSVersion(device)}</strong></p>}
-                                    <p id={this.elementId('last-access', session)}><strong>{Msg.localize('lastAccessedOn')}</strong> {this.time(session.lastAccess)}</p>
-                                    <p id={this.elementId('clients', session)}><strong>{Msg.localize('clients')}</strong> {this.makeClientsString(session.clients)}</p>
-                                    <p id={this.elementId('started', session)}><strong>{Msg.localize('startedAt')}</strong> {this.time(session.started)}</p>
-                                    <p id={this.elementId('expires', session)}><strong>{Msg.localize('expiresAt')}</strong> {this.time(session.expires)}</p>
+                                  <GridItem sm={8} md={9} span={10}>
+                                    <span id={this.elementId('browser', session)} className="pf-u-mr-md session-title">{this.findOS(device)} {this.findOSVersion(device)} / {session.browser}</span>
+                                    {session.current &&
+                                      <Label color="green" id={this.elementId('current-badge', session)}><Msg msgKey="currentSession" /></Label>}
+                                  </GridItem>
+                                  <GridItem className="pf-u-text-align-right" sm={3} md={2} span={1}>
                                     {!session.current &&
                                       <ContinueCancelModal buttonTitle='doSignOut'
                                         buttonId={this.elementId('sign-out', session)}
@@ -297,24 +280,44 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                         onContinue={() => this.signOutSession(device, session)}
                                       />
                                     }
-
                                   </GridItem>
-                                </React.Fragment>
-                              );
-
-                            })}
+                                  <GridItem span={11}>
+                                    <DescriptionList columnModifier={{ sm: '2Col', lg: '3Col' }}>
+                                      <DescriptionListGroup>
+                                        <DescriptionListTerm>{Msg.localize('ipAddress')}</DescriptionListTerm>
+                                          <DescriptionListDescription id={this.elementId('ip', session)}>{session.ipAddress}</DescriptionListDescription>
+                                      </DescriptionListGroup>
+                                      <DescriptionListGroup>
+                                          <DescriptionListTerm>{Msg.localize('lastAccessedOn')}</DescriptionListTerm>
+                                          <DescriptionListDescription id={this.elementId('last-access', session)}>{this.time(session.lastAccess)}</DescriptionListDescription>
+                                      </DescriptionListGroup>
+                                      <DescriptionListGroup>
+                                          <DescriptionListTerm>{Msg.localize('clients')}</DescriptionListTerm>
+                                          <DescriptionListDescription id={this.elementId('clients', session)}>{this.makeClientsString(session.clients)}</DescriptionListDescription>
+                                      </DescriptionListGroup>
+                                      <DescriptionListGroup>
+                                        <DescriptionListTerm>{Msg.localize('started')}</DescriptionListTerm>
+                                        <DescriptionListDescription id={this.elementId('started', session)}>{this.time(session.started)}</DescriptionListDescription>
+                                      </DescriptionListGroup>
+                                      <DescriptionListGroup>
+                                        <DescriptionListTerm>{Msg.localize('expires')}</DescriptionListTerm>
+                                        <DescriptionListDescription id={this.elementId('expires', session)}>{this.time(session.expires)}</DescriptionListDescription>
+                                      </DescriptionListGroup>
+                                    </DescriptionList>
+                                  </GridItem>
+                                </Grid>
+                              </DataListContent>
+                            </DataListItemRow>
                           </React.Fragment>
-                        )
+                        );
                       })}
-                      <GridItem span={12} /> {/* <-- bottom spacing */}
-                    </Grid>
-                  </DataListItemRow>
-                </DataListItem>
-              </DataList>
-            </StackItem>
-
-          </Stack>
+                    </React.Fragment>
+                  )
+                })}
+              </DataListItem>
+            </DataList>
+          </PageSection>
         </ContentPage>
-        );
+      );
     }
 };

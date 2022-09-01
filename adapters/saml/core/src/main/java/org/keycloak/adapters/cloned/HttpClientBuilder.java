@@ -373,6 +373,18 @@ public class HttpClientBuilder {
             trustStore(truststore);
         }
 
+        if (socketTimeout == -1 && adapterConfig.getSocketTimeout() > 0) {
+            socketTimeout(adapterConfig.getSocketTimeout(), TimeUnit.MILLISECONDS);
+        }
+
+        if (establishConnectionTimeout == -1 && adapterConfig.getConnectionTimeout() > 0) {
+            establishConnectionTimeout(adapterConfig.getConnectionTimeout(), TimeUnit.MILLISECONDS);
+        }
+
+        if (connectionTTL == -1 && adapterConfig.getConnectionTTL() > 0) {
+            connectionTTL(adapterConfig.getConnectionTTL(), TimeUnit.MILLISECONDS);
+        }
+        
         configureProxyForAuthServerIfProvided(adapterConfig);
 
         return build();

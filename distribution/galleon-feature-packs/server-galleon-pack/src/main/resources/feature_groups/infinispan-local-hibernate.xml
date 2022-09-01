@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="infinispan-local-hibernate" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="subsystem.infinispan">
+        <feature spec="subsystem.infinispan.cache-container">
+            <param name="cache-container" value="hibernate"/>
+            <param name="modules" value="[org.infinispan.hibernate-cache]"/>
+            <param name="marshaller" value="JBOSS"/>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="entity"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.expiration">
+                    <param name="max-idle" value="100000"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="local-query"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.expiration">
+                    <param name="max-idle" value="100000"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="timestamps"/>
+            </feature>
+        </feature>
+    </feature>
+</feature-group-spec>

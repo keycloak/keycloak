@@ -19,12 +19,14 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
      <changeSet author="bburke@redhat.com" id="2.5.0">
+         <validCheckSum>7:57e98a3077e29caf562f7dbf80c72600</validCheckSum>
          <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.MigrateUserFedToComponent"/>
 
          <modifyDataType tableName="OFFLINE_USER_SESSION" columnName="USER_ID" newDataType="VARCHAR(255)"/>
      </changeSet>
 
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-oracle">
+        <validCheckSum>7:e4c7e8f2256210aee71ddc42f538b57a</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <dbms type="oracle" />
         </preConditions>
@@ -62,6 +64,7 @@
     </changeSet>
 
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-other-dbs">
+        <validCheckSum>7:09a43c97e49bc626460480aa1379b522</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <not>
                 <dbms type="oracle" />
@@ -100,6 +103,7 @@
     </changeSet>
     
     <changeSet author="slawomir@dabek.name" id="2.5.0-duplicate-email-support">
+        <validCheckSum>7:26bfc7c74fefa9126f2ce702fb775553</validCheckSum>
         <addColumn tableName="REALM">
             <column name="LOGIN_WITH_EMAIL_ALLOWED" type="BOOLEAN" defaultValueBoolean="true">
                 <constraints nullable="false"/>
@@ -111,6 +115,7 @@
     </changeSet>
 
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unique-group-names">
+        <validCheckSum>7:a161e2ae671a9020fff61e996a207377</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <not>
                 <dbms type="db2" /> <!-- exclude DB2 as it requires all fields to be non-NULL for unique constraints -->

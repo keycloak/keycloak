@@ -39,7 +39,7 @@ public class SecureSigningAlgorithmExecutorFactory implements ClientPolicyExecut
 
     private static final ProviderConfigProperty DEFAULT_ALGORITHM_PROPERTY = new ProviderConfigProperty(
             DEFAULT_ALGORITHM, "Default Algorithm", "Default signature algorithm, which will be set to clients during client registration/update in case that client does not specify any algorithm",
-            ProviderConfigProperty.LIST_TYPE, Algorithm.PS256, new LinkedList<>(SecureSigningAlgorithmExecutor.ALLOWED_ALGORITHMS).toArray(new String[] {}));
+            ProviderConfigProperty.LIST_TYPE, Algorithm.PS256, new LinkedList<>(FapiConstant.ALLOWED_ALGORITHMS).toArray(new String[] {}));
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {

@@ -8,8 +8,10 @@
     }, {
         "name" : "rh-sso",
         "types": [ "admin", "account", "login", "common", "email", "welcome" ]
-    },
-	{
+    }, {
+        "name" : "keycloak.v2",
+        "types": [ "account" ]
+    }, {
         "name" : "rh-sso.v2",
         "types": [ "account" ]
     }]

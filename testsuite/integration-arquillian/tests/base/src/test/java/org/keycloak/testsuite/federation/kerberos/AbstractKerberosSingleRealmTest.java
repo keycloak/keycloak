@@ -205,6 +205,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
 
         // Logout
         oauth.openLogout();
+        events.poll();
 
         // Remove protocolMapper
         clientResource.getProtocolMappers().delete(protocolMapperId);

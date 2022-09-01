@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 import javax.security.cert.X509Certificate;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
@@ -65,6 +66,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -79,10 +81,14 @@ import org.keycloak.testsuite.util.UserBuilder;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
     protected static final String REALM_NAME = "authz-test";
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -327,17 +333,7 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
             JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
             policy.setName("Withdrawal Limit Policy");
-
-            StringBuilder code = new StringBuilder();
-
-            code.append("var context = $evaluation.getContext();");
-            code.append("var attributes = context.getAttributes();");
-            code.append("var withdrawalAmount = attributes.getValue('withdrawal.amount');");
-            code.append("if (withdrawalAmount && withdrawalAmount.asDouble(0) <= 100) {");
-            code.append("   $evaluation.grant();");
-            code.append("}");
-
-            policy.setCode(code.toString());
+            policy.setType("script-scripts/enforce-withdraw-limit-policy.js");
 
             clientResource.authorization().policies().js().create(policy).close();
 

@@ -22,20 +22,24 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 /**
  * Compare outputs from jboss-cli read-resource operations.  This compare the total
@@ -59,23 +63,30 @@ public class ConfigMigrationTest {
     public void testStandaloneHA() throws IOException {
         compareConfigs("master-standalone-ha.txt", "migrated-standalone-ha.txt");
     }
-    
+
     @Test
     public void testDomain() throws IOException {
-        compareConfigs("master-domain-standalone.txt", "migrated-domain-standalone.txt");
-        compareConfigs("master-domain-clustered.txt", "migrated-domain-clustered.txt");
-        
-        compareConfigs("master-domain-core-service.txt", "migrated-domain-core-service.txt");
-        compareConfigs("master-domain-extension.txt", "migrated-domain-extension.txt");
+        final Set<List<String>> ignoredPaths = new HashSet<>();
+        // KEYCLOAK-18505 Ignore some keys
+        ignoredPaths.add(getModelNode("root", "result", "[logging]", "result", "console-handler"));
+
+        compareConfigs("master-domain-standalone.txt", "migrated-domain-standalone.txt", ignoredPaths);
+        compareConfigs("master-domain-clustered.txt", "migrated-domain-clustered.txt", ignoredPaths);
+        compareConfigs("master-domain-core-service.txt", "migrated-domain-core-service.txt", ignoredPaths);
+        compareConfigs("master-domain-extension.txt", "migrated-domain-extension.txt", ignoredPaths);
 //        compareConfigs("master-domain-interface.txt", "migrated-domain-interface.txt");
     }
-    
+
     private void compareConfigs(String masterConfig, String migratedConfig) throws IOException {
+        compareConfigs(masterConfig, migratedConfig, null);
+    }
+
+    private void compareConfigs(String masterConfig, String migratedConfig, final Set<List<String>> ignoreMigrated) throws IOException {
         File masterFile = new File(TARGET_DIR, masterConfig);
         Assert.assertTrue(masterFile.exists());
         File migratedFile = new File(TARGET_DIR, migratedConfig);
         Assert.assertTrue(migratedFile.exists());
-        
+
         try (
             FileInputStream masterStream = new FileInputStream(masterFile);
             FileInputStream migratedStream = new FileInputStream(migratedFile);
@@ -91,19 +102,62 @@ public class ConfigMigrationTest {
                 if (Boolean.parseBoolean(System.getProperty("get.simple.full.comparison"))) {
                     assertThat(migrated, is(equalTo(master)));
                 }
-                compareConfigsDeeply("root", master, migrated);
+                compareConfigsDeeply("root", master, migrated, ignoreMigrated);
             }
-        } 
+        }
     }
-    
-    private void compareConfigsDeeply(String id, ModelNode master, ModelNode migrated) {
+
+    private List<String> getModelNode(String... paths) {
+        return Collections.unmodifiableList(Arrays.asList(paths));
+    }
+
+    /**
+     * Helper method for ignoring some keys in migrated files
+     *
+     * @param ignoredPaths Set of paths, which should be ignored
+     */
+    private boolean shouldIgnoreKey(final Set<List<String>> ignoredPaths) {
+        if (ignoredPaths == null || ignoredPaths.isEmpty()) return false;
+
+        // Create new references for paths in order to ensure the original set will not be modified
+        Set<List<String>> available = ignoredPaths.stream()
+                .map(ArrayList::new)
+                .collect(Collectors.toSet());
+
+        for (String navPath : nav) {
+            Iterator<List<String>> it = available.iterator();
+
+            while (it.hasNext()) {
+                List<String> ignorePath = it.next();
+                String first = ignorePath.stream().findFirst().orElse(null);
+
+                if (navPath.equals(first)) {
+                    ignorePath.remove(first);
+
+                    if (ignorePath.isEmpty()) {
+                        log.debugf("Ignoring navigation path '%s'", nav.toString());
+                        return true;
+                    }
+                } else {
+                    it.remove();
+                }
+            }
+        }
+        return false;
+    }
+
+    private void compareConfigsDeeply(String id, ModelNode master, ModelNode migrated, final Set<List<String>> ignoredPaths) {
         nav.add(id);
-        
+
+        if (shouldIgnoreKey(ignoredPaths)) {
+            return;
+        }
+
         master.protect();
         migrated.protect();
 
         assertEquals(getMessage(), master.getType(), migrated.getType());
-        
+
         switch (master.getType()) {
             case OBJECT:
                 //check nodes are equal
@@ -114,7 +168,7 @@ public class ConfigMigrationTest {
                 assertThat(getMessage(), migrated.keys(), is(equalTo(master.keys())));
 
                 for (String key : master.keys()) {
-                    compareConfigsDeeply(key, master.get(key), migrated.get(key));
+                    compareConfigsDeeply(key, master.get(key), migrated.get(key), ignoredPaths);
                 }
                 break;
             case LIST:
@@ -141,10 +195,11 @@ public class ConfigMigrationTest {
                     String navigation = diffNodeInMaster.getType().toString();
                     if (diffNodeInMaster.toString().contains("subsystem")) {
                         navigation = getSubsystemNames(Arrays.asList(diffNodeInMaster)).toString();
-                    } 
-                    compareConfigsDeeply(navigation, 
-                            diffNodeInMaster, 
-                            migratedAsList.get(masterAsList.indexOf(diffNodeInMaster)));
+                    }
+                    compareConfigsDeeply(navigation,
+                            diffNodeInMaster,
+                            migratedAsList.get(masterAsList.indexOf(diffNodeInMaster)),
+                            ignoredPaths);
                 }
                 break;
             case BOOLEAN:

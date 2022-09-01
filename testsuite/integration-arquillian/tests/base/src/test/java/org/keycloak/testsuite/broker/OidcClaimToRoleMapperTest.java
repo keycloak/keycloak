@@ -24,8 +24,8 @@ import com.google.common.collect.ImmutableMap;
  */
 public class OidcClaimToRoleMapperTest extends AbstractRoleMapperTest {
 
-    private static final String CLAIM = KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME;
-    private static final String CLAIM_VALUE = "value 1";
+    protected static final String CLAIM = KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME;
+    protected static final String CLAIM_VALUE = "value 1";
     private String claimOnSecondLogin = "";
 
     @Override
@@ -131,7 +131,7 @@ public class OidcClaimToRoleMapperTest extends AbstractRoleMapperTest {
         adminClient.realm(bc.providerRealmName()).users().get(user.getId()).update(user);
     }
 
-    private void createClaimToRoleMapper(IdentityProviderRepresentation idp, String claimValue, IdentityProviderMapperSyncMode syncMode) {
+    protected void createClaimToRoleMapper(IdentityProviderRepresentation idp, String claimValue, IdentityProviderMapperSyncMode syncMode) {
         IdentityProviderMapperRepresentation claimToRoleMapper = new IdentityProviderMapperRepresentation();
         claimToRoleMapper.setName("claim-to-role-mapper");
         claimToRoleMapper.setIdentityProviderMapper(ClaimToRoleMapper.PROVIDER_ID);

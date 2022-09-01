@@ -18,9 +18,9 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
 import javax.security.cert.X509Certificate;
 import javax.ws.rs.HttpMethod;
@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
@@ -61,10 +62,13 @@ import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.PermissionsResource;
+import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -77,25 +81,30 @@ import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
     private static final String RESOURCE_SERVER_CLIENT_ID = "resource-server-test";
     private static final String REALM_NAME = "authz-test";
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -328,6 +337,76 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         httpFacade = createHttpFacade("/api/resource/public", token);
         context = policyEnforcer.enforce(httpFacade);
         assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testDisabledPathNoCache() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-path-nocache.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+        ResourceRepresentation resource = clientResource.authorization().resources()
+                .findByName("Root").get(0);
+
+        clientResource.authorization().resources().resource(resource.getId()).remove();
+
+        // first request caches the path and the entry is invalidated due to the lifespan
+        httpFacade = createHttpFacade("/api/resource/all-public");
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        WaitUtils.pause(1000);
+
+        // second request can not fail because entry should not be invalidated
+        httpFacade = createHttpFacade("/api/resource/all-public");
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testLazyLoadedPathIsCached() {
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+        createResource(clientResource, "Static Test Resource", "/api/any-resource/*");
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Any Resource Permission");
+        permission.addResource("Static Test Resource");
+        permission.addPolicy("Always Grant Policy");
+
+        clientResource.authorization().permissions().resource().create(permission);
+
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-path-nocache.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/any-resource/test", token);
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        httpFacade = createHttpFacade("/api/any-resource/test", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        ResourceRepresentation resource = clientResource.authorization().resources()
+                .findByName("Static Test Resource").get(0);
+
+        clientResource.authorization().resources().resource(resource.getId()).remove();
+
+        httpFacade = createHttpFacade("/api/any-resource/test", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertFalse(context.isGranted());
     }
 
     @Test
@@ -621,6 +700,66 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         assertEquals(200, policyEnforcer.getPathMatcher().getPathCache().size());
         assertEquals(0, policyEnforcer.getPaths().size());
+
+        ResourceRepresentation resource = clientResource.authorization().resources()
+                .findByName("Root").get(0);
+
+        clientResource.authorization().resources().resource(resource.getId()).remove();
+
+        deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-lazyload-with-paths.json"));
+        policyEnforcer = deployment.getPolicyEnforcer();
+
+        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/0", token));
+
+        assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testSetMethodConfigs() {
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+        ResourceRepresentation representation = new ResourceRepresentation();
+
+        representation.setName(KeycloakModelUtils.generateId());
+        representation.setUris(Collections.singleton("/api-method/*"));
+
+        ResourcesResource resources = clientResource.authorization().resources();
+        javax.ws.rs.core.Response response = resources.create(representation);
+
+        representation.setId(response.readEntity(ResourceRepresentation.class).getId());
+
+        response.close();
+
+        try {
+            KeycloakDeployment deployment = KeycloakDeploymentBuilder
+                    .build(getAdapterConfiguration("enforcer-paths-use-method-config.json"));
+            PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+            oauth.realm(REALM_NAME);
+            oauth.clientId("public-client-test");
+            oauth.doLogin("marta", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokeResponse = oauth.doAccessTokenRequest(code, null);
+            String token = tokeResponse.getAccessToken();
+
+            AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api-method/foo", token));
+
+            // GET is disabled in the config
+            assertTrue(context.isGranted());
+
+            PolicyEnforcerConfig.PathConfig pathConfig = policyEnforcer.getPaths().get("/api-method/*");
+
+            assertNotNull(pathConfig);
+            List<PolicyEnforcerConfig.MethodConfig> methods = pathConfig.getMethods();
+            assertEquals(1, methods.size());
+            assertTrue(PolicyEnforcerConfig.ScopeEnforcementMode.DISABLED.equals(methods.get(0).getScopesEnforcementMode()));
+
+            // other verbs should be protected
+            context = policyEnforcer.enforce(createHttpFacade("/api-method/foo", token, "POST"));
+
+            assertFalse(context.isGranted());
+        } finally {
+            resources.resource(representation.getId()).remove();
+        }
     }
 
     private void initAuthorizationSettings(ClientResource clientResource) {
@@ -628,12 +767,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             JSPolicyRepresentation jsPolicy = new JSPolicyRepresentation();
 
             jsPolicy.setName("Always Grant Policy");
-
-            StringBuilder code = new StringBuilder();
-
-            code.append("$evaluation.grant();");
-
-            jsPolicy.setCode(code.toString());
+            jsPolicy.setType("script-scripts/default-policy.js");
 
             clientResource.authorization().policies().js().create(jsPolicy).close();
 
@@ -659,12 +793,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
             policy.setName("Always Deny Policy");
-
-            StringBuilder code = new StringBuilder();
-
-            code.append("$evaluation.deny();");
-
-            policy.setCode(code.toString());
+            policy.setType("script-scripts/always-deny-policy.js");
 
             clientResource.authorization().policies().js().create(policy).close();
 

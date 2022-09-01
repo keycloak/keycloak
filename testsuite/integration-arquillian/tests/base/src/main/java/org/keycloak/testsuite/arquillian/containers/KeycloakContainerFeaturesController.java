@@ -18,10 +18,13 @@ import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeatures;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -74,12 +77,15 @@ public class KeycloakContainerFeaturesController {
         private boolean skipRestart;
         private FeatureAction action;
         private boolean onlyForProduct;
+        private final AnnotatedElement annotatedElement;
 
-        public UpdateFeature(Profile.Feature feature, boolean skipRestart, FeatureAction action, boolean onlyForProduct) {
+        public UpdateFeature(Profile.Feature feature, boolean skipRestart, FeatureAction action, boolean onlyForProduct
+                , AnnotatedElement annotatedElement) {
             this.feature = feature;
             this.skipRestart = skipRestart;
             this.action = action;
             this.onlyForProduct = onlyForProduct;
+            this.annotatedElement = annotatedElement;
         }
 
         private void assertPerformed() {
@@ -94,6 +100,18 @@ public class KeycloakContainerFeaturesController {
             if ((action == FeatureAction.ENABLE && !ProfileAssume.isFeatureEnabled(feature))
                     || (action == FeatureAction.DISABLE && ProfileAssume.isFeatureEnabled(feature))) {
                 action.accept(testContextInstance.get().getTestingClient(), feature);
+                SetDefaultProvider setDefaultProvider = annotatedElement.getAnnotation(SetDefaultProvider.class);
+                if (setDefaultProvider != null) {
+                    try {
+                        if (action == FeatureAction.ENABLE) {
+                            SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContextInstance.get(), setDefaultProvider);
+                        } else {
+                            SpiProvidersSwitchingUtils.removeProvider(suiteContextInstance.get(), setDefaultProvider);
+                        }
+                    } catch (Exception cause) {
+                        throw new RuntimeException("Failed to (un)set default provider", cause);
+                    }
+                }
             }
         }
 
@@ -186,12 +204,13 @@ public class KeycloakContainerFeaturesController {
 
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
                 .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                        state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotation.onlyForProduct()))
+                        state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotation.onlyForProduct(), annotatedElement))
                 .collect(Collectors.toSet()));
 
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
                 .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                        state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotation.onlyForProduct()))
+                        state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotation.onlyForProduct(),
+                        annotatedElement))
                 .collect(Collectors.toSet()));
 
         return ret;

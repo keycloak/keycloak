@@ -1,0 +1,10 @@
+name: Task
+description: Any tasks that are not directly adding a new feature, enhancement or fixing a bug
+labels: ["kind/task"]
+body:
+  - type: textarea
+    attributes:
+      label: Description
+      description: Describe the task.
+    validations:
+      required: true

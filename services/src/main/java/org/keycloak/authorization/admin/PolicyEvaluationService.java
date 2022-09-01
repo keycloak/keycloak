@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -172,21 +171,21 @@ public class PolicyEvaluationService {
 
             ScopeStore scopeStore = storeFactory.getScopeStore();
 
-            Set<Scope> scopes = givenScopes.stream().map(scopeRepresentation -> scopeStore.findByName(scopeRepresentation.getName(), resourceServer.getId())).collect(Collectors.toSet());
+            Set<Scope> scopes = givenScopes.stream().map(scopeRepresentation -> scopeStore.findByName(resourceServer, scopeRepresentation.getName())).collect(Collectors.toSet());
 
             if (resource.getId() != null) {
-                Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId(), resourceServer.getId());
+                Resource resourceModel = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, resource.getId());
                 return new ArrayList<>(Arrays.asList(
                         Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
             } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
+                return storeFactory.getResourceStore().findByType(resourceServer, resource.getType()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
                         resourceServer, scopes, authorization, request));
             } else {
                 if (scopes.isEmpty()) {
                     return Stream.empty();
                 }
 
-                List<Resource> resources = storeFactory.getResourceStore().findByScope(scopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId());
+                List<Resource> resources = storeFactory.getResourceStore().findByScopes(resourceServer, scopes);
 
                 if (resources.isEmpty()) {
                     return scopes.stream().map(scope -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer));
@@ -254,7 +253,7 @@ public class PolicyEvaluationService {
                 String clientId = representation.getClientId();
 
                 if (clientId == null) {
-                    clientId = resourceServer.getId();
+                    clientId = resourceServer.getClientId();
                 }
 
                 if (clientId != null) {
@@ -287,7 +286,7 @@ public class PolicyEvaluationService {
             }
 
             if (client == null) {
-                client = realm.getClientById(resourceServer.getId());
+                client = realm.getClientById(resourceServer.getClientId());
             }
 
             accessToken.issuedFor(client.getClientId());

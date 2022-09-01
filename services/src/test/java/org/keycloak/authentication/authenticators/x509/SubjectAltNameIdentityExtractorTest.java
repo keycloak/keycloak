@@ -21,18 +21,25 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.cert.X509Certificate;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.UserIdentityExtractor;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.rule.CryptoInitRule;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class SubjectAltNameIdentityExtractorTest {
 
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
+
     @Test
     public void testX509SubjectAltName_otherName() throws Exception {
-        UserIdentityExtractor extractor = UserIdentityExtractor.getSubjectAltNameExtractor(0);
+        UserIdentityExtractor extractor = CryptoIntegration.getProvider().getIdentityExtractorProvider().getSubjectAltNameExtractor(0);
 
         X509Certificate cert = getCertificate();
 
@@ -43,7 +50,7 @@ public class SubjectAltNameIdentityExtractorTest {
 
     @Test
     public void testX509SubjectAltName_email() throws Exception {
-        UserIdentityExtractor extractor = UserIdentityExtractor.getSubjectAltNameExtractor(1);
+        UserIdentityExtractor extractor = CryptoIntegration.getProvider().getIdentityExtractorProvider().getSubjectAltNameExtractor(1);
 
         X509Certificate cert = getCertificate();
 

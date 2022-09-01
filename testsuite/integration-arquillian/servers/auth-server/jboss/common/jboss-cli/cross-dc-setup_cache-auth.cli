@@ -1,0 +1,125 @@
+echo ** Update replicated-cache work element **
+/subsystem=infinispan/cache-container=keycloak/replicated-cache=work/store=remote:write-attribute( \
+    name=properties, \
+    value={ \
+        infinispan.client.hotrod.auth_username=myuser, \
+        infinispan.client.hotrod.auth_password=qwer1234!, \
+        infinispan.client.hotrod.auth_realm=default, \
+        infinispan.client.hotrod.auth_server_name=infinispan, \
+        infinispan.client.hotrod.sasl_mechanism=@HOTROD_SASL_MECHANISM@, \
+        infinispan.client.hotrod.trust_store_file_name=${jboss.server.config.dir}/hotrod-client-truststore.jks, \
+        infinispan.client.hotrod.trust_store_type=JKS, \
+        infinispan.client.hotrod.trust_store_password=password, \
+        rawValues=true, \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
+    } \
+)
+
+echo ** Update distributed-cache sessions element **
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions/store=remote:write-attribute( \
+    name=properties, \
+    value={ \
+        infinispan.client.hotrod.auth_username=myuser, \
+        infinispan.client.hotrod.auth_password=qwer1234!, \
+        infinispan.client.hotrod.auth_realm=default, \
+        infinispan.client.hotrod.auth_server_name=infinispan, \
+        infinispan.client.hotrod.sasl_mechanism=@HOTROD_SASL_MECHANISM@, \
+        infinispan.client.hotrod.trust_store_file_name=${jboss.server.config.dir}/hotrod-client-truststore.jks, \
+        infinispan.client.hotrod.trust_store_type=JKS, \
+        infinispan.client.hotrod.trust_store_password=password, \
+        rawValues=true, \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
+    } \
+)
+
+echo ** Update distributed-cache offlineSessions element **
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions/store=remote:write-attribute( \
+    name=properties, \
+    value={ \
+        infinispan.client.hotrod.auth_username=myuser, \
+        infinispan.client.hotrod.auth_password=qwer1234!, \
+        infinispan.client.hotrod.auth_realm=default, \
+        infinispan.client.hotrod.auth_server_name=infinispan, \
+        infinispan.client.hotrod.sasl_mechanism=@HOTROD_SASL_MECHANISM@, \
+        infinispan.client.hotrod.trust_store_file_name=${jboss.server.config.dir}/hotrod-client-truststore.jks, \
+        infinispan.client.hotrod.trust_store_type=JKS, \
+        infinispan.client.hotrod.trust_store_password=password, \
+        rawValues=true, \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
+    } \
+)
+
+echo ** Update distributed-cache clientSessions element **
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions/store=remote:write-attribute( \
+    name=properties, \
+    value={ \
+        infinispan.client.hotrod.auth_username=myuser, \
+        infinispan.client.hotrod.auth_password=qwer1234!, \
+        infinispan.client.hotrod.auth_realm=default, \
+        infinispan.client.hotrod.auth_server_name=infinispan, \
+        infinispan.client.hotrod.sasl_mechanism=@HOTROD_SASL_MECHANISM@, \
+        infinispan.client.hotrod.trust_store_file_name=${jboss.server.config.dir}/hotrod-client-truststore.jks, \
+        infinispan.client.hotrod.trust_store_type=JKS, \
+        infinispan.client.hotrod.trust_store_password=password, \
+        rawValues=true, \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
+    } \
+)
+
+echo ** Update distributed-cache offlineClientSessions element **
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions/store=remote:write-attribute( \
+    name=properties, \
+    value={ \
+        infinispan.client.hotrod.auth_username=myuser, \
+        infinispan.client.hotrod.auth_password=qwer1234!, \
+        infinispan.client.hotrod.auth_realm=default, \
+        infinispan.client.hotrod.auth_server_name=infinispan, \
+        infinispan.client.hotrod.sasl_mechanism=@HOTROD_SASL_MECHANISM@, \
+        infinispan.client.hotrod.trust_store_file_name=${jboss.server.config.dir}/hotrod-client-truststore.jks, \
+        infinispan.client.hotrod.trust_store_type=JKS, \
+        infinispan.client.hotrod.trust_store_password=password, \
+        rawValues=true, \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
+    } \
+)
+
+echo ** Update distributed-cache loginFailures element **
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures/store=remote:write-attribute( \
+    name=properties, \
+    value={ \
+        infinispan.client.hotrod.auth_username=myuser, \
+        infinispan.client.hotrod.auth_password=qwer1234!, \
+        infinispan.client.hotrod.auth_realm=default, \
+        infinispan.client.hotrod.auth_server_name=infinispan, \
+        infinispan.client.hotrod.sasl_mechanism=@HOTROD_SASL_MECHANISM@, \
+        infinispan.client.hotrod.trust_store_file_name=${jboss.server.config.dir}/hotrod-client-truststore.jks, \
+        infinispan.client.hotrod.trust_store_type=JKS, \
+        infinispan.client.hotrod.trust_store_password=password, \
+        rawValues=true, \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
+    } \
+)
+
+echo ** Update distributed-cache actionTokens element **
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/store=remote:write-attribute( \
+    name=properties, \
+    value={ \
+        infinispan.client.hotrod.auth_username=myuser, \
+        infinispan.client.hotrod.auth_password=qwer1234!, \
+        infinispan.client.hotrod.auth_realm=default, \
+        infinispan.client.hotrod.auth_server_name=infinispan, \
+        infinispan.client.hotrod.sasl_mechanism=@HOTROD_SASL_MECHANISM@, \
+        infinispan.client.hotrod.trust_store_file_name=${jboss.server.config.dir}/hotrod-client-truststore.jks, \
+        infinispan.client.hotrod.trust_store_type=JKS, \
+        infinispan.client.hotrod.trust_store_password=password, \
+        rawValues=true, \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
+    } \
+)

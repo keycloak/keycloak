@@ -17,16 +17,8 @@
 
 package org.keycloak.testsuite.client;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
-
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-
-import org.jboss.arquillian.container.spi.client.container.LifecycleException;
+import org.junit.After;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
@@ -36,12 +28,17 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_POLICIES, skipRestart = true)
 @AuthServerContainerExclude({REMOTE})
 public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
 
@@ -59,6 +56,11 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
     @Override
     public void beforeAbstractKeycloakTestRealmImport() {
         removeAllRealmsDespiteMaster();
+    }
+
+    @After
+    public void afterImportExport() {
+        testingClient.testing().exportImport().clear();
     }
 
     @Test
@@ -98,7 +100,7 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
 
         assertExpectedLoadedPolicies((ClientPoliciesRepresentation reps)->{
             ClientPolicyRepresentation rep =  getPolicyRepresentation(reps, "new-policy");
-            assertExpectedPolicy("new-policy", "duplicated profiles are ignored.", true, Arrays.asList("global-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile"),
+            assertExpectedPolicy("new-policy", "duplicated profiles are ignored.", true, Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"),
                     rep);
         });
     }

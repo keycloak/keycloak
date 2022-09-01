@@ -339,6 +339,30 @@ public class StaxParserUtil {
      * Get the Attribute value
      *
      * @param startElement
+     * @param attrName
+     */
+    public static Long getLongAttributeValue(StartElement startElement, HasQName attrName) {
+        Attribute attr = startElement.getAttributeByName(attrName.getQName());
+        String value = getAttributeValue(attr);
+        return value == null ? null : Long.valueOf(value);
+    }
+
+    /**
+     * Get the Attribute value
+     *
+     * @param startElement
+     * @param attrName
+     */
+    public static Long getLongAttributeValueRP(StartElement startElement, HasQName attrName) {
+        Attribute attr = startElement.getAttributeByName(attrName.getQName());
+        String value = getAttributeValueRP(attr);
+        return value == null ? null : Long.valueOf(value);
+    }
+
+    /**
+     * Get the Attribute value
+     *
+     * @param startElement
      * @param tag localpart of the qname of the attribute
      *
      * @return
@@ -346,7 +370,7 @@ public class StaxParserUtil {
     public static Boolean getBooleanAttributeValue(StartElement startElement, HasQName attrName) {
         Attribute attr = startElement.getAttributeByName(attrName.getQName());
         String value = getAttributeValue(attr);
-        return value == null ? null : Boolean.valueOf(value);
+        return toBoolean(value);
     }
 
     /**
@@ -360,7 +384,11 @@ public class StaxParserUtil {
     public static Boolean getBooleanAttributeValueRP(StartElement startElement, HasQName attrName) {
         Attribute attr = startElement.getAttributeByName(attrName.getQName());
         String value = getAttributeValueRP(attr);
-        return value == null ? null : Boolean.valueOf(value);
+        return toBoolean(value);
+    }
+
+    private static Boolean toBoolean(String value) {
+    	return value==null ? null : Boolean.valueOf(value) || "1".equals(value);
     }
 
     /**
@@ -499,7 +527,7 @@ public class StaxParserUtil {
      *
      * @param xmlEventReader
      *
-     * @return A <b>trimmed</b> string value with all property references replaced if any. 
+     * @return A <b>trimmed</b> string value with all property references replaced if any.
      * If there are no valid references the input string will be returned
      *
      * @throws ParsingException

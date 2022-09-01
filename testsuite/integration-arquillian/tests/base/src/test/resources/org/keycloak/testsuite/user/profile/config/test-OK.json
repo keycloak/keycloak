@@ -1,0 +1,73 @@
+{
+	"groups" : [
+		{
+			"name" : "contact",
+			"displayHeader" : "Contact information",
+			"displayDescription" : "Required to contact you in case of emergency",
+			"annotations" : {
+				"contactanno1" : "value1"
+			}
+		}
+	],
+	"attributes": [
+	    {
+		    "name":"username", 
+			"validations": {
+				"length" : { "min": 3, "max": 80 }
+			}
+		},{
+		    "name":"email ",
+			"validations":	{
+				"length" : { "max": 255	},
+                "email": {},
+				"not-blank": {}
+			},
+	        "required": {
+	            "roles" : ["user", "admin"]
+	        },
+			"annotations": {
+			    "formHintKey" : "userEmailFormFieldHint",	
+			    "anotherKey" : 10,
+			    "yetAnotherKey" : "some value"
+			}
+		},{
+		    "name":"firstName",
+			"validations":	{
+				"length": {	"max": 255	}
+			},
+            "permissions": {
+                "view": ["admin", "user"], 
+                "edit": ["admin", "user"]
+            },
+	        "required": {}
+		}, {
+		    "name":"lastName",
+			"validations": {
+				"length": {	"max": 255 }
+			},
+			"required": {},
+            "permissions": {
+                "view": ["admin", "user"], 
+                "edit": ["admin"]
+            }
+		},{
+		    "name":"phone",
+		    "displayName" : "${profile.phone}",
+			"validations": 	{
+				"not-blank":{}
+			},
+			"group": "contact",
+			"required": {
+                "scopes" : ["phone-1", "phone-2"],
+                "roles" : ["user", "admin"]
+            },
+            "selector" : {
+                "scopes" : ["phone-1-sel", "phone-2-sel", "phone-3-sel"]
+            },
+            "permissions": {
+                "view": ["admin", "user"], 
+                "edit": ["admin"]
+            }
+		}
+	]
+}

@@ -26,7 +26,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public abstract class AbstractAccountPage extends AbstractPage {
 
-    @FindBy(linkText = "Sign Out")
+    @FindBy(linkText = "Sign out")
     private WebElement logoutLink;
 
     @FindBy(id = "kc-current-locale-link")

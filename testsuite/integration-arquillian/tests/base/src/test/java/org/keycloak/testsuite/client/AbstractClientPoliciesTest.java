@@ -17,16 +17,9 @@
 
 package org.keycloak.testsuite.client;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -37,7 +30,6 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,6 +46,9 @@ import java.util.stream.Collectors;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -84,10 +79,10 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -99,7 +94,6 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
-import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
@@ -124,20 +118,16 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCond
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory;
-import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -147,14 +137,28 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
-import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionCondition;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceGroupsConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceHostsConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceRolesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createHolderOfKeyEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -171,29 +175,32 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected static final String PROFILE_NAME = "MyProfile";
     protected static final String SAMPLE_CLIENT_ROLE = "sample-client-role";
 
+    protected static final String FAPI1_BASELINE_PROFILE_NAME = "fapi-1-baseline";
+    protected static final String FAPI1_ADVANCED_PROFILE_NAME = "fapi-1-advanced";
+    protected static final String FAPI_CIBA_PROFILE_NAME = "fapi-ciba";
+
     protected static final String ERR_MSG_MISSING_NONCE = "Missing parameter: nonce";
     protected static final String ERR_MSG_MISSING_STATE = "Missing parameter: state";
     protected static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
+    protected static final String ERR_MSG_REQ_NOT_ALLOWED = "request not allowed";
 
     protected ClientRegistration reg;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeClass
-    public static void beforeClientPoliciesTest() {
-        BouncyIntegration.init();
-    }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
     @Before
     public void before() throws Exception {
+        setInitialAccessTokenForDynamicClientRegistration();
+    }
+
+    protected void setInitialAccessTokenForDynamicClientRegistration() {
         // get initial access token for Dynamic Client Registration with authentication
         reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", REALM_NAME).build();
         ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
-
     }
 
     @After
@@ -245,7 +252,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                             createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
                     .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
                             createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList(SAMPLE_CLIENT_ROLE)))
-                        .addProfile("global-default-profile")
                         .addProfile("ordinal-test-profile")
                         .addProfile("lack-of-builtin-field-test-profile")
                         .addProfile("ordinal-test-profile")
@@ -283,14 +289,15 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList("global-default-profile"), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
+        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
 
-        // each profile - global-default-profile
-        ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, "global-default-profile", true);
-        assertExpectedProfile(actualProfileRep, "global-default-profile", "The global default profile for enforcing basic security level to clients.");
+        // each profile - fapi-1-baseline
+        ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);
+        assertExpectedProfile(actualProfileRep, FAPI1_BASELINE_PROFILE_NAME, "Client profile, which enforce clients to conform 'Financial-grade API Security Profile 1.0 - Part 1: Baseline' specification.");
 
         // each executor
-        assertExpectedExecutors(Arrays.asList(SecureSessionEnforceExecutorFactory.PROVIDER_ID), actualProfileRep);
+        assertExpectedExecutors(Arrays.asList(SecureSessionEnforceExecutorFactory.PROVIDER_ID, PKCEEnforcerExecutorFactory.PROVIDER_ID, SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
+                SecureClientUrisExecutorFactory.PROVIDER_ID, ConsentRequiredExecutorFactory.PROVIDER_ID, FullScopeDisabledExecutorFactory.PROVIDER_ID), actualProfileRep);
         assertExpectedSecureSessionEnforceExecutor(actualProfileRep);
 
         // each profile - ordinal-test-profile - updated
@@ -362,7 +369,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Utilities for Request Object retrieved by reference from jwks_uri
 
-    protected KeyPair setupJwks(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
+    protected KeyPair setupJwksUrl(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
         // generate and register client keypair
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.generateKeys(algorithm);
@@ -381,7 +388,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return keyPair;
     }
 
-    private KeyPair getKeyPairFromGeneratedBase64(Map<String, String> generatedKeys, String algorithm) throws Exception {
+    protected KeyPair getKeyPairFromGeneratedBase64(Map<String, String> generatedKeys, String algorithm) throws Exception {
         // It seems that PemUtils.decodePrivateKey, decodePublicKey can only treat RSA type keys, not EC type keys. Therefore, these are not used.
         String privateKeyBase64 = generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY);
         String publicKeyBase64 =  generatedKeys.get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
@@ -393,31 +400,31 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     private PrivateKey decodePrivateKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
         return kf.generatePrivate(spec);
     }
 
     private PublicKey decodePublicKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
         return kf.generatePublic(spec);
     }
 
     private String getKeyAlgorithmFromJwaAlgorithm(String jwaAlgorithm) {
         String keyAlg = null;
         switch (jwaAlgorithm) {
-            case org.keycloak.crypto.Algorithm.RS256:
-            case org.keycloak.crypto.Algorithm.RS384:
-            case org.keycloak.crypto.Algorithm.RS512:
-            case org.keycloak.crypto.Algorithm.PS256:
-            case org.keycloak.crypto.Algorithm.PS384:
-            case org.keycloak.crypto.Algorithm.PS512:
+            case Algorithm.RS256:
+            case Algorithm.RS384:
+            case Algorithm.RS512:
+            case Algorithm.PS256:
+            case Algorithm.PS384:
+            case Algorithm.PS512:
                 keyAlg = KeyType.RSA;
                 break;
-            case org.keycloak.crypto.Algorithm.ES256:
-            case org.keycloak.crypto.Algorithm.ES384:
-            case org.keycloak.crypto.Algorithm.ES512:
+            case Algorithm.ES256:
+            case Algorithm.ES384:
+            case Algorithm.ES512:
                 keyAlg = KeyType.EC;
                 break;
             default :
@@ -428,7 +435,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
    // Signed JWT for client authentication utility
 
-    protected String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+    protected String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm) {
         JsonWebToken jwt = createRequestToken(clientId, getRealmInfoUrl());
         String kid = KeyUtils.createKeyId(publicKey);
         SignatureSignerContext signer = oauth.createSigner(privateKey, kid, algorithm);
@@ -534,16 +541,17 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         requestObject.setResponseType("code");
         requestObject.setRedirectUriParam(oauth.getRedirectUri());
         requestObject.setScope("openid");
-        String scope = KeycloakModelUtils.generateId();
-        oauth.stateParamHardcoded(scope);
-        requestObject.setState(scope);
+        String state = KeycloakModelUtils.generateId();
+        oauth.stateParamHardcoded(state);
+        requestObject.setState(state);
         requestObject.setMax_age(Integer.valueOf(600));
         requestObject.setOtherClaims("custom_claim_ein", "rot");
         requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
+        requestObject.setNonce(KeycloakModelUtils.generateId());
         return requestObject;
     }
 
-    protected void registerRequestObject(AuthorizationEndpointRequestObject requestObject, String clientId, Algorithm sigAlg, boolean isUseRequestUri) throws URISyntaxException, IOException {
+    protected void registerRequestObject(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri) throws URISyntaxException, IOException {
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // Set required signature for request_uri
@@ -559,12 +567,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // generate and register client keypair
-        oidcClientEndpointsResource.generateKeys(sigAlg.name());
+        oidcClientEndpointsResource.generateKeys(sigAlg);
 
         // register request object
         byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
         String encodedRequestObject = Base64Url.encode(contentBytes);
-        oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg.name());
+        oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
 
         if (isUseRequestUri) {
             oauth.request(null);
@@ -625,6 +633,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         clientRep.setPublicClient(Boolean.FALSE);
         clientRep.setServiceAccountsEnabled(Boolean.TRUE);
         clientRep.setRedirectUris(Collections.singletonList(ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPostLogoutRedirectUris(Collections.singletonList("+"));
         op.accept(clientRep);
         Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
         if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
@@ -754,272 +763,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected void deleteClientDynamically(String clientId) throws ClientRegistrationException {
         reg.oidc().delete(clientId);
-    }
-
-    // Client Profiles CRUD Operations
-
-    protected static class ClientProfilesBuilder {
-        private final ClientProfilesRepresentation profilesRep;
-
-        public ClientProfilesBuilder() {
-            profilesRep = new ClientProfilesRepresentation();
-            profilesRep.setProfiles(new ArrayList<>());
-        }
-
-        // Create client profile from existing representation
-        public ClientProfilesBuilder(ClientProfilesRepresentation existingRep) {
-            this.profilesRep = existingRep;
-        }
-
-        public ClientProfilesBuilder addProfile(ClientProfileRepresentation rep) {
-            profilesRep.getProfiles().add(rep);
-            return this;
-        }
-
-        public ClientProfilesRepresentation toRepresentation() {
-            return profilesRep;
-        }
-
-        public String toString() {
-            String profilesJson = null;
-            try {
-                profilesJson = objectMapper.writeValueAsString(profilesRep);
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-                fail();
-            }
-            return profilesJson;
-        }
-    }
-
-    protected static class ClientProfileBuilder {
-
-        private final ClientProfileRepresentation profileRep;
-
-        public ClientProfileBuilder() {
-            profileRep = new ClientProfileRepresentation();
-        }
-
-        public ClientProfileBuilder createProfile(String name, String description) {
-            if (name != null) {
-                profileRep.setName(name);
-            }
-            if (description != null) {
-                profileRep.setDescription(description);
-            }
-            profileRep.setExecutors(new ArrayList<>());
-
-            return this;
-        }
-
-        public ClientProfileBuilder addExecutor(String providerId, ClientPolicyExecutorConfigurationRepresentation config) throws Exception {
-            if (config == null) {
-                config = new ClientPolicyExecutorConfigurationRepresentation();
-            }
-            ClientPolicyExecutorRepresentation executor = new ClientPolicyExecutorRepresentation();
-            executor.setExecutorProviderId(providerId);
-            executor.setConfiguration(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class));
-            profileRep.getExecutors().add(executor);
-            return this;
-        }
-
-        public ClientProfileRepresentation toRepresentation() {
-            return profileRep;
-        }
-
-        public String toString() {
-            String profileJson = null;
-            try {
-                profileJson = objectMapper.writeValueAsString(profileRep);
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-                fail();
-            }
-            return profileJson;
-        }
-    }
-
-    // Client Profiles - Executor CRUD Operations
-
-    protected HolderOfKeyEnforcerExecutor.Configuration createHolderOfKeyEnforceExecutorConfig(Boolean autoConfigure) {
-        HolderOfKeyEnforcerExecutor.Configuration config = new HolderOfKeyEnforcerExecutor.Configuration();
-        config.setAutoConfigure(autoConfigure);
-        return config;
-    }
-
-    protected PKCEEnforcerExecutor.Configuration createPKCEEnforceExecutorConfig(Boolean autoConfigure) {
-        PKCEEnforcerExecutor.Configuration config = new PKCEEnforcerExecutor.Configuration();
-        config.setAutoConfigure(autoConfigure);
-        return config;
-    }
-
-    protected SecureClientAuthenticatorExecutor.Configuration createSecureClientAuthenticatorExecutorConfig(List<String> allowedClientAuthenticators, String defaultClientAuthenticator) {
-        SecureClientAuthenticatorExecutor.Configuration config = new SecureClientAuthenticatorExecutor.Configuration();
-        config.setAllowedClientAuthenticators(allowedClientAuthenticators);
-        config.setDefaultClientAuthenticator(defaultClientAuthenticator);
-        return config;
-    }
-
-    protected SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf) {
-        SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
-        if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
-        if (verifyNbf != null) config.setVerifyNbf(verifyNbf);
-        return config;
-    }
-
-    protected SecureSigningAlgorithmForSignedJwtExecutor.Configuration createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean requireClientAssertion) {
-        SecureSigningAlgorithmForSignedJwtExecutor.Configuration config = new SecureSigningAlgorithmForSignedJwtExecutor.Configuration();
-        config.setRequireClientAssertion(requireClientAssertion);
-        return config;
-    }
-
-    protected SecureSigningAlgorithmExecutor.Configuration createSecureSigningAlgorithmEnforceExecutorConfig(String defaultAlgorithm) {
-        SecureSigningAlgorithmExecutor.Configuration config = new SecureSigningAlgorithmExecutor.Configuration();
-        config.setDefaultAlgorithm(defaultAlgorithm);
-        return config;
-    }
-
-    // Client Policies CRUD Operation
-
-    protected static class ClientPoliciesBuilder {
-        private final ClientPoliciesRepresentation policiesRep;
-
-        public ClientPoliciesBuilder() {
-            policiesRep = new ClientPoliciesRepresentation();
-            policiesRep.setPolicies(new ArrayList<>());
-        }
-
-        public ClientPoliciesBuilder addPolicy(ClientPolicyRepresentation rep) {
-            policiesRep.getPolicies().add(rep);
-            return this;
-        }
-
-        public ClientPoliciesRepresentation toRepresentation() {
-            return policiesRep;
-        }
-
-        public String toString() {
-            String policiesJson = null;
-            try {
-                policiesJson = objectMapper.writeValueAsString(policiesRep);
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-                fail();
-            }
-            return policiesJson;
-        }
-    }
-
-    protected static class ClientPolicyBuilder {
-
-        private final ClientPolicyRepresentation policyRep;
-
-        public ClientPolicyBuilder() {
-            policyRep = new ClientPolicyRepresentation();
-        }
-
-        public ClientPolicyBuilder createPolicy(String name, String description, Boolean isEnabled) {
-            policyRep.setName(name);
-            if (description != null) {
-                policyRep.setDescription(description);
-            }
-            if (isEnabled != null) {
-                policyRep.setEnabled(isEnabled);
-            } else {
-                policyRep.setEnabled(Boolean.FALSE);
-            }
-
-            policyRep.setConditions(new ArrayList<>());
-            policyRep.setProfiles(new ArrayList<>());
-
-            return this;
-        }
-
-        public ClientPolicyBuilder addCondition(String providerId, ClientPolicyConditionConfigurationRepresentation config) throws Exception {
-            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
-            condition.setConditionProviderId(providerId);
-            condition.setConfiguration(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class));
-            policyRep.getConditions().add(condition);
-            return this;
-        }
-
-        public ClientPolicyBuilder addProfile(String profileName) {
-            policyRep.getProfiles().add(profileName);
-            return this;
-        }
-
-        public ClientPolicyRepresentation toRepresentation() {
-            return policyRep;
-        }
-
-        public String toString() {
-            String policyJson = null;
-            try {
-                policyJson = objectMapper.writeValueAsString(policyRep);
-            } catch (JsonProcessingException e) {
-                fail();
-            }
-            return policyJson;
-        }
-    }
-
-    // Client Policies - Condition CRUD Operations
-
-    protected TestRaiseExeptionCondition.Configuration createTestRaiseExeptionConditionConfig() {
-        return new TestRaiseExeptionCondition.Configuration();
-    }
-
-    protected ClientPolicyConditionConfigurationRepresentation createAnyClientConditionConfig() {
-        return new ClientPolicyConditionConfigurationRepresentation();
-    }
-
-    protected ClientPolicyConditionConfigurationRepresentation createAnyClientConditionConfig(Boolean isNegativeLogic) {
-        ClientPolicyConditionConfigurationRepresentation config = new ClientPolicyConditionConfigurationRepresentation();
-        config.setNegativeLogic(isNegativeLogic);
-        return config;
-    }
-
-    protected ClientAccessTypeCondition.Configuration createClientAccessTypeConditionConfig(List<String> types) {
-        ClientAccessTypeCondition.Configuration config = new ClientAccessTypeCondition.Configuration();
-        config.setType(types);
-        return config;
-    }
-
-    protected ClientRolesCondition.Configuration createClientRolesConditionConfig(List<String> roles) {
-        ClientRolesCondition.Configuration config = new ClientRolesCondition.Configuration();
-        config.setRoles(roles);
-        return config;
-    }
-
-    protected ClientScopesCondition.Configuration createClientScopesConditionConfig(String type, List<String> scopes) {
-        ClientScopesCondition.Configuration config = new ClientScopesCondition.Configuration();
-        config.setType(type);
-        config.setScope(scopes);
-        return config;
-    }
-
-    protected ClientUpdaterContextCondition.Configuration createClientUpdateContextConditionConfig(List<String> updateClientSource) {
-        ClientUpdaterContextCondition.Configuration config = new ClientUpdaterContextCondition.Configuration();
-        config.setUpdateClientSource(updateClientSource);
-        return config;
-    }
-
-    protected ClientUpdaterSourceGroupsCondition.Configuration createClientUpdateSourceGroupsConditionConfig(List<String> groups) {
-        ClientUpdaterSourceGroupsCondition.Configuration config = new ClientUpdaterSourceGroupsCondition.Configuration();
-        config.setGroups(groups);
-        return config;
-    }
-
-    protected ClientUpdaterSourceHostsCondition.Configuration createClientUpdateSourceHostsConditionConfig(List<String> trustedHosts) {
-        ClientUpdaterSourceHostsCondition.Configuration config = new ClientUpdaterSourceHostsCondition.Configuration();
-        config.setTrustedHosts(trustedHosts);
-        return config;
-    }
-
-    protected ClientUpdaterSourceRolesCondition.Configuration createClientUpdateSourceRolesConditionConfig(List<String> roles) {
-        ClientUpdaterSourceRolesCondition.Configuration config = new ClientUpdaterSourceRolesCondition.Configuration();
-        config.setRoles(roles);
-        return config;
     }
 
     // Profiles Operation
@@ -1395,7 +1138,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void assertExpectedClientScopesCondition(String type, List<String> scopes, ClientPolicyRepresentation policyRep) {
         ClientScopesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientScopesConditionFactory.PROVIDER_ID,  ClientScopesCondition.Configuration.class);
         Assert.assertEquals(cfg.getType(), type);
-        Assert.assertEquals(cfg.getScope(), scopes);
+        Assert.assertEquals(cfg.getScopes(), scopes);
     }
 
     protected void assertExpectedClientUpdateContextCondition(List<String> updateClientSources, ClientPolicyRepresentation policyRep) {

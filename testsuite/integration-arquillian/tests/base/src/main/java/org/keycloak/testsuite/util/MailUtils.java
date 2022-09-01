@@ -61,11 +61,6 @@ public class MailUtils {
         final String textChangePwdUrl = getLink(body.getText());
         String htmlChangePwdUrl = getLink(body.getHtml());
         
-        // undo changes that may have been made by html sanitizer
-        htmlChangePwdUrl = htmlChangePwdUrl.replace("&#61;", "=");
-        htmlChangePwdUrl = htmlChangePwdUrl.replace("..", ".");
-        htmlChangePwdUrl = htmlChangePwdUrl.replace("&amp;", "&");
-        
         assertEquals(htmlChangePwdUrl, textChangePwdUrl);
 
         return htmlChangePwdUrl;
