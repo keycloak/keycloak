@@ -33,6 +33,7 @@ import java.security.MessageDigest;
 import java.util.Deque;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
@@ -238,7 +239,7 @@ public class KeycloakInstalled {
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
-                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID);
+                .queryParam(OAuth2Constants.SCOPE, Optional.ofNullable(deployment.getScope()).orElse(OAuth2Constants.SCOPE_OPENID));
 
         if (state != null) {
             builder.queryParam(OAuth2Constants.STATE, state);
