@@ -1,11 +1,9 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import { addTrailingSlash } from "../../util";
-import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
+import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 
 type BaseClientRolesQuery = {
   adminClient: KeycloakAdminClient;
   id: string;
-  realm: string;
   type: string;
 };
 
@@ -33,29 +31,17 @@ type ClientRole = {
 const fetchRoles = async ({
   adminClient,
   id,
-  realm,
   type,
   first,
   max,
   search,
   endpoint,
 }: Query): Promise<ClientRole[]> => {
-  const accessToken = await adminClient.getAccessToken();
-  const baseUrl = adminClient.baseUrl;
-
-  const response = await fetch(
-    `${addTrailingSlash(
-      baseUrl
-    )}admin/realms/${realm}/admin-ui-${endpoint}/${type}/${id}?first=${
-      first || 0
-    }&max=${max || 10}${search ? "&search=" + search : ""}`,
-    {
-      method: "GET",
-      headers: getAuthorizationHeaders(accessToken),
-    }
-  );
-
-  return await response.json();
+  return fetchAdminUI(adminClient, `/admin-ui-${endpoint}/${type}/${id}`, {
+    first: (first || 0).toString(),
+    max: (max || 10).toString(),
+    search: search || "",
+  });
 };
 
 export const getAvailableClientRoles = async (

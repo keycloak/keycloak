@@ -22,7 +22,6 @@ import { useAdminClient } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { deleteMapping, getEffectiveRoles, getMapping } from "./queries";
 import { getEffectiveClientRoles } from "./resource";
-import { useRealm } from "../../context/realm-context/RealmContext";
 
 import "./role-mapping.css";
 
@@ -89,7 +88,6 @@ export const RoleMapping = ({
 }: RoleMappingProps) => {
   const { t } = useTranslation(type);
   const { adminClient } = useAdminClient();
-  const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
@@ -113,7 +111,6 @@ export const RoleMapping = ({
       effectiveClientRoles = (
         await getEffectiveClientRoles({
           adminClient,
-          realm,
           type,
           id,
         })

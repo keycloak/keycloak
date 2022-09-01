@@ -17,7 +17,6 @@ import useLocaleSort from "../../utils/useLocaleSort";
 import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
 import { getAvailableRoles } from "./queries";
 import { getAvailableClientRoles } from "./resource";
-import { useRealm } from "../../context/realm-context/RealmContext";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -42,7 +41,6 @@ export const AddRoleMappingModal = ({
 }: AddRoleMappingModalProps) => {
   const { t } = useTranslation("common");
   const { adminClient } = useAdminClient();
-  const { realm } = useRealm();
 
   const [searchToggle, setSearchToggle] = useState(false);
 
@@ -80,7 +78,6 @@ export const AddRoleMappingModal = ({
     const roles = await getAvailableClientRoles({
       adminClient,
       id,
-      realm,
       type,
       first: first || 0,
       max: max || 10,

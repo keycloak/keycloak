@@ -6,6 +6,7 @@ import { cellWidth } from "@patternfly/react-table";
 
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
+import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -58,9 +59,7 @@ export const GroupTable = ({ toggleView }: GroupTableProps) => {
 
       groupsData = group.subGroups;
     } else {
-      groupsData = await adminClient.groups.find({
-        briefRepresentation: false,
-      });
+      groupsData = await fetchAdminUI(adminClient, "admin-ui-groups");
     }
 
     if (!groupsData) {

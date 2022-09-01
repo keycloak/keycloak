@@ -17,3 +17,4 @@
 
 org.keycloak.admin.ui.rest.AvailableRoleMappingProvider
 org.keycloak.admin.ui.rest.EffectiveRoleMappingProvider
+org.keycloak.admin.ui.rest.GroupsResourceProvider
