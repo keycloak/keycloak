@@ -208,7 +208,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (isDisabledByBruteForce(context, user)) {
             return false;
         }
-        if (context.getSession().userCredentialManager().isValid(context.getRealm(), user, UserCredentialModel.password(password))) {
+        if (user.credentialManager().isValid(UserCredentialModel.password(password))) {
             return true;
         }
         return badPasswordHandler(context, user, clearUser,false);
