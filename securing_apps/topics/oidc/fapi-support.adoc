@@ -37,13 +37,6 @@ in the more strict way to enforce some of the requirements. Especially:
 ==== TLS considerations
 
 As confidential information is being exchanged, all interactions shall be encrypted with TLS (HTTPS). Moreover, there are some requirements in the FAPI specification for
-the cipher suites and TLS protocol versions used. To match these requirements, you can consider configure allowed ciphers. This configuration can be done in the
-`KEYCLOAK_HOME/standalone/configuration/standalone-*.xml` file in the Elytron subsystem. For example this element can be added under `tls` -> `server-ssl-contexts`
-
-[source,xml]
-<server-ssl-context name="kcSSLContext" want-client-auth="true" protocols="TLSv1.2" \
-key-manager="kcKeyManager" trust-manager="kcTrustManager" \
-cipher-suite-filter="TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384" protocols="TLSv1.2" />
-
-As confidential information is being exchanged, all interactions shall be encrypted with TLS (HTTPS). Moreover, there are some requirements in the FAPI specification for
-the cipher suites and TLS protocol versions used. To match these requirements, you can consider configuring allowed ciphers. This configuration can be done by setting the `https-protocols` and `https-cipher-suites` options. For more details, see https://www.keycloak.org/server/enabletls[Configuring TLS] guide.
+the cipher suites and TLS protocol versions used. To match these requirements, you can consider configure allowed ciphers. This configuration can be done by setting
+the `https-protocols` and `https-cipher-suites` options. {project_name} uses `TLSv1.3` by default and hence it is posibly not needed to change the default settings. However it
+may be needed to adjust ciphers if you need to fallback to lower TLS version for some reason. For more details, see https://www.keycloak.org/server/enabletls[Configuring TLS] guide.
