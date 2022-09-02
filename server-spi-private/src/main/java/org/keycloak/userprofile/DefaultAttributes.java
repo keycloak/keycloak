@@ -24,9 +24,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -55,7 +57,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
      */
     public static final String READ_ONLY_ATTRIBUTE_KEY = "kc.read.only";
 
-    private final UserProfileContext context;
+    protected final UserProfileContext context;
     private final KeycloakSession session;
     private final Map<String, AttributeMetadata> metadataByAttribute;
     protected final UserModel user;
@@ -72,10 +74,20 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public boolean isReadOnly(String attributeName) {
-        return isReadOnlyFromMetadata(attributeName) || isReadOnlyInternalAttribute(attributeName);
+        if (isReadOnlyFromMetadata(attributeName) || isReadOnlyInternalAttribute(attributeName)) {
+            return true;
+        }
+
+        return getMetadata(attributeName) == null;
     }
 
-    private boolean isReadOnlyFromMetadata(String attributeName) {
+    /**
+     * Checks whether an attribute is marked as read only by looking at its metadata.
+     *
+     * @param attributeName the attribute name
+     * @return @return {@code true} if the attribute is readonly. Otherwise, returns {@code false}
+     */
+    protected boolean isReadOnlyFromMetadata(String attributeName) {
         AttributeMetadata attributeMetadata = metadataByAttribute.get(attributeName);
 
         if (attributeMetadata == null) {
@@ -168,10 +180,14 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public Map<String, List<String>> getReadable() {
-        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
+        Map<String, List<String>> attributes = new HashMap<>(this);
 
-        if (attributes.isEmpty()) {
-            return null;
+        for (String name : nameSet()) {
+            AttributeMetadata metadata = getMetadata(name);
+
+            if (metadata == null || !metadata.canView(createAttributeContext(metadata))) {
+                attributes.remove(name);
+            }
         }
 
         return attributes;
@@ -272,11 +288,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             List<String> values = EMPTY_VALUE;
             AttributeMetadata metadata = metadataByAttribute.get(attributeName);
 
-            // if the attribute is not provided and does not have view permission, use the current values
-            // this check makes possible to decide whether or not validation should happen for read-only attributes
-            // when the context does not have access to such attributes
-            if (user != null && !metadata.canView(createAttributeContext(metadata))) {
-                values = user.getAttributes().get(attributeName);
+            if (user != null && isIncludeAttributeIfNotProvided(metadata)) {
+                values = user.getAttributes().getOrDefault(attributeName, EMPTY_VALUE);
             }
 
             newAttributes.put(attributeName, values);
@@ -293,10 +306,19 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         List<String> email = newAttributes.get(UserModel.EMAIL);
 
         if (email != null && realm.isRegistrationEmailAsUsername()) {
-            newAttributes.put(UserModel.USERNAME, email);
+            final List<String> lowerCaseEmailList = email.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toList());
+
+            newAttributes.put(UserModel.USERNAME, lowerCaseEmailList);
         }
 
         return newAttributes;
+    }
+
+    protected boolean isIncludeAttributeIfNotProvided(AttributeMetadata metadata) {
+        return !metadata.canEdit(createAttributeContext(metadata));
     }
 
     /**
@@ -308,7 +330,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
      * @param name the name of the attribute
      * @return
      */
-    private boolean isSupportedAttribute(String name) {
+    protected boolean isSupportedAttribute(String name) {
         if (READ_ONLY_ATTRIBUTE_KEY.equals(name)) {
             return false;
         }
@@ -322,11 +344,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             return true;
         }
 
-        // attributes managed using forms with a pre-defined prefix are supported
-        if (name.startsWith(Constants.USER_ATTRIBUTES_PREFIX)) {
-            return true;
-        }
-
         if (isReadOnly(name)) {
             return true;
         }
@@ -335,7 +352,16 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return isRootAttribute(name);
     }
 
-    private boolean isReadOnlyInternalAttribute(String attributeName) {
+    /**
+     * <p>Returns whether an attribute is read only based on the provider configuration (using provider config),
+     * usually related to internal attributes managed by the server.
+     *
+     * <p>For user-defined attributes, it should be preferable to use the user profile configuration.
+     *
+     * @param attributeName the attribute name
+     * @return {@code true} if the attribute is readonly. Otherwise, returns {@code false}
+     */
+    protected boolean isReadOnlyInternalAttribute(String attributeName) {
         // read-only can be configured through the provider so we try to validate global validations
         AttributeMetadata readonlyMetadata = metadataByAttribute.get(READ_ONLY_ATTRIBUTE_KEY);
 

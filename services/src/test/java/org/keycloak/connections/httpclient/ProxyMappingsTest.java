@@ -29,6 +29,8 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -202,5 +204,49 @@ public class ProxyMappingsTest {
 
     ProxyMapping forSalesForce = proxyMappingsWithProxyAuthen.getProxyFor("login.salesforce.com");
     assertThat(forSalesForce.getProxyHost().getHostName(), is("fallback"));
+  }
+
+  @Test
+  public void shouldReturnMappingForHttpProxy() {
+    ProxyMappings proxyMappings = ProxyMappings.withFixedProxyMapping("https://some-proxy.redhat.com:8080", null);
+
+    ProxyMapping forGoogle = proxyMappings.getProxyFor("login.google.com");
+    assertEquals("some-proxy.redhat.com", forGoogle.getProxyHost().getHostName());
+  }
+
+  @Test
+  public void shouldReturnMappingForHttpProxyWithNoProxy() {
+    ProxyMappings proxyMappings = ProxyMappings.withFixedProxyMapping("https://some-proxy.redhat.com:8080", "login.facebook.com");
+
+    assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("login.google.com").getProxyHost().getHostName());
+    assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("facebook.com").getProxyHost().getHostName());
+
+    assertNull(proxyMappings.getProxyFor("login.facebook.com").getProxyHost());
+    assertNull(proxyMappings.getProxyFor("auth.login.facebook.com").getProxyHost());
+  }
+
+  @Test
+  public void shouldReturnMappingForHttpProxyWithMultipleNoProxy() {
+    ProxyMappings proxyMappings = ProxyMappings.withFixedProxyMapping("https://some-proxy.redhat.com:8080", "login.facebook.com,corp.com");
+
+    assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("login.google.com").getProxyHost().getHostName());
+    assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("facebook.com").getProxyHost().getHostName());
+
+    assertNull(proxyMappings.getProxyFor("login.facebook.com").getProxyHost());
+    assertNull(proxyMappings.getProxyFor("auth.login.facebook.com").getProxyHost());
+    assertNull(proxyMappings.getProxyFor("myapp.acme.corp.com").getProxyHost());
+  }
+
+  @Test
+  public void shouldReturnMappingForNoProxyWithInvalidChars() {
+    ProxyMappings proxyMappings = ProxyMappings.withFixedProxyMapping("https://some-proxy.redhat.com:8080", "[lj]ogin.facebook.com");
+
+    assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("login.facebook.com").getProxyHost().getHostName());
+    assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("jogin.facebook.com").getProxyHost().getHostName());
+  }
+
+  @Test
+  public void shouldReturnEmptyMappingForEmptyHttpProxy() {
+    assertNull(ProxyMappings.withFixedProxyMapping(null, "facebook.com"));
   }
 }

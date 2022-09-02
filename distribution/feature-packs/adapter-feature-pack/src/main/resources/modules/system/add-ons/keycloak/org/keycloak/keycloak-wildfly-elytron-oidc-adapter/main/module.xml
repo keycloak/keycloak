@@ -45,6 +45,7 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.wildfly.security.elytron" optional="true"/>
+        <module name="org.wildfly.security.elytron-web.undertow-server" optional="true"/>
     </dependencies>
 
 </module>

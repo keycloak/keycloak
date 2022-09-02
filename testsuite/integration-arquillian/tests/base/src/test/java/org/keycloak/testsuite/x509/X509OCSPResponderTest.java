@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.util.OAuthClient;
 
@@ -164,8 +165,8 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
                         .setOCSPResponder("http://" + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT + "/oscp")
                         .setOCSPResponderCertificate(
                                 IOUtils.toString(this.getClass().getResourceAsStream(OcspHandler.OCSP_RESPONDER_CERT_PATH), Charsets.UTF_8)
-                                        .replace("-----BEGIN CERTIFICATE-----", "")
-                                        .replace("-----END CERTIFICATE-----", ""))
+                                        .replace(PemUtils.BEGIN_CERT, "")
+                                        .replace(PemUtils.END_CERT, ""))
                         .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
         String cfgId = createConfig(directGrantExecution.getId(), cfg);

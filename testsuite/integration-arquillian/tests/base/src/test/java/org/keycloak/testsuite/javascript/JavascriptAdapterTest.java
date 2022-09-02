@@ -9,8 +9,12 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.ClaimsRepresentation;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -33,11 +37,14 @@ import org.keycloak.testsuite.util.javascript.JSObjectBuilder;
 import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutor;
 import org.keycloak.testsuite.util.javascript.XMLHttpRequest;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
@@ -498,6 +505,52 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         });
     }
 
+    /**
+     * Test for acr handling via {@code loginOptions}: <pre>{@code
+     * Keycloak keycloak = new Keycloak(); keycloak.login({.... acr: { values: ["foo", "bar"], essential: false}})
+     * }</pre>
+     */
+    @Test
+    public void testAcrInLoginOptionsShouldBeConsideredByLoginUrl() {
+        // Test when no "acr" option given. Claims parameter won't be passed to Keycloak server
+        testExecutor.configure().init(defaultArguments());
+        JSObjectBuilder loginOptions = JSObjectBuilder.create();
+
+        testExecutor.login(loginOptions, (JavascriptStateValidator) (driver, output, events) -> {
+            try {
+                String queryString = new URL(driver.getCurrentUrl()).getQuery();
+                String claimsParam = UriUtils.decodeQueryString(queryString).getFirst(OIDCLoginProtocol.CLAIMS_PARAM);
+                Assert.assertNull(claimsParam);
+            } catch (IOException ioe) {
+                throw new AssertionError(ioe);
+            }
+        });
+
+        // Test given "acr" option will be translated into the "claims" parameter passed to Keycloak server
+        jsDriver.navigate().to(testAppUrl);
+        testExecutor.configure().init(defaultArguments());
+
+        JSObjectBuilder acr1 = JSObjectBuilder.create()
+                .add("values", new String[] {"foo", "bar"})
+                .add("essential", false);
+        loginOptions = JSObjectBuilder.create().add("acr", acr1);
+
+        testExecutor.login(loginOptions, (JavascriptStateValidator) (driver, output, events) -> {
+            try {
+                String queryString = new URL(driver.getCurrentUrl()).getQuery();
+                String claimsParam = UriUtils.decodeQueryString(queryString).getFirst(OIDCLoginProtocol.CLAIMS_PARAM);
+                Assert.assertNotNull(claimsParam);
+
+                ClaimsRepresentation claimsRep = JsonSerialization.readValue(claimsParam, ClaimsRepresentation.class);
+                ClaimsRepresentation.ClaimValue<String> claimValue = claimsRep.getClaimValue(IDToken.ACR, ClaimsRepresentation.ClaimContext.ID_TOKEN, String.class);
+                Assert.assertNames(claimValue.getValues(), "foo", "bar");
+                Assert.assertThat(claimValue.isEssential(), is(false));
+            } catch (IOException ioe) {
+                throw new AssertionError(ioe);
+            }
+        });
+    }
+
     @Test
     public void testUpdateToken() {
         XMLHttpRequest request = XMLHttpRequest.create()
@@ -820,6 +873,42 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     public void check3pCookiesMessageCallbackTest() {
         testExecutor.attachCheck3pCookiesIframeMutationObserver()
                 .init(defaultArguments(), this::assertInitNotAuth);
+    }
+
+    // In case of incorrect/unavailable realm provided in KeycloakConfig,
+    // JavaScript Adapter init() should fail-fast and reject Promise with KeycloakError.
+    @Test
+    public void checkInitWithInvalidRealm() {
+
+        JSObjectBuilder keycloakConfig = JSObjectBuilder.create()
+                .add("url", authServerContextRootPage + "/auth")
+                .add("realm", "invalid-realm-name")
+                .add("clientId", CLIENT_ID);
+
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
+
+        testExecutor
+                .configure(keycloakConfig)
+                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+
+    }
+
+    // In case of unavailable Authorization Server due to network or other kind of problems,
+    // JavaScript Adapter init() should fail-fast and reject Promise with KeycloakError.
+    @Test
+    public void checkInitWithUnavailableAuthServer() {
+
+        JSObjectBuilder keycloakConfig = JSObjectBuilder.create()
+                .add("url", "https://localhost:12345/auth")
+                .add("realm", REALM_NAME)
+                .add("clientId", CLIENT_ID);
+
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
+
+        testExecutor
+                .configure(keycloakConfig)
+                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+
     }
 
     protected void assertAdapterIsLoggedIn(WebDriver driver1, Object output, WebElement events) {

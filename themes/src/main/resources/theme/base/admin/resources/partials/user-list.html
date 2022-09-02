@@ -18,7 +18,7 @@
                     </div>
                     <button id="viewAllUsers" class="btn btn-default" ng-click="query.search = null; firstPage()">{{:: 'view-all-users' | translate}}</button>
 
-                    <div class="pull-right" data-ng-show="access.manageUsers">
+                    <div class="pull-right" data-ng-show="(access.manageUsers || (serverInfo.featureEnabled('ADMIN_FINE_GRAINED_AUTHZ') && access.queryUsers))">
                         <button data-ng-click="unlockUsers()" class="btn btn-default">{{:: 'unlock-users' | translate}}</button>
                         <a id="createUser" class="btn btn-default" href="#/create/user/{{realm.realm}}">{{:: 'add-user' | translate}}</a>
                     </div>

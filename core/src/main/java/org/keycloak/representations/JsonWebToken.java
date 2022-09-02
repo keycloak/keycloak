@@ -32,6 +32,7 @@ import org.keycloak.json.StringOrArraySerializer;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -216,6 +217,22 @@ public class JsonWebToken implements Serializable, Token {
                 return true;
             }
         }
+        return false;
+    }
+
+    public boolean hasAnyAudience(List<String> audiences) {
+        String[] auds = getAudience();
+
+        if (auds == null) {
+            return false;
+        }
+
+        for (String aud : auds) {
+            if (audiences.contains(aud)) {
+                return true;
+            }
+        }
+
         return false;
     }
 

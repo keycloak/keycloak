@@ -25,6 +25,10 @@ public class ServerMacSignatureVerifierContext extends MacSignatureVerifierConte
         super(getKey(session, kid, algorithm));
     }
 
+    public ServerMacSignatureVerifierContext(KeyWrapper key) throws VerificationException {
+        super(key);
+    }
+
     private static KeyWrapper getKey(KeycloakSession session, String kid, String algorithm) throws VerificationException {
         KeyWrapper key = session.keys().getKey(session.getContext().getRealm(), kid, KeyUse.SIG, algorithm);
         if (key == null) {

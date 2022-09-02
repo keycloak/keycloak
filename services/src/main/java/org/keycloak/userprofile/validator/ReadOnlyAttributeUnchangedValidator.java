@@ -16,6 +16,8 @@
  */
 package org.keycloak.userprofile.validator;
 
+import static org.keycloak.common.util.ObjectUtil.isBlank;
+
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -80,25 +82,27 @@ public class ReadOnlyAttributeUnchangedValidator implements SimpleValidator {
             existingValue = existingAttrValues.get(0);
         }
 
-        if (values.isEmpty() && existingValue != null) {
-            context.addError(new ValidationError(ID, key, UPDATE_READ_ONLY_ATTRIBUTES_REJECTED_MSG));
-            return context;
-        }
-
         String value = null;
 
         if (!values.isEmpty()) {
             value = values.get(0);
         }
 
-        boolean unchanged = ObjectUtil.isEqualOrBothNull(value, existingValue);
-
-        if (!unchanged) {
+        if (!isUnchanged(existingValue, value)) {
             logger.warnf("Attempt to edit denied attribute '%s' of user '%s'", pattern, user == null ? "new user" : user.getFirstAttribute(UserModel.USERNAME));
             context.addError(new ValidationError(ID, key, UPDATE_READ_ONLY_ATTRIBUTES_REJECTED_MSG));
         }
 
         return context;
+    }
+
+    private boolean isUnchanged(String existingValue, String value) {
+        if (existingValue == null && isBlank(value)) {
+            // if attribute not set to the user and value is blank/null, then pass validation
+            return true;
+        }
+
+        return ObjectUtil.isEqualOrBothNull(existingValue, value);
     }
 
 }

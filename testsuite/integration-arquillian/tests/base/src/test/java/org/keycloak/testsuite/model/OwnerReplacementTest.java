@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -58,6 +59,8 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class OwnerReplacementTest extends AbstractKeycloakTest {
 
+    private static String testRealmId;
+    private static String fooRealmId;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -75,10 +78,16 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 .name("foo")
                 .user(user)
                 .build();
-        realm2.setId("foo");
         testRealms.add(realm2);
     }
 
+    @Before
+    public void before() {
+        testingClient.server().run(session -> {
+            testRealmId = session.realms().getRealmByName("test").getId();
+            fooRealmId = session.realms().getRealmByName("foo").getId();
+        });
+    }
 
     @Test
     @ModelTest
@@ -471,18 +480,17 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
         // Transaction 1 - Lookup object of realm1
         AtomicReference<String> realm1ObjectId = new AtomicReference<>();
         KeycloakModelUtils.runJobInTransaction(session1.getKeycloakSessionFactory(), (KeycloakSession session) -> {
-
-            RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm("test");
-
+            // can't use getRealmByName as that returns the infinispan realm adapter version, meaning the tests will query
+            // the cache instead of the actual provider.
+            RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
             realm1ObjectId.set(realm1ObjectIdProducer.apply(session, realm1));
 
         });
 
         // Transaction 2
         KeycloakModelUtils.runJobInTransaction(session1.getKeycloakSessionFactory(), (KeycloakSession session) -> {
-
-            RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm("test");
-            RealmModel realm2 = session.getProvider(RealmProvider.class).getRealm("foo");
+            RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
+            RealmModel realm2 = session.getProvider(RealmProvider.class).getRealm(fooRealmId);
 
             testLookupRealm1ObjectInRealm2.accept(session, realm2, realm1ObjectId.get());
             updaterRealm1ObjectInRealm2.accept(session, realm1, realm2, realm1ObjectId.get());
@@ -491,7 +499,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
 
         // Transaction 3
         KeycloakModelUtils.runJobInTransaction(session1.getKeycloakSessionFactory(), (KeycloakSession session) -> {
-            RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm("test");
+            RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
 
             testUpdateFailed.accept(session, realm1, realm1ObjectId.get());
         });
@@ -499,8 +507,8 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
         // Transaction 4
         try {
             KeycloakModelUtils.runJobInTransaction(session1.getKeycloakSessionFactory(), (KeycloakSession session) -> {
-                RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm("test");
-                RealmModel realm2 = session.getProvider(RealmProvider.class).getRealm("foo");
+                RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
+                RealmModel realm2 = session.getProvider(RealmProvider.class).getRealm(fooRealmId);
                 removeRealm1ObjectInRealm2.accept(session, realm1, realm2, realm1ObjectId.get());
 
             });
@@ -510,8 +518,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
 
         // Transaction 5
         KeycloakModelUtils.runJobInTransaction(session1.getKeycloakSessionFactory(), (KeycloakSession session) -> {
-            RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm("test");
-
+            RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
             testRemoveFailed.accept(session, realm1, realm1ObjectId.get());
         });
     }

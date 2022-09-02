@@ -191,7 +191,7 @@ public class BitbucketIdentityProvider extends AbstractOAuth2IdentityProvider im
 			return extractUserInfo(accessToken, profile);
 		} catch (Exception e) {
 			if (e instanceof IdentityBrokerException) throw (IdentityBrokerException)e;
-			throw new IdentityBrokerException("Could not obtain user profile from github.", e);
+			throw new IdentityBrokerException("Could not obtain user profile from bitbucket.", e);
 		}
 	}
 

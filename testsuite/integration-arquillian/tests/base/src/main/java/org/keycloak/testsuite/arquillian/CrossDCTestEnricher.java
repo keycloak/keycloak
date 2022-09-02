@@ -269,7 +269,7 @@ public class CrossDCTestEnricher {
     }
 
     /* Code to detect if underlying JVM is modular (AKA JDK 9+) taken over from Wildfly Core code base:
-     * https://github.com/wildfly/wildfly-core/blob/master/launcher/src/main/java/org/wildfly/core/launcher/Jvm.java#L59
+     * https://github.com/wildfly/wildfly-core/blob/main/launcher/src/main/java/org/wildfly/core/launcher/Jvm.java#L59
      * and turned into a function for easier reuse.
      */
     public static boolean isModularJvm() {

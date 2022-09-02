@@ -41,7 +41,7 @@ public final class KeycloakAdapterConfigService {
 
     private static final String CREDENTIALS_JSON_NAME = "credentials";
     
-    private static final String REDIRECT_REWRITE_RULE_JSON_NAME = "redirect-rewrite-rule";
+    private static final String REDIRECT_REWRITE_RULE_JSON_NAME = "redirect-rewrite-rules";
 
     private static final KeycloakAdapterConfigService INSTANCE = new KeycloakAdapterConfigService();
 
@@ -147,21 +147,8 @@ public final class KeycloakAdapterConfigService {
         if (!redirectRewritesRules.isDefined()) {
             redirectRewritesRules = new ModelNode();
         }
-
         String redirectRewriteRuleName = redirectRewriteRule(operation);
-        if (!redirectRewriteRuleName.contains(".")) {
-            redirectRewritesRules.get(redirectRewriteRuleName).set(model.get("value").asString());
-        } else {
-            String[] parts = redirectRewriteRuleName.split("\\.");
-            String provider = parts[0];
-            String property = parts[1];
-            ModelNode redirectRewriteRule = redirectRewritesRules.get(provider);
-            if (!redirectRewriteRule.isDefined()) {
-                redirectRewriteRule = new ModelNode();
-            }
-            redirectRewriteRule.get(property).set(model.get("value").asString());
-            redirectRewritesRules.set(provider, redirectRewriteRule);
-        }
+        redirectRewritesRules.get(redirectRewriteRuleName).set(model.get("value").asString());
 
         ModelNode deployment = this.secureDeployments.get(deploymentNameFromOp(operation));
         deployment.get(REDIRECT_REWRITE_RULE_JSON_NAME).set(redirectRewritesRules);

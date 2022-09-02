@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .f425009f-d653-4243-b52f-e6e7efdbf57a {
+        fill: #4d4d4d;
+      }
+
+      .bac6a0a4-fc2d-4f36-9ded-667acc6f4b52 {
+        fill: #bcbbbb;
+      }
+
+      .b9d59bf2-7616-43cd-a672-04b81955bad9 {
+        fill: #f48024;
+      }
+    </style>
+  </defs>
+  <g id="b393dd85-54a9-4370-beab-fda62d40e5d8" data-name="StackOverflow">
+    <g id="beef34ed-ad1e-45a9-8dc6-781d71c5dd19" data-name="Full color">
+      <rect class="f425009f-d653-4243-b52f-e6e7efdbf57a" width="32" height="32" rx="1.19"/>
+      <g>
+        <polygon class="bac6a0a4-fc2d-4f36-9ded-667acc6f4b52" points="21.29 23.44 21.29 18.82 23.34 18.82 23.34 25.5 7.94 25.5 7.94 18.82 9.99 18.82 9.99 23.44 21.29 23.44"/>
+        <path class="b9d59bf2-7616-43cd-a672-04b81955bad9" d="M11.53,21.9h8.22V20.36H11.53ZM19,6.5l-1.39,1,5.08,6.83,1.39-1Zm-4.21,4L21.29,16l1.08-1.28L15.85,9.22Zm-2.16,3.8,7.7,3.59L21,16.36l-7.7-3.59Zm7.18,5.53.36-1.51-8.27-1.72-.35,1.7Z"/>
+      </g>
+    </g>
+  </g>
+</svg>

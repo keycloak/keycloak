@@ -18,13 +18,19 @@ package org.keycloak.models.map.loginFailure;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.map.common.TimeAdapter;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class MapUserLoginFailureAdapter<K> extends AbstractUserLoginFailureModel<MapUserLoginFailureEntity<K>> {
-    public MapUserLoginFailureAdapter(KeycloakSession session, RealmModel realm, MapUserLoginFailureEntity<K> entity) {
+public class MapUserLoginFailureAdapter extends AbstractUserLoginFailureModel<MapUserLoginFailureEntity> {
+    public MapUserLoginFailureAdapter(KeycloakSession session, RealmModel realm, MapUserLoginFailureEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override
@@ -34,17 +40,19 @@ public abstract class MapUserLoginFailureAdapter<K> extends AbstractUserLoginFai
 
     @Override
     public int getFailedLoginNotBefore() {
-        return entity.getFailedLoginNotBefore();
+        Long failedLoginNotBefore = entity.getFailedLoginNotBefore();
+        return failedLoginNotBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(failedLoginNotBefore);
     }
 
     @Override
     public void setFailedLoginNotBefore(int notBefore) {
-        entity.setFailedLoginNotBefore(notBefore);
+        entity.setFailedLoginNotBefore(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(notBefore));
     }
 
     @Override
     public int getNumFailures() {
-        return entity.getNumFailures();
+        Integer numFailures = entity.getNumFailures();
+        return numFailures == null ? 0 : numFailures;
     }
 
     @Override
@@ -59,7 +67,8 @@ public abstract class MapUserLoginFailureAdapter<K> extends AbstractUserLoginFai
 
     @Override
     public long getLastFailure() {
-        return entity.getLastFailure();
+        Long lastFailure = entity.getLastFailure();
+        return lastFailure == null ? 0l : lastFailure;
     }
 
     @Override

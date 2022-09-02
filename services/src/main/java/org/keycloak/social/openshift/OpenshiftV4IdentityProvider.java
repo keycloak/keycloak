@@ -3,7 +3,6 @@ package org.keycloak.social.openshift;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
@@ -16,7 +15,6 @@ import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -33,6 +31,7 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
     public static final String OPENSHIFT_OAUTH_METADATA_ENDPOINT = "/.well-known/oauth-authorization-server";
     public static final String PROFILE_RESOURCE = "/apis/user.openshift.io/v1/users/~";
     public static final String DEFAULT_SCOPE = "user:info";
+    private static final String KUBEADM_NAME = "kube:admin";
 
     public OpenshiftV4IdentityProvider(KeycloakSession session, OpenshiftV4IdentityProviderConfig config) {
         super(session, config);
@@ -91,12 +90,24 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
     private BrokeredIdentityContext extractUserContext(JsonNode profile) {
         JsonNode metadata = profile.get("metadata");
         logger.debugv("extractUserContext: metadata = {0}", metadata);
-        final BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(metadata, "uid"));
+        final BrokeredIdentityContext user = new BrokeredIdentityContext(
+                getJsonProperty(metadata, "uid") != null
+                        ? getJsonProperty(metadata, "uid")
+                        : tryGetKubeAdmin(metadata)
+        );
         user.setUsername(getJsonProperty(metadata, "name"));
         user.setName(getJsonProperty(profile, "fullName"));
         user.setIdpConfig(getConfig());
         user.setIdp(this);
         return user;
+    }
+
+    private String tryGetKubeAdmin(JsonNode metadata) {
+        String nameProperty = getJsonProperty(metadata, "name");
+        if(!KUBEADM_NAME.equals(nameProperty)){
+            return null;
+        }
+        return nameProperty;
     }
 
     private JsonNode fetchProfile(String accessToken) throws IOException {

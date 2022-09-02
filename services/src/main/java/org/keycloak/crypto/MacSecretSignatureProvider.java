@@ -35,8 +35,24 @@ public class MacSecretSignatureProvider implements SignatureProvider {
     }
 
     @Override
+    public SignatureSignerContext signer(KeyWrapper key) throws SignatureException {
+        SignatureProvider.checkKeyForSignature(key, algorithm, KeyType.OCT);
+        return new ServerMacSignatureSignerContext(key);
+    }
+
+    @Override
     public SignatureVerifierContext verifier(String kid) throws VerificationException {
         return new ServerMacSignatureVerifierContext(session, kid, algorithm);
     }
 
+    @Override
+    public SignatureVerifierContext verifier(KeyWrapper key) throws VerificationException {
+        SignatureProvider.checkKeyForVerification(key, algorithm, KeyType.OCT);
+        return new ServerMacSignatureVerifierContext(key);
+    }
+
+    @Override
+    public boolean isAsymmetricAlgorithm() {
+        return false;
+    }
 }

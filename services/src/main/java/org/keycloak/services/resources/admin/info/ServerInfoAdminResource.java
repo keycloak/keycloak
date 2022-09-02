@@ -167,13 +167,8 @@ public class ServerInfoAdminResource {
         info.setThemes(new HashMap<>());
 
         for (Theme.Type type : Theme.Type.values()) {
-            List<String> themeNames = new LinkedList<>(session.theme().nameSet(type));
+            List<String> themeNames = filterThemes(type, new LinkedList<>(session.theme().nameSet(type)));
             Collections.sort(themeNames);
-
-            if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
-                themeNames.remove("keycloak.v2");
-                themeNames.remove("rh-sso.v2");
-            }
 
             List<ThemeInfoRepresentation> themes = new LinkedList<>();
             info.getThemes().put(type.toString().toLowerCase(), themes);
@@ -195,6 +190,22 @@ public class ServerInfoAdminResource {
                 }
             }
         }
+    }
+    
+    private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
+        LinkedList<String> filteredNames = new LinkedList<>(themeNames);
+        
+        boolean filterAccountV2 = (type == Theme.Type.ACCOUNT) && 
+                !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
+        boolean filterAdminV2 = (type == Theme.Type.ADMIN) && 
+                !Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
+        
+        if (filterAccountV2 || filterAdminV2) {
+            filteredNames.remove("keycloak.v2");
+            filteredNames.remove("rh-sso.v2");
+        }
+        
+        return filteredNames;
     }
 
     private void setSocialProviders(ServerInfoRepresentation info) {

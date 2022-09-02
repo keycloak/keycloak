@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 
-#kc-logo-wrapper {
-    background: url("../img/red-hat-logo.png") no-repeat top right;
-    height: 45px;
-    width: 200px;
+div.kc-logo-text {
+    background: url(../img/red-hat-logo.png) no-repeat center center;
+    background-size: contain;
 }

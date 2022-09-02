@@ -26,12 +26,9 @@
         {
             "name": "Default Policy",
             "description": "A policy that grants access only for users within this realm",
-            "type": "js",
+            "type": "script-scripts/default-policy.js",
             "logic": "POSITIVE",
-            "decisionStrategy": "AFFIRMATIVE",
-            "config": {
-                "code": "// by default, grants any permission associated with this policy: $evaluation.grant();"
-            }
+            "decisionStrategy": "AFFIRMATIVE"
         },
         {
             "name": "Default Permission",

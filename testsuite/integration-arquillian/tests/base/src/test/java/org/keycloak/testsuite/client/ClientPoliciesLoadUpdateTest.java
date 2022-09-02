@@ -85,7 +85,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME), Collections.emptyList());
+        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME), Collections.emptyList());
 
         // each profile - fapi-1-baseline
         ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);

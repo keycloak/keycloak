@@ -19,7 +19,10 @@ package org.keycloak.services.resources;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.Resteasy;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
@@ -41,18 +44,12 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.services.scheduled.ClearExpiredClientInitialAccessTokens;
-import org.keycloak.services.scheduled.ClearExpiredEvents;
-import org.keycloak.services.scheduled.ClearExpiredUserSessions;
-import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
-import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.services.util.ObjectMapperResolver;
-import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.util.JsonSerialization;
 
@@ -62,12 +59,14 @@ import javax.ws.rs.core.Application;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -96,6 +95,7 @@ public class KeycloakApplication extends Application {
 
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
             logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
+            CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
 
             loadConfig();
 
@@ -107,6 +107,7 @@ public class KeycloakApplication extends Application {
 
             classes.add(KeycloakSecurityHeadersFilter.class);
             classes.add(KeycloakErrorHandler.class);
+            classes.add(KcUnrecognizedPropertyExceptionHandler.class);
 
             singletons.add(new ObjectMapperResolver());
             singletons.add(new WelcomeResource());
@@ -139,7 +140,7 @@ public class KeycloakApplication extends Application {
                 }
             }
         });
-                
+
         if (exportImportManager[0].isRunExport()) {
             exportImportManager[0].runExport();
         }
@@ -154,9 +155,7 @@ public class KeycloakApplication extends Application {
 
         });
 
-        sessionFactory.publish(new PostMigrationEvent());
-
-        setupScheduledTasks(sessionFactory);
+        sessionFactory.publish(new PostMigrationEvent(sessionFactory));
     }
 
     protected void shutdown() {
@@ -234,21 +233,6 @@ public class KeycloakApplication extends Application {
         return factory;
     }
 
-    public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
-        long interval = Config.scope("scheduled").getLong("interval", 900L) * 1000;
-
-        KeycloakSession session = sessionFactory.create();
-        try {
-            TimerProvider timer = session.getProvider(TimerProvider.class);
-            timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredEvents(), interval), interval, "ClearExpiredEvents");
-            timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredClientInitialAccessTokens(), interval), interval, "ClearExpiredClientInitialAccessTokens");
-            timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, ClearExpiredUserSessions.TASK_NAME);
-            new UserStorageSyncManager().bootstrapPeriodic(sessionFactory, timer);
-        } finally {
-            session.close();
-        }
-    }
-
     public static KeycloakSessionFactory getSessionFactory() {
         return sessionFactory;
     }
@@ -271,9 +255,22 @@ public class KeycloakApplication extends Application {
                 String file = tokenizer.nextToken().trim();
                 RealmRepresentation rep;
                 try {
-                    rep = loadJson(new FileInputStream(file), RealmRepresentation.class);
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException(e);
+                    Path filePath = Paths.get(file);
+
+                    if (!(Files.exists(filePath) && Files.isRegularFile(filePath) && filePath.toString().endsWith(".json"))) {
+                        logger.debugf("Ignoring import file because it is not a valid file: %s", file);
+                        continue;
+                    }
+
+                    rep = JsonSerialization.readValue(StringPropertyReplacer.replaceProperties(
+                            new String(Files.readAllBytes(filePath), "UTF-8"), new StringPropertyReplacer.PropertyResolver() {
+                                @Override
+                                public String resolve(String property) {
+                                    return Optional.ofNullable(System.getenv(property)).orElse(null);
+                                }
+                            }), RealmRepresentation.class);
+                } catch (Exception cause) {
+                    throw new RuntimeException("Failed to parse realm configuration file: " + file, cause);
                 }
                 importRealm(rep, "file " + file);
             }
@@ -373,13 +370,4 @@ public class KeycloakApplication extends Application {
             }
         }
     }
-
-    private static <T> T loadJson(InputStream is, Class<T> type) {
-        try {
-            return JsonSerialization.readValue(is, type);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse json", e);
-        }
-    }
-
 }

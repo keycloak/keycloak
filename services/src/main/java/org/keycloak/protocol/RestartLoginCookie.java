@@ -133,14 +133,19 @@ public class RestartLoginCookie implements Token {
         CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true);
     }
 
-
-    public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm,
-                                                            RootAuthenticationSessionModel rootSession, String expectedClientId) throws Exception {
+    public static Cookie getRestartCookie(KeycloakSession session){
         Cookie cook = session.getContext().getRequestHeaders().getCookies().get(KC_RESTART);
         if (cook ==  null) {
             logger.debug("KC_RESTART cookie doesn't exist");
             return null;
         }
+        return cook;
+    }
+
+    public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm,
+                                                            RootAuthenticationSessionModel rootSession, String expectedClientId,
+                                                            Cookie cook) throws Exception {
+
         String encodedCookie = cook.getValue();
 
         RestartLoginCookie cookie = session.tokens().decode(encodedCookie, RestartLoginCookie.class);

@@ -18,11 +18,13 @@
 package org.keycloak.federation.kerberos;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.CredentialValidationOutput;
@@ -35,6 +37,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
@@ -166,7 +169,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
-        if (input.getType().equals(PasswordCredentialModel.TYPE) && !session.userCredentialManager().isConfiguredLocally(realm, user, PasswordCredentialModel.TYPE)) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE) && !((LegacyUserCredentialManager) user.credentialManager()).isConfiguredLocally(PasswordCredentialModel.TYPE)) {
             return validPassword(user.getUsername(), input.getChallengeResponse());
         } else {
             return false; // invalid cred type
@@ -234,7 +237,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
      * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
      */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
-        UserModel user = session.userLocalStorage().getUserByUsername(realm, username);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, username);
         if (user != null) {
             user = session.users().getUserById(realm, user.getId());  // make sure we get a cached instance
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
@@ -250,7 +253,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
                     logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getName() +
                             "] but kerberos principal is not correct. Kerberos principal on user is: " + user.getFirstAttribute(KERBEROS_PRINCIPAL));
                     logger.warn("Will re-create user");
-                    new UserManager(session).removeUser(realm, user, session.userLocalStorage());
+                    new UserManager(session).removeUser(realm, user, UserStoragePrivateUtil.userLocalStorage(session));
                 }
             }
         }
@@ -264,13 +267,16 @@ public class KerberosFederationProvider implements UserStorageProvider,
         String email = username + "@" + kerberosConfig.getKerberosRealm().toLowerCase();
 
         logger.debugf("Creating kerberos user: %s, email: %s to local Keycloak storage", username, email);
-        UserModel user = session.userLocalStorage().addUser(realm, username);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
         user.setEnabled(true);
         user.setEmail(email);
         user.setFederationLink(model.getId());
         user.setSingleAttribute(KERBEROS_PRINCIPAL, username + "@" + kerberosConfig.getKerberosRealm());
 
         if (kerberosConfig.isUpdateProfileFirstLogin()) {
+            if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
+            }
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
         }
 

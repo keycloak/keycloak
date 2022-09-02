@@ -18,6 +18,7 @@ package org.keycloak.testsuite.federation.storage;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -35,6 +36,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
@@ -42,7 +44,6 @@ import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -61,6 +62,8 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
 
     @Before
     public void setDirs() {
+        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
+
         File baseDir = new File(System.getProperty("auth.server.config.dir", "target"));
 
         exportFileAbsolutePath = new File (baseDir, "singleFile-full.json").getAbsolutePath();
@@ -108,14 +111,14 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
             List<String> attrValues = new LinkedList<>();
             attrValues.add("1");
             attrValues.add("2");
-            session.userFederatedStorage().setSingleAttribute(realm, userId, "single1", "value1");
-            session.userFederatedStorage().setAttribute(realm, userId, "list1", attrValues);
-            session.userFederatedStorage().addRequiredAction(realm, userId, "UPDATE_PASSWORD");
+            UserStorageUtil.userFederatedStorage(session).setSingleAttribute(realm, userId, "single1", "value1");
+            UserStorageUtil.userFederatedStorage(session).setAttribute(realm, userId, "list1", attrValues);
+            UserStorageUtil.userFederatedStorage(session).addRequiredAction(realm, userId, "UPDATE_PASSWORD");
             PasswordCredentialModel credential = FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy()).encodedCredential("password", realm.
                     getPasswordPolicy().getHashIterations());
-            session.userFederatedStorage().createCredential(realm, userId, credential);
-            session.userFederatedStorage().grantRole(realm, userId, role);
-            session.userFederatedStorage().joinGroup(realm, userId, group);
+            UserStorageUtil.userFederatedStorage(session).createCredential(realm, userId, credential);
+            UserStorageUtil.userFederatedStorage(session).grantRole(realm, userId, role);
+            UserStorageUtil.userFederatedStorage(session).joinGroup(realm, userId, group);
         });
 
         final String realmId = testRealmResource().toRepresentation().getId();
@@ -143,18 +146,18 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
             RoleModel role = realm.getRole("test-role");
             GroupModel group = realm.getGroupById(groupId);
 
-            Assert.assertEquals(1, session.userFederatedStorage().getStoredUsersCount(realm));
-            MultivaluedHashMap<String, String> attributes = session.userFederatedStorage().getAttributes(realm, userId);
+            Assert.assertEquals(1, UserStorageUtil.userFederatedStorage(session).getStoredUsersCount(realm));
+            MultivaluedHashMap<String, String> attributes = UserStorageUtil.userFederatedStorage(session).getAttributes(realm, userId);
             Assert.assertEquals(3, attributes.size());
             Assert.assertEquals("value1", attributes.getFirst("single1"));
             Assert.assertTrue(attributes.getList("list1").contains("1"));
             Assert.assertTrue(attributes.getList("list1").contains("2"));
-            Assert.assertTrue(session.userFederatedStorage().getRequiredActionsStream(realm, userId)
+            Assert.assertTrue(UserStorageUtil.userFederatedStorage(session).getRequiredActionsStream(realm, userId)
                     .collect(Collectors.toSet()).contains("UPDATE_PASSWORD"));
-            Assert.assertTrue(session.userFederatedStorage().getRoleMappingsStream(realm, userId)
+            Assert.assertTrue(UserStorageUtil.userFederatedStorage(session).getRoleMappingsStream(realm, userId)
                     .collect(Collectors.toSet()).contains(role));
-            Assert.assertTrue(session.userFederatedStorage().getGroupsStream(realm, userId).collect(Collectors.toSet()).contains(group));
-            List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentialsStream(realm, userId).collect(Collectors.toList());
+            Assert.assertTrue(UserStorageUtil.userFederatedStorage(session).getGroupsStream(realm, userId).collect(Collectors.toSet()).contains(group));
+            List<CredentialModel> creds = UserStorageUtil.userFederatedStorage(session).getStoredCredentialsStream(realm, userId).collect(Collectors.toList());
             Assert.assertEquals(1, creds.size());
             Assert.assertTrue(FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy())
                     .verify("password", PasswordCredentialModel.createFromCredentialModel(creds.get(0))));
@@ -175,15 +178,15 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
             List<String> attrValues = new LinkedList<>();
             attrValues.add("1");
             attrValues.add("2");
-            session.userFederatedStorage().setSingleAttribute(realm, userId, "single1", "value1");
-            session.userFederatedStorage().setAttribute(realm, userId, "list1", attrValues);
-            session.userFederatedStorage().addRequiredAction(realm, userId, "UPDATE_PASSWORD");
+            UserStorageUtil.userFederatedStorage(session).setSingleAttribute(realm, userId, "single1", "value1");
+            UserStorageUtil.userFederatedStorage(session).setAttribute(realm, userId, "list1", attrValues);
+            UserStorageUtil.userFederatedStorage(session).addRequiredAction(realm, userId, "UPDATE_PASSWORD");
             PasswordCredentialModel credential = FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy()).encodedCredential("password", realm.
                     getPasswordPolicy().getHashIterations());
-            session.userFederatedStorage().createCredential(realm, userId, credential);
-            session.userFederatedStorage().grantRole(realm, userId, role);
-            session.userFederatedStorage().joinGroup(realm, userId, group);
-            session.userFederatedStorage().setNotBeforeForUser(realm, userId, 50);
+            UserStorageUtil.userFederatedStorage(session).createCredential(realm, userId, credential);
+            UserStorageUtil.userFederatedStorage(session).grantRole(realm, userId, role);
+            UserStorageUtil.userFederatedStorage(session).joinGroup(realm, userId, group);
+            UserStorageUtil.userFederatedStorage(session).setNotBeforeForUser(realm, userId, 50);
         });
 
         final String realmId = testRealmResource().toRepresentation().getId();
@@ -212,19 +215,19 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
             RoleModel role = realm.getRole("test-role");
             GroupModel group = realm.getGroupById(groupId);
 
-            Assert.assertEquals(1, session.userFederatedStorage().getStoredUsersCount(realm));
-            MultivaluedHashMap<String, String> attributes = session.userFederatedStorage().getAttributes(realm, userId);
+            Assert.assertEquals(1, UserStorageUtil.userFederatedStorage(session).getStoredUsersCount(realm));
+            MultivaluedHashMap<String, String> attributes = UserStorageUtil.userFederatedStorage(session).getAttributes(realm, userId);
             Assert.assertEquals(3, attributes.size());
             Assert.assertEquals("value1", attributes.getFirst("single1"));
             Assert.assertTrue(attributes.getList("list1").contains("1"));
             Assert.assertTrue(attributes.getList("list1").contains("2"));
-            Assert.assertTrue(session.userFederatedStorage().getRequiredActionsStream(realm, userId)
+            Assert.assertTrue(UserStorageUtil.userFederatedStorage(session).getRequiredActionsStream(realm, userId)
                     .collect(Collectors.toSet()).contains("UPDATE_PASSWORD"));
-            Assert.assertTrue(session.userFederatedStorage().getRoleMappingsStream(realm, userId)
+            Assert.assertTrue(UserStorageUtil.userFederatedStorage(session).getRoleMappingsStream(realm, userId)
                     .collect(Collectors.toSet()).contains(role));
-            Assert.assertTrue(session.userFederatedStorage().getGroupsStream(realm, userId).collect(Collectors.toSet()).contains(group));
-            Assert.assertEquals(50, session.userFederatedStorage().getNotBeforeOfUser(realm, userId));
-            List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentialsStream(realm, userId).collect(Collectors.toList());
+            Assert.assertTrue(UserStorageUtil.userFederatedStorage(session).getGroupsStream(realm, userId).collect(Collectors.toSet()).contains(group));
+            Assert.assertEquals(50, UserStorageUtil.userFederatedStorage(session).getNotBeforeOfUser(realm, userId));
+            List<CredentialModel> creds = UserStorageUtil.userFederatedStorage(session).getStoredCredentialsStream(realm, userId).collect(Collectors.toList());
             Assert.assertEquals(1, creds.size());
             Assert.assertTrue(FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy())
                     .verify("password", PasswordCredentialModel.createFromCredentialModel(creds.get(0))));

@@ -24,6 +24,7 @@ import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
@@ -58,29 +59,35 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private KeycloakSession session;
 
     private final BlockingQueue<LogoutAction> adminLogoutActions;
+    private final BlockingQueue<LogoutToken> frontChannelLogoutTokens;
     private final BlockingQueue<LogoutToken> backChannelLogoutTokens;
     private final BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions;
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
     private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
 
     private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
+    private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
 
     @Context
     HttpRequest request;
 
     public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
             BlockingQueue<LogoutToken> backChannelLogoutTokens,
+            BlockingQueue<LogoutToken> frontChannelLogoutTokens,
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
             BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction,
             TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
-            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests) {
+            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests,
+            ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.backChannelLogoutTokens = backChannelLogoutTokens;
+        this.frontChannelLogoutTokens = frontChannelLogoutTokens;
         this.adminPushNotBeforeActions = adminPushNotBeforeActions;
         this.adminTestAvailabilityAction = adminTestAvailabilityAction;
         this.oidcClientData = oidcClientData;
         this.authenticationChannelRequests = authenticationChannelRequests;
+        this.cibaClientNotifications = cibaClientNotifications;
     }
 
     @POST
@@ -95,6 +102,15 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Path("/admin/backchannelLogout")
     public void backchannelLogout() throws JWSInputException {
         backChannelLogoutTokens.add(new JWSInput(request.getDecodedFormParameters().getFirst(OAuth2Constants.LOGOUT_TOKEN)).readJsonContent(LogoutToken.class));
+    }
+
+    @GET
+    @Path("/admin/frontchannelLogout")
+    public void frontchannelLogout(@QueryParam("sid") String sid, @QueryParam("iss") String issuer) {
+        LogoutToken token = new LogoutToken();
+        token.setSid(sid);
+        token.issuer(issuer);
+        frontChannelLogoutTokens.add(token);
     }
 
     @POST
@@ -123,6 +139,13 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Path("/poll-backchannel-logout")
     public LogoutToken getBackChannelLogoutAction() throws InterruptedException {
         return backChannelLogoutTokens.poll(20, TimeUnit.SECONDS);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/poll-frontchannel-logout")
+    public LogoutToken getFrontChannelLogoutAction() throws InterruptedException {
+        return frontChannelLogoutTokens.poll(20, TimeUnit.SECONDS);
     }
 
     @GET
@@ -233,7 +256,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     @Path("/oidc-client-endpoints")
     public TestingOIDCEndpointsApplicationResource getTestingOIDCClientEndpoints() {
-        return new TestingOIDCEndpointsApplicationResource(oidcClientData, authenticationChannelRequests);
+        return new TestingOIDCEndpointsApplicationResource(oidcClientData, authenticationChannelRequests, cibaClientNotifications);
     }
 
     @Override

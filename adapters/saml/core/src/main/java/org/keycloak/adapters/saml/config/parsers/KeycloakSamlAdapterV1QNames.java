@@ -91,9 +91,11 @@ public enum KeycloakSamlAdapterV1QNames implements HasQName {
     ATTR_VALIDATE_RESPONSE_SIGNATURE(null, "validateResponseSignature"),
     ATTR_VALUE(null, "value"),
     ATTR_KEEP_DOM_ASSERTION(null, "keepDOMAssertion"),
+    ATTR_SOCKET_TIMEOUT(null, "socketTimeout"),
+    ATTR_CONNECTION_TIMEOUT(null, "connectionTimeout"),
+    ATTR_CONNECTION_TTL(null, "connectionTtl"),
 
-    UNKNOWN_ELEMENT("")
-    ;
+    UNKNOWN_ELEMENT("");
 
     public static final String NS_URI = "urn:keycloak:saml:adapter";
 

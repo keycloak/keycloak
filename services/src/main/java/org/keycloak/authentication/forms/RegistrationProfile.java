@@ -78,7 +78,6 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
 
             if (pve.hasError(Messages.EMAIL_EXISTS)) {
                 context.error(Errors.EMAIL_IN_USE);
-                formData.remove("email");
             } else
                 context.error(Errors.INVALID_REGISTRATION);
 

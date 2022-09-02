@@ -169,7 +169,7 @@
         </fieldset>
 
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageUsers">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create && (access.manageUsers || (serverInfo.featureEnabled('ADMIN_FINE_GRAINED_AUTHZ') && access.queryUsers))">
                 <button kc-save data-ng-show="changed">{{:: 'save' | translate}}</button>
                 <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>

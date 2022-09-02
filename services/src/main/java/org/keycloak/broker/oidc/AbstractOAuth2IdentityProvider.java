@@ -331,6 +331,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
 
+        String maxAge = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
+        if (getConfig().isPassMaxAge() && maxAge != null) {
+            uriBuilder.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
+        }
+
         if (getConfig().isUiLocales()) {
             uriBuilder.queryParam(OIDCLoginProtocol.UI_LOCALES_PARAM, session.getContext().resolveLocale(null).toLanguageTag());
         }
@@ -372,8 +377,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null. 
-     * 
+     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null.
+     *
      * @param jsonNode to get property from
      * @param name of property to get
      * @return string value of the property or null.
@@ -570,12 +575,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
 
                 tokenRequest.param(OAuth2Constants.CODE_VERIFIER, brokerCodeChallenge);
-                tokenRequest.param(OAuth2Constants.CODE_CHALLENGE_METHOD, getConfig().getPkceMethod());
             }
 
             return authenticateTokenRequest(tokenRequest);
         }
-        
+
     }
 
     protected String getProfileEndpointForValidation(EventBuilder event) {

@@ -17,6 +17,8 @@
 
 package org.keycloak.events;
 
+import org.keycloak.storage.SearchableModelField;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +26,18 @@ import java.util.Map;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Event {
+
+    public static class SearchableFields {
+        public static final SearchableModelField<Event> ID             = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<Event> REALM_ID       = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<Event> CLIENT_ID      = new SearchableModelField<>("clientId", String.class);
+        public static final SearchableModelField<Event> USER_ID        = new SearchableModelField<>("userId", String.class);
+        public static final SearchableModelField<Event> TIMESTAMP      = new SearchableModelField<>("timestamp", Long.class);
+        public static final SearchableModelField<Event> IP_ADDRESS     = new SearchableModelField<>("ipAddress", String.class);
+        public static final SearchableModelField<Event> EVENT_TYPE     = new SearchableModelField<>("eventType", EventType.class);
+    }
+
+    private String id;
 
     private long time;
 
@@ -42,6 +56,14 @@ public class Event {
     private String error;
 
     private Map<String, String> details;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public long getTime() {
         return time;
@@ -117,6 +139,7 @@ public class Event {
 
     public Event clone() {
         Event clone = new Event();
+        clone.id = id;
         clone.time = time;
         clone.type = type;
         clone.realmId = realmId;

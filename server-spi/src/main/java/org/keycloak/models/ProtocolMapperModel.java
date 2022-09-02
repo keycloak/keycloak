@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Specifies a mapping from user data to a protocol claim assertion.
@@ -78,16 +79,41 @@ public class ProtocolMapperModel implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ProtocolMapperModel that = (ProtocolMapperModel) o;
-
-        if (!id.equals(that.id)) return false;
-
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ProtocolMapperModel other = (ProtocolMapperModel) obj;
+        if (this.consentRequired != other.consentRequired) {
+            return false;
+        }
+        if ( ! Objects.equals(this.id, other.id)) {
+            return false;
+        }
+        if ( ! Objects.equals(this.name, other.name)) {
+            return false;
+        }
+        if ( ! Objects.equals(this.protocol, other.protocol)) {
+            return false;
+        }
+        if ( ! Objects.equals(this.protocolMapper, other.protocolMapper)) {
+            return false;
+        }
+        if ( ! Objects.equals(this.consentText, other.consentText)) {
+            return false;
+        }
+        if ( ! Objects.equals(this.config, other.config)) {
+            return false;
+        }
         return true;
     }
+
 
     @Override
     public int hashCode() {

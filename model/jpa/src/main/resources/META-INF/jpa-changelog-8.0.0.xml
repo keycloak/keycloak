@@ -19,6 +19,7 @@
 
     <!--modifies the credentials to the new format, while copying the data as json in the new fields-->
     <changeSet author="keycloak" id="8.0.0-adding-credential-columns">
+        <validCheckSum>7:ec9707ae4d4f0b7452fee20128083879</validCheckSum>
 
         <addColumn tableName="CREDENTIAL">
             <column name="USER_LABEL" type="VARCHAR(255)">
@@ -53,6 +54,7 @@
 
     <!--Update format of credential to fill secret_data and credential_data - used on all databases beside Oracle DB -->
     <changeSet author="keycloak" id="8.0.0-updating-credential-data-not-oracle-fixed">
+        <validCheckSum>7:3979a0ae07ac465e920ca696532fc736</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <and>
                 <not>
@@ -117,6 +119,7 @@
 
     <!--Update format of credential to fill secret_data and credential_data - used on Oracle DB. Oracle doesn't support CONCAT with more than 2 arguments -->
     <changeSet author="keycloak" id="8.0.0-updating-credential-data-oracle-fixed">
+        <validCheckSum>7:5abfde4c259119d143bd2fbf49ac2bca</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <and>
                 <dbms type="oracle" />
@@ -178,6 +181,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="8.0.0-credential-cleanup-fixed">
+        <validCheckSum>7:b48da8c11a3d83ddd6b7d0c8c2219345</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
                 <changeSetExecuted id="8.0.0-credential-cleanup" author="keycloak" changeLogFile="META-INF/jpa-changelog-8.0.0.xml"/>
@@ -219,6 +223,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="8.0.0-resource-tag-support">
+        <validCheckSum>7:a73379915c23bfad3e8f5c6d5c0aa4bd</validCheckSum>
         <addColumn tableName="MIGRATION_MODEL">
             <column name="UPDATE_TIME" type="BIGINT" defaultValueNumeric="0">
                 <constraints nullable="false"/>

@@ -93,7 +93,7 @@ Update the openshift cartridge with latest Keycloak
 ---------------------------------------------------
 
 Once some issue is fixed on Keycloak side, you may want to doublecheck if test on OIDC conformance side is passing. Hence you may want to test with JARs from latest
-Keycloak master instead of the "official release" Keycloak JARs from cartridge.
+Keycloak main instead of the "official release" Keycloak JARs from cartridge.
  
 Openshift allows to connect with SSH and restart the cartridge. So you may use something like this on your laptop (example with the fix in module keycloak-services ). 
 

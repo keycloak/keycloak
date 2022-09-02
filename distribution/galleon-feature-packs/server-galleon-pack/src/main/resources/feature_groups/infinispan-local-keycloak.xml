@@ -4,6 +4,7 @@
         <feature spec="subsystem.infinispan.cache-container">
             <param name="cache-container" value="keycloak"/>
             <param name="modules" value="[org.keycloak.keycloak-model-infinispan]"/>
+            <param name="marshaller" value="JBOSS"/>
             <feature spec="subsystem.infinispan.cache-container.local-cache">
                 <param name="local-cache" value="realms"/>
                 <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">

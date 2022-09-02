@@ -49,6 +49,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("end_session_endpoint")
     private String logoutEndpoint;
 
+    @JsonProperty("frontchannel_logout_session_supported")
+    private Boolean frontChannelLogoutSessionSupported = true;
+
+    @JsonProperty("frontchannel_logout_supported")
+    private Boolean frontChannelLogoutSupported = true;
+
     @JsonProperty("jwks_uri")
     private String jwksUri;
 
@@ -57,6 +63,9 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("grant_types_supported")
     private List<String> grantTypesSupported;
+
+    @JsonProperty("acr_values_supported")
+    private List<String> acrValuesSupported;
 
     @JsonProperty("response_types_supported")
     private List<String> responseTypesSupported;
@@ -76,8 +85,20 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("userinfo_signing_alg_values_supported")
     private List<String> userInfoSigningAlgValuesSupported;
 
+    @JsonProperty("userinfo_encryption_alg_values_supported")
+    private List<String> userInfoEncryptionAlgValuesSupported;
+
+    @JsonProperty("userinfo_encryption_enc_values_supported")
+    private List<String> userInfoEncryptionEncValuesSupported;
+
     @JsonProperty("request_object_signing_alg_values_supported")
     private List<String> requestObjectSigningAlgValuesSupported;
+
+    @JsonProperty("request_object_encryption_alg_values_supported")
+    private List<String> requestObjectEncryptionAlgValuesSupported;
+
+    @JsonProperty("request_object_encryption_enc_values_supported")
+    private List<String> requestObjectEncryptionEncValuesSupported;
 
     @JsonProperty("response_modes_supported")
     private List<String> responseModesSupported;
@@ -96,6 +117,15 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("introspection_endpoint_auth_signing_alg_values_supported")
     private List<String> introspectionEndpointAuthSigningAlgValuesSupported;
+
+    @JsonProperty("authorization_signing_alg_values_supported")
+    private List<String> authorizationSigningAlgValuesSupported;
+
+    @JsonProperty("authorization_encryption_alg_values_supported")
+    private List<String> authorizationEncryptionAlgValuesSupported;
+
+    @JsonProperty("authorization_encryption_enc_values_supported")
+    private List<String> authorizationEncryptionEncValuesSupported;
 
     @JsonProperty("claims_supported")
     private List<String> claimsSupported;
@@ -150,6 +180,18 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("backchannel_authentication_endpoint")
     private String backchannelAuthenticationEndpoint;
+
+    @JsonProperty("backchannel_authentication_request_signing_alg_values_supported")
+    private List<String> backchannelAuthenticationRequestSigningAlgValuesSupported;
+
+    @JsonProperty("require_pushed_authorization_requests")
+    private Boolean requirePushedAuthorizationRequests;
+
+    @JsonProperty("pushed_authorization_request_endpoint")
+    private String pushedAuthorizationRequestEndpoint;
+
+    @JsonProperty("mtls_endpoint_aliases")
+    private MTLSEndpointAliases mtlsEndpointAliases;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
@@ -225,6 +267,14 @@ public class OIDCConfigurationRepresentation {
         this.grantTypesSupported = grantTypesSupported;
     }
 
+    public List<String> getAcrValuesSupported() {
+        return acrValuesSupported;
+    }
+
+    public void setAcrValuesSupported(List<String> acrValuesSupported) {
+        this.acrValuesSupported = acrValuesSupported;
+    }
+
     public List<String> getResponseTypesSupported() {
         return responseTypesSupported;
     }
@@ -273,12 +323,44 @@ public class OIDCConfigurationRepresentation {
         this.userInfoSigningAlgValuesSupported = userInfoSigningAlgValuesSupported;
     }
 
+    public List<String> getUserInfoEncryptionAlgValuesSupported() {
+        return userInfoEncryptionAlgValuesSupported;
+    }
+
+    public void setUserInfoEncryptionAlgValuesSupported(List<String> userInfoEncryptionAlgValuesSupported) {
+        this.userInfoEncryptionAlgValuesSupported = userInfoEncryptionAlgValuesSupported;
+    }
+
+    public List<String> getUserInfoEncryptionEncValuesSupported() {
+        return userInfoEncryptionEncValuesSupported;
+    }
+
+    public void setUserInfoEncryptionEncValuesSupported(List<String> userInfoEncryptionEncValuesSupported) {
+        this.userInfoEncryptionEncValuesSupported = userInfoEncryptionEncValuesSupported;
+    }
+
     public List<String> getRequestObjectSigningAlgValuesSupported() {
         return requestObjectSigningAlgValuesSupported;
     }
 
     public void setRequestObjectSigningAlgValuesSupported(List<String> requestObjectSigningAlgValuesSupported) {
         this.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported;
+    }
+
+    public List<String> getRequestObjectEncryptionAlgValuesSupported() {
+        return requestObjectEncryptionAlgValuesSupported;
+    }
+
+    public void setRequestObjectEncryptionAlgValuesSupported(List<String> requestObjectEncryptionAlgValuesSupported) {
+        this.requestObjectEncryptionAlgValuesSupported = requestObjectEncryptionAlgValuesSupported;
+    }
+
+    public List<String> getRequestObjectEncryptionEncValuesSupported() {
+        return requestObjectEncryptionEncValuesSupported;
+    }
+
+    public void setRequestObjectEncryptionEncValuesSupported(List<String> requestObjectEncryptionEncValuesSupported) {
+        this.requestObjectEncryptionEncValuesSupported = requestObjectEncryptionEncValuesSupported;
     }
 
     public List<String> getResponseModesSupported() {
@@ -461,6 +543,38 @@ public class OIDCConfigurationRepresentation {
         this.backchannelAuthenticationEndpoint = backchannelAuthenticationEndpoint;
     }
 
+    public List<String> getBackchannelAuthenticationRequestSigningAlgValuesSupported() {
+        return backchannelAuthenticationRequestSigningAlgValuesSupported;
+    }
+
+    public void setBackchannelAuthenticationRequestSigningAlgValuesSupported(List<String> backchannelAuthenticationRequestSigningAlgValuesSupported) {
+        this.backchannelAuthenticationRequestSigningAlgValuesSupported = backchannelAuthenticationRequestSigningAlgValuesSupported;
+    }
+
+    public String getPushedAuthorizationRequestEndpoint() {
+        return pushedAuthorizationRequestEndpoint;
+    }
+
+    public void setPushedAuthorizationRequestEndpoint(String pushedAuthorizationRequestEndpoint) {
+        this.pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint;
+    }
+
+    public Boolean getRequirePushedAuthorizationRequests() {
+        return requirePushedAuthorizationRequests;
+    }
+
+    public void setRequirePushedAuthorizationRequests(Boolean requirePushedAuthorizationRequests) {
+        this.requirePushedAuthorizationRequests = requirePushedAuthorizationRequests;
+    }
+
+    public MTLSEndpointAliases getMtlsEndpointAliases() {
+        return mtlsEndpointAliases;
+    }
+
+    public void setMtlsEndpointAliases(MTLSEndpointAliases mtlsEndpointAliases) {
+        this.mtlsEndpointAliases = mtlsEndpointAliases;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getOtherClaims() {
         return otherClaims;
@@ -477,5 +591,37 @@ public class OIDCConfigurationRepresentation {
 
     public String getDeviceAuthorizationEndpoint() {
         return deviceAuthorizationEndpoint;
+    }
+
+    public List<String> getAuthorizationSigningAlgValuesSupported() {
+        return authorizationSigningAlgValuesSupported;
+    }
+
+    public void setAuthorizationSigningAlgValuesSupported(List<String> authorizationSigningAlgValuesSupported) {
+        this.authorizationSigningAlgValuesSupported = authorizationSigningAlgValuesSupported;
+    }
+
+    public List<String> getAuthorizationEncryptionAlgValuesSupported() {
+        return authorizationEncryptionAlgValuesSupported;
+    }
+
+    public void setAuthorizationEncryptionAlgValuesSupported(List<String> authorizationEncryptionAlgValuesSupported) {
+        this.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported;
+    }
+
+    public List<String> getAuthorizationEncryptionEncValuesSupported() {
+        return authorizationEncryptionEncValuesSupported;
+    }
+
+    public void setAuthorizationEncryptionEncValuesSupported(List<String> authorizationEncryptionEncValuesSupported) {
+        this.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported;
+    }
+
+    public Boolean getFrontChannelLogoutSessionSupported() {
+        return frontChannelLogoutSessionSupported;
+    }
+
+    public Boolean getFrontChannelLogoutSupported() {
+        return frontChannelLogoutSupported;
     }
 }

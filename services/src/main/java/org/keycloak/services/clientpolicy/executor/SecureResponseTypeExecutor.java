@@ -26,6 +26,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -125,6 +126,15 @@ public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider<
             } else {
                 logger.trace("Passed. response_type = code id_token");
                 return;
+            }
+        }
+
+        if (request.getResponseMode() != null) {
+            if (parsedResponseType.hasSingleResponseType(OIDCResponseType.CODE)) {
+                if (OIDCResponseMode.JWT.name().equalsIgnoreCase(request.getResponseMode())) {
+                    logger.trace("Passed. response_type = code and response_mode = jwt");
+                    return;
+                }
             }
         }
 

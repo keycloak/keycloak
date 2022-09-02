@@ -17,14 +17,18 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import org.keycloak.common.Profile.Feature;
 import java.util.List;
 import java.util.Map;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -35,6 +39,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.LDAPRule;
+import org.junit.BeforeClass;
 
 
 /**
@@ -46,6 +51,9 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
     static final String TEST_REALM_NAME = "test";
 
     protected static String ldapModelId;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Page
     protected AppPage appPage;
@@ -83,6 +91,11 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
         createLDAPProvider();
 
         afterImportTestRealm();
+    }
+
+    @BeforeClass
+    public static void checkNotMapStorage() {
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
 

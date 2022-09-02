@@ -26,7 +26,6 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_CLUSTER)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6_CLUSTER)
 @UseServletFilter(filterName = "oidc-filter", filterClass = "org.keycloak.adapters.servlet.KeycloakOIDCFilter",

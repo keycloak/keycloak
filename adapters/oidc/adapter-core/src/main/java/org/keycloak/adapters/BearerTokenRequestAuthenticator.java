@@ -64,6 +64,7 @@ public class BearerTokenRequestAuthenticator {
     public AuthOutcome authenticate(HttpFacade exchange)  {
         List<String> authHeaders = exchange.getRequest().getHeaders("Authorization");
         if (authHeaders == null || authHeaders.isEmpty()) {
+            log.debug("Authorization header not present");
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.NO_BEARER_TOKEN, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
         }
@@ -81,6 +82,7 @@ public class BearerTokenRequestAuthenticator {
         }
 
         if (tokenString == null) {
+            log.debug("Token is not present in Authorization header");
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.NO_BEARER_TOKEN, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
         }
@@ -102,7 +104,7 @@ public class BearerTokenRequestAuthenticator {
         try {
             token = AdapterTokenVerifier.verifyToken(tokenString, deployment);
         } catch (VerificationException e) {
-            log.debug("Failed to verify token");
+            log.debugf("Failed to verify token: %s", e.getMessage());
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "invalid_token", e.getMessage());
             return AuthOutcome.FAILED;
         }

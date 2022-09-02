@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2022 Red Hat, Inc. and/or its affiliates
+and other contributors as indicated by the @author tags.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+                    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet author="keycloak" id="users-1">
+
+        <createTable tableName="kc_user">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="metadata" type="json"/>
+        </createTable>
+        <ext:addGeneratedColumn tableName="kc_user">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="username" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fUsername"/>
+            <ext:column name="firstname" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fFirstName"/>
+            <ext:column name="lastname" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fLastName"/>
+            <ext:column name="email" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fEmail"/>
+            <ext:column name="emailconstraint" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fEmailConstraint"/>
+            <ext:column name="federationlink" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fFederationLink"/>
+            <ext:column name="enabled" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEnabled"/>
+            <ext:column name="emailverified" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEmailVerified"/>
+            <ext:column name="timestamp" type="BIGINT" jsonColumn="metadata" jsonProperty="fCreatedTimestamp"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_user" indexName="user_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
+        <createIndex tableName="kc_user" indexName="user_realmId">
+            <column name="realmid"/>
+        </createIndex>
+        <createIndex tableName="kc_user" indexName="user_username_realmid">
+            <column name="username"/>
+            <column name="realmid"/>
+        </createIndex>
+        <createIndex tableName="kc_user" indexName="user_email_realmid">
+            <column name="email"/>
+            <column name="realmid"/>
+        </createIndex>
+        <createIndex tableName="kc_user" indexName="user_email_constraint_realmid">
+            <column name="emailconstraint"/>
+            <column name="realmid"/>
+        </createIndex>
+        <!-- TODO: create individual indexes for all other searchable columns (firstname, lastname, enabled, etc) ? -->
+        <ext:createJsonIndex tableName="kc_user" indexName="user_serviceAccountClientLink">
+            <ext:column jsonColumn="metadata" jsonProperty="fServiceAccountClientLink"/>
+        </ext:createJsonIndex>
+
+        <createTable tableName="kc_user_consent">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="user_consent_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
+            </column>
+            <column name="metadata" type="json"/>
+        </createTable>
+        <ext:addGeneratedColumn tableName="kc_user_consent">
+            <ext:column name="clientid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_user_consent" indexName="user_consent_fk_root">
+            <column name="fk_root"/>
+        </createIndex>
+        <createIndex tableName="kc_user_consent" indexName="user_consent_clientId">
+            <column name="clientid"/>
+        </createIndex>
+        <ext:createJsonIndex tableName="kc_user_consent" indexName="user_consent_grantedClientScopes">
+            <ext:column jsonColumn="metadata" jsonProperty="fGrantedClientScopesIds"/>
+        </ext:createJsonIndex>
+
+        <createTable tableName="kc_user_federated_identity">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="user_federated_identity_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
+            </column>
+            <column name="metadata" type="json"/>
+        </createTable>
+        <ext:addGeneratedColumn tableName="kc_user_federated_identity">
+            <ext:column name="identityprovider" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fIdentityProvider"/>
+            <ext:column name="userid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fUserId"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_user_federated_identity" indexName="user_federated_identity_fk_root">
+            <column name="fk_root"/>
+        </createIndex>
+        <createIndex tableName="kc_user_federated_identity" indexName="user_federated_identity_idp">
+            <column name="identityprovider"/>
+        </createIndex>
+        <createIndex tableName="kc_user_federated_identity" indexName="user_federated_identity_userId">
+            <column name="userid"/>
+        </createIndex>
+
+        <createTable tableName="kc_user_group">
+            <column name="user_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="user_group_userid_fkey" references="kc_user(id)" deleteCascade="true"/>
+            </column>
+            <column name="group_id" type="KC_KEY"/>
+        </createTable>
+        <createIndex tableName="kc_user_group" indexName="user_group_userId">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="kc_user_group" indexName="user_group_groupId">
+            <column name="group_id"/>
+        </createIndex>
+
+        <createTable tableName="kc_user_role">
+            <column name="user_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="user_role_userid_fkey" references="kc_user(id)" deleteCascade="true"/>
+            </column>
+            <column name="role_id" type="KC_KEY"/>
+        </createTable>
+        <createIndex tableName="kc_user_role" indexName="user_role_userId">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="kc_user_role" indexName="user_role_roleId">
+            <column name="role_id"/>
+        </createIndex>
+
+        <createTable tableName="kc_user_attribute">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="user_attr_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="value" type="TEXT"/>
+        </createTable>
+        <createIndex tableName="kc_user_attribute" indexName="user_attr_fk_root">
+            <column name="fk_root"/>
+        </createIndex>
+        <createIndex tableName="kc_user_attribute" indexName="user_attr_name_value">
+            <column name="name"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)"/>
+        </createIndex>
+        <modifySql dbms="postgresql,cockroachdb">
+            <replace replace="VALUE(255)" with="(value::varchar(250))"/>
+        </modifySql>
+
+    </changeSet>
+
+    <changeSet author="keycloak" id="users-2" dbms="postgresql">
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
+        <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
+        <addUniqueConstraint tableName="kc_user_group" columnNames="user_id, group_id" deferrable="true" initiallyDeferred="true" />
+        <addUniqueConstraint tableName="kc_user_role" columnNames="user_id, role_id" deferrable="true" initiallyDeferred="true" />
+        <addUniqueConstraint tableName="kc_user_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
+    </changeSet>
+</databaseChangeLog>

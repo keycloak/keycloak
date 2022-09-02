@@ -70,7 +70,7 @@ public class AdminConsoleLandingPageTest extends AbstractKeycloakTest {
         while(m.find()) {
             String url = m.group(1);
             if (url.contains("keycloak.js")) {
-                Assert.assertTrue(url, url.startsWith(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/js/"));
+                Assert.assertTrue(url, url.startsWith("/auth/js/"));
             } else {
                 Assert.assertTrue(url, url.startsWith("/auth/resources/"));
             }

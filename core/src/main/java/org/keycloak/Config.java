@@ -17,6 +17,8 @@
 
 package org.keycloak;
 
+import java.util.Set;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -154,6 +156,11 @@ public class Config {
             return new SystemPropertiesScope(sb.toString());
         }
 
+        @Override
+        public Set<String> getPropertyNames() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
     }
 
     /**
@@ -181,5 +188,6 @@ public class Config {
 
         Scope scope(String... scope);
 
+        Set<String> getPropertyNames();
     }
 }
