@@ -57,12 +57,17 @@ public abstract class KeyPairVerifierTest {
             + "PEuQrsfWRXm9/dTEavbfNkv5E53zWXjWyf93ezkVhBX0YoXmf6UO7PAlvsrjno3T\n" + "uwIDAQAB\n" + "-----END PUBLIC KEY-----";
 
     @Test
-    public void verifyWithPrivateKeysInTraditionalRSAFormat() throws Exception {
-        verifyImpl(this.privateKey1, this.privateKey2048);
+    public void verifyWith1024PrivateKeyInTraditionalRSAFormat() throws Exception {
+        verifyImplRsa1024Key(this.privateKey1);
     }
 
     @Test
-    public void verifyWithPrivateKeysInPKCS8Format() throws Exception {
+    public void verifyWith2048PrivateKeyInTraditionalRSAFormat() throws Exception {
+        verifyImplRsa2048Key(this.privateKey2048);
+    }
+
+    @Test
+    public void verifyWith1024PrivateKeyInPKCS8Format() throws Exception {
         String privateKey1 = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAKtWsK5O0CtuBpnM" +
                 "vWG+HTG0vmZzujQ2o9WdheQu+BzCILcGMsbDW0YQaglpcO5JpGWWhubnckGGPHfd" +
                 "Q2/7nP9QwbiTK0FbGF41UqcvoaCqU1psxoV88s8IXyQCAqeyLv00yj6foqdJjxh5" +
@@ -78,6 +83,11 @@ public abstract class KeyPairVerifierTest {
                 "7KQ6+vVqJlQwVPvYdTSOeZB7YVV6S4b4slS3ZObsa0yNMWgal/QnCtW5k3f185gC" +
                 "Wj6dOLGB5btfxg==";
 
+        verifyImplRsa1024Key(privateKey1);
+    }
+
+    @Test
+    public void verifyWith2048PrivateKeyInPKCS8Format() throws Exception {
         String privateKey2048 = "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDhXcyk6e4qx0Ft" +
                 "HVTM2Mr2jmZ4QxDizlWnKSG/UOmpOKUo6IQftVD9e2M3HDTKOcUGKUKekrrI32YM" +
                 "QdsETNpGO12uBWGQh6OJpcUE/kwGFRDmX27wTchkLcTynAONUXRn27RHiUZ5SDaT" +
@@ -105,21 +115,22 @@ public abstract class KeyPairVerifierTest {
                 "Zer7cRS4Vsn4uNvxhYGB4+NIcOhL/r7/7OoHVvm5Cn+NgVthCXnRQ9E9MX66XV5C" +
                 "jLsXjc2CPf/lwNFqsVl7dlPNmg==";
 
-        verifyImpl(privateKey1, privateKey2048);
+        verifyImplRsa2048Key(privateKey2048);
     }
 
-    protected void verifyImpl(String privateKey1, String privateKey2048) throws Exception {
-        KeyPairVerifier.verify(privateKey1, publicKey1);
-        KeyPairVerifier.verify(privateKey2048, publicKey2048);
-
+    protected void verifyImplRsa1024Key(String rsaPrivateKey1024) throws Exception {
+        KeyPairVerifier.verify(rsaPrivateKey1024, publicKey1);
         try {
-            KeyPairVerifier.verify(privateKey1, publicKey2048);
+            KeyPairVerifier.verify(rsaPrivateKey1024, publicKey2048);
             Assert.fail("Expected VerificationException");
         } catch (VerificationException e) {
         }
+    }
 
+    protected void verifyImplRsa2048Key(String rsaPrivateKey2048) throws Exception {
+        KeyPairVerifier.verify(rsaPrivateKey2048, publicKey2048);
         try {
-            KeyPairVerifier.verify(privateKey2048, publicKey1);
+            KeyPairVerifier.verify(rsaPrivateKey2048, publicKey1);
             Assert.fail("Expected VerificationException");
         } catch (VerificationException e) {
         }
