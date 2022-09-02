@@ -18,19 +18,16 @@
 package org.keycloak.forms.login.freemarker;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
-import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import javax.ws.rs.core.MultivaluedMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,6 +40,28 @@ import java.util.stream.Stream;
  */
 public class LoginFormsUtil {
 
+    public static List<IdentityProviderModel> filterIdentityProvidersForTheme(Stream<IdentityProviderModel> providers, KeycloakSession session, AuthenticationFlowContext context) {
+        if (context != null) {
+            AuthenticationSessionModel authSession = context.getAuthenticationSession();
+            String currentFlowPath = authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH);
+            UserModel currentUser = context.getUser();
+            // Fixing #14173
+            // If the current user is not null, then it's a re-auth, and we should filter the possible options with the pre-14173 logic
+            // If the current user is null, then it's one of the following cases:
+            //  - either connecting a new IdP to the user's account. 
+	    //    - in this case the currentUser is null AND the current flow is the FIRST_BROKER_LOGIN_PATH
+	    //    - so we should filter out the one they just used for login, as they need to re-auth themself with an already linked IdP account
+            //  - or we're on the Login page
+	    //    - in this case the current user is null AND the current flow is NOT the FIRST_BROKER_LOGIN_PATH
+	    //    - so we should show all the possible IdPs to the user trying to log in (this is the bug in #14173)
+	    //    - so we're skipping this branch, and retunring everything at the end of the method
+            if (currentUser != null || Objects.equals(LoginActionsService.FIRST_BROKER_LOGIN_PATH, currentFlowPath)) {
+                return filterIdentityProviders(providers, session, context);
+            }
+        }
+        return providers.collect(Collectors.toList());
+    }
+    
     public static List<IdentityProviderModel> filterIdentityProviders(Stream<IdentityProviderModel> providers, KeycloakSession session, AuthenticationFlowContext context) {
 
         if (context != null) {
