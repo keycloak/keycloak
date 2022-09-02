@@ -415,16 +415,23 @@ To add session limits to a flow, perform the following steps.
 . Click *Required* for the *User Session Count Limiter* authentication type to set its requirement to required.
 . Click *⚙️* (gear icon) for the *User Session Count Limiter*.
 . Enter an alias for this config.
-. Enter the required maximum number of sessions a user can have in this realm. If a value of 0 is used, this check is disabled.
-. Enter the required maximum number of sessions a user can have for the client. If a value of 0 is used, this check is disabled.
+. Enter the required maximum number of sessions that a user can have in this realm. For example, if 2 is the value, 2 SSO sessions is the maximum that each user can have in this realm. If 0 is the value, this check is disabled.
+. Enter the required maximum number of sessions a user can have for the client. For example, if 2 is the value, then 2 SSO sessions is the maximum in this realm for each client. So when a user is trying to authenticate to client `foo`, but that user has already authenticated in 2 SSO sessions to client `foo`, either the authentication will be denied or an existing sessions will be killed based on the behavior configured. If a value of 0 is used, this check is disabled.
+If both session limits and client session limits are enabled, it makes sense to have client session limits to be always lower than session limits. The limit per client can never exceed the limit of all SSO sessions of this user.
 . Select the behavior that is required when the user tries to create a session after the limit is reached. Available bahaviors are:
 
-  Deny new session - when a new session is requested and the session limit is reached, no new sessions can be created.
-  Terminate oldest session - when a new session is requested and the session limit has been reached, the oldest session will be removed and the new session created.
+  - *Deny new session* - when a new session is requested and the session limit is reached, no new sessions can be created.
+  - *Terminate oldest session* - when a new session is requested and the session limit has been reached, the oldest session will be removed and the new session created.
 
 . Optionally, add a custom error message to be displayed when the limit is reached.
 
 Note that the user session limits should be added to your bound *Browser flow*, *Direct grant flow*, *Reset credentials* and also to any *Post broker login flow*.
+The authenticator should be added at the point when the user is already known during authentication (usually at the end of the authentication flow) and should be typically REQUIRED. Note that it is not possible to have
+ALTERNATIVE and REQUIRED executions at the same level. For example for the default browser flow, it may be necessary to wrap the existing flow as a REQUIRED level-1 subflow and 
+add `User Session Count Limiter` to the same level as this new subflow. Example of such flow is below.
+
+image:{project_images}/authentication-user-session-limits.png[Authentication User Session Limits Flow]
+
 Currently, the administrator is responsible for maintaining consistency between the different configurations.
 
 Note also that the user session limit feature is not available for CIBA.
