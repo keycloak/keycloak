@@ -64,7 +64,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
 
         if (authorizationHeader != null) {
-            String[] usernameSecret = BasicAuthHelper.UrlEncoded.parseHeader(authorizationHeader);
+            String[] usernameSecret = BasicAuthHelper.RFC6749.parseHeader(authorizationHeader);
             if (usernameSecret != null) {
                 client_id = usernameSecret[0];
                 clientSecret = usernameSecret[1];

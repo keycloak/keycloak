@@ -18,40 +18,81 @@
 package org.keycloak.util;
 
 import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.Base64Url;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 /**
+ * The default implementation is compliant with <a href="https://datatracker.ietf.org/doc/html/rfc2617">RFC 2617</a>
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class BasicAuthHelper {
     public static String createHeader(String username, String password) {
-        return "Basic " + Base64.encodeBytes((username + ':' + password).getBytes(StandardCharsets.UTF_8));
+        try {
+            return "Basic " + Base64.encodeBytes((username + ':' + password).getBytes(StandardCharsets.UTF_8), Base64.DO_BREAK_LINES);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
-    // https://datatracker.ietf.org/doc/html/rfc6749#section-2.3.1
-    // The client identifier is encoded using the
-    // "application/x-www-form-urlencoded" encoding algorithm per
-    // Appendix B, and the encoded value is used as the username; the client
-    // password is encoded using the same algorithm and used as the password;
-    public static abstract class UrlEncoded {
+    public static String[] parseHeader(String header) {
+        if (header.length() < 6) return null;
+
+        String type = header.substring(0, 5);
+        type = type.toLowerCase();
+        if (!type.equalsIgnoreCase("Basic")) return null;
+
+        String val;
+        try {
+            val = new String(Base64.decode(header.substring(6), Base64.DO_BREAK_LINES));
+        } catch (IOException e) {
+            return null;
+        }
+
+        int separatorIndex = val.indexOf(":");
+        if (separatorIndex == -1) return null;
+
+        String username = val.substring(0, separatorIndex);
+        String password = val.substring(separatorIndex + 1);
+
+        return new String[]{ username, password };
+    }
+
+    /**
+     * compliant with <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-2.3.1">RFC 6749</a>
+     */
+    public static abstract class RFC6749 {
+
         public static String createHeader(String username, String password) {
-            return "Basic " + Base64Url.encode((username + ':' + password).getBytes(StandardCharsets.UTF_8));
+            try {
+                return BasicAuthHelper.createHeader(
+                    URLEncoder.encode(username, "UTF-8"),
+                    URLEncoder.encode(password, "UTF-8")
+                );
+            } catch (UnsupportedEncodingException e) {
+                return null;
+            }
         }
 
         public static String[] parseHeader(String header) {
-            if (header.length() < 6) return null;
-            String type = header.substring(0, 5);
-            type = type.toLowerCase();
-            if (!type.equalsIgnoreCase("Basic")) return null;
-            String val = new String(Base64Url.decode(header.substring(6)));
-            int seperatorIndex = val.indexOf(":");
-            if (seperatorIndex == -1) return null;
-            String user = val.substring(0, seperatorIndex);
-            String pw = val.substring(seperatorIndex + 1);
-            return new String[]{ user, pw };
+            String[] val = BasicAuthHelper.parseHeader(header);
+            if (null == val) {
+                return null;
+            }
+
+            try {
+                return new String[]{
+                    URLDecoder.decode(val[0], "UTF-8"),
+                    URLDecoder.decode(val[1], "UTF-8")
+                };
+            } catch (UnsupportedEncodingException e) {
+                return null;
+            }
         }
     }
 }
