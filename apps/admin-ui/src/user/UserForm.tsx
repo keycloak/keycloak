@@ -204,7 +204,11 @@ export const UserForm = ({
             id="kc-username"
             aria-label={t("username")}
             name="username"
-            isReadOnly={!!user?.id && !realm?.editUsernameAllowed}
+            isReadOnly={
+              !!user?.id &&
+              !realm?.editUsernameAllowed &&
+              realm?.editUsernameAllowed !== undefined
+            }
           />
         </FormGroup>
       )}
