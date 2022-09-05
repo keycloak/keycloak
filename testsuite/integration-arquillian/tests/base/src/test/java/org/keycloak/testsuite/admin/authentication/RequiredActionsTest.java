@@ -52,6 +52,8 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         addRequiredAction(expected, "delete_account", "Delete Account", false, false, null);
         addRequiredAction(expected, "terms_and_conditions", "Terms and Conditions", false, false, null);
         addRequiredAction(expected, "update_user_locale", "Update User Locale", true, false, null);
+        addRequiredAction(expected, "webauthn-register", "Webauthn Register", true, false, null);
+        addRequiredAction(expected, "webauthn-register-passwordless", "Webauthn Register Passwordless", true, false, null);
 
         compareRequiredActions(expected, sort(result));
 
@@ -82,7 +84,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         // Dummy RequiredAction is not registered in the realm and WebAuthn actions
         List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
-        Assert.assertEquals(4, result.size());
+        Assert.assertEquals(2, result.size());
         RequiredActionProviderSimpleRepresentation action = result.stream().filter(
                 a -> a.getProviderId().equals(DummyRequiredActionFactory.PROVIDER_ID)
         ).findFirst().get();

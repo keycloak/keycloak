@@ -35,7 +35,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +42,6 @@ import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -52,19 +50,21 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.fs.util.ZipUtils;
-import org.apache.commons.io.FileUtils;
 
 import org.keycloak.common.Version;
 import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
+import static org.keycloak.quarkus.runtime.Environment.isWindows;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
+
+    private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     private Process keycloak;
     private int exitCode = -1;
@@ -109,8 +109,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             throw new RuntimeException("Failed to start the server", cause);
         } finally {
             if (arguments.contains(Build.NAME) && removeBuildOptionsAfterBuild) {
-                for (PropertyMapper mapper : PropertyMappers.getBuildTimeMappers()) {
-                    removeProperty(mapper.getFrom().substring(3));
+                for (List<PropertyMapper> mappers : PropertyMappers.getBuildTimeMappers().values()) {
+                    for (PropertyMapper mapper : mappers) {
+                        removeProperty(mapper.getFrom().substring(3));
+                    }
                 }
             }
             if (!manualStop) {
@@ -126,24 +128,14 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public void stop() {
         if (isRunning()) {
             try {
-                if (Environment.isWindows()) {
-                    // On Windows, we're executing kc.bat in a runtime as "keycloak",
-                    // so tha java process is an actual child process
-                    // we have to kill first.
-                    killChildProcessesOnWindows(false);
-                }
+                // On Windows, we need to make sure sub-processes are terminated first
+                destroyDescendantsOnWindows(keycloak, false);
 
                 keycloak.destroy();
-                keycloak.waitFor(10, TimeUnit.SECONDS);
+                keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                 exitCode = keycloak.exitValue();
             } catch (Exception cause) {
-                if (Environment.isWindows()) {
-                    try {
-                        killChildProcessesOnWindows(true);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to stop the server", e);
-                    }
-                }
+                destroyDescendantsOnWindows(keycloak, true);
                 keycloak.destroyForcibly();
                 throw new RuntimeException("Failed to stop the server", cause);
             }
@@ -152,19 +144,36 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         shutdownOutputExecutor();
     }
 
-    private void killChildProcessesOnWindows(boolean isForced) {
-        for (ProcessHandle childProcessHandle : keycloak.children().collect(Collectors.toList())) {
-            CompletableFuture<ProcessHandle> onExit = childProcessHandle.onExit();
-            if (isForced) {
-                childProcessHandle.destroyForcibly();
+    private void destroyDescendantsOnWindows(Process parent, boolean force) {
+        if (!isWindows()) {
+            return;
+        }
+
+        CompletableFuture allProcesses = CompletableFuture.completedFuture(null);
+
+        for (ProcessHandle process : parent.descendants().collect(Collectors.toList())) {
+            if (force) {
+                process.destroyForcibly();
             } else {
-                childProcessHandle.destroy();
+                process.destroy();
             }
-            //for whatever reason windows doesnt wait for the termination,
-            // and parent process returns immediately with exitCode 1 but is not exited, leading to
-            // "failed to start the distribution" bc files that should be deleted
-            // are used by another process, so we need this here.
-            onExit.join();
+
+            allProcesses = CompletableFuture.allOf(allProcesses, process.onExit());
+        }
+
+        try {
+            allProcesses.get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to terminate descendants processes", cause);
+        }
+
+        try {
+            // TODO: remove this. do not ask why, but on Windows we are here even though the process was previously terminated
+            // without this pause, tests re-installing dist before tests should fail
+            // looks like pausing the current thread let windows to cleanup processes?
+            // more likely it is env dependent
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
         }
     }
 
@@ -193,7 +202,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public String[] getCliArgs(List<String> arguments) {
         List<String> allArgs = new ArrayList<>();
 
-        if (Environment.isWindows()) {
+        if (isWindows()) {
             allArgs.add(distPath.resolve("bin") + File.separator + SCRIPT_CMD_INVOKABLE);
         } else {
             allArgs.add(SCRIPT_CMD_INVOKABLE);
@@ -320,8 +329,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         outputStream.clear();
         errorStream.clear();
         exitCode = -1;
-        keycloak = null;
         shutdownOutputExecutor();
+        keycloak = null;
     }
 
     private Path prepareDistribution() {
@@ -338,13 +347,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             Path dPath = distRootPath.resolve(distDirName.substring(0, distDirName.lastIndexOf('.')));
 
             if (!inited || (reCreate || !dPath.toFile().exists())) {
-
-                if (!Environment.isWindows()) {
-                    FileUtils.deleteDirectory(dPath.toFile());
-                } else {
-                    deleteTempFilesOnWindows(dPath);
-                }
-
+                FileUtil.deleteDirectory(dPath);
                 ZipUtils.unzip(distFile.toPath(), distRootPath);
             }
 
@@ -358,23 +361,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             return dPath;
         } catch (Exception cause) {
             throw new RuntimeException("Failed to prepare distribution", cause);
-        }
-    }
-
-    private void deleteTempFilesOnWindows(Path dPath) {
-        if (Files.exists(dPath)) {
-            try (Stream<Path> walk = Files.walk(dPath)) {
-                walk.sorted(Comparator.reverseOrder())
-                        .forEach(s -> {
-                            try {
-                                Files.delete(s);
-                            } catch (IOException e) {
-                                throw new RuntimeException("Could not delete temp directory for distribution", e);
-                            }
-                        });
-            } catch (IOException e) {
-                throw new RuntimeException("Could not traverse temp directory for distribution to delete files", e);
-            }
         }
     }
 
@@ -414,6 +400,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         builder.environment().put("KEYCLOAK_ADMIN", "admin");
         builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+
+        if (debug) {
+            builder.environment().put("DEBUG_SUSPEND", "y");
+        }
 
         builder.environment().putAll(envVars);
 

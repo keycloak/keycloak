@@ -61,7 +61,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     GroupPermissions(AuthorizationProvider authz, MgmtPermissions root) {
         this.authz = authz;
         this.root = root;
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+        if (authz!=null) {
             resourceStore = authz.getStoreFactory().getResourceStore();
             policyStore = authz.getStoreFactory().getPolicyStore();
         } else {
@@ -96,9 +96,9 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     private void initialize(GroupModel group) {
-        root.initializeRealmResourceServer();
+        ResourceServer server = root.initializeRealmResourceServer();
+        if (server == null) return;
         root.initializeRealmDefaultScopes();
-        ResourceServer server = root.realmResourceServer();
         Scope manageScope = root.realmManageScope();
         Scope viewScope = root.realmViewScope();
         Scope manageMembersScope = root.initializeRealmScope(MANAGE_MEMBERS_SCOPE);
@@ -221,6 +221,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public Map<String, String> getPermissions(GroupModel group) {
+        if (authz == null) return null;
         initialize(group);
         Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission(group).getId());

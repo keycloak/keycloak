@@ -189,14 +189,14 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
             });
         } finally {
-            tearDownRealm(session, "user1", "user2");
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> tearDownRealm(kcSession, "user1", "user2"));
         }
     }
 
 
     // KEYCLOAK-3296 , KEYCLOAK-3494
     @Test
-    @ModelTest
+    @ModelTest(skipForMapStorage = true) // skipped for map storage - to be revisited (GHI #12910)
     public void removeUserAttribute(KeycloakSession session) throws Exception {
 
         try {

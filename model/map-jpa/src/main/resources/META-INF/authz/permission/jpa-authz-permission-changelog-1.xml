@@ -58,6 +58,12 @@ limitations under the License.
             <ext:column jsonColumn="metadata" jsonProperty="fGrantedTimestamp"/>
         </ext:createJsonIndex>
         <addUniqueConstraint columnNames="realmid, resourceserverid, scopeid, resourceid, owner, requester"  tableName="kc_authz_permission"/>
+    </changeSet>
+
+    <!-- unimplemented on CockroachDB: computed column "XXX" cannot reference a foreign key
+         See: https://go.crdb.dev/issue-v/46672/v21.2 -->
+
+    <changeSet author="keycloak" id="authz-permission-2" dbms="postgresql">
         <addForeignKeyConstraint constraintName="authz_permission_fk_root_fkey"
                                  baseTableName="kc_authz_permission"
                                  baseColumnNames="resourceserverid"
@@ -65,6 +71,13 @@ limitations under the License.
                                  referencedColumnNames="id"
                                  onDelete="CASCADE"/>
 
+    </changeSet>
+
+    <changeSet author="keycloak" id="authz-permission-3" dbms="cockroachdb">
+        <!-- placeholder for foreign key on computed column to allow fast looking by resourceserverid -->
+        <createIndex tableName="kc_authz_permission" indexName="authz_permission_fk_root_fkey">
+            <column name="resourceserverid"/>
+        </createIndex>
     </changeSet>
 
 </databaseChangeLog>

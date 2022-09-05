@@ -127,9 +127,9 @@
             </modules>
         </profile>
         <profile>
-            <id>console-ui-tests</id>
+            <id>old-admin-console</id>
             <modules>
-                <module>console</module>
+                <module>old-admin-console</module>
             </modules>
         </profile>
         <profile>
@@ -171,7 +171,7 @@
         <profile>
             <id>webauthn</id>
             <modules>
-                <module>console</module>
+                <module>old-admin-console</module>
                 <module>base-ui</module>
                 <module>webauthn</module>
             </modules>

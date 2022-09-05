@@ -39,6 +39,9 @@
         <module name="org.keycloak.keycloak-services" services="import"/>
         <module name="org.keycloak.keycloak-wildfly-extensions" export="true" services="import"/>
 
+        <!-- Openshift Client Storage -->
+        <module name="com.openshift.openshift-restclient-java" services="import"/>
+
         <module name="com.googlecode.owasp-java-html-sanitizer"/>
         <module name="com.google.guava"/>
         <module name="org.freemarker"/>
@@ -57,7 +60,6 @@
         <module name="com.google.zxing.core"/>
         <module name="com.google.zxing.javase"/>
         <module name="org.jboss.logging"/>
-        <module name="org.bouncycastle" />
         <module name="javax.api"/>
         <module name="javax.activation.api"/>
         <module name="javax.json.api"/>

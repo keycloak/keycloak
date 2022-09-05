@@ -24,7 +24,6 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import java.io.IOException;
@@ -47,7 +46,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
@@ -134,9 +132,7 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<String> getRealmLocalizationLocales() {
-        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
-            throw new ForbiddenException();
-        }
+        auth.requireAnyAdminRole();
 
         return realm.getRealmLocalizationTexts().keySet().stream().sorted();
     }
@@ -144,10 +140,8 @@ public class RealmLocalizationResource {
     @Path("{locale}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale, @QueryParam("useRealmDefaultLocaleFallback") Boolean useFallback) {
-        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
-            throw new ForbiddenException();
-        }
+    public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale,  @QueryParam("useRealmDefaultLocaleFallback") Boolean useFallback) {
+        auth.requireAnyAdminRole();
 
         Map<String, String> realmLocalizationTexts = new HashMap<>();
         if(useFallback != null && useFallback && StringUtil.isNotBlank(realm.getDefaultLocale())) {
@@ -164,9 +158,7 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String getRealmLocalizationText(@PathParam("locale") String locale, @PathParam("key") String key) {
-        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
-            throw new ForbiddenException();
-        }
+        auth.requireAnyAdminRole();
 
         String text = session.realms().getLocalizationTextsById(realm, locale, key);
         if (text != null) {

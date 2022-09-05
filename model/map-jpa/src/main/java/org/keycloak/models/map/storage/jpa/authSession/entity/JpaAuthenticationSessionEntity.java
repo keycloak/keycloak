@@ -36,19 +36,12 @@ import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
-import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.sessions.CommonClientSessionModel;
 
 /**
  * Entity represents individual authentication session. 
- * 
- * It implements {@link JpaRootEntity} as it contains json field. 
- * 
- * Authentication session is modified from multiple transactions within one request, 
- * via {@code KeycloakModelUtils.runJobInTransaction}. Therefore it doesn't 
- * implement {@code JpaRootVersionedEntity} nor {@code JpaChildEntity}.
  */
 @Entity
 @Table(name = "kc_auth_session")

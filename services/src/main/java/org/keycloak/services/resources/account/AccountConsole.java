@@ -12,8 +12,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.json.Json;
-import javax.json.JsonObjectBuilder;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
@@ -43,10 +41,11 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.MessageFormatterMethod;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.StringUtil;
 
@@ -152,7 +151,7 @@ public class AccountConsole {
             RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
             map.put("updateEmailActionEnabled", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled());
 
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
+            FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
             Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
             return builder.build();
@@ -166,13 +165,15 @@ public class AccountConsole {
     
     private String messagesToJsonString(Properties props) {
         if (props == null) return "";
-        
-        JsonObjectBuilder json = Json.createObjectBuilder();
-        for (String prop : props.stringPropertyNames()) {
-            json.add(prop, convertPropValue(props.getProperty(prop)));
+        Properties newProps = new Properties();
+        for (String prop: props.stringPropertyNames()) {
+            newProps.put(prop, convertPropValue(props.getProperty(prop)));
         }
-        
-        return json.build().toString();
+        try {
+            return JsonSerialization.writeValueAsString(newProps);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     private String convertPropValue(String propertyValue) {

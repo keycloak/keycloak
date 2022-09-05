@@ -21,6 +21,7 @@ import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -119,7 +120,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @KeepServerAlive
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(9)
     void testUnknownQuarkusBuildTimePropertyApplied(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

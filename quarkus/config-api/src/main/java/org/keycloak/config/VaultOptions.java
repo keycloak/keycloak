@@ -1,8 +1,6 @@
 package org.keycloak.config;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class VaultOptions {
@@ -16,7 +14,6 @@ public class VaultOptions {
             .category(OptionCategory.VAULT)
             .description("Enables a vault provider.")
             .buildTime(true)
-            .expectedValues(Provider.values())
             .build();
 
     public static final Option VAULT_DIR = new OptionBuilder<>("vault-dir", File.class)
@@ -43,14 +40,4 @@ public class VaultOptions {
             .description("A set of one or more key/value paths that should be used when looking up secrets.")
             .hidden()
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(VAULT);
-        ALL_OPTIONS.add(VAULT_DIR);
-        ALL_OPTIONS.add(VAULT_UNMAPPED);
-        ALL_OPTIONS.add(VAULT_URL);
-        ALL_OPTIONS.add(VAULT_KV_PATHS);
-    }
 }

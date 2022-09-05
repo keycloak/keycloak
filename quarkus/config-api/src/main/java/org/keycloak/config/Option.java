@@ -2,7 +2,7 @@ package org.keycloak.config;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.Supplier;
 
 public class Option<T> {
 
@@ -13,15 +13,15 @@ public class Option<T> {
     private final boolean buildTime;
     private final String description;
     private final Optional<T> defaultValue;
-    private final List<String> expectedValues;
+    private final Supplier<List<String>> expectedValues;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues) {
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, Supplier<List<String>> expectedValues) {
         this.type = type;
         this.key = key;
         this.category = category;
         this.hidden = hidden;
         this.buildTime = buildTime;
-        this.description = description;
+        this.description = getDescriptionByCategorySupportLevel(description);
         this.defaultValue = defaultValue;
         this.expectedValues = expectedValues;
     }
@@ -51,7 +51,7 @@ public class Option<T> {
     }
 
     public List<String> getExpectedValues() {
-        return expectedValues;
+        return expectedValues.get();
     }
 
     public Option<T> withRuntimeSpecificDefault(T defaultValue) {
@@ -67,4 +67,22 @@ public class Option<T> {
         );
     }
 
+    private String getDescriptionByCategorySupportLevel(String description) {
+        if(description == null || description.isBlank()) {
+            return description;
+        }
+
+        switch(this.getCategory().getSupportLevel()) {
+            case PREVIEW:
+                description = "Preview: " + description;
+                break;
+            case EXPERIMENTAL:
+                description = "Experimental: " + description;
+                break;
+            default:
+                description = description;
+        }
+
+        return description;
+    }
 }

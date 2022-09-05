@@ -23,6 +23,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LegacyRealmModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.client.ClientLookupProvider;
@@ -78,7 +79,7 @@ public class ClientStorageManager implements ClientProvider {
 
 
     private static <T> Stream<ClientStorageProviderModel> getStorageProviders(RealmModel realm, KeycloakSession session, Class<T> type) {
-        return realm.getClientStorageProvidersStream()
+        return ((LegacyRealmModel) realm).getClientStorageProvidersStream()
                 .filter(model -> {
                     ClientStorageProviderFactory factory = getClientStorageProviderFactory(model, session);
                     if (factory == null) {

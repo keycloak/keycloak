@@ -36,6 +36,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
+import static org.keycloak.operator.controllers.KeycloakDeployment.getEnvVarName;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getDefaultKeycloakDeployment;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
@@ -115,6 +116,10 @@ public class RealmImportTest extends BaseOperatorTest {
                     CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), HAS_ERRORS, false);
                 });
         var job = k8sclient.batch().v1().jobs().inNamespace(namespace).withName("example-count0-kc").get();
+        assertThat(job.getSpec().getTemplate().getMetadata().getLabels().get("app")).isEqualTo("keycloak-realm-import");
+        var envvars = job.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        assertThat(envvars.stream().filter(e -> e.getName().equals(getEnvVarName("cache"))).findAny().get().getValue()).isEqualTo("local");
+        assertThat(envvars.stream().filter(e -> e.getName().equals(getEnvVarName("health-enabled"))).findAny().get().getValue()).isEqualTo("false");
         assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().size()).isEqualTo(1);
         assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().get(0).getName()).isEqualTo("my-empty-secret");
 

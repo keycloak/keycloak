@@ -116,6 +116,8 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -438,11 +440,12 @@ public class TokenEndpoint {
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
-        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+        boolean useRefreshToken = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken();
+        if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
         }
 
-        checkMtlsHoKToken(responseBuilder, OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken());
+        checkMtlsHoKToken(responseBuilder, useRefreshToken);
 
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
@@ -506,7 +509,7 @@ public class TokenEndpoint {
             res = responseBuilder.build();
 
             if (!responseBuilder.isOfflineToken()) {
-                UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
+                UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, res.getSessionState()));
                 AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                 updateClientSession(clientSession);
                 updateUserSessionFromClientAuth(userSession);
@@ -625,7 +628,8 @@ public class TokenEndpoint {
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
-        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+        boolean useRefreshToken = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken();
+        if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
         }
 
@@ -633,6 +637,8 @@ public class TokenEndpoint {
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
         }
+
+        checkMtlsHoKToken(responseBuilder, useRefreshToken);
 
         // TODO : do the same as codeToToken()
         AccessTokenResponse res = responseBuilder.build();

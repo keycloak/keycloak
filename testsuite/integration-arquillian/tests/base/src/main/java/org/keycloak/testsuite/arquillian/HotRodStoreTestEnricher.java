@@ -1,53 +1,29 @@
 package org.keycloak.testsuite.arquillian;
 
-import org.jboss.arquillian.container.spi.event.StartContainer;
-import org.jboss.arquillian.container.spi.event.StopContainer;
-import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.core.api.Event;
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.core.api.annotation.Observes;
-import org.jboss.arquillian.core.spi.Validate;
-import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
-import org.jboss.logging.Logger;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
+import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
+import org.keycloak.testsuite.util.InfinispanContainer;
 
 
 public class HotRodStoreTestEnricher {
 
-    private static SuiteContext suiteContext;
-    private static final Logger log = Logger.getLogger(HotRodStoreTestEnricher.class);
+    public static final String HOT_ROD_STORE_HOST_PROPERTY = "keycloak.connectionsHotRod.host";
 
-    @Inject
-    private Event<StartContainer> startContainerEvent;
+    public static final boolean HOT_ROD_START_CONTAINER = Boolean.parseBoolean(System.getProperty("keycloak.testsuite.start-hotrod-container", "false"));
 
-    @Inject
-    private Event<StopContainer> stopContainerEvent;
-
-    static void initializeSuiteContext(SuiteContext suiteContext) {
-        Validate.notNull(suiteContext, "Suite context cannot be null.");
-        HotRodStoreTestEnricher.suiteContext = suiteContext;
-    }
+    private final InfinispanContainer hotRodContainer = new InfinispanContainer();
 
     public void beforeContainerStarted(@Observes(precedence = 1) StartSuiteContainers event) {
-        if (!AuthServerTestEnricher.HOT_ROD_STORE_ENABLED) return;
+        if (!HOT_ROD_START_CONTAINER) return;
+        hotRodContainer.start();
 
-        ContainerInfo hotRodContainer = suiteContext.getHotRodStoreInfo();
-
-        if (hotRodContainer != null && !hotRodContainer.isStarted()) {
-            log.infof("HotRod store starting: %s", hotRodContainer.getQualifier());
-            startContainerEvent.fire(new StartContainer(hotRodContainer.getArquillianContainer()));
-        }
+        // Add env variable, so it can be picked up by Keycloak
+        System.setProperty(HOT_ROD_STORE_HOST_PROPERTY, hotRodContainer.getHost());
     }
 
     public void afterSuite(@Observes(precedence = 4) AfterSuite event) {
-        if (!AuthServerTestEnricher.HOT_ROD_STORE_ENABLED) return;
-
-        ContainerInfo hotRodContainer = suiteContext.getHotRodStoreInfo();
-
-        if (hotRodContainer != null && hotRodContainer.isStarted()) {
-            log.infof("HotRod store stopping: %s", hotRodContainer.getQualifier());
-            stopContainerEvent.fire(new StopContainer(hotRodContainer.getArquillianContainer()));
-        }
+        if (!HOT_ROD_START_CONTAINER) return;
+        hotRodContainer.stop();
     }
 }

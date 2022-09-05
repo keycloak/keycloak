@@ -21,11 +21,11 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.LegacyRealmModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.UserStorageUtil;
 
 import java.util.Objects;
 
@@ -51,7 +51,7 @@ public class MigrateTo1_8_0 implements Migration {
     }
 
     protected void migrateRealm(RealmModel realm) {
-        UserStorageUtil.getUserStorageProvidersStream(realm)
+        ((LegacyRealmModel) realm).getUserStorageProvidersStream()
                 .filter(fedProvider -> Objects.equals(fedProvider.getProviderId(), LDAPConstants.LDAP_PROVIDER))
                 .filter(this::isActiveDirectory)
                 .filter(fedProvider -> Objects.isNull(getMapperByName(realm, fedProvider, "MSAD account controls")))

@@ -12,7 +12,7 @@ final class HealthPropertyMappers {
     public static PropertyMapper[] getHealthPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(HealthOptions.HEALTH_ENABLED)
-                        .to("quarkus.datasource.health.enabled")
+                        .to("quarkus.health.extensions.enabled")
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build()
         };

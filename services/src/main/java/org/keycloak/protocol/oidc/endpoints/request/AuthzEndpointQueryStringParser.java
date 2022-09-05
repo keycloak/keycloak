@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
+public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
 
     private final MultivaluedMap<String, String> requestParams;
 

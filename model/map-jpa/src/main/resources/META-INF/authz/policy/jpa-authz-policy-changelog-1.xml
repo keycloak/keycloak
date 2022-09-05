@@ -52,12 +52,6 @@ limitations under the License.
         <createIndex tableName="kc_authz_policy" indexName="authz_policy_type">
             <column name="type"/>
         </createIndex>
-        <addForeignKeyConstraint constraintName="authz_policy_fk_root_fkey"
-                                 baseTableName="kc_authz_policy"
-                                 baseColumnNames="resourceserverid"
-                                 referencedTableName="kc_authz_resource_server"
-                                 referencedColumnNames="id"
-                                 onDelete="CASCADE"/>
 
         <createTable tableName="kc_authz_policy_scope">
             <column name="policy_id" type="UUID">
@@ -118,8 +112,6 @@ limitations under the License.
             <column name="fk_root"/>
             <column name="name"/>
         </createIndex>
-        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
-        <addUniqueConstraint tableName="kc_authz_policy_config" columnNames="fk_root, name" deferrable="true" initiallyDeferred="true" />
     </changeSet>
 
     <changeSet author="keycloak" id="authz-policy-2" dbms="postgresql">
@@ -129,5 +121,25 @@ limitations under the License.
         <addUniqueConstraint tableName="kc_authz_policy_scope" columnNames="policy_id, scope_id" deferrable="true" initiallyDeferred="true" />
         <addUniqueConstraint tableName="kc_authz_policy_resource" columnNames="policy_id, resource_id" deferrable="true" initiallyDeferred="true" />
         <addUniqueConstraint tableName="kc_authz_policy_associated_policy" columnNames="policy_id, associated_policy_id" deferrable="true" initiallyDeferred="true" />
+
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <addUniqueConstraint tableName="kc_authz_policy_config" columnNames="fk_root, name" deferrable="true" initiallyDeferred="true" />
+
+        <!-- unimplemented on CockroachDB: computed column "XXX" cannot reference a foreign key
+             See: https://go.crdb.dev/issue-v/46672/v21.2 -->
+        <addForeignKeyConstraint constraintName="authz_policy_fk_root_fkey"
+                                 baseTableName="kc_authz_policy"
+                                 baseColumnNames="resourceserverid"
+                                 referencedTableName="kc_authz_resource_server"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
     </changeSet>
+
+    <changeSet author="keycloak" id="authz-policy-3" dbms="cockroachdb">
+        <!-- placeholder for foreign key on computed column to allow fast looking by resourceserverid -->
+        <createIndex tableName="kc_authz_policy" indexName="authz_policy_fk_root_fkey">
+            <column name="resourceserverid"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

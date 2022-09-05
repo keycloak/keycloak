@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
 import static org.keycloak.util.JsonSerialization.readValue;
 
@@ -72,13 +73,11 @@ import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.exportimport.util.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
-import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -602,7 +601,7 @@ public class RealmAdminResource {
     public void deleteSession(@PathParam("session") String sessionId) {
         auth.users().requireManage();
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+        UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, sessionId));
         if (userSession == null) throw new NotFoundException("Sesssion not found");
         AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).success();
@@ -1077,23 +1076,6 @@ public class RealmAdminResource {
         ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
         RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
         return stripForExport(session, rep);
-    }
-
-    /**
-     * Clear cache of external public keys (Public keys of clients or Identity providers)
-     *
-     */
-    @Path("clear-keys-cache")
-    @POST
-    public void clearKeysCache() {
-        auth.realm().requireManageRealm();
-
-        PublicKeyStorageProvider cache = session.getProvider(PublicKeyStorageProvider.class);
-        if (cache != null) {
-            cache.clearCache();
-        }
-
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
     @Path("keys")

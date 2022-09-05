@@ -235,10 +235,13 @@ public class ExportUtils {
                 rep.setUsers(users);
             }
 
-            List<UserRepresentation> federatedUsers = userFederatedStorage(session).getStoredUsersStream(realm, 0, -1)
-                    .map(user -> exportFederatedUser(session, realm, user, options)).collect(Collectors.toList());
-            if (federatedUsers.size() > 0) {
-                rep.setFederatedUsers(federatedUsers);
+            UserFederatedStorageProvider userFederatedStorageProvider = userFederatedStorage(session);
+            if (userFederatedStorageProvider != null) {
+                List<UserRepresentation> federatedUsers = userFederatedStorage(session).getStoredUsersStream(realm, 0, -1)
+                        .map(user -> exportFederatedUser(session, realm, user, options)).collect(Collectors.toList());
+                if (federatedUsers.size() > 0) {
+                    rep.setFederatedUsers(federatedUsers);
+                }
             }
 
         } else if (options.isClientsIncluded() && options.isOnlyServiceAccountsIncluded()) {

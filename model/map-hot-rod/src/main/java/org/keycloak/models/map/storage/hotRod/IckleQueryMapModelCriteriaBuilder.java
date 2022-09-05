@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.C;
 import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.findAvailableNamedParam;
-import static org.keycloak.models.map.storage.hotRod.common.ProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE;
+import static org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE;
 
 public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M> implements ModelCriteriaBuilder<M, IckleQueryMapModelCriteriaBuilder<E, M>> {
 
@@ -80,8 +80,7 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, "components.providerType");
 
         INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.IS_OFFLINE, "offline");
-        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.CLIENT_ID, "authenticatedClientSessions.key");
-        INFINISPAN_NAME_OVERRIDES.put(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, "offline");
+        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.CLIENT_ID, "authenticatedClientSessions.clientId");
 
         INFINISPAN_NAME_OVERRIDES.put(Resource.SearchableFields.SCOPE_ID, "scopeIds");
 

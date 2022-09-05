@@ -26,12 +26,12 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.LegacyRealmModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.timer.TimerProvider;
@@ -62,7 +62,7 @@ public class UserStorageSyncManager {
             public void run(KeycloakSession session) {
                 Stream<RealmModel> realms = session.realms().getRealmsWithProviderTypeStream(UserStorageProvider.class);
                 realms.forEach(realm -> {
-                    Stream<UserStorageProviderModel> providers = UserStorageUtil.getUserStorageProvidersStream(realm);
+                    Stream<UserStorageProviderModel> providers = ((LegacyRealmModel) realm).getUserStorageProvidersStream();
                     providers.forEachOrdered(provider -> {
                         UserStorageProviderFactory factory = (UserStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, provider.getProviderId());
                         if (factory instanceof ImportSynchronization && provider.isImportEnabled()) {
@@ -166,7 +166,7 @@ public class UserStorageSyncManager {
 
 
     public static void notifyToRefreshPeriodicSyncAll(KeycloakSession session, RealmModel realm, boolean removed) {
-        UserStorageUtil.getUserStorageProvidersStream(realm).forEachOrdered(fedProvider ->
+        ((LegacyRealmModel) realm).getUserStorageProvidersStream().forEachOrdered(fedProvider ->
            notifyToRefreshPeriodicSync(session, realm, fedProvider, removed));
     }
     
@@ -268,7 +268,7 @@ public class UserStorageSyncManager {
             @Override
             public void run(KeycloakSession session) {
                 RealmModel persistentRealm = session.realms().getRealm(realmId);
-                UserStorageUtil.getUserStorageProvidersStream(persistentRealm)
+                ((LegacyRealmModel) persistentRealm).getUserStorageProvidersStream()
                         .filter(persistentFedProvider -> Objects.equals(provider.getId(), persistentFedProvider.getId()))
                         .forEachOrdered(persistentFedProvider -> {
                             // Update persistent provider in DB

@@ -16,87 +16,30 @@
  */
 package org.keycloak.models.map.userSession;
 
-import org.keycloak.Config.Scope;
-import org.keycloak.common.Profile;
-import org.keycloak.component.AmphibianProviderFactory;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.MapStorageSpi;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
 
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.USER_BEFORE_REMOVE;
-import static org.keycloak.models.map.common.AbstractMapProviderFactory.uniqueCounter;
-import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserSessionProviderFactory<UK, CK> implements AmphibianProviderFactory<UserSessionProvider>, UserSessionProviderFactory, EnvironmentDependentProviderFactory, InvalidationHandler {
+public class MapUserSessionProviderFactory extends AbstractMapProviderFactory<MapUserSessionProvider, MapUserSessionEntity, UserSessionModel> implements  UserSessionProviderFactory<MapUserSessionProvider>, InvalidationHandler {
 
-    public static final String CONFIG_STORAGE_USER_SESSIONS = "storage-user-sessions";
-    public static final String CONFIG_STORAGE_CLIENT_SESSIONS = "storage-client-sessions";
-    public static final String PROVIDER_ID = AbstractMapProviderFactory.PROVIDER_ID;
-
-    private final String uniqueKey = getClass().getName() + uniqueCounter.incrementAndGet();
-
-    private Scope storageConfigScopeUserSessions;
-    private Scope storageConfigScopeClientSessions;
-
-    @Override
-    public String getId() {
-        return PROVIDER_ID;
+    public MapUserSessionProviderFactory() {
+        super(UserSessionModel.class, MapUserSessionProvider.class);
     }
 
     @Override
-    public void init(Scope config) {
-        storageConfigScopeUserSessions = config.scope(AbstractMapProviderFactory.CONFIG_STORAGE + "-user-sessions");
-        storageConfigScopeClientSessions = config.scope(AbstractMapProviderFactory.CONFIG_STORAGE + "-client-sessions");
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
-        AmphibianProviderFactory.super.close();
-    }
-
-    @Override
-    public void loadPersistentSessions(KeycloakSessionFactory sessionFactory, int maxErrors, int sessionsPerSegment) {
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public MapUserSessionProvider create(KeycloakSession session) {
-        MapUserSessionProvider provider = session.getAttribute(uniqueKey, MapUserSessionProvider.class);
-
-        if (provider != null) return provider;
-
-        MapStorageProviderFactory storageProviderFactoryUs = (MapStorageProviderFactory) getComponentFactory(session.getKeycloakSessionFactory(),
-          MapStorageProvider.class, storageConfigScopeUserSessions, MapStorageSpi.NAME);
-        final MapStorageProvider factoryUs = storageProviderFactoryUs.create(session);
-        MapStorage userSessionStore = factoryUs.getStorage(UserSessionModel.class);
-
-        MapStorageProviderFactory storageProviderFactoryCs = (MapStorageProviderFactory) getComponentFactory(session.getKeycloakSessionFactory(),
-          MapStorageProvider.class, storageConfigScopeClientSessions, MapStorageSpi.NAME);
-        final MapStorageProvider factoryCs = storageProviderFactoryCs.create(session);
-        MapStorage clientSessionStore = factoryCs.getStorage(AuthenticatedClientSessionModel.class);
-
-        provider = new MapUserSessionProvider(session, userSessionStore, clientSessionStore);
-        session.setAttribute(uniqueKey, provider);
-        return provider;
+    public MapUserSessionProvider createNew(KeycloakSession session) {
+        return new MapUserSessionProvider(session, getStorage(session));
     }
 
     @Override
@@ -108,11 +51,13 @@ public class MapUserSessionProviderFactory<UK, CK> implements AmphibianProviderF
     public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
         if (type == USER_BEFORE_REMOVE) {
             create(session).removeUserSessions((RealmModel) params[0], (UserModel) params[1]);
+        } else if (type == REALM_BEFORE_REMOVE) {
+            create(session).removeAllUserSessions((RealmModel) params[0]);
         }
     }
 
     @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+    public void loadPersistentSessions(KeycloakSessionFactory sessionFactory, int maxErrors, int sessionsPerSegment) {
+
     }
 }

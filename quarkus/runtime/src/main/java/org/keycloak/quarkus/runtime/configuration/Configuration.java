@@ -157,10 +157,10 @@ public final class Configuration {
     }
 
     private static String getValue(ConfigSource configSource, String name) {
-        String value = configSource.getValue(name);
+        String value = configSource.getValue("%".concat(getProfileOrDefault("prod").concat(".").concat(name)));
 
         if (value == null) {
-            value = configSource.getValue("%".concat(getProfileOrDefault("prod").concat(".").concat(name)));
+            value = configSource.getValue(name);
         }
 
         return value;

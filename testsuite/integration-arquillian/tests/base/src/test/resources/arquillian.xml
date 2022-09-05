@@ -641,19 +641,6 @@
         </container>
     </group>
 
-    <container qualifier="hot-rod-store" mode="manual" >
-        <configuration>
-            <property name="enabled">${hotrod.store.enabled}</property>
-            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.InfinispanServerDeployableContainer</property>
-            <property name="infinispanHome">${cache.server.home}-hot-rod-store</property>
-<!--            <property name="serverConfig">infinisan-xsite.xml</property>-->
-            <property name="portOffset">${hotrod.store.port.offset}</property>
-            <property name="managementPort">${hotrod.store.management.port}</property>
-            <property name="javaHome">${cache.server.java.home}</property>
-        </configuration>
-    </container>
-
-
     <container qualifier="auth-server-remote" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.remote}</property>
@@ -669,9 +656,13 @@
     <container qualifier="auth-server-quarkus" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.quarkus}</property>
-            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+            <property name="adapterImplClass">
+                org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer
+            </property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
-            <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
+            <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m
+                -Djava.net.preferIPv4Stack=true -Dauth.server.db.host=some
+            </property>
         </configuration>
     </container>
 
@@ -751,13 +742,16 @@
             <property name="enabled">${auth.server.migration}</property>
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
-            <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
-            <property name="javaVmArguments">
-                ${migration.import.props.previous}
+            <property name="importFile">${migration.import.file.name}</property>
+            <property name="javaOpts">
+                -Xms512m
+                -Xmx512m
+                -XX:MetaspaceSize=96M
+                -XX:MaxMetaspaceSize=512m
+                -Djava.net.preferIPv4Stack=true
                 ${auth.server.memory.settings}
                 -Dauth.server.db.host=${auth.server.db.host}
             </property>
-            <property name="managementPort">${auth.server.management.port}</property>
         </configuration>
     </container>
 

@@ -96,10 +96,7 @@
     "userSessions": {
         "provider": "${keycloak.userSession.provider:infinispan}",
         "map": {
-            "storage-user-sessions": {
-                "provider": "${keycloak.userSession.map.storage.provider:concurrenthashmap}"
-            },
-            "storage-client-sessions": {
+            "storage": {
                 "provider": "${keycloak.userSession.map.storage.provider:concurrenthashmap}"
             }
         }
@@ -128,6 +125,15 @@
         "map": {
             "storage": {
                 "provider": "${keycloak.singleUseObject.map.storage.provider:concurrenthashmap}"
+            }
+        }
+    },
+
+    "publicKeyStorage": {
+        "provider": "${keycloak.publicKeyStorage.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.publicKeyStorage.map.storage.provider:concurrenthashmap}"
             }
         }
     },
@@ -231,6 +237,12 @@
         },
         "mem": {
             "maxSize": 20000
+        }
+    },
+
+    "publicKeyCache": {
+        "default" : {
+            "enabled": "${keycloak.publicKeyCache.enabled:true}"
         }
     },
 

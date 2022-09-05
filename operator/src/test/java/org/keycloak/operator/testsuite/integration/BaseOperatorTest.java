@@ -20,7 +20,6 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -186,6 +185,17 @@ public abstract class BaseOperatorTest {
   protected static void deleteDB() {
     // Delete the Postgres StatefulSet
     k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").delete();
+    Awaitility.await()
+            .ignoreExceptions()
+            .untilAsserted(() -> {
+              Log.infof("Waiting for postgres to be deleted");
+              assertThat(k8sclient
+                      .apps()
+                      .statefulSets()
+                      .inNamespace(namespace)
+                      .withName("postgresql-db")
+                      .get()).isNull();
+            });
   }
 
   // TODO improve this (preferably move to JOSDK)
@@ -220,7 +230,7 @@ public abstract class BaseOperatorTest {
             .untilAsserted(() -> {
               var kcDeployments = k8sclient
                       .apps()
-                      .deployments()
+                      .statefulSets()
                       .inNamespace(namespace)
                       .withLabels(Constants.DEFAULT_LABELS)
                       .list()

@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -282,6 +283,30 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation kcClientRep = getKeycloakClient(clientId);
         Assert.assertTrue(kcClientRep.isPublicClient());
         Assert.assertNull(kcClientRep.getSecret());
+    }
+
+    @Test
+    public void testClientSecretsWithAuthMethod() throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setGrantTypes(Collections.singletonList(OAuth2Constants.CLIENT_CREDENTIALS));
+        clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_JWT);
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals("client_secret_jwt", response.getTokenEndpointAuthMethod());
+        Assert.assertNotNull(response.getClientSecret());
+        Assert.assertNotNull(response.getClientSecretExpiresAt());
+
+        ClientRepresentation kcClientRep = getKeycloakClient(response.getClientId());
+        Assert.assertFalse(kcClientRep.isPublicClient());
+        Assert.assertNotNull(kcClientRep.getSecret());
+
+        // Updating
+        reg.auth(Auth.token(response));
+        response.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
+        OIDCClientRepresentation updated = reg.oidc().update(response);
+        Assert.assertEquals("tls_client_auth", updated.getTokenEndpointAuthMethod());
+        Assert.assertNull(updated.getClientSecret());
+        Assert.assertNull(updated.getClientSecretExpiresAt());
     }
 
     @Test
@@ -819,5 +844,28 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         // Revert realm acr-to-loa mappings
         realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
         adminClient.realm("test").update(realmRep);
+    }
+
+    @Test
+    public void testPostLogoutRedirectUri() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setPostLogoutRedirectUris(Collections.singletonList("http://redirect/logout"));
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertEquals("http://redirect/logout", response.getPostLogoutRedirectUris().get(0));
+    }
+
+    @Test
+    public void testPostLogoutRedirectUriPlus() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setPostLogoutRedirectUris(Collections.singletonList("+"));
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertEquals("http://redirect", response.getPostLogoutRedirectUris().get(0));
+    }
+
+    @Test
+    public void testPostLogoutRedirectUriNull() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertNull(response.getPostLogoutRedirectUris());
     }
 }

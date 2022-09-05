@@ -64,7 +64,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
 
         if (authorizationHeader != null) {
-            String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
+            String[] usernameSecret = BasicAuthHelper.UrlEncoded.parseHeader(authorizationHeader);
             if (usernameSecret != null) {
                 client_id = usernameSecret[0];
                 clientSecret = usernameSecret[1];
@@ -202,6 +202,11 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         } else {
             return Collections.emptySet();
         }
+    }
+
+    @Override
+    public boolean supportsSecret() {
+        return true;
     }
 
     private void reportFailedAuth(ClientAuthenticationFlowContext context) {

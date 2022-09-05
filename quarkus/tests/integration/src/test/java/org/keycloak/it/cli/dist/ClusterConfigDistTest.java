@@ -33,7 +33,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest
+@DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
 @RawDistOnly(reason = "Not possible to mount files using docker.")
 public class ClusterConfigDistTest {
 
@@ -72,7 +72,7 @@ public class ClusterConfigDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start", "--auto-build", "--log-level=info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--log-level=info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true", "--hostname-strict=false" })
     void testStartDefaultsToClustering(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
@@ -82,7 +82,7 @@ public class ClusterConfigDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell behaviour on Windows.")
-    @Launch({ "start", "--auto-build", "--log-level=\"info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true\"", "--hostname-strict=false" })
+    @Launch({ "start", "--log-level=\"info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true\"", "--hostname-strict=false" })
     void testWinStartDefaultsToClustering(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();

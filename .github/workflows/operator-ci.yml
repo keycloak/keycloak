@@ -4,6 +4,9 @@ on:
   push:
     branches-ignore: [main]
   pull_request:
+    paths-ignore:
+      - '.github/workflows/**'
+      - '!.github/workflows/operator-ci.yml'
   schedule:
     - cron: '0 0 * * *'
 
@@ -14,7 +17,7 @@ env:
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
-  group: ci-operator-keycloak-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -59,7 +62,7 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: 'maven'
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.6.0
+        uses: manusa/actions-setup-minikube@v2.7.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -104,7 +107,7 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: 'maven'
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.6.0
+        uses: manusa/actions-setup-minikube@v2.7.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -149,7 +152,7 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: 'maven'
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.6.0
+        uses: manusa/actions-setup-minikube@v2.7.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}

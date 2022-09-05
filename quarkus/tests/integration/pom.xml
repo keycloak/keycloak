@@ -87,6 +87,10 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>mariadb</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -116,9 +120,13 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <argLine>-Xmx1024m -XX:MaxMetaspaceSize=512m</argLine>
-                            <systemProperties>
+                            <systemPropertyVariables>
                                 <kc.test.storage.database>true</kc.test.storage.database>
-                            </systemProperties>
+                                <!--DB Container -->
+                                <kc.db.postgresql.container.image>postgres:alpine</kc.db.postgresql.container.image>
+                                <kc.db.mariadb.container.image>mariadb:10.5.9</kc.db.mariadb.container.image>
+                                <kc.infinispan.container.image>quay.io/infinispan/server:${infinispan.version}</kc.infinispan.container.image>
+                            </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>

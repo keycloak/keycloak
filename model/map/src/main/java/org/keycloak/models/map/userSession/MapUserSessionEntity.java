@@ -18,12 +18,19 @@ package org.keycloak.models.map.userSession;
 
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
+import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -48,6 +55,44 @@ public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity, E
             if (this.id != null) throw new IllegalStateException("Id cannot be changed");
             this.id = id;
             this.updated |= id != null;
+        }
+
+        @Override
+        public boolean isUpdated() {
+            return this.updated
+                    || Optional.ofNullable(getAuthenticatedClientSessions()).orElseGet(Collections::emptySet).stream().anyMatch(UpdatableEntity::isUpdated);
+        }
+
+        @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+            Optional.ofNullable(getAuthenticatedClientSessions()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+        }
+
+        @Override
+        public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
+            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
+            if (acss == null || acss.isEmpty()) return Optional.empty();
+
+            return acss.stream().filter(acs -> Objects.equals(acs.getClientId(), clientUUID)).findFirst();
+        }
+
+        @Override
+        public Boolean removeAuthenticatedClientSession(String clientUUID) {
+            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
+            boolean removed = acss != null && acss.removeIf(uc -> Objects.equals(uc.getClientId(), clientUUID));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public void clearAuthenticatedClientSessions() {
+            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
+            if (acss != null) {
+                acss.stream().map(MapAuthenticatedClientSessionEntity::getClientId)
+                        .collect(Collectors.toSet())
+                        .forEach(this::removeAuthenticatedClientSession);
+            }
         }
     }
 
@@ -110,11 +155,12 @@ public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity, E
     UserSessionModel.State getState();
     void setState(UserSessionModel.State state);
 
-    Map<String, String> getAuthenticatedClientSessions();
-    void setAuthenticatedClientSessions(Map<String, String> authenticatedClientSessions);
-    String getAuthenticatedClientSession(String clientUUID);
-    void setAuthenticatedClientSession(String clientUUID, String clientSessionId);
+    Set<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSessions();
+    Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID);
+    void addAuthenticatedClientSession(MapAuthenticatedClientSessionEntity clientSession);
     Boolean removeAuthenticatedClientSession(String clientUUID);
+    @IgnoreForEntityImplementationGenerator
+    void clearAuthenticatedClientSessions();
 
     Boolean isOffline();
     void setOffline(Boolean offline);

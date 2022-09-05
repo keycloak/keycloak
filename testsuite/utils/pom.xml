@@ -50,11 +50,23 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client</artifactId>
+            <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
+            <type>pom</type>
+            <scope>import</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-adduser</artifactId>
+            <artifactId>keycloak-admin-ui</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -72,10 +84,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.spec.javax.ws.rs</groupId>
             <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
         </dependency>
@@ -85,7 +93,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
+            <artifactId>resteasy-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -128,6 +136,10 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>${keycloak.crypto.artifactId}</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -303,6 +315,7 @@
                         <configuration>
                             <systemProperties>
                                 <systemProperty><key>keycloak.profile.feature.map_storage</key><value>enabled</value></systemProperty>
+                                <systemProperty><key>keycloak.dblock.provider</key><value>none</value></systemProperty>
                                 <systemProperty><key>keycloak.realm.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.client.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.clientScope.provider</key><value>map</value></systemProperty>
@@ -317,9 +330,11 @@
                                 <systemProperty><key>keycloak.actionToken.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.singleUseObject.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.eventsStore.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.publicKeyStorage.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.authorizationCache.enabled</key><value>false</value></systemProperty>
                                 <systemProperty><key>keycloak.realmCache.enabled</key><value>false</value></systemProperty>
                                 <systemProperty><key>keycloak.userCache.enabled</key><value>false</value></systemProperty>
+                                <systemProperty><key>keycloak.publicKeyCache.enabled</key><value>false</value></systemProperty>
                             </systemProperties>
                         </configuration>
                     </plugin>

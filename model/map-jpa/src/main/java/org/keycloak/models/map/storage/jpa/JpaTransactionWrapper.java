@@ -20,7 +20,6 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceException;
 
 import org.jboss.logging.Logger;
-import org.keycloak.connections.jpa.PersistenceExceptionConverter;
 import org.keycloak.models.KeycloakTransaction;
 
 /**

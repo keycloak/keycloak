@@ -17,13 +17,17 @@
 
 package org.keycloak.models.map.storage.hotRod.authSession;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 import java.util.Collections;
@@ -33,14 +37,34 @@ import java.util.Set;
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.authSession.HotRodRootAuthenticationSessionEntity.AbstractHotRodRootAuthenticationSessionEntityDelegate"
+        inherits = "org.keycloak.models.map.storage.hotRod.authSession.HotRodRootAuthenticationSessionEntity.AbstractHotRodRootAuthenticationSessionEntityDelegate",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.sessions.RootAuthenticationSessionModel"
 )
 @ProtoDoc("@Indexed")
+@ProtoDoc("schema-version: " + HotRodRootAuthenticationSessionEntity.VERSION)
 public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity {
+
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodRootAuthenticationSessionEntity.class,
+                    HotRodAuthenticationSessionEntity.class
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
+            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class}
+    )
+    public interface HotRodRootAuthenticationSessionEntitySchema extends GeneratedSchema {
+        HotRodRootAuthenticationSessionEntitySchema INSTANCE = new HotRodRootAuthenticationSessionEntitySchemaImpl();
+    }
+
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1)
-    public Integer entityVersion = 1;
+    public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;

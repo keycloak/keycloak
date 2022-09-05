@@ -4,12 +4,17 @@ import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.StorageOptions;
 import org.keycloak.config.database.Database;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.util.Optional;
-import java.util.function.BiFunction;
 
+import static java.util.Optional.of;
+import static org.keycloak.config.StorageOptions.STORAGE;
 import static org.keycloak.quarkus.runtime.Messages.invalidDatabaseVendor;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawValue;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
@@ -27,9 +32,10 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB_DRIVER)
                         .mapFrom("db")
                         .to("quarkus.datasource.jdbc.driver")
-                        .transformer(DatabasePropertyMappers.getXaOrNonXaDriver())
+                        .transformer(DatabasePropertyMappers::getXaOrNonXaDriver)
                         .build(),
                 fromOption(DatabaseOptions.DB)
+                        .transformer(DatabasePropertyMappers::resolveDatabaseVendor)
                         .to("quarkus.datasource.db-kind")
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
                         .paramLabel("vendor")
@@ -37,7 +43,7 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB_URL)
                         .to("quarkus.datasource.jdbc.url")
                         .mapFrom("db")
-                        .transformer(DatabasePropertyMappers.getDatabaseUrl())
+                        .transformer(DatabasePropertyMappers::getDatabaseUrl)
                         .paramLabel("jdbc-url")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
@@ -88,60 +94,126 @@ final class DatabasePropertyMappers {
         };
     }
 
-    private static BiFunction<String, ConfigSourceInterceptorContext, String> getDatabaseUrl() {
-        return (s, c) -> Database.getDefaultUrl(s).orElse(s);
+    private static Optional<String> getDatabaseUrl(Optional<String> value, ConfigSourceInterceptorContext c) {
+        Optional<String> url = Database.getDefaultUrl(value.get());
+
+        if (url.isPresent()) {
+            if (isJpaStore()) {
+                return Database.getDefaultUrl(Database.Vendor.POSTGRES.name().toLowerCase());
+            }
+            return url;
+        }
+
+        return value;
     }
 
-    private static BiFunction<String, ConfigSourceInterceptorContext, String> getXaOrNonXaDriver() {
-        return (String db, ConfigSourceInterceptorContext context) -> {
-            ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
+    private static Optional<String> getXaOrNonXaDriver(Optional<String> value, ConfigSourceInterceptorContext context) {
+        if (isJpaStore()) {
+            return Database.getDriver(Database.Vendor.POSTGRES.name().toLowerCase(), false);
+        }
 
-            boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
+        ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
+        ConfigValue jtaEnabledConfiguration = context.proceed("kc.transaction-jta-enabled");
 
-            return Database.getDriver(db, isXaEnabled).orElse(db);
-        };
+        boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
+        boolean isJtaEnabled = jtaEnabledConfiguration == null || Boolean.parseBoolean(jtaEnabledConfiguration.getValue());
+
+        if (!isJtaEnabled) {
+            isXaEnabled = false;
+        }
+
+        Optional<String> driver = Database.getDriver(value.get(), isXaEnabled);
+
+        if (driver.isPresent()) {
+            return driver;
+        }
+
+        return value;
     }
 
-    private static String toDatabaseKind(String db, ConfigSourceInterceptorContext context) {
-        Optional<String> databaseKind = Database.getDatabaseKind(db);
+    private static Optional<String> toDatabaseKind(Optional<String> db, ConfigSourceInterceptorContext context) {
+        if (isJpaStore()) {
+            return Database.getDatabaseKind(Database.Vendor.POSTGRES.name().toLowerCase());
+        }
+
+        Optional<String> databaseKind = Database.getDatabaseKind(db.get());
 
         if (databaseKind.isPresent()) {
-            return databaseKind.get();
+            return databaseKind;
         }
 
-        addInitializationException(invalidDatabaseVendor(db, Database.getAliases()));
+        addInitializationException(invalidDatabaseVendor(db.get(), Database.getAliases()));
 
-        return "h2";
+        return of("h2");
     }
 
-    private static String resolveUsername(String value, ConfigSourceInterceptorContext context) {
-        if (isDevModeDatabase(context)) {
-            return "sa";
+    private static Optional<String> resolveDatabaseVendor(Optional<String> db, ConfigSourceInterceptorContext context) {
+        if (isJpaStore()) {
+            return of(Database.Vendor.POSTGRES.name().toLowerCase());
         }
 
-        return Database.getDatabaseKind(value).isEmpty() ? value : null;
+        if (db.isEmpty()) {
+            return of("dev-file");
+        }
+
+        return db;
     }
 
-    private static String resolvePassword(String value, ConfigSourceInterceptorContext context) {
+    private static Optional<String> resolveUsername(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (isDevModeDatabase(context)) {
-            return "password";
+            return of("sa");
         }
 
-        return Database.getDatabaseKind(value).isEmpty() ? value : null;
+        return Database.getDatabaseKind(value.get()).isEmpty() ? value : null;
+    }
+
+    private static Optional<String> resolvePassword(Optional<String> value, ConfigSourceInterceptorContext context) {
+        if (isDevModeDatabase(context)) {
+            return of("password");
+        }
+
+        return Database.getDatabaseKind(value.get()).isEmpty() ? value : null;
     }
 
     private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
-        String db = context.proceed("kc.db").getValue();
+        if (isJpaStore()) {
+            return false;
+        }
+
+        String db = Configuration.getConfig().getConfigValue("kc.db").getValue();
         return Database.getDatabaseKind(db).get().equals(DatabaseKind.H2);
     }
 
-    private static String transformDialect(String db, ConfigSourceInterceptorContext context) {
-        Optional<String> databaseKind = Database.getDatabaseKind(db);
+    private static Optional<String> transformDialect(Optional<String> db, ConfigSourceInterceptorContext context) {
+        if (isJpaStore()) {
+            return of("org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
+        }
+
+        Optional<String> databaseKind = Database.getDatabaseKind(db.get());
 
         if (databaseKind.isEmpty()) {
             return db;
         }
 
-        return Database.getDialect(db).orElse(Database.getDialect("dev-file").get());
+        Optional<String> dialect = Database.getDialect(db.get());
+
+        if (dialect.isPresent()) {
+            return dialect;
+        }
+
+        return Database.getDialect("dev-file");
+    }
+
+    private static String getDefaultVendor() {
+        if (isJpaStore()) {
+            return Database.Vendor.POSTGRES.name().toLowerCase();
+        }
+
+        return "dev-file";
+    }
+
+    private static boolean isJpaStore() {
+        String storage = getRawValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey()));
+        return storage != null && StorageOptions.StorageType.jpa.name().equals(storage);
     }
 }

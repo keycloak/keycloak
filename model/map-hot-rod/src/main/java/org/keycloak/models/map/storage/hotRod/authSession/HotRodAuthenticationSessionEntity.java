@@ -61,7 +61,7 @@ public class HotRodAuthenticationSessionEntity extends AbstractHotRodEntity {
     public Set<String> clientScopes;
 
     @ProtoField(number = 8)
-    public Set<HotRodPair<String, HotRodExecutionStatus>> executionStatuses;
+    public Set<HotRodPair<String, Integer>> executionStatuses;
 
     @ProtoField(number = 9)
     public String protocol;
@@ -82,20 +82,20 @@ public class HotRodAuthenticationSessionEntity extends AbstractHotRodEntity {
 
         @Override
         public Map<String, AuthenticationSessionModel.ExecutionStatus> getExecutionStatuses() {
-            Set<HotRodPair<String, HotRodExecutionStatus>> executionStatuses = getHotRodEntity().executionStatuses;
+            Set<HotRodPair<String, Integer>> executionStatuses = getHotRodEntity().executionStatuses;
             if (executionStatuses == null) {
                 return Collections.emptyMap();
             }
             return executionStatuses.stream().collect(Collectors.toMap(HotRodPair::getKey,
-                    v -> AuthenticationSessionModel.ExecutionStatus.valueOf(v.getValue().name())));
+                    v -> AuthenticationSessionModel.ExecutionStatus.valueOfInteger(v.getValue())));
         }
 
         @Override
         public void setExecutionStatuses(Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus) {
             HotRodAuthenticationSessionEntity hotRodEntity = getHotRodEntity();
-            Set<HotRodPair<String, HotRodExecutionStatus>> executionStatusSet = executionStatus == null ? null :
+            Set<HotRodPair<String, Integer>> executionStatusSet = executionStatus == null ? null :
                     executionStatus.entrySet().stream()
-                            .map(e -> new HotRodPair<>(e.getKey(), HotRodExecutionStatus.valueOf(e.getValue().name())))
+                            .map(e -> new HotRodPair<>(e.getKey(), e.getValue().getStableIndex()))
                             .collect(Collectors.toSet());
             hotRodEntity.updated |= ! Objects.equals(hotRodEntity.executionStatuses, executionStatusSet);
             hotRodEntity.executionStatuses = executionStatusSet;
@@ -109,7 +109,7 @@ public class HotRodAuthenticationSessionEntity extends AbstractHotRodEntity {
             }
             boolean valueUndefined = status == null;
             hotRodEntity.updated |= HotRodTypesUtils.removeFromSetByMapKey(hotRodEntity.executionStatuses, authenticator, HotRodTypesUtils::getKey);
-            hotRodEntity.updated |= !valueUndefined && hotRodEntity.executionStatuses.add(new HotRodPair<>(authenticator, HotRodExecutionStatus.valueOf(status.name())));
+            hotRodEntity.updated |= !valueUndefined && hotRodEntity.executionStatuses.add(new HotRodPair<>(authenticator, status.getStableIndex()));
         }
     }
 

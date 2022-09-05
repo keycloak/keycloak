@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -47,6 +49,7 @@ public class HttpMethod<R> {
     protected final Configuration configuration;
     protected final Map<String, String> headers;
     protected final Map<String, List<String>> params;
+    private static final Logger logger = Logger.getLogger(HttpMethod.class.getName());
     private HttpMethodResponse<R> response;
 
     public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder) {
@@ -90,6 +93,10 @@ public class HttpMethod<R> {
 
             StatusLine statusLine = response.getStatusLine();
             int statusCode = statusLine.getStatusCode();
+
+            if(logger.isLoggable(Level.FINE)) {
+                logger.fine( "Response from server: " + statusCode + " / " + statusLine.getReasonPhrase() +  " / Body : " + new String(bytes != null? bytes: new byte[0]));
+            }
 
             if (statusCode < 200 || statusCode >= 300) {
                 throw new HttpResponseException("Unexpected response from server: " + statusCode + " / " + statusLine.getReasonPhrase(), statusCode, statusLine.getReasonPhrase(), bytes);

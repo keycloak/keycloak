@@ -240,11 +240,14 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
                 .clientId("test-device")
                 .secret("secret")
                 .attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
+                .attribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+")
                 .build();
         clients.add(app);
 
         ClientRepresentation appPublic = ClientBuilder.create().id(KeycloakModelUtils.generateId()).publicClient()
-                .clientId(DEVICE_APP_PUBLIC).attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
+                .clientId(DEVICE_APP_PUBLIC)
+                .attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
+                .attribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+")
                 .build();
         clients.add(appPublic);
 

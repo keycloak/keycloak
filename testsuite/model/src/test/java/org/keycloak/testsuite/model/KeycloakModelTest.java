@@ -16,12 +16,12 @@
  */
 package org.keycloak.testsuite.model;
 
-import org.infinispan.commons.CacheConfigurationException;
-import org.infinispan.manager.EmbeddedCacheManagerStartupException;
 import org.junit.Assert;
 import org.keycloak.Config.Scope;
 import org.keycloak.authorization.AuthorizationSpi;
 import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.cluster.ClusterSpi;
 import org.keycloak.common.util.Time;
@@ -73,11 +73,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -213,6 +211,7 @@ public abstract class KeycloakModelTest {
 
     private static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .add(AuthorizationSpi.class)
+      .add(PolicySpi.class)
       .add(ClientScopeSpi.class)
       .add(ClientSpi.class)
       .add(ComponentFactorySpi.class)
@@ -235,6 +234,7 @@ public abstract class KeycloakModelTest {
     private static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
       .add(ComponentFactoryProviderFactory.class)
       .add(DefaultAuthorizationProviderFactory.class)
+      .add(PolicyProviderFactory.class)
       .add(DefaultExecutorsProviderFactory.class)
       .add(DeploymentStateProviderFactory.class)
       .add(DatastoreProviderFactory.class)
@@ -277,7 +277,6 @@ public abstract class KeycloakModelTest {
      * local to the thread that calls this method, allowing for per-thread customization. This in turn allows
      * testing of several parallel session factories which can be used to simulate several servers
      * running in parallel.
-     * @return
      */
     public static KeycloakSessionFactory createKeycloakSessionFactory() {
         int factoryIndex = FACTORY_COUNT.incrementAndGet();
@@ -340,7 +339,7 @@ public abstract class KeycloakModelTest {
     /**
      * Runs the given {@code task} in {@code numThreads} parallel threads, each thread operating
      * in the context of a fresh {@link KeycloakSessionFactory} independent of each other thread.
-     *
+     * <p>
      * Will throw an exception when the thread throws an exception or if the thread doesn't complete in time.
      *
      * @see #inIndependentFactory
@@ -362,53 +361,27 @@ public abstract class KeycloakModelTest {
             }
         });
         try {
-        /*
-            workaround for Infinispan 12.1.7.Final to prevent an internal Infinispan NullPointerException
-            when multiple nodes tried to join at the same time by starting them sequentially,
-            although that does not catch 100% of all occurrences.
-            Already fixed in Infinispan 13.
-            https://issues.redhat.com/browse/ISPN-13231
-        */
-            Semaphore sem = new Semaphore(1);
             CountDownLatch start = new CountDownLatch(numThreads);
             CountDownLatch stop = new CountDownLatch(numThreads);
-            Callable<?> independentTask = () -> {
-                AtomicBoolean locked = new AtomicBoolean(false);
+            Callable<?> independentTask = () -> inIndependentFactory(() -> {
+
+                // use the latch to ensure that all caches are online while the transaction below runs to avoid a RemoteException
+                start.countDown();
+                start.await();
+
                 try {
-                    sem.acquire();
-                    locked.set(true);
-                    Object val = inIndependentFactory(() -> {
-                        sem.release();
-                        locked.set(false);
+                    task.run();
 
-                        // use the latch to ensure that all caches are online while the transaction below runs to avoid a RemoteException
-                        start.countDown();
-                        start.await();
-
-                        try {
-                            task.run();
-
-                            // use the latch to ensure that all caches are online while the transaction above runs to avoid a RemoteException
-                            // otherwise might fail with "Cannot wire or start components while the registry is not running" during shutdown
-                            // https://issues.redhat.com/browse/ISPN-9761
-                        } finally {
-                            stop.countDown();
-                        }
-                        stop.await();
-
-                        sem.acquire();
-                        locked.set(true);
-                        return null;
-                    });
-                    sem.release();
-                    locked.set(false);
-                    return val;
+                    // use the latch to ensure that all caches are online while the transaction above runs to avoid a RemoteException
+                    // otherwise might fail with "Cannot wire or start components while the registry is not running" during shutdown
+                    // https://issues.redhat.com/browse/ISPN-9761
                 } finally {
-                    if (locked.get()) {
-                        sem.release();
-                    }
+                    stop.countDown();
                 }
-            };
+                stop.await();
+
+                return null;
+            });
 
             // submit tasks, and wait for the results without cancelling execution so that we'll be able to analyze the thread dump
             List<? extends Future<?>> tasks = IntStream.range(0, numThreads)
@@ -479,53 +452,16 @@ public abstract class KeycloakModelTest {
     /**
      * Runs the given {@code task} in a context of a fresh {@link KeycloakSessionFactory} which is created before
      * running the task and destroyed afterwards.
-     * @return
      */
     public static <T> T inIndependentFactory(Callable<T> task) {
         if (USE_DEFAULT_FACTORY) {
             throw new IllegalStateException("USE_DEFAULT_FACTORY must be false to use an independent factory");
         }
         KeycloakSessionFactory original = getFactory();
-        int retries = 10;
-        KeycloakSessionFactory factory = null;
-        do {
-            try {
-                factory = createKeycloakSessionFactory();
-            } catch (CacheConfigurationException | EmbeddedCacheManagerStartupException ex) {
-                if (retries > 0) {
-                    /*
-                        workaround for Infinispan 12.1.7.Final for a NullPointerException
-                        when multiple nodes tried to join at the same time. Retry until this succeeds.
-                        Already fixed in Infinispan 13.
-                        https://issues.redhat.com/browse/ISPN-13231
-                    */
-                    LOG.warn("initialization failed, retrying", ex);
-                    --retries;
-                } else {
-                    throw ex;
-                }
-            }
-        } while (factory == null);
+        KeycloakSessionFactory factory = createKeycloakSessionFactory();
         try {
             setFactory(factory);
-            do {
-                try {
-                    return task.call();
-                } catch (CacheConfigurationException | EmbeddedCacheManagerStartupException ex) {
-                    if (retries > 0) {
-                    /*
-                        workaround for Infinispan 12.1.7.Final for a NullPointerException
-                        when multiple nodes tried to join at the same time. Retry until this succeeds.
-                        Already fixed in Infinispan 13.
-                        https://issues.redhat.com/browse/ISPN-13231
-                    */
-                        LOG.warn("initialization failed, retrying", ex);
-                        -- retries;
-                    } else {
-                        throw ex;
-                    }
-                }
-            } while (true);
+            return task.call();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         } finally {
@@ -581,10 +517,6 @@ public abstract class KeycloakModelTest {
         return MODEL_PARAMETERS.stream().flatMap(mp -> mp.getParameters(clazz)).filter(Objects::nonNull);
     }
 
-    protected <T> void withEach(Class<T> parameterClazz, Consumer<T> what) {
-        getParameters(parameterClazz).forEach(what);
-    }
-
     protected <T> void inRolledBackTransaction(T parameter, BiConsumer<KeycloakSession, T> what) {
         KeycloakSession session = getFactory().create();
         session.getTransactionManager().begin();
@@ -629,10 +561,6 @@ public abstract class KeycloakModelTest {
      * Convenience method for {@link #inComittedTransaction(java.util.function.Consumer)} that
      * obtains realm model from the session and puts it into session context before
      * running the {@code what} task.
-     * @param <R>
-     * @param realmId
-     * @param what
-     * @return
      */
     protected <R> R withRealm(String realmId, BiFunction<KeycloakSession, RealmModel, R> what) {
         return inComittedTransaction(session -> {

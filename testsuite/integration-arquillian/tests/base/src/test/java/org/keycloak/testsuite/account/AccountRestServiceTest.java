@@ -33,6 +33,7 @@ import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -68,6 +69,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.validate.validators.EmailValidator;
 
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
@@ -76,12 +78,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -533,14 +537,28 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         requiredAction.setId("12345");
         requiredAction.setName(WebAuthnRegisterFactory.PROVIDER_ID);
         requiredAction.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
-        testRealm().flows().registerRequiredAction(requiredAction);
+
+        try {
+            testRealm().flows().registerRequiredAction(requiredAction);
+        } catch (ClientErrorException e) {
+            assertThat(e.getResponse(), notNullValue());
+            assertThat(e.getResponse().getStatus(), is(409));
+        }
+
         getCleanup().addRequiredAction(requiredAction.getProviderId());
 
         requiredAction = new RequiredActionProviderSimpleRepresentation();
         requiredAction.setId("6789");
         requiredAction.setName(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
         requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
-        testRealm().flows().registerRequiredAction(requiredAction);
+
+        try {
+            testRealm().flows().registerRequiredAction(requiredAction);
+        } catch (ClientErrorException e) {
+            assertThat(e.getResponse(), notNullValue());
+            assertThat(e.getResponse().getStatus(), is(409));
+        }
+
         getCleanup().addRequiredAction(requiredAction.getProviderId());
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
@@ -945,7 +963,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(app.getConsent().getGrantedScopes().isEmpty());
         ConsentScopeRepresentation grantedScope = app.getConsent().getGrantedScopes().get(0);
         assertEquals(clientScopeRepresentation.getId(), grantedScope.getId());
-        assertEquals(clientScopeRepresentation.getName(), grantedScope.getName());
+        assertEquals(clientScopeRepresentation.getAttributes().get(ClientScopeModel.CONSENT_SCREEN_TEXT) != null ? clientScopeRepresentation.getAttributes().get(ClientScopeModel.CONSENT_SCREEN_TEXT) : clientScopeRepresentation.getName(), grantedScope.getName());
     }
 
     @Test

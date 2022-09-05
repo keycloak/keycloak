@@ -127,6 +127,50 @@ public interface UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("username") String username, @QueryParam("exact") Boolean exact);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByUsername(@QueryParam("username") String username, @QueryParam("exact") Boolean exact);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByEmail(@QueryParam("email") String email, @QueryParam("exact") Boolean exact);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByFirstName(@QueryParam("firstName") String email, @QueryParam("exact") Boolean exact);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByLastName(@QueryParam("lastName") String email, @QueryParam("exact") Boolean exact);
+
+    /**
+     * Search for users based on the given filters.
+     *
+     * @param username a value contained in username
+     * @param firstName a value contained in first name
+     * @param lastName a value contained in last name
+     * @param email a value contained in email
+     * @param firstResult the position of the first result to retrieve
+     * @param maxResults the maximum number of results to retrieve
+     * @param enabled only return enabled or disabled users
+     * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first
+     *        and last name, email, enabled state, email verification state, federation link, and access.
+     *        Note that it means that namely user attributes, required actions, and not before are not returned.)
+     * @param exact search with exact matching by filters (username, email, firstName, lastName)
+     * @return a list of {@link UserRepresentation}
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> search(@QueryParam("username") String username,
+                                    @QueryParam("firstName") String firstName,
+                                    @QueryParam("lastName") String lastName,
+                                    @QueryParam("email") String email,
+                                    @QueryParam("first") Integer firstResult,
+                                    @QueryParam("max") Integer maxResults,
+                                    @QueryParam("enabled") Boolean enabled,
+                                    @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                    @QueryParam("exact") Boolean exact);
+
     /**
      * Search for users whose username or email matches the value provided by {@code search}. The {@code search}
      * argument also allows finding users by specific attributes as follows:

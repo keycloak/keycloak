@@ -28,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
-import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestObjectParser;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 
@@ -80,7 +79,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         if (requestParam != null) {
             // parses the request object if PAR was registered using JAR
             // parameters from requets object have precedence over those sent directly in the request
-            new AuthzEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
+            new ParEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
         } else {
             super.parseRequest(request);
         }

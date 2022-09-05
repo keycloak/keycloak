@@ -19,7 +19,6 @@ package org.keycloak.authentication.requiredactions;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.*;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.common.util.Time;
@@ -45,7 +44,7 @@ import javax.ws.rs.core.*;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class VerifyEmail implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
+public class VerifyEmail implements RequiredActionProvider, RequiredActionFactory {
     private static final Logger logger = Logger.getLogger(VerifyEmail.class);
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -106,14 +105,6 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
         return this;
-    }
-
-
-    @Override
-    public RequiredActionProvider createDisplay(KeycloakSession session, String displayType) {
-        if (displayType == null) return this;
-        if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
-        return ConsoleVerifyEmail.SINGLETON;
     }
 
     @Override

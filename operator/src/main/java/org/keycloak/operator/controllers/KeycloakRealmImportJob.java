@@ -17,13 +17,14 @@
 package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -37,11 +38,14 @@ import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus
 import java.util.List;
 import java.util.Optional;
 
+import static org.keycloak.operator.Constants.DEFAULT_DIST_CONFIG;
+import static org.keycloak.operator.controllers.KeycloakDeployment.getEnvVarName;
+
 public class KeycloakRealmImportJob extends OperatorManagedResource {
 
     private final Keycloak keycloak;
     private final KeycloakRealmImport realmCR;
-    private final Deployment existingDeployment;
+    private final StatefulSet existingDeployment;
     private final Job existingJob;
     private final String secretName;
     private final String volumeName;
@@ -80,10 +84,10 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
                 .get();
     }
 
-    private Deployment fetchExistingDeployment() {
+    private StatefulSet fetchExistingDeployment() {
         return client
                 .apps()
-                .deployments()
+                .statefulSets()
                 .inNamespace(getNamespace())
                 .withName(getKeycloakName())
                 .get();
@@ -128,6 +132,26 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
 
         buildKeycloakJobContainer(keycloakPodTemplate.getSpec().getContainers().get(0));
         keycloakPodTemplate.getSpec().getVolumes().add(buildSecretVolume());
+
+        var labels = keycloakPodTemplate.getMetadata().getLabels();
+
+        // The Job should not be selected with app=keycloak
+        labels.put("app", "keycloak-realm-import");
+
+        var envvars = keycloakPodTemplate
+                .getSpec()
+                .getContainers()
+                .get(0)
+                .getEnv();
+
+        var cacheEnvVarName = getEnvVarName("cache");
+        var healthEnvVarName = getEnvVarName("health-enabled");
+        envvars.removeIf(e -> e.getName().equals(cacheEnvVarName) || e.getName().equals(healthEnvVarName));
+
+        // The Job should not connect to the cache
+        envvars.add(new EnvVarBuilder().withName(cacheEnvVarName).withValue("local").build());
+        // The Job doesn't need health to be enabled
+        envvars.add(new EnvVarBuilder().withName(healthEnvVarName).withValue("false").build());
 
         return buildJob(keycloakPodTemplate);
     }
@@ -205,7 +229,7 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
     private String getRealmName() { return realmCR.getSpec().getRealm().getRealm(); }
 
     private void rollingRestart() {
-        client.apps().deployments()
+        client.apps().statefulSets()
                 .inNamespace(getNamespace())
                 .withName(getKeycloakName())
                 .rolling().restart();

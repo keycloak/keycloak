@@ -17,11 +17,15 @@
 
 package org.keycloak.models.map.storage.hotRod.authorization;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodStringPair;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
@@ -30,14 +34,34 @@ import java.util.Set;
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.authorization.entity.MapPolicyEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.authorization.HotRodPolicyEntity.AbstractHotRodPolicyEntity"
+        inherits = "org.keycloak.models.map.storage.hotRod.authorization.HotRodPolicyEntity.AbstractHotRodPolicyEntity",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.authorization.model.Policy",
+        cacheName = "authz"
 )
 @ProtoDoc("@Indexed")
+@ProtoDoc("schema-version: " + HotRodPolicyEntity.VERSION)
 public class HotRodPolicyEntity extends AbstractHotRodEntity {
 
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodPolicyEntity.class
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
+            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class}
+    )
+    public interface HotRodPolicyEntitySchema extends GeneratedSchema {
+        HotRodPolicyEntitySchema INSTANCE = new HotRodPolicyEntitySchemaImpl();
+    }
+
+
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 1, required = true)
-    public int entityVersion = 1;
+    @ProtoField(number = 1)
+    public Integer entityVersion = VERSION;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 2)
@@ -63,10 +87,10 @@ public class HotRodPolicyEntity extends AbstractHotRodEntity {
     public String type;
 
     @ProtoField(number = 8)
-    public HotRodDecisionStrategy decisionStrategy;
+    public Integer decisionStrategy;
 
     @ProtoField(number = 9)
-    public HotRodLogic logic;
+    public Integer logic;
 
     @ProtoField(number = 10)
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")

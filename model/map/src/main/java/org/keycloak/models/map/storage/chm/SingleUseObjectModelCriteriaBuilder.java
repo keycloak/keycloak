@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.ActionTokenValueModel;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.storage.SearchableModelField;
 
@@ -31,13 +32,16 @@ public class SingleUseObjectModelCriteriaBuilder implements ModelCriteriaBuilder
 
     private String actionVerificationNonce;
 
+    private String objectKey;
+
     public SingleUseObjectModelCriteriaBuilder() {
     }
 
-    public SingleUseObjectModelCriteriaBuilder(String userId, String actionId, String actionVerificationNonce) {
+    public SingleUseObjectModelCriteriaBuilder(String userId, String actionId, String actionVerificationNonce, String objectKey) {
         this.userId = userId;
         this.actionId = actionId;
         this.actionVerificationNonce = actionVerificationNonce;
+        this.objectKey = objectKey;
     }
 
     @Override
@@ -48,8 +52,10 @@ public class SingleUseObjectModelCriteriaBuilder implements ModelCriteriaBuilder
             actionId = value[0].toString();
         } else if (modelField == org.keycloak.models.ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE) {
             actionVerificationNonce = value[0].toString();
+        } else if (modelField == ActionTokenValueModel.SearchableFields.OBJECT_KEY) {
+            objectKey = value[0].toString();
         }
-        return new SingleUseObjectModelCriteriaBuilder(userId, actionId, actionVerificationNonce);
+        return new SingleUseObjectModelCriteriaBuilder(userId, actionId, actionVerificationNonce, objectKey);
     }
 
     @Override
@@ -57,6 +63,7 @@ public class SingleUseObjectModelCriteriaBuilder implements ModelCriteriaBuilder
         String userId = null;
         String actionId = null;
         String actionVerificationNonce = null;
+        String objectKey = null;
 
         for (ModelCriteriaBuilder builder: builders) {
             SingleUseObjectModelCriteriaBuilder suoMcb = (SingleUseObjectModelCriteriaBuilder) builder;
@@ -69,8 +76,11 @@ public class SingleUseObjectModelCriteriaBuilder implements ModelCriteriaBuilder
             if (suoMcb.actionVerificationNonce != null) {
                 actionVerificationNonce = suoMcb.actionVerificationNonce;
             }
+            if (suoMcb.objectKey != null) {
+                objectKey = suoMcb.objectKey;
+            }
         }
-        return new SingleUseObjectModelCriteriaBuilder(userId, actionId, actionVerificationNonce);
+        return new SingleUseObjectModelCriteriaBuilder(userId, actionId, actionVerificationNonce, objectKey);
     }
 
     @Override
@@ -84,10 +94,11 @@ public class SingleUseObjectModelCriteriaBuilder implements ModelCriteriaBuilder
     }
 
     public boolean isValid() {
-        return userId != null && actionId != null && actionVerificationNonce != null;
+        return (userId != null && actionId != null && actionVerificationNonce != null) || objectKey != null;
     }
 
     public String getKey() {
+        if (objectKey != null) return objectKey;
         return userId + ":" + actionId + ":" + actionVerificationNonce;
     }
 }

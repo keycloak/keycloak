@@ -55,7 +55,7 @@ import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.hotRod.common.HotRodUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
+public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends AbstractEntity & HotRodEntityDelegate<E>, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
 
     private static final Logger LOG = Logger.getLogger(HotRodMapStorage.class);
 
@@ -223,10 +223,14 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
         MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
 
         if (sessionTransaction == null) {
-            Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
-            sessionTransaction = new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
+            sessionTransaction = createTransactionInternal(session);
             session.setAttribute("map-transaction-" + hashCode(), sessionTransaction);
         }
         return sessionTransaction;
+    }
+
+    protected MapKeycloakTransaction<V, M> createTransactionInternal(KeycloakSession session) {
+        Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
+        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
     }
 }

@@ -21,6 +21,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntityDelegate;
 import org.keycloak.models.map.storage.jpa.Constants;
@@ -33,8 +34,8 @@ import org.keycloak.models.map.storage.jpa.authorization.permission.entity.JpaPe
 public class JpaPermissionMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaPermissionEntity, MapPermissionTicketEntity, PermissionTicket> {
 
     @SuppressWarnings("unchecked")
-    public JpaPermissionMapKeycloakTransaction(EntityManager em) {
-        super(JpaPermissionEntity.class, PermissionTicket.class, em);
+    public JpaPermissionMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+        super(session, JpaPermissionEntity.class, PermissionTicket.class, em);
     }
 
     @Override

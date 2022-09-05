@@ -88,14 +88,14 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         if (distConfig != null) {
             onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
 
+            if (dist == null) {
+                dist = createDistribution(distConfig);
+            }
+
+            onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
+            onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
+
             if (launch != null) {
-                if (dist == null) {
-                    dist = createDistribution(distConfig);
-                }
-
-                onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
-                onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
-
                 result = dist.run(Arrays.asList(launch.value()));
             }
         } else {
@@ -226,7 +226,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        return type == LaunchResult.class || type == RawDistRootPath.class || (dist != null && type == KeycloakDistribution.class);
+        return type == LaunchResult.class || type == RawDistRootPath.class || type == KeycloakDistribution.class;
     }
 
     private void configureProfile(ExtensionContext context) {
@@ -255,10 +255,15 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
                 databaseContainer.start();
 
-                dist.setProperty("db", database.alias());
-                dist.setProperty("db-username", databaseContainer.getUsername());
-                dist.setProperty("db-password", databaseContainer.getPassword());
-                dist.setProperty("db-url", databaseContainer.getJdbcUrl());
+                if (database.buildOptions().length == 0) {
+                    dist.setProperty("db", database.alias());
+                } else {
+                    for (String option : database.buildOptions()) {
+                        dist.setProperty(option.substring(0, option.indexOf('=')), option.substring(option.indexOf('=') + 1));
+                    }
+                }
+
+                databaseContainer.configureDistribution(dist);
 
                 dist.run("build");
             }

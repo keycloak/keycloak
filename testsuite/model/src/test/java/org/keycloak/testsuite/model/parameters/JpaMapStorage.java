@@ -32,7 +32,9 @@ import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
 import org.keycloak.models.map.deploymentState.MapDeploymentStateProviderFactory;
+import org.keycloak.models.map.events.MapEventStoreProviderFactory;
 import org.keycloak.models.map.group.MapGroupProviderFactory;
+import org.keycloak.models.map.keys.MapPublicKeyStorageProviderFactory;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureProviderFactory;
 import org.keycloak.models.map.realm.MapRealmProviderFactory;
 import org.keycloak.models.map.role.MapRoleProviderFactory;
@@ -94,14 +96,14 @@ public class JpaMapStorage extends KeycloakModelParameters {
           .spi("role").provider(MapRoleProviderFactory.PROVIDER_ID)                                                     .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi(DeploymentStateSpi.NAME).provider(MapDeploymentStateProviderFactory.PROVIDER_ID)                         .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi(StoreFactorySpi.NAME).provider(MapAuthorizationStoreFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
-          .spi("user").provider(MapUserProviderFactory.PROVIDER_ID)                                                     .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+          .spi("user").provider(MapUserProviderFactory.PROVIDER_ID)                                                     .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).provider(MapUserLoginFailureProviderFactory.PROVIDER_ID)                       .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("dblock").provider(NoLockingDBLockProviderFactory.PROVIDER_ID)                                           .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-          .spi(ActionTokenStoreSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID)                        .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-          .spi(SingleUseObjectSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID)                         .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-          .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                 .config("storage-user-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                                                                                                                        .config("storage-client-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-          .spi(EventStoreSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                  .config("storage-admin-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
+          .spi(ActionTokenStoreSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID)                        .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
+          .spi(SingleUseObjectSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID)                         .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
+          .spi("publicKeyStorage").provider(MapPublicKeyStorageProviderFactory.PROVIDER_ID)                             .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+          .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
+          .spi(EventStoreSpi.NAME).provider(MapEventStoreProviderFactory.PROVIDER_ID)                                   .config("storage-admin-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
                                                                                                                         .config("storage-auth-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID);
     }
 }

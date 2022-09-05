@@ -386,12 +386,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     private JWEAlgorithmProvider getJweAlgorithmProvider(String algAlgorithm) {
-        JWEAlgorithmProvider jweAlgorithmProvider = null;
-        if (JWEConstants.RSA1_5.equals(algAlgorithm) || JWEConstants.RSA_OAEP.equals(algAlgorithm) ||
-                JWEConstants.RSA_OAEP_256.equals(algAlgorithm)) {
-            jweAlgorithmProvider = new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
-        }
-        return jweAlgorithmProvider;
+        return new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
     }
     private JWEEncryptionProvider getJweEncryptionProvider(String encAlgorithm) {
         JWEEncryptionProvider jweEncryptionProvider = null;
@@ -705,6 +700,26 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         try {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "");
+            response.close();
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testUnsuccessfulUserInfoRequestwithDuplicatedParams() {
+        Client client = AdminClientUtil.createResteasyClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+            Form form = new Form();
+            form.param("access_token", accessTokenResponse.getToken());
+            form.param("access_token", accessTokenResponse.getToken());
+
+            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            Response response = userInfoTarget.request().post(Entity.form(form));
             response.close();
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         } finally {

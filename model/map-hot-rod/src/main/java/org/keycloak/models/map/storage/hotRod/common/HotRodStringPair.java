@@ -23,6 +23,10 @@ import org.infinispan.protostream.annotations.ProtoField;
 import java.util.Objects;
 
 /**
+ * !!! Please do not change this class !!!
+ *
+ * If some change is needed please create a new version of this class and solve the migration on top-level entities.
+ *
  * Indexed Hot Rod pair entity where both key and value are {@link String} type. The entity should be used when
  * there is a need to search by key or/and value. Otherwise {@link HotRodPair<String, String>} should be used.
  */

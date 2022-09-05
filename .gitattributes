@@ -7,6 +7,7 @@
 *.jsp text eol=lf
 *.md text eol=lf
 *.properties text eol=lf
+*.sh text eol=lf
 *.svg text auto
 *.xml text eol=lf
 *.xsl text eol=lf

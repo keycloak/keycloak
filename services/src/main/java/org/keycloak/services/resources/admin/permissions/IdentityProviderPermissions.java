@@ -70,6 +70,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
 
     private void initialize(IdentityProviderModel idp) {
         ResourceServer server = root.initializeRealmResourceServer();
+        if (server == null) return;
         Scope exchangeToScope = root.initializeScope(TOKEN_EXCHANGE, server);
 
         String resourceName = getResourceName(idp);
@@ -139,6 +140,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
 
     @Override
     public Map<String, String> getPermissions(IdentityProviderModel idp) {
+        if (authz==null) return null;
         initialize(idp);
         Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(TOKEN_EXCHANGE, exchangeToPermission(idp).getId());

@@ -25,8 +25,17 @@
     </resources>
 
     <dependencies>
+        <module name="org.keycloak.keycloak-admin-ui" services="import" export="true">
+            <imports>
+                <include path="META-INF*"/>
+            </imports>
+            <exports>
+                <include path="META-INF*"/>
+            </exports>
+        </module>
         <module name="org.keycloak.keycloak-common" services="import"/>
         <module name="org.keycloak.keycloak-core" services="import"/>
+        <module name="org.keycloak.keycloak-crypto-default" services="import"/>
         <module name="org.keycloak.keycloak-js-adapter" services="import"/>
         <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
         <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
@@ -47,9 +56,6 @@
         <!-- Authorization -->
         <module name="org.keycloak.keycloak-authz-policy-common" services="import"/>
 
-        <!-- Openshift Client Storage -->
-        <module name="com.openshift.openshift-restclient-java" services="import"/>
-
         <module name="com.googlecode.owasp-java-html-sanitizer"/>
         <module name="com.google.guava"/>
         <module name="org.freemarker"/>
@@ -68,7 +74,6 @@
         <module name="com.google.zxing.core"/>
         <module name="com.google.zxing.javase"/>
         <module name="org.jboss.logging"/>
-        <module name="org.bouncycastle" />
         <module name="javax.api"/>
         <module name="javax.activation.api"/>
         <module name="javax.json.api"/>

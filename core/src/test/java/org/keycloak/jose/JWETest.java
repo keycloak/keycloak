@@ -17,30 +17,40 @@
 
 package org.keycloak.jose;
 
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.JWEUtils;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.enc.AesCbcHmacShaJWEEncryptionProvider;
+import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+import org.keycloak.rule.CryptoInitRule;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.jose.jwe.*;
-import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
-import org.keycloak.jose.jwe.alg.RsaKeyEncryptionJWEAlgorithmProvider;
-import org.keycloak.jose.jwe.enc.AesCbcHmacShaJWEEncryptionProvider;
-import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
-import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
-
 /**
+ * This is not tested in keycloak-core. The subclasses should be created in the crypto modules to make sure it is tested with corresponding modules (bouncycastle VS bouncycastle-fips)
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class JWETest {
+public abstract class JWETest {
+
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     private static final String PAYLOAD = "Hello world! How are you man? I hope you are fine. This is some quite a long text, which is much longer than just simple 'Hello World'";
 
@@ -70,7 +80,7 @@ public class JWETest {
 
 
     private void testDirectEncryptAndDecrypt(Key aesKey, Key hmacKey, String encAlgorithm, String payload, boolean sysout) throws Exception {
-        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIR, encAlgorithm, null);
+        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIRECT, encAlgorithm, null);
         JWE jwe = new JWE()
                 .header(jweHeader)
                 .content(payload.getBytes(StandardCharsets.UTF_8));
@@ -123,17 +133,6 @@ public class JWETest {
         long took = System.currentTimeMillis() - start;
         System.out.println("Iterations: " + iterations + ", took: " + took);
     }
-
-    @Test
-    public void testPassword() {
-        byte[] salt = JWEUtils.generateSecret(8);
-        String encodedSalt = Base64.encodeBytes(salt);
-        String jwe = JWE.encryptUTF8("geheim", encodedSalt, PAYLOAD);
-        String decodedContent = JWE.decryptUTF8("geheim", encodedSalt, jwe);
-        Assert.assertEquals(PAYLOAD, decodedContent);
-    }
-
-
 
     @Test
     public void testAesKW_Aes128CbcHmacSha256() throws Exception {
@@ -274,7 +273,7 @@ public class JWETest {
     private void testKeyEncryption_ContentEncryptionAesGcm(String jweAlgorithmName, String jweEncryptionName) throws Exception {
         // generate key pair for KEK
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
-        JWEAlgorithmProvider jweAlgorithmProvider = new RsaKeyEncryptionJWEAlgorithmProvider(getJcaAlgorithmName(jweAlgorithmName));
+        JWEAlgorithmProvider jweAlgorithmProvider = CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, jweAlgorithmName);
         JWEEncryptionProvider jweEncryptionProvider = new AesGcmJWEEncryptionProvider(jweEncryptionName);
 
         JWEHeader jweHeader = new JWEHeader(jweAlgorithmName, jweEncryptionName, null);
@@ -307,7 +306,7 @@ public class JWETest {
         final SecretKey aesKey = new SecretKeySpec(AES_128_KEY, "AES");
         final SecretKey hmacKey = new SecretKeySpec(HMAC_SHA256_KEY, "HMACSHA2");
 
-        JWEAlgorithmProvider jweAlgorithmProvider = new RsaKeyEncryptionJWEAlgorithmProvider(getJcaAlgorithmName(jweAlgorithmName));
+        JWEAlgorithmProvider jweAlgorithmProvider = CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, jweAlgorithmName);
         JWEEncryptionProvider jweEncryptionProvider = new AesCbcHmacShaJWEEncryptionProvider(jweEncryptionName);
 
         JWEHeader jweHeader = new JWEHeader(jweAlgorithmName, jweEncryptionName, null);
@@ -340,15 +339,4 @@ public class JWETest {
         Assert.assertEquals(PAYLOAD, decodedContent);
     }
 
-    private String getJcaAlgorithmName(String jweAlgorithmName) {
-        String jcaAlgorithmName = null;
-        if (JWEConstants.RSA1_5.equals(jweAlgorithmName)) {
-            jcaAlgorithmName = "RSA/ECB/PKCS1Padding";
-        } else if (JWEConstants.RSA_OAEP.equals(jweAlgorithmName)) {
-            jcaAlgorithmName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
-        } else if (JWEConstants.RSA_OAEP_256.equals(jweAlgorithmName)) {
-            jcaAlgorithmName = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
-        }
-        return jcaAlgorithmName;
-    }
 }

@@ -17,32 +17,55 @@
 
 package org.keycloak.models.map.storage.hotRod.clientscope;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
+import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntityNonIndexed;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.clientscope.MapClientScopeEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.clientscope.HotRodClientScopeEntity.AbstractHotRodClientScopeEntityDelegate"
+        inherits = "org.keycloak.models.map.storage.hotRod.clientscope.HotRodClientScopeEntity.AbstractHotRodClientScopeEntityDelegate",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.models.ClientScopeModel"
 )
 @ProtoDoc("@Indexed")
+@ProtoDoc("schema-version: " + HotRodClientScopeEntity.VERSION)
 public class HotRodClientScopeEntity extends AbstractHotRodEntity  {
+
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodClientScopeEntity.class
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
+            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class, HotRodClientEntity.HotRodClientEntitySchema.class}
+    )
+    public interface HotRodClientScopeEntitySchema extends GeneratedSchema {
+        HotRodClientScopeEntitySchema INSTANCE = new HotRodClientScopeEntitySchemaImpl();
+    }
+
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1)
-    public Integer entityVersion = 1;
+    public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;

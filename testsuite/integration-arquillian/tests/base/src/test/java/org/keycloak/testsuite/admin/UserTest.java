@@ -679,6 +679,16 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByEmailExactMatch() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByEmail("user1@localhost", true);
+        assertEquals(1, users.size());
+
+        users = realm.users().search("@localhost", true);
+        assertEquals(0, users.size());
+    }
+
+    @Test
     public void searchByUsername() {
         createUsers();
 
@@ -750,8 +760,25 @@ public class UserTest extends AbstractAdminTest {
         List<UserRepresentation> users = realm.users().search("username1", true);
         assertEquals(1, users.size());
 
+        users = realm.users().searchByUsername("username1", true);
+        assertEquals(1, users.size());
+
         users = realm.users().search("user", true);
         assertEquals(0, users.size());
+    }
+
+    @Test
+    public void searchByFirstNameExact() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByFirstName("First1", true);
+        assertEquals(1, users.size());
+    }
+
+    @Test
+    public void searchByLastNameExact() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByLastName("Last1", true);
+        assertEquals(1, users.size());
     }
 
     @Test
@@ -1105,6 +1132,88 @@ public class UserTest extends AbstractAdminTest {
         users = realm.users().search("\"user1@localhost\"", null, null);
         assertThat(users, hasSize(1));
         assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+    }
+
+    @Test
+    public void searchWithExactMatch() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("test_username");
+        user.setFirstName("test_first_name");
+        user.setLastName("test_last_name");
+        user.setEmail("test_email@test.com");
+        user.setEnabled(true);
+        user.setEmailVerified(true);
+        createUser(user);
+
+        UserRepresentation user2 = new UserRepresentation();
+        user2.setUsername("test_username2");
+        user2.setFirstName("test_first_name2");
+        user2.setLastName("test_last_name");
+        user2.setEmail("test_email@test.com2");
+        user2.setEnabled(true);
+        user2.setEmailVerified(true);
+        createUser(user2);
+
+        UserRepresentation user3 = new UserRepresentation();
+        user3.setUsername("test_username3");
+        user3.setFirstName("test_first_name");
+        user3.setLastName("test_last_name3");
+        user3.setEmail("test_email@test.com3");
+        user3.setEnabled(true);
+        user3.setEmailVerified(true);
+        createUser(user3);
+
+        List<UserRepresentation> users = realm.users().search(
+                null, null, null, "test_email@test.co",
+                0, 10, null, null, true
+        );
+        assertEquals(0, users.size());
+        users = realm.users().search(
+                null, null, null, "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(1, users.size());
+        users = realm.users().search(
+                null, null, "test_last", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(0, users.size());
+        users = realm.users().search(
+                null, null, "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(1, users.size());
+        users = realm.users().search(
+                null, "test_first", "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(0, users.size());
+        users = realm.users().search(
+                null, "test_first_name", "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(1, users.size());
+        users = realm.users().search(
+                "test_usernam", "test_first_name", "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(0, users.size());
+        users = realm.users().search(
+                "test_username", "test_first_name", "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(1, users.size());
+
+        users = realm.users().search(
+                null, null, "test_last_name", null,
+                0, 10, null, null, true
+        );
+        assertEquals(2, users.size());
+        users = realm.users().search(
+                null, "test_first_name", null, null,
+                0, 10, null, null, true
+        );
+        assertEquals(2, users.size());
     }
 
     @Test

@@ -164,7 +164,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
                 } else {
                     return false;
                 }
-            }).forEach((ProtocolMapperModel mapping) -> {
+            }).collect(Collectors.toList()).forEach((ProtocolMapperModel mapping) -> {
                 PairwiseSubMapperHelper.setSectorIdentifierUri(mapping, sectorIdentifierUri);
                 clientModel.updateProtocolMapper(mapping);
             });

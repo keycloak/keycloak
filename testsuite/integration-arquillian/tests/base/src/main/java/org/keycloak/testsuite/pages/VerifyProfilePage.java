@@ -132,6 +132,14 @@ public class VerifyProfilePage extends AbstractPage {
         }
     }
 
+    public boolean isUsernameEnabled() {
+        try {
+            return driver.findElement(By.id("username")).isEnabled();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
     public boolean isDepartmentPresent() {
         try {
           isDepartmentEnabled();

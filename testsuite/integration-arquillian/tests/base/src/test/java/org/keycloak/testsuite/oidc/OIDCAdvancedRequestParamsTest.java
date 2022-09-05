@@ -605,7 +605,35 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
         clientResource.update(clientRep);
     }
-    
+
+    @Test
+    public void requestObjectSupersedesQueryParameter() throws Exception {
+        String stateInRequestObject = "stateInRequestObject";
+        String stateInQueryParameter = "stateInQueryParameter";
+        oauth.stateParamHardcoded(stateInQueryParameter);
+        // Set request object not required for client
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI);
+        clientResource.update(clientRep);
+        
+        // Set up a request object
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", stateInRequestObject, "none");
+        
+        // Send request object in "request" param
+        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+        // Assert that the request is accepted
+        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        Assert.assertNotNull(response1.getCode());
+        Assert.assertEquals(stateInRequestObject, response1.getState());
+        assertTrue(appPage.isCurrent());
+        
+        // Revert requiring request object for client
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
+        clientResource.update(clientRep);
+    }
+
     @Test
     public void requestObjectRequiredProvidedInRequestUriParam() throws Exception {
         oauth.stateParamHardcoded("mystate2");

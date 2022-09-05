@@ -21,6 +21,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntityDelegate;
 import org.keycloak.models.map.storage.jpa.Constants;
@@ -33,8 +34,8 @@ import org.keycloak.models.map.storage.jpa.authorization.resourceServer.entity.J
 public class JpaResourceServerMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaResourceServerEntity, MapResourceServerEntity, ResourceServer> {
 
     @SuppressWarnings("unchecked")
-    public JpaResourceServerMapKeycloakTransaction(EntityManager em) {
-        super(JpaResourceServerEntity.class, ResourceServer.class, em);
+    public JpaResourceServerMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+        super(session, JpaResourceServerEntity.class, ResourceServer.class, em);
     }
 
     @Override

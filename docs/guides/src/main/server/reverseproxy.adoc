@@ -33,7 +33,7 @@ To select the proxy mode, enter this command:
 == Configure the reverse proxy
 Some Keycloak features rely on the assumption that the remote address of the HTTP request connecting to Keycloak is the real IP address of the clients machine.
 
-When you have a reverse proxy or loadbalancer in front of Keycloak, this might not be the case, so please make sure your reverse proxy is configured correctly by performing these actions:
+When you have a reverse proxy or a load balancer in front of Keycloak, this might not be the case, so please make sure your reverse proxy is configured correctly by performing these actions:
 
 * Set the X-Forwarded-For, X-Forwarded-Proto, and X-Forwarded-Host HTTP headers.
 
@@ -41,7 +41,13 @@ To set these headers, consult the documentation for your reverse proxy.
 
 Take extra precautions to ensure that the X-Forwarded-For header is set by your reverse proxy.
 If this header is incorrectly configured, rogue clients can set this header and trick Keycloak into thinking the client is connected from a different IP address than the actual address.
-This precaution can more be critical if you do any deny or allow listing of IP addresses.
+This precaution can be more critical if you do any deny or allow listing of IP addresses.
+
+== Trust the proxy to set hostname
+
+By default, Keycloak needs to know under which hostname it will be called. If your reverse proxy is configured to check for the correct hostname, you can set Keycloak to accept any hostname.
+
+<@kc.start parameters="--proxy <mode> --hostname-strict=false"/>
 
 === Exposing the administration console
 
@@ -159,6 +165,9 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 
 |certificate-chain-length
 | The maximum length of the certificate chain.
+
+|trust-proxy-verification
+| Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to keycloak and verifying it in keycloak.
 |===
 
 ==== Configuring the NGINX provider

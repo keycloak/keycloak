@@ -16,11 +16,15 @@
  */
 package org.keycloak.models.map.storage.hotRod.role;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntityNonIndexed;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
@@ -29,10 +33,29 @@ import java.util.Set;
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.role.MapRoleEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntity.AbstractHotRodRoleEntityDelegate"
+        inherits = "org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntity.AbstractHotRodRoleEntityDelegate",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.models.RoleModel"
 )
 @ProtoDoc("@Indexed")
+@ProtoDoc("schema-version: " + HotRodRoleEntity.VERSION)
 public class HotRodRoleEntity extends AbstractHotRodEntity {
+
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodRoleEntity.class
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
+            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class}
+    )
+    public interface HotRodRoleEntitySchema extends GeneratedSchema {
+        HotRodRoleEntitySchema INSTANCE = new HotRodRoleEntitySchemaImpl();
+    }
+
 
     public static abstract class AbstractHotRodRoleEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodRoleEntity> implements MapRoleEntity {
 
@@ -60,7 +83,7 @@ public class HotRodRoleEntity extends AbstractHotRodEntity {
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1)
-    public Integer entityVersion = 1;
+    public Integer entityVersion = VERSION;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 2)

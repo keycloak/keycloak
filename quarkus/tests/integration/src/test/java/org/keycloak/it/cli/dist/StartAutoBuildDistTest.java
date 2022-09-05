@@ -17,9 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -27,10 +26,13 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Containers are immutable")
@@ -38,7 +40,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 public class StartAutoBuildDistTest {
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", AbstractStartCommand.AUTO_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(1)
     void testStartAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -47,13 +49,14 @@ public class StartAutoBuildDistTest {
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start --http-enabled=true --hostname-strict=false");
+        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start " + OPTIMIZED_BUILD_OPTION_LONG + " --http-enabled=true --hostname-strict=false");
+        cliResult.assertMessage(DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION);
         assertFalse(cliResult.getOutput().contains("--cache"));
         cliResult.assertStarted();
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(2)
     void testShouldNotReAugIfConfigIsSame(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -62,7 +65,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(3)
     void testShouldReAugIfConfigChanged(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -71,7 +74,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(4)
     void testShouldNotReAugIfSameDatabase(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -88,7 +91,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(6)
     void testReAugWhenNoOptionAfterBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -97,8 +100,25 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start-dev" })
+    @Launch({ "start", "--db=postgres", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(7)
+    void testShouldReAugWithoutAutoBuildOptionAfterDatabaseChange(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoMessage(DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION);
+        cliResult.assertBuild();
+    }
+
+    @Test
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--cache=local", OPTIMIZED_BUILD_OPTION_LONG})
+    @Order(8)
+    void testShouldReAugAndNeedsAutoBuildOptionBecauseHasNoAutoBuildOption(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @Launch({ "start-dev" })
+    @Order(8)
     void testStartDevFirstTime(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertTrue(cliResult.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."));
@@ -107,7 +127,7 @@ public class StartAutoBuildDistTest {
 
     @Test
     @Launch({ "start-dev" })
-    @Order(8)
+    @Order(9)
     void testShouldNotReAugStartDevIfConfigIsSame(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."));
