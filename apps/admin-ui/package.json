@@ -70,7 +70,7 @@
     "progress-promise": "^0.0.6",
     "tar-fs": "^2.1.1",
     "ts-node": "^10.9.1",
-    "vite": "^3.0.9",
+    "vite": "^3.1.0",
     "vite-plugin-checker": "^0.5.0",
     "vitest": "^0.22.1",
     "webpack": "^5.74.0"
