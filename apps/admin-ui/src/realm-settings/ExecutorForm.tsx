@@ -27,7 +27,7 @@ import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import type { ExecutorParams } from "./routes/Executor";
 
 type ExecutorForm = {
-  config: object;
+  config?: object;
   executor: string;
 };
 
@@ -89,16 +89,15 @@ export default function ExecutorForm() {
         return profile;
       }
 
-      const profileExecutor = profile.executors!.find(
-        (executor) => executor.executor === executorName
-      );
-
       const executors = (profile.executors ?? []).concat({
         executor: formValues.executor,
-        configuration: formValues.config,
+        configuration: formValues.config || {},
       });
 
       if (editMode) {
+        const profileExecutor = profile.executors!.find(
+          (executor) => executor.executor === executorName
+        );
         profileExecutor!.configuration = {
           ...profileExecutor!.configuration,
           ...formValues.config,

@@ -1,4 +1,7 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useForm, useFieldArray } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -19,26 +22,28 @@ import {
   TextVariants,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+
+import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
+import type ClientProfilesRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfilesRepresentation";
+import type ClientPolicyExecutorRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyExecutorRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useParams } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
-import "./realm-settings-section.css";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { toAddExecutor } from "./routes/AddExecutor";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
 import { toExecutor } from "./routes/Executor";
 import { toClientPolicies } from "./routes/ClientPolicies";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+
+import "./realm-settings-section.css";
 
 type ClientProfileForm = Required<ClientProfileRepresentation>;
 
@@ -54,19 +59,25 @@ export default function ClientProfileForm() {
   const {
     handleSubmit,
     setValue,
+    getValues,
     register,
     formState: { isDirty, errors },
+    control,
   } = useForm<ClientProfileForm>({
     defaultValues,
     mode: "onChange",
   });
 
+  const { fields: profileExecutors, remove } =
+    useFieldArray<ClientPolicyExecutorRepresentation>({
+      name: "executors",
+      control,
+    });
+
   const { addAlert, addError } = useAlerts();
   const { adminClient } = useAdminClient();
-  const [globalProfiles, setGlobalProfiles] = useState<
-    ClientProfileRepresentation[]
-  >([]);
-  const [profiles, setProfiles] = useState<ClientProfileRepresentation[]>([]);
+  const [profiles, setProfiles] = useState<ClientProfilesRepresentation>();
+  const [isGlobalProfile, setIsGlobalProfile] = useState(false);
   const { realm, profileName } = useParams<ClientProfileParams>();
   const serverInfo = useServerInfo();
   const executorTypes = useMemo(
@@ -82,25 +93,38 @@ export default function ClientProfileForm() {
   }>();
   const editMode = profileName ? true : false;
   const [key, setKey] = useState(0);
-  const reload = () => setKey(new Date().getTime());
+  const reload = () => setKey(key + 1);
 
   useFetch(
     () =>
       adminClient.clientPolicies.listProfiles({ includeGlobalProfiles: true }),
     (profiles) => {
-      setGlobalProfiles(profiles.globalProfiles ?? []);
-      setProfiles(profiles.profiles ?? []);
+      setProfiles({
+        globalProfiles: profiles.globalProfiles,
+        profiles: profiles.profiles?.filter((p) => p.name !== profileName),
+      });
+      const globalProfile = profiles.globalProfiles?.find(
+        (p) => p.name === profileName
+      );
+      const profile = profiles.profiles?.find((p) => p.name === profileName);
+      setIsGlobalProfile(globalProfile !== undefined);
+      setValue("name", globalProfile?.name ?? profile?.name);
+      setValue(
+        "description",
+        globalProfile?.description ?? profile?.description
+      );
+      setValue("executors", globalProfile?.executors ?? profile?.executors);
     },
     [key]
   );
 
   const save = async (form: ClientProfileForm) => {
-    const updatedProfiles = editMode ? patchProfiles(form) : addProfile(form);
+    const updatedProfiles = form;
 
     try {
       await adminClient.clientPolicies.createProfiles({
-        profiles: updatedProfiles,
-        globalProfiles: globalProfiles,
+        ...profiles,
+        profiles: [...(profiles?.profiles || []), updatedProfiles],
       });
 
       addAlert(
@@ -121,25 +145,6 @@ export default function ClientProfileForm() {
     }
   };
 
-  const patchProfiles = (data: ClientProfileRepresentation) =>
-    profiles.map((profile) => {
-      if (profile.name !== profileName) {
-        return profile;
-      }
-
-      return {
-        ...profile,
-        name: data.name,
-        description: data.description,
-      };
-    });
-
-  const addProfile = (data: ClientProfileRepresentation) =>
-    profiles.concat({
-      ...data,
-      executors: [],
-    });
-
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: executorToDelete?.name!
       ? t("deleteExecutorProfileConfirmTitle")
@@ -156,11 +161,11 @@ export default function ClientProfileForm() {
 
     onConfirm: async () => {
       if (executorToDelete?.name!) {
-        profileExecutors.splice(executorToDelete.idx!, 1);
+        remove(executorToDelete.idx);
         try {
           await adminClient.clientPolicies.createProfiles({
-            profiles: profiles,
-            globalProfiles,
+            ...profiles,
+            profiles: [...(profiles!.profiles || []), getValues()],
           });
           addAlert(t("deleteExecutorSuccess"), AlertVariant.success);
           navigate(toClientProfile({ realm, profileName }));
@@ -168,15 +173,8 @@ export default function ClientProfileForm() {
           addError(t("deleteExecutorError"), error);
         }
       } else {
-        const updatedProfiles = profiles.filter(
-          (profile) => profile.name !== profileName
-        );
-
         try {
-          await adminClient.clientPolicies.createProfiles({
-            profiles: updatedProfiles,
-            globalProfiles,
-          });
+          await adminClient.clientPolicies.createProfiles(profiles);
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
           navigate(toClientPolicies({ realm, tab: "profiles" }));
         } catch (error) {
@@ -186,17 +184,9 @@ export default function ClientProfileForm() {
     },
   });
 
-  const profile = profiles.find((profile) => profile.name === profileName);
-  const profileExecutors = profile?.executors || [];
-  const globalProfile = globalProfiles.find(
-    (globalProfile) => globalProfile.name === profileName
-  );
-  const globalProfileExecutors = globalProfile?.executors || [];
-
-  useEffect(() => {
-    setValue("name", globalProfile?.name ?? profile?.name);
-    setValue("description", globalProfile?.description ?? profile?.description);
-  }, [profiles]);
+  if (!profiles) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <>
@@ -206,12 +196,12 @@ export default function ClientProfileForm() {
         badges={[
           {
             id: "global-client-profile-badge",
-            text: globalProfile ? t("global") : "",
+            text: isGlobalProfile ? t("global") : "",
           },
         ]}
         divider
         dropdownItems={
-          editMode && !globalProfile
+          editMode && !isGlobalProfile
             ? [
                 <DropdownItem
                   key="delete"
@@ -244,7 +234,7 @@ export default function ClientProfileForm() {
               id="name"
               aria-label={t("name")}
               data-testid="client-profile-name"
-              isReadOnly={!!globalProfile}
+              isReadOnly={isGlobalProfile}
             />
           </FormGroup>
           <FormGroup label={t("common:description")} fieldId="kc-description">
@@ -255,11 +245,11 @@ export default function ClientProfileForm() {
               id="description"
               aria-label={t("description")}
               data-testid="client-profile-description"
-              isReadOnly={!!globalProfile}
+              isReadOnly={isGlobalProfile}
             />
           </FormGroup>
           <ActionGroup>
-            {!globalProfile && (
+            {!isGlobalProfile && (
               <Button
                 variant="primary"
                 onClick={() => handleSubmit(save)()}
@@ -269,7 +259,7 @@ export default function ClientProfileForm() {
                 {t("common:save")}
               </Button>
             )}
-            {editMode && !globalProfile && (
+            {editMode && !isGlobalProfile && (
               <Button
                 id={"reloadProfile"}
                 variant="link"
@@ -280,7 +270,7 @@ export default function ClientProfileForm() {
                 {t("realm-settings:reload")}
               </Button>
             )}
-            {!editMode && !globalProfile && (
+            {!editMode && !isGlobalProfile && (
               <Button
                 id={"cancelCreateProfile"}
                 variant="link"
@@ -308,7 +298,7 @@ export default function ClientProfileForm() {
                     />
                   </Text>
                 </FlexItem>
-                {profile && (
+                {!isGlobalProfile && (
                   <FlexItem align={{ default: "alignRight" }}>
                     <Button
                       id="addExecutor"
@@ -332,99 +322,22 @@ export default function ClientProfileForm() {
                 )}
               </Flex>
               {profileExecutors.length > 0 && (
-                <DataList aria-label={t("executors")} isCompact>
-                  {profileExecutors.map((executor, idx) => (
-                    <DataListItem
-                      aria-labelledby={"executors-list-item"}
-                      key={executor.executor}
-                      id={executor.executor}
-                    >
-                      <DataListItemRow data-testid="executors-list-row">
-                        <DataListItemCells
-                          dataListCells={[
-                            <DataListCell
-                              key="executor"
-                              data-testid="executor-type"
-                            >
-                              {executor.configuration ? (
-                                <Button
-                                  component={(props) => (
-                                    <Link
-                                      {...props}
-                                      to={toExecutor({
-                                        realm,
-                                        profileName,
-                                        executorName: executor.executor!,
-                                      })}
-                                    />
-                                  )}
-                                  variant="link"
-                                  data-testid="editExecutor"
-                                >
-                                  {executor.executor}
-                                </Button>
-                              ) : (
-                                <span className="kc-unclickable-executor">
-                                  {executor.executor}
-                                </span>
-                              )}
-                              {executorTypes
-                                ?.filter(
-                                  (type) => type.id === executor.executor
-                                )
-                                .map((type) => (
-                                  <Fragment key={type.id}>
-                                    <HelpItem
-                                      key={type.id}
-                                      helpText={type.helpText}
-                                      fieldLabelId="realm-settings:executorTypeTextHelpText"
-                                    />
-                                    <Button
-                                      variant="link"
-                                      isInline
-                                      icon={
-                                        <TrashIcon
-                                          key={`executorType-trash-icon-${type.id}`}
-                                          className="kc-executor-trash-icon"
-                                          data-testid="deleteExecutor"
-                                        />
-                                      }
-                                      onClick={() => {
-                                        toggleDeleteDialog();
-                                        setExecutorToDelete({
-                                          idx: idx,
-                                          name: type.id,
-                                        });
-                                      }}
-                                    ></Button>
-                                  </Fragment>
-                                ))}
-                            </DataListCell>,
-                          ]}
-                        />
-                      </DataListItemRow>
-                    </DataListItem>
-                  ))}
-                </DataList>
-              )}
-              {globalProfileExecutors.length > 0 && (
                 <>
                   <DataList aria-label={t("executors")} isCompact>
-                    {globalProfileExecutors.map((executor) => (
+                    {profileExecutors.map((executor, idx) => (
                       <DataListItem
-                        aria-labelledby={"global-executors-list-item"}
+                        aria-labelledby={"executors-list-item"}
                         key={executor.executor}
                         id={executor.executor}
                       >
-                        <DataListItemRow data-testid="global-executors-list-row">
+                        <DataListItemRow data-testid="executors-list-row">
                           <DataListItemCells
                             dataListCells={[
                               <DataListCell
                                 key="executor"
-                                data-testid="global-executor-type"
+                                data-testid="executor-type"
                               >
-                                {Object.keys(executor.configuration!).length !==
-                                0 ? (
+                                {executor.configuration ? (
                                   <Button
                                     component={(props) => (
                                       <Link
@@ -451,11 +364,33 @@ export default function ClientProfileForm() {
                                     (type) => type.id === executor.executor
                                   )
                                   .map((type) => (
-                                    <HelpItem
-                                      key={type.id}
-                                      helpText={type.helpText}
-                                      fieldLabelId="realm-settings:executorTypeTextHelpText"
-                                    />
+                                    <Fragment key={type.id}>
+                                      <HelpItem
+                                        key={type.id}
+                                        helpText={type.helpText}
+                                        fieldLabelId="realm-settings:executorTypeTextHelpText"
+                                      />
+                                      {!isGlobalProfile && (
+                                        <Button
+                                          variant="link"
+                                          isInline
+                                          icon={
+                                            <TrashIcon
+                                              key={`executorType-trash-icon-${type.id}`}
+                                              className="kc-executor-trash-icon"
+                                              data-testid="deleteExecutor"
+                                            />
+                                          }
+                                          onClick={() => {
+                                            toggleDeleteDialog();
+                                            setExecutorToDelete({
+                                              idx: idx,
+                                              name: type.id,
+                                            });
+                                          }}
+                                        />
+                                      )}
+                                    </Fragment>
                                   ))}
                               </DataListCell>,
                             ]}
@@ -464,34 +399,35 @@ export default function ClientProfileForm() {
                       </DataListItem>
                     ))}
                   </DataList>
-                  <Button
-                    id="backToClientPolicies"
-                    component={(props) => (
-                      <Link
-                        {...props}
-                        to={toClientPolicies({ realm, tab: "profiles" })}
-                      />
-                    )}
-                    variant="primary"
-                    className="kc-backToPolicies"
-                    data-testid="backToClientPolicies"
-                  >
-                    {t("realm-settings:back")}
-                  </Button>
+                  {isGlobalProfile && (
+                    <Button
+                      id="backToClientPolicies"
+                      component={(props) => (
+                        <Link
+                          {...props}
+                          to={toClientPolicies({ realm, tab: "profiles" })}
+                        />
+                      )}
+                      variant="primary"
+                      className="kc-backToPolicies"
+                      data-testid="backToClientPolicies"
+                    >
+                      {t("realm-settings:back")}
+                    </Button>
+                  )}
                 </>
               )}
-              {profileExecutors.length === 0 &&
-                globalProfileExecutors.length === 0 && (
-                  <>
-                    <Divider />
-                    <Text
-                      className="kc-emptyExecutors"
-                      component={TextVariants.h6}
-                    >
-                      {t("realm-settings:emptyExecutors")}
-                    </Text>
-                  </>
-                )}
+              {profileExecutors.length === 0 && (
+                <>
+                  <Divider />
+                  <Text
+                    className="kc-emptyExecutors"
+                    component={TextVariants.h6}
+                  >
+                    {t("realm-settings:emptyExecutors")}
+                  </Text>
+                </>
+              )}
             </>
           )}
         </FormAccess>
