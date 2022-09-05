@@ -3,6 +3,7 @@ import {
   Button,
   Chip,
   ChipGroup,
+  DatePicker,
   Dropdown,
   DropdownToggle,
   Flex,
@@ -416,14 +417,17 @@ export const AdminEvents = () => {
                 fieldId="kc-dateFrom"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
-                  ref={register()}
-                  type="text"
-                  id="kc-dateFrom"
+                <Controller
                   name="dateFrom"
-                  className="pf-c-form-control pf-m-icon pf-m-calendar"
-                  placeholder="yyyy-MM-dd"
-                  data-testid="dateFrom-searchField"
+                  control={control}
+                  render={({ onChange, value }) => (
+                    <DatePicker
+                      className="pf-u-w-100"
+                      value={value}
+                      onChange={(value) => onChange(value)}
+                      inputProps={{ id: "kc-dateFrom" }}
+                    />
+                  )}
                 />
               </FormGroup>
               <FormGroup
@@ -431,14 +435,17 @@ export const AdminEvents = () => {
                 fieldId="kc-dateTo"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
-                  ref={register()}
-                  type="text"
-                  id="kc-dateTo"
+                <Controller
                   name="dateTo"
-                  className="pf-c-form-control pf-m-icon pf-m-calendar"
-                  placeholder="yyyy-MM-dd"
-                  data-testid="dateTo-searchField"
+                  control={control}
+                  render={({ onChange, value }) => (
+                    <DatePicker
+                      className="pf-u-w-100"
+                      value={value}
+                      onChange={(value) => onChange(value)}
+                      inputProps={{ id: "kc-dateTo" }}
+                    />
+                  )}
                 />
               </FormGroup>
               <ActionGroup>
