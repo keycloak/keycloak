@@ -243,7 +243,7 @@ export default function UsersSection() {
       {!realm?.bruteForceProtected ? (
         <ToolbarItem>
           <Button
-            variant={ButtonVariant.plain}
+            variant={ButtonVariant.link}
             onClick={toggleDeleteDialog}
             data-testid="delete-user-btn"
             isDisabled={selectedRows.length === 0}
