@@ -16,6 +16,8 @@ import ProviderOpenshiftGeneralSettings from "../support/pages/admin_console/man
 import ProviderPaypalGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderPaypalGeneralSettings";
 import ProviderStackoverflowGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderStackoverflowGeneralSettings";
 import adminClient from "../support/util/AdminClient";
+import GroupPage from "../support/pages/admin_console/manage/groups/GroupPage";
+import CommonPage from "../support/pages/CommonPage";
 
 describe("Identity provider test", () => {
   const loginPage = new LoginPage();
@@ -24,8 +26,12 @@ describe("Identity provider test", () => {
   const listingPage = new ListingPage();
   const createProviderPage = new CreateProviderPage();
   const addMapperPage = new AddMapperPage();
+  const groupPage = new GroupPage();
+  const commonPage = new CommonPage();
 
   const createSuccessMsg = "Identity provider successfully created";
+  const createFailMsg =
+    "Could not create the identity provider: Identity Provider github already exists";
   const createMapperSuccessMsg = "Mapper created successfully.";
 
   const changeSuccessMsg =
@@ -122,7 +128,7 @@ describe("Identity provider test", () => {
       });
     });
 
-    it("should create provider", () => {
+    it("should create github provider", () => {
       createProviderPage.checkGitHubCardVisible().clickGitHubCard();
 
       createProviderPage.checkAddButtonDisabled();
@@ -137,6 +143,15 @@ describe("Identity provider test", () => {
       listingPage.itemExist(identityProviderName);
     });
 
+    it("fail to make duplicate github provider", () => {
+      createProviderPage
+        .clickCreateDropdown()
+        .clickItem("github")
+        .fill("github2", "123")
+        .clickAdd();
+      masthead.checkNotificationMessage(createFailMsg, true);
+    });
+
     it("should create facebook provider", () => {
       createProviderPage
         .clickCreateDropdown()
@@ -144,6 +159,36 @@ describe("Identity provider test", () => {
         .fill("facebook", "123")
         .clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg, true);
+    });
+
+    it("search for existing provider by name", () => {
+      sidebarPage.goToIdentityProviders();
+      listingPage.searchItem(identityProviderName, false);
+      listingPage.itemExist(identityProviderName, true);
+    });
+
+    it("search for non-existing provider by name", () => {
+      sidebarPage.goToIdentityProviders();
+      listingPage.searchItem("not-existing-provider", false);
+      groupPage.assertNoSearchResultsMessageExist(true);
+    });
+
+    it("create and delete provider by item details", () => {
+      createProviderPage
+        .clickCreateDropdown()
+        .clickItem("linkedin")
+        .fill("linkedin", "123")
+        .clickAdd();
+      masthead.checkNotificationMessage(createSuccessMsg, true);
+
+      commonPage
+        .actionToolbarUtils()
+        .clickActionToggleButton()
+        .clickDropdownItem("Delete");
+
+      const modalUtils = new ModalUtils();
+      modalUtils.checkModalTitle(deletePrompt).confirmModal();
+      masthead.checkNotificationMessage(deleteSuccessMsg, true);
     });
 
     it.skip("should change order of providers", () => {
