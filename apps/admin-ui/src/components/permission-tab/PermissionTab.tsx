@@ -146,6 +146,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
             >
               <Switch
                 id="permissionsEnabled"
+                data-testid="permissionSwitch"
                 label={t("common:on")}
                 labelOff={t("common:off")}
                 isChecked={permission.enabled}

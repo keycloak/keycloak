@@ -473,4 +473,15 @@ describe("Group test", () => {
       groupPage.assertGroupItemExist(predefinedGroups[0], true);
     });
   });
+
+  describe("Permissions", () => {
+    beforeEach(() => {
+      groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
+      groupDetailPage.goToPermissionsTab();
+    });
+
+    it("enable/disable permissions", () => {
+      groupDetailPage.enablePermissionSwitch();
+    });
+  });
 });
