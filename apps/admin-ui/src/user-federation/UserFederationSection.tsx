@@ -1,7 +1,6 @@
 import {
   AlertVariant,
   ButtonVariant,
-  Card,
   CardTitle,
   DropdownItem,
   Gallery,
@@ -28,9 +27,10 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../util";
 import { toProvider } from "./routes/NewProvider";
+import { ClickableCard } from "../components/keycloak-card/ClickableCard";
+import helpUrls from "../help-urls";
 
 import "./user-federation.css";
-import helpUrls from "../help-urls";
 
 export default function UserFederationSection() {
   const [userFederations, setUserFederations] =
@@ -193,11 +193,8 @@ export default function UserFederationSection() {
             <hr className="pf-u-mb-lg" />
             <Gallery hasGutter>
               {providers.map((p) => (
-                <Card
+                <ClickableCard
                   key={p.id}
-                  className="keycloak-empty-state-card"
-                  role="button"
-                  isHoverable
                   onClick={() =>
                     navigate(toProvider({ realm, providerId: p.id! }))
                   }
@@ -216,7 +213,7 @@ export default function UserFederationSection() {
                       </SplitItem>
                     </Split>
                   </CardTitle>
-                </Card>
+                </ClickableCard>
               ))}
             </Gallery>
           </>

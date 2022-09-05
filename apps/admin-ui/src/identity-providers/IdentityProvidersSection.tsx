@@ -8,7 +8,6 @@ import {
   Badge,
   Button,
   ButtonVariant,
-  Card,
   CardTitle,
   Dropdown,
   DropdownGroup,
@@ -39,6 +38,7 @@ import { ManageOrderDialog } from "./ManageOrderDialog";
 import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
 import helpUrls from "../help-urls";
+import { ClickableCard } from "../components/keycloak-card/ClickableCard";
 
 export default function IdentityProvidersSection() {
   const { t } = useTranslation("identity-providers");
@@ -190,11 +190,8 @@ export default function IdentityProvidersSection() {
                 <hr className="pf-u-mb-lg" />
                 <Gallery hasGutter>
                   {sortBy(identityProviders[group], "name").map((provider) => (
-                    <Card
-                      className="keycloak-empty-state-card"
-                      role="button"
+                    <ClickableCard
                       key={provider.id}
-                      isHoverable
                       data-testid={`${provider.id}-card`}
                       onClick={() => navigateToCreate(provider.id)}
                     >
@@ -206,7 +203,7 @@ export default function IdentityProvidersSection() {
                           <SplitItem isFilled>{provider.name}</SplitItem>
                         </Split>
                       </CardTitle>
-                    </Card>
+                    </ClickableCard>
                   ))}
                 </Gallery>
               </Fragment>

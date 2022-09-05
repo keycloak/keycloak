@@ -1,6 +1,5 @@
 import { ReactElement, useState } from "react";
 import {
-  Card,
   CardHeader,
   CardActions,
   CardTitle,
@@ -15,6 +14,7 @@ import {
 import "./keycloak-card.css";
 import { useRouteMatch } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
+import { ClickableCard } from "./ClickableCard";
 
 export type KeycloakCardProps = {
   id: string;
@@ -54,7 +54,7 @@ export const KeycloakCard = ({
   };
 
   return (
-    <Card role="button" isSelectable onClick={openSettings}>
+    <ClickableCard isSelectable onClick={openSettings}>
       <CardHeader>
         <CardActions>
           {dropdownItems && (
@@ -84,6 +84,6 @@ export const KeycloakCard = ({
           </FlexItem>
         </Flex>
       </CardFooter>
-    </Card>
+    </ClickableCard>
   );
 };
