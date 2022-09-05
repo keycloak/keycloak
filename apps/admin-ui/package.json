@@ -72,7 +72,7 @@
     "ts-node": "^10.9.1",
     "vite": "^3.1.0",
     "vite-plugin-checker": "^0.5.0",
-    "vitest": "^0.22.1",
+    "vitest": "^0.23.1",
     "webpack": "^5.74.0"
   }
 }
