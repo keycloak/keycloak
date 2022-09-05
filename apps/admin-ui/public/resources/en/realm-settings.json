@@ -743,6 +743,46 @@
     "REFRESH_TOKEN_ERROR": {
       "name": "Refresh token error",
       "description": "Refresh token error"
+    },
+    "VERIFY_PROFILE": {
+      "name": "Verify profile",
+      "description": "Verify profile"
+    },
+    "VERIFY_PROFILE_ERROR": {
+      "name": "Verify profile error",
+      "description": "Verify profile error"
+    },
+    "OAUTH2_DEVICE_CODE_TO_TOKEN": {
+      "name": "Oauth2 device code to token",
+      "description": "Oauth2 device code to token"
+    },
+    "OAUTH2_DEVICE_CODE_TO_TOKEN_ERROR": {
+      "name": "Oauth2 device code to token error",
+      "description": "Oauth2 device code to token error"
+    },
+    "OAUTH2_DEVICE_VERIFY_USER_CODE": {
+      "name": "Oauth2 device verify user code",
+      "description": "Oauth2 device verify user code"
+    },
+    "OAUTH2_DEVICE_VERIFY_USER_CODE_ERROR": {
+      "name": "Oauth2 device verify user code error",
+      "description": "Oauth2 device verify user code error"
+    },
+    "AUTHREQID_TO_TOKEN": {
+      "name": "Authreqid to token",
+      "description": "Authreqid to token"
+    },
+    "AUTHREQID_TO_TOKEN_ERROR": {
+      "name": "Authreqid to token error",
+      "description": "Authreqid to token error"
+    },
+    "OAUTH2_DEVICE_AUTH": {
+      "name": "Oauth2 device authentication",
+      "description": "Oauth2 device authentication"
+    },
+    "OAUTH2_DEVICE_AUTH_ERROR": {
+      "name": "Oauth2 device authentication error",
+      "description": "Oauth2 device authentication error"
     }
   },
   "emptyEvents": "Nothing to add",
