@@ -87,17 +87,9 @@ export default class AddMapperPage {
   }
 
   addRoleToMapperForm() {
-    cy.get("#group-role-select-typeahead")
-      .click()
-      .get(".pf-c-select__menu-item")
-      .first()
-      .click();
-    cy.get("#role-role-select-typeahead")
-      .click()
-      .get(".pf-c-select__menu-item")
-      .first()
-      .click();
-
+    cy.findByTestId("add-roles").click();
+    cy.get("[aria-label='Select row 1']").click();
+    cy.findByTestId("assign").click();
     return this;
   }
 

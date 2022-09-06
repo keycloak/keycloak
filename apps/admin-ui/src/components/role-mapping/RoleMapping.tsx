@@ -60,7 +60,7 @@ export const mapRoles = (
 
 export const ServiceRole = ({ role, client }: Row) => (
   <>
-    {client && (
+    {client?.clientId && (
       <Badge isRead className="keycloak-admin--role-mapping__client-name">
         {client.clientId}
       </Badge>

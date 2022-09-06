@@ -371,16 +371,9 @@ export default class ProviderPage {
         break;
 
       case this.hcLdapRoleMapper:
-        cy.get("#group-role-select-typeahead")
-          .click()
-          .get(".pf-c-select__menu-item")
-          .first()
-          .click();
-        cy.get("#role-role-select-typeahead")
-          .click()
-          .get(".pf-c-select__menu-item")
-          .first()
-          .click();
+        cy.findByTestId("add-roles").click();
+        cy.get("[aria-label='Select row 1']").click();
+        cy.findByTestId("assign").click();
         break;
       default:
         console.log("Invalid mapper type.");
