@@ -379,31 +379,6 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         return importValidation(realm, results);
     }
 
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
-        return getUsersStream(realm, null, null, false);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return getUsersStream(realm, firstResult, maxResults, false);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(final RealmModel realm, Integer firstResult, Integer maxResults, final boolean includeServiceAccounts) {
-        Stream<UserModel> results =  query((provider, firstResultInQuery, maxResultsInQuery) -> {
-            if (provider instanceof UserProvider) { // it is local storage
-                return ((UserProvider) provider).getUsersStream(realm, firstResultInQuery, maxResultsInQuery, includeServiceAccounts);
-            } else if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).getUsersStream(realm);
-            }
-            return Stream.empty();
-        }
-        , realm, firstResult, maxResults);
-        return importValidation(realm, results);
-    }
-
     @Override
     public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
         int localStorageUsersCount = localStorage().getUsersCount(realm, includeServiceAccount);

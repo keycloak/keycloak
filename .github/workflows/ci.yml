@@ -289,64 +289,6 @@ jobs:
           path: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip
           if-no-files-found: ignore
 
-  test-crossdc:
-    name: Cross-DC Tests
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      MAVEN_OPTS: -Xmx1024m
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-
-      - name: Check whether this phase should run
-        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
-
-      - uses: actions/setup-java@v3
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-          cache: 'maven'
-
-      - name: Update maven settings
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-
-      - name: Cleanup org.keycloak artifacts
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
-
-      - name: Download built keycloak
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-
-      - name: Run tests
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        shell: bash
-        run: |
-          echo '::group::Compiling testsuite'
-          ./mvnw clean install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
-          echo '::endgroup::'
-          ./mvnw clean install -B -nsu -f testsuite/integration-arquillian/tests/base/pom.xml -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly "-Dtest=org.keycloak.testsuite.crossdc.**.*,org.keycloak.testsuite.adapter.**.crossdc.**.*" | misc/log/trimmer.sh
-          TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-cross-dc-tests.zip -@
-          exit $TEST_RESULT
-
-      - name: Cross-DC test reports
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: reports-cross-dc-tests
-          retention-days: 14
-          path: reports-cross-dc-tests.zip
-          if-no-files-found: ignore
-
 ### Tests: Quarkus distribution
 
   quarkus-test-cluster:
