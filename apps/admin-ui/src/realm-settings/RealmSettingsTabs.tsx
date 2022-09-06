@@ -200,14 +200,13 @@ export const RealmSettingsTabs = ({
       r.attributes?.["acr.loa.map"] &&
       typeof r.attributes["acr.loa.map"] !== "string"
     ) {
-      const map = JSON.stringify(
+      r.attributes["acr.loa.map"] = JSON.stringify(
         Object.fromEntries(
           (r.attributes["acr.loa.map"] as KeyValueType[])
             .filter(({ key }) => key !== "")
             .map(({ key, value }) => [key, value])
         )
       );
-      r.attributes["acr.loa.map"] = map !== "{}" ? map : "[]";
     }
 
     try {
