@@ -175,13 +175,9 @@ public final class AttributeMetadata {
             this.validators = new ArrayList<>();
         }
 
+        this.validators.removeIf(validators::contains);
         this.validators.addAll(validators.stream().filter(Objects::nonNull).collect(Collectors.toList()));
 
-        return this;
-    }
-
-    public AttributeMetadata addValidator(AttributeValidatorMetadata validator) {
-        addValidator(Arrays.asList(validator));
         return this;
     }
 

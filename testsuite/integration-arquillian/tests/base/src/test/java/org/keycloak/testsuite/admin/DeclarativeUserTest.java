@@ -3,6 +3,7 @@ package org.keycloak.testsuite.admin;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.enableDynamicUserProfile;
@@ -12,6 +13,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
 import java.util.Collections;
@@ -140,6 +142,40 @@ public class DeclarativeUserTest extends AbstractAdminTest {
         userResource.update(user1);
         attributes.put("attr2", null);
         userResource.update(user1);
+    }
+
+    @Test
+    public void testValidationUsingExistingAttributes() {
+        setUserProfileConfiguration(this.realm, "{\"attributes\": ["
+                + "{\"name\": \"username\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"email\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr1\", \"required\": {}, " + PERMISSIONS_ALL + "}]}");
+
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        // set an attribute to later remove it from the configuration
+        user1.singleAttribute("attr1", "some-value");
+        String user1Id = createUser(user1);
+
+        UserResource userResource = realm.users().get(user1Id);
+        user1 = userResource.toRepresentation();
+        user1.setFirstName("changed");
+        user1.setAttributes(null);
+
+        // do not validate attr1 because the attribute list is not provided and the user has the attribute
+        userResource.update(user1);
+        user1 = userResource.toRepresentation();
+        assertEquals("changed", user1.getFirstName());
+
+        try {
+            user1.setAttributes(Collections.emptyMap());
+            userResource.update(user1);
+            fail("Should fail because the attribute attr1 is required");
+        } catch (BadRequestException ignore) {
+
+        }
     }
 
     @Test

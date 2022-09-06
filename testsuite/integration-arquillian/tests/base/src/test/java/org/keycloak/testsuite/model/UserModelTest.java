@@ -479,11 +479,11 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             Assert.assertThat(users, hasSize(1));
             Assert.assertThat(users, contains(user2));
 
-            users = currentSession.users().getUsersStream(realm, false).collect(Collectors.toList());
+            users = currentSession.users().searchForUserStream(realm, Collections.singletonMap(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString())).collect(Collectors.toList());
             Assert.assertThat(users, hasSize(1));
             Assert.assertThat(users, contains(user2));
 
-            users = currentSession.users().getUsersStream(realm, true).collect(Collectors.toList());
+            users = currentSession.users().searchForUserStream(realm, Collections.emptyMap()).collect(Collectors.toList());
             Assert.assertThat(users, hasSize(2));
             Assert.assertThat(users, containsInAnyOrder(user1, user2));
 

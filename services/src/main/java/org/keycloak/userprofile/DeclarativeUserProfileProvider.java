@@ -139,18 +139,12 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         UserProfileMetadata decoratedMetadata = metadata.clone();
 
         if (!isEnabled(session)) {
-            if(!context.equals(UserProfileContext.USER_API) && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)) {
+            if(!context.equals(UserProfileContext.USER_API)
+                    && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)
+                    && !context.equals(UserProfileContext.UPDATE_EMAIL)) {
                 decoratedMetadata.addAttribute(UserModel.FIRST_NAME, 1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
                         Messages.MISSING_FIRST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${firstName}");
                 decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${lastName}");
-                
-                //add email format validator to legacy profile
-                List<AttributeMetadata> em = decoratedMetadata.getAttribute(UserModel.EMAIL);
-                for(AttributeMetadata e: em) {
-                    e.addValidator(new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()));
-                }
-                
-                return decoratedMetadata;
             }
             return decoratedMetadata;
         }
@@ -272,7 +266,11 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         UPConfig parsedConfig = getParsedConfig(model);
 
         // do not change config for REGISTRATION_USER_CREATION context, everything important is covered thanks to REGISTRATION_PROFILE
-        if (parsedConfig == null || context == UserProfileContext.REGISTRATION_USER_CREATION) {
+        // do not change config for UPDATE_EMAIL context, validations are already set and do not need including anything else from the configuration
+        if (parsedConfig == null
+                || context == UserProfileContext.REGISTRATION_USER_CREATION
+                || context == UserProfileContext.UPDATE_EMAIL
+        ) {
             return decoratedMetadata;
         }
 
