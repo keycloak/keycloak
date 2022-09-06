@@ -126,6 +126,21 @@ public class TokenManager {
         }
     }
 
+    public synchronized void logout() {
+        if (currentToken.getRefreshToken() == null) {
+            return;
+        }
+
+        Form form = new Form().param(REFRESH_TOKEN, currentToken.getRefreshToken());
+
+        if (config.isPublicClient()) {
+            form.param(CLIENT_ID, config.getClientId());
+        }
+
+        tokenService.logout(config.getRealm(), form.asMap());
+        currentToken = null;
+    }
+
     public synchronized void setMinTokenValidity(long minTokenValidity) {
         this.minTokenValidity = minTokenValidity;
     }
