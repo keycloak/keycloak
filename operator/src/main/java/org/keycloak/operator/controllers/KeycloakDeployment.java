@@ -155,7 +155,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         }
 
         if (overlayTemplate.getSpec() != null &&
-                CollectionUtil.isNotEmpty(overlayTemplate.getSpec().getImagePullSecrets())) {
+            CollectionUtil.isNotEmpty(overlayTemplate.getSpec().getImagePullSecrets())) {
             status.addWarningMessage("The imagePullSecrets of the keycloak container cannot be modified using podTemplate");
         }
     }

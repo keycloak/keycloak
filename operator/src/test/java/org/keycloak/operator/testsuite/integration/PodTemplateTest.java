@@ -17,7 +17,10 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
@@ -27,9 +30,12 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
+import java.util.Collections;
+
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition.HAS_ERRORS;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
 @QuarkusTest
 public class PodTemplateTest extends BaseOperatorTest {
@@ -177,6 +183,41 @@ public class PodTemplateTest extends BaseOperatorTest {
                 .await()
                 .ignoreExceptions()
                 .atMost(3, MINUTES).untilAsserted(() -> {
+                    CRAssert.assertKeycloakStatusCondition(getCrSelector().get(), HAS_ERRORS, false, "cannot be modified");
+                });
+    }
+
+    @Test
+    public void testPodTemplateIncorrectImagePullSecretsConfig() {
+        String imagePullSecretName = "docker-regcred-custom-kc-imagepullsecret-01";
+        String secretDescriptorFilename = "test-docker-registry-secret.yaml";
+
+        Secret imagePullSecret = getResourceFromFile(secretDescriptorFilename, Secret.class);
+        k8sclient.secrets().inNamespace(namespace).createOrReplace(imagePullSecret);
+        LocalObjectReference localObjRefAsSecretTmp = new LocalObjectReferenceBuilder().withName(imagePullSecret.getMetadata().getName()).build();
+
+        assertThat(localObjRefAsSecretTmp.getName()).isNotNull();
+        assertThat(localObjRefAsSecretTmp.getName()).isEqualTo(imagePullSecretName);
+
+        var podTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec()
+                    .addAllToImagePullSecrets(Collections.singletonList(localObjRefAsSecretTmp))
+                .endSpec()
+                .build();
+
+        var plainKc = getEmptyPodTemplateKeycloak();
+        plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
+
+        // Act
+        k8sclient.resource(plainKc).createOrReplace();
+
+        // Assert
+        Log.info("Getting status of Keycloak");
+        Awaitility
+                .await()
+                .ignoreExceptions()
+                .atMost(3, MINUTES).untilAsserted(() -> {
+                    CRAssert.assertKeycloakStatusCondition(getCrSelector().get(), HAS_ERRORS, false, "imagePullSecrets");
                     CRAssert.assertKeycloakStatusCondition(getCrSelector().get(), HAS_ERRORS, false, "cannot be modified");
                 });
     }
