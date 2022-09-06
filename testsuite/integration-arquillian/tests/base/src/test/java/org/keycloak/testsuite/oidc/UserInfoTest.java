@@ -64,6 +64,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -496,7 +497,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             assertNotNull(wwwAuthHeader);
             assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
             assertThat(wwwAuthHeader, CoreMatchers.containsString("realm=\"" + realmName + "\""));
-            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_REQUEST + "\""));
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
 
             response.close();
 
@@ -652,7 +653,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         Client client = AdminClientUtil.createResteasyClient();
 
         try {
-            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true);
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true, true);
 
             testingClient.testing().removeUserSessions("test");
 
@@ -700,8 +701,10 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         try {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "");
+            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+            assertEquals(wwwAuthHeader, "Bearer realm=\"test\"");
             response.close();
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         } finally {
             client.close();
         }
@@ -728,6 +731,92 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testUnsuccessfulUserInfoRequestWithMultipleTokens() {
+        Client client = AdminClientUtil.createResteasyClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+            String accessToken = accessTokenResponse.getToken();
+
+            Form form = new Form();
+            form.param("access_token", accessToken);
+
+            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            Response response = userInfoTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .post(Entity.form(form));
+            response.close();
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testUnsuccessfulUserInfoRequestWithoutOpenIDScope() {
+        Client client = AdminClientUtil.createResteasyClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, false, false);
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            response.close();
+
+            assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+
+            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+            assertNotNull(wwwAuthHeader);
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INSUFFICIENT_SCOPE + "\""));
+
+            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.ACCESS_DENIED)
+                    .client((String) null)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .assertEvent();
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testUnsuccessfulUserInfoRequestWithDisabledUser() {
+        Client client = AdminClientUtil.createResteasyClient();
+        RealmResource realm = adminClient.realm("test");
+        UserResource userResource = ApiUtil.findUserByUsernameId(realm, "test-user@localhost");
+        UserRepresentation user = userResource.toRepresentation();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+            user.setEnabled(false);
+            userResource.update(user);
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            response.close();
+
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+            assertNotNull(wwwAuthHeader);
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
+
+            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.USER_DISABLED)
+                    .client("test-app")
+                    .user(user.getId())
+                    .session(Matchers.notNullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .assertEvent();
+        } finally {
+            client.close();
+        }
+
+        user.setEnabled(true);
+        userResource.update(user);
+    }
+
+    @Test
     public void testUserInfoRequestWithSamlClient() throws Exception {
         // obtain an access token
         String accessToken = oauth.doGrantAccessTokenRequest("test", "test-user@localhost", "password", null, "saml-client", "secret").getAccessToken();
@@ -743,7 +832,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessToken);
             response.close();
 
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
             events.expect(EventType.USER_INFO_REQUEST)
                     .error(Errors.INVALID_CLIENT)
                     .client((String) null)
@@ -776,21 +865,28 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     private AccessTokenResponse executeGrantAccessTokenRequest(Client client) {
-        return executeGrantAccessTokenRequest(client, false);
+        return executeGrantAccessTokenRequest(client, false, true);
     }
 
-    private AccessTokenResponse executeGrantAccessTokenRequest(Client client, boolean requestOfflineToken) {
+    private AccessTokenResponse executeGrantAccessTokenRequest(Client client, boolean requestOfflineToken, boolean openid) {
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
 
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
+        String scope = null;
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .param("username", "test-user@localhost")
                 .param("password", "password");
         if( requestOfflineToken) {
-            form.param("scope", "offline_access");
+            scope = OAuth2Constants.OFFLINE_ACCESS;
+        }
+        if (openid) {
+            scope = TokenUtil.attachOIDCScope(scope);
+        }
+        if (scope != null) {
+            form.param(OAuth2Constants.SCOPE, scope);
         }
 
         Response response = grantTarget.request()
