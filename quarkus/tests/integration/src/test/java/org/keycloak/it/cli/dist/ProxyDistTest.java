@@ -64,6 +64,13 @@ public class ProxyDistTest {
         assertXForwardedHeaders();
     }
 
+    @Test
+    @Launch({ "start-dev", "--hostname-url=http://mykeycloak.127.0.0.1.nip.io:1234", "--hostname-admin-url=http://mykeycloakadmin.127.0.0.1.nip.io:1234", "--proxy=edge" })
+    public void testIgnoreForwardedHeadersWhenFrontendUrlSet() {
+        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.127.0.0.1.nip.io:8080").then().body(containsString("http://mykeycloakadmin.127.0.0.1.nip.io:1234/admin"));
+        given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().body(containsString("http://mykeycloakadmin.127.0.0.1.nip.io:1234/admin"));
+    }
+
     private void assertXForwardedHeaders() {
         given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.127.0.0.1.nip.io:8080").then().body(containsString("http://test:8080/admin"));
         given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://test:8080/admin"));
