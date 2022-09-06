@@ -185,7 +185,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         public Response authResponse(@QueryParam("state") String state,
                                      @QueryParam("denied") String denied,
                                      @QueryParam("oauth_verifier") String verifier) {
-            IdentityBrokerState idpState = IdentityBrokerState.encoded(state);
+            IdentityBrokerState idpState = IdentityBrokerState.encoded(state, realm);
             String clientId = idpState.getClientId();
             String tabId = idpState.getTabId();
             if (clientId == null || tabId == null) {
