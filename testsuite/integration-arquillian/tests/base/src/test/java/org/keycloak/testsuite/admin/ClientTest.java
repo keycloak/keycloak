@@ -54,12 +54,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -70,14 +65,7 @@ import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.BadRequestException;
@@ -100,6 +88,7 @@ public class ClientTest extends AbstractAdminTest {
         rep.setDescription("my-app description");
         rep.setEnabled(true);
         rep.setPublicClient(true);
+
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
@@ -417,6 +406,8 @@ public class ClientTest extends AbstractAdminTest {
         newClient.setId(client.getId());
         newClient.setClientId(client.getClientId());
         newClient.setBaseUrl("http://baseurl");
+        newClient.setDefaultClientScopes(List.of("web-origins"));
+        newClient.setOptionalClientScopes(List.of("profile"));
 
         realm.clients().get(client.getId()).update(newClient);
 
@@ -424,7 +415,7 @@ public class ClientTest extends AbstractAdminTest {
 
         ClientRepresentation storedClient = realm.clients().get(client.getId()).toRepresentation();
 
-        assertClient(client, storedClient);
+        assertClient(newClient, storedClient);
 
         newClient.setSecret("new-secret");
 
@@ -433,7 +424,7 @@ public class ClientTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient, ResourceType.CLIENT);
 
         storedClient = realm.clients().get(client.getId()).toRepresentation();
-        assertClient(client, storedClient);
+        assertClient(newClient, storedClient);
 
         storedClient.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
 
@@ -924,6 +915,24 @@ public class ClientTest extends AbstractAdminTest {
                     .collect(Collectors.toSet());
 
             Assert.assertEquals(set, storedSet);
+        }
+
+        List<String> defaultClientScopes = client.getDefaultClientScopes();
+        if (defaultClientScopes != null) {
+            Set<String> defaultSet = new HashSet<>(defaultClientScopes);
+            Set<String> storedSet = new HashSet<>(storedClient.getDefaultClientScopes());
+            Assert.assertEquals(defaultSet, storedSet);
+        } else {
+            Assert.assertEquals(0, storedClient.getDefaultClientScopes().size());
+        }
+
+        List<String> optionalClientScopes = client.getOptionalClientScopes();
+        if (optionalClientScopes != null) {
+            Set<String> defaultSet = new HashSet<>(optionalClientScopes);
+            Set<String> storedSet = new HashSet<>(storedClient.getOptionalClientScopes());
+            Assert.assertEquals(defaultSet, storedSet);
+        } else {
+            Assert.assertEquals(0, storedClient.getOptionalClientScopes().size());
         }
     }
 

@@ -777,7 +777,7 @@ public class ClientResource {
             rep.setAuthorizationServicesEnabled(false);
         }
 
-        RepresentationToModel.updateClient(rep, client);
+        RepresentationToModel.updateClient(realm, rep, client);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
         updateAuthorizationSettings(rep);
     }

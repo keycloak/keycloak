@@ -18,11 +18,9 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -31,6 +29,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.ws.rs.NotFoundException;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -58,31 +58,15 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.migration.migrators.MigrationUtils;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
+import org.keycloak.models.*;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
 import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -497,13 +481,32 @@ public class RepresentationToModel {
     private static void addClientScopeToClient(RealmModel realm, ClientModel client, String clientScopeName, boolean defaultScope) {
         ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, clientScopeName);
         if (clientScope != null) {
+            if (defaultScope && clientScope.isDynamicScope()) {
+                logger.warnf("Can't assign dynamic scope '%s' to to client '%s' as default scope ", clientScopeName, client.getName());
+                return;
+            }
             client.addClientScope(clientScope, defaultScope);
         } else {
             logger.warnf("Referenced client scope '%s' doesn't exist. Ignoring", clientScopeName);
         }
     }
 
-    public static void updateClient(ClientRepresentation rep, ClientModel resource) {
+    private static void updateClientScopesForClient(RealmModel realm, ClientRepresentation rep, ClientModel resource) {
+        // Remove old scopes
+        Stream.of(resource.getClientScopes(true), resource.getClientScopes(false))
+            .flatMap(map -> map.entrySet().stream())
+            .forEach(e -> resource.removeClientScope(e.getValue()));
+
+        // Add the new ones
+        rep.getDefaultClientScopes()
+            .forEach(clientScopeName -> addClientScopeToClient(realm, resource, clientScopeName, true));
+
+        rep.getOptionalClientScopes()
+             .forEach(clientScopeName -> addClientScopeToClient(realm, resource, clientScopeName, false));
+
+    }
+
+    public static void updateClient(RealmModel realm, ClientRepresentation rep, ClientModel resource) {
         if (rep.getClientId() != null) resource.setClientId(rep.getClientId());
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
@@ -593,6 +596,10 @@ public class RepresentationToModel {
             }
         }
 
+        if (rep.getDefaultClientScopes() != null || rep.getOptionalClientScopes() != null) {
+            updateClientScopesForClient(realm, rep, resource);
+        }
+
         resource.updateClient();
     }
 
@@ -659,7 +666,17 @@ public class RepresentationToModel {
         return clientScope;
     }
 
-    public static void updateClientScope(ClientScopeRepresentation rep, ClientScopeModel resource) {
+    public static void validateProtocolMapperModel(KeycloakSession session, ProtocolMapperContainerModel clientModel, ProtocolMapperModel model) throws ProtocolMapperConfigException {
+        RealmModel realm = session.getContext().getRealm();
+        ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
+        if (mapper != null) {
+            mapper.validateConfig(session, realm, clientModel, model);
+        } else {
+            throw new NotFoundException("ProtocolMapper provider not found");
+        }
+    }
+
+    public static void updateClientScope(KeycloakSession session, ClientScopeRepresentation rep, ClientScopeModel resource) {
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
 
@@ -672,6 +689,18 @@ public class RepresentationToModel {
             }
         }
 
+        if (rep.getProtocolMappers() != null) {
+            resource.getProtocolMappersStream().collect(Collectors.toList()).forEach(resource::removeProtocolMapper);
+            for(ProtocolMapperRepresentation mapper : rep.getProtocolMappers()) {
+                try {
+                    ProtocolMapperModel model = RepresentationToModel.toModel(mapper);
+                    validateProtocolMapperModel(session, resource, model);
+                    resource.addProtocolMapper(model);
+                } catch (ProtocolMapperConfigException | NotFoundException e) {
+                    logger.errorf("failed to validate protocolmapper: %s", e.getMessage());
+                }
+            }
+        }
     }
 
     // Scope mappings

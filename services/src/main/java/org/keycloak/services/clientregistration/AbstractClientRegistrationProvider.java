@@ -147,8 +147,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         if (!client.getClientId().equals(rep.getClientId())) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
-
-        RepresentationToModel.updateClient(rep, client);
+        RealmModel realm = session.getContext().getRealm();
+        RepresentationToModel.updateClient(realm, rep, client);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
 
         if (rep.getDefaultRoles() != null) {
