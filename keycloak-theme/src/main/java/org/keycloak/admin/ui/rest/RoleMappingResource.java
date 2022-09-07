@@ -24,8 +24,7 @@ public abstract class RoleMappingResource {
     public final List<ClientRole> mapping(Predicate<RoleModel> predicate, long first, long max, final String search) {
 
         return mapping(predicate).filter(clientRole -> clientRole.getClient().contains(search) || clientRole.getRole().contains(search))
-
-                .skip("".equals(search) ? first : 0).limit(max).collect(Collectors.toList());
+                .skip(first).limit(max).collect(Collectors.toList());
     }
 
     public RoleMappingResource(RealmModel realm, AdminPermissionEvaluator auth) {

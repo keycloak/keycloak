@@ -4,6 +4,7 @@ import {
   ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -207,6 +208,7 @@ export function KeycloakDataTable<T>({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [search, setSearch] = useState<string>("");
+  const prevSearch = useRef<string>();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -297,8 +299,15 @@ export function KeycloakDataTable<T>({
   useFetch(
     async () => {
       setLoading(true);
+      const newSearch = prevSearch.current === "" && search !== "";
+
+      if (newSearch) {
+        setFirst(0);
+      }
+      prevSearch.current = search;
       return typeof loader === "function"
-        ? unPaginatedData || (await loader(first, max + 1, search))
+        ? unPaginatedData ||
+            (await loader(newSearch ? 0 : first, max + 1, search))
         : loader;
     },
     (data) => {
