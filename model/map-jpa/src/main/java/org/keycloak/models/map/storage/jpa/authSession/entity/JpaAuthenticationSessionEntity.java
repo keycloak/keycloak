@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -58,6 +59,10 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
     @Column
     private int version;
 
+    @Column(insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
+    private Integer entityVersion;
+
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
     private final JpaAuthenticationSessionMetadata metadata;
@@ -77,6 +82,10 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
         this.metadata = new JpaAuthenticationSessionMetadata(cloner);
     }
 
+    public boolean isMetadataInitialized() {
+        return metadata != null;
+    }
+
     public void setParent(JpaRootAuthenticationSessionEntity root) {
         this.root = root;
     }
@@ -93,7 +102,8 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
 
     @Override
     public Integer getEntityVersion() {
-        return metadata.getEntityVersion();
+        if (isMetadataInitialized()) return metadata.getEntityVersion();
+        return entityVersion;
     }
 
     @Override
