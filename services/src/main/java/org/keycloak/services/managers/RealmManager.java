@@ -438,6 +438,8 @@ public class RealmManager {
             RoleModel manageConsentRole = accountClient.addRole(AccountRoles.MANAGE_CONSENT);
             manageConsentRole.setDescription("${role_" + AccountRoles.MANAGE_CONSENT + "}");
             manageConsentRole.addCompositeRole(viewConsentRole);
+            RoleModel viewGroups = accountClient.addRole(AccountRoles.VIEW_GROUPS);
+            viewGroups.setDescription("${role_" + AccountRoles.VIEW_GROUPS + "}");
 
             KeycloakModelUtils.setupDeleteAccount(accountClient);
 
@@ -458,6 +460,7 @@ public class RealmManager {
                 accountConsoleClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
                 accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT));
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.VIEW_GROUPS));
 
                 ProtocolMapperModel audienceMapper = new ProtocolMapperModel();
                 audienceMapper.setName(OIDCLoginProtocolFactory.AUDIENCE_RESOLVE);

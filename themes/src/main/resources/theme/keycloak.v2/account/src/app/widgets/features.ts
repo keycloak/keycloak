@@ -26,6 +26,7 @@
     deleteAccountAllowed: boolean;
     updateEmailFeatureEnabled: boolean;
     updateEmailActionEnabled: boolean;
+    isViewGroupsEnabled: boolean;
  }
 
 

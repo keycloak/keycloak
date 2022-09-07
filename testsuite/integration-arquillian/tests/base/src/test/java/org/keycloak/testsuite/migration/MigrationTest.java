@@ -68,6 +68,8 @@ public class MigrationTest extends AbstractMigrationTest {
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
         testExtremelyLongClientAttribute(migrationRealm);
+
+        testMigrationTo20_x();
     }
 
     @Test
@@ -78,6 +80,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo12_x(true);
         testMigrationTo18_x();
         testMigrationTo19_x();
+        testMigrationTo20_x();
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
@@ -97,6 +100,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo12_x(true);
         testMigrationTo18_x();
         testMigrationTo19_x();
+        testMigrationTo20_x();
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
@@ -117,6 +121,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo12_x(true);
         testMigrationTo18_x();
         testMigrationTo19_x();
+        testMigrationTo20_x();
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
@@ -145,6 +150,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo12_x(false);
         testMigrationTo18_x();
         testMigrationTo19_x();
+        testMigrationTo20_x();
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
@@ -166,6 +172,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo12_x(false);
         testMigrationTo18_x();
         testMigrationTo19_x();
+        testMigrationTo20_x();
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
