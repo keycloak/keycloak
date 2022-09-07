@@ -52,6 +52,8 @@ import org.keycloak.config.MultiOption;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.Export;
+import org.keycloak.quarkus.runtime.cli.command.Import;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.Start;
@@ -102,24 +104,31 @@ public final class Picocli {
     private static int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
         int exitCode = 0;
 
-        if (!isHelpCommand(cliArgs)) {
-            if (cliArgs.contains(StartDev.NAME)) {
-                String profile = Environment.getProfile();
+        if (shouldSkipRebuild(cliArgs)) {
+            return exitCode;
+        }
 
-                if (profile == null) {
-                    // force the server image to be set with the dev profile
-                    Environment.forceDevProfile();
-                }
-            }
-            if (requiresReAugmentation(cmd)) {
-                exitCode = runReAugmentation(cliArgs, cmd);
+        if (cliArgs.contains(StartDev.NAME)) {
+            String profile = Environment.getProfile();
+
+            if (profile == null) {
+                // force the server image to be set with the dev profile
+                Environment.forceDevProfile();
             }
         }
+        if (requiresReAugmentation(cmd)) {
+            exitCode = runReAugmentation(cliArgs, cmd);
+        }
+
         return exitCode;
     }
 
-    private static boolean isHelpCommand(List<String> cliArgs) {
-        return cliArgs.contains("--help") || cliArgs.contains("-h") || cliArgs.contains("--help-all");
+    private static boolean shouldSkipRebuild(List<String> cliArgs) {
+        return cliArgs.contains("--help")
+                || cliArgs.contains("-h")
+                || cliArgs.contains("--help-all")
+                || cliArgs.contains(Export.NAME)
+                || cliArgs.contains(Import.NAME);
     }
 
     public static boolean requiresReAugmentation(CommandLine cmd) {
