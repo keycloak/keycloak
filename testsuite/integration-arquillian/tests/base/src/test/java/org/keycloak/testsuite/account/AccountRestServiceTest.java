@@ -925,11 +925,22 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
-    public void listApplicationsThirdParty() throws Exception {
+    public void listApplicationsThirdPartyWithoutConsentText() throws Exception {
+        listApplicationsThirdParty("acr", false);
+    }
+
+    @Test
+    public void listApplicationsThirdPartyWithConsentText() throws Exception {
+        listApplicationsThirdParty("profile", true);
+    }
+
+    public void listApplicationsThirdParty(String clientScopeName, boolean expectConsentTextAsName) throws Exception {
         String appId = "third-party";
         TokenUtil token = new TokenUtil("view-applications-access", "password");
 
-        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().stream()
+                .filter(s -> s.getName().equals(clientScopeName))
+                .findFirst().get();
         ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
         consentScopeRepresentation.setId(clientScopeRepresentation.getId());
 
@@ -964,7 +975,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(app.getConsent().getGrantedScopes().isEmpty());
         ConsentScopeRepresentation grantedScope = app.getConsent().getGrantedScopes().get(0);
         assertEquals(clientScopeRepresentation.getId(), grantedScope.getId());
-        assertEquals(clientScopeRepresentation.getAttributes().get(ClientScopeModel.CONSENT_SCREEN_TEXT) != null ? clientScopeRepresentation.getAttributes().get(ClientScopeModel.CONSENT_SCREEN_TEXT) : clientScopeRepresentation.getName(), grantedScope.getName());
+
+        if (expectConsentTextAsName) {
+            assertEquals(clientScopeRepresentation.getAttributes().get(ClientScopeModel.CONSENT_SCREEN_TEXT), grantedScope.getName());
+        }
+        else {
+            assertEquals(clientScopeRepresentation.getName(), grantedScope.getName());
+        }
     }
 
     @Test
