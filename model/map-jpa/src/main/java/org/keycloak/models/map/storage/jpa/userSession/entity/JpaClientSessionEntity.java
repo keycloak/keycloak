@@ -90,13 +90,18 @@ public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEn
         this.metadata = new JpaClientSessionMetadata(cloner);
     }
 
+    public boolean isMetadataInitialized() {
+        return metadata != null;
+    }
+
     public void setParent(JpaUserSessionEntity root) {
         this.root = root;
     }
 
     @Override
     public Integer getEntityVersion() {
-        return metadata.getEntityVersion();
+        if (isMetadataInitialized()) return metadata.getEntityVersion();
+        return entityVersion;
     }
 
     @Override
@@ -137,7 +142,8 @@ public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEn
 
     @Override
     public String getClientId() {
-        return metadata.getClientId();
+        if (isMetadataInitialized()) return metadata.getClientId();
+        return clientId;
     }
 
     @Override
