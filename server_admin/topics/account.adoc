@@ -147,3 +147,15 @@ The *Applications* menu item shows users which applications you can access. In t
 .Applications
 
 image:{project_images}/account-console-applications.png[Applications]
+
+=== Viewing group memberships
+
+You can view the groups you are associated with by clicking the *Groups* menu.
+If you select *Direct membership* checkbox, you will see only the groups you are direct associated with.
+
+.Prerequisites
+
+* You need to have the *view-groups* account role for being able to view *Groups* menu.
+
+.View group memberships
+image:{project_images}/groups_account_console.png[View group memberships]
