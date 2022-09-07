@@ -66,5 +66,6 @@ public class JsonFileImport1301MigrationClientPoliciesTest extends AbstractJsonF
         Assert.assertTrue(clientProfiles.getProfiles().isEmpty());
         ClientPoliciesRepresentation clientPolicies = adminClient.realms().realm("test").clientPoliciesPoliciesResource().getPolicies();
         Assert.assertTrue(clientPolicies.getPolicies().isEmpty());
+        testViewGroups(masterRealm);
     }
 }
