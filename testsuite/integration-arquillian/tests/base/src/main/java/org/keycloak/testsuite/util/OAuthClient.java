@@ -745,7 +745,7 @@ public class OAuthClient {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getServiceAccountUrl());
 
-            String authorization = BasicAuthHelper.UrlEncoded.createHeader(clientId, clientSecret);
+            String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
             post.setHeader("Authorization", authorization);
 
             List<NameValuePair> parameters = new LinkedList<>();
