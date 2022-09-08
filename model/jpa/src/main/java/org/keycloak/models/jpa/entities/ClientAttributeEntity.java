@@ -28,6 +28,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Nationalized;
+
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -46,7 +48,8 @@ public class ClientAttributeEntity {
     @Column(name="NAME")
     protected String name;
 
-    @Column(name = "VALUE", length = 4000)
+    @Nationalized
+    @Column(name = "VALUE")
     protected String value;
 
     public ClientEntity getClient() {
