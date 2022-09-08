@@ -39,6 +39,7 @@ import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.realm.entity.MapComponentEntity;
 import org.keycloak.models.map.storage.jpa.Constants;
+import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
@@ -48,10 +49,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * to indicate that they are automatically generated from json fields. As such, these fields are non-insertable and non-updatable.
  * <p/>
  * Components are independent (i.e. a component doesn't depend on another component) and can be manipulated directly via
- * the component endpoints. Because of that, this entity  implements {@link JpaRootVersionedEntity} instead of
- * {@link org.keycloak.models.map.storage.jpa.JpaChildEntity}. This prevents {@link javax.persistence.OptimisticLockException}s
- * when different components in the same realm are being manipulated at the same time - for example, when multiple components
- * are being added to the realm by different threads.
+ * the component endpoints.
  * <p/>
  * By implementing {@link JpaRootVersionedEntity}, this entity will enforce optimistic locking, which can lead to
  * {@link javax.persistence.OptimisticLockException} if more than one thread attempts to modify the <b>same</b> component
@@ -62,7 +60,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 @Entity
 @Table(name = "kc_component")
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaComponentEntity extends UpdatableEntity.Impl implements MapComponentEntity, JpaRootVersionedEntity {
+public class JpaComponentEntity extends UpdatableEntity.Impl implements MapComponentEntity, JpaRootVersionedEntity, JpaChildEntity<JpaRealmEntity> {
 
     @Id
     @Column
@@ -98,6 +96,11 @@ public class JpaComponentEntity extends UpdatableEntity.Impl implements MapCompo
 
     public JpaComponentEntity(DeepCloner cloner) {
         this.metadata = new JpaComponentMetadata(cloner);
+    }
+
+    @Override
+    public JpaRealmEntity getParent() {
+        return root;
     }
 
     public void setParent(JpaRealmEntity root) {
