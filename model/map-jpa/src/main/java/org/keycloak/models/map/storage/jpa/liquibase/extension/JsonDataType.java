@@ -19,6 +19,7 @@ package org.keycloak.models.map.storage.jpa.liquibase.extension;
 
 import liquibase.change.core.LoadDataChange;
 import liquibase.database.Database;
+import liquibase.database.core.MSSQLDatabase;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.datatype.DataTypeInfo;
 import liquibase.datatype.DatabaseDataType;
@@ -37,7 +38,10 @@ public class JsonDataType extends LiquibaseDataType {
         if (database instanceof PostgresDatabase) {
             // on Postgres switch the columns of type JSON to JSONB as JSONB is a more efficient type to handle JSON contents.
             return new DatabaseDataType("JSONB", super.getParameters());
+        } else if (database instanceof MSSQLDatabase) {
+            return new DatabaseDataType("NVARCHAR(MAX)", super.getParameters());
         }
+
         return super.toDatabaseDataType(database);
     }
 

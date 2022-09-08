@@ -98,9 +98,9 @@ final class DatabasePropertyMappers {
         Optional<String> url = Database.getDefaultUrl(value.get());
 
         if (url.isPresent()) {
-            if (isJpaStore()) {
-                return Database.getDefaultUrl(Database.Vendor.POSTGRES.name().toLowerCase());
-            }
+//            if (isJpaStore()) {
+//                return Database.getDefaultUrl(Database.Vendor.POSTGRES.name().toLowerCase());
+//            }
             return url;
         }
 
@@ -108,9 +108,9 @@ final class DatabasePropertyMappers {
     }
 
     private static Optional<String> getXaOrNonXaDriver(Optional<String> value, ConfigSourceInterceptorContext context) {
-        if (isJpaStore()) {
-            return Database.getDriver(Database.Vendor.POSTGRES.name().toLowerCase(), false);
-        }
+//        if (isJpaStore()) {
+//            return Database.getDriver(Database.Vendor.POSTGRES.name().toLowerCase(), false);
+//        }
 
         ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
         ConfigValue jtaEnabledConfiguration = context.proceed("kc.transaction-jta-enabled");
@@ -132,9 +132,9 @@ final class DatabasePropertyMappers {
     }
 
     private static Optional<String> toDatabaseKind(Optional<String> db, ConfigSourceInterceptorContext context) {
-        if (isJpaStore()) {
-            return Database.getDatabaseKind(Database.Vendor.POSTGRES.name().toLowerCase());
-        }
+//        if (isJpaStore()) {
+//            return Database.getDatabaseKind(Database.Vendor.POSTGRES.name().toLowerCase());
+//        }
 
         Optional<String> databaseKind = Database.getDatabaseKind(db.get());
 
@@ -148,9 +148,9 @@ final class DatabasePropertyMappers {
     }
 
     private static Optional<String> resolveDatabaseVendor(Optional<String> db, ConfigSourceInterceptorContext context) {
-        if (isJpaStore()) {
-            return of(Database.Vendor.POSTGRES.name().toLowerCase());
-        }
+//        if (isJpaStore()) {
+//            return of(Database.Vendor.POSTGRES.name().toLowerCase());
+//        }
 
         if (db.isEmpty()) {
             return of("dev-file");
@@ -185,9 +185,9 @@ final class DatabasePropertyMappers {
     }
 
     private static Optional<String> transformDialect(Optional<String> db, ConfigSourceInterceptorContext context) {
-        if (isJpaStore()) {
-            return of("org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
-        }
+//        if (isJpaStore()) {
+//            return of("org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
+//        }
 
         Optional<String> databaseKind = Database.getDatabaseKind(db.get());
 

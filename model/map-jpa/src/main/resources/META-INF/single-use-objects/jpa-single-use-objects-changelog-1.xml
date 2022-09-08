@@ -35,7 +35,7 @@ limitations under the License.
         </createTable>
         <ext:addGeneratedColumn tableName="kc_single_use_obj">
             <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="objectkey" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fObjectKey"/>
+            <ext:column name="objectkey" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fObjectKey"/>
             <ext:column name="expiration" type="BIGINT" jsonColumn="metadata" jsonProperty="fExpiration"/>
         </ext:addGeneratedColumn>
         <createIndex tableName="kc_single_use_obj" indexName="single_use_obj_entityVersion">
@@ -58,8 +58,8 @@ limitations under the License.
             <column name="fk_root" type="UUID">
                 <constraints foreignKeyName="single_use_obj_note_fk_root_fkey" references="kc_single_use_obj(id)" deleteCascade="true"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="value" type="TEXT"/>
+            <column name="name" type="NVARCHAR(255)"/>
+            <column name="value" type="NVARCHAR(max)"/>
         </createTable>
         <createIndex tableName="kc_single_use_obj_note" indexName="single_use_obj_note_fk_root">
             <column name="fk_root"/>

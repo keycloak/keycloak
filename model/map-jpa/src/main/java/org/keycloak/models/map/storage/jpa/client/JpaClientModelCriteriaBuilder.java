@@ -61,9 +61,9 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaClientModelCriteriaBuilder((cb, query, root) ->
-                        cb.isTrue(cb.function("@>",
-                            Boolean.TYPE,
-                            cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fScopeMappings")),
+                        cb.isTrue(cb.equal(
+                            cb.function("JSON_VALUE", JsonbType.class, root.get("metadata"),
+                                    cb.literal("$.fScopeMappings")),
                             cb.literal(convertToJson(value[0]))))
                     );
                 } else if (modelField == SearchableFields.ALWAYS_DISPLAY_IN_CONSOLE) {
@@ -71,7 +71,7 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
 
                     return new JpaClientModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(
-                            cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fAlwaysDisplayInConsole")), 
+                            cb.function("JSON_VALUE", JsonbType.class, root.get("metadata"), cb.literal("$.fAlwaysDisplayInConsole")),
                             cb.literal(convertToJson(value[0])))
                     );
                 } else if (modelField == SearchableFields.ATTRIBUTE) {

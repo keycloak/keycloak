@@ -85,8 +85,8 @@ public class JpaMapStorage extends KeycloakModelParameters {
                 .config("url", System.getProperty("keycloak.map.storage.connectionsJpa.url"))
                 .config("user", System.getProperty("keycloak.map.storage.connectionsJpa.user"))
                 .config("password", System.getProperty("keycloak.map.storage.connectionsJpa.password"))
-                .config("driver", "org.postgresql.Driver")
-                .config("driverDialect", "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
+                .config("driver", System.getProperty("keycloak.map.storage.connectionsJpa.driver", "org.postgresql.Driver"))
+                .config("driverDialect", "org.hibernate.dialect.SQLServerDialect");
 
         cf.spi(AuthenticationSessionSpi.PROVIDER_ID).provider(MapRootAuthenticationSessionProviderFactory.PROVIDER_ID)  .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("client").provider(MapClientProviderFactory.PROVIDER_ID)                                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)

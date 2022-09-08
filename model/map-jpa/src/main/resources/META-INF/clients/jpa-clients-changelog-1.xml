@@ -36,8 +36,8 @@ limitations under the License.
         <ext:addGeneratedColumn tableName="kc_client">
             <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
             <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
-            <ext:column name="clientid" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fClientId"/>
-            <ext:column name="protocol" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fProtocol"/>
+            <ext:column name="clientid" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fClientId"/>
+            <ext:column name="protocol" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fProtocol"/>
             <ext:column name="enabled" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEnabled"/>
         </ext:addGeneratedColumn>
         <createIndex tableName="kc_client" indexName="client_entityVersion">
@@ -60,19 +60,22 @@ limitations under the License.
             <column name="fk_root" type="UUID">
                 <constraints foreignKeyName="client_attr_fk_root_fkey" references="kc_client(id)" deleteCascade="true"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="value" type="text"/>
+            <column name="name" type="NVARCHAR(255)"/>
+            <column name="value" type="NVARCHAR(max)"/>
         </createTable>
         <createIndex tableName="kc_client_attribute" indexName="client_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
+        <!-- TODO: need a solution for this kind of indexes on mssql
         <createIndex tableName="kc_client_attribute" indexName="client_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>
+
         <modifySql dbms="postgresql,cockroachdb">
             <replace replace="VALUE(255)" with="(value::varchar(250))"/>
         </modifySql>
+        -->
     </changeSet>
 
     <changeSet author="keycloak" id="clients-2" dbms="postgresql">

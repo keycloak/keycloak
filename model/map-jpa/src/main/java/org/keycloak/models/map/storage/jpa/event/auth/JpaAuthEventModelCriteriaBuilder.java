@@ -66,8 +66,8 @@ public class JpaAuthEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jp
                     validateValue(value, modelField, op, String.class);
                     return new JpaAuthEventModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(
-                                    cb.function("->>", String.class, root.get("metadata"),
-                                            cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
+                                    cb.function("JSON_VALUE", String.class, root.get("metadata"),
+                                            cb.literal("$." + FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
                     );
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
@@ -111,8 +111,8 @@ public class JpaAuthEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jp
                     if (values.isEmpty()) return new JpaAuthEventModelCriteriaBuilder((cb, query, root) -> cb.or());
 
                     return new JpaAuthEventModelCriteriaBuilder((cb, query, root) -> {
-                        CriteriaBuilder.In<Integer> in = cb.in(cb.function("->>", String.class, root.get("metadata"),
-                                cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))).as(Integer.class));
+                        CriteriaBuilder.In<Integer> in = cb.in(cb.function("JSON_VALUE", String.class, root.get("metadata"),
+                                cb.literal("$." + FIELD_TO_JSON_PROP.get(modelField.getName()))).as(Integer.class));
                         values.forEach(in::value);
                         return in;
                     });

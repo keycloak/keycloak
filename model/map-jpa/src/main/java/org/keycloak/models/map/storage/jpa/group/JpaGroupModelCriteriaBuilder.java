@@ -69,9 +69,9 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaGroupModelCriteriaBuilder((cb, query, root) ->
-                        cb.isTrue(cb.function("@>",
-                            Boolean.TYPE,
-                            cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fGrantedRoles")),
+                        cb.isTrue(cb.equal(
+                            cb.function("JSON_VALUE", JsonbType.class, root.get("metadata"),
+                                    cb.literal("$.fGrantedRoles")),
                             cb.literal(convertToJson(value[0]))))
                     );
                 } else if (modelField == GroupModel.SearchableFields.ATTRIBUTE) {

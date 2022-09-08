@@ -54,8 +54,8 @@ limitations under the License.
             <column name="fk_root" type="UUID">
                 <constraints foreignKeyName="auth_event_detail_fk_root_fkey" references="kc_auth_event(id)" deleteCascade="true"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="value" type="TEXT"/>
+            <column name="name" type="NVARCHAR(255)"/>
+            <column name="value" type="NVARCHAR(max)"/>
         </createTable>
         <createIndex tableName="kc_auth_event_detail" indexName="auth_event_detail_fk_root">
             <column name="fk_root"/>

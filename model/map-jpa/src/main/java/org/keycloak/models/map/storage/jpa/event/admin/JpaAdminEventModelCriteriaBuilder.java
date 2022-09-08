@@ -39,6 +39,7 @@ import org.keycloak.util.EnumWithStableIndex;
 public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaAdminEventEntity, AdminEvent, JpaAdminEventModelCriteriaBuilder> {
 
     private static final Map<String, String> FIELD_TO_JSON_PROP = new HashMap<>();
+
     static {
         FIELD_TO_JSON_PROP.put(AdminEvent.SearchableFields.AUTH_CLIENT_ID.getName(), "fAuthClientId");
         FIELD_TO_JSON_PROP.put(AdminEvent.SearchableFields.AUTH_REALM_ID.getName(), "fAuthRealmId");
@@ -75,8 +76,8 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                     validateValue(value, modelField, op, String.class);
                     return new JpaAdminEventModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(
-                                    cb.function("->>", String.class, root.get("metadata"),
-                                            cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
+                                    cb.function("JSON_VALUE", String.class, root.get("metadata"),
+                                            cb.literal("$." + FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
                     );
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
@@ -108,7 +109,8 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
 
                     return new JpaAdminEventModelCriteriaBuilder((cb, query, root) ->
                             cb.like(
-                                    cb.function("->>", String.class, root.get("metadata"), cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))),
+                                    cb.function("JSON_VALUE", String.class, root.get("metadata"),
+                                            cb.literal("$." + FIELD_TO_JSON_PROP.get(modelField.getName()))),
                                     value[0].toString())
                     );
                 } else {
@@ -132,8 +134,8 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                     if (values.isEmpty()) return new JpaAdminEventModelCriteriaBuilder((cb, query, root) -> cb.or());
 
                     return new JpaAdminEventModelCriteriaBuilder((cb, query, root) -> {
-                        CriteriaBuilder.In<Integer> in = cb.in(cb.function("->>", String.class, root.get("metadata"),
-                                cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))).as(Integer.class));
+                        CriteriaBuilder.In<Integer> in = cb.in(cb.function("JSON_VALUE", String.class, root.get("metadata"),
+                                cb.literal("$." +FIELD_TO_JSON_PROP.get(modelField.getName()))).as(Integer.class));
                         values.forEach(in::value);
                         return in;
                     });
@@ -145,8 +147,8 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                     if (values.isEmpty()) return new JpaAdminEventModelCriteriaBuilder((cb, query, root) -> cb.or());
 
                     return new JpaAdminEventModelCriteriaBuilder((cb, query, root) -> {
-                        CriteriaBuilder.In<String> in = cb.in(cb.function("->>", String.class, root.get("metadata"),
-                                                              cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))));
+                        CriteriaBuilder.In<String> in = cb.in(cb.function("JSON_VALUE", String.class, root.get("metadata"),
+                                                              cb.literal("$." +FIELD_TO_JSON_PROP.get(modelField.getName()))));
                         values.forEach(in::value);
                         return in;
                     });

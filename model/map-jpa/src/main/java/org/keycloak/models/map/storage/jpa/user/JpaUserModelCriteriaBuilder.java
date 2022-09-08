@@ -136,7 +136,7 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     validateValue(value, modelField, op, String.class);
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(
-                                    cb.function("->>", String.class, root.get("metadata"), cb.literal("fServiceAccountClientLink")),
+                                    cb.function("JSON_VALUE", String.class, root.get("metadata"), cb.literal("$." +"fServiceAccountClientLink")),
                                     value[0]));
 
                 } else if (modelField == UserModel.SearchableFields.CONSENT_FOR_CLIENT) {
@@ -155,9 +155,9 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     validateValue(value, modelField, op, String.class);
                     return new JpaUserModelCriteriaBuilder((cb, query, root) -> {
                        Join<JpaUserEntity, JpaUserConsentEntity> join = root.join("consents", JoinType.LEFT);
-                       return cb.isTrue(cb.function("@>",
-                               Boolean.TYPE,
-                               cb.function("->", JsonbType.class, join.get("metadata"), cb.literal("fGrantedClientScopesIds")),
+                       return cb.isTrue(cb.equal(
+                               cb.function("JSON_VALUE", JsonbType.class, join.get("metadata"),
+                                       cb.literal("$.fGrantedClientScopesIds")),
                                cb.literal(convertToJson(value[0]))));
                     });
 
@@ -236,7 +236,7 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
             case NOT_EXISTS:
                 if (modelField == UserModel.SearchableFields.SERVICE_ACCOUNT_CLIENT) {
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
-                        cb.isNull(cb.function("->>", String.class, root.get("metadata"), cb.literal("fServiceAccountClientLink"))));
+                        cb.isNull(cb.function("JSON_VALUE", String.class, root.get("metadata"), cb.literal("$." +"fServiceAccountClientLink"))));
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }

@@ -82,7 +82,7 @@ public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                 } else if (modelField ==  SearchableFields.GRANTED_TIMESTAMP) { 
 
                     return new JpaPermissionModelCriteriaBuilder((cb, query, root) ->
-                        cb.isNotNull(cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fGrantedTimestamp")))
+                        cb.isNotNull(cb.function("JSON_VALUE", JsonbType.class, root.get("metadata"), cb.literal("$.fGrantedTimestamp")))
                     );
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
@@ -98,7 +98,7 @@ public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                 } else if (modelField == SearchableFields.GRANTED_TIMESTAMP) { 
 
                     return new JpaPermissionModelCriteriaBuilder((cb, query, root) ->
-                        cb.isNull(cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fGrantedTimestamp")))
+                        cb.isNull(cb.function("JSON_VALUE", JsonbType.class, root.get("metadata"), cb.literal("$.fGrantedTimestamp")))
                     );
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);

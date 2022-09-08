@@ -38,8 +38,8 @@ limitations under the License.
             <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
             <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
             <ext:column name="clientid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
-            <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
-            <ext:column name="description" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fDescription"/>
+            <ext:column name="name" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
+            <ext:column name="description" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fDescription"/>
         </ext:addGeneratedColumn>
         <createIndex tableName="kc_role" indexName="role_entityVersion">
             <column name="entityversion"/>
@@ -63,16 +63,18 @@ limitations under the License.
             <column name="fk_root" type="UUID">
                 <constraints foreignKeyName="role_attr_fk_root_fkey" references="kc_role(id)" deleteCascade="true"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="value" type="text"/>
+            <column name="name" type="NVARCHAR(255)"/>
+            <column name="value" type="NVARCHAR(max)"/>
         </createTable>
         <createIndex tableName="kc_role_attribute" indexName="role_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
+        <!-- TODO: need a solution for this kind of indexes on mssql
         <createIndex tableName="kc_role_attribute" indexName="role_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>
+        -->
         <createTable tableName="kc_role_composite">
             <column name="role_id" type="UUID">
                 <constraints foreignKeyName="role_composite_fk_root_fkey" references="kc_role(id)" deleteCascade="true" nullable="false"/>

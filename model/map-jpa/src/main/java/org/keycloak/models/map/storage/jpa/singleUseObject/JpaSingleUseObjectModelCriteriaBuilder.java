@@ -57,10 +57,10 @@ public class JpaSingleUseObjectModelCriteriaBuilder extends JpaModelCriteriaBuil
                         modelField == ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE) {
 
                     validateValue(value, modelField, op, String.class);
-
                     return new JpaSingleUseObjectModelCriteriaBuilder((cb, query, root) ->
-                            cb.equal(cb.function("->>", String.class, root.get("metadata"),
-                                    cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
+                            cb.equal(cb.function("JSON_VALUE", String.class, root.get("metadata"),
+                                    cb.literal("$." + FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
+
                     );
                 } else if(modelField == ActionTokenValueModel.SearchableFields.OBJECT_KEY) {
                     validateValue(value, modelField, op, String.class);

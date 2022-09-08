@@ -35,9 +35,9 @@ limitations under the License.
         </createTable>
         <ext:addGeneratedColumn tableName="kc_realm">
             <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
-            <ext:column name="displayname" type="TEXT" jsonColumn="metadata" jsonProperty="fDisplayName"/>
-            <ext:column name="displaynamehtml" type="TEXT" jsonColumn="metadata" jsonProperty="fDisplayNameHtml"/>
+            <ext:column name="name" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
+            <ext:column name="displayname" type="NVARCHAR(max)" jsonColumn="metadata" jsonProperty="fDisplayName"/>
+            <ext:column name="displaynamehtml" type="NVARCHAR(max)" jsonColumn="metadata" jsonProperty="fDisplayNameHtml"/>
             <ext:column name="enabled" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEnabled"/>
         </ext:addGeneratedColumn>
         <createIndex tableName="kc_realm" indexName="realm_entityVersion">
@@ -63,7 +63,7 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_component">
-            <ext:column name="providertype" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fProviderType"/>
+            <ext:column name="providertype" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fProviderType"/>
         </ext:addGeneratedColumn>
         <createIndex tableName="kc_component" indexName="component_fk_root">
             <column name="fk_root"/>
@@ -79,19 +79,22 @@ limitations under the License.
             <column name="fk_root" type="UUID">
                 <constraints foreignKeyName="realm_attr_fk_root_fkey" references="kc_realm(id)" deleteCascade="true"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="value" type="TEXT"/>
+            <column name="name" type="NVARCHAR(255)"/>
+            <column name="value" type="NVARCHAR(max)"/>
         </createTable>
         <createIndex tableName="kc_realm_attribute" indexName="realm_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
+        <!-- TODO: need a solution for this kind of indexes on mssql
         <createIndex tableName="kc_realm_attribute" indexName="realm_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>
+
         <modifySql dbms="postgresql,cockroachdb">
-            <replace replace="VALUE(255)" with="(value::varchar(250))"/>
+            <replace replace="VALUE(255)" with="(value::NVARCHAR(250))"/>
         </modifySql>
+        -->
     </changeSet>
 
     <changeSet author="keycloak" id="realms-2" dbms="postgresql">

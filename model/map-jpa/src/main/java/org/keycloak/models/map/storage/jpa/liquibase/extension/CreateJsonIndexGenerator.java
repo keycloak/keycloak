@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import liquibase.database.Database;
 import liquibase.database.core.CockroachDatabase;
+import liquibase.database.core.MSSQLDatabase;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.exception.ValidationErrors;
 import liquibase.sql.Sql;
@@ -69,11 +70,23 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
     @Override
     public Sql[] generateSql(CreateJsonIndexStatement statement, Database database, SqlGeneratorChain sqlGeneratorChain) {
 
-        if (!(database instanceof PostgresDatabase)) {
+        StringBuilder builder = null;
+
+        if (database instanceof PostgresDatabase) {
+            builder = buildIndexPostgres(statement, database);
+        } else if (database instanceof MSSQLDatabase)  {
+            builder = buildIndexMssql(statement, database);
+        }
+
+        if (builder == null) {
             // for now return an empty SQL for DBs that don't support JSON indexes natively.
             return new Sql[0];
         }
 
+        return new Sql[]{new UnparsedSql(builder.toString(), getAffectedIndex(statement))};
+    }
+
+    private StringBuilder buildIndexPostgres(CreateJsonIndexStatement statement, Database database) {
         StringBuilder builder = new StringBuilder();
         builder.append("CREATE ");
         if (statement.isUnique() != null && statement.isUnique()) {
@@ -91,8 +104,39 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
         if (StringUtil.trimToNull(statement.getTablespace()) != null && database.supportsTablespaces()) {
             builder.append(" TABLESPACE ").append(statement.getTablespace());
         }
+        return builder;
+    }
 
-        return new Sql[]{new UnparsedSql(builder.toString(), getAffectedIndex(statement))};
+    private StringBuilder buildIndexMssql(CreateJsonIndexStatement statement, Database database) {
+        StringBuilder builder = new StringBuilder();
+        this.createMssqlIndexCols(statement, database, builder);
+
+        builder.append("; CREATE ");
+        if (statement.isUnique() != null && statement.isUnique()) {
+            builder.append("UNIQUE ");
+        }
+        builder.append("INDEX ");
+
+        if (statement.getIndexName() != null) {
+            builder.append(database.escapeObjectName(statement.getIndexName(), Index.class)).append(" ");
+        }
+
+        builder.append("ON ").append(database.escapeTableName(statement.getTableCatalogName(), statement.getTableSchemaName(),
+                statement.getTableName()));
+        this.handleJsonIndex(statement, database, builder);
+        if (StringUtil.trimToNull(statement.getTablespace()) != null && database.supportsTablespaces()) {
+            builder.append(" TABLESPACE ").append(statement.getTablespace());
+        }
+        return builder;
+    }
+
+    private void createMssqlIndexCols(CreateJsonIndexStatement statement, Database database, StringBuilder builder) {
+        builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
+                        .map(c -> {
+                            String idxColName = "idx" + c.getJsonProperty();
+                            return "ALTER TABLE " + statement.getTableName() + " ADD " + idxColName + " AS JSON_VALUE("
+                                    + c.getJsonColumn() + ", '$." + c.getJsonProperty() + "') PERSISTED";})
+                        .collect(Collectors.joining("; ")));
     }
 
     protected void handleJsonIndex(final CreateJsonIndexStatement statement, final Database database, final StringBuilder builder) {
@@ -110,6 +154,12 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
                     .map(c -> c.getJsonProperty() == null ? c.getJsonColumn() :
                             "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "') jsonb_path_ops")
                     .collect(Collectors.joining(", ")))
+                    .append(")");
+        } else if (database instanceof  MSSQLDatabase){
+            builder.append("(");
+            builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
+                            .map(c -> "idx" + c.getJsonProperty())
+                            .collect(Collectors.joining(", ")))
                     .append(")");
         }
     }

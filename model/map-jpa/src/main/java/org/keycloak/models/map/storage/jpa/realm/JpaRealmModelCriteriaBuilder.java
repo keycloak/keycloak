@@ -66,8 +66,8 @@ public class JpaRealmModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRea
             case EXISTS:
                 if (modelField == RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS) {
                     return new JpaRealmModelCriteriaBuilder((cb, query, root) ->
-                        cb.isTrue(cb.function("->", JsonbType.class, root.get("metadata"),
-                                cb.literal("fClientInitialAccesses")).isNotNull())
+                        cb.isTrue(cb.function("JSON_VALUE", JsonbType.class, root.get("metadata"),
+                                cb.literal("$.fClientInitialAccesses")).isNotNull())
                     );
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);

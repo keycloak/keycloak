@@ -36,12 +36,12 @@ limitations under the License.
         <ext:addGeneratedColumn tableName="kc_user">
             <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
             <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
-            <ext:column name="username" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fUsername"/>
-            <ext:column name="firstname" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fFirstName"/>
-            <ext:column name="lastname" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fLastName"/>
-            <ext:column name="email" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fEmail"/>
-            <ext:column name="emailconstraint" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fEmailConstraint"/>
-            <ext:column name="federationlink" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fFederationLink"/>
+            <ext:column name="username" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fUsername"/>
+            <ext:column name="firstname" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fFirstName"/>
+            <ext:column name="lastname" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fLastName"/>
+            <ext:column name="email" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fEmail"/>
+            <ext:column name="emailconstraint" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fEmailConstraint"/>
+            <ext:column name="federationlink" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fFederationLink"/>
             <ext:column name="enabled" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEnabled"/>
             <ext:column name="emailverified" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEmailVerified"/>
             <ext:column name="timestamp" type="BIGINT" jsonColumn="metadata" jsonProperty="fCreatedTimestamp"/>
@@ -107,7 +107,7 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_user_federated_identity">
-            <ext:column name="identityprovider" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fIdentityProvider"/>
+            <ext:column name="identityprovider" type="NVARCHAR(255)" jsonColumn="metadata" jsonProperty="fIdentityProvider"/>
             <ext:column name="userid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fUserId"/>
         </ext:addGeneratedColumn>
         <createIndex tableName="kc_user_federated_identity" indexName="user_federated_identity_fk_root">
@@ -153,20 +153,22 @@ limitations under the License.
             <column name="fk_root" type="UUID">
                 <constraints foreignKeyName="user_attr_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="value" type="TEXT"/>
+            <column name="name" type="NVARCHAR(255)"/>
+            <column name="value" type="NVARCHAR(max)"/>
         </createTable>
         <createIndex tableName="kc_user_attribute" indexName="user_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
+        <!-- TODO: need a solution for this kind of indexes on mssql
         <createIndex tableName="kc_user_attribute" indexName="user_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>
+
         <modifySql dbms="postgresql,cockroachdb">
             <replace replace="VALUE(255)" with="(value::varchar(250))"/>
         </modifySql>
-
+        -->
     </changeSet>
 
     <changeSet author="keycloak" id="users-2" dbms="postgresql">

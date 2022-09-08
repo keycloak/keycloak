@@ -22,7 +22,7 @@ import liquibase.database.Database;
 import liquibase.datatype.DataTypeInfo;
 import liquibase.datatype.DatabaseDataType;
 import liquibase.datatype.LiquibaseDataType;
-import liquibase.datatype.core.VarcharType;
+import liquibase.datatype.core.NVarcharType;
 
 /**
  * A {@link LiquibaseDataType} used in columns that reference an entity that can be external to the JPA storage. In other
@@ -38,10 +38,10 @@ public class KeycloakKeyDataType extends LiquibaseDataType {
 
     @Override
     public DatabaseDataType toDatabaseDataType(Database database) {
-        // convert the type into a varchar of size 4000.
-        VarcharType varcharType = new VarcharType();
-        varcharType.addParameter("4000");
-        return varcharType.toDatabaseDataType(database);
+        // convert the type into a nvarchar of size 4000.
+        NVarcharType nvarcharType = new NVarcharType();
+        nvarcharType.addParameter("4000");
+        return nvarcharType.toDatabaseDataType(database);
     }
 
     @Override

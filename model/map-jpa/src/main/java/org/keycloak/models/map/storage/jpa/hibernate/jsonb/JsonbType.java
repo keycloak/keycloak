@@ -49,6 +49,7 @@ import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.java.MutableMutabilityPlan;
 import org.hibernate.type.descriptor.sql.BasicBinder;
 import org.hibernate.type.descriptor.sql.BasicExtractor;
+import org.hibernate.type.descriptor.sql.NVarcharTypeDescriptor;
 import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 import org.hibernate.usertype.DynamicParameterizedType;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
@@ -129,7 +130,7 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
     }
 
     public JsonbType() {
-        super(JsonbSqlTypeDescriptor.INSTANCE, new JsonbJavaTypeDescriptor());
+        super(NVarcharTypeDescriptor.INSTANCE, new JsonbJavaTypeDescriptor());
     }
 
     @Override
@@ -161,12 +162,12 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             return new BasicBinder<X>(javaTypeDescriptor, this) {
                 @Override
                 protected void doBind(PreparedStatement st, X value, int index, WrapperOptions options) throws SQLException {
-                    st.setObject(index, javaTypeDescriptor.unwrap(value, JsonNode.class, options), getSqlType());
+                    st.setObject(index, javaTypeDescriptor.unwrap(value, JsonNode.class, options).toString(), getSqlType());
                 }
 
                 @Override
                 protected void doBind(CallableStatement st, X value, String name, WrapperOptions options) throws SQLException {
-                    st.setObject(name, javaTypeDescriptor.unwrap(value, JsonNode.class, options), getSqlType());
+                    st.setObject(name, javaTypeDescriptor.unwrap(value, JsonNode.class, options).toString(), getSqlType());
                 }
             };
         }
@@ -254,11 +255,7 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             if (value == null) return null;
 
             String stringValue = (value instanceof String) ? (String) value : toString(value);
-            try {
-                return (X) MAPPER.readTree(stringValue);
-            } catch (IOException e) {
-                throw new HibernateException("unable to read", e);
-            }
+            return (X) stringValue;
         }
 
         @Override

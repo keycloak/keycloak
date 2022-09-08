@@ -62,7 +62,7 @@ limitations under the License.
     <!-- unimplemented on CockroachDB: computed column "XXX" cannot reference a foreign key
          See: https://go.crdb.dev/issue-v/46672/v21.2 -->
 
-    <changeSet author="keycloak" id="authz-permission-2" dbms="postgresql">
+    <changeSet author="keycloak" id="authz-permission-2" dbms="postgresql,mssql">
         <addForeignKeyConstraint constraintName="authz_permission_fk_root_fkey"
                                  baseTableName="kc_authz_permission"
                                  baseColumnNames="resourceserverid"

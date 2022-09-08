@@ -177,8 +177,8 @@
             "url": "${keycloak.map.storage.connectionsJpa.url:}",
             "user": "${keycloak.map.storage.connectionsJpa.user:}",
             "password": "${keycloak.map.storage.connectionsJpa.password:}",
-            "driver": "org.postgresql.Driver",
-            "driverDialect": "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect",
+            "driver": "${keycloak.map.storage.connectionsJpa.driver:}",
+            "driverDialect": "org.hibernate.dialect.SQLServerDialect",
             "showSql": "${keycloak.map.storage.connectionsJpa,showSql:false}"
         }
     },

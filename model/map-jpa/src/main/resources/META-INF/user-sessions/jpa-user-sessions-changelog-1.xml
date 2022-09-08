@@ -59,8 +59,8 @@ limitations under the License.
             <column name="fk_root" type="UUID">
                 <constraints foreignKeyName="user_session_note_fk_root_fkey" references="kc_user_session(id)" deleteCascade="true"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="value" type="TEXT"/>
+            <column name="name" type="NVARCHAR(255)"/>
+            <column name="value" type="NVARCHAR(max)"/>
         </createTable>
         <createIndex tableName="kc_user_session_note" indexName="kc_user_session_note_fk_root_name_key">
             <column name="fk_root"/>
@@ -106,10 +106,10 @@ limitations under the License.
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="client_session_fk_root_fkey" references="kc_client_session(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="client_session_note_fk_root_fkey" references="kc_client_session(id)" deleteCascade="true"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="value" type="TEXT"/>
+            <column name="name" type="NVARCHAR(255)"/>
+            <column name="value" type="NVARCHAR(max)"/>
         </createTable>
         <createIndex tableName="kc_client_session_note" indexName="kc_client_session_note_fk_root_name_key">
             <column name="fk_root"/>

@@ -93,7 +93,7 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
             case NOT_EXISTS:
                 if (modelField == SearchableFields.OWNER) {
                     return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->
-                        cb.isNull(cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fOwner")))
+                        cb.isNull(cb.function("JSON_VALUE", JsonbType.class, root.get("metadata"), cb.literal("$.fOwner")))
                     );
                 } else if (modelField == SearchableFields.RESOURCE_ID) {
                     return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> {
