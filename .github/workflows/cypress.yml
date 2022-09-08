@@ -5,6 +5,13 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      keycloakRepo:
+        description: The location of the Keycloak repo (e.g. keycloak/keycloak).
+        required: false
+      keycloakBranch:
+        description: The branch to check out for the Keycloak repo (e.g. main).
+        required: false
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -22,7 +29,8 @@ jobs:
       - name: Check out Keycloak Server
         uses: actions/checkout@v3
         with:
-          repository: keycloak/keycloak
+          repository: ${{ inputs.keycloakRepo || 'keycloak/keycloak' }}
+          ref: ${{ inputs.keycloakBranch || 'main' }}
           path: ${{ env.KEYCLOAK_SERVER_PATH }}
 
       - name: Set up Java
