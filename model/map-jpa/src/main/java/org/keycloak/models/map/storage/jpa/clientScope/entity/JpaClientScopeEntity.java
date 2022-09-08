@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.clientscope.entity;
+package org.keycloak.models.map.storage.jpa.clientScope.entity;
 
 import java.util.Collection;
 import java.util.HashMap;

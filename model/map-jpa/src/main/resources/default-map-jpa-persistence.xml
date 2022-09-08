@@ -30,8 +30,8 @@
     <class>org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyEntity</class>
     <class>org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyConfigEntity</class>
     <!--client-scopes-->
-    <class>org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity</class>
-    <class>org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeAttributeEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.clientScope.entity.JpaClientScopeEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.clientScope.entity.JpaClientScopeAttributeEntity</class>
     <!--clients-->
     <class>org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity</class>
     <class>org.keycloak.models.map.storage.jpa.client.entity.JpaClientAttributeEntity</class>

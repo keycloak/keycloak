@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.clientscope;
+package org.keycloak.models.map.storage.jpa.clientScope;
 
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeModel.SearchableFields;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
-import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
+import org.keycloak.models.map.storage.jpa.clientScope.entity.JpaClientScopeEntity;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaClientScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaClientScopeEntity, ClientScopeModel, JpaClientScopeModelCriteriaBuilder> {

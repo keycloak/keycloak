@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.clientscope.delegate;
+package org.keycloak.models.map.storage.jpa.clientScope.delegate;
 
 import java.util.UUID;
 
@@ -29,7 +29,7 @@ import org.keycloak.models.map.clientscope.MapClientScopeEntityFields;
 import org.keycloak.models.map.common.EntityField;
 import org.keycloak.models.map.common.delegate.DelegateProvider;
 import org.keycloak.models.map.storage.jpa.JpaDelegateProvider;
-import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
+import org.keycloak.models.map.storage.jpa.clientScope.entity.JpaClientScopeEntity;
 
 public class JpaClientScopeDelegateProvider extends JpaDelegateProvider<JpaClientScopeEntity> implements DelegateProvider<MapClientScopeEntity> {
 
