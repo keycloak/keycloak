@@ -80,8 +80,8 @@ export const ExecutionConfigModal = ({
   );
 
   useEffect(() => {
-    if (configDescription) setupForm(config);
-  }, [show]);
+    if (config) setupForm(config);
+  }, [config]);
 
   const save = async (changedConfig: ExecutionConfigModalForm) => {
     try {
