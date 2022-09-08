@@ -58,6 +58,7 @@ import org.keycloak.userprofile.validator.UsernameHasValueValidator;
 import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.validators.EmailValidator;
 
 /**
  * <p>A base class for {@link UserProfileProvider} implementations providing the main hooks for customizations.
@@ -322,7 +323,8 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 AbstractUserProfileProvider::readEmailCondition,
                 new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL, false)),
         		new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
-        		new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID))
+        		new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID),
+                new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()))
             .setAttributeDisplayName("${email}");
 
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
