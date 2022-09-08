@@ -37,6 +37,7 @@ import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
+import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.sessions.CommonClientSessionModel;
@@ -47,7 +48,7 @@ import org.keycloak.sessions.CommonClientSessionModel;
 @Entity
 @Table(name = "kc_auth_session")
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapAuthenticationSessionEntity, JpaRootVersionedEntity {
+public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapAuthenticationSessionEntity, JpaRootVersionedEntity, JpaChildEntity<JpaRootAuthenticationSessionEntity>{
 
     @Id
     @Column
@@ -84,6 +85,11 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
 
     public boolean isMetadataInitialized() {
         return metadata != null;
+    }
+
+    @Override
+    public JpaRootAuthenticationSessionEntity getParent() {
+        return root;
     }
 
     public void setParent(JpaRootAuthenticationSessionEntity root) {
