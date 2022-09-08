@@ -311,7 +311,7 @@ export const RealmSettingsTabs = ({
             data-testid="rs-realm-events-tab"
             {...route("events")}
           >
-            <EventsTab />
+            <EventsTab realm={realm} />
           </Tab>
           <Tab
             title={<TabTitleText>{t("localization")}</TabTitleText>}

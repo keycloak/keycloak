@@ -11,6 +11,7 @@ import {
   Title,
 } from "@patternfly/react-core";
 
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -21,11 +22,20 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { EventsTypeTable, EventType } from "./EventsTypeTable";
 import { AddEventTypesDialog } from "./AddEventTypesDialog";
 import { EventListenersForm } from "./EventListenersForm";
+import { convertToFormValues } from "../../util";
 
-export const EventsTab = () => {
+type EventsTabProps = {
+  realm: RealmRepresentation;
+};
+
+type EventsConfigForm = RealmEventsConfigRepresentation & {
+  adminEventsExpiration?: number;
+};
+
+export const EventsTab = ({ realm }: EventsTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const form = useForm<RealmEventsConfigRepresentation>();
-  const { setValue, handleSubmit, watch, reset } = form;
+  const form = useForm<EventsConfigForm>();
+  const { setValue, handleSubmit, watch } = form;
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -39,14 +49,11 @@ export const EventsTab = () => {
 
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const { realm } = useRealm();
+  const { realm: realmName } = useRealm();
 
-  const setupForm = (eventConfig?: RealmEventsConfigRepresentation) => {
-    reset(eventConfig);
+  const setupForm = (eventConfig?: EventsConfigForm) => {
     setEvents(eventConfig);
-    Object.entries(eventConfig || {}).forEach((entry) =>
-      setValue(entry[0], entry[1])
-    );
+    convertToFormValues(eventConfig, setValue);
   };
 
   const clear = async (type: EventsType) => {
@@ -63,10 +70,10 @@ export const EventsTab = () => {
       try {
         switch (type) {
           case "admin":
-            await adminClient.realms.clearAdminEvents({ realm });
+            await adminClient.realms.clearAdminEvents({ realm: realmName });
             break;
           case "user":
-            await adminClient.realms.clearEvents({ realm });
+            await adminClient.realms.clearEvents({ realm: realmName });
             break;
         }
         addAlert(t(`${type}-events-cleared`), AlertVariant.success);
@@ -77,21 +84,38 @@ export const EventsTab = () => {
   });
 
   useFetch(
-    () => adminClient.realms.getConfigEvents({ realm }),
+    () => adminClient.realms.getConfigEvents({ realm: realmName }),
     (eventConfig) => {
-      setupForm(eventConfig);
+      setupForm({
+        ...eventConfig,
+        adminEventsExpiration: realm.attributes?.adminEventsExpiration,
+      });
       reload();
     },
     [key]
   );
 
-  const save = async (eventConfig: RealmEventsConfigRepresentation) => {
+  const save = async (config: EventsConfigForm) => {
     const updatedEventListener =
-      events?.eventsListeners !== eventConfig.eventsListeners;
+      events?.eventsListeners !== config.eventsListeners;
+
+    const { adminEventsExpiration, ...eventConfig } = config;
+    if (realm.attributes?.adminEventsExpiration !== adminEventsExpiration) {
+      await adminClient.realms.update(
+        { realm: realmName },
+        {
+          ...realm,
+          attributes: { ...(realm.attributes || {}), adminEventsExpiration },
+        }
+      );
+    }
 
     try {
-      await adminClient.realms.updateConfigEvents({ realm }, eventConfig);
-      setupForm({ ...events, ...eventConfig });
+      await adminClient.realms.updateConfigEvents(
+        { realm: realmName },
+        eventConfig
+      );
+      setupForm({ ...events, ...eventConfig, adminEventsExpiration });
       addAlert(
         updatedEventListener
           ? t("realm-settings:saveEventListenersSuccess")

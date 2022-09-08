@@ -114,31 +114,31 @@ export const EventConfigForm = ({
               />
             </FormGroup>
           )}
-          {type === "user" && (
-            <FormGroup
-              label={t("expiration")}
-              fieldId="expiration"
-              labelIcon={
-                <HelpItem
-                  helpText="realm-settings-help:expiration"
-                  fieldLabelId="realm-settings:expiration"
-                />
-              }
-            >
-              <Controller
-                name="eventsExpiration"
-                defaultValue=""
-                control={control}
-                render={({ onChange, value }) => (
-                  <TimeSelector
-                    value={value}
-                    onChange={onChange}
-                    units={["minute", "hour", "day"]}
-                  />
-                )}
+          <FormGroup
+            label={t("expiration")}
+            fieldId="expiration"
+            labelIcon={
+              <HelpItem
+                helpText="realm-settings-help:expiration"
+                fieldLabelId="realm-settings:expiration"
               />
-            </FormGroup>
-          )}
+            }
+          >
+            <Controller
+              name={
+                type === "user" ? "eventsExpiration" : "adminEventsExpiration"
+              }
+              defaultValue=""
+              control={control}
+              render={({ onChange, value }) => (
+                <TimeSelector
+                  value={value}
+                  onChange={onChange}
+                  units={["minute", "hour", "day"]}
+                />
+              )}
+            />
+          </FormGroup>
         </>
       )}
       <ActionGroup>
