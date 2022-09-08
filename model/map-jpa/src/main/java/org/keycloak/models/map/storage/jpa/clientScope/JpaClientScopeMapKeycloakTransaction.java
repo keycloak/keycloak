@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.clientscope;
+package org.keycloak.models.map.storage.jpa.clientScope;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -28,8 +28,8 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
 import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
-import org.keycloak.models.map.storage.jpa.clientscope.delegate.JpaClientScopeDelegateProvider;
-import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
+import org.keycloak.models.map.storage.jpa.clientScope.delegate.JpaClientScopeDelegateProvider;
+import org.keycloak.models.map.storage.jpa.clientScope.entity.JpaClientScopeEntity;
 
 public class JpaClientScopeMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaClientScopeEntity, MapClientScopeEntity, ClientScopeModel> {
 
