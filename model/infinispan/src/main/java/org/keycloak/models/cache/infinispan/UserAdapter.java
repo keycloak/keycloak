@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -53,7 +54,6 @@ public class UserAdapter implements CachedUserModel.Streams {
     protected final KeycloakSession keycloakSession;
     protected final RealmModel realm;
     protected volatile UserModel updated;
-    private boolean userRegisteredForInvalidation;
 
     public UserAdapter(CachedUser cached, UserCacheSession userProvider, KeycloakSession keycloakSession, RealmModel realm) {
         this.cached = cached;
@@ -101,12 +101,8 @@ public class UserAdapter implements CachedUserModel.Streams {
     public UserModel getDelegateForUpdate() {
         if (updated == null) {
             userProviderCache.registerUserInvalidation(realm, cached);
-            userRegisteredForInvalidation = true;
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
-        } else if (!userRegisteredForInvalidation) {
-            userProviderCache.registerUserInvalidation(realm, cached);
-            userRegisteredForInvalidation = true;
         }
         return updated;
     }
@@ -288,14 +284,13 @@ public class UserAdapter implements CachedUserModel.Streams {
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        if (updated == null) {
-            updated = modelSupplier.get();
-            if (updated == null) throw new IllegalStateException("Not found in database");
-        }
-        return new SubjectCredentialManagerCacheAdapter(updated.credentialManager()) {
+        // Instantiate a new LegacyUserCredentialManager that points to the instance that is wrapped by the cache
+        // this way it the cache will know if any of the credentials are modified during validation of CredentialInputs.
+        // This assumes that each implementation in the legacy world implements the LegacyUserCredentialManager and not something else.
+        return new SubjectCredentialManagerCacheAdapter(keycloakSession, realm, this) {
             @Override
             public CredentialModel getStoredCredentialById(String id) {
-                if (!userRegisteredForInvalidation) {
+                if (updated == null) {
                     return cached.getStoredCredentials(modelSupplier).stream().filter(credential ->
                                     Objects.equals(id, credential.getId()))
                             .findFirst().orElse(null);
@@ -305,7 +300,7 @@ public class UserAdapter implements CachedUserModel.Streams {
 
             @Override
             public Stream<CredentialModel> getStoredCredentialsStream() {
-                if (!userRegisteredForInvalidation) {
+                if (updated == null) {
                     return cached.getStoredCredentials(modelSupplier).stream();
                 }
                 return super.getStoredCredentialsStream();
@@ -313,7 +308,7 @@ public class UserAdapter implements CachedUserModel.Streams {
 
             @Override
             public Stream<CredentialModel> getStoredCredentialsByTypeStream(String type) {
-                if (!userRegisteredForInvalidation) {
+                if (updated == null) {
                     return cached.getStoredCredentials(modelSupplier).stream().filter(credential -> Objects.equals(type, credential.getType()));
                 }
                 return super.getStoredCredentialsByTypeStream(type);
@@ -321,7 +316,7 @@ public class UserAdapter implements CachedUserModel.Streams {
 
             @Override
             public CredentialModel getStoredCredentialByNameAndType(String name, String type) {
-                if (!userRegisteredForInvalidation) {
+                if (updated == null) {
                     return cached.getStoredCredentials(modelSupplier).stream().filter(credential ->
                             Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
                             .findFirst().orElse(null);
@@ -331,10 +326,9 @@ public class UserAdapter implements CachedUserModel.Streams {
 
             @Override
             public void invalidateCacheForEntity() {
-                if (!userRegisteredForInvalidation) {
-                    userProviderCache.registerUserInvalidation(realm, cached);
-                    userRegisteredForInvalidation = true;
-                }
+                // This implies invalidation of the cached entry,
+                // and all future calls in this session for the user will go to the store instead of the cache.
+                getDelegateForUpdate();
             }
         };
     }
