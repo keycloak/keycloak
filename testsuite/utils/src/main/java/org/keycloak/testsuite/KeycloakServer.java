@@ -40,6 +40,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.platform.Platform;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
+import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
 import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
@@ -601,6 +602,9 @@ public class KeycloakServer {
             addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("mappers", Collections.emptyList()),
                     ProtocolMapperSpi.class,
                     DeployedScriptOIDCProtocolMapper::new);
+            addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("saml-mappers", Collections.emptyList()),
+                    ProtocolMapperSpi.class,
+                    DeployedScriptSAMLProtocolMapper::new);
             addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("policies", Collections.emptyList()),
                     PolicySpi.class,
                     DeployedScriptPolicyFactory::new);
