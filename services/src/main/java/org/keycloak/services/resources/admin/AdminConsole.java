@@ -328,7 +328,14 @@ public class AdminConsole {
                 adminBaseUrl = adminBaseUrl.substring(0, adminBaseUrl.length() - 1);
             }
 
+            String kcJsRelativeBasePath = adminBaseUri.getPath();
+
+            if(!kcJsRelativeBasePath.endsWith("/")) {
+                kcJsRelativeBasePath = kcJsRelativeBasePath + "/";
+            }
+
             URI authServerBaseUri = session.getContext().getUri(UrlType.FRONTEND).getBaseUri();
+
             String authServerBaseUrl = authServerBaseUri.toString();
             if (authServerBaseUrl.endsWith("/")) {
                 authServerBaseUrl = authServerBaseUrl.substring(0, authServerBaseUrl.length() - 1);
@@ -339,7 +346,7 @@ public class AdminConsole {
             map.put("consoleBaseUrl", Urls.adminConsoleRoot(adminBaseUri, realm.getName()).getPath());
             map.put("resourceUrl", Urls.themeRoot(adminBaseUri).getPath() + "/admin/" + theme.getName());
             map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
-            map.put("keycloakJsUrl", adminBaseUri.getPath() + "js/keycloak.js?version=" + Version.RESOURCES_VERSION);
+            map.put("keycloakJsUrl", kcJsRelativeBasePath + "js/keycloak.js?version=" + Version.RESOURCES_VERSION);
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("loginRealm", realm.getName());

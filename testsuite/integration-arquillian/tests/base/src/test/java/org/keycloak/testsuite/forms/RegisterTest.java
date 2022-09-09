@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -696,7 +697,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertThat(user, notNullValue());
 
         if (username != null) {
-            assertThat(username.toLowerCase(), is(user.getUsername()));
+            assertThat(username, Matchers.equalToIgnoringCase(user.getUsername()));
         }
         assertThat(email.toLowerCase(), is(user.getEmail()));
         assertThat(firstName, is(user.getFirstName()));

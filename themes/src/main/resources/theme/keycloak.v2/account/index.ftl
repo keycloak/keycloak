@@ -48,7 +48,8 @@
                 isTotpConfigured : ${isTotpConfigured?c},
                 deleteAccountAllowed : ${deleteAccountAllowed?c},
                 updateEmailFeatureEnabled: ${updateEmailFeatureEnabled?c},
-                updateEmailActionEnabled: ${updateEmailActionEnabled?c}
+                updateEmailActionEnabled: ${updateEmailActionEnabled?c},
+                isViewGroupsEnabled : ${isViewGroupsEnabled?c}
             }
 
             var availableLocales = [];
