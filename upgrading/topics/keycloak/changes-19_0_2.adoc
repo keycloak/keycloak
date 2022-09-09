@@ -12,3 +12,11 @@ bin/kc.[sh|bat] --spi-login-protocol-openid-connect-suppress-logout-confirmation
 With this configuration, you can still use the logout endpoint without a user prompt.
 
 WARNING: The backwards compatibility switch will be removed in some future version - probably Keycloak 23. You are encouraged to update your clients as soon as possible as described above rather than rely on this switch.
+
+= Deploying scripts through SAML javascript protocol mapper
+
+Until now, administrators, which used SAML javascript protocol mapper on their SAML clients or client scopes, were allowed to upload scripts to the server through the {project_name} Administration Console as well as
+through the RESTful Admin API.
+
+For now on, this capability is *disabled* and users should deploy scripts directly to the server. This behaviour is aligned with other script based providers. For more details,
+please take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
