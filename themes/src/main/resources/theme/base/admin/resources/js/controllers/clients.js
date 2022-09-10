@@ -1521,6 +1521,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.client.requestUris = [];
         }
 
+        if ($scope.client.attributes["post.logout.redirect.uris"] && $scope.client.attributes["post.logout.redirect.uris"].length > 0) {
+            $scope.postLogoutRedirectUris = $scope.client.attributes["post.logout.redirect.uris"].split("##");
+        } else {
+            $scope.postLogoutRedirectUris = [];
+        }
+
         if ($scope.client.attributes["default.acr.values"] && $scope.client.attributes["default.acr.values"].length > 0) {
             $scope.defaultAcrValues = $scope.client.attributes["default.acr.values"].split("##");
         } else {
@@ -1733,6 +1739,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         if ($scope.newRedirectUri && $scope.newRedirectUri.length > 0) {
             return true;
         }
+        if ($scope.newPostLogoutRedirectUri && $scope.newPostLogoutRedirectUri.length > 0) {
+            return true;
+        }
         if ($scope.newWebOrigin && $scope.newWebOrigin.length > 0) {
             return true;
         }
@@ -1849,6 +1858,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.changed = isChanged();
     }, true);
 
+    $scope.$watch('newPostLogoutRedirectUri', function() {
+        $scope.changed = isChanged();
+    }, true);
 
     $scope.$watch('newWebOrigin', function() {
         $scope.changed = isChanged();
@@ -1894,6 +1906,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.newRedirectUri = "";
     }
 
+    $scope.deletePostLogoutRedirectUri = function(index) {
+        $scope.postLogoutRedirectUris.splice(index, 1);
+    }
+
+    $scope.addPostLogoutRedirectUri = function() {
+        $scope.postLogoutRedirectUris.push($scope.newPostLogoutRedirectUri);
+        $scope.newPostLogoutRedirectUri = "";
+    }
+
     $scope.save = function() {
         if ($scope.newRedirectUri && $scope.newRedirectUri.length > 0) {
             $scope.addRedirectUri();
@@ -1911,6 +1932,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else {
             $scope.clientEdit.attributes["request.uris"] = null;
         }
+
+        if ($scope.postLogoutRedirectUris && $scope.postLogoutRedirectUris.length > 0) {
+            $scope.clientEdit.attributes["post.logout.redirect.uris"] = $scope.postLogoutRedirectUris.join("##");
+        } else {
+            $scope.clientEdit.attributes["post.logout.redirect.uris"] = null;
+        }
+
         if (!$scope.clientEdit.frontchannelLogout) {
             $scope.clientEdit.attributes["frontchannel.logout.url"] = null;
         }
@@ -2242,7 +2270,7 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, $rout
         });
     }
 
-    
+
     $scope.selectedClient = null;
 
     $scope.selectClient = function(client) {
@@ -3028,7 +3056,7 @@ module.controller('ClientClientScopesEvaluateCtrl', function($scope, Realm, User
     }
 
     clientSelectControl($scope, $route.current.params.realm, Client);
-    
+
     $scope.selectedClient = null;
 
     $scope.selectClient = function(client) {
