@@ -21,6 +21,8 @@
  */
 package org.keycloak.testsuite.console.page.authentication.otppolicy;
 
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
@@ -47,22 +49,30 @@ public class OTPPolicyForm extends Form {
 
     @FindBy(id = "lookAround")
     private WebElement lookAround;
-    
+
     @FindBy(id = "period")
     private WebElement period;
-    
+
     @FindBy(id = "counter")
     private WebElement counter;
-    
+
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='reusableCode']]")
+    private OnOffSwitch reusableCode;
+
     public void setValues(OTPType otpType, OTPHashAlg otpHashAlg, Digits digits, String lookAheadOrAround, String periodOrCounter) {
+        setValues(otpType, otpHashAlg, digits, lookAheadOrAround, periodOrCounter, OTPPolicy.DEFAULT_IS_REUSABLE);
+    }
+
+    public void setValues(OTPType otpType, OTPHashAlg otpHashAlg, Digits digits, String lookAheadOrAround, String periodOrCounter, boolean isReusableCode) {
         this.otpType.selectByValue(otpType.getName());
         this.otpHashAlg.selectByValue(otpHashAlg.getName());
         this.digits.selectByVisibleText("" + digits.getName());
-        
+
         switch (otpType) {
             case TIME_BASED:
                 UIUtils.setTextInputValue(this.lookAround, lookAheadOrAround);
                 UIUtils.setTextInputValue(period, periodOrCounter);
+                reusableCode.setOn(isReusableCode);
                 break;
             case COUNTER_BASED:
                 UIUtils.setTextInputValue(this.lookAhead, lookAheadOrAround);

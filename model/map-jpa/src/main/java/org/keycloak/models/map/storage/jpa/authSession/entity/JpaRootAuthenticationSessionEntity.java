@@ -200,7 +200,7 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
     public void addAuthenticationSession(MapAuthenticationSessionEntity authenticationSession) {
         JpaAuthenticationSessionEntity jpaAuthSession = JpaAuthenticationSessionEntity.class.cast(CLONER.from(authenticationSession));
         jpaAuthSession.setParent(this);
-        jpaAuthSession.setEntityVersion(this.getEntityVersion());
+        jpaAuthSession.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION);
         authSessions.add(jpaAuthSession);
     }
 

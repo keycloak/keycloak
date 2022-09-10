@@ -626,7 +626,7 @@ public class SAMLEndpoint {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.INVALID_SAML_DOCUMENT);
                 event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_INVALID_RESPONSE);
             }
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
@@ -650,7 +650,7 @@ public class SAMLEndpoint {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_INVALID_SIGNATURE);
                 }
             }
             if (statusResponse instanceof ResponseType) {

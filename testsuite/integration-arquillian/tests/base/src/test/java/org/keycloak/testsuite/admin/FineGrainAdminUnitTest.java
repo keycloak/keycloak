@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.admin;
 
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -628,7 +629,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 // Should only return the list of users that belong to "top" group
                 List<UserRepresentation> queryUsers = realmClient.realm(TEST).users().list();
                 Assert.assertEquals(queryUsers.size(), 1);
-                Assert.assertEquals("groupmember", queryUsers.get(0).getUsername());
+                MatcherAssert.assertThat("groupmember", Matchers.equalToIgnoringCase(queryUsers.get(0).getUsername()));
                 for (UserRepresentation user : queryUsers) {
                     System.out.println(user.getUsername());
                 }

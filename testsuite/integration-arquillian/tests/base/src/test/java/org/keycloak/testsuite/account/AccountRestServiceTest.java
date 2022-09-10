@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -393,7 +394,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             user.setUsername("updatedUsername");
             user = updateAndGet(user);
-            assertEquals("updatedusername", user.getUsername());
+            assertThat("updatedusername", Matchers.equalToIgnoringCase(user.getUsername()));
 
 
             realmRep.setEditUsernameAllowed(false);

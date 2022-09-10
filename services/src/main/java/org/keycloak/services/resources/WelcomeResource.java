@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
@@ -176,6 +177,7 @@ public class WelcomeResource {
 
             Map<String, Object> map = new HashMap<>();
 
+            map.put("adminConsoleEnabled", isAdminConsoleEnabled());
             map.put("productName", Version.NAME);
             map.put("productNameFull", Version.NAME_FULL);
 
@@ -213,6 +215,10 @@ public class WelcomeResource {
         } catch (Exception e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private static boolean isAdminConsoleEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
     }
 
     private Theme getTheme() {

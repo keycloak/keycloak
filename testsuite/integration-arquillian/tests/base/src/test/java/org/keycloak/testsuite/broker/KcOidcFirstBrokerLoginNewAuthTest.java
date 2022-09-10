@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -80,6 +81,8 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         // Create user and link him with TOTP
         String consumerRealmUserId = createUser("consumer");
         String totpSecret = addTOTPToUser("consumer");
+
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginWithBrokerAndConfirmLinkAccount();
 
@@ -163,6 +166,8 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         // Create user and link him with TOTP
         String consumerRealmUserId = createUser("consumer");
         String totpSecret = addTOTPToUser("consumer");
+
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginWithBrokerAndConfirmLinkAccount();
 

@@ -2,6 +2,7 @@ package org.keycloak.testsuite.updaters;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+
 import java.util.HashMap;
 import java.util.List;
 
@@ -115,6 +116,42 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
 
     public RealmAttributeUpdater setInternationalizationEnabled(Boolean internationalizationEnabled) {
         rep.setInternationalizationEnabled(internationalizationEnabled);
+        return this;
+    }
+
+    // OTP Policy
+    public RealmAttributeUpdater setOtpPolicyAlgorithm(String otpPolicyAlgorithm) {
+        rep.setOtpPolicyAlgorithm(otpPolicyAlgorithm);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyDigits(Integer otpPolicyDigits) {
+        rep.setOtpPolicyDigits(otpPolicyDigits);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyInitialCounter(Integer otpPolicyInitialCounter) {
+        rep.setOtpPolicyInitialCounter(otpPolicyInitialCounter);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyPeriod(Integer otpPolicyPeriod) {
+        rep.setOtpPolicyPeriod(otpPolicyPeriod);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyType(String otpPolicyType) {
+        rep.setOtpPolicyType(otpPolicyType);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyLookAheadWindow(Integer otpPolicyLookAheadWindow) {
+        rep.setOtpPolicyLookAheadWindow(otpPolicyLookAheadWindow);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyCodeReusable(Boolean isCodeReusable) {
+        rep.setOtpPolicyCodeReusable(isCodeReusable);
         return this;
     }
 }

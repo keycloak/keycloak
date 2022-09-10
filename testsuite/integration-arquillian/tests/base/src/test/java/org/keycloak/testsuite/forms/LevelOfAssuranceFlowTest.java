@@ -27,6 +27,7 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -62,11 +63,13 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.PushTheButtonPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -100,6 +103,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         try {
+            testRealm.setOtpPolicyCodeReusable(true);
             findTestApp(testRealm).setAttributes(Collections.singletonMap(Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient()));
             UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
             UserBuilder.edit(user)
@@ -121,6 +125,19 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     @Before
     public void setupFlow() {
         configureStepUpFlow(testingClient);
+        canBeOtpCodesReusable(true);
+    }
+
+    @After
+    public void tearDown() {
+        canBeOtpCodesReusable(false);
+    }
+
+    // Fixing this test with not reusable OTP codes would bring additional unwanted workarounds; not scope of this test
+    private void canBeOtpCodesReusable(boolean state) {
+        new RealmAttributeUpdater(testRealm())
+                .setOtpPolicyCodeReusable(state)
+                .update();
     }
 
     public static void configureStepUpFlow(KeycloakTestingClient testingClient) {

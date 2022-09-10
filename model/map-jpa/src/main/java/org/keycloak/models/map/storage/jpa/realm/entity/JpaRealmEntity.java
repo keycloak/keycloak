@@ -55,10 +55,10 @@ import org.keycloak.models.map.realm.entity.MapOTPPolicyEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_REALM;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 
 /**
@@ -161,7 +161,7 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
 
     @Override
     public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_REALM;
+        return Constants.CURRENT_SCHEMA_VERSION_REALM;
     }
 
     @Override
@@ -888,7 +888,7 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     public void addComponent(MapComponentEntity component) {
         JpaComponentEntity jpaComponent = JpaComponentEntity.class.cast(CLONER.from(component));
         jpaComponent.setParent(this);
-        jpaComponent.setEntityVersion(this.getEntityVersion());
+        jpaComponent.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_COMPONENT);
         this.components.add(jpaComponent);
     }
 

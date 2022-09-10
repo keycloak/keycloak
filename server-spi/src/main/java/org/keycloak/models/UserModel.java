@@ -53,13 +53,21 @@ public interface UserModel extends RoleMapperModel {
     public static class SearchableFields {
         public static final SearchableModelField<UserModel> ID              = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<UserModel> REALM_ID        = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<UserModel> USERNAME        = new SearchableModelField<>("username", String.class);
         public static final SearchableModelField<UserModel> FIRST_NAME      = new SearchableModelField<>("firstName", String.class);
         public static final SearchableModelField<UserModel> LAST_NAME       = new SearchableModelField<>("lastName", String.class);
         public static final SearchableModelField<UserModel> EMAIL           = new SearchableModelField<>("email", String.class);
         public static final SearchableModelField<UserModel> ENABLED         = new SearchableModelField<>("enabled", Boolean.class);
         public static final SearchableModelField<UserModel> EMAIL_VERIFIED  = new SearchableModelField<>("emailVerified", Boolean.class);
         public static final SearchableModelField<UserModel> FEDERATION_LINK = new SearchableModelField<>("federationLink", String.class);
+
+        /**
+         * Search for user's username in case sensitive mode.
+         */
+        public static final SearchableModelField<UserModel> USERNAME        = new SearchableModelField<>("username", String.class);
+        /**
+         * Search for user's username in case insensitive mode.
+         */
+        public static final SearchableModelField<UserModel> USERNAME_CASE_INSENSITIVE = new SearchableModelField<>("usernameCaseInsensitive", String.class);
 
         /**
          * This field can only searched either for users coming from an IDP, then the operand is (idp_alias),

@@ -145,6 +145,7 @@ import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant1;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant2;
+import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
@@ -803,7 +804,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         UserRepresentation topGroupUser = createUserRepresentation("topGroupUser", "top@redhat.com", "", "", true);
         setPasswordFor(topGroupUser, PASSWORD);
 
-        assertSuccessfulLogin(salesPostServletPage, topGroupUser, testRealmSAMLPostLoginPage, "principal=topgroupuser");
+        String expectedString = StoreProvider.getCurrentProvider().isMapStore() ? "principal=topGroupUser" : "principal=topgroupuser";
+        assertSuccessfulLogin(salesPostServletPage, topGroupUser, testRealmSAMLPostLoginPage, expectedString);
 
         salesPostServletPage.logout();
         checkLoggedOut(salesPostServletPage, testRealmSAMLPostLoginPage);

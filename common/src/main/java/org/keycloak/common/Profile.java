@@ -22,6 +22,7 @@ import static org.keycloak.common.Profile.Type.DEPRECATED;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -89,6 +90,11 @@ public class Profile {
                     break;
             }
         }
+
+        if ((!disabledFeatures.contains(Feature.ADMIN2) || !disabledFeatures.contains(Feature.ADMIN)) && disabledFeatures.contains(Feature.ADMIN_API)) {
+                throw new RuntimeException(String.format("Invalid value for feature: %s needs to be enabled because it is required by feature %s.",
+                        Feature.ADMIN_API, Arrays.asList(Feature.ADMIN, Feature.ADMIN2)));
+        }
     }
 
     private static Profile getInstance() {
@@ -153,6 +159,22 @@ public class Profile {
         ACCOUNT2("New Account Management Console", Type.DEFAULT),
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
+        /**
+         * Controls the availability of the Admin REST-API.
+         */
+        ADMIN_API("Admin API", Type.DEFAULT),
+
+        /**
+         * Controls the availability of the legacy admin-console.
+         * Note that the admin-console requires the {@link #ADMIN_API} feature.
+         */
+        @Deprecated
+        ADMIN("Legacy Admin Console", Type.DEPRECATED),
+
+        /**
+         * Controls the availability of the admin-console.
+         * Note that the admin-console requires the {@link #ADMIN_API} feature.
+         */
         ADMIN2("New Admin Console", Type.DEFAULT),
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
         IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),

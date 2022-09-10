@@ -331,11 +331,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
 
-        String maxAge = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
-        if (getConfig().isPassMaxAge() && maxAge != null) {
-            uriBuilder.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
-        }
-
         if (getConfig().isUiLocales()) {
             uriBuilder.queryParam(OIDCLoginProtocol.UI_LOCALES_PARAM, session.getContext().resolveLocale(null).toLanguageTag());
         }
@@ -550,8 +545,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
 
                 RealmModel realm = context.getRealm();
-
-                IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam);
+                IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam, realm);
                 ClientModel client = realm.getClientByClientId(idpBrokerState.getClientId());
 
                 AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(

@@ -30,6 +30,7 @@ import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAP
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.theme.ClasspathThemeProviderFactory.KEYCLOAK_THEMES_JSON;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.SAML_MAPPERS;
 
 import javax.persistence.Entity;
 import javax.persistence.spi.PersistenceUnitTransactionType;
@@ -92,6 +93,7 @@ import org.keycloak.config.StorageOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
+import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
 import org.keycloak.quarkus.runtime.QuarkusProfile;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
@@ -174,6 +176,7 @@ class KeycloakProcessor {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(POLICIES, KeycloakProcessor::registerScriptPolicy);
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(MAPPERS, KeycloakProcessor::registerScriptMapper);
+        DEPLOYEABLE_SCRIPT_PROVIDERS.put(SAML_MAPPERS, KeycloakProcessor::registerSAMLScriptMapper);
     }
 
     private static ProviderFactory registerScriptAuthenticator(ScriptProviderMetadata metadata) {
@@ -186,6 +189,10 @@ class KeycloakProcessor {
 
     private static ProviderFactory registerScriptMapper(ScriptProviderMetadata metadata) {
         return new DeployedScriptOIDCProtocolMapper(metadata);
+    }
+
+    private static ProviderFactory registerSAMLScriptMapper(ScriptProviderMetadata metadata) {
+        return new DeployedScriptSAMLProtocolMapper(metadata);
     }
 
     @BuildStep
@@ -679,7 +686,7 @@ class KeycloakProcessor {
     }
 
     private boolean isScriptForSpi(Spi spi, String type) {
-        if (spi instanceof ProtocolMapperSpi && MAPPERS.equals(type)) {
+        if (spi instanceof ProtocolMapperSpi && (MAPPERS.equals(type) || SAML_MAPPERS.equals(type))) {
             return true;
         } else if (spi instanceof PolicySpi && POLICIES.equals(type)) {
             return true;

@@ -19,6 +19,7 @@ package org.keycloak.subsystem.server.extension;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.SAML_MAPPERS;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +40,7 @@ import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
+import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
 import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
@@ -61,6 +63,10 @@ final class ScriptProviderDeploymentProcessor {
 
     private static void registerScriptMapper(KeycloakDeploymentInfo info, ScriptProviderMetadata metadata) {
         info.addProvider(ProtocolMapperSpi.class, new DeployedScriptOIDCProtocolMapper(metadata));
+    }
+
+    private static void registerSAMLScriptMapper(KeycloakDeploymentInfo info, ScriptProviderMetadata metadata) {
+        info.addProvider(ProtocolMapperSpi.class, new DeployedScriptSAMLProtocolMapper(metadata));
     }
 
     static void deploy(DeploymentUnit deploymentUnit, KeycloakDeploymentInfo info) {
@@ -129,5 +135,6 @@ final class ScriptProviderDeploymentProcessor {
         PROVIDERS.put(AUTHENTICATORS, ScriptProviderDeploymentProcessor::registerScriptAuthenticator);
         PROVIDERS.put(POLICIES, ScriptProviderDeploymentProcessor::registerScriptPolicy);
         PROVIDERS.put(MAPPERS, ScriptProviderDeploymentProcessor::registerScriptMapper);
+        PROVIDERS.put(SAML_MAPPERS, ScriptProviderDeploymentProcessor::registerSAMLScriptMapper);
     }
 }
