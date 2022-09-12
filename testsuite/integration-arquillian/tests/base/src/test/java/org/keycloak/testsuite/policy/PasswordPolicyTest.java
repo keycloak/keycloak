@@ -30,8 +30,6 @@ import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.RealmBuilder;
 
@@ -50,7 +48,6 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
@@ -174,9 +171,6 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
      */
     @Test
     public void testBlacklistPasswordPolicyWithTestBlacklist() throws Exception {
-
-        ContainerAssume.assumeNotAuthServerRemote();
-
         testingClient.server("passwordPolicy").run(session -> {
 
             RealmModel realmModel = session.getContext().getRealm();

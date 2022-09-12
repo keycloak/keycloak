@@ -33,14 +33,11 @@ import org.keycloak.testsuite.util.LDAPRule;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @EnableVault
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
     @ClassRule

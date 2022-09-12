@@ -27,13 +27,10 @@ import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 import java.util.List;
 import java.util.Map;
@@ -55,7 +52,6 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // This looks like some database issue, test should get events which are newer or equal to requested time, however it gets only newer events from remote server
     public void query() {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;

@@ -11,8 +11,6 @@ import org.keycloak.common.Version;
 import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.theme.Theme;
 
 import java.io.File;
@@ -28,7 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Override

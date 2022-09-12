@@ -37,7 +37,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -62,7 +61,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -381,7 +379,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
+     // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerification() throws Exception {
         try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
             loginPage.open();
@@ -423,7 +421,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
+     // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
         try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
             loginPage.open();

@@ -379,54 +379,6 @@
 
     <profiles>
         <profile>
-            <id>auth-server-remote</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-keystore</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/containers/auth-server-remote</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${common.resources}/keystore</directory>
-                                            <includes>
-                                                <include>keycloak.jks</include>
-                                                <include>keycloak.truststore</include>
-                                                <include>client.jks</include>
-                                                <include>client-ca.jks</include>
-                                                <include>test-user-cert-intermediary-ca.jks</include>
-                                                <include>ca.crt</include>
-                                                <include>client.crt</include>
-                                                <include>client.key</include>
-                                                <include>*.crl</include>
-                                                <include>other_client.jks</include>
-                                                <include>test-user-obb.jks</include>
-                                            </includes>
-                                        </resource>
-                                        <resource>
-                                            <directory>${common.resources}/pki/root/ca</directory>
-                                            <includes>
-                                                <include>certs/clients/test-user-san@localhost.cert.pem</include>
-                                                <include>certs/clients/test-user@localhost.key.pem</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
             <id>jpa</id>
             <build>
                 <plugins>

@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
@@ -93,9 +92,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -178,7 +174,6 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(REMOTE)
     public void failCreateInvalidUrl() throws Exception {
         try (AutoCloseable c = new RealmAttributeUpdater(realmsResouce().realm("test"))
                 .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))

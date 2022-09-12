@@ -42,19 +42,14 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
-
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-
 import javax.mail.internet.MimeMessage;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.configureSessionLimits;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.ERROR_TO_DISPLAY;
 
-@AuthServerContainerExclude(REMOTE)
 public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     private String realmName = "test";
     private String username = "test-user@localhost";

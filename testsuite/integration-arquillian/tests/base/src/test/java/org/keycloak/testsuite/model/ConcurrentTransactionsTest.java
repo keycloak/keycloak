@@ -30,7 +30,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.Arrays;
@@ -42,12 +41,9 @@ import static org.hamcrest.Matchers.nullValue;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RoleModel;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
     private static final int LATCH_TIMEOUT_MS = 30000;
