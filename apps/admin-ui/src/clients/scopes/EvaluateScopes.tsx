@@ -164,13 +164,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   };
 
   useFetch(
-    () => {
-      if (userSearch.length > 2) {
-        return adminClient.users.find({ search: userSearch });
-      } else {
-        return Promise.resolve<UserRepresentation[]>([]);
-      }
-    },
+    () => adminClient.users.find({ search: userSearch }),
     (users) =>
       setUserItems(
         users
