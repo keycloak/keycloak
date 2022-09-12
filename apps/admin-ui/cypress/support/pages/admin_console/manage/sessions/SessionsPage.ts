@@ -10,6 +10,7 @@ export default class SessionsPage {
   setToNowButton = "set-to-now-button";
   actionDropdown = "action-dropdown";
   clearNotBeforeButton = "clear-not-before-button";
+  pushButton = "modal-test-connection-button";
   notBeforeInput = "not-before-input";
   logoutAll = "logout-all";
   logoutAllConfirm = "confirm";
@@ -42,5 +43,11 @@ export default class SessionsPage {
     cy.findByTestId(this.actionDropdown).should("exist").click();
     cy.findByTestId(this.logoutAll).should("exist").click();
     cy.findByTestId(this.logoutAllConfirm).should("exist").click();
+  }
+
+  pushRevocation() {
+    cy.findByTestId(this.actionDropdown).should("exist").click();
+    cy.findByTestId(this.revocationActionItem).should("exist").click();
+    cy.findByTestId(this.pushButton).should("exist").click();
   }
 }
