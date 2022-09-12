@@ -79,9 +79,13 @@ import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ExportImportManager;
+import org.keycloak.storage.ImportRealmFromRepresentation;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ValidationUtil;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -104,7 +108,7 @@ import static org.keycloak.models.utils.RepresentationToModel.importRoles;
  * This wraps the functionality about export/import for legacy storage.
  *
  * <p>
- * Currently this only removes the user-storage and federation code from LegacyExportImportManager.
+ * Currently, this only removes the user-storage and federation code from LegacyExportImportManager.
  * <p>
  * In the future, this needs to be rewritten completely.
  *
@@ -418,6 +422,26 @@ public class MapExportImportManager implements ExportImportManager {
 
     public void exportRealm(RealmModel realm, ExportOptions options, ExportAdapter callback) {
         throw new ModelException("exporting for map storage is currently not supported");
+    }
+
+    @Override
+    public RealmModel importRealm(InputStream requestBody) {
+        /* A future implementation that would differentiate between the old JSON representations and the new file store
+          might want to add the file name or the media type as a method parameter to switch between different implementations. */
+
+        RealmRepresentation rep;
+        try {
+            rep = JsonSerialization.readValue(requestBody, RealmRepresentation.class);
+        } catch (IOException e) {
+            throw new ModelException("unable to read contents from stream", e);
+        }
+        logger.debugv("importRealm: {0}", rep.getRealm());
+
+        /* The import for the JSON representation might be called from the Admin UI, where it will be empty except for
+           the realm name and if the realm is enabled. For that scenario, it would need to create all missing elements,
+           which is done by firing an event to call the existing implementation in the RealmManager. */
+
+        return ImportRealmFromRepresentation.fire(session, rep);
     }
 
     private static void convertDeprecatedDefaultRoles(RealmRepresentation rep, RealmModel newRealm) {
