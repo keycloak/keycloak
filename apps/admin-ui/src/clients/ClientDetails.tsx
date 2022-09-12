@@ -386,12 +386,14 @@ export default function ClientDetails() {
         </>
       </ConfirmDialogModal>
       <DeleteConfirm />
-      <DownloadDialog
-        id={client.id!}
-        protocol={client.protocol}
-        open={downloadDialogOpen}
-        toggleDialog={toggleDownloadDialogOpen}
-      />
+      {downloadDialogOpen && (
+        <DownloadDialog
+          id={client.id!}
+          protocol={client.protocol}
+          open
+          toggleDialog={toggleDownloadDialogOpen}
+        />
+      )}
       <Controller
         name="enabled"
         control={form.control}

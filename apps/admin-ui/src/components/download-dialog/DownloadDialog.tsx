@@ -14,8 +14,10 @@ import FileSaver from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { prettyPrintJSON } from "../../util";
+import { addTrailingSlash, prettyPrintJSON } from "../../util";
+import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
 import { useHelp } from "../help-enabler/HelpHeader";
 import { HelpItem } from "../help-enabler/HelpItem";
@@ -35,6 +37,7 @@ export const DownloadDialog = ({
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
   const { adminClient } = useAdminClient();
+  const { realm } = useRealm();
   const { t } = useTranslation("common");
   const { enabled } = useHelp();
   const serverInfo = useServerInfo();
@@ -43,7 +46,7 @@ export const DownloadDialog = ({
   const [selected, setSelected] = useState(
     configFormats[configFormats.length - 1].id
   );
-  const [snippet, setSnippet] = useState("");
+  const [snippet, setSnippet] = useState<string | ArrayBuffer>();
   const [openType, setOpenType] = useState(false);
 
   const selectedConfig = useMemo(
@@ -59,14 +62,30 @@ export const DownloadDialog = ({
 
   useFetch(
     async () => {
-      const snippet = await adminClient.clients.getInstallationProviders({
-        id,
-        providerId: selected,
-      });
-      if (typeof snippet === "string") {
-        return sanitizeSnippet(snippet);
+      if (selectedConfig?.mediaType === "application/zip") {
+        const response = await fetch(
+          `${addTrailingSlash(
+            adminClient.baseUrl
+          )}admin/realms/${realm}/clients/${id}/installation/providers/${selected}`,
+          {
+            method: "GET",
+            headers: getAuthorizationHeaders(
+              await adminClient.getAccessToken()
+            ),
+          }
+        );
+
+        return response.arrayBuffer();
       } else {
-        return prettyPrintJSON(snippet);
+        const snippet = await adminClient.clients.getInstallationProviders({
+          id,
+          providerId: selected,
+        });
+        if (typeof snippet === "string") {
+          return sanitizeSnippet(snippet);
+        } else {
+          return prettyPrintJSON(snippet);
+        }
       }
     },
     (snippet) => setSnippet(snippet),
@@ -81,10 +100,9 @@ export const DownloadDialog = ({
       titleKey={t("clients:downloadAdaptorTitle")}
       continueButtonLabel={t("download")}
       onConfirm={() => {
-        const config = configFormats.find((config) => config.id === selected)!;
         FileSaver.saveAs(
-          new Blob([snippet], { type: config.mediaType }),
-          config.filename
+          new Blob([snippet!], { type: selectedConfig?.mediaType }),
+          selectedConfig?.filename
         );
       }}
       open={open}
@@ -163,7 +181,7 @@ export const DownloadDialog = ({
                   readOnly
                   rows={12}
                   resizeOrientation="vertical"
-                  value={snippet}
+                  value={snippet && typeof snippet === "string" ? snippet : ""}
                   aria-label="text area example"
                 />
               </FormGroup>
