@@ -11,6 +11,7 @@ import {
   Split,
   SplitItem,
   TimePicker,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
@@ -57,6 +58,7 @@ const DateTime = ({ name }: { name: string }) => {
       name={name}
       defaultValue=""
       control={control}
+      rules={{ required: true }}
       render={({ onChange, value }) => {
         const dateTime = value.match(DATE_TIME_FORMAT) || ["", "", "0", "00"];
         return (
@@ -147,7 +149,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
 
 export const Time = () => {
   const { t } = useTranslation("clients");
-  const { getValues } = useFormContext();
+  const { getValues, errors } = useFormContext();
   const [repeat, setRepeat] = useState(getValues("month"));
   return (
     <>
@@ -203,6 +205,11 @@ export const Time = () => {
             fieldLabelId="clients:startTime"
           />
         }
+        isRequired
+        helperTextInvalid={t("common:required")}
+        validated={
+          errors.notBefore ? ValidatedOptions.error : ValidatedOptions.default
+        }
       >
         <DateTime name="notBefore" />
       </FormGroup>
@@ -214,6 +221,13 @@ export const Time = () => {
             helpText="clients-help:expireTime"
             fieldLabelId="clients:expireTime"
           />
+        }
+        isRequired
+        helperTextInvalid={t("common:required")}
+        validated={
+          errors.notOnOrAfter
+            ? ValidatedOptions.error
+            : ValidatedOptions.default
         }
       >
         <DateTime name="notOnOrAfter" />
