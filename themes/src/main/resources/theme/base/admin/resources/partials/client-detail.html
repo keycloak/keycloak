@@ -350,6 +350,28 @@
                 <kc-tooltip>{{:: 'valid-redirect-uris.tooltip' | translate}}</kc-tooltip>
             </div>
 
+            <div class="form-group clearfix block" data-ng-hide="clientEdit.bearerOnly || (!clientEdit.standardFlowEnabled && !clientEdit.implicitFlowEnabled) || protocol == 'docker-v2'">
+                <label class="col-md-2 control-label" for="newPostLogoutRedirectUri">{{:: 'valid-post-logout-redirect-uris' | translate}}</label>
+
+                <div class="col-sm-6">
+                    <div class="input-group" ng-repeat="(i, postLogoutRedirectUri) in postLogoutRedirectUris track by $index">
+                        <input class="form-control" ng-model="postLogoutRedirectUris[i]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deletePostLogoutRedirectUri($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newPostLogoutRedirectUri" id="newPostLogoutRedirectUri">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newPostLogoutRedirectUri.length > 0 && addPostLogoutRedirectUri()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <kc-tooltip>{{:: 'valid-post-logout-redirect-uris.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol != 'docker-v2'">
                 <label class="col-md-2 control-label" for="baseUrl">{{:: 'base-url' | translate}}</label>
                 <div class="col-sm-6">
