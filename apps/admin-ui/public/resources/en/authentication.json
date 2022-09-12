@@ -24,6 +24,7 @@
   "lookAhead": "Look ahead window",
   "otpPolicyPeriod": "OTP Token period",
   "otpPolicyPeriodErrorHint": "Value needs to be between 1 second and 2 minutes",
+  "otpPolicyCodeReusable": "Reusable token",
   "initialCounter": "Initial counter",
   "initialCounterErrorHint": "Value needs to be between 1 and 120",
   "supportedActions": "Supported actions",

@@ -13,6 +13,7 @@ import {
   Button,
   ButtonVariant,
   AlertVariant,
+  Switch,
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
@@ -321,6 +322,35 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             isReadOnly
           />
         </FormGroup>
+
+        {otpType === POLICY_TYPES[0] && (
+          <FormGroup
+            label={t("otpPolicyCodeReusable")}
+            fieldId="otpPolicyCodeReusable"
+            labelIcon={
+              <HelpItem
+                helpText="authentication-help:otpPolicyCodeReusable"
+                fieldLabelId="authentication:otpPolicyCodeReusable"
+              />
+            }
+          >
+            <Controller
+              name="otpPolicyCodeReusable"
+              defaultValue={true}
+              control={control}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="otpPolicyCodeReusable"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={value}
+                  onChange={onChange}
+                />
+              )}
+            />
+          </FormGroup>
+        )}
+
         <ActionGroup>
           <Button
             data-testid="save"

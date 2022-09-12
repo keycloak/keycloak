@@ -13,6 +13,7 @@
   "otpPolicyDigits": "How many digits should the OTP have?",
   "lookAhead": "How far ahead should the server look just in case the token generator and server are out of time sync or counter sync?",
   "otpPolicyPeriod": "How many seconds should an OTP token be valid? Defaults to 30 seconds.",
+  "otpPolicyCodeReusable": "Possibility to use the same OTP code again after successful authentication.",
   "supportedActions": "Applications that are known to work with the current OTP policy",
   "webauthnIntro": "What is this form used for?",
   "webAuthnPolicyFormHelp": "Policy for WebAuthn authentication. This one will be used by 'WebAuthn Register' required action and 'WebAuthn Authenticator' authenticator. Typical usage is, when WebAuthn will be used for the two-factor authentication.",
