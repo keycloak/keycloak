@@ -34,7 +34,7 @@
 
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
         <frontend.maven.plugin.version>1.12.1</frontend.maven.plugin.version>
-        <frontend.maven.plugin.nodeVersion>v18.7.0</frontend.maven.plugin.nodeVersion>
+        <frontend.maven.plugin.nodeVersion>v18.9.0</frontend.maven.plugin.nodeVersion>
 
         <keycloak.version>19.0.1</keycloak.version>
 
@@ -237,7 +237,7 @@
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>run build --workspace=admin-ui</arguments>
+                            <arguments>run build --workspace=keycloak-js --workspace=admin-ui</arguments>
                         </configuration>
                     </execution>
                 </executions>

@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build Keycloak JS
+        run: npm run build --workspace=keycloak-js
+
       - name: Cache setup
         uses: actions/cache@v3
         with:

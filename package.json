@@ -1,12 +1,14 @@
 {
   "name": "keycloak-ui",
   "workspaces": [
+    "libs/keycloak-js",
     "apps/admin-ui"
   ],
   "scripts": {
     "prepare": "husky install"
   },
   "devDependencies": {
+    "@types/node": "^18.7.16",
     "@typescript-eslint/eslint-plugin": "^5.36.0",
     "@typescript-eslint/parser": "^5.36.0",
     "eslint": "^8.23.0",
