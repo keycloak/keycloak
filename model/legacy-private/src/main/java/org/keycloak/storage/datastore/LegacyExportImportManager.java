@@ -41,6 +41,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
@@ -86,6 +87,7 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ExportImportManager;
+import org.keycloak.storage.ImportRealmFromRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -96,6 +98,8 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ValidationUtil;
 
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -137,6 +141,18 @@ public class LegacyExportImportManager implements ExportImportManager {
             JsonSerialization.writeValueToStream(outputStream, rep);
             outputStream.close();
         });
+    }
+
+    @Override
+    public RealmModel importRealm(InputStream requestBody) {
+        RealmRepresentation rep;
+        try {
+            rep = JsonSerialization.readValue(requestBody, RealmRepresentation.class);
+        } catch (IOException e) {
+            throw new ModelException("unable to read contents from stream", e);
+        }
+        logger.debugv("importRealm: {0}", rep.getRealm());
+        return ImportRealmFromRepresentation.fire(session, rep);
     }
 
     @Override
