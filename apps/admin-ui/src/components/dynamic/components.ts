@@ -2,6 +2,7 @@ import type { FunctionComponent } from "react";
 
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import { StringComponent } from "./StringComponent";
+import { TextComponent } from "./TextComponent";
 import { BooleanComponent } from "./BooleanComponent";
 import { ListComponent } from "./ListComponent";
 import { RoleComponent } from "./RoleComponent";
@@ -20,6 +21,7 @@ export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
 
 const ComponentTypes = [
   "String",
+  "Text",
   "boolean",
   "List",
   "Role",
@@ -39,6 +41,7 @@ export const COMPONENTS: {
   [index in Components]: FunctionComponent<ComponentProps>;
 } = {
   String: StringComponent,
+  Text: TextComponent,
   boolean: BooleanComponent,
   List: ListComponent,
   Role: RoleComponent,
