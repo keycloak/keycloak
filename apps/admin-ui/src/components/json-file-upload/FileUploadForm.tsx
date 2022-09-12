@@ -4,16 +4,12 @@ import {
   MouseEvent as ReactMouseEvent,
   useState,
 } from "react";
-import {
-  FormGroup,
-  FileUpload,
-  Modal,
-  ModalVariant,
-  Button,
-  FileUploadProps,
-} from "@patternfly/react-core";
+import { FormGroup, Modal, ModalVariant, Button } from "@patternfly/react-core";
+import { DropEvent } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
+
+import { FileUpload, FileUploadProps } from "./patternfly/FileUpload";
 
 type FileUploadType = {
   value: string;
@@ -54,27 +50,18 @@ export const FileUploadForm = ({
   };
   const [fileUpload, setFileUpload] = useState<FileUploadType>(defaultUpload);
   const removeDialog = () => setFileUpload({ ...fileUpload, modal: false });
-  const handleChange: FileUploadProps["onChange"] = (
-    value,
-    filename,
-    event
-  ) => {
-    if (
-      event.nativeEvent instanceof MouseEvent &&
-      !(event.nativeEvent instanceof DragEvent)
-    ) {
-      setFileUpload({ ...fileUpload, modal: true });
-    } else {
-      setFileUpload({
-        ...fileUpload,
-        value: value.toString(),
-        filename,
-      });
 
-      if (value) {
-        onChange(value.toString());
-      }
-    }
+  const handleFileInputChange = (_event: DropEvent, file: File) => {
+    setFileUpload({ ...fileUpload, filename: file.name });
+  };
+
+  const handleTextOrDataChange = (value: string) => {
+    setFileUpload({ ...fileUpload, value });
+    onChange(value);
+  };
+
+  const handleClear = () => {
+    setFileUpload({ ...fileUpload, modal: true });
   };
 
   return (
@@ -117,7 +104,10 @@ export const FileUploadForm = ({
           type="text"
           value={fileUpload.value}
           filename={fileUpload.filename}
-          onChange={handleChange}
+          onFileInputChange={handleFileInputChange}
+          onDataChange={handleTextOrDataChange}
+          onTextChange={handleTextOrDataChange}
+          onClearClick={handleClear}
           onReadStarted={() =>
             setFileUpload({ ...fileUpload, isLoading: true })
           }
@@ -126,7 +116,7 @@ export const FileUploadForm = ({
           }
           isLoading={fileUpload.isLoading}
           dropzoneProps={{
-            accept: extension,
+            accept: { "application/text": [extension] },
           }}
         />
       )}
@@ -142,7 +132,10 @@ export const FileUploadForm = ({
             type="text"
             value={fileUpload.value}
             filename={fileUpload.filename}
-            onChange={handleChange}
+            onFileInputChange={handleFileInputChange}
+            onDataChange={handleTextOrDataChange}
+            onTextChange={handleTextOrDataChange}
+            onClearClick={handleClear}
             onReadStarted={() =>
               setFileUpload({ ...fileUpload, isLoading: true })
             }
@@ -158,9 +151,7 @@ export const FileUploadForm = ({
                 code={fileUpload.value}
                 language={language}
                 height="128px"
-                onChange={(value, event) =>
-                  handleChange(value || "", fileUpload.filename, event as any)
-                }
+                onChange={(value) => setFileUpload({ ...fileUpload, value })}
                 isReadOnly={!rest.allowEditingUploadedText}
               />
             )}

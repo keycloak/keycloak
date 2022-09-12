@@ -4,7 +4,6 @@ import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import {
   Button,
   ButtonVariant,
-  FileUpload,
   Form,
   FormGroup,
   Modal,
@@ -17,6 +16,7 @@ import {
 } from "@patternfly/react-core";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { StoreSettings } from "./StoreSettings";
+import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
 
 type ImportKeyDialogProps = {
   toggleDialog: () => void;

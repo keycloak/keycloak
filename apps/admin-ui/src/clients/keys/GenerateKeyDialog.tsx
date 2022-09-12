@@ -9,7 +9,6 @@ import {
 import {
   Button,
   ButtonVariant,
-  FileUpload,
   Form,
   FormGroup,
   Modal,
@@ -24,6 +23,7 @@ import {
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { StoreSettings } from "./StoreSettings";
+import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
 
 type GenerateKeyDialogProps = {
   clientId: string;

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
-import { FileUpload, FormGroup } from "@patternfly/react-core";
+import { FormGroup } from "@patternfly/react-core";
 
 import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
+import { FileUpload } from "../json-file-upload/patternfly/FileUpload";
 
 export const FileComponent = ({
   name,

@@ -188,18 +188,23 @@ describe("Clients test", () => {
       commonPage.tableUtils().checkRowItemExists(itemName, false);
     });
 
-    // TODO: https://github.com/keycloak/keycloak-admin-ui/issues/1854
     it("Should remove multiple client scopes from search bar", () => {
       const itemName1 = clientScopeName + 1;
       const itemName2 = clientScopeName + 2;
+      cy.intercept("/admin/realms/master/client-scopes").as("load");
       commonPage.tableToolbarUtils().clickSearchButton();
+      cy.wait("@load");
+      cy.wait(1000);
       commonPage.tableToolbarUtils().checkActionItemIsEnabled("Remove", false);
       commonPage.tableToolbarUtils().searchItem(clientScopeName, false);
       commonPage
         .tableUtils()
         .selectRowItemCheckbox(itemName1)
         .selectRowItemCheckbox(itemName2);
+      cy.intercept("/admin/realms/master/client-scopes").as("load");
       commonPage.tableToolbarUtils().clickSearchButton();
+      cy.wait("@load");
+      cy.wait(1000);
       commonPage.tableToolbarUtils().clickActionItem("Remove");
       commonPage.masthead().checkNotificationMessage(msgScopeMappingRemoved);
       commonPage.tableToolbarUtils().searchItem(clientScopeName, false);

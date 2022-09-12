@@ -13,16 +13,6 @@ export default defineConfig({
     mainFields: ["module"],
     dedupe: ["react", "react-dom"],
   },
-  optimizeDeps: {
-    // Enable optimization of dependencies using esbuild (see https://vitejs.dev/guide/migration.html#using-esbuild-deps-optimization-at-build-time).
-    disabled: false,
-  },
-  build: {
-    commonjsOptions: {
-      // Ensure `@rollup/plugin-commonjs` is not loaded, using esbuild instead (see https://vitejs.dev/guide/migration.html#using-esbuild-deps-optimization-at-build-time).
-      include: [],
-    },
-  },
   plugins: [react(), checker({ typescript: true })],
   test: {
     setupFiles: "vitest.setup.ts",
