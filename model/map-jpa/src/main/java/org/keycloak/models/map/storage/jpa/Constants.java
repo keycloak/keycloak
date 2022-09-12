@@ -35,7 +35,7 @@ public interface Constants {
     public static final Integer CURRENT_SCHEMA_VERSION_ROOT_AUTH_SESSION = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_SINGLE_USE_OBJECT = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_USER = 1;
+    public static final Integer CURRENT_SCHEMA_VERSION_USER = 2;
     public static final Integer CURRENT_SCHEMA_VERSION_USER_CONSENT = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_USER_FEDERATED_IDENTITY = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_USER_SESSION = 1;

@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
@@ -173,6 +174,7 @@ public class QuarkusWelcomeResource {
 
             Map<String, Object> map = new HashMap<>();
 
+            map.put("adminConsoleEnabled", isAdminConsoleEnabled());
             map.put("productName", Version.NAME);
             map.put("productNameFull", Version.NAME_FULL);
 
@@ -248,6 +250,10 @@ public class QuarkusWelcomeResource {
             }
         }
         return shouldBootstrap.get();
+    }
+
+    private static boolean isAdminConsoleEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
     }
 
     private boolean isLocal() {

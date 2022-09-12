@@ -207,7 +207,7 @@ public class AccountLinkTest extends AbstractKeycloakTest {
         String memProviderId = ApiUtil.getCreatedId(resp);
 
         // Create federated user
-        String username = "fedUser1";
+        String username = "fed-user1";
         UserRepresentation userRepresentation = new UserRepresentation();
         userRepresentation.setUsername(username);
         userRepresentation.setEmail("feduser1@mail.com");

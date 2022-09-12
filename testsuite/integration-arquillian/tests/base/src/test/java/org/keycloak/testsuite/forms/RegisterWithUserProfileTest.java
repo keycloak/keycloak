@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -613,7 +614,7 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         // test that timestamp is current with 10s tollerance
         Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         // test user info is set from form
-        assertEquals(username.toLowerCase(), user.getUsername());
+        assertThat(username, Matchers.equalToIgnoringCase(user.getUsername()));
         assertEquals(email.toLowerCase(), user.getEmail());
         assertEquals(firstName, user.getFirstName());
 

@@ -54,7 +54,6 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public void setUsername(String username) {
-        username = KeycloakModelUtils.toLowerCaseSafe(username);
         // Do not continue if current username of entity is the requested username
         if (username != null && username.equals(entity.getUsername())) return;
 
@@ -255,6 +254,7 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public void joinGroup(GroupModel group) {
+        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
         entity.addGroupsMembership(group.getId());
     }
 

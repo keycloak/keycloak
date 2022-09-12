@@ -48,6 +48,8 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         assertEquals("new-email@localhost", user.getEmail());
+        assertEquals("Tom", user.getFirstName());
+        assertEquals("Brady", user.getLastName());
         assertFalse(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
     }
 }

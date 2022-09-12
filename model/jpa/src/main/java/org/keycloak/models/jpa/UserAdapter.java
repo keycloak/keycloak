@@ -392,7 +392,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     @Override
     public void joinGroup(GroupModel group) {
-        if (isMemberOf(group)) return;
+        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
         joinGroupImpl(group);
 
     }

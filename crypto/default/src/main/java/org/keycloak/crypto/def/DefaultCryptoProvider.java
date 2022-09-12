@@ -22,13 +22,13 @@ import org.keycloak.common.crypto.UserIdentityExtractorProvider;
  */
 public class DefaultCryptoProvider implements CryptoProvider {
 
-    private final BouncyCastleProvider bcProvider;
+    private final Provider bcProvider;
 
     private Map<String, Object> providers = new ConcurrentHashMap<>();
 
     public DefaultCryptoProvider() {
         // Make sure to instantiate this only once due it is expensive. And skip registration if already available in Java security providers (EG. due explicitly configured in java security file)
-        BouncyCastleProvider existingBc = (BouncyCastleProvider) Security.getProvider(CryptoConstants.BC_PROVIDER_ID);
+        Provider existingBc = Security.getProvider(CryptoConstants.BC_PROVIDER_ID);
         this.bcProvider = existingBc == null ? new BouncyCastleProvider() : existingBc;
 
         providers.put(CryptoConstants.A128KW, new AesKeyWrapAlgorithmProvider());

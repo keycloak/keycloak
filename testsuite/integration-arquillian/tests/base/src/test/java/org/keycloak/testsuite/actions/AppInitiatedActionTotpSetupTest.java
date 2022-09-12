@@ -363,9 +363,11 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         events.expectLogout(authSessionId).assertEvent();
 
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        
+
         loginTotpPage.login(totp.generateTOTP(totpSecret));
 
         events.expectLogin().assertEvent();
@@ -411,6 +413,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String src = driver.getPageSource();
         assertTrue(loginPage.isCurrent());
         Assert.assertFalse(totpPage.isCurrent());
+
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         // Login with one-time password
         loginTotpPage.login(totp.generateTOTP(totpCode));
@@ -471,6 +475,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
+
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, timeBased);
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");

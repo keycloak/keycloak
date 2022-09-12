@@ -152,6 +152,30 @@ public class LoginEventsTest extends AbstractEventTest {
         assertTrue(realm.getEvents(null, null, null, null, null, null, 0, 1000).size() >= 110);
     }
 
+    @Test
+    public void orderResultsTest() {
+        RealmResource realm = adminClient.realms().realm("test");
+        EventRepresentation firstEvent = new EventRepresentation();
+        firstEvent.setRealmId(realm.toRepresentation().getId());
+        firstEvent.setType(EventType.LOGIN.toString());
+        firstEvent.setTime(System.currentTimeMillis() - 1000);
+
+        EventRepresentation secondEvent = new EventRepresentation();
+        secondEvent.setRealmId(realm.toRepresentation().getId());
+        secondEvent.setType(EventType.LOGOUT.toString());
+        secondEvent.setTime(System.currentTimeMillis());
+
+
+        testingClient.testing("test").onEvent(firstEvent);
+        testingClient.testing("test").onEvent(secondEvent);
+
+        List<EventRepresentation> events = realm.getEvents(null, null, null, null, null, null, null, null);
+        assertEquals(2, events.size());
+        assertEquals(EventType.LOGOUT.toString(), events.get(0).getType());
+        assertEquals(EventType.LOGIN.toString(), events.get(1).getType());
+
+    }
+
     /*
     Removed this test because it takes too long.  The default interval for
     event cleanup is 15 minutes (900 seconds).  I don't have time to figure out

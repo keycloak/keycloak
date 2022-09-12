@@ -325,6 +325,8 @@ public class AssertEvents implements TestRule {
                         description.appendText("contains scope in any order");
                     }
                 });
+            } else if (key.equals(Details.USERNAME) && value != null) {
+                return detail(key, Matchers.equalToIgnoringCase(value));
             } else {
                 return detail(key, CoreMatchers.equalTo(value));
             }

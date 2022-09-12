@@ -48,6 +48,7 @@ public class JpaEventQuery implements EventQuery {
     private final ArrayList<Predicate> predicates;
     private Integer firstResult;
     private Integer maxResults;
+    private boolean orderByDescTime = true;
 
     public JpaEventQuery(EntityManager em) {
         this.em = em;
@@ -117,12 +118,28 @@ public class JpaEventQuery implements EventQuery {
     }
 
     @Override
+    public EventQuery orderByDescTime() {
+        orderByDescTime = true;
+        return this;
+    }
+
+    @Override
+    public EventQuery orderByAscTime() {
+        orderByDescTime = false;
+        return this;
+    }
+
+    @Override
     public Stream<Event> getResultStream() {
         if (!predicates.isEmpty()) {
             cq.where(cb.and(predicates.toArray(new Predicate[predicates.size()])));
         }
 
-        cq.orderBy(cb.desc(root.get("time")));
+        if(orderByDescTime) {
+            cq.orderBy(cb.desc(root.get("time")));
+        } else {
+            cq.orderBy(cb.asc(root.get("time")));
+        }
 
         TypedQuery<EventEntity> query = em.createQuery(cq);
 

@@ -52,11 +52,15 @@ public interface UserLookupProvider {
     UserModel getUserById(String id, RealmModel realm);
 
     /**
+     * Exact search for a user by its username.
      * Returns a user with the given username belonging to the realm
      *
-     * @param username case insensitive username (case-sensitivity is controlled by storage)
+     * @param username (case-sensitivity is controlled by storage)
      * @param realm the realm model
      * @return found user model, or {@code null} if no such user exists
+     * @throws org.keycloak.models.ModelDuplicateException when searched with case 
+     * insensitive mode and there are more users with username which differs only 
+     * by case 
      */
     default UserModel getUserByUsername(RealmModel realm, String username) {
         return getUserByUsername(username, realm);
@@ -75,7 +79,7 @@ public interface UserLookupProvider {
     /**
      * Returns a user with the given email belonging to the realm
      *
-     * @param email case insensitive email address (case-sensitivity is controlled by storage)
+     * @param email email address
      * @param realm the realm model
      * @return found user model, or {@code null} if no such user exists
      *
