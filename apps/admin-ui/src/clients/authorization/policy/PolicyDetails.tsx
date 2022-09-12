@@ -172,7 +172,11 @@ export default function PolicyDetails() {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={policyId ? policy?.name! : "clients:createPolicy"}
+        titleKey={
+          policyId
+            ? policy?.name!
+            : t("clients:createPolicyOfType", { policyType })
+        }
         dropdownItems={
           policyId
             ? [

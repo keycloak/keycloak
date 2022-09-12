@@ -183,6 +183,7 @@
   "updateScopeSuccess": "Authorization scope successfully updated",
   "scopeSaveError": "Could not persist authorization scope due to {{error}}",
   "createPolicy": "Create policy",
+  "createPolicyOfType": "Create {{policyType}} policy",
   "dependentPermission": "Dependent permission",
   "deletePolicy": "Permanently delete policy?",
   "deletePolicyConfirm": "If you delete this policy, some permissions or aggregated policies will be affected.",
