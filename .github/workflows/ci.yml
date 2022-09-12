@@ -81,6 +81,15 @@ jobs:
             exit 1
           fi
 
+      - name: Analyze Test and/or Coverage Results
+        uses: runforesight/foresight-test-kit-action@v1
+        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' ) && ( success() || failure() )
+        with:
+          api_key: ${{ secrets.FORESIGHT_API_KEY }}
+          test_format: JUNIT
+          test_framework: JUNIT
+          test_path: '**/target/surefire-reports/*.xml'
+
       - name: Unit test reports
         uses: actions/upload-artifact@v3
         if: failure()
@@ -117,6 +126,15 @@ jobs:
             find . -path '*/target/surefire-reports*/*.xml' | zip -q reports-model-tests.zip -@
             exit 1
           fi
+
+      - name: Analyze Test and/or Coverage Results
+        uses: runforesight/foresight-test-kit-action@v1
+        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' ) && ( success() || failure() )
+        with:
+          api_key: ${{ secrets.FORESIGHT_API_KEY }}
+          test_format: JUNIT
+          test_framework: JUNIT
+          test_path: 'testsuite/model/target/surefire-reports/*.xml'
 
       - name: Model test reports
         uses: actions/upload-artifact@v3
@@ -192,6 +210,15 @@ jobs:
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip -@
           exit $TEST_RESULT
+
+      - name: Analyze Test and/or Coverage Results
+        uses: runforesight/foresight-test-kit-action@v1
+        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' ) && ( success() || failure() )
+        with:
+          api_key: ${{ secrets.FORESIGHT_API_KEY }}
+          test_format: JUNIT
+          test_framework: JUNIT
+          test_path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - name: Base test reports
         uses: actions/upload-artifact@v3
@@ -280,6 +307,15 @@ jobs:
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip -@
           exit $TEST_RESULT
 
+      - name: Analyze Test and/or Coverage Results
+        uses: runforesight/foresight-test-kit-action@v1
+        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' ) && ( success() || failure() )
+        with:
+          api_key: ${{ secrets.FORESIGHT_API_KEY }}
+          test_format: JUNIT
+          test_framework: JUNIT
+          test_path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+
       - name: Base test reports
         uses: actions/upload-artifact@v3
         if: failure()
@@ -330,6 +366,15 @@ jobs:
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-cluster-tests.zip -@
           exit $TEST_RESULT
+
+      - name: Analyze Test and/or Coverage Results
+        uses: runforesight/foresight-test-kit-action@v1
+        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' ) && ( success() || failure() )
+        with:
+          api_key: ${{ secrets.FORESIGHT_API_KEY }}
+          test_format: JUNIT
+          test_framework: JUNIT
+          test_path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - name: Quarkus cluster test reports
         uses: actions/upload-artifact@v3
@@ -389,6 +434,15 @@ jobs:
           ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.dist=docker | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           exit $TEST_RESULT
+
+      - name: Analyze Test and/or Coverage Results
+        uses: runforesight/foresight-test-kit-action@v1
+        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' ) && ( success() || failure() )
+        with:
+          api_key: ${{ secrets.FORESIGHT_API_KEY }}
+          test_format: JUNIT
+          test_framework: JUNIT
+          test_path: 'quarkus/tests/integration/target/surefire-reports/*.xml'
 
       - name: Quarkus test reports
         uses: actions/upload-artifact@v3
