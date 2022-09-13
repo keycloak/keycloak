@@ -752,7 +752,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         // started and lastSessionRefresh set to current time
         int currentTime = Time.currentTime();
         offlineUserSession.getEntity().setStarted(currentTime);
-        offlineUserSession.setLastSessionRefresh(currentTime);
+        offlineUserSession.getEntity().setLastSessionRefresh(currentTime);
 
         session.getProvider(UserSessionPersisterProvider.class).createUserSession(userSession, true);
 
@@ -981,7 +981,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         UserSessionEntity entity = createUserSessionEntityInstance(userSession);
 
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
-        InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(offline);
 
         SessionUpdateTask<UserSessionEntity> importTask = Tasks.addIfAbsentSync();
         userSessionUpdateTx.addTask(userSession.getId(), importTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
