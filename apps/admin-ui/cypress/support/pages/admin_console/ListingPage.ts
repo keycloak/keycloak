@@ -97,8 +97,11 @@ export default class ListingPage extends CommonElements {
     cy.get(this.searchInput).clear();
     if (searchValue) {
       cy.get(this.searchInput).type(searchValue);
+      cy.get(this.searchBtn).click({ force: true });
+    } else {
+      // TODO: Remove else and move clickSearchButton outside of the if
+      cy.get(this.searchInput).type("{enter}");
     }
-    cy.get(this.searchBtn).click({ force: true });
 
     if (wait) {
       cy.wait(["@search"]);

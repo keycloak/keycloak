@@ -8,7 +8,7 @@ export default class InitialAccessTokenTab extends CommonPage {
   private expirationNumberInput = "expiration";
   private expirationInput = 'input[name="count"]';
   private expirationText = "#expiration-helper";
-  private countInput = "count";
+  private countInput = '[data-testid="count"] input';
   private countPlusBtn = '[data-testid="count"] [aria-label="Plus"]';
   private saveBtn = "save";
 
@@ -43,7 +43,7 @@ export default class InitialAccessTokenTab extends CommonPage {
 
   fillNewTokenData(expiration: number, count: number) {
     cy.findByTestId(this.expirationNumberInput).clear().type(`${expiration}`);
-    cy.findByTestId(this.countInput).clear();
+    cy.get(this.countInput).clear();
 
     for (let i = 0; i < count; i++) {
       cy.get(this.countPlusBtn).click();

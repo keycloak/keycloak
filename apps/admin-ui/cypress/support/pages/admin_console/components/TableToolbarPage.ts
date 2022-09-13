@@ -78,8 +78,11 @@ export default class TableToolbar extends CommonElements {
     cy.get(this.searchInput).clear();
     if (searchValue) {
       cy.get(this.searchInput).type(searchValue);
+      this.clickSearchButton();
+    } else {
+      // TODO: Remove else and move clickSearchButton outside of the if
+      cy.get(this.searchInput).type("{enter}");
     }
-    this.clickSearchButton();
     if (wait) {
       cy.wait(["@search"]);
     }

@@ -7,7 +7,7 @@ export default class RoleMappingTab {
     `no-roles-for-this-${type}-empty-action`;
   private assignRoleBtn = "assignRole";
   private unAssignBtn = "unAssignRole";
-  private unAssignDrpDwnBtn = '.pf-c-table__action li[role="menuitem"] button';
+  private unAssignDrpDwnBtn = '.pf-c-table__action li button[role="menuitem"]';
   private assignBtn = "assign";
   private hideInheritedRolesBtn = "#hideInheritedRoles";
   private assignedRolesTable = "assigned-roles";
@@ -56,7 +56,7 @@ export default class RoleMappingTab {
   }
 
   unhideInheritedRoles() {
-    cy.get(this.hideInheritedRolesBtn).uncheck();
+    cy.get(this.hideInheritedRolesBtn).uncheck({ force: true });
     return this;
   }
 

@@ -41,8 +41,8 @@ export default class CreateClientPage extends CommonPage {
   private clientConsentScreenText = "#kc-consent-screen-text";
 
   private frontChannelLogoutSwitch =
-    '[for="frontchannelLogout"] > .pf-c-switch__toggle';
-  private frontChannelLogoutSwitchInput = "#frontchannelLogout";
+    '[for="kc-frontchannelLogout-switch"] > .pf-c-switch__toggle';
+  private frontChannelLogoutSwitchInput = "#kc-frontchannelLogout-switch";
   private frontChannelLogoutInput = "#frontchannelLogoutUrl";
   private backChannelLogoutInput = "#backchannelLogoutUrl";
   private backChannelLogoutRequiredSwitchInput =

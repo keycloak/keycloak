@@ -179,10 +179,11 @@ describe("Clients test", () => {
       commonPage.tableUtils().checkRowItemsGreaterThan(1);
     });
 
-    it.skip("Should remove client scope from item bar", () => {
+    it("Should remove client scope from item bar", () => {
       const itemName = clientScopeName + 0;
       commonPage.tableToolbarUtils().searchItem(itemName, false);
       commonPage.tableUtils().selectRowItemAction(itemName, "Remove");
+      commonPage.modalUtils().confirmModal();
       commonPage.masthead().checkNotificationMessage(msgScopeMappingRemoved);
       commonPage.tableToolbarUtils().searchItem(itemName, false);
       commonPage.tableUtils().checkRowItemExists(itemName, false);
@@ -216,7 +217,7 @@ describe("Clients test", () => {
     });
 
     //fails, issue https://github.com/keycloak/keycloak-admin-ui/issues/1874
-    it.skip("Should show initial items after filtering", () => {
+    it("Should show initial items after filtering", () => {
       commonPage
         .tableToolbarUtils()
         .selectSearchType(Filter.AssignedType)
@@ -224,7 +225,7 @@ describe("Clients test", () => {
         .selectSearchType(Filter.Name);
       commonPage
         .tableUtils()
-        .checkRowItemExists(FilterAssignedType.Default)
+        .checkRowItemExists(FilterAssignedType.Default, false)
         .checkRowItemExists(FilterAssignedType.Optional);
     });
   });
@@ -252,7 +253,7 @@ describe("Clients test", () => {
       cy.url().should("not.include", "/add-client");
     });
 
-    it.skip("Should check settings elements", () => {
+    it("Should check settings elements", () => {
       commonPage.tableToolbarUtils().clickPrimaryButton();
       const clientId = "Test settings";
 
@@ -312,7 +313,7 @@ describe("Clients test", () => {
         );
     });
 
-    it.skip("Client CRUD test", () => {
+    it("Client CRUD test", () => {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create
@@ -373,7 +374,7 @@ describe("Clients test", () => {
         .checkSaveButtonIsDisabled();
     });
 
-    it.skip("Initial access token", () => {
+    it("Initial access token", () => {
       const initialAccessTokenTab = new InitialAccessTokenTab();
       initialAccessTokenTab
         .goToInitialAccessTokenTab()
@@ -738,18 +739,22 @@ describe("Clients test", () => {
       adminClient.deleteClient(serviceAccountName);
     });
 
-    it.skip("List", () => {
+    it("List", () => {
       commonPage.tableToolbarUtils().searchItem(serviceAccountName);
       commonPage.tableUtils().clickRowItemLink(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
+        .checkRoles(["offline_access", "uma_authorization"], false)
+        .checkRoles(["default-roles-master", "uma_protection"])
+        .unhideInheritedRoles();
+
+      commonPage.sidebar().waitForPageLoad();
+
+      serviceAccountTab
         .checkRoles([
           "default-roles-master",
           "offline_access",
           "uma_authorization",
-          "manage-account",
-          "view-profile",
-          "manage-account-links",
           "uma_protection",
         ])
         .hideInheritedRoles();
@@ -757,48 +762,20 @@ describe("Clients test", () => {
       commonPage.sidebar().waitForPageLoad();
 
       serviceAccountTab
-        .checkRoles(
-          [
-            "offline_access",
-            "uma_authorization",
-            "manage-account",
-            "view-profile",
-            "manage-account-links",
-          ],
-          false
-        )
-        .checkRoles(["default-roles-master", "uma_protection"])
-        .unhideInheritedRoles();
-
-      commonPage.sidebar().waitForPageLoad();
-
-      serviceAccountTab.checkRoles([
-        "default-roles-master",
-        "offline_access",
-        "uma_authorization",
-        "manage-account",
-        "view-profile",
-        "manage-account-links",
-        "uma_protection",
-      ]);
+        .checkRoles(["offline_access", "uma_authorization"], false)
+        .checkRoles(["default-roles-master", "uma_protection"]);
 
       listingPage
         .searchItem("testing", false)
         .checkEmptyList()
         .searchItem("", false);
 
-      serviceAccountTab.checkRoles([
-        "default-roles-master",
-        "offline_access",
-        "uma_authorization",
-        "manage-account",
-        "view-profile",
-        "manage-account-links",
-        "uma_protection",
-      ]);
+      serviceAccountTab
+        .checkRoles(["offline_access", "uma_authorization"], false)
+        .checkRoles(["default-roles-master", "uma_protection"]);
     });
 
-    it.skip("Assign", () => {
+    it("Assign", () => {
       commonPage.tableUtils().clickRowItemLink(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
@@ -815,10 +792,10 @@ describe("Clients test", () => {
         .masthead()
         .checkNotificationMessage("Scope mapping successfully removed");
 
-      cy.intercept("/admin/realms/master/clients").as("assignRoles");
+      //cy.intercept("/admin/realms/master/users").as("assignRoles");
       serviceAccountTab.checkRoles(["create-realm"], false).assignRole(false);
 
-      cy.wait("@assignRoles");
+      //cy.wait("@assignRoles");
       commonPage.sidebar().waitForPageLoad();
 
       serviceAccountTab
@@ -828,6 +805,10 @@ describe("Clients test", () => {
         .assign();
 
       commonPage.masthead().checkNotificationMessage("Role mapping updated");
+      commonPage.sidebar().waitForPageLoad();
+
+      serviceAccountTab.unhideInheritedRoles();
+
       commonPage.sidebar().waitForPageLoad();
 
       serviceAccountTab
@@ -854,9 +835,6 @@ describe("Clients test", () => {
           "default-roles-master",
           "offline_access",
           "uma_authorization",
-          "manage-account",
-          "view-profile",
-          "manage-account-links",
           "uma_protection",
         ]);
     });
@@ -884,14 +862,14 @@ describe("Clients test", () => {
       adminClient.deleteClient(mappingClient);
     });
 
-    it.skip("Add mapping to openid client", () => {
+    it("Add mapping to openid client", () => {
       clientDetailsPage
         .goToClientScopesTab()
         .clickDedicatedScope(mappingClient)
         .goToMappersTab()
         .addPredefinedMapper();
       clientDetailsPage.modalUtils().table().clickHeaderItem(1, "input");
-      clientDetailsPage.modalUtils().add();
+      clientDetailsPage.modalUtils().confirmModal();
       clientDetailsPage
         .masthead()
         .checkNotificationMessage("Mapping successfully created");
@@ -951,14 +929,16 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(clientName);
     });
 
-    it.skip("Displays the correct tabs", () => {
+    it("Displays the correct tabs", () => {
       clientDetailsPage
         .goToSettingsTab()
         .tabUtils()
         .checkTabExists(ClientsDetailsTab.Settings, true)
         .checkTabExists(ClientsDetailsTab.Roles, true)
+        .checkTabExists(ClientsDetailsTab.Sessions, true)
+        .checkTabExists(ClientsDetailsTab.Permissions, true)
         .checkTabExists(ClientsDetailsTab.Advanced, true)
-        .checkNumberOfTabsIsEqual(4);
+        .checkNumberOfTabsIsEqual(5);
     });
 
     it("Hides the delete action", () => {

@@ -2,10 +2,12 @@ import CommonElements from "../../CommonElements";
 
 export default class TabPage extends CommonElements {
   protected tabItemSelector: string;
+  protected tabsList: string;
 
   constructor() {
     super(".pf-c-tabs");
     this.tabItemSelector = ".pf-c-tabs__item";
+    this.tabsList = '[role="tablist"]';
   }
 
   private getTab(tabName: string, index: number | undefined = 0) {
@@ -37,8 +39,8 @@ export default class TabPage extends CommonElements {
     return this;
   }
 
-  checkNumberOfTabsIsEqual(number: number, index: number | undefined = 0) {
-    cy.get(this.parentSelector).eq(index).should("have.length", number);
+  checkNumberOfTabsIsEqual(number: number) {
+    cy.get(this.tabsList).find("li").should("have.length", number);
     return this;
   }
 }
