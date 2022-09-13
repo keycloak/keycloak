@@ -61,8 +61,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -92,7 +90,6 @@ import javax.ws.rs.core.Response;
 public class ClientTest extends AbstractAdminTest {
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void getClients() {
         Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
@@ -138,7 +135,6 @@ public class ClientTest extends AbstractAdminTest {
     }
     
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void createClientVerifyWithSecret() {
         String id = createClientNonPublic().getId();
 
@@ -149,7 +145,6 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void createClientVerify() {
         String id = createClient().getId();
 
@@ -342,7 +337,6 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void getAllClientsSearchAndPagination() {
         Set<String> ids = new HashSet<>();
         try {
@@ -450,7 +444,6 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void serviceAccount() {
         Response response = realm.clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccount().build());
         String id = ApiUtil.getCreatedId(response);
@@ -823,7 +816,6 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void updateClientWithProtocolMapper() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");

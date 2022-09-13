@@ -1768,6 +1768,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void partialExport() {
+        // re-enable as part of https://github.com/keycloak/keycloak/issues/14291
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.partialExport(false, false);

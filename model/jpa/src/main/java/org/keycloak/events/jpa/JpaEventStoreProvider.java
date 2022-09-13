@@ -276,7 +276,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<RealmAttributeEntity> cr = cb.createQuery(RealmAttributeEntity.class);
         Root<RealmAttributeEntity> root = cr.from(RealmAttributeEntity.class);
-        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.greaterThan(root.get("value"),Long.valueOf(0))));
+        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.greaterThan(root.get("value").as(Long.class),Long.valueOf(0))));
         Map<Long, List<RealmAttributeEntity>> realms = em.createQuery(cr).getResultStream().collect(Collectors.groupingBy(attribute -> Long.valueOf(attribute.getValue())));
 
         long current = Time.currentTimeMillis();

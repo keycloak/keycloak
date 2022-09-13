@@ -126,97 +126,6 @@ You can use value `TRACE` if you want to enable even TRACE logging.
 There is no support for more packages ATM, you need to edit the file `testsuite/integration-arquillian/servers/auth-server/jboss/common/jboss-cli/add-log-level.cli`
 and add packages manually.
 
-## Run tests against remote container
-
-### remote server tests
-
-note: if there is a need to run server on http only testsuite providers has to be re-builded with `-Dauth.server.ssl.required=false`
-
-    mvn -f testsuite/integration-arquillian/pom.xml clean install -Pauth-server-wildfly -Dauth.server.ssl.required=false -DskipTests
-
-unzip prepared server:
-
-    unzip -q testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
-
-create admin user:
-
-    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
-
-start the server:
-
-    sh auth-server-wildfly/bin/standalone.sh \
-        -Dauth.server.ssl.required=false \
-        -Djboss.socket.binding.port-offset=100 \
-        -Dauth.server.http.port=8180 \
-        -Dauth.server.https.port=8543
-
-run base testsuite:
-
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install -Pauth-server-remote -Dauth.server.ssl.required=false
-
-note: it is also possible to run tests against server running on different host and port using `-Dauth.server.host=${server.host}` and `-Dauth.server.http.port=${server.port}`. The testsuite currently doesn't work with port 80.
-
-### remote adapter tests
-
-note: if there is a need to run server on http only testsuite providers has to be re-builded with `-Dauth.server.ssl.required=false`
-
-    mvn -f keycloak/testsuite/integration-arquillian/pom.xml clean install -Pauth-server-wildfly -Papp-server-wildfly -Dauth.server.ssl.required=false -DskipTests ${MVN_DEFAULT_ARGS}
-
-unzip prepared servers:
-
-    unzip -q keycloak/testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
-    unzip -q keycloak/testsuite/integration-arquillian/servers/app-server/jboss/wildfly/target/integration-arquillian-servers-app-server-wildfly-*.zip
-
-create admin user:
-
-    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
-
-start both servers:
-
-    sh auth-server-wildfly/bin/standalone.sh \
-        -Dauth.server.ssl.required=false \
-        -Djboss.socket.binding.port-offset=100 \
-        -Dauth.server.http.port=8180 \
-        -Dauth.server.https.port=8543
-
-    sh app-server-wildfly/bin/standalone.sh \
-        -Djboss.socket.binding.port-offset=200 \
-        -Dapp.server.ssl.required=false
-
-run other/adapters/jboss/remote tests:
-
-    mvn -f keycloak/testsuite/integration-arquillian/tests/other/adapters/jboss/remote/pom.xml clean install \
-        -Pauth-server-remote,app-server-remote \
-        -Dauth.server.ssl.required=false \
-        -Dapp.server.ssl.required=false
-
-### Running tests against container not produced by the testsuite
-
-For running the testsuite, it is necessary to install/deploy so-called testsuite-providers. The testsuite rely on 
-testsuite-providers in many test scenarios for example for checking fired events, moving in time etc. When using
-keycloak from `integration-arquillian-servers-auth-server-wildfly-*.zip`, it should not be necessary to do any steps 
-because testsuite-providers are already included in this archive. However, when a clean keycloak is used, e.g. 
-openshift image, testsuite-providers jar file is deployed to the container in the beginning of test run. 
-To be able to deploy the jar to the container, arquillian has to have an access to the management port. 
-
-For example, to run testsuite against image in openshift, we need to first forward 9990 port from the running pod.
-```shell script
-oc port-forward "${POD}" 9990:9990
-```
-where ${POD} is a name of the pod
-
-Now just run testsuite against the image in openshift:
-```shell script
-mvn clean install -f testsuite/integration-arquillian/tests/base/pom.xml \
-    -Pauth-server-remote \
-    -Dauth.server.ssl.required=false \
-    -Dauth.server.host="${HOST}" \
-    -Dauth.server.http.port=80 \
-    -Dauth.server.management.host=127.0.0.1 \
-    -Dauth.server.management.port=9990
-```
-where ${HOST} is url of keycloak, for example: `keycloak-keycloak.192.168.42.91.nip.io`.
-
 ## Run adapter tests
 
 ### Undertow
@@ -326,18 +235,6 @@ The test is executed in same way as the "auto" DB migration test with the only d
 that you need to use property `migration.mode` with the value `manual` .
 
     -Dmigration.mode=manual
-
-
-## Server configuration migration test
-This will compare if Wildfly configuration files (standalone.xml, standalone-ha.xml, domain.xml)
-are correctly migrated from previous version
-
-    mvn -f testsuite/integration-arquillian/tests/other/server-config-migration/pom.xml \
-      clean install \
-      -Dmigrated.version=1.9.8.Final-redhat-1
-
-For the available versions, take a look at the directory [tests/other/server-config-migration/src/test/resources/standalone](tests/other/server-config-migration/src/test/resources/standalone)
-
 
 ## Old Admin Console UI tests
 The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox and Google Chrome. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.

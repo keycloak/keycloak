@@ -112,8 +112,6 @@ import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorF
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -839,8 +837,6 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         successfulLoginAndLogout(clientId, clientSecret);
     }
 
-
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     @Test
     public void testClientUpdateSourceHostsCondition() throws Exception {
         // register profiles

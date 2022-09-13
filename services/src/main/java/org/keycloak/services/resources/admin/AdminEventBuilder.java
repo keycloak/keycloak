@@ -55,7 +55,7 @@ public class AdminEventBuilder {
         this.listeners = new HashMap<>();
         updateStore(session);
         addListeners(session);
-
+        realm(realm);
         authRealm(auth.getRealm());
         authClient(auth.getClient());
         authUser(auth.getUser());
