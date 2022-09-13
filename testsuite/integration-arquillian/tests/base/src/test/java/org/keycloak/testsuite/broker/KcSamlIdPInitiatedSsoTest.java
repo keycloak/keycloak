@@ -66,14 +66,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 /**
  *
  * @author hmlnarik
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
     private static final String PROVIDER_REALM_USER_NAME = "test";

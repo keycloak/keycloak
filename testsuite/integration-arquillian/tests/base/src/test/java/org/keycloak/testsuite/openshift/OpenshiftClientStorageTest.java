@@ -44,8 +44,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ConsentPage;
@@ -68,7 +66,6 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude({AuthServer.REMOTE})
 @EnableFeature(value = OPENSHIFT_INTEGRATION, skipRestart = true)
 public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakTest {
 

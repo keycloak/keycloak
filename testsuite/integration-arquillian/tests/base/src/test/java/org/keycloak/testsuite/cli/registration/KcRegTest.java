@@ -20,8 +20,6 @@ import java.util.UUID;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
 import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**
@@ -263,7 +261,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testUserLoginWithDefaultConfig() {
         /*
          *  Test most basic user login, using the default admin-cli as a client
@@ -364,7 +361,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testUserLoginWithCustomConfig() {
         /*
          *  Test user login using a custom config file
@@ -402,7 +398,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCustomConfigLoginCreateDelete() throws IOException {
         /*
          *  Test user login, create, delete session using a custom config file
@@ -459,7 +454,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCRUDWithOnTheFlyUserAuth() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
@@ -470,7 +464,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCRUDWithOnTheFlyUserAuthWithClientSecret() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
@@ -509,7 +502,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
@@ -557,7 +549,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCRUDWithOnTheFlyServiceAccountWithClientSecret() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
@@ -568,7 +559,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCRUDWithOnTheFlyServiceAccountWithSignedJwtClient() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
@@ -641,14 +631,12 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCreateWithAllowedHostsWithoutAuthenticationNoConfig() throws IOException {
 
         testCreateWithAllowedHostsWithoutAuthentication("test", false);
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCreateWithAllowedHostsWithoutAuthentication() throws IOException {
 
         testCreateWithAllowedHostsWithoutAuthentication("test", true);

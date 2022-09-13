@@ -77,12 +77,6 @@
                 <module>relative</module>
             </modules>
         </profile>
-        <profile>
-            <id>app-server-remote</id>
-            <modules>
-                <module>remote</module>
-            </modules>
-        </profile>
     </profiles>
     
 </project>

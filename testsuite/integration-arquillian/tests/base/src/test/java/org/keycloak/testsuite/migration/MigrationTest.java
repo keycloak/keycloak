@@ -34,7 +34,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class MigrationTest extends AbstractMigrationTest {
 
     @Override

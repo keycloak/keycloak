@@ -760,29 +760,6 @@
     </build>
 
     <profiles>
-
-        <profile>
-            <id>auth-server-remote</id>
-            <properties>
-                <auth.server>remote</auth.server>
-                <auth.server.remote>true</auth.server.remote>
-                <auth.server.undertow>false</auth.server.undertow>
-                <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly.arquillian</groupId>
-                    <artifactId>wildfly-arquillian-container-remote</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>${wildfly.core.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
         <profile>
             <id>auth-server-quarkus</id>
             <properties>

@@ -50,7 +50,6 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -800,7 +799,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
     public void refreshTokenAfterUserAdminLogoutEndpointAndLoginAgain() {
         try {
             String refreshToken1 = loginAndForceNewLoginPage();

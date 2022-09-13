@@ -41,7 +41,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
@@ -61,7 +60,6 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
@@ -69,7 +67,6 @@ import org.keycloak.testsuite.util.AdminClientUtil;
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     public static final String TEST_APP_DIRECT_OVERRIDE = "test-app-direct-override";
