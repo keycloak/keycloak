@@ -811,7 +811,6 @@
                                 <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
                                 <keycloak.authorization.provider>map</keycloak.authorization.provider>
                                 <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
-                                <keycloak.actionToken.provider>map</keycloak.actionToken.provider>
                                 <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
                                 <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
                                 <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
@@ -865,7 +864,6 @@
                                 <keycloak.loginFailure.map.storage.provider>jpa</keycloak.loginFailure.map.storage.provider>
                                 <keycloak.realm.map.storage.provider>jpa</keycloak.realm.map.storage.provider>
                                 <keycloak.role.map.storage.provider>jpa</keycloak.role.map.storage.provider>
-                                <keycloak.actionToken.map.storage.provider>jpa</keycloak.actionToken.map.storage.provider>
                                 <keycloak.singleUseObject.map.storage.provider>jpa</keycloak.singleUseObject.map.storage.provider>
                                 <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
                                 <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
