@@ -4,6 +4,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 4 * * *'
   workflow_dispatch:
     inputs:
       keycloakRepo:
@@ -13,25 +15,21 @@ on:
         description: The branch to check out for the Keycloak repo (e.g. main).
         required: false
 jobs:
-  setup:
+  build-keycloak:
+    if: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
-    outputs:
-      server-path: ${{ steps.extract-server.outputs.path }}
-    env:
-      ADMIN_UI_PATH: admin-ui
-      KEYCLOAK_SERVER_PATH: keycloak-server
     steps:
       - name: Check out Admin UI
         uses: actions/checkout@v3
         with:
-          path: ${{ env.ADMIN_UI_PATH }}
+          path: admin-ui-repo
 
       - name: Check out Keycloak Server
         uses: actions/checkout@v3
         with:
           repository: ${{ inputs.keycloakRepo || 'keycloak/keycloak' }}
           ref: ${{ inputs.keycloakBranch || 'main' }}
-          path: ${{ env.KEYCLOAK_SERVER_PATH }}
+          path: keycloak-repo
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -43,34 +41,45 @@ jobs:
 
       # See https://issues.redhat.com/browse/KEYCLOAK-17812
       - name: Update Maven settings
-        working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
+        working-directory: keycloak-repo
         run: cp .github/settings.xml ~/.m2
 
       - name: Build Admin UI
-        working-directory: ${{ env.ADMIN_UI_PATH }}
+        working-directory: admin-ui-repo
         run: mvn clean install --batch-mode --file keycloak-theme/pom.xml
 
       - name: Build Keycloak Server
-        working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
-        run: mvn clean install --no-snapshot-updates --batch-mode --errors -DskipTests -DskipCommon -DskipAccount2 -Pdistribution
-
-      - name: Extract Keycloak server
-        id: extract-server
-        working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
+        working-directory: keycloak-repo
         run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          mkdir ../server
-          tar -xvf quarkus/dist/target/keycloak-$VERSION.tar.gz -C ../server
-          echo "::set-output name=path::server/keycloak-$VERSION"
+          mvn clean install --no-snapshot-updates --batch-mode --errors -DskipTests -DskipCommon -DskipAccount2 -Pdistribution
+          mv quarkus/dist/target/keycloak-999-SNAPSHOT.tar.gz ../keycloak-999-SNAPSHOT.tar.gz
 
-      - name: Cache Keycloak server
-        uses: actions/cache@v3
+      - name: Upload Keycloak server
+        uses: actions/upload-artifact@v3
         with:
-          path: ${{ steps.extract-server.outputs.path }}
-          key: ${{ github.sha }}
+          name: keycloak
+          path: keycloak-999-SNAPSHOT.tar.gz
+
+  install-nightly:
+    if: ${{ github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+        - name: Download Keycloak
+          id: extract-server
+          run: |
+            gh release -R keycloak/keycloak download nightly -p keycloak-999-SNAPSHOT.tar.gz
+
+        - name: Upload Keycloak server
+          uses: actions/upload-artifact@v3
+          with:
+            name: keycloak
+            path: keycloak-999-SNAPSHOT.tar.gz
 
   test:
-    needs: setup
+    needs: [build-keycloak, install-nightly]
+    if: always() && ( needs.build-keycloak.result == 'success' || needs.install-nightly.result == 'success' )
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -91,14 +100,14 @@ jobs:
         run: npm ci
 
       - name: Restore Keycloak server
-        uses: actions/cache@v3
+        uses: actions/download-artifact@v3
         with:
-          path: ${{ needs.setup.outputs.server-path }}
-          key: ${{ github.sha }}
+          name: keycloak
 
       - name: Start Keycloak Server
-        working-directory: ${{ needs.setup.outputs.server-path }}/bin
-        run: ./kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &
+        run: |
+          tar xfvz keycloak-999-SNAPSHOT.tar.gz
+          keycloak-999-SNAPSHOT/bin/kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
