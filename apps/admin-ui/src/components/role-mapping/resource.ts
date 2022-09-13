@@ -1,21 +1,21 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 
-type BaseClientRolesQuery = {
+type BaseQuery = {
   adminClient: KeycloakAdminClient;
   id: string;
   type: string;
 };
 
-type AvailableClientRolesQuery = BaseClientRolesQuery & {
+type PaginatingQuery = BaseQuery & {
   first: number;
   max: number;
   search?: string;
 };
 
-type EffectiveClientRolesQuery = BaseClientRolesQuery;
+type EffectiveClientRolesQuery = BaseQuery;
 
-type Query = Partial<Omit<AvailableClientRolesQuery, "adminClient">> & {
+type Query = Partial<Omit<PaginatingQuery, "adminClient">> & {
   adminClient: KeycloakAdminClient;
   endpoint: string;
 };
@@ -28,7 +28,7 @@ type ClientRole = {
   clientId: string;
 };
 
-const fetchRoles = async ({
+const fetchEndpoint = async ({
   adminClient,
   id,
   type,
@@ -36,7 +36,7 @@ const fetchRoles = async ({
   max,
   search,
   endpoint,
-}: Query): Promise<ClientRole[]> => {
+}: Query): Promise<any> => {
   return fetchAdminUI(adminClient, `/admin-ui-${endpoint}/${type}/${id}`, {
     first: (first || 0).toString(),
     max: (max || 10).toString(),
@@ -44,14 +44,15 @@ const fetchRoles = async ({
   });
 };
 
-export const getAvailableClientRoles = async (
-  query: AvailableClientRolesQuery
-): Promise<ClientRole[]> => {
-  return fetchRoles({ ...query, endpoint: "available-roles" });
-};
+export const getAvailableClientRoles = (
+  query: PaginatingQuery
+): Promise<ClientRole[]> =>
+  fetchEndpoint({ ...query, endpoint: "available-roles" });
 
-export const getEffectiveClientRoles = async (
+export const getEffectiveClientRoles = (
   query: EffectiveClientRolesQuery
-): Promise<ClientRole[]> => {
-  return fetchRoles({ ...query, endpoint: "effective-roles" });
-};
+): Promise<ClientRole[]> =>
+  fetchEndpoint({ ...query, endpoint: "effective-roles" });
+
+export const fetchUsedBy = (query: PaginatingQuery): Promise<string[]> =>
+  fetchEndpoint({ ...query, endpoint: "authentication-management" });

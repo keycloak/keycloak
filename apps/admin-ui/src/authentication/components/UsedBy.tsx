@@ -10,9 +10,11 @@ import {
 } from "@patternfly/react-core";
 import { CheckCircleIcon } from "@patternfly/react-icons";
 
-import type { AuthenticationType } from "../AuthenticationSection";
+import { AuthenticationType, REALM_FLOWS } from "../AuthenticationSection";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import useToggle from "../../utils/useToggle";
+import { useAdminClient } from "../../context/auth/AdminClient";
+import { fetchUsedBy } from "../../components/role-mapping/resource";
 
 import "./used-by.css";
 
@@ -28,17 +30,31 @@ const Label = ({ label }: { label: string }) => (
 );
 
 type UsedByModalProps = {
-  values: string[];
+  id: string;
   onClose: () => void;
   isSpecificClient: boolean;
 };
 
-const UsedByModal = ({
-  values,
-  isSpecificClient,
-  onClose,
-}: UsedByModalProps) => {
+const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
   const { t } = useTranslation("authentication");
+  const { adminClient } = useAdminClient();
+
+  const loader = async (
+    first?: number,
+    max?: number,
+    search?: string
+  ): Promise<{ name: string }[]> => {
+    const result = await fetchUsedBy({
+      adminClient,
+      id,
+      type: isSpecificClient ? "clients" : "idp",
+      first: first || 0,
+      max: max || 10,
+      search,
+    });
+    return result.map((p) => ({ name: p }));
+  };
+
   return (
     <Modal
       header={
@@ -66,7 +82,8 @@ const UsedByModal = ({
       ]}
     >
       <KeycloakDataTable
-        loader={values.map((value) => ({ name: value }))}
+        loader={loader}
+        isPaginated
         ariaLabelKey="authentication:usedBy"
         searchPlaceholderKey="common:search"
         columns={[
@@ -79,12 +96,7 @@ const UsedByModal = ({
   );
 };
 
-export const UsedBy = ({
-  authType: {
-    id,
-    usedBy: { type, values },
-  },
-}: UsedByProps) => {
+export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
   const { t } = useTranslation("authentication");
   const [open, toggle] = useToggle();
 
@@ -92,26 +104,29 @@ export const UsedBy = ({
     <>
       {open && (
         <UsedByModal
-          values={values}
+          id={id!}
           onClose={toggle}
-          isSpecificClient={type === "specificClients"}
+          isSpecificClient={usedBy?.type === "SPECIFIC_CLIENTS"}
         />
       )}
-      {(type === "specificProviders" || type === "specificClients") &&
-        (values.length < 8 ? (
+      {(usedBy?.type === "SPECIFIC_PROVIDERS" ||
+        usedBy?.type === "SPECIFIC_CLIENTS") &&
+        (usedBy.values.length <= 8 ? (
           <Popover
             key={id}
             aria-label={t("usedBy")}
             bodyContent={
-              <div key={`usedBy-${id}-${values}`}>
+              <div key={`usedBy-${id}-${usedBy.values}`}>
                 {t(
                   "appliedBy" +
-                    (type === "specificClients" ? "Clients" : "Providers")
+                    (usedBy.type === "SPECIFIC_CLIENTS"
+                      ? "Clients"
+                      : "Providers")
                 )}{" "}
-                {values.map((used, index) => (
+                {usedBy.values.map((used, index) => (
                   <>
                     <strong>{used}</strong>
-                    {index < values.length - 1 ? ", " : ""}
+                    {index < usedBy.values.length - 1 ? ", " : ""}
                   </>
                 ))}
               </div>
@@ -121,7 +136,7 @@ export const UsedBy = ({
               variant="link"
               className="keycloak__used-by__popover-button"
             >
-              <Label label={t(type!)} />
+              <Label label={t(`used.${usedBy.type}`)} />
             </Button>
           </Popover>
         ) : (
@@ -130,11 +145,19 @@ export const UsedBy = ({
             className="keycloak__used-by__popover-button"
             onClick={toggle}
           >
-            <Label label={t(type!)} />
+            <Label label={t(`used.${usedBy.type}`)} />
           </Button>
         ))}
-      {type === "default" && <Label label={t(`flow.${values[0]}`)} />}
-      {!type && t("notInUse")}
+      {usedBy?.type === "DEFAULT" && (
+        <Label
+          label={t(
+            [...REALM_FLOWS.values()].includes(usedBy.values[0])
+              ? `flow.${usedBy.values[0]}`
+              : usedBy.values[0]
+          )}
+        />
+      )}
+      {!usedBy?.type && t("used.notInUse")}
     </>
   );
 };

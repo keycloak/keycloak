@@ -84,7 +84,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
         <FormGroup label={t("chooseBindingType")} fieldId="chooseBindingType">
           <Controller
             name="bindingType"
-            defaultValue={REALM_FLOWS[0]}
+            defaultValue={"browserFlow"}
             control={control}
             render={({ onChange, value }) => (
               <Select
@@ -100,17 +100,20 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
                 isOpen={open}
                 menuAppendTo="parent"
               >
-                {REALM_FLOWS.filter(
-                  (f) => f !== "dockerAuthenticationFlow"
-                ).map((flow) => (
-                  <SelectOption
-                    selected={flow === value}
-                    key={flow}
-                    value={flow}
-                  >
-                    {t(`flow.${flow}`)}
-                  </SelectOption>
-                ))}
+                {[...REALM_FLOWS.keys()]
+                  .filter((f) => f !== "dockerAuthenticationFlow")
+                  .map((key) => {
+                    const value = REALM_FLOWS.get(key);
+                    return (
+                      <SelectOption
+                        selected={key === REALM_FLOWS.get(key)}
+                        key={key}
+                        value={key}
+                      >
+                        {t(`flow.${value}`)}
+                      </SelectOption>
+                    );
+                  })}
               </Select>
             )}
           />

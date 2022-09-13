@@ -36,23 +36,25 @@ import {
   RoutableTabs,
 } from "../components/routable-tabs/RoutableTabs";
 import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
+import { addTrailingSlash } from "../util";
+import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 
 import "./authentication-section.css";
 
-type UsedBy = "specificClients" | "default" | "specificProviders";
+type UsedBy = "SPECIFIC_CLIENTS" | "SPECIFIC_PROVIDERS" | "DEFAULT";
 
 export type AuthenticationType = AuthenticationFlowRepresentation & {
-  usedBy: { type?: UsedBy; values: string[] };
+  usedBy?: { type?: UsedBy; values: string[] };
 };
 
-export const REALM_FLOWS = [
-  "browserFlow",
-  "registrationFlow",
-  "directGrantFlow",
-  "resetCredentialsFlow",
-  "clientAuthenticationFlow",
-  "dockerAuthenticationFlow",
-];
+export const REALM_FLOWS = new Map<string, string>([
+  ["browserFlow", "browser"],
+  ["registrationFlow", "registration"],
+  ["directGrantFlow", "direct grant"],
+  ["resetCredentialsFlow", "reset credentials"],
+  ["clientAuthenticationFlow", "clients"],
+  ["dockerAuthenticationFlow", "docker auth"],
+]);
 
 export default function AuthenticationSection() {
   const { t } = useTranslation("authentication");
@@ -68,54 +70,18 @@ export default function AuthenticationSection() {
   const [bindFlowOpen, toggleBindFlow] = useToggle();
 
   const loader = async () => {
-    const [allClients, allIdps, realmRep, flows] = await Promise.all([
-      adminClient.clients.find(),
-      adminClient.identityProviders.find(),
-      adminClient.realms.findOne({ realm }),
-      adminClient.authenticationManagement.getFlows(),
-    ]);
-    if (!realmRep) {
-      throw new Error(t("common:notFound"));
-    }
-
-    const defaultFlows = Object.entries(realmRep).filter(([key]) =>
-      REALM_FLOWS.includes(key)
+    const flowsRequest = await fetch(
+      `${addTrailingSlash(
+        adminClient.baseUrl
+      )}admin/realms/${realm}/admin-ui-authentication-management/flows`,
+      {
+        method: "GET",
+        headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
+      }
     );
+    const flows = await flowsRequest.json();
 
-    for (const flow of flows as AuthenticationType[]) {
-      flow.usedBy = { values: [] };
-      const clients = allClients.filter(
-        (client) =>
-          client.authenticationFlowBindingOverrides &&
-          (client.authenticationFlowBindingOverrides["direct_grant"] ===
-            flow.id ||
-            client.authenticationFlowBindingOverrides["browser"] === flow.id)
-      );
-      if (clients.length > 0) {
-        flow.usedBy.type = "specificClients";
-        flow.usedBy.values = clients.map(({ clientId }) => clientId!);
-      }
-
-      const idps = allIdps.filter(
-        (idp) =>
-          idp.firstBrokerLoginFlowAlias === flow.alias ||
-          idp.postBrokerLoginFlowAlias === flow.alias
-      );
-      if (idps.length > 0) {
-        flow.usedBy.type = "specificProviders";
-        flow.usedBy.values = idps.map(({ alias }) => alias!);
-      }
-
-      const defaultFlow = defaultFlows.find(
-        ([, alias]) => flow.alias === alias
-      );
-      if (defaultFlow) {
-        flow.usedBy.type = "default";
-        flow.usedBy.values.push(defaultFlow[0]);
-      }
-    }
-
-    return sortBy(flows as AuthenticationType[], (flow) => flow.usedBy.type);
+    return sortBy(flows as AuthenticationType[], (flow) => flow.usedBy?.type);
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -156,7 +122,7 @@ export default function AuthenticationSection() {
         to={toFlow({
           realm,
           id: id!,
-          usedBy: usedBy.type || "notInUse",
+          usedBy: usedBy?.type || "notInUse",
           builtIn: builtIn ? "builtIn" : undefined,
         })}
         key={`link-${id}`}
@@ -236,7 +202,7 @@ export default function AuthenticationSection() {
                     setSelectedFlow(data);
                   },
                 },
-                ...(data.usedBy.type !== "default" &&
+                ...(data.usedBy?.type !== "DEFAULT" &&
                 data.providerId !== "client-flow"
                   ? [
                       {
@@ -248,7 +214,7 @@ export default function AuthenticationSection() {
                       },
                     ]
                   : []),
-                ...(!data.builtIn && data.usedBy.values.length === 0
+                ...(!data.builtIn && !data.usedBy
                   ? [
                       {
                         title: t("common:delete"),

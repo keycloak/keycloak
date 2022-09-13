@@ -73,20 +73,22 @@
   "buildIn": "Built-in",
   "appliedByProviders": "Applied by the following providers",
   "appliedByClients": "Applied by the following clients",
-  "specificProviders": "Specific providers",
-  "specificClients": "Specific clients",
-  "default": "Default",
-  "notInUse": "Not in use",
+  "used": {
+    "SPECIFIC_PROVIDERS": "Specific providers",
+    "SPECIFIC_CLIENTS": "Specific clients",
+    "DEFAULT": "Default",
+    "notInUse": "Not in use"
+  },
   "duplicate": "Duplicate",
   "bindFlow": "Bind flow",
   "chooseBindingType": "Choose binding type",
   "flow": {
-    "browserFlow": "Browser flow",
-    "registrationFlow": "Registration flow",
-    "directGrantFlow": "Direct grant flow",
-    "resetCredentialsFlow": "Reset credentials flow",
-    "clientAuthenticationFlow": "Client authentication flow",
-    "dockerAuthenticationFlow": "Docker authentication flow"
+    "browser": "Browser flow",
+    "registration": "Registration flow",
+    "direct grant": "Direct grant flow",
+    "reset credentials": "Reset credentials flow",
+    "clients": "Client authentication flow",
+    "docker auth": "Docker authentication flow"
   },
   "editInfo": "Edit info",
   "editFlow": "Edit flow",

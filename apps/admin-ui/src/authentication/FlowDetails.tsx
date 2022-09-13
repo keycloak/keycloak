@@ -303,7 +303,7 @@ export default function FlowDetails() {
       <ViewHeader
         titleKey={flow?.alias || ""}
         badges={[
-          { text: <Label>{t(usedBy)}</Label> },
+          { text: <Label>{t(`used.${usedBy}`)}</Label> },
           builtIn
             ? {
                 text: (

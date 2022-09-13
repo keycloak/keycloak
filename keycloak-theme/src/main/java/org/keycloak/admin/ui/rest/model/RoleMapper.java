@@ -6,7 +6,7 @@ import org.keycloak.models.RoleModel;
 
 public class RoleMapper {
 
-    public static ClientRole convertToRepresentation(RoleModel roleModel, Stream<ClientModel> clients) {
+    public static ClientRole convertToModel(RoleModel roleModel, Stream<ClientModel> clients) {
         ClientRole clientRole = new ClientRole(roleModel.getId(), roleModel.getName(), roleModel.getDescription());
         ClientModel clientModel = clients.filter(c -> roleModel.getContainerId().equals(c.getId())).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Could not find referenced client"));

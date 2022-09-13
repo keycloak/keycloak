@@ -4,10 +4,14 @@ import java.util.Objects;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 public final class ClientRole {
-    @Schema(required = true) private final String id;
-    @Schema(required = true) private final String role;
-    @Schema(required = true) private String client;
-    @Schema(required = true) private String clientId;
+    @Schema(required = true)
+    private final String id;
+    @Schema(required = true)
+    private final String role;
+    @Schema(required = true)
+    private String client;
+    @Schema(required = true)
+    private String clientId;
     private String description;
 
     public String getId() {
