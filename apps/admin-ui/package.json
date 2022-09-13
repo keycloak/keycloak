@@ -1,7 +1,7 @@
 {
   "name": "admin-ui",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx,mjs,ts,tsx",
