@@ -139,12 +139,6 @@
             </modules>
         </profile>
         <profile>
-            <id>server-config-migration</id>
-            <modules>
-                <module>server-config-migration</module>
-            </modules>
-        </profile>
-        <profile>
             <id>sssd</id>
             <modules>
                 <module>sssd</module>

@@ -327,18 +327,6 @@ that you need to use property `migration.mode` with the value `manual` .
 
     -Dmigration.mode=manual
 
-
-## Server configuration migration test
-This will compare if Wildfly configuration files (standalone.xml, standalone-ha.xml, domain.xml)
-are correctly migrated from previous version
-
-    mvn -f testsuite/integration-arquillian/tests/other/server-config-migration/pom.xml \
-      clean install \
-      -Dmigrated.version=1.9.8.Final-redhat-1
-
-For the available versions, take a look at the directory [tests/other/server-config-migration/src/test/resources/standalone](tests/other/server-config-migration/src/test/resources/standalone)
-
-
 ## Old Admin Console UI tests
 The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox and Google Chrome. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
 
