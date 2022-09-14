@@ -23,9 +23,10 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.NotFoundException;
 
-import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -228,9 +229,7 @@ public class ClientAttributeCertificateResource {
         PrivateKey privateKey = null;
         X509Certificate certificate = null;
         try {
-            KeyStore keyStore = null;
-            if (keystoreFormat.equals("JKS")) keyStore = KeyStore.getInstance("JKS");
-            else keyStore = KeyStore.getInstance(keystoreFormat, BouncyIntegration.PROVIDER);
+            KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreFormat.valueOf(keystoreFormat));
             keyStore.load(inputParts.get(0).getBody(InputStream.class, null), storePassword);
             try {
                 privateKey = (PrivateKey)keyStore.getKey(keyAlias, keyPassword);
@@ -332,9 +331,7 @@ public class ClientAttributeCertificateResource {
     private byte[] getKeystore(KeyStoreConfig config, String privatePem, String certPem) {
         try {
             String format = config.getFormat();
-            KeyStore keyStore;
-            if (format.equals("JKS")) keyStore = KeyStore.getInstance("JKS");
-            else keyStore = KeyStore.getInstance(format, BouncyIntegration.PROVIDER);
+            KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreFormat.valueOf(format));
             keyStore.load(null, null);
             String keyAlias = config.getKeyAlias();
             if (keyAlias == null) keyAlias = client.getClientId();

@@ -25,7 +25,7 @@ public class CryptoIntegration {
             synchronized (lock) {
                 if (cryptoProvider == null) {
                     cryptoProvider = detectProvider(classLoader);
-                    logger.debugv("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
+                    logger.infov("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
 
                     if (logger.isTraceEnabled()) {
                         logger.tracef(dumpJavaSecurityProviders());

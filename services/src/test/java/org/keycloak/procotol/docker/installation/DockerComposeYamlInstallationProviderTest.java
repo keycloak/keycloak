@@ -33,9 +33,10 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.protocol.docker.installation.DockerComposeYamlInstallationProvider;
 import org.keycloak.rule.CryptoInitRule;
 
@@ -49,8 +50,7 @@ public class DockerComposeYamlInstallationProviderTest {
     
     @Before
     public void setUp() throws Exception {
-        final KeyPairGenerator keyGen;
-        keyGen = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
+        final KeyPairGenerator keyGen = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
         keyGen.initialize(2048, new SecureRandom());
 
         final KeyPair keypair = keyGen.generateKeyPair();

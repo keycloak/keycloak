@@ -1,7 +1,8 @@
 package org.keycloak.protocol.docker.installation.compose;
 
-import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.crypto.KeyType;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -24,9 +25,8 @@ public class DockerComposeCertsDirectory {
     public DockerComposeCertsDirectory(final String directoryName, final Certificate realmCert, final String registryCertFilename, final String registryKeyFilename, final String idpCertTrustChainFilename, final String realmName) {
         this.directoryName = directoryName;
 
-        final KeyPairGenerator keyGen;
         try {
-            keyGen = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
+            final KeyPairGenerator keyGen = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
             keyGen.initialize(2048, new SecureRandom());
 
             final KeyPair keypair = keyGen.generateKeyPair();

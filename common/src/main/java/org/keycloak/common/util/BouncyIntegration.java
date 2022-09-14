@@ -19,7 +19,6 @@ package org.keycloak.common.util;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.crypto.CryptoConstants;
 
 import java.security.Provider;
 import java.security.Security;
@@ -37,7 +36,8 @@ public class BouncyIntegration {
     private static String loadProvider() {
         Provider provider = CryptoIntegration.getProvider().getBouncyCastleProvider();
         if (provider == null) {
-            throw new RuntimeException("Failed to load required security provider: BouncyCastleProvider or BouncyCastleFipsProvider");
+            return Security.getProviders()[0].getName();
+            // throw new RuntimeException("Failed to load required security provider: BouncyCastleProvider or BouncyCastleFipsProvider");
         }
         if (Security.getProvider(provider.getName()) == null) {
             Security.addProvider(provider);

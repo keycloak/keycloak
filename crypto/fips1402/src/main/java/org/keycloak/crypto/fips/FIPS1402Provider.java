@@ -1,5 +1,12 @@
 package org.keycloak.crypto.fips;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.spec.ECField;
 import java.security.spec.ECFieldF2m;
@@ -8,8 +15,18 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
 import java.security.Security;
+import java.security.Signature;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertStore;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CollectionCertStoreParameters;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKeyFactory;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -23,6 +40,9 @@ import org.keycloak.common.crypto.CryptoConstants;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
+import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
+import org.keycloak.crypto.JavaAlgorithm;
 
 
 /**
@@ -117,5 +137,63 @@ public class FIPS1402Provider implements CryptoProvider {
     @Override
     public <T> T getOCSPProver(Class<T> clazz) {
         return clazz.cast(new BCFIPSOCSPProvider());
+    }
+
+
+    @Override
+    public KeyPairGenerator getKeyPairGen(String algorithm) throws NoSuchAlgorithmException, NoSuchProviderException {
+        return KeyPairGenerator.getInstance(algorithm, BouncyIntegration.PROVIDER);
+    }
+
+    @Override
+    public KeyFactory getKeyFactory(String algorithm) throws NoSuchAlgorithmException, NoSuchProviderException {
+        return KeyFactory.getInstance(algorithm , BouncyIntegration.PROVIDER);
+    }
+
+    @Override
+    public Cipher getAesCbcCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException {
+        return Cipher.getInstance("AES/CBC/PKCS7Padding", BouncyIntegration.PROVIDER);
+    }
+
+    @Override
+    public Cipher getAesGcmCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException {
+        return Cipher.getInstance("AES/GCM/NoPadding", BouncyIntegration.PROVIDER);
+    }
+    
+    @Override
+    public SecretKeyFactory getSecretKeyFact(String keyAlgorithm) throws NoSuchAlgorithmException, NoSuchProviderException {
+        return SecretKeyFactory.getInstance(keyAlgorithm, BouncyIntegration.PROVIDER);
+    }
+    
+    @Override
+    public KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException {
+        if (format == KeystoreFormat.JKS) {
+            return KeyStore.getInstance(format.toString());
+        } else {
+            return KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
+        }
+    }
+
+    @Override
+    public CertificateFactory getX509CertFactory() throws CertificateException, NoSuchProviderException {
+        return CertificateFactory.getInstance("X.509", BouncyIntegration.PROVIDER);
+    }
+
+    @Override
+    public CertStore getCertStore(CollectionCertStoreParameters certStoreParams) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
+
+        return CertStore.getInstance("Collection", certStoreParams, BouncyIntegration.PROVIDER);
+
+    }
+
+    @Override
+    public CertPathBuilder getCertPathBuilder() throws NoSuchAlgorithmException, NoSuchProviderException {
+        return CertPathBuilder.getInstance("PKIX", BouncyIntegration.PROVIDER);
+    }
+    
+    @Override
+    public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException {
+        return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), BouncyIntegration.PROVIDER);
+            
     }
 }
