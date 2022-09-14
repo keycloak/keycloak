@@ -23,6 +23,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
@@ -45,6 +46,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  * @author tkyjovsk
  */
 @DisableFeature(value = Profile.Feature.ADMIN2, skipRestart = true)
+@EnableFeature(value = Profile.Feature.ADMIN, skipRestart = true)
 public abstract class AbstractConsoleTest extends AbstractAuthTest {
 
     @Page
