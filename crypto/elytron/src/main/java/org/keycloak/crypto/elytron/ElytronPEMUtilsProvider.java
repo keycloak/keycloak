@@ -17,11 +17,14 @@
 package org.keycloak.crypto.elytron;
 
 import java.security.Key;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Base64;
 
 import org.keycloak.common.crypto.PemUtilsProvider;
+import org.keycloak.common.util.DerUtils;
+import org.keycloak.common.util.PemException;
 
 /**
  * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>
@@ -45,6 +48,20 @@ public class ElytronPEMUtilsProvider extends PemUtilsProvider {
             }
         }
         return encoded;
+    }
+
+    @Override
+    public PrivateKey decodePrivateKey(String pem) {
+        if (pem == null) {
+            return null;
+        }
+
+        try {
+            byte[] der = pemToDer(pem);
+            return DerUtils.decodePrivateKey(der);
+        } catch (Exception e) {
+            throw new PemException(e);
+        }
     }
     
 }
