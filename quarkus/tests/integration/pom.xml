@@ -99,6 +99,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <useSystemClassLoader>false</useSystemClassLoader>
+                    <argLine>-Xmx1024m -XX:MaxMetaspaceSize=512m</argLine>
+                    <forkCount>2.5C</forkCount>
+                    <reuseForks>true</reuseForks>
                     <systemPropertyVariables>
                         <kc.quarkus.tests.dist>${kc.quarkus.tests.dist}</kc.quarkus.tests.dist>
                     </systemPropertyVariables>
@@ -119,7 +123,10 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+                            <useSystemClassLoader>false</useSystemClassLoader>
                             <argLine>-Xmx1024m -XX:MaxMetaspaceSize=512m</argLine>
+                            <forkCount>2.5C</forkCount>
+                            <reuseForks>true</reuseForks>
                             <systemPropertyVariables>
                                 <kc.test.storage.database>true</kc.test.storage.database>
                                 <!--DB Container -->

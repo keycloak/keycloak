@@ -392,8 +392,12 @@ jobs:
     name: Quarkus Tests
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tests: [ 'integration','storage','docker' ]
+      fail-fast: false
     env:
-      MAVEN_OPTS: -Xmx1024m
+      MAVEN_OPTS: -Xmx1024m -XX:MaxMetaspaceSize=512m
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
@@ -413,27 +417,18 @@ jobs:
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
 
-      - name: Prepare the local distribution archives
-        run: ./mvnw clean install -DskipTests -Pdistribution
-
-      - name: Run Quarkus Integration Tests
+      - name: Run Quarkus Tests
         run: |
-          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
+          declare -A TESTGROUP
+          TESTGROUP["integration"]=""
+          TESTGROUP["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest"
+          TESTGROUP["docker"]="-Dkc.quarkus.tests.dist=docker"
+          
+          ./mvnw clean install -nsu -B -f quarkus/pom.xml -DskipTestsuite
+          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml ${TESTGROUP["${{ matrix.tests }}"]} | misc/log/trimmer.sh
+          
           TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
-          exit $TEST_RESULT
-
-      - name: Run Quarkus Storage Tests
-        run: |
-          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest | misc/log/trimmer.sh
-          TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
-          exit $TEST_RESULT
-
-      - name: Run Quarkus Tests in Docker
-        run: |
-          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.dist=docker | misc/log/trimmer.sh
-          TEST_RESULT=${PIPESTATUS[0]}
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests-${{ matrix.tests }}.zip -@
           exit $TEST_RESULT
 
       - name: Analyze Test and/or Coverage Results
@@ -449,9 +444,9 @@ jobs:
         uses: actions/upload-artifact@v3
         if: failure()
         with:
-          name: reports-quarkus-tests
+          name: reports-quarkus-tests-${{ matrix.tests }}
           retention-days: 14
-          path: reports-quarkus-tests.zip
+          path: reports-quarkus-tests-${{ matrix.tests }}.zip
           if-no-files-found: ignore
 
 # NOTE: WebAuthn tests can be enabled once the issue #12621 is resolved
