@@ -1,16 +1,48 @@
 {
   "name": "admin-ui",
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext js,jsx,mjs,ts,tsx",
-    "test": "vitest",
+    "dev": "wireit",
+    "build": "wireit",
+    "preview": "wireit",
+    "lint": "wireit",
+    "test": "wireit",
     "cy:open": "cypress open --e2e --browser chrome",
     "cy:run": "cypress run --browser chrome",
     "cy:check-types": "tsc --project cypress/tsconfig.json",
     "server:start": "./scripts/start-server.mjs",
     "server:import-client": "./scripts/import-client.mjs"
+  },
+  "wireit": {
+    "dev": {
+      "command": "vite --host",
+      "dependencies": [
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "preview": {
+      "command": "vite preview",
+      "dependencies": [
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "build": {
+      "command": "vite build",
+      "dependencies": [
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "lint": {
+      "command": "eslint . --ext js,jsx,mjs,ts,tsx",
+      "dependencies": [
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "test": {
+      "command": "vitest",
+      "dependencies": [
+        "../../libs/keycloak-js:build"
+      ]
+    }
   },
   "dependencies": {
     "@keycloak/keycloak-admin-client": "^19.0.1",

@@ -9,8 +9,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "rollup --config --configPlugin typescript",
+    "build": "wireit",
     "prepublishOnly": "npm run build"
+  },
+  "wireit": {
+    "build": {
+      "command": "rollup --config --configPlugin typescript",
+      "files": ["src/**", "rollup.config.ts", "tsconfig.json"],
+      "output": ["dist/**", "!dist/*.d.ts"]
+    }
   },
   "repository": {
     "type": "git",

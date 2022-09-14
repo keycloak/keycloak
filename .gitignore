@@ -31,3 +31,6 @@ assets
 
 # Keycloak server
 server
+
+# Wireit
+.wireit

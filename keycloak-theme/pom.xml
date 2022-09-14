@@ -271,7 +271,7 @@
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>run build --workspace=keycloak-js --workspace=admin-ui</arguments>
+                            <arguments>run build --workspace=admin-ui</arguments>
                         </configuration>
                     </execution>
                 </executions>

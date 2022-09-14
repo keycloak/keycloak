@@ -29,7 +29,7 @@ jobs:
         run: npm ci
 
       - name: Run build task
-        run: npm run build --workspace=keycloak-js --workspace=admin-ui
+        run: npm run build --workspace=admin-ui
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
