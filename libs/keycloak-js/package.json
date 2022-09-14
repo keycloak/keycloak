@@ -29,7 +29,7 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^22.0.1",
     "@rollup/plugin-inject": "^4.0.4",
-    "@rollup/plugin-node-resolve": "^14.0.1",
+    "@rollup/plugin-node-resolve": "^14.1.0",
     "@rollup/plugin-typescript": "^8.3.0",
     "es6-promise": "^4.2.8",
     "rollup": "^2.67.1",
