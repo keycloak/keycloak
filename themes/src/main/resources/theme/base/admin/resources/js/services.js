@@ -960,7 +960,7 @@ function clientSelectControl($scope, realm, Client) {
             Client.query({realm: realm, search: true, clientId: query.term.trim(), max: 20}, function(response) {
                 query.callback({ results: response.map(function (client) {
                     return { id: client.id, text: client.clientId }
-                });
+                })});
             });
         }
     };
@@ -1021,7 +1021,7 @@ function roleControl($scope, $route, realm, role, roles, Client,
 
 
     clientSelectControl($scope, $route.current.params.realm, Client);
-    
+
     $scope.selectedClient = null;
 
 
