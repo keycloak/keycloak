@@ -330,7 +330,7 @@ public class AuthServerTestEnricher {
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server
-                if (container.getQualifier().equals("auth-server-jboss-migration") || container.getQualifier().equals("auth-server-migration")) {
+                if (container.getQualifier().equals("auth-server-migration")) {
                     updateWithAuthServerInfo(container);
                     suiteContext.setMigratedAuthServerInfo(container);
                 }
@@ -338,7 +338,7 @@ public class AuthServerTestEnricher {
             // validate setup
             if (suiteContext.getMigratedAuthServerInfo() == null) {
                 throw new RuntimeException("Migration test was enabled but no auth server from which to migrate was activated. "
-                        + "A container matching 'auth-server-jboss-migration' or 'auth-server-migration' needs to be enabled in arquillian.xml.");
+                        + "A container matching 'auth-server-migration' needs to be enabled in arquillian.xml.");
             }
         }
 
