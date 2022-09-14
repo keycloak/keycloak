@@ -1,7 +1,10 @@
 import ModalUtils from "../../../../../util/ModalUtils";
+import ListingPage from "../../../ListingPage";
 import GroupPage from "../GroupPage";
 
 const modalUtils = new ModalUtils();
+const listingPage = new ListingPage();
+const groupPage = new GroupPage();
 
 export default class GroupDetailPage extends GroupPage {
   private groupNamesColumn = '[data-label="Group name"] > a';
@@ -145,5 +148,29 @@ export default class GroupDetailPage extends GroupPage {
       .confirmModal();
     this.assertSwitchStateOff(cy.findByTestId(this.permissionSwitch));
     return this;
+  }
+
+  createRoleMapping() {
+    listingPage.clickItemCheckbox("default-roles-");
+  }
+
+  createRoleMappingSearch() {
+    listingPage.searchItemInModal("offline_access");
+    listingPage.clickItemCheckbox("offline_access");
+  }
+
+  checkRoles() {
+    listingPage.itemExist("offline_access");
+    listingPage.searchItem("offline_access", false);
+    listingPage.itemExist("offline_access");
+    listingPage.searchItem("non-existant-role", false);
+    groupPage.assertNoSearchResultsMessageExist(true);
+  }
+
+  deleteRole() {
+    modalUtils
+      .checkModalTitle("Remove mapping?")
+      .checkConfirmButtonText("Remove")
+      .confirmModal();
   }
 }

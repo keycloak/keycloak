@@ -210,6 +210,7 @@ export const RoleMapping = ({
               <Checkbox
                 label={t("common:hideInheritedRoles")}
                 id="hideInheritedRoles"
+                data-testid="hideInheritedRoles"
                 isChecked={hide}
                 onChange={(check) => {
                   setHide(check);

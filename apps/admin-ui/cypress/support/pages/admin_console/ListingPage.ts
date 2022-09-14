@@ -64,6 +64,9 @@ export default class ListingPage extends CommonElements {
   private tableHeaderCheckboxItemAllRows =
     "input[aria-label='Select all rows']";
 
+  private searchBtnInModal =
+    ".pf-c-modal-box .pf-c-toolbar__content-section button.pf-m-control:visible";
+
   showPreviousPageTableItems() {
     cy.get(this.previousPageBtn).first().click();
 
@@ -108,6 +111,14 @@ export default class ListingPage extends CommonElements {
     }
 
     return this;
+  }
+
+  searchItemInModal(searchValue: string) {
+    cy.get(this.searchInput).clear();
+    if (searchValue) {
+      cy.get(this.searchInput).type(searchValue);
+    }
+    cy.get(this.searchBtnInModal).click({ force: true });
   }
 
   checkTableLength(length: number, identifier: string) {

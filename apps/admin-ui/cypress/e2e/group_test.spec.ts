@@ -10,6 +10,8 @@ import ChildGroupsTab from "../support/pages/admin_console/manage/groups/group_d
 import MembersTab from "../support/pages/admin_console/manage/groups/group_details/tabs/MembersTab";
 import adminClient from "../support/util/AdminClient";
 import { range } from "lodash-es";
+import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
+import CommonPage from "../support/pages/CommonPage";
 
 describe("Group test", () => {
   const loginPage = new LoginPage();
@@ -21,6 +23,7 @@ describe("Group test", () => {
   const groupDetailPage = new GroupDetailPage();
   const childGroupsTab = new ChildGroupsTab();
   const membersTab = new MembersTab();
+  const commonPage = new CommonPage();
 
   const groupNamePrefix = "group_";
   let groupName: string;
@@ -471,6 +474,39 @@ describe("Group test", () => {
         .moveGroupItemAction(predefinedGroups[0], ["root"]);
       sidebarPage.goToGroups();
       groupPage.assertGroupItemExist(predefinedGroups[0], true);
+    });
+  });
+
+  describe("Role mappings", () => {
+    const roleMappingTab = new RoleMappingTab("group");
+    beforeEach(() => {
+      groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
+      groupDetailPage.goToRoleMappingTab();
+    });
+
+    it("Check empty state", () => {
+      commonPage.emptyState().checkIfExists(true);
+    });
+
+    it("Assign roles from empty state", () => {
+      roleMappingTab.assignRole();
+      groupDetailPage.createRoleMappingSearch();
+      roleMappingTab.assign();
+    });
+
+    it("Show and search roles", () => {
+      groupDetailPage.checkRoles();
+    });
+
+    it("Check hide inherited roles option", () => {
+      roleMappingTab.unhideInheritedRoles();
+      roleMappingTab.hideInheritedRoles();
+    });
+
+    it("Remove roles", () => {
+      roleMappingTab.selectRow("offline_access");
+      roleMappingTab.unAssign();
+      groupDetailPage.deleteRole();
     });
   });
 
