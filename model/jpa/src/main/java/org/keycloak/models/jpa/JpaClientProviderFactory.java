@@ -70,7 +70,7 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
     @Override
     public ClientProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em, clientSearchableAttributes);
+        return new JpaRealmProvider(session, em, clientSearchableAttributes, null);
     }
 
     @Override
