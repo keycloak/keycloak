@@ -7,7 +7,7 @@ import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/g
 
 import type { AddAlertFunction } from "../components/alert/Alerts";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
-import { convertToFormValues, toUpperCase } from "../util";
+import { convertAttributeNameToForm, toUpperCase } from "../util";
 import { AdvancedSettings } from "./advanced/AdvancedSettings";
 import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
 import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
@@ -55,7 +55,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   const { t } = useTranslation("clients");
   const openIdConnect = "openid-connect";
 
-  const { setValue, control, reset } = useFormContext();
+  const { setValue, control } = useFormContext();
   const {
     publicClient,
     attributes,
@@ -64,11 +64,12 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   } = client;
 
   const resetFields = (names: string[]) => {
-    const values: { [name: string]: string } = {};
     for (const name of names) {
-      values[`attributes.${name}`] = attributes?.[name];
+      setValue(
+        convertAttributeNameToForm(`attributes.${name}`),
+        attributes?.[name] || ""
+      );
     }
-    reset(values);
   };
 
   return (
@@ -95,11 +96,25 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                 </Text>
                 <FineGrainOpenIdConnect
                   save={save}
-                  reset={() =>
-                    convertToFormValues(attributes, (key, value) =>
-                      setValue(`attributes.${key}`, value)
-                    )
-                  }
+                  reset={() => {
+                    resetFields([
+                      "logoUri",
+                      "policyUri",
+                      "tosUri",
+                      "access.token.signed.response.alg",
+                      "id.token.signed.response.alg",
+                      "id.token.encrypted.response.alg",
+                      "id.token.encrypted.response.enc",
+                      "user.info.response.signature.alg",
+                      "request.object.signature.alg",
+                      "request.object.encryption.alg",
+                      "request.object.encryption.enc",
+                      "request.object.required",
+                      "request.uris",
+                      "authorization.encrypted.response.alg",
+                      "authorization.encrypted.response.enc",
+                    ]);
+                  }}
                 />
               </>
             ),
@@ -134,9 +149,18 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                   control={control}
                   save={() => save()}
                   reset={() =>
-                    convertToFormValues(attributes, (key, value) =>
-                      setValue(`attributes.${key}`, value)
-                    )
+                    resetFields([
+                      "logoUri",
+                      "policyUri",
+                      "tosUri",
+                      "saml_assertion_consumer_url_post",
+                      "saml_assertion_consumer_url_redirect",
+                      "saml_single_logout_service_url_post",
+                      "saml_single_logout_service_url_redirect",
+                      "saml_single_logout_service_url_artifact",
+                      "saml_artifact_binding_url",
+                      "saml_artifact_resolution_service_url",
+                    ])
                   }
                 />
               </>

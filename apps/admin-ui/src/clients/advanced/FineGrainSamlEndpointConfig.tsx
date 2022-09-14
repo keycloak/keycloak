@@ -104,7 +104,7 @@ export const FineGrainSamlEndpointConfig = ({
           ref={register()}
           type="text"
           id="logoutServiceArtifactBindingUrl"
-          name="attributes.saml_single_logout_service_url_redirect"
+          name="attributes.saml_single_logout_service_url_artifact"
         />
       </FormGroup>
       <FormGroup
