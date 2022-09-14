@@ -8,7 +8,7 @@
     "prepare": "husky install"
   },
   "devDependencies": {
-    "@types/node": "^18.7.16",
+    "@types/node": "^18.7.17",
     "@typescript-eslint/eslint-plugin": "^5.36.0",
     "@typescript-eslint/parser": "^5.36.2",
     "eslint": "^8.23.0",
