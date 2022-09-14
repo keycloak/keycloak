@@ -104,6 +104,7 @@ import java.net.URI;
 import java.util.Map;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
+import static org.keycloak.services.Constants.USER_SESSION_ID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -236,6 +237,12 @@ public class LoginActionsService {
         if (userSession != null) {
             logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
             AuthenticationManager.backchannelLogout(session, userSession, false);
+            // backchannel logout might relink sessions under a new root session with the same id as the user session
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSession.getId());
+            if (rootAuthSession != null) {
+                // refresh the auth session to ensure it is updated
+                authSession = rootAuthSession.getAuthenticationSession(authSession.getClient(), tabId);
+            }
         }
 
         AuthenticationProcessor.resetFlow(authSession, flowPath);
@@ -924,7 +931,7 @@ public class LoginActionsService {
         OIDCResponseMode responseMode = OIDCResponseMode.parse(respMode, OIDCResponseType.parse(responseType));
 
         event.event(EventType.LOGIN).client(authSession.getClient())
-                .detail(Details.CODE_ID, authSession.getParentSession().getId())
+                .detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId())
                 .detail(Details.REDIRECT_URI, authSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, authSession.getProtocol())
                 .detail(Details.RESPONSE_TYPE, responseType)

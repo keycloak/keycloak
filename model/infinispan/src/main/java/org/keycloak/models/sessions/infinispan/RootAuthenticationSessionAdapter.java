@@ -170,4 +170,16 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
         entity.setTimestamp(Time.currentTime());
         update();
     }
+
+    @Override
+    public void relinkAuthenticationSessions(RootAuthenticationSessionModel other) {
+        if (other instanceof RootAuthenticationSessionAdapter) {
+            RootAuthenticationSessionAdapter otherAdapter = (RootAuthenticationSessionAdapter) other;
+            otherAdapter.entity.getAuthenticationSessions().entrySet().forEach(e -> {
+                otherAdapter.removeAuthenticationSessionByTabId(e.getKey());
+                this.entity.getAuthenticationSessions().put(e.getKey(), e.getValue());
+                update();
+            });
+        }
+    }
 }

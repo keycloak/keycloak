@@ -97,4 +97,5 @@ public interface RootAuthenticationSessionModel {
      */
     void restartSession(RealmModel realm);
 
+    void relinkAuthenticationSessions(final RootAuthenticationSessionModel other);
 }

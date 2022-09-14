@@ -46,6 +46,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 
+import static org.keycloak.services.Constants.ASSOCIATED_AUTH_SESSION_ID;
+import static org.keycloak.services.Constants.USER_SESSION_ID;
+
 /**
  * Common base class for Authorization REST endpoints implementation, which have to be implemented by each protocol.
  *
@@ -106,7 +109,7 @@ public abstract class AuthorizationEndpointBase {
         AuthenticationFlowModel flow = getAuthenticationFlow(authSession);
         String flowId = flow.getId();
         AuthenticationProcessor processor = createProcessor(authSession, flowId, LoginActionsService.AUTHENTICATE_PATH);
-        event.detail(Details.CODE_ID, authSession.getParentSession().getId());
+        event.detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId());
         if (isPassive) {
             // OIDC prompt == NONE or SAML 2 IsPassive flag
             // This means that client is just checking if the user is already completely logged in.
@@ -196,8 +199,10 @@ public abstract class AuthorizationEndpointBase {
                     AuthenticationManager.backchannelLogout(session, userSession, true);
                 } else {
                     String userSessionId = userSession.getId();
-                    rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSessionId);
+                    rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
                     authSession = rootAuthSession.createAuthenticationSession(client);
+                    userSession.setNote(ASSOCIATED_AUTH_SESSION_ID + authSession.getTabId(), rootAuthSession.getId());
+                    authSession.setAuthNote(USER_SESSION_ID, userSessionId);
                     logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
                             "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());
                 }

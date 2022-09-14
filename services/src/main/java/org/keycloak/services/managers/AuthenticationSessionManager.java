@@ -36,6 +36,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.services.Constants.ASSOCIATED_AUTH_SESSION_ID;
+import static org.keycloak.services.Constants.USER_SESSION_ID;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
@@ -204,6 +206,12 @@ public class AuthenticationSessionManager {
         RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
 
         log.debugf("Removing authSession '%s'. Expire restart cookie: %b", rootAuthSession.getId(), expireRestartCookie);
+        if (authSession.getAuthNote(USER_SESSION_ID) != null) {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, authSession.getAuthNote(USER_SESSION_ID));
+            if (userSession != null) {
+                userSession.removeNote(ASSOCIATED_AUTH_SESSION_ID + authSession.getTabId());
+            }
+        }
         session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
 
         // expire restart cookie
@@ -217,13 +225,24 @@ public class AuthenticationSessionManager {
 
     // Check to see if we already have authenticationSession with same ID
     public UserSessionModel getUserSession(AuthenticationSessionModel authSession) {
-        return lockUserSessionsForModification(session, () -> session.sessions().getUserSession(authSession.getRealm(), authSession.getParentSession().getId()));
+        String userSessionId = authSession.getAuthNote(USER_SESSION_ID);
+        return lockUserSessionsForModification(session, () -> session.sessions().getUserSession(authSession.getRealm(),
+               userSessionId != null ? userSessionId : authSession.getParentSession().getId()));
     }
 
 
     // Don't look at cookie. Just lookup authentication session based on the ID and client. Return null if not found
     public AuthenticationSessionModel getAuthenticationSessionByIdAndClient(RealmModel realm, String authSessionId, ClientModel client, String tabId) {
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+        if (rootAuthSession == null) {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, authSessionId);
+            if (userSession != null) {
+                String associatedId = userSession.getNote(ASSOCIATED_AUTH_SESSION_ID + tabId);
+                if (associatedId != null) {
+                    rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, associatedId);
+                }
+            }
+        }
         return rootAuthSession==null ? null : rootAuthSession.getAuthenticationSession(client, tabId);
     }
 }

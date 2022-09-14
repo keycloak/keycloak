@@ -112,6 +112,8 @@ import java.util.stream.Stream;
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
+import static org.keycloak.services.Constants.ASSOCIATED_AUTH_SESSION_ID;
+import static org.keycloak.services.Constants.USER_SESSION_ID;
 import static org.keycloak.services.util.CookieHelper.getCookie;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -304,6 +306,7 @@ public class AuthenticationManager {
             logger.tracef("Removing logout session '%s' after backchannel logout", logoutAuthSession.getParentSession().getId());
             RootAuthenticationSessionModel rootAuthSession = logoutAuthSession.getParentSession();
             rootAuthSession.removeAuthenticationSessionByTabId(logoutAuthSession.getTabId());
+            userSession.removeNote(ASSOCIATED_AUTH_SESSION_ID + "logout");
         }
 
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
@@ -323,6 +326,21 @@ public class AuthenticationManager {
         } else {
             session.sessions().removeUserSession(realm, userSession);
         }
+
+        Set<RootAuthenticationSessionModel> associatedRootSessions = userSession.getNotes().entrySet().stream()
+                .filter(e -> e.getKey().startsWith(ASSOCIATED_AUTH_SESSION_ID))
+                .map(e -> session.authenticationSessions().getRootAuthenticationSession(realm, e.getValue()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (!associatedRootSessions.isEmpty()) {
+            // before removing the user session, create a new root auth session with same id and re-link all sessions if necessary.
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSession.getId());
+            associatedRootSessions.forEach(s -> {
+                rootAuthSession.relinkAuthenticationSessions(s);
+            });
+        }
+
         backchannelLogoutResponse
                 .setLocalLogoutSucceeded(expireUserSessionCookieSucceeded && userSessionOnlyHasLoggedOutClients);
         return backchannelLogoutResponse;
@@ -340,13 +358,19 @@ public class AuthenticationManager {
             client = SystemClientUtil.getSystemClient(realm);
         }
 
-        String authSessionId;
+        String authSessionId = null;
         RootAuthenticationSessionModel rootLogoutSession = null;
         boolean browserCookiePresent = false;
 
         // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession
         if (browserCookie) {
             rootLogoutSession = asm.getCurrentRootAuthenticationSession(realm);
+            if (rootLogoutSession == null) {
+                String associatedSessionId = userSession != null ? userSession.getNote(ASSOCIATED_AUTH_SESSION_ID + "logout") : null;
+                if (associatedSessionId != null) {
+                    rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, associatedSessionId);
+                }
+            }
         }
         if (rootLogoutSession != null) {
             authSessionId = rootLogoutSession.getId();
@@ -354,14 +378,13 @@ public class AuthenticationManager {
         } else if (userSession != null) {
             authSessionId = userSession.getId();
             rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
-        } else {
-            authSessionId = KeycloakModelUtils.generateId();
         }
 
         if (rootLogoutSession == null) {
+            authSessionId = KeycloakModelUtils.generateId();
             rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(realm, authSessionId);
         }
-        if (browserCookie && !browserCookiePresent) {
+        if (browserCookie && !browserCookiePresent && authSessionId != null) {
             // Update cookie if needed
             asm.setAuthSessionCookie(authSessionId, realm);
         }
@@ -378,6 +401,10 @@ public class AuthenticationManager {
         } else {
             logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
             logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
+            if (userSession != null) {
+                logoutAuthSession.setAuthNote(USER_SESSION_ID, userSession.getId());
+                userSession.setNote(ASSOCIATED_AUTH_SESSION_ID + "logout", rootLogoutSession.getId());
+            }
             logger.tracef("Creating logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
         }
         session.getContext().setAuthenticationSession(logoutAuthSession);
@@ -721,6 +748,20 @@ public class AuthenticationManager {
         // Do not remove user session, it will be removed when last clientSession will be logged out
         if (numberOfUnconfirmedSessions < 1) {
             session.sessions().removeUserSession(realm, userSession);
+        }
+
+        Set<RootAuthenticationSessionModel> associatedRootSessions = userSession.getNotes().entrySet().stream()
+                .filter(e -> e.getKey().startsWith(ASSOCIATED_AUTH_SESSION_ID))
+                .map(e -> session.authenticationSessions().getRootAuthenticationSession(realm, e.getValue()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (!associatedRootSessions.isEmpty()) {
+            // before removing the user session, create a new root auth session with same id and re-link all sessions if necessary.
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSession.getId());
+            associatedRootSessions.forEach(s -> {
+                rootAuthSession.relinkAuthenticationSessions(s);
+            });
         }
 
         logger.tracef("Removing logout session '%s'.", logoutAuthSession.getParentSession().getId());
@@ -1147,7 +1188,7 @@ public class AuthenticationManager {
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
 
-        event.detail(Details.CODE_ID, authSession.getParentSession().getId());
+        event.detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId());
 
         Stream<String> requiredActions = user.getRequiredActionsStream();
         Response action = executionActions(session, authSession, request, event, realm, user, requiredActions);

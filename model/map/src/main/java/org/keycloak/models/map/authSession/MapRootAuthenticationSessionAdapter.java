@@ -26,6 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -146,6 +147,17 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
         entity.setTimestamp(timestamp);
         int authSessionLifespanSeconds = getAuthSessionLifespan(realm);
         entity.setExpiration(timestamp + TimeAdapter.fromSecondsToMilliseconds(authSessionLifespanSeconds));
+    }
+
+    @Override
+    public void relinkAuthenticationSessions(RootAuthenticationSessionModel other) {
+        if (other instanceof MapRootAuthenticationSessionAdapter) {
+            MapRootAuthenticationSessionAdapter otherAdapter = (MapRootAuthenticationSessionAdapter) other;
+            for (MapAuthenticationSessionEntity sessionEntity : otherAdapter.entity.getAuthenticationSessions()) {
+//                otherAdapter.removeAuthenticationSessionByTabId(sessionEntity.getTabId());
+                this.entity.addAuthenticationSession(sessionEntity);
+            }
+        }
     }
 
     private String generateTabId() {
