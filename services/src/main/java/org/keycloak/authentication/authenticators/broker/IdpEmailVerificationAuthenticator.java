@@ -48,6 +48,8 @@ import javax.ws.rs.core.UriBuilder;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.*;
 
+import static org.keycloak.authentication.AuthenticationProcessor.USER_SESSION_ID;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -123,7 +125,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                 .user(existingUser)
                 .detail(Details.USERNAME, existingUser.getUsername())
                 .detail(Details.EMAIL, existingUser.getEmail())
-                .detail(Details.CODE_ID, authSession.getParentSession().getId())
+                .detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId())
                 .removeDetail(Details.AUTH_METHOD)
                 .removeDetail(Details.AUTH_TYPE);
 

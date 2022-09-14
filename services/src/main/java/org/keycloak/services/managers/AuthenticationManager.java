@@ -108,6 +108,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.authentication.AuthenticationProcessor.USER_SESSION_ID;
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
@@ -1146,7 +1147,7 @@ public class AuthenticationManager {
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
 
-        event.detail(Details.CODE_ID, authSession.getParentSession().getId());
+        event.detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId());
 
         Stream<String> requiredActions = user.getRequiredActionsStream();
         Response action = executionActions(session, authSession, request, event, realm, user, requiredActions);

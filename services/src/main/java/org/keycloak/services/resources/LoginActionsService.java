@@ -106,6 +106,7 @@ import javax.ws.rs.ext.Providers;
 import java.net.URI;
 import java.util.Map;
 
+import static org.keycloak.authentication.AuthenticationProcessor.USER_SESSION_ID;
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
 
 /**
@@ -927,7 +928,7 @@ public class LoginActionsService {
         OIDCResponseMode responseMode = OIDCResponseMode.parse(respMode, OIDCResponseType.parse(responseType));
 
         event.event(EventType.LOGIN).client(authSession.getClient())
-                .detail(Details.CODE_ID, authSession.getParentSession().getId())
+                .detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId())
                 .detail(Details.REDIRECT_URI, authSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, authSession.getProtocol())
                 .detail(Details.RESPONSE_TYPE, responseType)

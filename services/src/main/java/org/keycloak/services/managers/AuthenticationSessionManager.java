@@ -34,8 +34,10 @@ import javax.ws.rs.core.UriInfo;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.keycloak.authentication.AuthenticationProcessor.USER_SESSION_ID;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
@@ -48,6 +50,8 @@ public class AuthenticationSessionManager {
     public static final int AUTH_SESSION_COOKIE_LIMIT = 3;
 
     private static final Logger log = Logger.getLogger(AuthenticationSessionManager.class);
+
+    private static final Pattern SEPARATOR = Pattern.compile("/");
 
     private final KeycloakSession session;
 
@@ -154,6 +158,29 @@ public class AuthenticationSessionManager {
         log.debugf("Set AUTH_SESSION_ID cookie with value %s", encodedAuthSessionId);
     }
 
+    /**
+     * Sets the authentication session cookie with a value that combines both the user session id and root authentication
+     * session id, separated by a {@code '/'} character.
+     *
+     * @param userSessionId the decoded user session id (without route info).
+     * @param authSessionId the decoded root authentication session id (without route info).
+     * @param realm a reference to the realm.
+     */
+    public void setAuthSessionCookie(String userSessionId, String authSessionId, RealmModel realm) {
+        UriInfo uriInfo = session.getContext().getUri();
+        String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
+
+        boolean sslRequired = realm.getSslRequired().isRequired(session.getContext().getConnection());
+
+        StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
+        String encodedAuthSessionId = encoder.encodeSessionId(authSessionId);
+        String encodedUserSessionId = encoder.encodeSessionId(userSessionId);
+
+        CookieHelper.addCookie(AUTH_SESSION_ID, encodedUserSessionId + "/" + encodedAuthSessionId, cookiePath, null
+                , null, -1, sslRequired, true, SameSiteAttributeValue.NONE);
+
+        log.debugf("Set AUTH_SESSION_ID cookie with value %s", encodedUserSessionId + "/" + encodedAuthSessionId);
+    }
 
     /**
      *
@@ -190,7 +217,8 @@ public class AuthenticationSessionManager {
             AuthenticationManager.expireOldAuthSessionCookie(realm, session.getContext().getUri(), session.getContext().getConnection());
         }
 
-        List<String> authSessionIds = cookiesVal.stream().limit(AUTH_SESSION_COOKIE_LIMIT).collect(Collectors.toList());
+        List<String> authSessionIds = cookiesVal.stream().limit(AUTH_SESSION_COOKIE_LIMIT)
+                .flatMap(SEPARATOR::splitAsStream).collect(Collectors.toList());
 
         if (authSessionIds.isEmpty()) {
             log.debugf("Not found AUTH_SESSION_ID cookie");
@@ -217,7 +245,9 @@ public class AuthenticationSessionManager {
 
     // Check to see if we already have authenticationSession with same ID
     public UserSessionModel getUserSession(AuthenticationSessionModel authSession) {
-        return lockUserSessionsForModification(session, () -> session.sessions().getUserSession(authSession.getRealm(), authSession.getParentSession().getId()));
+        String userSessionId = authSession.getAuthNote(USER_SESSION_ID);
+        return lockUserSessionsForModification(session, () -> session.sessions().getUserSession(authSession.getRealm(),
+               userSessionId != null ? userSessionId : authSession.getParentSession().getId()));
     }
 
 

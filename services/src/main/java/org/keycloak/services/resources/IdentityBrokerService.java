@@ -120,6 +120,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.authentication.AuthenticationProcessor.USER_SESSION_ID;
+
 /**
  * <p></p>
  *
@@ -655,7 +657,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private Response afterFirstBrokerLogin(AuthenticationSessionModel authSession) {
         try {
-            this.event.detail(Details.CODE_ID, authSession.getParentSession().getId())
+            this.event.detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId())
                     .removeDetail("auth_method");
 
             SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
@@ -853,7 +855,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
             return AuthenticationManager.redirectToRequiredActions(session, realmModel, authSession, session.getContext().getUri(), nextRequiredAction);
         } else {
-            event.detail(Details.CODE_ID, authSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
+            event.detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
             return AuthenticationManager.finishedRequiredActions(session, authSession, null, clientConnection, request, session.getContext().getUri(), event);
         }
     }

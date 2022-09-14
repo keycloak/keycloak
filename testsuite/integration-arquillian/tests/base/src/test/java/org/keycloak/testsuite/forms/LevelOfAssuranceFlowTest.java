@@ -384,34 +384,38 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testClientDefaultAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
-        ClientRepresentation testClientRep = testClient.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "gold"));
-        testClient.update(testClientRep);
+        try {
+            ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+            ClientRepresentation testClientRep = testClient.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "gold"));
+            testClient.update(testClientRep);
 
-        // Should request client to authenticate with silver
-        oauth.openLoginForm();
-        authenticateWithUsernamePassword();
-        assertLoggedInWithAcr("silver");
+            // Should request client to authenticate with silver
+            oauth.openLoginForm();
+            authenticateWithUsernamePassword();
+            assertLoggedInWithAcr("silver");
 
-        // Re-configure to level gold
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("gold"));
-        testClient.update(testClientRep);
-        oauth.openLoginForm();
-        authenticateWithTotp();
-        assertLoggedInWithAcr("gold");
+            // Re-configure to level gold
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("gold"));
+            testClient.update(testClientRep);
+            oauth.openLoginForm();
+            authenticateWithTotp();
+            assertLoggedInWithAcr("gold");
 
-        // Value from essential ACR from claims parameter should have preference over the client default
-        openLoginFormWithAcrClaim(true, "silver");
-        assertLoggedInWithAcr("silver");
+            // Value from essential ACR from claims parameter should have preference over the client default
+            openLoginFormWithAcrClaim(true, "silver");
+            assertLoggedInWithAcr("silver");
 
-        // Value from non-essential ACR from claims parameter should have preference over the client default
-        openLoginFormWithAcrClaim(false, "silver");
-        assertLoggedInWithAcr("silver");
-
-        // Revert
-        testClientRep.getAttributes().put(Constants.DEFAULT_ACR_VALUES, null);
-        testClient.update(testClientRep);
+            // Value from non-essential ACR from claims parameter should have preference over the client default
+            openLoginFormWithAcrClaim(false, "silver");
+            assertLoggedInWithAcr("silver");
+        } finally {
+            // Revert
+            ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+            ClientRepresentation testClientRep = testClient.toRepresentation();
+            testClientRep.getAttributes().put(Constants.DEFAULT_ACR_VALUES, null);
+            testClient.update(testClientRep);
+        }
     }
 
     @Test
@@ -635,20 +639,22 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     @Test
     @DisableFeature(value = Profile.Feature.STEP_UP_AUTHENTICATION, skipRestart = true)
     public void testDisableStepupFeatureTest() {
-        BrowserFlowTest.revertFlows(testRealm(), "browser -  Level of Authentication FLow");
+        try {
+            BrowserFlowTest.revertFlows(testRealm(), "browser -  Level of Authentication FLow");
 
-        // Login normal way - should return 1 (backwards compatibility before step-up was introduced)
-        loginPage.open();
-        authenticateWithUsernamePassword();
-        authenticateWithTotp(); // OTP required due the user has it
-        assertLoggedInWithAcr("1");
+            // Login normal way - should return 1 (backwards compatibility before step-up was introduced)
+            loginPage.open();
+            authenticateWithUsernamePassword();
+            authenticateWithTotp(); // OTP required due the user has it
+            assertLoggedInWithAcr("1");
 
-        // SSO login - should return 0 (backwards compatibility before step-up was introduced)
-        oauth.openLoginForm();
-        assertLoggedInWithAcr("0");
-
-        // Flow is needed due the "after()" method
-        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow("browser -  Level of Authentication FLow"));
+            // SSO login - should return 0 (backwards compatibility before step-up was introduced)
+            oauth.openLoginForm();
+            assertLoggedInWithAcr("0");
+        } finally {
+            // Flow is needed due the "after()" method
+            testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow("browser -  Level of Authentication FLow"));
+        }
     }
 
     @Test
