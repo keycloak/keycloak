@@ -27,13 +27,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
  */
-@AuthServerContainerExclude(value = {AuthServer.REMOTE})
 public class JsonFileImport483MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Override

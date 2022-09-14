@@ -29,7 +29,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 
@@ -42,7 +41,6 @@ import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUI
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class TransientSessionTest extends AbstractTestRealmKeycloakTest {
 
     @Rule

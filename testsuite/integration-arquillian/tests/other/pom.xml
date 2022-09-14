@@ -121,12 +121,6 @@
             </modules>
         </profile>
         <profile>
-            <id>clean-start</id>
-            <modules>
-                <module>clean-start</module>
-            </modules>
-        </profile>
-        <profile>
             <id>old-admin-console</id>
             <modules>
                 <module>old-admin-console</module>
@@ -142,12 +136,6 @@
             <id>jpa-performance</id>
             <modules>
                 <module>jpa-performance</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>server-config-migration</id>
-            <modules>
-                <module>server-config-migration</module>
             </modules>
         </profile>
         <profile>

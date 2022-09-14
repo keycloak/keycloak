@@ -174,6 +174,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
         FederatedIdentityEntity federatedIdentity = findFederatedIdentity(federatedUser, federatedIdentityModel.getIdentityProvider(), LockModeType.PESSIMISTIC_WRITE);
 
+        federatedIdentity.setUserName(federatedIdentityModel.getUserName());
         federatedIdentity.setToken(federatedIdentityModel.getToken());
 
         em.persist(federatedIdentity);

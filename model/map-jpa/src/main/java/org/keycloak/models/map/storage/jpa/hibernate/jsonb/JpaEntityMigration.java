@@ -31,7 +31,7 @@ import org.keycloak.models.map.storage.jpa.authorization.resource.entity.JpaReso
 import org.keycloak.models.map.storage.jpa.authorization.scope.entity.JpaScopeMetadata;
 import org.keycloak.models.map.storage.jpa.authorization.resourceServer.entity.JpaResourceServerMetadata;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientMetadata;
-import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeMetadata;
+import org.keycloak.models.map.storage.jpa.clientScope.entity.JpaClientScopeMetadata;
 import org.keycloak.models.map.storage.jpa.event.admin.entity.JpaAdminEventMetadata;
 import org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventMetadata;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupMetadata;

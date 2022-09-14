@@ -24,21 +24,17 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.logging.LogEntry;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -72,11 +68,6 @@ public class WelcomePageTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         // no operation
-    }
-
-    @BeforeClass
-    public static void enabled() {
-        ContainerAssume.assumeNotAuthServerRemote();
     }
 
     /*
