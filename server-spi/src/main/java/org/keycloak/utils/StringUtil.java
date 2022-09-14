@@ -16,6 +16,8 @@
  */
 package org.keycloak.utils;
 
+import java.text.Normalizer;
+
 public class StringUtil {
 
     public static boolean isBlank(String str) {
@@ -24,6 +26,21 @@ public class StringUtil {
 
     public static boolean  isNotBlank(String str) {
         return str != null && !"".equals(str.trim());
+    }
+    
+    public static String removeAccentAndSpecialCharacters(String input) {
+        input = removeAccent(input);
+        return removeSpecialCharacters(input);
+    }
+    
+    public static String removeAccent(String input) {
+        return Normalizer
+                .normalize(input, Normalizer.Form.NFD)
+                .replaceAll("[^\\p{ASCII}]", "");
+    }
+    
+    public static String removeSpecialCharacters(String input) {
+        return input.replaceAll("[^a-zA-Z0-9]", "");
     }
 
 }

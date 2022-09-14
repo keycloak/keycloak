@@ -19,6 +19,7 @@ package org.keycloak.storage;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.utils.StringUtil;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -35,11 +36,11 @@ public class StorageId implements Serializable {
     public StorageId(String id) {
         if (!id.startsWith("f:")) {
             providerId = null;
-            externalId = id;
+            externalId = StringUtil.removeAccentAndSpecialCharacters(id);
         } else {
             int providerIndex = id.indexOf(':', 2);
             providerId = id.substring(2, providerIndex);
-            externalId = id.substring(providerIndex + 1);
+            externalId = StringUtil.removeAccentAndSpecialCharacters(id.substring(providerIndex + 1));
         }
     }
 
@@ -48,7 +49,7 @@ public class StorageId implements Serializable {
             throw new IllegalArgumentException("Provider must not contain a colon (:) character");
         }
         this.providerId = providerId;
-        this.externalId = externalId;
+        this.externalId = StringUtil.removeAccentAndSpecialCharacters(externalId);
     }
 
     public boolean isLocal() {

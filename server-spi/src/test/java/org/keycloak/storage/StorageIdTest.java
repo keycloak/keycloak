@@ -79,6 +79,16 @@ public class StorageIdTest {
         assertThat(id.getId(), is("f:abc:123"));
         assertFalse(id.isLocal());
     }
+    
+    @Test
+    public void testExternalIdTwoStringsWithSpecialCharactersAndAccents() {
+        StorageId id = new StorageId("abc", "spècial.Characters#*_");
+        assertThat(id, notNullValue());
+        assertThat(id.getExternalId(), is("specialCharacters"));
+        assertThat(id.getProviderId(), is("abc"));
+        assertThat(id.getId(), is("f:abc:specialCharacters"));
+        assertFalse(id.isLocal());
+    }
 
     @Test
     public void testEquals() {
