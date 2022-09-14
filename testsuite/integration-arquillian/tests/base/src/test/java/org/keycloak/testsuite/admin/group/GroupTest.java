@@ -157,27 +157,6 @@ public class GroupTest extends AbstractGroupTest {
         assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.clientResourcePath(clientUuid), ResourceType.CLIENT);
     }
 
-    private GroupRepresentation createGroup(RealmResource realm, GroupRepresentation group) {
-        try (Response response = realm.groups().add(group)) {
-            String groupId = ApiUtil.getCreatedId(response);
-            getCleanup().addGroupId(groupId);
-
-            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);
-
-            // Set ID to the original rep
-            group.setId(groupId);
-            return group;
-        }
-    }
-
-    private RoleRepresentation createRealmRole(RealmResource realm, RoleRepresentation role) {
-        realm.roles().create(role);
-
-        RoleRepresentation created = realm.roles().get(role.getName()).toRepresentation();
-        getCleanup().addRoleId(created.getId());
-        return created;
-    }
-
     @Test
     public void doNotAllowSameGroupNameAtSameLevel() throws Exception {
         RealmResource realm = adminClient.realms().realm("test");
@@ -244,13 +223,6 @@ public class GroupTest extends AbstractGroupTest {
             // conflict status 409 - same name not allowed
             assertEquals("HTTP 409 Conflict", e.getMessage());
         }  
-    }
-    
-    private void addSubGroup(RealmResource realm, GroupRepresentation parent, GroupRepresentation child) {
-        Response response = realm.groups().add(child);
-        child.setId(ApiUtil.getCreatedId(response));
-        response = realm.groups().group(parent.getId()).subGroup(child);
-        response.close();
     }
 
     @Test

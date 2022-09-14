@@ -33,6 +33,7 @@ import org.keycloak.models.map.storage.QueryParameters;
 
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -184,6 +185,18 @@ public class MapGroupProvider implements GroupProvider {
                 }
                 return groupById;
             }).sorted(GroupModel.COMPARE_BY_NAME).distinct();
+    }
+
+    @Override
+    public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+        mcb =  mcb.compare(GroupModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            mcb = mcb.compare(GroupModel.SearchableFields.ATTRIBUTE, Operator.EQ, entry.getKey(), entry.getValue());
+        }
+
+        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
+                .map(entityToAdapterFunc(realm));
     }
 
     @Override

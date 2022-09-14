@@ -21,6 +21,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
@@ -61,6 +62,7 @@ public class IckleQueryWhereClauses {
     static {
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(ClientModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
+        WHERE_CLAUSE_PRODUCER_OVERRIDES.put(GroupModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.IDP_AND_USER, IckleQueryWhereClauses::whereClauseForUserIdpAlias);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, IckleQueryWhereClauses::whereClauseForConsentClientFederationLink);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE, IckleQueryWhereClauses::whereClauseForUsernameCaseInsensitive);
