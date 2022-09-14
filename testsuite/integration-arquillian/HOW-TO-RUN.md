@@ -34,12 +34,12 @@ And then re-run the LoginTest (or any other test you wish) and the changes shoul
 If you use Intellij Idea, you don't even need to re-build anything with the maven. After doing any
 change in the codebase, the change is immediately effective when running the test with Junit runner. 
 
-### Running tests in the production mode (Keycloak on Wildfly)
+### Running tests in the production mode (Keycloak on Quarkus)
 
-For the "production" testing, it is possible to run the Keycloak server deployed on real Wildfly server.
-This can be achieved by add the `auth-server-wildfly` profile when running the testsuite.
+For the "production" testing, it is possible to run the Keycloak server deployed on real Quarkus server.
+This can be achieved by add the `auth-server-quarkus` profile when running the testsuite.
 
-    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-wildfly clean install
+    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-quarkus clean install
 
 Unlike the "development" setup described above, this requires re-build the whole distribution
 after doing any change in the code.
@@ -424,18 +424,6 @@ The setup includes:
 *  a load balancer on embedded Undertow (SimpleUndertowLoadBalancer)
 *  two clustered nodes of Keycloak server on Wildfly/EAP or on embedded undertow
 *  shared DB
-
-### Cluster tests with Keycloak on Wildfly
-
-After you build the distribution, you run this command to setup servers and run cluster tests using shared Docker database:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-    -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa \
-    -Dsession.cache.owners=2 \
-    -Dbackends.console.output=true \
-    -Dauth.server.log.check=false \
-    -Dfrontend.console.output=true \
-    -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
     
 ### Cluster tests with Keycloak on Quarkus
 
@@ -573,6 +561,8 @@ necessary to download the artifact and install it to local Maven repository. For
 For Data Grid 7 and older use: `-Dfile=jboss-datagrid-${DATAGRID_VERSION}-server.zip`.
 
 ### Run Cross-DC Tests from Maven
+
+Warning: The Cross-DC tests doesn't work with Quarkus distribution
 
 Note: Profile `auth-servers-crossdc-undertow` currently doesn't work (see [KEYCLOAK-18335](https://issues.redhat.com/browse/KEYCLOAK-18335)).
 Use `-Pauth-servers-crossdc-jboss,auth-server-wildfly` instead.
@@ -770,11 +760,11 @@ Then, before running the test, setup Keycloak Server distribution for the tests:
 
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
         clean install \
-        -Pauth-server-wildfly
+        -Pauth-server-quarkus
 
 When running the test, add the following arguments to the command line:
 
-    -Pauth-server-wildfly -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
+    -Pauth-server-quarkus -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
 
 ## Java 11 support
 Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and

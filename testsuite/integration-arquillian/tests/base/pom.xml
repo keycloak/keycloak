@@ -43,7 +43,7 @@
         <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
         <mvel.version>2.4.0.Final</mvel.version>
         <systemrules.version>1.19.0</systemrules.version>
-        <common.resources>${basedir}/../../servers/auth-server/jboss/common</common.resources>
+        <common.resources>${basedir}/../../servers/auth-server/common</common.resources>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven.compiler.release>11</maven.compiler.release>
         <maven.compiler.target>11</maven.compiler.target>

@@ -14,7 +14,7 @@
 
     <properties>
         <auth.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</auth.server.home>
-        <common.resources>${basedir}/../jboss/common</common.resources>
+        <common.resources>${basedir}/../common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
