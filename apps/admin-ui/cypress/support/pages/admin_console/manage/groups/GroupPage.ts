@@ -36,17 +36,8 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  public searchGroup(groupName: string) {
-    listingPage.searchItem(groupName, false);
-    return this;
-  }
-
-  public headerActionsearchGroup() {
-    super.openDropdownMenu("", cy.findByTestId(this.actionDrpDwnButton));
-    super.clickDropdownMenuItem(
-      "",
-      cy.findByTestId(this.actionDrpDwnItemSearchGroup)
-    );
+  public searchGroup(groupName: string, wait: boolean = false) {
+    listingPage.searchItem(groupName, wait);
     return this;
   }
 

@@ -53,11 +53,15 @@ public class GroupsResource {
             )}
     )
     public final Stream<GroupRepresentation> listGroups(@QueryParam("search") @DefaultValue("") final String search, @QueryParam("first")
-        @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max) {
+        @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max, @QueryParam("global") @DefaultValue("true") boolean global) {
         this.auth.groups().requireList();
         final Stream<GroupModel> stream;
-        if ("".equals(search)) {
-            stream = this.realm.searchForGroupByNameStream(search, first, max);
+        if (!"".equals(search)) {
+            if (global) {
+                stream = this.realm.searchForGroupByNameStream(search, first, max);
+            } else {
+                stream = this.realm.getTopLevelGroupsStream().filter(g -> g.getName().contains(search)).skip(first).limit(max);
+            }
         } else {
             stream = this.realm.getTopLevelGroupsStream(first, max);
         }

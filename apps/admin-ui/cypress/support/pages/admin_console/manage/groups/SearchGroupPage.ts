@@ -2,7 +2,7 @@ import GroupPage from "./GroupPage";
 
 export class SearchGroupPage extends GroupPage {
   private searchField = "group-search";
-  private searchButton = "search-button";
+  private searchButton = "[data-testid='group-search'] > button";
 
   public searchGroup(groupName: string) {
     this.typeSearchInput(groupName);
@@ -16,7 +16,7 @@ export class SearchGroupPage extends GroupPage {
   }
 
   public clickSearchButton() {
-    cy.findByTestId(this.searchButton).click();
+    cy.get(this.searchButton).click();
     return this;
   }
 

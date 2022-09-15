@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom-v5-compat";
 import { useLocation, useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,7 +22,6 @@ import { Members } from "./Members";
 import { GroupAttributes } from "./GroupAttributes";
 import { GroupsModal } from "./GroupsModal";
 import { toGroups } from "./routes/Groups";
-import { toGroupsSearch } from "./routes/GroupsSearch";
 import { GroupRoleMapping } from "./GroupRoleMapping";
 import helpUrls from "../help-urls";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
@@ -89,17 +87,6 @@ export default function GroupsSection() {
     [id]
   );
 
-  const SearchDropdown = (
-    <DropdownItem
-      key="searchGroup"
-      component={
-        <Link data-testid="searchGroup" to={toGroupsSearch({ realm })}>
-          {t("searchGroup")}
-        </Link>
-      }
-    />
-  );
-
   return (
     <>
       <DeleteGroup
@@ -126,7 +113,6 @@ export default function GroupsSection() {
         dropdownItems={
           id && canManageGroup
             ? [
-                SearchDropdown,
                 <DropdownItem
                   data-testid="renameGroupAction"
                   key="renameGroup"
@@ -142,7 +128,7 @@ export default function GroupsSection() {
                   {t("deleteGroup")}
                 </DropdownItem>,
               ]
-            : [SearchDropdown]
+            : undefined
         }
       />
       <PageSection variant={PageSectionVariants.light} className="pf-u-p-0">
