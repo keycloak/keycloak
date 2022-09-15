@@ -27,12 +27,14 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -45,8 +47,6 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-
-import javax.ws.rs.core.UriBuilder;
 
 @AuthServerContainerExclude({QUARKUS})
 public class DefaultHostnameTest extends AbstractHostnameTest {
@@ -106,7 +106,8 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ADMIN2)
+    @DisableFeature(value = Profile.Feature.ADMIN2, skipRestart = true)
+    @EnableFeature(value = Profile.Feature.ADMIN, skipRestart = true)
     public void fixedFrontendUrlOldAdminPage() throws Exception {
         expectedBackendUrl = transformUrlIfQuarkusServer(AUTH_SERVER_ROOT);
 

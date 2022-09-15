@@ -171,39 +171,13 @@ mvn -f testsuite/integration-arquillian/pom.xml \
 ### DB migration test
 
 This test will:
- - start MySQL DB on docker container. Docker on your laptop is a requirement for this test.
- - start Keycloak 4.8.3.Final (replace with the other version if needed)
- - import realm and add some data to MySQL DB
- - stop Keycloak 4.8.3.Final
- - start latest Keycloak, which automatically updates DB from 4.8.3.Final
- - Perform couple of tests to verify data after the update are correct
- - Stop MySQL DB docker container. In case of a test failure, the MySQL container is not stopped, so you can manually inspect the database.
-
-
-Run the test (Update according to your DB connection, versions etc):
-
-
-    export OLD_KEYCLOAK_VERSION=4.8.3.Final
-
-    mvn -B -f testsuite/integration-arquillian/pom.xml \
-      clean install \
-      -Pjpa,auth-server-wildfly,db-mariadb,auth-server-migration-legacy \
-      -Dauth.server.jboss.startup.timeout=900 \
-      -Dtest=MigrationTest \
-      -Dmigration.mode=auto \
-      -Dmigrated.auth.server.version=$OLD_KEYCLOAK_VERSION \
-      -Dprevious.product.unpacked.folder.name=keycloak-$OLD_KEYCLOAK_VERSION \
-      -Dmigration.import.file.name=migration-realm-$OLD_KEYCLOAK_VERSION.json \
-      -Dauth.server.ssl.required=false \
-      -Djdbc.mvn.version=2.2.4 \
-      -Dsurefire.failIfNoSpecifiedTests=false
-
-
-For the available versions of old keycloak server, you can take a look to [this directory](tests/base/src/test/resources/migration-test) .
-
-### DB migration test with Quarkus
-It is possible to execute DB migration tests for Keycloak with Quarkus distribution by specifying auth server as `-Pauth-server-quarkus` 
-and instead of the `auth-server-migration-legacy`, use only `auth-server-migration`.
+- start MariaDB on docker container. Docker/Podman on your laptop is a requirement for this test.
+- start Keycloak 17.0.0 (replace with the other version if needed)
+- import realm and add some data to MariaDB
+- stop Keycloak 17.0.0
+- start latest Keycloak, which automatically updates DB from 17.0.0
+- Perform a couple of tests to verify data after the update are correct
+- Stop MariaDB docker container. In case of a test failure, the MariaDB container is not stopped, so you can manually inspect the database.
 
 The first version of Keycloak on Quarkus is version `17.0.0`.
 Therefore, it is not possible to define the older version.
@@ -223,6 +197,8 @@ mvn -B -f testsuite/integration-arquillian/pom.xml \
   -Djdbc.mvn.version=2.2.4 \
   -Dsurefire.failIfNoSpecifiedTests=false
 ```
+
+For the available versions of old keycloak server, you can take a look to [this directory](tests/base/src/test/resources/migration-test) .
 
 ### DB migration test with manual mode
 
