@@ -29,7 +29,7 @@ export default function AddOpenIdConnect() {
   const { t } = useTranslation("identity-providers");
   const navigate = useNavigate();
   const { url } = useRouteMatch();
-  const isKeycloak = url.endsWith("keycloak-oidc");
+  const isKeycloak = url.includes("keycloak-oidc");
   const id = `${isKeycloak ? "keycloak-" : ""}oidc`;
 
   const form = useForm<IdentityProviderRepresentation>({
