@@ -67,7 +67,11 @@ describe("Sessions test", () => {
 
     it("Push when URI not configured", () => {
       sessionsPage.pushRevocation();
-      commonPage.masthead().checkNotificationMessage("No push sent");
+      commonPage
+        .masthead()
+        .checkNotificationMessage(
+          "No push sent. No admin URI configured or no registered cluster nodes available"
+        );
     });
   });
 

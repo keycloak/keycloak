@@ -340,4 +340,9 @@ export default class PageObject {
     cy.get(this.breadcrumbItem).contains(itemName).click();
     return this;
   }
+
+  protected waitForPageLoad() {
+    cy.get('[role="progressbar"]').should("not.exist");
+    return this;
+  }
 }

@@ -66,6 +66,9 @@ describe("Events tests", () => {
         .enableSaveEventsSwitch()
         .save()
         .clearUserEvents();
+
+      cy.wait(5000);
+
       sidebarPage.goToEvents();
       eventsPage.goToUserEventsTab();
       userEventsTab.assertNoSearchResultsExist(true);
@@ -98,6 +101,8 @@ describe("Events tests", () => {
         .goToUserEventsSettingsSubTab()
         .disableSaveEventsSwitch()
         .save();
+
+      cy.wait(5000);
 
       masthead.signOut();
       loginPage.logIn();
@@ -271,6 +276,9 @@ describe("Events tests", () => {
         .disableSaveEvents()
         .save()
         .clearAdminEvents();
+
+      cy.wait(5000);
+
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
       adminEventsTab.assertNoSearchResultsExist(true);

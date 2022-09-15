@@ -61,8 +61,7 @@ describe("Realm tests", () => {
 
     createRealmPage.fillRealmName(testRealmName).createRealm();
 
-    masthead.checkNotificationMessage("Realm created");
-    masthead.closeAllAlertMessages();
+    masthead.checkNotificationMessage("Realm created successfully");
   });
 
   it("should create Test Disabled realm", () => {
@@ -71,11 +70,10 @@ describe("Realm tests", () => {
     createRealmPage.fillRealmName("Test Disabled").createRealm();
     createRealmPage.disableRealm();
 
-    masthead.checkNotificationMessage("Realm created");
+    masthead.checkNotificationMessage("Realm created successfully");
   });
 
   it("Should cancel deleting Test Disabled realm", () => {
-    masthead.closeAllAlertMessages();
     sidebarPage.goToRealm("Test Disabled").goToRealmSettings();
     realmSettings.clickActionMenu();
     cy.findByText("Delete").click();
@@ -100,14 +98,14 @@ describe("Realm tests", () => {
     const fetchUrl = "/admin/realms?briefRepresentation=true";
     cy.intercept(fetchUrl).as("fetch");
 
-    masthead.checkNotificationMessage("Realm created");
+    masthead.checkNotificationMessage("Realm created successfully");
 
     cy.wait(["@fetch"]);
 
     sidebarPage.goToCreateRealm();
     createRealmPage.fillRealmName(editedRealmName).createRealm();
 
-    masthead.checkNotificationMessage("Realm created");
+    masthead.checkNotificationMessage("Realm created successfully");
 
     cy.wait(["@fetch"]);
 

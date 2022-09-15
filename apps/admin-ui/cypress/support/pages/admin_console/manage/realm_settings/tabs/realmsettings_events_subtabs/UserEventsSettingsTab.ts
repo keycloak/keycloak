@@ -21,6 +21,7 @@ export default class UserEventsSettingsTab extends PageObject {
   disableSaveEventsSwitch() {
     cy.get(this.saveEventsSwitch).parent().click();
     super.assertSwitchStateOn(cy.get(this.saveEventsSwitch));
+    this.waitForPageLoad();
     modal.checkModalTitle("Unsave events?");
     modal.confirmModal();
     super.assertSwitchStateOff(cy.get(this.saveEventsSwitch));

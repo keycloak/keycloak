@@ -30,7 +30,7 @@ export default class DedicatedScopesMappersTab extends CommonPage {
   addPredefinedMapper() {
     this.emptyState()
       .checkIfExists(true)
-      .clickSecondaryBtn(mapperTypeEmptyState.AddPredefinedMapper);
+      .clickSecondaryBtn(mapperTypeEmptyState.AddPredefinedMapper, true);
     return this;
   }
 

@@ -275,7 +275,6 @@ describe("User creation", () => {
             true
           );
         }
-        masthead.closeAllAlertMessages();
       });
     });
 
@@ -335,7 +334,6 @@ describe("User creation", () => {
             true
           );
         }
-        masthead.closeAllAlertMessages();
       });
     });
   });

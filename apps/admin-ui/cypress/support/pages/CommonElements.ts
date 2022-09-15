@@ -31,8 +31,8 @@ export default class CommonElements {
     return this;
   }
 
-  clickSecondaryBtn(buttonName: string) {
-    cy.get(this.secondaryBtn).contains(buttonName).click();
+  clickSecondaryBtn(buttonName: string, force = false) {
+    cy.get(this.secondaryBtn).contains(buttonName).click({ force: force });
     return this;
   }
 

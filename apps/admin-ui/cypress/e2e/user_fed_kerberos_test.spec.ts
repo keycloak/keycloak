@@ -195,9 +195,7 @@ describe("User Fed Kerberos tests", () => {
 
     masthead.checkNotificationMessage(savedSuccessMessage);
     sidebarPage.goToUserFederation();
-    masthead.checkNotificationMessage(savedSuccessMessage);
 
-    sidebarPage.goToUserFederation();
     expect(cy.contains("Disabled").should("exist"));
   });
 
