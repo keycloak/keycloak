@@ -224,6 +224,18 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA512", 30000);
     }
 
+    @Test
+    public void testPbkdf2Sha256BackwardsCompatibility() throws Exception {
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha256PasswordHashProviderFactory.ID + ")");
+        String username = "testPbkdf2Sha2562";
+        createUser(username);
+
+        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+
+        // Encoded without padding still works and should give same results as originally padded password
+        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 27500);
+    }
+
 
     private void createUser(String username) {
         ApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm("test"), UserBuilder.create().username(username).build(), "password");
