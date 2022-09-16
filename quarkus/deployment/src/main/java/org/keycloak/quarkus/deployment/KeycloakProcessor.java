@@ -89,6 +89,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
+import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.StorageOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
@@ -561,6 +562,17 @@ class KeycloakProcessor {
                 resteasyDeployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, Boolean.TRUE);
             }
         }));
+    }
+
+    @Consume(KeycloakSessionFactoryPreInitBuildItem.class)
+    @BuildStep
+    @Record(ExecutionTime.STATIC_INIT)
+    void setCryptoProvider(KeycloakRecorder recorder) {
+        SecurityOptions.FipsMode fipsMode = Configuration.getOptionalValue(
+                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
+                SecurityOptions.FipsMode::valueOf).orElse(SecurityOptions.FipsMode.disabled);
+
+        recorder.setCryptoProvider(fipsMode);
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)
