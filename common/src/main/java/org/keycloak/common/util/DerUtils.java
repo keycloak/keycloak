@@ -65,7 +65,7 @@ public final class DerUtils {
     public static PublicKey decodePublicKey(byte[] der, String type) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec =
                 new X509EncodedKeySpec(der);
-        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory("RSA");
+        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(type);
         return kf.generatePublic(spec);
     }
 
