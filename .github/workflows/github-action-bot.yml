@@ -20,6 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # to avoid a tag being changed afterwards, use the commit hash of the action
-      - uses: keycloak/keycloak-gh-actionbot@1f2a036608f4e498bb726f1acc8bd884fd36bb0e # v0.2.0
+      - uses: keycloak/keycloak-gh-actionbot@33d8759517f1bfbb70d52fa1f6d58ef2e824301b # v0.3.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
