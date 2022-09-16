@@ -49,7 +49,7 @@ export const UserSelect = ({
         max: 20,
       };
       if (search) {
-        params.name = search;
+        params.username = search;
       }
 
       if (values?.length && !search) {

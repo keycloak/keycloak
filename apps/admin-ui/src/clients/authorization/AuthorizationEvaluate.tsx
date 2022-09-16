@@ -34,9 +34,9 @@ import { useAccess } from "../../context/access/Access";
 import { ForbiddenSection } from "../../ForbiddenSection";
 import { Results } from "./evaluate/Results";
 import { ClientSelect } from "../../components/client/ClientSelect";
+import { UserSelect } from "../../components/users/UserSelect";
 
 import "./auth-evaluate.css";
-import { UserSelect } from "../../components/users/UserSelect";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
