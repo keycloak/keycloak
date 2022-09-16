@@ -39,6 +39,7 @@ export const ExtendedNonDiscoverySettings = () => {
     >
       <Form isHorizontal>
         <SwitchField label="passLoginHint" field="config.loginHint" />
+        <SwitchField label="passMaxAge" field="config.passMaxAge" />
         <SwitchField label="passCurrentLocale" field="config.uiLocales" />
         <SwitchField
           field="config.backchannelSupported"

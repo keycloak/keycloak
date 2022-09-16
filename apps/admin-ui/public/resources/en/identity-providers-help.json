@@ -10,6 +10,7 @@
   "discoveryEndpoint": "Import metadata from a remote IDP discovery descriptor.",
   "importConfig": "Import metadata from a downloaded IDP discovery descriptor.",
   "passLoginHint": "Pass login_hint to identity provider.",
+  "passMaxAge": "Pass max_age to identity provider.",
   "passCurrentLocale": "Pass the current locale to the identity provider as a ui_locales parameter.",
   "logoutUrl": "End session endpoint to use to logout user from external IDP.",
   "backchannelLogout": "Does the external IDP support backchannel logout?",

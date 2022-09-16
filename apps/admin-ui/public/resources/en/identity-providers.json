@@ -92,6 +92,7 @@
   "metadataOfDiscoveryEndpoint": "Metadata of the discovery endpoint",
   "authorizationUrl": "Authorization URL",
   "passLoginHint": "Pass login_hint",
+  "passMaxAge": "Pass max_age",
   "passCurrentLocale": "Pass current locale",
   "tokenUrl": "Token URL",
   "logoutUrl": "Logout URL",
