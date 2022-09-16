@@ -42,7 +42,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         fieldId="clientAuthentication"
       >
         <Controller
-          name="config.clientAuthentications"
+          name="config.clientAuthMethod"
           defaultValue={clientAuthentications[0]}
           control={control}
           render={({ onChange, value }) => (
