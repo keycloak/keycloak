@@ -1,3 +1,7 @@
+import { useState } from "react";
+import { useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
+import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   Button,
@@ -26,13 +30,10 @@ import {
   WarningTriangleIcon,
 } from "@patternfly/react-icons";
 import type { IRowData } from "@patternfly/react-table";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -52,12 +53,9 @@ import {
   RoutableTabs,
 } from "../components/routable-tabs/RoutableTabs";
 import { useAccess } from "../context/access/Access";
+import { BruteUser, findUsers } from "../components/role-mapping/resource";
 
 import "./user-section.css";
-
-type BruteUser = UserRepresentation & {
-  brute?: Record<string, object>;
-};
 
 export default function UsersSection() {
   const { t } = useTranslation("users");
@@ -128,24 +126,11 @@ export default function UsersSection() {
     }
 
     try {
-      const users = await adminClient.users.find({
+      return await findUsers({
+        adminClient,
         briefRepresentation: true,
         ...params,
       });
-      if (realm?.bruteForceProtected) {
-        const brutes = await Promise.all(
-          users.map((user: BruteUser) =>
-            adminClient.attackDetection.findOne({
-              id: user.id!,
-            })
-          )
-        );
-        for (let index = 0; index < users.length; index++) {
-          const user: BruteUser = users[index];
-          user.brute = brutes[index];
-        }
-      }
-      return users;
     } catch (error) {
       if (userStorage?.length) {
         addError("users:noUsersFoundErrorStorage", error);
@@ -198,12 +183,12 @@ export default function UsersSection() {
             {t("disabled")}
           </Label>
         )}
-        {user.brute?.disabled && (
+        {user.bruteForceStatus?.disabled && (
           <Label key={user.id} color="orange" icon={<WarningTriangleIcon />}>
             {t("temporaryDisabled")}
           </Label>
         )}
-        {user.enabled && !user.brute?.disabled && "—"}
+        {user.enabled && !user.bruteForceStatus?.disabled && "—"}
       </>
     );
   };
@@ -226,7 +211,7 @@ export default function UsersSection() {
 
   const goToCreate = () => navigate(toAddUser({ realm: realmName }));
 
-  if (!userStorage) {
+  if (!userStorage || !realm) {
     return <KeycloakSpinner />;
   }
 
@@ -240,7 +225,7 @@ export default function UsersSection() {
           {t("addUser")}
         </Button>
       </ToolbarItem>
-      {!realm?.bruteForceProtected ? (
+      {!realm.bruteForceProtected ? (
         <ToolbarItem>
           <Button
             variant={ButtonVariant.link}
