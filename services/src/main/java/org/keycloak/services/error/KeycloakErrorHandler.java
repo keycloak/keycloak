@@ -158,7 +158,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
         attributes.put("realm", realm);
         attributes.put("url", new UrlBean(realm, theme, session.getContext().getUri().getBaseUri(), null));
-        attributes.put("locale", new LocaleBean(realm, locale, session.getContext().getUri().getBaseUriBuilder(), messagesBundle));
+        attributes.put("locale", new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messagesBundle));
 
 
         String errorKey = statusCode == 404 ? Messages.PAGE_NOT_FOUND : Messages.INTERNAL_SERVER_ERROR;
