@@ -31,7 +31,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 public class CertificateUtils {
 
     static {
-        CryptoIntegration.init(ClassLoader.getSystemClassLoader());
+        CryptoIntegration.init(CertificateUtils.class.getClassLoader());
     }
 
 
