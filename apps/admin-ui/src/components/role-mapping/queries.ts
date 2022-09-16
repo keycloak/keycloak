@@ -13,10 +13,8 @@ export type ResourcesKey = keyof KeycloakAdminClient;
 
 type DeleteFunctions =
   | keyof Pick<Groups, "delClientRoleMappings" | "delRealmRoleMappings">
-  | keyof Pick<
-      ClientScopes,
-      "delClientScopeMappings" | "delRealmScopeMappings"
-    >;
+  | keyof Pick<ClientScopes, "delClientScopeMappings" | "delRealmScopeMappings">
+  | keyof Pick<Roles, "delCompositeRoles">;
 
 type ListEffectiveFunction =
   | keyof Pick<Groups, "listRoleMappings" | "listAvailableRealmRoleMappings">
@@ -26,7 +24,7 @@ type ListEffectiveFunction =
       | "listAvailableRealmScopeMappings"
       | "listCompositeClientScopeMappings"
     >
-  | keyof Pick<Roles, "getCompositeRoles">
+  | keyof Pick<Roles, "getCompositeRoles" | "getCompositeRolesForClient">
   | keyof Pick<
       Users,
       "listCompositeClientRoleMappings" | "listCompositeRealmRoleMappings"
@@ -83,8 +81,12 @@ const mapping: ResourceMapping = {
   clientScopes: clientFunctions,
   clients: clientFunctions,
   roles: {
-    delete: [],
-    listEffective: ["getCompositeRoles", "getCompositeRoles"],
+    delete: ["delCompositeRoles", "delCompositeRoles"],
+    listEffective: [
+      "getCompositeRoles",
+      "getCompositeRoles",
+      "getCompositeRolesForClient",
+    ],
     listAvailable: ["listRoles", "find"],
   },
 };
@@ -140,7 +142,28 @@ export const getMapping = async (
   id: string
 ): Promise<MappingsRepresentation> => {
   const query = mapping[type]!.listEffective[0];
-  return applyQuery(adminClient, type, query, { id }) as MappingsRepresentation;
+  const result = applyQuery(adminClient, type, query, { id });
+  if (type !== "roles") {
+    return result as MappingsRepresentation;
+  }
+  const roles = await result;
+  const clientRoles = await Promise.all(
+    roles
+      .filter((r) => r.clientRole)
+      .map(async (role) => {
+        const client = await adminClient.clients.findOne({
+          id: role.containerId!,
+        });
+
+        role.containerId = client?.clientId;
+        return { ...client, mappings: [role] };
+      })
+  );
+
+  return {
+    clientMappings: clientRoles,
+    realmMappings: roles.filter((r) => !r.clientRole),
+  };
 };
 
 export const getEffectiveRoles = async (
@@ -149,9 +172,18 @@ export const getEffectiveRoles = async (
   id: string
 ): Promise<Row[]> => {
   const query = mapping[type]!.listEffective[1];
-  return (await applyQuery(adminClient, type, query, { id })).map((role) => ({
-    role,
-  }));
+  if (type !== "roles") {
+    return (await applyQuery(adminClient, type, query, { id })).map((role) => ({
+      role,
+    }));
+  }
+  const roles = await applyQuery(adminClient, type, query, { id });
+  const parentRoles = await Promise.all(
+    roles
+      .filter((r) => r.composite)
+      .map((r) => applyQuery(adminClient, type, query, { id: r.id }))
+  );
+  return [...roles, ...parentRoles.flat()].map((role) => ({ role }));
 };
 
 export const getAvailableRoles = async (

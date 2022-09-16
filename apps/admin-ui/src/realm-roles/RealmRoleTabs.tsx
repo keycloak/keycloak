@@ -31,7 +31,6 @@ import { RealmRoleForm } from "./RealmRoleForm";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { AddRoleMappingModal } from "../components/role-mapping/AddRoleMappingModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-import { AssociatedRolesTab } from "./AssociatedRolesTab";
 import { UsersInRoleTab } from "./UsersInRoleTab";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { toRealmRole } from "./routes/RealmRole";
@@ -41,6 +40,7 @@ import {
   toClientRole,
 } from "./routes/ClientRole";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
+import { RoleMapping } from "../components/role-mapping/RoleMapping";
 
 export default function RealmRoleTabs() {
   const { t } = useTranslation("roles");
@@ -59,10 +59,10 @@ export default function RealmRoleTabs() {
 
   const { realm: realmName } = useRealm();
 
-  const [key, setKey] = useState("");
+  const [key, setKey] = useState(0);
 
   const refresh = () => {
-    setKey(`${new Date().getTime()}`);
+    setKey(key + 1);
   };
 
   const { addAlert, addError } = useAlerts();
@@ -184,7 +184,7 @@ export default function RealmRoleTabs() {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleDeleteConfirm",
     messageKey: t("roles:roleDeleteConfirmDialog", {
-      name: role?.name || t("createRole"),
+      selectedRoleName: role?.name || t("createRole"),
     }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
@@ -385,7 +385,13 @@ export default function RealmRoleTabs() {
                 className="kc-associated-roles-tab"
                 title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
               >
-                <AssociatedRolesTab parentRole={role} refresh={refresh} />
+                <RoleMapping
+                  name={role.name!}
+                  id={role.id!}
+                  type="roles"
+                  isManager
+                  save={(rows) => addComposites(rows.map((r) => r.role))}
+                />
               </Tab>
             )}
             {!isDefaultRole(role.name!) && (

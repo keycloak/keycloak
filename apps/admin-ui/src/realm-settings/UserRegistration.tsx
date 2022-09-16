@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
+import { AlertVariant, Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { AssociatedRolesTab } from "../realm-roles/AssociatedRolesTab";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { useAlerts } from "../components/alert/Alerts";
+import { RoleMapping } from "../components/role-mapping/RoleMapping";
 import { DefaultsGroupsTab } from "./DefaultGroupsTab";
 
 export const UserRegistration = () => {
@@ -16,6 +18,7 @@ export const UserRegistration = () => {
   const [key, setKey] = useState(0);
 
   const { adminClient } = useAdminClient();
+  const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
 
   useFetch(
@@ -28,6 +31,21 @@ export const UserRegistration = () => {
     return <KeycloakSpinner />;
   }
 
+  const addComposites = async (composites: RoleRepresentation[]) => {
+    const compositeArray = composites;
+
+    try {
+      await adminClient.roles.createComposite(
+        { roleId: realm.defaultRole!.id!, realm: realmName },
+        compositeArray
+      );
+      setKey(key + 1);
+      addAlert(t("roles:addAssociatedRolesSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("roles:addAssociatedRolesError", error);
+    }
+  };
+
   return (
     <Tabs
       activeKey={activeTab}
@@ -39,9 +57,12 @@ export const UserRegistration = () => {
         eventKey={10}
         title={<TabTitleText>{t("defaultRoles")}</TabTitleText>}
       >
-        <AssociatedRolesTab
-          parentRole={{ ...realm.defaultRole, attributes: [] }}
-          refresh={() => setKey(key + 1)}
+        <RoleMapping
+          name={realm.defaultRole!.name!}
+          id={realm.defaultRole!.id!}
+          type="roles"
+          isManager
+          save={(rows) => addComposites(rows.map((r) => r.role))}
         />
       </Tab>
       <Tab

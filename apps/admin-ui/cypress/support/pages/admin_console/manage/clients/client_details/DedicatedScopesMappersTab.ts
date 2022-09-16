@@ -28,9 +28,11 @@ export default class DedicatedScopesMappersTab extends CommonPage {
   }
 
   addPredefinedMapper() {
-    this.emptyState()
-      .checkIfExists(true)
-      .clickSecondaryBtn(mapperTypeEmptyState.AddPredefinedMapper, true);
+    this.emptyState().checkIfExists(true);
+    this.emptyState().clickSecondaryBtn(
+      mapperTypeEmptyState.AddPredefinedMapper,
+      true
+    );
     return this;
   }
 

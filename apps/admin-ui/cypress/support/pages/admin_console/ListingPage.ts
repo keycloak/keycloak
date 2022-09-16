@@ -162,8 +162,8 @@ export default class ListingPage extends CommonElements {
     return this;
   }
 
-  removeMarkedItems() {
-    cy.get(this.listHeaderSecondaryBtn).contains("Remove").click();
+  removeMarkedItems(name: string = "Remove") {
+    cy.get(this.listHeaderSecondaryBtn).contains(name).click();
     return this;
   }
 
@@ -246,7 +246,7 @@ export default class ListingPage extends CommonElements {
 
   removeItem(itemName: string) {
     this.clickRowDetails(itemName);
-    this.clickDetailMenu("Remove");
+    this.clickDetailMenu("Unassign");
 
     return this;
   }

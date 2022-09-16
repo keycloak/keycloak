@@ -45,16 +45,14 @@ describe("Realm settings - User registration tab", () => {
 
   it("Remove admin role", () => {
     const role = "admin";
-    listingPage.markItemRow(role).removeMarkedItems();
+    listingPage.markItemRow(role).removeMarkedItems("Unassign");
     sidebarPage.waitForPageLoad();
     modalUtils
-      .checkModalTitle("Remove associated roles?")
-      .checkModalMessage(
-        "This action will remove the associated roles of default-roles-master. Users who have permission to default-roles-master will no longer have access to these roles."
-      )
+      .checkModalTitle("Remove mapping?")
+      .checkModalMessage("Are you sure you want to remove this mapping?")
       .checkConfirmButtonText("Remove")
       .confirmModal();
-    masthead.checkNotificationMessage("Associated roles have been removed");
+    masthead.checkNotificationMessage("Scope mapping successfully removed");
   });
 
   it("Add default group", () => {

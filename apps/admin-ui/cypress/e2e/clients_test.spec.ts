@@ -458,7 +458,6 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(client);
@@ -591,24 +590,18 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().searchItem(itemId, false);
       commonPage.tableUtils().clickRowItemLink(itemId);
       rolesTab.goToAssociatedRolesTab();
-      commonPage.tableUtils().selectRowItemAction("create-realm", "Remove");
+      commonPage.tableUtils().selectRowItemAction("create-realm", "Unassign");
       commonPage.sidebar().waitForPageLoad();
-      commonPage
-        .modalUtils()
-        .checkModalTitle("Remove associated role?")
-        .confirmModal();
+      commonPage.modalUtils().checkModalTitle("Remove mapping?").confirmModal();
       commonPage.sidebar().waitForPageLoad();
 
       commonPage
         .masthead()
-        .checkNotificationMessage("Associated roles have been removed", true);
+        .checkNotificationMessage("Scope mapping successfully removed", true);
 
-      commonPage.tableUtils().selectRowItemAction("manage-consent", "Remove");
+      commonPage.tableUtils().selectRowItemAction("manage-consent", "Unassign");
       commonPage.sidebar().waitForPageLoad();
-      commonPage
-        .modalUtils()
-        .checkModalTitle("Remove associated role?")
-        .confirmModal();
+      commonPage.modalUtils().checkModalTitle("Remove mapping?").confirmModal();
     });
 
     it("Should delete associated role from search bar test", () => {
@@ -617,7 +610,7 @@ describe("Clients test", () => {
       commonPage.sidebar().waitForPageLoad();
       rolesTab.goToAssociatedRolesTab();
 
-      cy.get('td[data-label="Role name"]')
+      cy.get('td[data-label="Name"]')
         .contains("manage-account")
         .parent()
         .within(() => {
@@ -627,15 +620,12 @@ describe("Clients test", () => {
       associatedRolesPage.removeAssociatedRoles();
 
       commonPage.sidebar().waitForPageLoad();
-      commonPage
-        .modalUtils()
-        .checkModalTitle("Remove associated roles?")
-        .confirmModal();
+      commonPage.modalUtils().checkModalTitle("Remove mapping?").confirmModal();
       commonPage.sidebar().waitForPageLoad();
 
       commonPage
         .masthead()
-        .checkNotificationMessage("Associated roles have been removed", true);
+        .checkNotificationMessage("Scope mapping successfully removed", true);
     });
 
     it("Should delete client role test", () => {

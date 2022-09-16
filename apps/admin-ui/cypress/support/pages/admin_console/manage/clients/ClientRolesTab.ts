@@ -9,7 +9,7 @@ enum ClientRolesTabItems {
 export default class ClientRolesTab extends CommonPage {
   private createRoleBtn = "create-role";
   private createRoleEmptyStateBtn = "no-roles-for-this-client-empty-action";
-  private hideInheritedRolesChkBox = "#kc-hide-inherited-roles-checkbox";
+  private hideInheritedRolesChkBox = "#hideInheritedRoles";
   private rolesTab = "rolesTab";
   private associatedRolesTab = ".kc-associated-roles-tab > button";
 
