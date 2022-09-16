@@ -19,7 +19,6 @@ package org.keycloak.storage.ldap.idm.model;
 
 import org.jboss.logging.Logger;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -27,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -53,6 +53,41 @@ public class LDAPObject {
 
     // range attributes are always read from 0 to max so just saving the top value
     private final Map<String, Integer> rangedAttributes = new HashMap<>();
+
+    // consumer to be executed when mandatory attributes are set
+    private Consumer<LDAPObject> consumerOnMandatoryAttributesComplete;
+
+    // mandatory attributes defined for the entry
+    private Set<String> mandatoryAttributeNames;
+
+    // mandatory attributes that remain not set
+    private Set<String> mandatoryAttributeNamesRemaining;
+
+    public void executeOnMandatoryAttributesComplete(Set<String> mandatoryAttributeNames, Consumer<LDAPObject> consumer) {
+        this.consumerOnMandatoryAttributesComplete = consumer;
+        this.mandatoryAttributeNames = new LinkedHashSet<>();
+        this.mandatoryAttributeNamesRemaining = new LinkedHashSet<>();
+        // initializes mandatory attributes
+        if (mandatoryAttributeNames != null) {
+            for (String name : mandatoryAttributeNames) {
+                name = name.toLowerCase();
+                this.mandatoryAttributeNames.add(name);
+                Set<String> values = lowerCasedAttributes.get(name);
+                if (values == null || values.isEmpty()) {
+                    this.mandatoryAttributeNamesRemaining.add(name);
+                }
+            }
+        }
+        executeConsumerOnMandatoryAttributesComplete();
+    }
+
+    public boolean isWaitingForExecutionOnMandatoryAttributesComplete() {
+        return consumerOnMandatoryAttributesComplete != null;
+    }
+
+    public Set<String> getMandatoryAttributeNamesRemaining() {
+        return mandatoryAttributeNamesRemaining;
+    }
 
     public String getUuid() {
         return uuid;
@@ -114,13 +149,24 @@ public class LDAPObject {
 
     public void setSingleAttribute(String attributeName, String attributeValue) {
         Set<String> asSet = new LinkedHashSet<>();
-        asSet.add(attributeValue);
+        if (attributeValue != null) {
+            asSet.add(attributeValue);
+        }
         setAttribute(attributeName, asSet);
     }
 
     public void setAttribute(String attributeName, Set<String> attributeValue) {
         attributes.put(attributeName, attributeValue);
-        lowerCasedAttributes.put(attributeName.toLowerCase(), attributeValue);
+        attributeName = attributeName.toLowerCase();
+        lowerCasedAttributes.put(attributeName, attributeValue);
+        if (consumerOnMandatoryAttributesComplete != null) {
+            if (!attributeValue.isEmpty()) {
+                mandatoryAttributeNamesRemaining.remove(attributeName);
+            } else if (mandatoryAttributeNames.contains(attributeName)) {
+                mandatoryAttributeNamesRemaining.add(attributeName);
+            }
+            executeConsumerOnMandatoryAttributesComplete();
+        }
     }
 
     // Case-insensitive
@@ -202,5 +248,15 @@ public class LDAPObject {
     public String toString() {
         return "LDAP Object [ dn: " + dn + " , uuid: " + uuid + ", attributes: " + attributes +
                 ", readOnly attribute names: " + readOnlyAttributeNames + ", ranges: " + rangedAttributes + " ]";
+    }
+
+    private void executeConsumerOnMandatoryAttributesComplete() {
+        if (mandatoryAttributeNamesRemaining.isEmpty()) {
+            final Consumer<LDAPObject> consumer = consumerOnMandatoryAttributesComplete;
+            consumerOnMandatoryAttributesComplete = null;
+            mandatoryAttributeNames = null;
+            mandatoryAttributeNamesRemaining = null;
+            consumer.accept(this);
+        }
     }
 }
