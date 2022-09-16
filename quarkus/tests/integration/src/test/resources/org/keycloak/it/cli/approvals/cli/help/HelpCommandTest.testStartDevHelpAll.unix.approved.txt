@@ -279,6 +279,12 @@ Logging:
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
 
+Security (Experimental):
+
+--fips-mode <mode>   Experimental: Sets the FIPS mode. If 'enabled' is set, FIPS is enabled but on
+                       non-approved mode. For full FIPS compliance, set 'strict' to run on approved
+                       mode. Possible values are: enabled, strict, disabled. Default: disabled.
+
 Do NOT start the server using this command when deploying to production.
 
 Use 'kc.sh start-dev --help-all' to list all available options, including build

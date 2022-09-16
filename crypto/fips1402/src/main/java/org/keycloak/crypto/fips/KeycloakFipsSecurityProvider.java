@@ -1,5 +1,7 @@
 package org.keycloak.crypto.fips;
 
+import static org.bouncycastle.crypto.CryptoServicesRegistrar.isInApprovedOnlyMode;
+
 import java.security.Provider;
 
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
@@ -17,10 +19,9 @@ public class KeycloakFipsSecurityProvider extends Provider {
     private final BouncyCastleFipsProvider bcFipsProvider;
 
     public KeycloakFipsSecurityProvider(BouncyCastleFipsProvider bcFipsProvider) {
-        super("KC", 1, "Keycloak pseudo provider");
+        super("KC(" + bcFipsProvider.toString() + (isInApprovedOnlyMode() ? " Approved Mode" : "") + ")", 1, "Keycloak pseudo provider");
         this.bcFipsProvider = bcFipsProvider;
     }
-
 
     @Override
     public synchronized final Service getService(String type, String algorithm) {
