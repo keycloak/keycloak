@@ -72,7 +72,7 @@
   },
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.1",
-    "@babel/core": "^7.19.0",
+    "@babel/core": "^7.19.1",
     "@babel/preset-env": "^7.19.1",
     "@cypress/webpack-batteries-included-preprocessor": "^2.2.3",
     "@cypress/webpack-preprocessor": "^5.12.2",
