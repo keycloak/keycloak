@@ -65,6 +65,34 @@ export const LdapSettingsSynchronization = ({
           ></Controller>
         </FormGroup>
         <FormGroup
+          hasNoPaddingTop
+          label={t("syncRegistrations")}
+          labelIcon={
+            <HelpItem
+              helpText="user-federation-help:syncRegistrations"
+              fieldLabelId="user-federation:syncRegistrations"
+            />
+          }
+          fieldId="syncRegistrations"
+        >
+          <Controller
+            name="config.syncRegistrations"
+            defaultValue={["true"]}
+            control={form.control}
+            render={({ onChange, value }) => (
+              <Switch
+                id="syncRegistrations"
+                data-testid="syncRegistrations"
+                label={t("common:on")}
+                labelOff={t("common:off")}
+                onChange={(value) => onChange([`${value}`])}
+                isChecked={value[0] === "true"}
+                aria-label={t("syncRegistrations")}
+              />
+            )}
+          />
+        </FormGroup>
+        <FormGroup
           label={t("batchSize")}
           labelIcon={
             <HelpItem
