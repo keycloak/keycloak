@@ -17,7 +17,6 @@
 
 package org.keycloak.models.map.realm;
 
-import org.keycloak.common.util.Time;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.common.AbstractEntity;
@@ -42,6 +41,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 
 @GenerateEntityImplementations(
         inherits = "org.keycloak.models.map.realm.MapRealmEntity.AbstractRealmEntity"
@@ -237,8 +238,7 @@ public interface MapRealmEntity extends UpdatableEntity, AbstractEntity, EntityW
         }
 
         private boolean checkIfExpired(MapClientInitialAccessEntity cia) {
-            return cia.getRemainingCount() < 1 ||
-                    (cia.getExpiration() > 0 && (cia.getTimestamp() + cia.getExpiration()) < Time.currentTime());
+            return cia.getRemainingCount() < 1 || isExpired(cia, true);
         }
     }
 
@@ -332,8 +332,8 @@ public interface MapRealmEntity extends UpdatableEntity, AbstractEntity, EntityW
     Integer getAccessCodeLifespanLogin();
     void setAccessCodeLifespanLogin(Integer accessCodeLifespanLogin);
 
-    Integer getNotBefore();
-    void setNotBefore(Integer notBefore);
+    Long getNotBefore();
+    void setNotBefore(Long notBefore);
 
     Integer getClientSessionIdleTimeout();
     void setClientSessionIdleTimeout(Integer clientSessionIdleTimeout);
@@ -438,6 +438,7 @@ public interface MapRealmEntity extends UpdatableEntity, AbstractEntity, EntityW
 
     Map<String, String> getBrowserSecurityHeaders();
     void setBrowserSecurityHeaders(Map<String, String> headers);
+    void setBrowserSecurityHeader(String name, String value);
 
     Map<String, String> getSmtpConfig();
     void setSmtpConfig(Map<String, String> smtpConfig);

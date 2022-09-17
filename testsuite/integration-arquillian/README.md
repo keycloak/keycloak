@@ -126,10 +126,10 @@ They are designed to work with most of the desktop browsers (HtmlUnit included) 
 
 The tests are place in a separate module (`tests/other/base-ui`) and are disabled by default.
 
-### Admin Console UI Tests
+### Old Admin Console UI Tests
 
-Tests for Keycloak Admin Console are located in a separate module `tests/other/console` 
-and are **disabled** by default. Can be enabled by `-Pconsole-ui-tests`.
+Tests for the old Keycloak Admin Console are located in a separate module `tests/other/old-admin-console` 
+and are **disabled** by default. Can be enabled by `-Pold-admin-console`.
 
 #### Types of adapter tests
 
@@ -182,8 +182,7 @@ integration-arquillian
 │  │
 │  ├──app-server
 │  │  ├──jboss (wildfly/eap/as)
-│  │  ├──tomcat
-│  │  └──karaf
+│  │  └──tomcat
 │  │
 │  └──wildfly-balancer
 │
@@ -194,8 +193,7 @@ integration-arquillian
    └──other   (common settings for all test modules dependent on base)
       │
       ├──adapters         (common settings for all adapter test modules - will be moved into base)
-      │  ├──jboss
-      │  └──karaf
+      │  └──jboss
       │
       ├──console          
       ├──console_no_users 

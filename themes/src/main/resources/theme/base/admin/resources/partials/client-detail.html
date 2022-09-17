@@ -285,12 +285,26 @@
                 </div>
                 <kc-tooltip>{{:: 'front-channel-logout-url.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && clientEdit.frontchannelLogout">
+                <label class="col-md-2 control-label" for="frontchannelLogoutSessionRequired">{{:: 'front-channel-logout-session-required' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="frontchannelLogoutSessionRequired" name="frontchannelLogoutSessionRequired" id="frontchannelLogoutSessionRequired" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'front-channel-logout-session-required.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlForceNameIdFormat">{{:: 'force-name-id-format' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="samlForceNameIdFormat" ng-click="switchChange()" name="samlForceNameIdFormat" id="samlForceNameIdFormat" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'force-name-id-format.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="samlAllowECPFlow">{{:: 'allow-ecp-flow' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="samlAllowECPFlow" ng-click="switchChange()" name="samlAllowECPFlow" id="samlAllowECPFlow" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'allow-ecp-flow.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlNameIdFormat">{{:: 'name-id-format' | translate}}</label>
@@ -334,6 +348,28 @@
                 </div>
 
                 <kc-tooltip>{{:: 'valid-redirect-uris.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block" data-ng-hide="clientEdit.bearerOnly || (!clientEdit.standardFlowEnabled && !clientEdit.implicitFlowEnabled) || protocol == 'docker-v2'">
+                <label class="col-md-2 control-label" for="newPostLogoutRedirectUri">{{:: 'valid-post-logout-redirect-uris' | translate}}</label>
+
+                <div class="col-sm-6">
+                    <div class="input-group" ng-repeat="(i, postLogoutRedirectUri) in postLogoutRedirectUris track by $index">
+                        <input class="form-control" ng-model="postLogoutRedirectUris[i]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deletePostLogoutRedirectUri($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newPostLogoutRedirectUri" id="newPostLogoutRedirectUri">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newPostLogoutRedirectUri.length > 0 && addPostLogoutRedirectUri()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <kc-tooltip>{{:: 'valid-post-logout-redirect-uris.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol != 'docker-v2'">
@@ -571,6 +607,35 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'user-info-signed-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="userInfoEncryptedResponseAlg">{{:: 'user-info-encrypted-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="userInfoEncryptedResponseAlg"
+                                ng-change="changeUserInfoEncryptedResponseAlg()"
+                                ng-model="userInfoEncryptedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'user-info-encrypted-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="userInfoEncryptedResponseEnc">{{:: 'user-info-encrypted-response-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="userInfoEncryptedResponseEnc"
+                                ng-change="changeUserInfoEncryptedResponseEnc()"
+                                ng-model="userInfoEncryptedResponseEnc">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'user-info-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="requestObjectSignatureAlg">{{:: 'request-object-signature-alg' | translate}}</label>

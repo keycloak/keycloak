@@ -74,21 +74,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     }
 
     protected Authenticator createAuthenticator(AuthenticatorFactory factory) {
-        String display = processor.getAuthenticationSession().getAuthNote(OAuth2Constants.DISPLAY);
-        if (display == null) return factory.create(processor.getSession());
-
-        if (factory instanceof DisplayTypeAuthenticatorFactory) {
-            Authenticator authenticator = ((DisplayTypeAuthenticatorFactory) factory).createDisplay(processor.getSession(), display);
-            if (authenticator != null) return authenticator;
-        }
-        // todo create a provider for handling lack of display support
-        if (OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(display)) {
-            processor.getAuthenticationSession().removeAuthNote(OAuth2Constants.DISPLAY);
-            throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED,
-                    ConsoleDisplayMode.browserContinue(processor.getSession(), processor.getRefreshUrl(true).toString()));
-        } else {
-            return factory.create(processor.getSession());
-        }
+        return factory.create(processor.getSession());
     }
 
     @Override
@@ -446,6 +432,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 } else {
                     throw new AuthenticationFlowException("authenticator: " + factory.getId(), AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED);
                 }
+            }
+        }
+        else {
+            if ((authUser != null) &&
+                    !authenticator.configuredFor(processor.getSession(), processor.getRealm(), authUser) &&
+                    !factory.isUserSetupAllowed() &&
+                    (authenticator instanceof CredentialValidator)) {
+                throw new AuthenticationFlowException("authenticator: " + factory.getId(), AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED);
             }
         }
         logger.debugv("invoke authenticator.authenticate: {0}", factory.getId());

@@ -24,6 +24,7 @@ set "SERVER_OPTS=-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dq
 set DEBUG_MODE=false
 set DEBUG_PORT_VAR=8787
 set DEBUG_SUSPEND_VAR=n
+set CONFIG_ARGS=
 
 rem Read command-line args, the ~ removes the quotes from the parameter
 :READ-ARGS
@@ -45,8 +46,7 @@ if "%KEY%" == "--debug" (
   goto READ-ARGS
 )
 if "%KEY%" == "start-dev" (
-  set "CONFIG_ARGS=%CONFIG_ARGS% --profile=dev %KEY% --auto-build"
-  shift
+  set "CONFIG_ARGS=%CONFIG_ARGS% --profile=dev %KEY% "
   shift
   goto READ-ARGS
 )
@@ -57,14 +57,15 @@ if not "%KEY:~0,2%"=="--" if "%KEY:~0,2%"=="-D" (
 if not "%KEY:~0,2%"=="--" if not "%KEY:~0,1%"=="-" (
   set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
 )
-if "%KEY:~0,2%"=="--" if not "%KEY:~0,2%"=="-D" if "%KEY:~0,1%"=="-" (
-  if "%~2"=="" (
-    set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
-  ) else (
-    set "CONFIG_ARGS=%CONFIG_ARGS% %KEY% %~2%"
+if not "%KEY:~0,2%"=="-D" (
+  if "%KEY:~0,1%"=="-" (
+      if "%~2"=="" (
+        set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
+      ) else (
+        set "CONFIG_ARGS=%CONFIG_ARGS% %KEY% %~2%"
+      )
+      shift
   )
-
-  shift
 )
 shift
 goto READ-ARGS
@@ -73,7 +74,7 @@ goto READ-ARGS
 if not "x%JAVA_OPTS%" == "x" (
   echo "JAVA_OPTS already set in environment; overriding default settings with values: %JAVA_OPTS%"
 ) else (
-  set "JAVA_OPTS=-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true"
+  set "JAVA_OPTS=-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8"
 )
 
 if not "x%JAVA_OPTS_APPEND%" == "x" (
@@ -129,12 +130,33 @@ set "JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config
 
 SetLocal EnableDelayedExpansion
 
-set "AUTO_BUILD_OPTION=auto-build"
+set "OPTIMIZED_OPTION=--optimized"
+set "HELP_LONG_OPTION=--help"
+set "BUILD_OPTION= build"
+set IS_HELP_SHORT=false
 
-if not "!CONFIG_ARGS:%AUTO_BUILD_OPTION%=!"=="!CONFIG_ARGS!" (
-  "%JAVA%" -Dkc.config.rebuild-and-exit=true %JAVA_RUN_OPTS%
+echo "%CONFIG_ARGS%" | findstr /r "\<-h\>" > nul
+
+if not errorlevel == 1 (
+    set IS_HELP_SHORT=true
 )
 
-"%JAVA%" %JAVA_RUN_OPTS%
+set START_SERVER=true
+
+if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
+    setlocal enabledelayedexpansion
+
+    "%JAVA%" -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%
+
+    if not !errorlevel! == 0 (
+        set START_SERVER=false
+    )
+
+    set "JAVA_RUN_OPTS=-Dkc.config.built=true %JAVA_RUN_OPTS%"
+)
+
+if "%START_SERVER%" == "true" (
+    "%JAVA%" %JAVA_RUN_OPTS%
+)
 
 :END

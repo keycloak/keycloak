@@ -39,9 +39,11 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
@@ -606,8 +608,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                         String username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
                         exists.value = true;
                         LDAPUtils.checkUuid(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
-                        UserModel currentUserLocal = session.userLocalStorage().getUserByUsername(currentRealm, username);
-                        Optional<UserModel> userModelOptional = session.userLocalStorage()
+                        UserModel currentUserLocal = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(currentRealm, username);
+                        Optional<UserModel> userModelOptional = UserStoragePrivateUtil.userLocalStorage(session)
                                 .searchForUserByUserAttributeStream(currentRealm, LDAPConstants.LDAP_ID, ldapUser.getUuid())
                                 .findFirst();
                         if (!userModelOptional.isPresent() && currentUserLocal == null) {
@@ -629,7 +631,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                                             ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
                                         });
 
-                                UserCache userCache = session.userCache();
+                                UserCache userCache = UserStorageUtil.userCache(session);
                                 if (userCache != null) {
                                     userCache.evict(currentRealm, currentUser);
                                 }
@@ -664,13 +666,13 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                             }
 
                             if (username != null) {
-                                UserModel existing = session.userLocalStorage().getUserByUsername(currentRealm, username);
+                                UserModel existing = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(currentRealm, username);
                                 if (existing != null) {
-                                    UserCache userCache = session.userCache();
+                                    UserCache userCache = UserStorageUtil.userCache(session);
                                     if (userCache != null) {
                                         userCache.evict(currentRealm, existing);
                                     }
-                                    session.userLocalStorage().removeUser(currentRealm, existing);
+                                    UserStoragePrivateUtil.userLocalStorage(session).removeUser(currentRealm, existing);
                                 }
                             }
                         }

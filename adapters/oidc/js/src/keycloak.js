@@ -478,7 +478,12 @@ function Keycloak (config) {
 
     kc.createLogoutUrl = function(options) {
         var url = kc.endpoints.logout()
-            + '?redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
+            + '?client_id=' + encodeURIComponent(kc.clientId)
+            + '&post_logout_redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
+
+        if (kc.idToken) {
+            url += '&id_token_hint=' + encodeURIComponent(kc.idToken);
+        }
 
         return url;
     }

@@ -45,12 +45,6 @@ public class TotpUtils {
         return sb.toString();
     }
 
-    public static String decode(String totpSecretEncoded) {
-        String encoded = totpSecretEncoded.replace(" ", "");
-        byte[] bytes = Base32.decode(encoded);
-        return new String(bytes);
-    }
-
     public static String qrCode(String totpSecret, RealmModel realm, UserModel user) {
         try {
             String keyUri = realm.getOTPPolicy().getKeyURI(realm, user, totpSecret);

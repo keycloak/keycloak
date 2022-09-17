@@ -9,6 +9,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import java.util.Comparator;
@@ -16,11 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.keycloak.events.Errors;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 public class UserSessionLimitsAuthenticator implements Authenticator {
 
@@ -49,7 +53,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
         if (context.getRealm() != null && context.getUser() != null) {
 
             // Get the session count in this realm for this specific user
-            List<UserSessionModel> userSessionsForRealm = session.sessions().getUserSessionsStream(context.getRealm(), context.getUser()).collect(Collectors.toList());
+            List<UserSessionModel> userSessionsForRealm = lockUserSessionsForModification(session, () -> session.sessions().getUserSessionsStream(context.getRealm(), context.getUser()).collect(Collectors.toList()));
             int userSessionCountForRealm = userSessionsForRealm.size();
 
             // Get the session count related to the current client for this user
@@ -141,9 +145,14 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                         .orElse(SESSION_LIMIT_EXCEEDED);
 
                 context.getEvent().error(Errors.GENERIC_AUTHENTICATION_ERROR);
-                Response challenge = context.form()
-                        .setError(errorMessage)
-                        .createErrorPage(Response.Status.FORBIDDEN);
+                Response challenge = null;
+                if(context.getFlowPath() == null) {
+                    OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(Errors.GENERIC_AUTHENTICATION_ERROR, errorMessage);
+                    challenge = Response.status(Response.Status.UNAUTHORIZED.getStatusCode()).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build();
+                }
+                else {
+                    challenge = context.form().setError(errorMessage).createErrorPage(Response.Status.FORBIDDEN);
+                }
                 context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, eventDetails, errorMessage);
                 break;
 

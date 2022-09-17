@@ -68,10 +68,6 @@
             <maven-resource group="org.keycloak" artifact="keycloak-saml-undertow-adapter"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-saml-wildfly-adapter">
-            <maven-resource group="org.keycloak" artifact="keycloak-saml-wildfly-adapter"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-saml-wildfly-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-wildfly-subsystem"/>
         </module-def>

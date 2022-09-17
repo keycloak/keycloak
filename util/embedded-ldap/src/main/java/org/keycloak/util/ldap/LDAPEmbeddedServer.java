@@ -207,7 +207,13 @@ public class LDAPEmbeddedServer {
         dcName = dcName.substring(dcName.indexOf("=") + 1);
 
         if (this.directoryServiceFactory.equals(DSF_INMEMORY)) {
-            System.setProperty( "apacheds.partition.factory", AvlPartitionFactory.class.getName());
+            // this used to be AvlPartitionFactory but it didn't prove stable in testing;
+            // sometimes the search returned an OPERATIONS_ERROR, sometimes after retrieving a list of entries
+            // and deleting them one by one, an entry was missing before it was deleted and either the search or the deletion failed.
+            // This happened in approximately one out of 100 test runs for RoleModelTest.
+            // This all happened with ApacheDS 2.0.0.AM26. Once changed to JdbmPartitionFactory, the problems disappeared.
+            // https://issues.apache.org/jira/browse/DIRSERVER-2369
+            System.setProperty( "apacheds.partition.factory", JdbmPartitionFactoryFast.class.getName());
         } else if (this.directoryServiceFactory.equals(DSF_FILE)) {
             System.setProperty( "apacheds.partition.factory", JdbmPartitionFactory.class.getName());
         } else {

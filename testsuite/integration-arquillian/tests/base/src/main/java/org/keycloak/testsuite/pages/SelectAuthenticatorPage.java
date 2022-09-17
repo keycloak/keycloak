@@ -19,6 +19,12 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
     // Corresponds to the PasswordForm
     public static final String PASSWORD = "Password";
 
+    // Corresponds to the UsernameForm
+    public static final String USERNAME = "Username";
+
+    // Corresponds to the UsernamePasswordForm
+    public static final String USERNAMEPASSWORD = "Username and password";
+
     // Corresponds to the OTPFormAuthenticator
     public static final String AUTHENTICATOR_APPLICATION = "Authenticator Application";
 

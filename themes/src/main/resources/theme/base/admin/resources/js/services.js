@@ -387,6 +387,14 @@ module.factory('RealmSpecificLocalizationTexts', function($resource) {
     return $resource(authUrl + '/admin/realms/:id/localization/:locale', {
         id : '@realm',
         locale : '@locale'
+    }, {
+        get: {
+            isArray: false,
+                method: 'GET',
+                params: {
+                    useRealmDefaultLocaleFallback: '@useRealmDefaultLocaleFallback'
+                }
+        }
     });
 });
 
@@ -949,15 +957,11 @@ function clientSelectControl($scope, realm, Client) {
         delay: 500,
         allowClear: true,
         query: function (query) {
-            var data = {results: []};
             Client.query({realm: realm, search: true, clientId: query.term.trim(), max: 20}, function(response) {
-                data.results = response;
-                query.callback(data);
+                query.callback({ results: response.map(function (client) {
+                    return { id: client.id, text: client.clientId }
+                })});
             });
-        },
-        formatResult: function(object, container, query) {
-            object.text = object.clientId;
-            return object.clientId;
         }
     };
 }
@@ -1017,7 +1021,7 @@ function roleControl($scope, $route, realm, role, roles, Client,
 
 
     clientSelectControl($scope, $route.current.params.realm, Client);
-    
+
     $scope.selectedClient = null;
 
 

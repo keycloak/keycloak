@@ -18,8 +18,8 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
-
 import org.keycloak.storage.SearchableModelField;
+
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -53,13 +53,21 @@ public interface UserModel extends RoleMapperModel {
     public static class SearchableFields {
         public static final SearchableModelField<UserModel> ID              = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<UserModel> REALM_ID        = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<UserModel> USERNAME        = new SearchableModelField<>("username", String.class);
         public static final SearchableModelField<UserModel> FIRST_NAME      = new SearchableModelField<>("firstName", String.class);
         public static final SearchableModelField<UserModel> LAST_NAME       = new SearchableModelField<>("lastName", String.class);
         public static final SearchableModelField<UserModel> EMAIL           = new SearchableModelField<>("email", String.class);
         public static final SearchableModelField<UserModel> ENABLED         = new SearchableModelField<>("enabled", Boolean.class);
         public static final SearchableModelField<UserModel> EMAIL_VERIFIED  = new SearchableModelField<>("emailVerified", Boolean.class);
         public static final SearchableModelField<UserModel> FEDERATION_LINK = new SearchableModelField<>("federationLink", String.class);
+
+        /**
+         * Search for user's username in case sensitive mode.
+         */
+        public static final SearchableModelField<UserModel> USERNAME        = new SearchableModelField<>("username", String.class);
+        /**
+         * Search for user's username in case insensitive mode.
+         */
+        public static final SearchableModelField<UserModel> USERNAME_CASE_INSENSITIVE = new SearchableModelField<>("usernameCaseInsensitive", String.class);
 
         /**
          * This field can only searched either for users coming from an IDP, then the operand is (idp_alias),
@@ -118,7 +126,7 @@ public interface UserModel extends RoleMapperModel {
      * Get timestamp of user creation. May be null for old users created before this feature introduction.
      */
     Long getCreatedTimestamp();
-    
+
     void setCreatedTimestamp(Long timestamp);
 
     boolean isEnabled();
@@ -278,7 +286,7 @@ public interface UserModel extends RoleMapperModel {
     default long getGroupsCount() {
         return getGroupsCountByNameContaining(null);
     }
-    
+
     default long getGroupsCountByNameContaining(String search) {
         if (search == null) {
             return getGroupsStream().count();
@@ -298,6 +306,11 @@ public interface UserModel extends RoleMapperModel {
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
 
+    /**
+     * Instance of a user credential manager to validate and update the credentials of this user.
+     */
+    SubjectCredentialManager credentialManager();
+
     enum RequiredAction {
         VERIFY_EMAIL,
         UPDATE_PROFILE,
@@ -305,7 +318,8 @@ public interface UserModel extends RoleMapperModel {
         CONFIGURE_RECOVERY_AUTHN_CODES,
         UPDATE_PASSWORD,
         TERMS_AND_CONDITIONS,
-        VERIFY_PROFILE
+        VERIFY_PROFILE,
+        UPDATE_EMAIL
     }
 
     /**

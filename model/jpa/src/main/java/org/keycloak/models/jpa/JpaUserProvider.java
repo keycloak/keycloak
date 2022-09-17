@@ -68,6 +68,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -173,6 +174,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
         FederatedIdentityEntity federatedIdentity = findFederatedIdentity(federatedUser, federatedIdentityModel.getIdentityProvider(), LockModeType.PESSIMISTIC_WRITE);
 
+        federatedIdentity.setUserName(federatedIdentityModel.getUserName());
         federatedIdentity.setToken(federatedIdentityModel.getToken());
 
         em.persist(federatedIdentity);
@@ -680,6 +682,9 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                 case UserModel.EMAIL:
                     restrictions.add(qb.like(from.get("email"), "%" + value + "%"));
                     break;
+                case UserModel.ENABLED:
+                    restrictions.add(qb.equal(from.get("enabled"), Boolean.parseBoolean(value.toLowerCase())));
+                    break;
                 case UserModel.EMAIL_VERIFIED:
                     restrictions.add(qb.equal(from.get("emailVerified"), Boolean.parseBoolean(value.toLowerCase())));
                     break;
@@ -729,6 +734,9 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                 case UserModel.EMAIL:
                     restrictions.add(qb.like(from.get("user").get("email"), "%" + value + "%"));
                     break;
+                case UserModel.ENABLED:
+                     restrictions.add(qb.equal(from.get("enabled"), Boolean.parseBoolean(value.toLowerCase())));
+                     break;
                 case UserModel.EMAIL_VERIFIED:
                     restrictions.add(qb.equal(from.get("emailVerified"), Boolean.parseBoolean(value.toLowerCase())));
                     break;
@@ -740,21 +748,6 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         Long result = query.getSingleResult();
 
         return result.intValue();
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return getUsersStream(realm, firstResult, maxResults, false);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
-        String queryName = includeServiceAccounts ? "getAllUsersByRealm" : "getAllUsersByRealmExcludeServiceAccount" ;
-
-        TypedQuery<UserEntity> query = em.createNamedQuery(queryName, UserEntity.class);
-        query.setParameter("realmId", realm.getId());
-
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
     }
 
     @Override
@@ -775,9 +768,10 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        Map<String, String> attributes = new HashMap<>();
+        Map<String, String> attributes = new HashMap<>(2);
         attributes.put(UserModel.SEARCH, search);
-        session.setAttribute(UserModel.INCLUDE_SERVICE_ACCOUNT, false);
+        attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString());
+
         return searchForUserStream(realm, attributes, firstResult, maxResults);
     }
 
@@ -791,10 +785,6 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         List<Predicate> attributePredicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
-
-        if (!session.getAttributeOrDefault(UserModel.INCLUDE_SERVICE_ACCOUNT, true)) {
-            predicates.add(root.get("serviceAccountClientLink").isNull());
-        }
 
         Join<Object, Object> federatedIdentitiesJoin = null;
 
@@ -857,6 +847,13 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                             builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
 
                     break;
+                case UserModel.INCLUDE_SERVICE_ACCOUNT: {
+                    if (!attributes.containsKey(UserModel.INCLUDE_SERVICE_ACCOUNT)
+                            || !Boolean.parseBoolean(attributes.get(UserModel.INCLUDE_SERVICE_ACCOUNT))) {
+                        predicates.add(root.get("serviceAccountClientLink").isNull());
+                    }
+                    break;
+                }
             }
         }
 
@@ -902,7 +899,8 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
         UserProvider users = session.users();
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                .map(userEntity -> users.getUserById(realm, userEntity.getId()));
+                .map(userEntity -> users.getUserById(realm, userEntity.getId()))
+                .filter(Objects::nonNull);
     }
 
     @Override

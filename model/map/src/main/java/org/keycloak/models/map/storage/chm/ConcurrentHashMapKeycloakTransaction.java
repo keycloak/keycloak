@@ -249,7 +249,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
 
     @Override
     public boolean delete(String key) {
-        addTask(key, new DeleteOperation(key));
+        tasks.merge(key, new DeleteOperation(key), this::merge);
         return true;
     }
 

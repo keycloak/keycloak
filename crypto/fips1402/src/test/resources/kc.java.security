@@ -1,0 +1,29 @@
+# Configuration file just with the security properties, which are supposed to be overriden. The properties, which are not mentioned in this file,
+# are inherited from the default java.security file bundled within the distribution.
+#
+# NOTE: Each property is specified 2 times. This is so the same file can be used on both FIPS based RHEL host (which uses "fips" prefixed properties by default)
+# and the non-fips based (EG. when running the tests on GH actions)
+
+#
+# List of providers and their preference orders (see above). Used on the host without FIPS (EG. when running the tests on GH actions)
+# NOTE: List is empty for now, so we test just with BCFIPS provider, which is registered programatically
+#
+security.provider.1=
+
+#
+# Security providers used when global crypto-policies are set to FIPS.
+# NOTE: List is empty for now, so we test just with BCFIPS provider, which is registered programatically
+#
+fips.provider.1=
+#fips.provider.1=SunPKCS11 ${java.home}/conf/security/nss.fips.cfg
+#fips.provider.2=SunEC
+#fips.provider.3=com.sun.net.ssl.internal.ssl.Provider SunPKCS11-NSS-FIPS
+
+# Commented this provider for now as it uses lots of non-FIPS services. See https://access.redhat.com/documentation/en-us/openjdk/11/html-single/configuring_openjdk_11_on_rhel_with_fips/index#ref_openjdk-default-fips-configuration_openjdk
+# fips.provider.2=SUN
+
+#
+# Default keystore type.
+#
+keystore.type=PKCS11
+fips.keystore.type=PKCS11

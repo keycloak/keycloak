@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,8 +23,10 @@ import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
 
 import javax.persistence.EntityManager;
@@ -58,7 +59,7 @@ public class JPAResourceServerStore implements ResourceServerStore {
 
         this.entityManager.persist(entity);
 
-        return new ResourceServerAdapter(entity, entityManager, provider.getStoreFactory());
+        return new ResourceServerAdapter(client.getRealm(), entity, entityManager, provider.getStoreFactory());
     }
 
     @Override
@@ -122,14 +123,14 @@ public class JPAResourceServerStore implements ResourceServerStore {
     }
 
     @Override
-    public ResourceServer findById(String id) {
+    public ResourceServer findById(RealmModel realm, String id) {
         ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
         if (entity == null) return null;
-        return new ResourceServerAdapter(entity, entityManager, provider.getStoreFactory());
+        return new ResourceServerAdapter(provider.getRealm(), entity, entityManager, provider.getStoreFactory());
     }
 
     @Override
     public ResourceServer findByClient(ClientModel client) {
-        return findById(client.getId());
+        return findById(JPAAuthorizationStoreFactory.NULL_REALM, client.getId());
     }
 }

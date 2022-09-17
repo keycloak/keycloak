@@ -14,7 +14,6 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
@@ -26,13 +25,11 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.forms.BrowserFlowTest.revertFlows;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@AuthServerContainerExclude(REMOTE)
 public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
 
     @Page

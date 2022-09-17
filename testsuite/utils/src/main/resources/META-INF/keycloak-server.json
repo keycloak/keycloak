@@ -11,7 +11,18 @@
     },
 
     "eventsStore": {
-        "provider": "${keycloak.eventsStore.provider:}"
+        "provider": "${keycloak.eventsStore.provider:jpa}",
+        "jpa": {
+            "max-detail-length": "${keycloak.eventsStore.maxDetailLength:1000}"
+        },
+        "map": {
+            "storage-admin-events": {
+                "provider": "${keycloak.adminEventsStore.map.storage.provider:concurrenthashmap}"
+            },
+            "storage-auth-events": {
+                "provider": "${keycloak.authEventsStore.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "deploymentState": {
@@ -85,10 +96,7 @@
     "userSessions": {
         "provider": "${keycloak.userSession.provider:infinispan}",
         "map": {
-            "storage-user-sessions": {
-                "provider": "${keycloak.userSession.map.storage.provider:concurrenthashmap}"
-            },
-            "storage-client-sessions": {
+            "storage": {
                 "provider": "${keycloak.userSession.map.storage.provider:concurrenthashmap}"
             }
         }
@@ -103,14 +111,42 @@
         }
     },
 
+    "actionToken": {
+        "provider": "${keycloak.actionToken.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.actionToken.map.storage.provider:concurrenthashmap}"
+            }
+        }
+    },
+
+    "singleUseObject": {
+        "provider": "${keycloak.singleUseObject.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.singleUseObject.map.storage.provider:concurrenthashmap}"
+            }
+        }
+    },
+
+    "publicKeyStorage": {
+        "provider": "${keycloak.publicKeyStorage.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.publicKeyStorage.map.storage.provider:concurrenthashmap}"
+            }
+        }
+    },
+
     "mapStorage": {
         "provider": "${keycloak.mapStorage.provider:}",
         "concurrenthashmap": {
             "dir": "${project.build.directory:target/map}",
+            "keyType.single-use-objects": "string",
             "keyType.realms": "string",
             "keyType.authz-resource-servers": "string"
         },
-        "jpa-map-storage": {
+        "jpa": {
             "url": "${keycloak.map.storage.connectionsJpa.url:}",
             "user": "${keycloak.map.storage.connectionsJpa.user:}",
             "password": "${keycloak.map.storage.connectionsJpa.password:}",
@@ -136,7 +172,8 @@
             "role.object.classes": "groupOfNames",
             "role.attributes": "ou",
             "mode": "LDAP_ONLY",
-            "use.realm.roles.mapping": "true"
+            "use.realm.roles.mapping": "true",
+            "connectionPooling": "true"
         }
     },
 
@@ -189,9 +226,29 @@
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:default}",
         "default" : {
-            "enabled": "${keycloak.realm.cache.provider.enabled:true}"
+            "enabled": "${keycloak.realmCache.enabled:true}"
+        }
+    },
+
+    "userCache": {
+        "default" : {
+            "enabled": "${keycloak.userCache.enabled:true}"
+        },
+        "mem": {
+            "maxSize": 20000
+        }
+    },
+
+    "publicKeyCache": {
+        "default" : {
+            "enabled": "${keycloak.publicKeyCache.enabled:true}"
+        }
+    },
+
+    "authorizationCache": {
+        "default": {
+            "enabled": "${keycloak.authorizationCache.enabled:true}"
         }
     },
 
@@ -216,10 +273,15 @@
         "default": {
             "embedded": "${keycloak.connectionsHotRod.embedded:true}",
             "embeddedPort": "${keycloak.connectionsHotRod.embeddedPort:11444}",
-            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}"
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}",
+            "port": "${keycloak.connectionsHotRod.port:11444}",
+            "host": "${keycloak.connectionsHotRod.host:localhost}",
+            "configureRemoteCaches": "${keycloak.connectionsHotRod.configureRemoteCaches:false}",
+            "username": "${keycloak.connectionsHotRod.username:admin}",
+            "password": "${keycloak.connectionsHotRod.password:admin}",
+            "reindexCaches": "${keycloak.connectionsHotRod.reindexCaches:}"
         }
     },
-
     "scripting": {
     },
 
@@ -228,6 +290,9 @@
     },
 
     "login-protocol": {
+        "openid-connect": {
+            "legacy-logout-redirect-uri": "${keycloak.oidc.legacyLogoutRedirectUri:false}"
+        },
         "saml": {
             "knownProtocols": [
                 "http=${auth.server.http.port}",

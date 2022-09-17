@@ -23,13 +23,13 @@ When you use a pair of matching certificate and private key files in PEM format,
 Keycloak creates a keystore out of these files in memory and uses this keystore afterwards.
 
 === Providing a Java Keystore
-When no keystore file is explicitly configured, but `http.enabled` is set to false, Keycloak looks for a `conf/server.keystore` file.
+When no keystore file is explicitly configured, but `http-enabled` is set to false, Keycloak looks for a `conf/server.keystore` file.
 
 As an alternative, you can use an existing keystore by running the following command:
 <@kc.start parameters="--https-key-store-file=/path/to/existing-keystore-file"/>
 
 ==== Setting the Keystore password
-You can set a secure password for your keystore using the `https.key-store.password` option:
+You can set a secure password for your keystore using the `https-key-store-password` option:
 <@kc.start parameters="--https-key-store-password=<value>"/>
 
 If no password is set, the default password `password` is used.
@@ -48,15 +48,23 @@ Keycloak listens for HTTPS traffic on port `8443`. To change this port, use the 
 <@kc.start parameters="--https-port=<port>"/>
 
 == Using a truststore
-Keycloak uses a truststore to store certificates to verify clients that are communicating with Keycloak.
-Examples of client requests are for using mutualTLS, certificate-bound tokens or X.509 authentication.
-This truststore is used for outgoing https requests as well as mTLS requests.
+
+In order to properly validate client certificates and enable certain authentication methods like two-way TLS or mTLS, you can set
+a trust store with all the certificates (and certificate chain) the server should be trusting. There are number of capabilities that rely
+on this trust store to properly authenticate clients using certificates such as:
+
+* Mutual-TLS Client Authentication
+* End-User X.509 Browser Authentication
 
 You can configure the location of this truststore by running the following command:
+
 <@kc.start parameters="--https-trust-store-file=/path/to/file"/>
 
+Note that this trust store is targeted for authenticating clients where Keycloak is acting as a server. For configuring a trust store
+where Keycloak is acting as a client to external services through TLS, please consider looking at the <@links.server id="keycloak-truststore"/> guide.
+
 === Setting the truststore password
-You can set a secure password for your truststore using the `https.trust-store.password` option:
+You can set a secure password for your truststore using the `https-trust-store-password` option:
 <@kc.start parameters="--https-trust-store-password=<value>"/>
 If no password is set, the default password `password` is used.
 

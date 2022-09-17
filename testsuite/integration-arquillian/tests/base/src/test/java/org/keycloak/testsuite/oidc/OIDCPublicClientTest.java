@@ -18,13 +18,8 @@
 
 package org.keycloak.testsuite.oidc;
 
-import java.security.Security;
-import java.util.List;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -39,6 +34,9 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -55,11 +53,6 @@ public class OIDCPublicClientTest extends AbstractKeycloakTest {
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
-    }
-
-    @BeforeClass
-    public static void addBouncyCastleProvider() {
-        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
     }
 
     @Before

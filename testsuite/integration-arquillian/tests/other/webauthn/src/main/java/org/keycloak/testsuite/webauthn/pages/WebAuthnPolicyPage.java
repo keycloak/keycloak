@@ -37,6 +37,7 @@ import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.utils.StringUtil.isNotBlank;
 
 /**
  * Helper class for WebAuthnPolicy Page
@@ -127,11 +128,10 @@ public class WebAuthnPolicyPage extends Authentication {
     }
 
     public AttestationConveyancePreference getAttestationConveyancePreference() {
-        return getRequirementOrNull(() ->
-                AttestationConveyancePreference.create(checkElement(() -> attestationConveyancePreference
-                        .getFirstSelectedOption()
-                        .getText()))
-        );
+        return getRequirementOrNull(() -> {
+            final String value = checkElement(() -> attestationConveyancePreference.getFirstSelectedOption().getText());
+            return isNotBlank(value) ? AttestationConveyancePreference.create(value) : null;
+        });
     }
 
     public void setAttestationConveyancePreference(AttestationConveyancePreference attestation) {
@@ -146,11 +146,10 @@ public class WebAuthnPolicyPage extends Authentication {
     }
 
     public AuthenticatorAttachment getAuthenticatorAttachment() {
-        return getRequirementOrNull(() ->
-                AuthenticatorAttachment.create(checkElement(() -> authenticatorAttachment
-                        .getFirstSelectedOption()
-                        .getText()))
-        );
+        return getRequirementOrNull(() -> {
+            final String value = checkElement(() -> authenticatorAttachment.getFirstSelectedOption().getText());
+            return isNotBlank(value) ? AuthenticatorAttachment.create(value) : null;
+        });
     }
 
     public void setAuthenticatorAttachment(AuthenticatorAttachment attachment) {
@@ -181,11 +180,10 @@ public class WebAuthnPolicyPage extends Authentication {
     }
 
     public UserVerificationRequirement getUserVerification() {
-        return getRequirementOrNull(() ->
-                UserVerificationRequirement.create(checkElement(() -> userVerification
-                        .getFirstSelectedOption()
-                        .getText()))
-        );
+        return getRequirementOrNull(() -> {
+            final String value = checkElement(() -> userVerification.getFirstSelectedOption().getText());
+            return isNotBlank(value) ? UserVerificationRequirement.create(value) : null;
+        });
     }
 
     public void setUserVerification(UserVerificationRequirement verification) {

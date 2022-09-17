@@ -361,6 +361,7 @@ public class UsersResource {
      * @param first    first name filter
      * @param email    email filter
      * @param username username filter
+     * @param enabled Boolean representing if user is enabled or not
      * @return the number of users that match the given criteria
      */
     @Path("count")
@@ -372,7 +373,8 @@ public class UsersResource {
                                  @QueryParam("firstName") String first,
                                  @QueryParam("email") String email,
                                  @QueryParam("emailVerified") Boolean emailVerified,
-                                 @QueryParam("username") String username) {
+                                 @QueryParam("username") String username,
+                                 @QueryParam("enabled") Boolean enabled) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
@@ -385,7 +387,7 @@ public class UsersResource {
             } else {
                 return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupsWithViewPermission());
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null) {
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -401,6 +403,9 @@ public class UsersResource {
             }
             if (emailVerified != null) {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+            }
+            if (enabled != null) {
+                parameters.put(UserModel.ENABLED, enabled.toString());
             }
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
@@ -428,7 +433,7 @@ public class UsersResource {
     }
 
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
-        session.setAttribute(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts);
+        attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
         if (!auth.users().canView()) {
             Set<String> groupModels = auth.groups().getGroupsWithViewPermission();

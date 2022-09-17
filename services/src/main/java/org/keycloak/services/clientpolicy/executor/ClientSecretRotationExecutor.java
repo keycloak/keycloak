@@ -1,5 +1,6 @@
 package org.keycloak.services.clientpolicy.executor;
 
+import java.text.SimpleDateFormat;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -15,6 +16,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
 
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_EXPIRATION_PERIOD;
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_REMAINING_ROTATION_PERIOD;
@@ -47,23 +49,23 @@ public class ClientSecretRotationExecutor implements
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
-        if (!session.getContext().getClient().isPublicClient() && !session.getContext().getClient()
-                .isBearerOnly()) {
-            session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED,Boolean.TRUE);
-            switch (context.getEvent()) {
-                case REGISTERED:
-                case UPDATED:
+        switch (context.getEvent()) {
+            case REGISTERED:
+            case UPDATED:
+                if(isClientWithSecret(session.getContext().getClient())) {
+                    session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED, Boolean.TRUE);
                     executeOnClientCreateOrUpdate((ClientCRUDContext) context);
-                    break;
-
-                case AUTHORIZATION_REQUEST:
-                case TOKEN_REQUEST:
+                }
+                break;
+            case AUTHORIZATION_REQUEST:
+            case TOKEN_REQUEST:
+                if(isClientWithSecret(session.getContext().getClient())) {
+                    session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED, Boolean.TRUE);
                     executeOnAuthRequest();
-                    return;
-
-                default:
-                    return;
-            }
+                }
+                break;
+            default:
+                return;
         }
     }
 
@@ -76,6 +78,11 @@ public class ClientSecretRotationExecutor implements
             configuration = config.parseWithDefaultValues();
         }
 
+    }
+
+    private boolean isClientWithSecret(ClientModel client) {
+        if (client == null) return false;
+        return (!client.isPublicClient() && !client.isBearerOnly());
     }
 
     private void executeOnAuthRequest() {
@@ -99,13 +106,26 @@ public class ClientSecretRotationExecutor implements
                 || !clientConfigWrapper.hasClientSecretExpirationTime()) {
             rotateSecret(adminContext, clientConfigWrapper);
         } else {
-            //TODO validation for client dynamic registration
 
-            int secondsRemaining = clientConfigWrapper.getClientSecretExpirationTime()
-                    - configuration.remainExpirationPeriod;
-            if (secondsRemaining <= configuration.remainExpirationPeriod) {
-//        rotateSecret(adminContext);
+            if (adminContext instanceof DynamicClientUpdatedContext) {
+                int startRemainingWindow = clientConfigWrapper.getClientSecretExpirationTime()
+                        - configuration.remainExpirationPeriod;
+
+                debugDynamicInfo(clientConfigWrapper, startRemainingWindow);
+
+                if (Time.currentTime() >= startRemainingWindow) {
+                    logger.debugv("Executing rotation for the dynamic client {0} due to remaining expiration time that starts at {1}", adminContext.getTargetClient().getClientId(), Time.toDate(startRemainingWindow));
+                    rotateSecret(adminContext, clientConfigWrapper);
+                }
             }
+        }
+    }
+
+    private void debugDynamicInfo(OIDCClientSecretConfigWrapper clientConfigWrapper, int startRemainingWindow) {
+        if (logger.isDebugEnabled()) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            logger.debugv("client expiration time: {0}, remaining time: {1}, current time: {2}, Time offset: {3}", clientConfigWrapper.getClientSecretExpirationTime(), startRemainingWindow, Time.currentTime(), Time.getOffset());
+            logger.debugv("client expiration date: {0}, window remaining date: {1}, current date: {2}", sdf.format(Time.toDate(clientConfigWrapper.getClientSecretExpirationTime())), sdf.format(Time.toDate(startRemainingWindow)), sdf.format(Time.toDate(Time.currentTime())));
         }
     }
 
@@ -120,10 +140,10 @@ public class ClientSecretRotationExecutor implements
                 updateClientConfigProperties(clientConfigWrapper);
             }
         } else if (!clientConfigWrapper.hasClientSecretExpirationTime()) {
-            logger.debugv("client {0} has no secret rotation expiration time configured",clientConfigWrapper.getId());
+            logger.debugv("client {0} has no secret rotation expiration time configured", clientConfigWrapper.getId());
             updatedSecretExpiration(clientConfigWrapper);
         } else {
-            logger.debugv("Execute typical secret rotation for client {0}",clientConfigWrapper.getId());
+            logger.debugv("Execute typical secret rotation for client {0}", clientConfigWrapper.getId());
             updatedSecretExpiration(clientConfigWrapper);
             updateRotateSecret(clientConfigWrapper, clientConfigWrapper.getSecret());
             KeycloakModelUtils.generateSecret(crudContext.getTargetClient());
@@ -135,7 +155,7 @@ public class ClientSecretRotationExecutor implements
                     crudContext.getProposedClientRepresentation());
         }
 
-        logger.debugv("Client configured: {0}",clientConfigWrapper.toJson());
+        logger.debugv("Client configured: {0}", clientConfigWrapper.toJson());
     }
 
     private void updatedSecretExpiration(OIDCClientSecretConfigWrapper clientConfigWrapper) {

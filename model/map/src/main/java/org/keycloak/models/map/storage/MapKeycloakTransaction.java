@@ -43,6 +43,9 @@ public interface MapKeycloakTransaction<V extends AbstractEntity, M> extends Key
      * in current transaction. Updates to the returned instance would be visible in the current transaction
      * and will propagate into the underlying store upon commit.
      *
+     * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
+     * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
+     *
      * @param key identifier of a value
      * @return a value associated with the given {@code key}
      */
@@ -56,6 +59,9 @@ public interface MapKeycloakTransaction<V extends AbstractEntity, M> extends Key
      * <p>
      * Updates to the returned instances of {@code V} would be visible in the current transaction
      * and will propagate into the underlying store upon commit.
+     *
+     * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
+     * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
      *
      * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return values that fulfill the given criteria, that are updated based on changes in the current transaction

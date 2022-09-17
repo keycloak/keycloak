@@ -17,6 +17,8 @@
 
 package org.keycloak.events;
 
+import org.keycloak.storage.SearchableModelField;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +26,16 @@ import java.util.Map;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Event {
+
+    public static class SearchableFields {
+        public static final SearchableModelField<Event> ID             = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<Event> REALM_ID       = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<Event> CLIENT_ID      = new SearchableModelField<>("clientId", String.class);
+        public static final SearchableModelField<Event> USER_ID        = new SearchableModelField<>("userId", String.class);
+        public static final SearchableModelField<Event> TIMESTAMP      = new SearchableModelField<>("timestamp", Long.class);
+        public static final SearchableModelField<Event> IP_ADDRESS     = new SearchableModelField<>("ipAddress", String.class);
+        public static final SearchableModelField<Event> EVENT_TYPE     = new SearchableModelField<>("eventType", EventType.class);
+    }
 
     private String id;
 

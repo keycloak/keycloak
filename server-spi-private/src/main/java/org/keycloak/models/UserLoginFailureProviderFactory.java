@@ -21,6 +21,6 @@ import org.keycloak.provider.ProviderFactory;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public interface UserLoginFailureProviderFactory extends ProviderFactory<UserLoginFailureProvider>  {
+public interface UserLoginFailureProviderFactory<T extends UserLoginFailureProvider> extends ProviderFactory<T>  {
 
 }

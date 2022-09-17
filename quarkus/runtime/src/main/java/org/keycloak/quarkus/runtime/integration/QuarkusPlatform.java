@@ -19,13 +19,20 @@ package org.keycloak.quarkus.runtime.integration;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.platform.Platform;
 import org.keycloak.platform.PlatformProvider;
 import org.keycloak.quarkus.runtime.InitializationException;
@@ -158,5 +165,11 @@ public class QuarkusPlatform implements PlatformProvider {
 
     private void reset() {
         deferredExceptions.clear();
+    }
+
+    @Override
+    public ClassLoader getScriptEngineClassLoader(Config.Scope scriptProviderConfig) {
+        // It is fine to return null assuming that nashorn and it's dependencies are included on the classpath (usually "providers" directory)
+        return null;
     }
 }

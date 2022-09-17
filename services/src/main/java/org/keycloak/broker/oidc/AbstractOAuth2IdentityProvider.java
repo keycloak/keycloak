@@ -372,8 +372,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null. 
-     * 
+     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null.
+     *
      * @param jsonNode to get property from
      * @param name of property to get
      * @return string value of the property or null.
@@ -545,8 +545,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
 
                 RealmModel realm = context.getRealm();
-
-                IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam);
+                IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam, realm);
                 ClientModel client = realm.getClientByClientId(idpBrokerState.getClientId());
 
                 AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(
@@ -570,12 +569,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
 
                 tokenRequest.param(OAuth2Constants.CODE_VERIFIER, brokerCodeChallenge);
-                tokenRequest.param(OAuth2Constants.CODE_CHALLENGE_METHOD, getConfig().getPkceMethod());
             }
 
             return authenticateTokenRequest(tokenRequest);
         }
-        
+
     }
 
     protected String getProfileEndpointForValidation(EventBuilder event) {

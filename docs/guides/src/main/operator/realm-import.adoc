@@ -1,0 +1,93 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Keycloak Realm Import"
+priority=30
+summary="How to perform an automated Keycloak Realm Import using the operator">
+
+== Keycloak Realm Import
+
+The Keycloak Operator ships with the ability to automatically perform a realm import for the Keycloak Deployment.
+
+.Note:
+[NOTE]
+If a Realm with the same name already exists in Keycloak it will not be overwritten.
+
+.Note:
+[NOTE]
+The Realm Import CR only supports creation of new realms and doesn't update or delete those. +
+Changes to the realm performed directly on Keycloak are not synced back in the CR.
+
+=== Writing Realm Import CR
+
+A Realm Import Custom Resource (CR) looks like follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: my-realm-kc
+spec:
+  keycloakCRName: <name of the keycloak CR>
+  realm:
+    ...
+----
+
+This CR should be created in the same namespace as the Keycloak Deployment CR, defined in the field `keycloakCRName`.
+The `realm` field accepts a full https://www.keycloak.org/docs-api/{majorMinorVersion}/rest-api/index.html#_realmrepresentation[RealmRepresentation].
+
+The recommended way to obtain a `RealmRepresentation` is leveraging the export functionality <@links.server id="importExport"/>
+
+* export the Realm to a single file
+* convert the json to yaml
+* copy-paste the obtained yaml as body for the `realm` key (make sure the indentation is correct)
+
+=== Applying the Realm Import CR
+
+Use `kubectl` to create the CR in the correct cluster namespace:
+
+[source,bash]
+----
+cat <<EOF >> example-realm-import.yaml
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: my-realm-kc
+spec:
+  keycloakCRName: <name of the keycloak CR>
+  realm:
+    id: example-realm
+    realm: example-realm
+    displayName: ExampleRealm
+    enabled: true
+EOF
+kubectl apply -f example-realm-import.yaml
+----
+
+You can check the status of the running import by using the following command:
+
+[source,bash]
+----
+kubectl get keycloakrealmimports/my-realm-kc -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'
+----
+
+When the import has successfully completed, the output will look like the example below:
+
+[source,bash]
+----
+CONDITION: Done
+  STATUS: true
+  MESSAGE: 
+CONDITION: Started
+  STATUS: false
+  MESSAGE: 
+CONDITION: HasErrors
+  STATUS: false
+  MESSAGE:
+----
+
+</@tmpl.guide>

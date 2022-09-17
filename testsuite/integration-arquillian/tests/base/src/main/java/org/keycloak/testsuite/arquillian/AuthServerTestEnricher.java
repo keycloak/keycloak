@@ -120,6 +120,7 @@ public class AuthServerTestEnricher {
     private Event<StopContainer> stopContainerEvent;
 
     private JavaArchive testsuiteProvidersArchive;
+    private JavaArchive testsuiteProvidersDeploymentArchive;
     private String currentContainerName;
 
     public static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
@@ -140,10 +141,6 @@ public class AuthServerTestEnricher {
     public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
     public static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
-
-
-    public static final String HOT_ROD_STORE_ENABLED_PROPERTY = "hotrod.store.enabled";
-    public static final boolean HOT_ROD_STORE_ENABLED = Boolean.parseBoolean(System.getProperty(HOT_ROD_STORE_ENABLED_PROPERTY, "false"));
 
     public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
 
@@ -169,10 +166,6 @@ public class AuthServerTestEnricher {
     @Inject
     @ClassScoped
     private InstanceProducer<OAuthClient> oAuthClientProducer;
-
-    public static boolean isAuthServerRemote() {
-        return AUTH_SERVER_CONTAINER.equals("auth-server-remote");
-    }
 
     public static boolean isAuthServerQuarkus() {
         return AUTH_SERVER_CONTAINER.equals("auth-server-quarkus");
@@ -337,26 +330,15 @@ public class AuthServerTestEnricher {
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server
-                if (container.getQualifier().equals("auth-server-jboss-migration")) {
+                if (container.getQualifier().equals("auth-server-migration")) {
                     updateWithAuthServerInfo(container);
                     suiteContext.setMigratedAuthServerInfo(container);
                 }
             }
             // validate setup
             if (suiteContext.getMigratedAuthServerInfo() == null) {
-                throw new RuntimeException(String.format("Migration test was enabled but no auth server from which to migrate was activated. "
-                        + "A container matching auth-server-jboss-migration needs to be enabled in arquillian.xml."));
-            }
-        }
-
-        if (HOT_ROD_STORE_ENABLED) {
-            HotRodStoreTestEnricher.initializeSuiteContext(suiteContext);
-
-            for (ContainerInfo container : suiteContext.getContainers()) {
-                // migrated auth server
-                if (container.getQualifier().equals("hot-rod-store")) {
-                    suiteContext.setHotRodStoreInfo(container);
-                }
+                throw new RuntimeException("Migration test was enabled but no auth server from which to migrate was activated. "
+                        + "A container matching 'auth-server-migration' needs to be enabled in arquillian.xml.");
             }
         }
 
@@ -414,23 +396,12 @@ public class AuthServerTestEnricher {
         }
     }
 
-    public void deployProviders(@Observes(precedence = -1) AfterStart event) throws DeploymentException {
-        if (isAuthServerRemote() && currentContainerName.contains("auth-server")) {
-            this.testsuiteProvidersArchive = ShrinkWrap.create(ZipImporter.class, "testsuiteProviders.jar")
-                    .importFrom(Maven.configureResolverViaPlugin()
-                        .resolve("org.keycloak.testsuite:integration-arquillian-testsuite-providers")
-                        .withoutTransitivity()
-                        .asSingleFile()
-                    ).as(JavaArchive.class)
-                    .addAsManifestResource("jboss-deployment-structure.xml");
-                    
-            event.getDeployableContainer().deploy(testsuiteProvidersArchive);
-        }
-    }
-
     public void unDeployProviders(@Observes(precedence = 20) BeforeStop event) throws DeploymentException {
         if (testsuiteProvidersArchive != null) {
             event.getDeployableContainer().undeploy(testsuiteProvidersArchive);
+        }
+        if (testsuiteProvidersDeploymentArchive != null) {
+            event.getDeployableContainer().undeploy(testsuiteProvidersDeploymentArchive);
         }
     }
 
@@ -445,6 +416,7 @@ public class AuthServerTestEnricher {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("## STOP old container: " + suiteContext.getMigratedAuthServerInfo().getQualifier());
             stopContainerEvent.fire(new StopContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
+            suiteContext.setMigratedAuthServerInfo(null);
         }
     }
 
@@ -555,43 +527,33 @@ public class AuthServerTestEnricher {
     }
 
     public void restartAuthServer() throws Exception {
-        if (isAuthServerRemote()) {
-            try (OnlineManagementClient client = getManagementClient()) {
-                int timeoutInSec = Integer.getInteger(System.getProperty("auth.server.jboss.startup.timeout"), 300);
-                Administration administration = new Administration(client, timeoutInSec);
-                administration.reload();
-            }
-        } else {
-            stopContainerEvent.fire(new StopContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
-            startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
-        }
+        stopContainerEvent.fire(new StopContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+        startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
     }
 
     public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) throws Exception {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
 
-        if (!isAuthServerRemote()) {
-            boolean wasUpdated = false;
+        boolean wasUpdated = false;
 
-            if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
-                SetDefaultProvider defaultProvider = event.getTestClass().getAnnotation(SetDefaultProvider.class);
+        if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
+            SetDefaultProvider defaultProvider = event.getTestClass().getAnnotation(SetDefaultProvider.class);
 
-                if (defaultProvider.beforeEnableFeature()) {
-                    SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContext, defaultProvider);
-                    wasUpdated = true;
-                }
-            }
-
-            if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
-                VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+            if (defaultProvider.beforeEnableFeature()) {
+                SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContext, defaultProvider);
                 wasUpdated = true;
             }
+        }
 
-            if (wasUpdated) {
-                restartAuthServer();
-                testContext.reconnectAdminClient();
-            }
+        if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+            VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+            wasUpdated = true;
+        }
+
+        if (wasUpdated) {
+            restartAuthServer();
+            testContext.reconnectAdminClient();
         }
     }
 
@@ -901,24 +863,21 @@ public class AuthServerTestEnricher {
 
         removeTestRealms(testContext, adminClient);
 
-        if (!isAuthServerRemote()) {
-            
-            boolean wasUpdated = false;
+        boolean wasUpdated = false;
 
-            if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
-                SpiProvidersSwitchingUtils.resetProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
-                wasUpdated = true;
-            }
+        if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
+            SpiProvidersSwitchingUtils.resetProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
+            wasUpdated = true;
+        }
 
-            if (event.getTestClass().isAnnotationPresent(EnableVault.class) && !isAuthServerQuarkus()) {
-                VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
-                wasUpdated = true;
-            }
+        if (event.getTestClass().isAnnotationPresent(EnableVault.class) && !isAuthServerQuarkus()) {
+            VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+            wasUpdated = true;
+        }
 
-            if (wasUpdated) {
-                restartAuthServer();
-                testContext.reconnectAdminClient();
-            }
+        if (wasUpdated) {
+            restartAuthServer();
+            testContext.reconnectAdminClient();
         }
 
         if (adminClient != null) {

@@ -16,108 +16,66 @@
  */
 package org.keycloak.models.map.loginFailure;
 
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
-import java.util.Objects;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureEntity extends UpdatableEntity.Impl implements AbstractEntity {
-    private String id;
-    private String realmId;
-    private String userId;
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity.AbstractUserLoginFailureEntity"
+)
+@DeepCloner.Root
+public interface MapUserLoginFailureEntity extends AbstractEntity, UpdatableEntity {
 
-    private int failedLoginNotBefore;
-    private int numFailures;
-    private long lastFailure;
-    private String lastIPFailure;
+    public abstract class AbstractUserLoginFailureEntity extends UpdatableEntity.Impl implements MapUserLoginFailureEntity {
 
-    public MapUserLoginFailureEntity() {}
+        private String id;
 
-    public MapUserLoginFailureEntity(String id, String realmId, String userId) {
-        this.id = id;
-        this.realmId = realmId;
-        this.userId = userId;
+        @Override
+        public String getId() {
+            return this.id;
+        }
+
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
+
+        @Override
+        public void clearFailures() {
+            this.updated |= getFailedLoginNotBefore() != null || getNumFailures() != null || getLastFailure() != null || getLastIPFailure() != null;
+            setFailedLoginNotBefore(null);
+            setNumFailures(null);
+            setLastFailure(null);
+            setLastIPFailure(null);
+        }
     }
 
-    @Override
-    public String getId() {
-        return this.id;
-    }
+    String getRealmId();
+    void setRealmId(String realmId);
 
-    @Override
-    public void setId(String id) {
-        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
-        this.id = id;
-        this.updated |= id != null;
-    }
+    String getUserId();
+    void setUserId(String userId);
 
-    public String getRealmId() {
-        return realmId;
-    }
+    Long getFailedLoginNotBefore();
+    void setFailedLoginNotBefore(Long failedLoginNotBefore);
 
-    public void setRealmId(String realmId) {
-        this.updated |= !Objects.equals(this.realmId, realmId);
-        this.realmId = realmId;
-    }
+    Integer getNumFailures();
+    void setNumFailures(Integer numFailures);
 
-    public String getUserId() {
-        return userId;
-    }
+    Long getLastFailure();
+    void setLastFailure(Long lastFailure);
 
-    public void setUserId(String userId) {
-        this.updated |= !Objects.equals(this.userId, userId);
-        this.userId = userId;
-    }
+    String getLastIPFailure();
+    void setLastIPFailure(String lastIPFailure);
 
-    public int getFailedLoginNotBefore() {
-        return failedLoginNotBefore;
-    }
-
-    public void setFailedLoginNotBefore(int failedLoginNotBefore) {
-        this.updated |= this.failedLoginNotBefore != failedLoginNotBefore;
-        this.failedLoginNotBefore = failedLoginNotBefore;
-    }
-
-    public int getNumFailures() {
-        return numFailures;
-    }
-
-    public void setNumFailures(int numFailures) {
-        this.updated |= this.numFailures != numFailures;
-        this.numFailures = numFailures;
-    }
-
-    public long getLastFailure() {
-        return lastFailure;
-    }
-
-    public void setLastFailure(long lastFailure) {
-        this.updated |= this.lastFailure != lastFailure;
-        this.lastFailure = lastFailure;
-    }
-
-    public String getLastIPFailure() {
-        return lastIPFailure;
-    }
-
-    public void setLastIPFailure(String lastIPFailure) {
-        this.updated |= !Objects.equals(this.lastIPFailure, lastIPFailure);
-        this.lastIPFailure = lastIPFailure;
-    }
-
-    public void clearFailures() {
-        this.updated |= this.failedLoginNotBefore != 0 || this.numFailures != 0 ||
-                this.lastFailure != 0l || this.lastIPFailure != null;
-        this.failedLoginNotBefore = this.numFailures = 0;
-        this.lastFailure = 0l;
-        this.lastIPFailure = null;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s@%08x", getId(), hashCode());
-    }
+    @IgnoreForEntityImplementationGenerator
+    void clearFailures();
 }

@@ -73,7 +73,6 @@ public final class Constants {
     public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
 
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
-    public static final String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
     public static final String TAB_ID = "tab_id";

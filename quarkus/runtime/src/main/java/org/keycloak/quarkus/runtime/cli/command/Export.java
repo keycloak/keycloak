@@ -22,10 +22,12 @@ import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(name = "export",
+@Command(name = Export.NAME,
         header = "Export data from realms to a file or directory.",
         description = "%nExport data from realms to a file or directory.")
 public final class Export extends AbstractExportImportCommand implements Runnable {
+
+    public static final String NAME = "export";
 
     @Option(names = "--users",
             arity = "1",
@@ -43,7 +45,7 @@ public final class Export extends AbstractExportImportCommand implements Runnabl
 
     @Option(names = "--realm",
             arity = "1",
-            description = "Set the name of the realm to export",
+            description = "Set the name of the realm to export. If not set, all realms are going to be exported.",
             paramLabel = "<realm>")
     String realm;
 

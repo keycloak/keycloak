@@ -33,7 +33,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
@@ -45,7 +44,6 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -86,7 +84,6 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void create() throws Exception {
         long priority = System.currentTimeMillis();
 
@@ -122,7 +119,6 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void invalidKeystorePassword() throws Exception {
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis());
         rep.getConfig().putSingle("keystore", "invalid");
@@ -132,7 +128,6 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void invalidKeyAlias() throws Exception {
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis());
         rep.getConfig().putSingle("keyAlias", "invalid");
@@ -142,7 +137,6 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void invalidKeyPassword() throws Exception {
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis());
         rep.getConfig().putSingle("keyPassword", "invalid");
@@ -164,7 +158,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, long priority) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId("test");
+        rep.setParentId(adminClient.realm("test").toRepresentation().getId());
         rep.setProviderId(JavaKeystoreKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

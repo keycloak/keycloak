@@ -35,14 +35,14 @@ public class ShowConfigCommandTest {
     @Launch({ ShowConfig.NAME })
     void testShowConfigCommandShowsRuntimeConfig(LaunchResult result) {
         Assertions.assertTrue(result.getOutput()
-                .contains("Runtime Configuration"));
+                .contains("Current Configuration"));
     }
 
     @Test
     @Launch({ ShowConfig.NAME, "all" })
     void testShowConfigCommandWithAllShowsAllProfiles(LaunchResult result) {
         Assertions.assertTrue(result.getOutput()
-                .contains("Runtime Configuration"));
+                .contains("Current Configuration"));
         Assertions.assertTrue(result.getOutput()
                 .contains("Quarkus Configuration"));
     }

@@ -731,7 +731,7 @@ public class ClientResource {
     }
 
     /**
-     * Get the client secret
+     * Get the rotated client secret
      *
      * @return
      */

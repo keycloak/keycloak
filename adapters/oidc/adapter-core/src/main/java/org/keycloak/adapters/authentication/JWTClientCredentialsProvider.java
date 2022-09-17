@@ -24,12 +24,18 @@ import java.util.Map;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureSignerContext;
 
 /**
  * Client authentication based on JWT signed by client private key .
@@ -42,7 +48,7 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
     public static final String PROVIDER_ID = "jwt";
 
     private KeyPair keyPair;
-    private JWK publicKeyJwk;
+    private SignatureSignerContext sigCtx;
 
     private int tokenTimeout;
 
@@ -52,8 +58,35 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
     }
 
     public void setupKeyPair(KeyPair keyPair) {
+        setupKeyPair(keyPair, Algorithm.RS256);
+    }
+
+    public void setupKeyPair(KeyPair keyPair, String algorithm) {
+        // check the algorithm is valid
+        switch (keyPair.getPublic().getAlgorithm()) {
+            case KeyType.RSA:
+                if (!JavaAlgorithm.isRSAJavaAlgorithm(algorithm)) {
+                    throw new RuntimeException("Invalid algorithm for a RSA KeyPair: " + algorithm);
+                }
+                break;
+            case KeyType.EC:
+                if (!JavaAlgorithm.isECJavaAlgorithm(algorithm)) {
+                    throw new RuntimeException("Invalid algorithm for a EC KeyPair: " + algorithm);
+                }
+                break;
+            default:
+                throw new RuntimeException("Invalid KeyPair algorithm: " + keyPair.getPublic().getAlgorithm());
+        }
+        // create the key and signature context
+        KeyWrapper keyWrapper = new KeyWrapper();
+        keyWrapper.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
+        keyWrapper.setAlgorithm(algorithm);
+        keyWrapper.setPrivateKey(keyPair.getPrivate());
+        keyWrapper.setPublicKey(keyPair.getPublic());
+        keyWrapper.setType(keyPair.getPublic().getAlgorithm());
+        keyWrapper.setUse(KeyUse.SIG);
         this.keyPair = keyPair;
-        this.publicKeyJwk = JWKBuilder.create().rs256(keyPair.getPublic());
+        this.sigCtx = new AsymmetricSignatureSignerContext(keyWrapper);
     }
 
     public void setTokenTimeout(int tokenTimeout) {
@@ -99,8 +132,10 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
             clientKeyAlias = deployment.getResourceName();
         }
 
+        String algorithm = (String) cfg.getOrDefault("algorithm", Algorithm.RS256);
+
         KeyPair keyPair = KeystoreUtil.loadKeyPairFromKeystore(clientKeystoreFile, clientKeystorePassword, clientKeyPassword, clientKeyAlias, clientKeystoreFormat);
-        setupKeyPair(keyPair);
+        setupKeyPair(keyPair, algorithm);
 
         this.tokenTimeout = asInt(cfg, "token-timeout", 10);
     }
@@ -132,9 +167,8 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
     public String createSignedRequestToken(String clientId, String realmInfoUrl) {
         JsonWebToken jwt = createRequestToken(clientId, realmInfoUrl);
         return new JWSBuilder()
-                .kid(publicKeyJwk.getKeyId())
                 .jsonContent(jwt)
-                .rsa256(keyPair.getPrivate());
+                .sign(sigCtx);
     }
 
     protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {

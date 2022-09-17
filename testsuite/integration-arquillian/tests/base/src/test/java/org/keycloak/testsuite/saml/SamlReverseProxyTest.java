@@ -16,12 +16,6 @@
  */
 package org.keycloak.testsuite.saml;
 
-import java.net.URI;
-import java.util.HashMap;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -35,10 +29,14 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.ReverseProxy;
 import org.keycloak.testsuite.util.SamlClient;
 import org.w3c.dom.Document;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+import java.util.HashMap;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
@@ -50,7 +48,7 @@ import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
+
 public class SamlReverseProxyTest extends AbstractSamlTest {
 
     @ClassRule

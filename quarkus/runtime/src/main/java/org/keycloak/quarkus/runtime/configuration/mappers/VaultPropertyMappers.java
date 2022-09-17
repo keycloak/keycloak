@@ -1,5 +1,9 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import org.keycloak.config.VaultOptions;
+
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+
 final class VaultPropertyMappers {
 
     private VaultPropertyMappers() {
@@ -7,45 +11,25 @@ final class VaultPropertyMappers {
 
     public static PropertyMapper[] getVaultPropertyMappers() {
         return new PropertyMapper[] {
-                builder()
-                        .from("vault")
-                        .description("Enables a vault provider.")
-                        .expectedValues("file", "hashicorp")
+                fromOption(VaultOptions.VAULT)
                         .paramLabel("provider")
-                        .isBuildTimeProperty(true)
                         .build(),
-                builder()
-                        .from("vault-dir")
+                fromOption(VaultOptions.VAULT_DIR)
                         .to("kc.spi-vault-file-dir")
-                        .description("If set, secrets can be obtained by reading the content of files within the given directory.")
                         .paramLabel("dir")
                         .build(),
-                builder()
-                        .from("vault-")
+                fromOption(VaultOptions.VAULT_UNMAPPED)
                         .to("quarkus.vault.")
-                        .description("Maps any vault option to their corresponding properties in quarkus-vault extension.")
-                        .hidden(true)
-                        .isBuildTimeProperty(true)
                         .build(),
-                builder()
-                        .from("vault-url")
+                fromOption(VaultOptions.VAULT_URL)
                         .to("quarkus.vault.url")
-                        .description("The vault server url.")
                         .paramLabel("paths")
-                        .hidden(true)
-                        .isBuildTimeProperty(true)
                         .build(),
-                builder()
-                        .from("vault-kv-paths")
+                fromOption(VaultOptions.VAULT_KV_PATHS)
                         .to("kc.spi-vault-hashicorp-paths")
-                        .description("A set of one or more key/value paths that should be used when looking up secrets.")
                         .paramLabel("paths")
-                        .hidden(true)
                         .build()
         };
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.VAULT);
-    }
 }

@@ -20,6 +20,8 @@ package org.keycloak.it.junit5.extension;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.*;
 
 import java.util.List;
 
@@ -28,14 +30,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.approvaltests.namer.NamedEnvironment;
+import org.keycloak.it.junit5.extension.approvalTests.KcNamerFactory;
 
 public interface CLIResult extends LaunchResult {
 
-    static Object create(List<String> outputStream, List<String> errStream, int exitCode) {
+    static CLIResult create(List<String> outputStream, List<String> errStream, int exitCode) {
         return new CLIResult() {
             @Override
             public List<String> getOutputStream() {
                 return outputStream;
+            }
+
+            @Override
+            public String getErrorOutput() {
+                return String.join("\n", errStream).replace("\r","");
             }
 
             @Override
@@ -72,7 +81,7 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertHelp() {
-        try {
+        try (NamedEnvironment env = KcNamerFactory.asWindowsOsSpecificTest()) {
             Approvals.verify(getOutput());
         } catch (Exception cause) {
             throw new RuntimeException("Failed to assert help", cause);
@@ -80,7 +89,16 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertMessage(String message) {
-        assertTrue(getOutput().contains(message));
+        assertThat(getOutput(), containsString(message));
+    }
+
+    default void assertNoMessage(String message) {
+        assertThat(getOutput(), not(containsString(message)));
+    }
+
+    default void assertMessageWasShownExactlyNumberOfTimes(String message, long numberOfShownTimes) {
+        long msgCount = getOutput().lines().filter(oneMessage -> oneMessage.contains(message)).count();
+        assertThat(msgCount, equalTo(numberOfShownTimes));
     }
 
     default void assertBuild() {
@@ -89,6 +107,10 @@ public interface CLIResult extends LaunchResult {
 
     default void assertNoBuild() {
         assertFalse(getOutput().contains("Server configuration updated and persisted"));
+    }
+
+    default void assertBuildRuntimeMismatchWarning(String quarkusBuildtimePropKey) {
+        assertTrue(getOutput().contains(" - " + quarkusBuildtimePropKey + " is set to 'true' but it is build time fixed to 'false'. Did you change the property " + quarkusBuildtimePropKey + " after building the application?"));
     }
 
     default boolean isClustered() {
@@ -106,7 +128,7 @@ public interface CLIResult extends LaunchResult {
     default void assertJsonLogDefaultsApplied() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        String[] splittedOutput = getOutput().split(System.lineSeparator());
+        String[] splittedOutput = getOutput().split("\n");
 
         int counter = 0;
 
@@ -127,4 +149,5 @@ public interface CLIResult extends LaunchResult {
             fail("No JSON found in output.");
         }
     }
+
 }

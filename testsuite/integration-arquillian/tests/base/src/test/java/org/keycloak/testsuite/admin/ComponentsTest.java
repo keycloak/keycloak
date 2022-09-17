@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.components.TestProvider;
 
@@ -39,15 +40,12 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.*;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ComponentsTest extends AbstractAdminTest {
 
     private ComponentsResource components;
@@ -166,10 +164,11 @@ public class ComponentsTest extends AbstractAdminTest {
     public void testCreateWithGivenId() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
         rep.getConfig().addFirst("required", "foo");
-        rep.setId("fixed-id");
+        String componentId = KeycloakModelUtils.generateId();
+        rep.setId(componentId);
 
         String id = createComponent(rep);
-        assertEquals("fixed-id", id);
+        assertEquals(componentId, id);
     }
 
     @Test

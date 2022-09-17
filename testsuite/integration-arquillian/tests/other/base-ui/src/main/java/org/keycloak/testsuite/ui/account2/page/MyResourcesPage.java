@@ -1,11 +1,13 @@
 package org.keycloak.testsuite.ui.account2.page;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -147,24 +149,26 @@ public class MyResourcesPage extends AbstractLoggedInPage {
     public void createShare(String userName) {
         driver.findElement(By.id("username")).sendKeys(userName);
         driver.findElement(By.id("add")).click();
-        driver.findElement(By.id("pf-toggle-id-6")).click();
-        driver.findElement(By.id("Scope A-1")).click();
-        driver.findElement(By.id("pf-toggle-id-9")).click();
+        driver.findElement(By.className("pf-c-select__toggle-typeahead")).click();
+        driver.findElement(By.xpath("//button[@class='pf-c-select__menu-item' and text()='Scope A']")).click();
         driver.findElement(By.id("done")).click();
         waitForModalFadeOut();
     }
 
     public void removeAllPermissions() {
-        List<String> buttonTexts = Arrays.asList(getScopeText("0"), getScopeText("1"));
-        assertThat(buttonTexts, containsInAnyOrder("Scope A", "Scope B"));
+        assertThat(getScopesTexts(), containsInAnyOrder("Scope A", "Scope B"));
         driver.findElement(By.className("pf-c-select__toggle-clear")).click();
         driver.findElement(By.id("save-0")).click();
         driver.findElement(By.id("done")).click();
         waitForModalFadeOut();
     }
 
-    private String getScopeText(String id) {
-        return driver.findElement(By.id(String.format("pf-random-id-%s", id))).getText();
+    private List<String> getScopesTexts() {
+        return driver.findElements(By.xpath("//span[contains(@id,'pf-random-id-')]"))
+                .stream()
+                .filter(Objects::nonNull)
+                .map(UIUtils::getTextFromElement)
+                .collect(Collectors.toList());
     }
 
     private void waitForModalFadeIn() {

@@ -16,184 +16,79 @@
  */
 package org.keycloak.models.map.userSession;
 
-import org.keycloak.common.util.Time;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapAuthenticatedClientSessionEntity extends UpdatableEntity.Impl implements AbstractEntity {
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity.AbstractAuthenticatedClientSessionEntity"
+)
+@DeepCloner.Root
+public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, UpdatableEntity, ExpirableEntity {
 
-    private String id;
-    private String userSessionId;
-    private String realmId;
-    private String clientId;
+    abstract class AbstractAuthenticatedClientSessionEntity extends UpdatableEntity.Impl implements MapAuthenticatedClientSessionEntity {
+
+        private String id;
+
+        @Override
+        public String getId() {
+            return this.id;
+        }
+
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
+    }
 
     /**
-     * Flag signalizing that any of the setters has been meaningfully used.
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the client session entity was created or updated (refreshed).
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
      */
+    Long getTimestamp();
 
-    private String authMethod;
-    private String redirectUri;
-    private volatile int timestamp;
-    private long expiration;
-    private String action;
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the client session entity was created or updated (refreshed).
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
 
-    private Map<String, String> notes = new ConcurrentHashMap<>();
+    String getRealmId();
+    void setRealmId(String realmId);
 
-    private String currentRefreshToken;
-    private int currentRefreshTokenUseCount;
+    String getClientId();
+    void setClientId(String clientId);
 
-    private boolean offline;
+    String getAuthMethod();
+    void setAuthMethod(String authMethod);
 
-    public MapAuthenticatedClientSessionEntity() {}
+    String getRedirectUri();
+    void setRedirectUri(String redirectUri);
+    String getAction();
+    void setAction(String action);
 
-    public MapAuthenticatedClientSessionEntity(String id, String userSessionId, String realmId, String clientId, boolean offline) {
-        this.id = id;
-        this.userSessionId = userSessionId;
-        this.realmId = realmId;
-        this.clientId = clientId;
-        this.offline = offline;
-        this.timestamp = Time.currentTime();
-    }
+    Map<String, String> getNotes();
+    void setNotes(Map<String, String> notes);
+    String getNote(String name);
+    Boolean removeNote(String name);
+    void setNote(String name, String value);
 
-    @Override
-    public String getId() {
-        return this.id;
-    }
+    String getCurrentRefreshToken();
+    void setCurrentRefreshToken(String currentRefreshToken);
 
-    @Override
-    public void setId(String id) {
-        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
-        this.id = id;
-        this.updated |= id != null;
-    }
+    Integer getCurrentRefreshTokenUseCount();
+    void setCurrentRefreshTokenUseCount(Integer currentRefreshTokenUseCount);
 
-    public String getRealmId() {
-        return realmId;
-    }
-
-    public void setRealmId(String realmId) {
-        this.updated |= !Objects.equals(this.realmId, realmId);
-        this.realmId = realmId;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(String clientId) {
-        this.updated |= !Objects.equals(this.clientId, clientId);
-        this.clientId = clientId;
-    }
-
-    public String getUserSessionId() {
-        return userSessionId;
-    }
-
-    public void setUserSessionId(String userSessionId) {
-        this.updated |= !Objects.equals(this.userSessionId, userSessionId);
-        this.userSessionId = userSessionId;
-    }
-
-    public String getAuthMethod() {
-        return authMethod;
-    }
-
-    public void setAuthMethod(String authMethod) {
-        this.updated |= !Objects.equals(this.authMethod, authMethod);
-        this.authMethod = authMethod;
-    }
-
-    public String getRedirectUri() {
-        return redirectUri;
-    }
-
-    public void setRedirectUri(String redirectUri) {
-        this.updated |= !Objects.equals(this.redirectUri, redirectUri);
-        this.redirectUri = redirectUri;
-    }
-
-    public int getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(int timestamp) {
-        this.updated |= this.timestamp != timestamp;
-        this.timestamp = timestamp;
-    }
-
-    public long getExpiration() {
-        return expiration;
-    }
-
-    public void setExpiration(long expiration) {
-        this.updated |= this.expiration != expiration;
-        this.expiration = expiration;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(String action) {
-        this.updated |= !Objects.equals(this.action, action);
-        this.action = action;
-    }
-
-    public Map<String, String> getNotes() {
-        return notes;
-    }
-
-    public void setNotes(Map<String, String> notes) {
-        this.updated |= !Objects.equals(this.notes, notes);
-        this.notes = notes;
-    }
-
-    public String removeNote(String name) {
-        String note = this.notes.remove(name);
-        this.updated |= note != null;
-        return note;
-    }
-
-    public void addNote(String name, String value) {
-        this.updated |= !Objects.equals(this.notes.put(name, value), value);
-    }
-
-    public String getCurrentRefreshToken() {
-        return currentRefreshToken;
-    }
-
-    public void setCurrentRefreshToken(String currentRefreshToken) {
-        this.updated |= !Objects.equals(this.currentRefreshToken, currentRefreshToken);
-        this.currentRefreshToken = currentRefreshToken;
-    }
-
-    public int getCurrentRefreshTokenUseCount() {
-        return currentRefreshTokenUseCount;
-    }
-
-    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-        this.updated |= this.currentRefreshTokenUseCount != currentRefreshTokenUseCount;
-        this.currentRefreshTokenUseCount = currentRefreshTokenUseCount;
-    }
-
-    public boolean isOffline() {
-        return offline;
-    }
-
-    public void setOffline(boolean offline) {
-        this.updated |= this.offline != offline;
-        this.offline = offline;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s@%08x", getId(), hashCode());
-    }
+    Boolean isOffline();
+    void setOffline(Boolean offline);
 }

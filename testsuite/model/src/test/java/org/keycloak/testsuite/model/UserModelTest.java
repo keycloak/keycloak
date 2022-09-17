@@ -20,14 +20,17 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.map.realm.MapRealmProviderFactory;
+import org.keycloak.models.map.user.MapUserProviderFactory;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.user.UserRegistrationProvider;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -35,21 +38,27 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
-import javax.naming.NamingException;
-
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
+import org.keycloak.models.jpa.JpaUserProvider;
+import static org.keycloak.models.map.user.MapUserProviderFactory.REALM_ATTR_USERNAME_CASE_SENSITIVE;
 
 /**
  *
@@ -65,6 +74,8 @@ public class UserModelTest extends KeycloakModelTest {
     private static final int DELETED_USER_COUNT = LAST_DELETED_USER_INDEX - FIRST_DELETED_USER_INDEX;
 
     private String realmId;
+    private String realm1Id;
+    private String realm2Id;
     private final List<String> groupIds = new ArrayList<>(NUM_GROUPS);
     private String userFederationId;
 
@@ -82,6 +93,8 @@ public class UserModelTest extends KeycloakModelTest {
     @Override
     public void cleanEnvironment(KeycloakSession s) {
         s.realms().removeRealm(realmId);
+        if (realm1Id != null) s.realms().removeRealm(realm1Id);
+        if (realm2Id != null) s.realms().removeRealm(realm2Id);
     }
 
     @Override
@@ -112,6 +125,53 @@ public class UserModelTest extends KeycloakModelTest {
         assertNull(session.users().getUserByUsername(realm, user.getUsername()));
 
         return null;
+    }
+
+    @Test
+    @RequireProvider(value = UserProvider.class, only = {MapUserProviderFactory.PROVIDER_ID})
+    @RequireProvider(value = RealmProvider.class, only = {MapRealmProviderFactory.PROVIDER_ID})
+    public void testCaseSensitivityGetUserByUsername() {
+
+        realm1Id = inComittedTransaction((Function<KeycloakSession, String>)  session -> {
+            RealmModel realm = session.realms().createRealm("realm1");
+            realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
+            realm.setAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, true);
+            return realm.getId();
+        });
+
+        withRealm(realm1Id, (session, realm) -> {
+            UserModel user1 = session.users().addUser(realm, "user");
+            UserModel user2 = session.users().addUser(realm, "USER");
+
+            assertThat(user1, not(nullValue()));
+            assertThat(user2, not(nullValue()));
+
+            assertThat(user1.getUsername(), equalTo("user"));
+            assertThat(user2.getUsername(), equalTo("USER"));
+
+            return null;
+        });
+
+        realm2Id = inComittedTransaction((Function<KeycloakSession, String>)  session -> {
+            RealmModel realm = session.realms().createRealm("realm2");
+            realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
+            realm.setAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, false);
+            return realm.getId();
+        });
+
+        withRealm(realm2Id, (session, realm) -> {
+            UserModel user1 = session.users().addUser(realm, "user");
+            assertThat(user1, not(nullValue()));
+
+            try {
+                session.users().addUser(realm, "USER");
+            } catch (ModelDuplicateException e) {
+                return null; // expected
+            }
+
+            fail("ModelDuplicateException expected");
+            return null;
+        });
     }
 
     @Test
@@ -183,8 +243,8 @@ public class UserModelTest extends KeycloakModelTest {
         });
 
         withRealm(realmId, (session, realm) -> {
-            if (session.userCache() != null) {
-                session.userCache().clear();
+            if (UserStorageUtil.userCache(session) != null) {
+                UserStorageUtil.userCache(session).clear();
             }
             final UserModel user = session.users().getUserByUsername(realm, "user-A");
             assertThat("User should not be found in the main store", user, Matchers.nullValue());
@@ -216,16 +276,7 @@ public class UserModelTest extends KeycloakModelTest {
             log.debugf("Removing selected users from backend");
             IntStream.range(FIRST_DELETED_USER_INDEX, LAST_DELETED_USER_INDEX).forEach(j -> {
                 final UserModel user = session.users().getUserByUsername(realm, "user-" + j);
-                try {
-                    ((UserRegistrationProvider) instance).removeUser(realm, user);
-                } catch (ModelException ex) {
-                    // removing user might have failed for an LDAP reason
-                    // as this is not the main subject under test, retry once more to delete the entry
-                    if (ex.getMessage().contains("Could not unbind DN") && ex.getCause() instanceof NamingException) {
-                        log.warn("removing failed, retrying", ex);
-                        ((UserRegistrationProvider) instance).removeUser(realm, user);
-                    }
-                }
+                ((UserRegistrationProvider) instance).removeUser(realm, user);
             });
             return null;
         });
@@ -243,8 +294,8 @@ public class UserModelTest extends KeycloakModelTest {
             // because they are not present in any storage. However, when we get users by id cache may still be hit
             // since it is not alerted in any way when users are removed from external provider. Hence we need to clear
             // the cache manually.
-            if (session.userCache() != null) {
-                session.userCache().clear();
+            if (UserStorageUtil.userCache(session) != null) {
+                UserStorageUtil.userCache(session).clear();
             }
             return null;
         });

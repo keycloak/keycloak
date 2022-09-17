@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -61,9 +60,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
@@ -72,6 +74,46 @@ import static org.keycloak.testsuite.Assert.assertNames;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientScopeTest extends AbstractClientTest {
+
+    @Test
+    public void testAddFailureWithInvalidScopeName() {
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("マルチバイト");
+
+        ErrorRepresentation error;
+        try (Response response = clientScopes().create(scopeRep)) {
+            Assert.assertEquals(400, response.getStatus());
+            error = response.readEntity(ErrorRepresentation.class);
+        }
+
+        Assert.assertEquals("Unexpected name \"マルチバイト\" for ClientScope", error.getErrorMessage());
+    }
+
+    @Test
+    public void testUpdateFailureWithInvalidScopeName() {
+        // Creating first
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope1");
+        String scope1Id = createClientScope(scopeRep);
+        // Assert created
+        scopeRep = clientScopes().get(scope1Id).toRepresentation();
+        Assert.assertEquals("scope1", scopeRep.getName());
+
+        // Test updating
+        scopeRep.setName("マルチバイト");
+        try {
+            clientScopes().get(scope1Id).update(scopeRep);
+        } catch (ClientErrorException e) {
+            ErrorRepresentation error;
+            try (Response response = e.getResponse()) {
+                Assert.assertEquals(400, response.getStatus());
+                error = response.readEntity(ErrorRepresentation.class);
+            }
+            Assert.assertEquals("Unexpected name \"マルチバイト\" for ClientScope", error.getErrorMessage());
+        }
+
+        removeClientScope(scope1Id);
+    }
 
     @Test
     public void testAddDuplicatedClientScope() {
@@ -356,7 +398,7 @@ public class ClientScopeTest extends AbstractClientTest {
         assertNames(scopesResource.clientLevel(roleContainerClientUuid).listEffective(), "client-composite",
                 "client-child");
     }
-    
+
     // KEYCLOAK-2809
     @Test
     public void testRemoveScopedRole() {
@@ -698,7 +740,7 @@ public class ClientScopeTest extends AbstractClientTest {
         scopeRep = clientScopes().get(scopeDefId).toRepresentation();
         assertEquals("non-dynamic-scope-def", scopeRep.getName());
         assertEquals("false", scopeRep.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE));
-        assertEquals("", scopeRep.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP));
+        assertThat(scopeRep.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP), anyOf(nullValue(), equalTo("")));
     }
 
     @Test
@@ -766,7 +808,7 @@ public class ClientScopeTest extends AbstractClientTest {
             clientScopes().get(scopeDefId).update(scopeRep);
             Assert.fail("This update should fail");
         } catch (ClientErrorException ex) {
-            MatcherAssert.assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
+            assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
         }
     }
 
@@ -794,7 +836,7 @@ public class ClientScopeTest extends AbstractClientTest {
             clientResource.addDefaultClientScope(optionalClientScopeId);
             Assert.fail("A Dynamic Scope shouldn't not be assigned as a default scope to a client");
         } catch (ClientErrorException ex) {
-            MatcherAssert.assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
+            assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
         }
 
     }

@@ -23,9 +23,12 @@ import org.infinispan.commons.util.CloseableIterator;
 import org.infinispan.query.dsl.Query;
 import org.infinispan.query.dsl.QueryFactory;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.ExpirableEntity;
+import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
@@ -48,18 +51,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.hotRod.common.HotRodUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
+public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends AbstractEntity & HotRodEntityDelegate<E>, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
 
     private static final Logger LOG = Logger.getLogger(HotRodMapStorage.class);
 
     private final RemoteCache<K, E> remoteCache;
-    private final StringKeyConverter<K> keyConverter;
-    private final HotRodEntityDescriptor<E, V> storedEntityDescriptor;
+    protected final StringKeyConverter<K> keyConverter;
+    protected final HotRodEntityDescriptor<E, V> storedEntityDescriptor;
     private final Function<E, V> delegateProducer;
-    private final DeepCloner cloner;
+    protected final DeepCloner cloner;
+    protected boolean isExpirableEntity;
 
     public HotRodMapStorage(RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner) {
         this.remoteCache = remoteCache;
@@ -67,6 +72,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
         this.storedEntityDescriptor = storedEntityDescriptor;
         this.cloner = cloner;
         this.delegateProducer = storedEntityDescriptor.getHotRodDelegateProvider();
+        this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(ModelEntityUtil.getEntityType(storedEntityDescriptor.getModelTypeClass()));
     }
 
     @Override
@@ -86,13 +92,26 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
     public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
         K k = keyConverter.fromStringSafe(key);
-        return delegateProducer.apply(remoteCache.get(k));
+
+        // Obtain value from Infinispan
+        E hotRodEntity = remoteCache.get(k);
+        if (hotRodEntity == null) return null;
+
+        // Create delegate that implements Map*Entity
+        V delegateEntity = delegateProducer.apply(hotRodEntity);
+
+        // Check expiration if necessary and return value
+        return isExpirableEntity && isExpired((ExpirableEntity) delegateEntity, true) ? null : delegateEntity;
     }
 
     @Override
     public V update(V value) {
         K key = keyConverter.fromStringSafe(value.getId());
-        return delegateProducer.apply(remoteCache.replace(key, value.getHotRodEntity()));
+
+        E previousValue = remoteCache.replace(key, value.getHotRodEntity());
+        if (previousValue == null) return null;
+
+        return delegateProducer.apply(previousValue);
     }
 
     @Override
@@ -109,11 +128,21 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
         return modelFieldName + " " + orderString;
     }
 
+    private static String isNotExpiredIckleWhereClause() {
+        return "(" + IckleQueryOperators.C + ".expiration > " + Time.currentTimeMillis() + " OR "
+                + IckleQueryOperators.C + ".expiration is null)";
+    }
+
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
         IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createCriteriaBuilder());
         String queryString = iqmcb.getIckleQuery();
+
+        // Temporary solution until https://github.com/keycloak/keycloak/issues/12068 is fixed
+        if (isExpirableEntity) {
+            queryString += (queryString.contains("WHERE") ? " AND " : " WHERE ") + isNotExpiredIckleWhereClause();
+        }
 
         if (!queryParameters.getOrderBy().isEmpty()) {
             queryString += " ORDER BY " + queryParameters.getOrderBy().stream().map(HotRodMapStorage::toOrderString)
@@ -191,6 +220,16 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
 
     @Override
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
+        MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
+
+        if (sessionTransaction == null) {
+            sessionTransaction = createTransactionInternal(session);
+            session.setAttribute("map-transaction-" + hashCode(), sessionTransaction);
+        }
+        return sessionTransaction;
+    }
+
+    protected MapKeycloakTransaction<V, M> createTransactionInternal(KeycloakSession session) {
         Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
         return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
     }

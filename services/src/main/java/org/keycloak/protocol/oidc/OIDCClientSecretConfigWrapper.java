@@ -1,15 +1,18 @@
 package org.keycloak.protocol.oidc;
 
+import java.io.InvalidObjectException;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
 
@@ -33,8 +36,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         return new OIDCClientSecretConfigWrapper(client, null);
     }
 
-    public static OIDCClientSecretConfigWrapper fromClientRepresentation(
-            ClientRepresentation clientRep) {
+    public static OIDCClientSecretConfigWrapper fromClientRepresentation(ClientRepresentation clientRep) {
         return new OIDCClientSecretConfigWrapper(null, clientRep);
     }
 
@@ -86,8 +88,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     }
 
     public boolean hasRotatedSecret() {
-        return StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET)) && StringUtil.isNotBlank(
-                getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
+        return StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET)) && StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
     }
 
     public String getClientRotatedSecret() {
@@ -121,13 +122,10 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
 
     public void updateClientRepresentationAttributes(ClientRepresentation rep) {
         rep.getAttributes().put(CLIENT_ROTATED_SECRET, getAttribute(CLIENT_ROTATED_SECRET));
-        rep.getAttributes()
-                .put(CLIENT_SECRET_CREATION_TIME, getAttribute(CLIENT_SECRET_CREATION_TIME));
+        rep.getAttributes().put(CLIENT_SECRET_CREATION_TIME, getAttribute(CLIENT_SECRET_CREATION_TIME));
         rep.getAttributes().put(CLIENT_SECRET_EXPIRATION, getAttribute(CLIENT_SECRET_EXPIRATION));
-        rep.getAttributes().put(CLIENT_ROTATED_SECRET_CREATION_TIME,
-                getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
-        rep.getAttributes().put(CLIENT_ROTATED_SECRET_EXPIRATION_TIME,
-                getAttribute(CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
+        rep.getAttributes().put(CLIENT_ROTATED_SECRET_CREATION_TIME, getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
+        rep.getAttributes().put(CLIENT_ROTATED_SECRET_EXPIRATION_TIME, getAttribute(CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
     }
 
     public boolean hasClientSecretExpirationTime() {
@@ -145,29 +143,24 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
 
     public boolean isClientSecretExpired() {
         if (hasClientSecretExpirationTime()) {
-            if (getClientSecretExpirationTime() < Time.currentTime()) {
-                return true;
-            }
+            return getClientSecretExpirationTime() < Time.currentTime();
         }
         return false;
     }
 
     public int getClientRotatedSecretExpirationTime() {
         if (hasClientRotatedSecretExpirationTime()) {
-            return Integer.valueOf(
-                    getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
+            return Integer.valueOf(getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
         }
         return 0;
     }
 
     public void setClientRotatedSecretExpirationTime(Integer expiration) {
-        setAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME,
-                expiration != null ? String.valueOf(expiration) : null);
+        setAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME, expiration != null ? String.valueOf(expiration) : null);
     }
 
     public boolean hasClientRotatedSecretExpirationTime() {
-        return StringUtil.isNotBlank(
-                getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
+        return StringUtil.isNotBlank(getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
     }
 
     public boolean isClientRotatedSecretExpired() {
@@ -213,5 +206,27 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         } catch (JsonProcessingException e) {
             return "";
         }
+    }
+
+    public ReadOnlyRotatedSecretClientModel toRotatedClientModel() throws InvalidObjectException {
+        if (Objects.isNull(this.clientModel))
+            throw new InvalidObjectException(getClass().getCanonicalName() + " does not have an attribute of type " + ClientModel.class.getCanonicalName());
+        return new ReadOnlyRotatedSecretClientModel(clientModel);
+    }
+
+    /**
+     * Representation of a client model that passes information from a rotated secret. The goal is to act as a decorator/DTO just providing information and not updating objects persistently.
+     */
+    public class ReadOnlyRotatedSecretClientModel extends ClientModelLazyDelegate {
+
+        private ReadOnlyRotatedSecretClientModel(ClientModel clientModel) {
+            super(() -> clientModel);
+        }
+
+        @Override
+        public String getSecret() {
+            return OIDCClientSecretConfigWrapper.this.getClientRotatedSecret();
+        }
+
     }
 }

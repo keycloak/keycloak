@@ -181,8 +181,8 @@ public class FlowTest extends AbstractAuthenticationTest {
         data.put("alias", "SomeFlow");
         authMgmtResource.addExecutionFlow("browser-2", data);
         authMgmtResource.addExecutionFlow("browser-2", data2);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data, ResourceType.AUTH_EXECUTION_FLOW);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data2, ResourceType.AUTH_EXECUTION_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data, ResourceType.AUTH_EXECUTION_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data2, ResourceType.AUTH_EXECUTION_FLOW);
 
         // check that new flow is returned in a children list
         flows = authMgmtResource.getFlows();
@@ -212,7 +212,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // delete non-built-in flow
         authMgmtResource.deleteFlow(found.getId());
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authFlowPath(found.getId()), ResourceType.AUTH_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authFlowPath(found.getId()), ResourceType.AUTH_FLOW);
 
         // check the deleted flow is no longer returned
         flows = authMgmtResource.getFlows();
@@ -257,7 +257,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         // copy that should succeed
         params.put("newName", "Copy of browser");
         response = authMgmtResource.copy("browser", params);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
         try {
             Assert.assertThat("Copy flow", response, statusCodeIs(Status.CREATED));
         } finally {
@@ -293,7 +293,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         Response response = authMgmtResource.copy("browser", params);
         Assert.assertEquals(201, response.getStatus());
         response.close();
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
 
         params = new HashMap<>();
         params.put("alias", "child");
@@ -302,7 +302,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.put("type", "basic-flow");
 
         authMgmtResource.addExecutionFlow("parent", params);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("parent"), params, ResourceType.AUTH_EXECUTION_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("parent"), params, ResourceType.AUTH_EXECUTION_FLOW);
     }
 
     @Test
@@ -315,7 +315,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         HashMap<String, String> params = new HashMap<>();
         params.put("newName", "Copy of browser");
         Response response = authMgmtResource.copy("browser", params);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
         try {
             Assert.assertEquals("Copy flow", 201, response.getStatus());
         } finally {
@@ -328,7 +328,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         //Set a new unique name. Should succeed
         testFlow.setAlias("Copy of browser2");
         authMgmtResource.updateFlow(testFlow.getId(), testFlow);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authEditFlowPath(testFlow.getId()), ResourceType.AUTH_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authEditFlowPath(testFlow.getId()), ResourceType.AUTH_FLOW);
         flows = authMgmtResource.getFlows();
         Assert.assertEquals("Copy of browser2", findFlowByAlias("Copy of browser2", flows).getAlias());
 
@@ -360,7 +360,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         flows = authMgmtResource.getFlows();
 
         Assert.assertEquals("New description", findFlowByAlias("New Flow", flows).getDescription());
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authEditFlowPath(found.getId()), ResourceType.AUTH_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authEditFlowPath(found.getId()), ResourceType.AUTH_FLOW);
 
         //Update name and description
         found.setAlias("New Flow2");
@@ -370,7 +370,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         Assert.assertEquals("New Flow2", findFlowByAlias("New Flow2", flows).getAlias());
         Assert.assertEquals("New description2", findFlowByAlias("New Flow2", flows).getDescription());
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authEditFlowPath(found.getId()), ResourceType.AUTH_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authEditFlowPath(found.getId()), ResourceType.AUTH_FLOW);
         Assert.assertNull(findFlowByAlias("New Flow", flows));
 
         authMgmtResource.deleteFlow(testFlow.getId());
@@ -392,7 +392,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.put("type", "basic-flow");
 
         authMgmtResource.addExecutionFlow("Parent-Flow", params);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
 
         executionReps = authMgmtResource.getExecutions("Parent-Flow");
 
@@ -424,7 +424,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         found.setDescription("This is another child flow2");
 
         authMgmtResource.updateExecutions("Parent-Flow", found);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("Parent-Flow"), ResourceType.AUTH_EXECUTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("Parent-Flow"), ResourceType.AUTH_EXECUTION);
         executionReps = authMgmtResource.getExecutions("Parent-Flow");
         Assert.assertEquals("Child-Flow2", executionReps.get(0).getDisplayName());
         Assert.assertEquals("This is another child flow2", executionReps.get(0).getDescription());
@@ -433,7 +433,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         found.setDescription("This is another child flow3");
         authMgmtResource.updateExecutions("Parent-Flow", found);
 
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("Parent-Flow"), ResourceType.AUTH_EXECUTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("Parent-Flow"), ResourceType.AUTH_EXECUTION);
         executionReps = authMgmtResource.getExecutions("Parent-Flow");
         Assert.assertEquals("Child-Flow2", executionReps.get(0).getDisplayName());
         Assert.assertEquals("This is another child flow3", executionReps.get(0).getDescription());

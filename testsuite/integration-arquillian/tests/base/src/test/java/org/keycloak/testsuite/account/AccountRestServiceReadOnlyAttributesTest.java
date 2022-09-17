@@ -31,18 +31,15 @@ import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude({REMOTE}) // TODO: Enable this for quarkus and hopefully for remote as well...
 public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServiceTest {
 
     private static final Logger logger = Logger.getLogger(AccountRestServiceReadOnlyAttributesTest.class);

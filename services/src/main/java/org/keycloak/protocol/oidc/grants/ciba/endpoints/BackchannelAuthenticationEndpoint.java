@@ -27,10 +27,11 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceCodeModel;
-import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
 import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelProvider;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
@@ -123,7 +124,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
 
     /**
      * TODO: Leverage the device code storage for tracking authentication requests. Not sure if we need a specific storage,
-     * but probably make the {@link OAuth2DeviceTokenStoreProvider} more generic for ciba, device, or any other use case
+     * or we can leverage the {@link SingleUseObjectProvider} for ciba, device, or any other use case
      * that relies on cross-references for unsolicited user authentication requests from devices.
      */
     private void storeAuthenticationRequest(CIBAAuthenticationRequest request, CibaConfig cibaConfig, String authReqId) {
@@ -147,9 +148,10 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         // To inform "expired_token" to the client, the lifespan of the cache provider is longer than device code
         int lifespanSeconds = expiresIn + poolingInterval + 10;
 
-        OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
 
-        store.put(deviceCode, userCode, lifespanSeconds);
+        singleUseStore.put(deviceCode.serializeKey(), lifespanSeconds, deviceCode.toMap());
+        singleUseStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
     }
 
     private CIBAAuthenticationRequest authorizeClient(MultivaluedMap<String, String> params) {
@@ -170,6 +172,10 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         String scope = endpointRequest.getScope();
         if (scope == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "missing parameter : scope",
+                    Response.Status.BAD_REQUEST);
+        }
+        if (!TokenManager.isValidScope(scope, client)) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid scopes: " + scope,
                     Response.Status.BAD_REQUEST);
         }
         request.setScope(scope);

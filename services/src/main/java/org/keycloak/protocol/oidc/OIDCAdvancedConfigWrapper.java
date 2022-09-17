@@ -20,15 +20,11 @@ package org.keycloak.protocol.oidc;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,28 +45,44 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     }
 
 
-    public Algorithm getUserInfoSignedResponseAlg() {
-        String alg = getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
-        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+    public String getUserInfoSignedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
     }
 
-    public void setUserInfoSignedResponseAlg(Algorithm alg) {
-        String algStr = alg==null ? null : alg.toString();
-        setAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, algStr);
+    public void setUserInfoSignedResponseAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, algorithm);
     }
 
     public boolean isUserInfoSignatureRequired() {
         return getUserInfoSignedResponseAlg() != null;
     }
 
-    public Algorithm getRequestObjectSignatureAlg() {
-        String alg = getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG);
-        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+    public void setUserInfoEncryptedResponseAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ALG, algorithm);
     }
 
-    public void setRequestObjectSignatureAlg(Algorithm alg) {
-        String algStr = alg==null ? null : alg.toString();
-        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG, algStr);
+    public String getUserInfoEncryptedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ALG);
+    }
+
+    public String getUserInfoEncryptedResponseEnc() {
+        return getAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ENC);
+    }
+
+    public void setUserInfoEncryptedResponseEnc(String algorithm) {
+        setAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ENC, algorithm);
+    }
+
+    public boolean isUserInfoEncryptionRequired() {
+        return getUserInfoEncryptedResponseAlg() != null;
+    }
+
+    public String getRequestObjectSignatureAlg() {
+        return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG);
+    }
+
+    public void setRequestObjectSignatureAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG, algorithm);
     }
 
     public void setRequestObjectEncryptionAlg(String algorithm) {
@@ -321,6 +333,17 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI);
     }
 
+    public boolean isFrontChannelLogoutSessionRequired() {
+        String frontChannelLogoutSessionRequired = getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED);
+        // Include session by default for backwards compatibility
+        return frontChannelLogoutSessionRequired == null ? true : Boolean.parseBoolean(frontChannelLogoutSessionRequired);
+    }
+
+    public void setFrontChannelLogoutSessionRequired(boolean frontChannelLogoutSessionRequired) {
+        String val = String.valueOf(frontChannelLogoutSessionRequired);
+        setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED, val);
+    }
+
     public void setLogoUri(String logoUri) {
         setAttribute(ClientModel.LOGO_URI, logoUri);
     }
@@ -331,6 +354,29 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     public void setTosUri(String tosUri) {
         setAttribute(ClientModel.TOS_URI, tosUri);
+    }
+
+    public List<String> getPostLogoutRedirectUris() {
+        List<String> postLogoutRedirectUris = getAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+        if(postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) {
+            return null;
+        }
+        else if (postLogoutRedirectUris.get(0).equals("+")) {
+            if(clientModel != null) {
+                return new ArrayList(clientModel.getRedirectUris());
+            }
+            else if(clientRep != null) {
+                return clientRep.getRedirectUris();
+            }
+            return null;
+        }
+        else {
+            return postLogoutRedirectUris;
+        }
+    }
+
+    public void setPostLogoutRedirectUris(List<String> postLogoutRedirectUris) {
+        setAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutRedirectUris);
     }
 
 }

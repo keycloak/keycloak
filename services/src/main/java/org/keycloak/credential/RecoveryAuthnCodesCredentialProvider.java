@@ -1,10 +1,7 @@
 package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
@@ -39,15 +36,15 @@ public class RecoveryAuthnCodesCredentialProvider
     public CredentialModel createCredential(RealmModel realm, UserModel user,
             RecoveryAuthnCodesCredentialModel credentialModel) {
 
-        session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, getType()).findFirst()
+        user.credentialManager().getStoredCredentialsByTypeStream(getType()).findFirst()
                 .ifPresent(model -> deleteCredential(realm, user, model.getId()));
 
-        return session.userCredentialManager().createCredential(realm, user, credentialModel);
+        return user.credentialManager().createStoredCredential(credentialModel);
     }
 
     @Override
     public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
-        return session.userCredentialManager().removeStoredCredential(realm, user, credentialId);
+        return user.credentialManager().removeStoredCredentialById(credentialId);
     }
 
     @Override
@@ -62,11 +59,7 @@ public class RecoveryAuthnCodesCredentialProvider
                 .helpText("recovery-authn-codes-help-text").iconCssClass("kcAuthenticatorRecoveryAuthnCodesClass")
                 .removeable(true);
         UserModel user = metadataContext.getUser();
-        if (user != null && !isConfiguredFor(session.getContext().getRealm(), user, getType())) {
-            builder.createAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
-        } else {
-            builder.updateAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
-        }
+        builder.createAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
         return builder.build(session);
     }
 
@@ -99,14 +92,13 @@ public class RecoveryAuthnCodesCredentialProvider
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        return session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, credentialType).anyMatch(Objects::nonNull);
+        return user.credentialManager().getStoredCredentialsByTypeStream(credentialType).anyMatch(Objects::nonNull);
     }
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput credentialInput) {
         String rawInputRecoveryAuthnCode = credentialInput.getChallengeResponse();
-        Optional<CredentialModel> credential = session.userCredentialManager()
-                .getStoredCredentialsByTypeStream(realm, user, getType()).findFirst();
+        Optional<CredentialModel> credential = user.credentialManager().getStoredCredentialsByTypeStream(getType()).findFirst();
         if (credential.isPresent()) {
             RecoveryAuthnCodesCredentialModel credentialModel = RecoveryAuthnCodesCredentialModel
                     .createFromCredentialModel(credential.get());
@@ -116,7 +108,7 @@ public class RecoveryAuthnCodesCredentialProvider
                     String nextRecoveryCode = nextRecoveryAuthnCode.get().getEncodedHashedValue();
                     if (RecoveryAuthnCodesUtils.verifyRecoveryCodeInput(rawInputRecoveryAuthnCode, nextRecoveryCode)) {
                         credentialModel.removeRecoveryAuthnCode();
-                        session.userCredentialManager().updateCredential(realm, user, credentialModel);
+                        user.credentialManager().updateStoredCredential(credentialModel);
                         return true;
                     }
 

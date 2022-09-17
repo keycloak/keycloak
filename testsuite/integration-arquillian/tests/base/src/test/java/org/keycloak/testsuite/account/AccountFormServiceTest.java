@@ -46,7 +46,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
@@ -100,8 +99,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -487,8 +484,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserById(realm, uId);
             assertThat(user, Matchers.notNullValue());
-            List<CredentialModel> storedCredentials = session.userCredentialManager()
-                    .getStoredCredentialsStream(realm, user).collect(Collectors.toList());
+            List<CredentialModel> storedCredentials = user.credentialManager().getStoredCredentialsStream().collect(Collectors.toList());
             assertThat(storedCredentials, Matchers.hasSize(expectedNumberOfStoredCredentials));
         });
     }
@@ -1309,7 +1305,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // we need to do domain name -> ip address to make this test work in remote testing
+     // we need to do domain name -> ip address to make this test work in remote testing
     public void sessions() {
         loginPage.open();
         loginPage.clickRegister();
@@ -1350,6 +1346,16 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    //KEYCLOAK-17256
+    @Test
+    public void testHomographicUsername() {
+        loginPage.open();
+        loginPage.clickRegister();
+        String username = "b"+"\u043E"+"b";
+        registerPage.register("bob", "spoof", "bob@spoof.com", username, "password", "password");
+        events.expectRegisterError(username, "bob@spoof.com").error("invalid_registration").assertEvent();
+    }
+
     // KEYCLOAK-5155
     @Test
     public void testConsoleListedInApplications() {
@@ -1357,12 +1363,12 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("realm-admin", "password");
         Assert.assertTrue(applicationsPage.isCurrent());
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), hasItems("Admin CLI", "Security Admin Console"));
+        Assert.assertThat(apps.keySet(), hasItems("Admin CLI", "security admin console"));
         events.clear();
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    
     public void applicationsVisibilityNoScopesNoConsent() throws Exception {
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, ROOT_URL_CLIENT)
           .setConsentRequired(false)
@@ -1390,7 +1396,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    
     public void applicationsVisibilityNoScopesAndConsent() throws Exception {
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, ROOT_URL_CLIENT)
           .setConsentRequired(true)
@@ -1410,7 +1416,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
     // More tests (including revoke) are in OAuthGrantTest and OfflineTokenTest
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    
     public void applications() {
         applicationsPage.open();
         loginPage.login("test-user@localhost", "password");

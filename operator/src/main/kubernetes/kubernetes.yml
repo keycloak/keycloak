@@ -5,8 +5,11 @@ metadata:
 rules:
   - apiGroups:
       - apps
+      # Extensions enabled for backward compatibility:
+      # https://github.com/fabric8io/kubernetes-client/issues/3996
+      - extensions
     resources:
-      - deployments
+      - statefulsets
     verbs:
       - get
       - list
@@ -32,6 +35,18 @@ rules:
       - batch
     resources:
       - jobs
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
     verbs:
       - get
       - list

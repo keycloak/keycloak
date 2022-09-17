@@ -24,6 +24,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.List;
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,10 +40,11 @@ public class Sidebar extends AbstractFragmentWithMobileLayout {
     public static int MOBILE_WIDTH = 767; // if the page width is less or equal than this, we expect the sidebar to be collapsed by default
     public static final String NAV_ITEM_ID_PREFIX = "nav-link-";
 
+    @Drone
+    protected WebDriver driver;
+
     @Root
     private WebElement sidebarRoot;
-    @FindBy(id = "nav-toggle") // relative to root element
-    private WebElement collapseToggle;
 
     @Override
     protected int getMobileWidth() {
@@ -54,16 +57,20 @@ public class Sidebar extends AbstractFragmentWithMobileLayout {
 
     public void collapse() {
         assertFalse("Sidebar is already collapsed", isCollapsed());
-        collapseToggle.click();
+        getCollapseToggle().click();
         pause(2000); // wait for animation
         assertTrue("Sidebar is not collapsed", isCollapsed());
     }
 
     public void expand() {
         assertTrue("Sidebar is already expanded", isCollapsed());
-        collapseToggle.click();
+        getCollapseToggle().click();
         pause(2000); // wait for animation
         assertFalse("Sidebar is not expanded", isCollapsed());
+    }
+
+    private WebElement getCollapseToggle(){
+        return driver.findElement(By.id("nav-toggle"));
     }
 
     protected void performOperationWithSidebarExpanded(Runnable operation) {

@@ -122,10 +122,8 @@ public class ClientModelTest extends KeycloakModelTest {
             });
 
             withRealm(realmId, (session, realm) -> {
-                ClientModel client = session.clients().searchClientsByClientIdStream(realm, "%", 0, 10).findFirst().orElse(null);
-                assertThat(client, notNullValue());
-                assertThat(client.getId(), is(equalTo(searchClient.getId())));
-                assertThat(client.getClientId(), is(equalTo(searchClientId)));
+                // when searching by "%" all entries are expected
+                assertThat(session.clients().searchClientsByClientIdStream(realm, "%", 0, 10).count(), is(equalTo(2L)));
                 return null;
             });
         }

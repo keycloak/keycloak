@@ -17,16 +17,16 @@
 
 package org.keycloak.common;
 
+import static org.keycloak.common.Profile.Type.DEPRECATED;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-
 import org.jboss.logging.Logger;
-
-import static org.keycloak.common.Profile.Type.DEPRECATED;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -70,11 +70,6 @@ public class Profile {
                         disabledFeatures.add(f);
                     } else if (DEPRECATED.equals(type)) {
                         logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
-                        if (Feature.UPLOAD_SCRIPTS.equals(f)) {
-                            previewFeatures.add(Feature.SCRIPTS);
-                            disabledFeatures.remove(Feature.SCRIPTS);
-                            logger.warnf("Preview feature enabled: " + Feature.SCRIPTS.name().toLowerCase());
-                        }
                     }
                     break;
                 case PREVIEW:
@@ -95,6 +90,11 @@ public class Profile {
                     break;
             }
         }
+
+        if ((!disabledFeatures.contains(Feature.ADMIN2) || !disabledFeatures.contains(Feature.ADMIN)) && disabledFeatures.contains(Feature.ADMIN_API)) {
+                throw new RuntimeException(String.format("Invalid value for feature: %s needs to be enabled because it is required by feature %s.",
+                        Feature.ADMIN_API, Arrays.asList(Feature.ADMIN, Feature.ADMIN2)));
+        }
     }
 
     private static Profile getInstance() {
@@ -109,7 +109,13 @@ public class Profile {
     }
 
     public static void init() {
-        CURRENT = new Profile(null);
+        PropertyResolver resolver = null;
+
+        if (CURRENT != null) {
+            resolver = CURRENT.propertyResolver;
+        }
+
+        CURRENT = new Profile(resolver);
     }
 
     public static String getName() {
@@ -153,13 +159,28 @@ public class Profile {
         ACCOUNT2("New Account Management Console", Type.DEFAULT),
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
-        ADMIN2("New Admin Console", Type.EXPERIMENTAL),
+        /**
+         * Controls the availability of the Admin REST-API.
+         */
+        ADMIN_API("Admin API", Type.DEFAULT),
+
+        /**
+         * Controls the availability of the legacy admin-console.
+         * Note that the admin-console requires the {@link #ADMIN_API} feature.
+         */
+        @Deprecated
+        ADMIN("Legacy Admin Console", Type.DEPRECATED),
+
+        /**
+         * Controls the availability of the admin-console.
+         * Note that the admin-console requires the {@link #ADMIN_API} feature.
+         */
+        ADMIN2("New Admin Console", Type.DEFAULT),
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
         IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
         OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
-        UPLOAD_SCRIPTS("Ability to upload custom JavaScript through Admin REST API", DEPRECATED),
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
         CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
         CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
@@ -169,7 +190,8 @@ public class Profile {
         DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
-        RECOVERY_CODES("Recovery codes", Type.PREVIEW);
+        RECOVERY_CODES("Recovery codes", Type.PREVIEW),
+        UPDATE_EMAIL("Update Email Action", Type.PREVIEW);
 
 
         private final Type typeProject;

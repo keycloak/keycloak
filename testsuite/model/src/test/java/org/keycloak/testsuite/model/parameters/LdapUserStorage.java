@@ -73,6 +73,7 @@ public class LdapUserStorage extends KeycloakModelParameters {
             }
             config.putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
             config.putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
+            config.putSingle(LDAPConstants.CONNECTION_POOLING, "true");
 
             UserStorageProviderModel federatedStorage = new UserStorageProviderModel();
             federatedStorage.setName(LDAPStorageProviderFactory.PROVIDER_NAME + ":" + counter.getAndIncrement());

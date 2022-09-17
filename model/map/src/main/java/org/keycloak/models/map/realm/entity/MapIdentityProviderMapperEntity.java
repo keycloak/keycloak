@@ -38,7 +38,7 @@ public interface MapIdentityProviderMapperEntity extends UpdatableEntity, Abstra
         entity.setName(model.getName());
         entity.setIdentityProviderAlias(model.getIdentityProviderAlias());
         entity.setIdentityProviderMapper(model.getIdentityProviderMapper());
-        entity.setConfig(model.getConfig() == null ? null : new HashMap<>(model.getConfig()));
+        entity.setConfig(model.getConfig());
         return entity;
     }
 
@@ -49,7 +49,8 @@ public interface MapIdentityProviderMapperEntity extends UpdatableEntity, Abstra
         model.setName(entity.getName());
         model.setIdentityProviderAlias(entity.getIdentityProviderAlias());
         model.setIdentityProviderMapper(entity.getIdentityProviderMapper());
-        model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
+        Map<String, String> config = entity.getConfig();
+        model.setConfig(config == null ? new HashMap<>() : new HashMap<>(config));
         return model;
     }
 

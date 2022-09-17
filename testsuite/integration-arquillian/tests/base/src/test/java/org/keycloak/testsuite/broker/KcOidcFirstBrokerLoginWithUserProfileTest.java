@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
@@ -45,7 +44,6 @@ import org.openqa.selenium.By;
  *
  */
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBrokerLoginTest {
 
     @Override

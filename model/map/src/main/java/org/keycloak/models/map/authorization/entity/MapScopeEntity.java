@@ -45,6 +45,9 @@ public interface MapScopeEntity extends UpdatableEntity, AbstractEntity {
         }
     }
 
+    String getRealmId();
+    void setRealmId(String realmId);
+
     String getName();
     void setName(String name);
 

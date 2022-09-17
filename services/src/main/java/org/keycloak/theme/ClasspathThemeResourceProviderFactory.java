@@ -15,12 +15,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 
 public class ClasspathThemeResourceProviderFactory implements ThemeResourceProviderFactory, ThemeResourceProvider {
 
-    public static final String THEME_RESOURCES_TEMPLATES = "theme-resources/templates/";
-    public static final String THEME_RESOURCES_RESOURCES = "theme-resources/resources/";
-    public static final String THEME_RESOURCES_MESSAGES = "theme-resources/messages/";
+    public static final String THEME_RESOURCES = "theme-resources";
+    public static final String THEME_RESOURCES_TEMPLATES = THEME_RESOURCES + "/templates/";
+    public static final String THEME_RESOURCES_RESOURCES = THEME_RESOURCES + "/resources/";
+    public static final String THEME_RESOURCES_MESSAGES = THEME_RESOURCES + "/messages/";
 
     private final String id;
-    private final ClassLoader classLoader;
+    protected final ClassLoader classLoader;
 
     public ClasspathThemeResourceProviderFactory() {
         this("classpath", Thread.currentThread().getContextClassLoader());
@@ -43,7 +44,10 @@ public class ClasspathThemeResourceProviderFactory implements ThemeResourceProvi
 
     @Override
     public InputStream getResourceAsStream(String path) throws IOException {
-        final URL rootResourceURL = classLoader.getResource(THEME_RESOURCES_RESOURCES);
+        return getResourceAsStream(path, classLoader.getResource(THEME_RESOURCES_RESOURCES));
+    }
+
+    protected InputStream getResourceAsStream(String path, URL rootResourceURL) throws IOException {
         if (rootResourceURL == null) {
             return null;
         }
@@ -59,17 +63,20 @@ public class ClasspathThemeResourceProviderFactory implements ThemeResourceProvi
 
     @Override
     public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
-        Properties m = new Properties();
-        InputStream in = classLoader.getResourceAsStream(THEME_RESOURCES_MESSAGES + baseBundlename + "_" + locale.toString() + ".properties");
-        if(in != null){
-            Charset encoding = PropertiesUtil.detectEncoding(in);
+        Properties messages = new Properties();
+        URL resource = classLoader.getResource(THEME_RESOURCES_MESSAGES + baseBundlename + "_" + locale.toString() + ".properties");
+        loadMessages(messages, resource);
+        return messages;
+    }
+
+    protected void loadMessages(Properties messages, URL resource) throws IOException {
+        if (resource != null) {
+            Charset encoding = PropertiesUtil.detectEncoding(resource.openStream());
             // detectEncoding closes the stream
-            try (Reader reader = new InputStreamReader(
-                        classLoader.getResourceAsStream(THEME_RESOURCES_MESSAGES + baseBundlename + "_" + locale.toString() + ".properties"), encoding)) {
-                m.load(reader);
+            try (Reader reader = new InputStreamReader(resource.openStream(), encoding)) {
+                messages.load(reader);
             }
         }
-        return m;
     }
 
     @Override

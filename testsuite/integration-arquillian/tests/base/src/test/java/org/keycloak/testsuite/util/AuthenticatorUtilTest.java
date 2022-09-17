@@ -26,19 +26,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@AuthServerContainerExclude(REMOTE)
 public class AuthenticatorUtilTest extends AbstractTestRealmKeycloakTest {
 
     @Override
@@ -50,7 +47,7 @@ public class AuthenticatorUtilTest extends AbstractTestRealmKeycloakTest {
     public void variousFactoryProviders() {
         testingClient.server().run(session -> {
 
-            RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
+            RealmModel realm = session.realms().getRealmByName(TEST_REALM_NAME);
             assertThat(realm, notNullValue());
 
             ClientModel client = realm.getClientByClientId("test-app");

@@ -32,9 +32,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 import static org.hamcrest.Matchers.is;
 
@@ -57,7 +54,6 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testFormActionProviders() {
         List<Map<String, Object>> result = authMgmtResource.getFormActionProviders();
 
@@ -77,7 +73,6 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testClientAuthenticatorProviders() {
         List<Map<String, Object>> result = authMgmtResource.getClientAuthenticatorProviders();
 
@@ -156,8 +151,6 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
         addProviderInfo(result, "basic-auth", "Basic Auth Challenge", "Challenge-response authentication using HTTP BASIC scheme.");
         addProviderInfo(result, "basic-auth-otp", "Basic Auth Password+OTP", "Challenge-response authentication using HTTP BASIC scheme.  Password param should contain a combination of password + otp. Realm's OTP policy is used to determine how to parse this. This SHOULD NOT BE USED in conjection with regular basic auth provider.");
-        addProviderInfo(result, "console-username-password", "Username Password Challenge",
-                "Proprietary challenge protocol for CLI clients that queries for username password");
         addProviderInfo(result, "direct-grant-auth-x509-username", "X509/Validate Username",
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
         addProviderInfo(result, "direct-grant-validate-otp", "OTP", "Validates the one time password supplied as a 'totp' form parameter in direct grant request");

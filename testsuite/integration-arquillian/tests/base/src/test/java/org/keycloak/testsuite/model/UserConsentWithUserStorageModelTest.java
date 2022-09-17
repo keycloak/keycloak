@@ -19,6 +19,7 @@ package org.keycloak.testsuite.model;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.component.ComponentModel;
@@ -37,7 +38,6 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
@@ -47,18 +47,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeycloakTest {
 
     private static ComponentModel clientStorageComponent;
 
     @Before
     public void before() {
+        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
         testingClient.server().run(UserConsentWithUserStorageModelTest::setupEnv);
     }
 
@@ -365,7 +364,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesDelClient2) -> {
             KeycloakSession currentSession = sesDelClient2;
             RealmManager realmManager = new RealmManager(currentSession);
-            RealmModel realm = realmManager.getRealm("original");
+            RealmModel realm = realmManager.getRealmByName("original");
 
             ClientModel fooClient = realm.getClientByClientId("foo-client");
             Assert.assertNull(realm.getClientByClientId("bar-client"));

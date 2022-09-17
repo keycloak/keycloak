@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
@@ -28,8 +29,8 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
@@ -176,6 +177,7 @@ public class WelcomeResource {
 
             Map<String, Object> map = new HashMap<>();
 
+            map.put("adminConsoleEnabled", isAdminConsoleEnabled());
             map.put("productName", Version.NAME);
             map.put("productNameFull", Version.NAME_FULL);
 
@@ -203,7 +205,7 @@ public class WelcomeResource {
             if (errorMessage != null) {
                 map.put("errorMessage", errorMessage);
             }
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
+            FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
 
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)
@@ -213,6 +215,10 @@ public class WelcomeResource {
         } catch (Exception e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private static boolean isAdminConsoleEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
     }
 
     private Theme getTheme() {

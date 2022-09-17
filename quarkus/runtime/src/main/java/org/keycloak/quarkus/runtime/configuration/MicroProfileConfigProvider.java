@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCase;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
 
 import java.util.Set;
@@ -62,9 +63,13 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         private final String[] scope;
         private final String prefix;
 
-        public MicroProfileScope(String... scope) {
-            this.scope = scope;
-            this.prefix = NS_KEYCLOAK_PREFIX + String.join(OPTION_PART_SEPARATOR, ArrayUtils.insert(0, scope, "spi"));
+        public MicroProfileScope(String... scopes) {
+            this.scope = scopes;
+            StringBuilder prefix = new StringBuilder(NS_KEYCLOAK_PREFIX).append("spi");
+            for (String scope : scopes) {
+                prefix.append(OPTION_PART_SEPARATOR).append(scope);
+            }
+            this.prefix = prefix.toString();
         }
 
         @Override
@@ -130,27 +135,8 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         }
 
         private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
-            return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key)), clazz).orElse(defaultValue);
+            return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key.replace('.', '-'))), clazz).orElse(defaultValue);
         }
-    }
-
-    private static String toDashCase(String s) {
-
-        StringBuilder sb = new StringBuilder(s.length());
-        boolean l = false;
-
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (l && Character.isUpperCase(c)) {
-                sb.append('-');
-                c = Character.toLowerCase(c);
-                l = false;
-            } else {
-                l = Character.isLowerCase(c);
-            }
-            sb.append(c);
-        }
-        return sb.toString();
     }
 
 }

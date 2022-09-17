@@ -215,6 +215,17 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
         return "deepClone(" + parameterName + ")";
     }
 
+    protected String removeUndefined(TypeMirror fieldType, String parameterName) {
+        TypeElement typeElement = elements.getTypeElement(types.erasure(fieldType).toString());
+        boolean isMapType = isMapType(typeElement);
+
+        return parameterName + (isMapType ? ".values()" : "") + ".removeIf(org.keycloak.models.map.common.UndefinedValuesUtils::isUndefined)";
+    }
+
+    protected String isUndefined(String parameterName) {
+        return "org.keycloak.models.map.common.UndefinedValuesUtils.isUndefined(" + parameterName + ")";
+    }
+
     protected boolean isEnumType(TypeMirror fieldType) {
         return types.asElement(fieldType).getKind() == ElementKind.ENUM;
     }

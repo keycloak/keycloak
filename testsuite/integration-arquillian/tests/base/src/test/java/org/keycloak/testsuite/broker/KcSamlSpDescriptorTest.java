@@ -13,6 +13,7 @@ import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.Assert;
@@ -82,6 +83,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute(), not(empty()));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getName(), is("email_attr_name"));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getFriendlyName(), is("email_attr_friendlyname"));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getNameFormat(), is(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.getUri().toString()));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName(), notNullValue());
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName().get(0).getValue(), is(bc.consumerRealmName()));
         }
@@ -117,8 +119,46 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute(), not(empty()));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getName(), is("email_attr_name"));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getFriendlyName(), is("email_attr_friendlyname"));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getNameFormat(), is(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.getUri().toString()));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName(), notNullValue());
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName().get(0).getValue(), is("My Attribute Set"));
+        }
+    }
+
+    @Test
+    public void testAttributeConsumingServiceNameInSpMetadataWithDifferentFormatName() throws IOException, ParsingException, URISyntaxException {
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.ATTRIBUTE_CONSUMING_SERVICE_INDEX, "12")
+                .update())
+        {
+            IdentityProviderMapperRepresentation attrMapperEmail = new IdentityProviderMapperRepresentation();
+            attrMapperEmail.setName("attribute-mapper-email");
+            attrMapperEmail.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+            attrMapperEmail.setConfig(ImmutableMap.<String,String>builder()
+                    .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString())
+                    .put(UserAttributeMapper.ATTRIBUTE_NAME, "email_attr_name")
+                    .put(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME, "email_attr_friendlyname")
+                    .put(UserAttributeMapper.USER_ATTRIBUTE, "email")
+                    .put(UserAttributeMapper.ATTRIBUTE_NAME_FORMAT, JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.name())
+                    .build());
+            attrMapperEmail.setIdentityProviderAlias(bc.getIDPAlias());
+
+            identityProviderResource.addMapper(attrMapperEmail);
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            assertThat(spDescriptor.getAttributeConsumingService(), not(empty()));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getIndex(), is(12));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute(), notNullValue());
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute(), not(empty()));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getName(), is("email_attr_name"));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getFriendlyName(), is("email_attr_friendlyname"));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getNameFormat(), is(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.getUri().toString()));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName(), notNullValue());
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName().get(0).getValue(), is(bc.consumerRealmName()));
         }
     }
 

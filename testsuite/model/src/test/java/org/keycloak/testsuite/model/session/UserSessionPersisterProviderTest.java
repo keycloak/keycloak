@@ -253,7 +253,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         AtomicReference<String> userSessionID = new AtomicReference<>();
 
         inComittedTransaction(session -> {
-            RealmModel fooRealm = session.realms().createRealm("foo", "foo");
+            RealmModel fooRealm = session.realms().createRealm("foo");
             fooRealm.setDefaultRole(session.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
 
             fooRealm.addClient("foo-app");
@@ -267,7 +267,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             // Persist offline session
-            RealmModel fooRealm = session.realms().getRealm("foo");
+            RealmModel fooRealm = session.realms().getRealmByName("foo");
             UserSessionModel userSession = session.sessions().getUserSession(fooRealm, userSessionID.get());
             persistUserSession(session, userSession, true);
         });
@@ -278,7 +278,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
             // Remove realm
             RealmManager realmMgr = new RealmManager(session);
-            realmMgr.removeRealm(realmMgr.getRealm("foo"));
+            realmMgr.removeRealm(realmMgr.getRealmByName("foo"));
         });
 
         inComittedTransaction(session -> {
@@ -293,7 +293,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         AtomicReference<String> userSessionID = new AtomicReference<>();
 
         inComittedTransaction(session -> {
-            RealmModel fooRealm = session.realms().createRealm("foo", "foo");
+            RealmModel fooRealm = session.realms().createRealm("foo");
             fooRealm.setDefaultRole(session.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX));
 
             fooRealm.addClient("foo-app");
@@ -308,7 +308,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         });
 
         inComittedTransaction(session -> {
-            RealmModel fooRealm = session.realms().getRealm("foo");
+            RealmModel fooRealm = session.realms().getRealmByName("foo");
 
             // Persist offline session
             UserSessionModel userSession = session.sessions().getUserSession(fooRealm, userSessionID.get());
@@ -318,7 +318,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         inComittedTransaction(session -> {
             RealmManager realmMgr = new RealmManager(session);
             ClientManager clientMgr = new ClientManager(realmMgr);
-            RealmModel fooRealm = realmMgr.getRealm("foo");
+            RealmModel fooRealm = realmMgr.getRealmByName("foo");
 
             // Assert session was persisted with both clientSessions
             UserSessionModel persistedSession = loadPersistedSessionsPaginated(session, true, 10, 1, 1).get(0);
@@ -332,7 +332,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         inComittedTransaction(session -> {
             RealmManager realmMgr = new RealmManager(session);
             ClientManager clientMgr = new ClientManager(realmMgr);
-            RealmModel fooRealm = realmMgr.getRealm("foo");
+            RealmModel fooRealm = realmMgr.getRealmByName("foo");
 
             // Assert just one bar-app clientSession persisted now
             UserSessionModel persistedSession = loadPersistedSessionsPaginated(session, true, 10, 1, 1).get(0);
@@ -349,7 +349,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
             // Cleanup
             RealmManager realmMgr = new RealmManager(session);
-            realmMgr.removeRealm(realmMgr.getRealm("foo"));
+            realmMgr.removeRealm(realmMgr.getRealmByName("foo"));
         });
     }
 

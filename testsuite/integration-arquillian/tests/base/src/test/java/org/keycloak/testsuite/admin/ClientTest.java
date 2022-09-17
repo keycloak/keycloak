@@ -35,6 +35,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.Constants.defaultClients;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -59,8 +61,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -90,7 +90,6 @@ import javax.ws.rs.core.Response;
 public class ClientTest extends AbstractAdminTest {
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void getClients() {
         Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
@@ -100,6 +99,7 @@ public class ClientTest extends AbstractAdminTest {
         rep.setClientId("my-app");
         rep.setDescription("my-app description");
         rep.setEnabled(true);
+        rep.setPublicClient(true);
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
@@ -113,9 +113,38 @@ public class ClientTest extends AbstractAdminTest {
 
         return rep;
     }
+    
+    private ClientRepresentation createClientNonPublic() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("my-app");
+        rep.setDescription("my-app description");
+        rep.setEnabled(true);
+        rep.setPublicClient(false);
+        Response response = realm.clients().create(rep);
+        response.close();
+        String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
+        ClientRepresentation found = ApiUtil.findClientResourceByClientId(realm, "my-app").toRepresentation();
+
+        assertEquals("my-app", found.getClientId());
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
+
+        rep.setId(id);
+
+        return rep;
+    }
+    
+    @Test
+    public void createClientVerifyWithSecret() {
+        String id = createClientNonPublic().getId();
+
+        ClientResource client = realm.clients().get(id);
+        assertNotNull(client);
+        assertNotNull(client.toRepresentation().getSecret());
+        Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
+    }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void createClientVerify() {
         String id = createClient().getId();
 
@@ -308,7 +337,6 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void getAllClientsSearchAndPagination() {
         Set<String> ids = new HashSet<>();
         try {
@@ -416,14 +444,13 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void serviceAccount() {
         Response response = realm.clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccount().build());
         String id = ApiUtil.getCreatedId(response);
         getCleanup().addClientUuid(id);
         response.close();
         UserRepresentation userRep = realm.clients().get(id).getServiceAccountUser();
-        assertEquals("service-account-serviceclient", userRep.getUsername());
+        MatcherAssert.assertThat("service-account-serviceclient", Matchers.equalToIgnoringCase(userRep.getUsername()));
         // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
         assertNull(userRep.getEmail());
     }
@@ -595,7 +622,7 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll(), AccountRoles.VIEW_PROFILE);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective(), AccountRoles.VIEW_PROFILE);
 
-        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT);
+        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT, AccountRoles.VIEW_GROUPS);
 
         Assert.assertNames(scopesResource.getAll().getRealmMappings(), "realm-composite");
         Assert.assertNames(scopesResource.getAll().getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), AccountRoles.VIEW_PROFILE);
@@ -611,7 +638,7 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "realm-composite", "realm-child", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll());
 
-        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT);
+        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT, AccountRoles.VIEW_GROUPS);
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective());
     }
@@ -789,7 +816,6 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void updateClientWithProtocolMapper() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");

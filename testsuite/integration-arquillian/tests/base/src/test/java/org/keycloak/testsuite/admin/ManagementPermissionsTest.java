@@ -16,13 +16,12 @@
  */
 package org.keycloak.testsuite.admin;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.*;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 import javax.ws.rs.core.Response;
 
@@ -33,12 +32,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:leon.graser@bosch-si.com">Leon Graser</a>
  */
+@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
 public class ManagementPermissionsTest extends AbstractTestRealmKeycloakTest {
-
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

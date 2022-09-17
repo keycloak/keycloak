@@ -29,8 +29,5 @@ public interface Config {
     interface Keycloak {
         String image();
         String imagePullPolicy();
-
-        String initContainerImage();
-        String initContainerImagePullPolicy();
     }
 }

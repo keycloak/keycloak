@@ -31,7 +31,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -115,7 +114,6 @@ public interface ClientResource {
     ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix);
 
     @GET
-    @NoCache
     @Path("installation/providers/{providerId}")
     String getInstallationProvider(@PathParam("providerId") String providerId);
 
@@ -188,7 +186,6 @@ public interface ClientResource {
 
     @Path("/service-account-user")
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     UserRepresentation getServiceAccountUser();
 

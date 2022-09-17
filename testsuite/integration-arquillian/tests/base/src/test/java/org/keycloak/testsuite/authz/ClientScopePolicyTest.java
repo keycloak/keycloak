@@ -40,8 +40,6 @@ import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresent
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -50,7 +48,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientScopePolicyTest extends AbstractAuthzTest {
 
     @Override

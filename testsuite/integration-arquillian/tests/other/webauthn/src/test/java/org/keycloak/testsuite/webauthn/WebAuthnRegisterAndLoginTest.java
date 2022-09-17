@@ -145,9 +145,11 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             events.clear();
 
             // logout by user
-            appPage.logout();
+            logout();
+
             // confirm logout event
             events.expectLogout(sessionId)
+                    .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
                     .assertEvent();
 
@@ -176,9 +178,11 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             events.clear();
             // logout by user
-            appPage.logout();
+            logout();
+
             // confirm logout event
             events.expectLogout(sessionId)
+                    .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
                     .assertEvent();
         } finally {
@@ -248,9 +252,10 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             events.clear();
 
-            appPage.logout();
+            logout();
 
             events.expectLogout(sessionID)
+                    .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
                     .assertEvent();
 
@@ -271,7 +276,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();
-            appPage.logout();
+            logout();
 
             // Only passwordless login
             loginUsernamePage.open();
@@ -292,7 +297,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();
-            appPage.logout();
+            logout();
         } finally {
             removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL);
             removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_PASSWORDLESS, PASSWORDLESS_LABEL);

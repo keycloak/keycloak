@@ -50,6 +50,9 @@ public interface MapPolicyEntity extends UpdatableEntity, AbstractEntity {
         }
     }
 
+    String getRealmId();
+    void setRealmId(String realmId);
+
     String getName();
     void setName(String name);
 

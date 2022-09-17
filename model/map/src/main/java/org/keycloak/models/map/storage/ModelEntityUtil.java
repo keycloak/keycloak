@@ -20,6 +20,9 @@ import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.events.Event;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.ActionTokenValueModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -29,6 +32,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
@@ -38,6 +42,8 @@ import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.events.MapAdminEventEntity;
+import org.keycloak.models.map.events.MapAuthEventEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
@@ -60,7 +66,7 @@ public class ModelEntityUtil {
 
     private static final Map<Class<?>, String> MODEL_TO_NAME = new HashMap<>();
     static {
-        MODEL_TO_NAME.put(AuthenticatedClientSessionModel.class, "client-sessions");
+        MODEL_TO_NAME.put(ActionTokenValueModel.class, "single-use-objects");
         MODEL_TO_NAME.put(ClientScopeModel.class, "client-scopes");
         MODEL_TO_NAME.put(ClientModel.class, "clients");
         MODEL_TO_NAME.put(GroupModel.class, "groups");
@@ -77,12 +83,16 @@ public class ModelEntityUtil {
         MODEL_TO_NAME.put(ResourceServer.class, "authz-resource-servers");
         MODEL_TO_NAME.put(Resource.class, "authz-resources");
         MODEL_TO_NAME.put(org.keycloak.authorization.model.Scope.class, "authz-scopes");
+
+        // events
+        MODEL_TO_NAME.put(AdminEvent.class, "admin-events");
+        MODEL_TO_NAME.put(Event.class, "auth-events");
     }
     private static final Map<String, Class<?>> NAME_TO_MODEL = MODEL_TO_NAME.entrySet().stream().collect(Collectors.toMap(Entry::getValue, Entry::getKey));
 
     private static final Map<Class<?>, Class<? extends AbstractEntity>> MODEL_TO_ENTITY_TYPE = new HashMap<>();
     static {
-        MODEL_TO_ENTITY_TYPE.put(AuthenticatedClientSessionModel.class, MapAuthenticatedClientSessionEntity.class);
+        MODEL_TO_ENTITY_TYPE.put(ActionTokenValueModel.class, MapSingleUseObjectEntity.class);
         MODEL_TO_ENTITY_TYPE.put(ClientScopeModel.class, MapClientScopeEntity.class);
         MODEL_TO_ENTITY_TYPE.put(ClientModel.class, MapClientEntity.class);
         MODEL_TO_ENTITY_TYPE.put(GroupModel.class, MapGroupEntity.class);
@@ -92,6 +102,7 @@ public class ModelEntityUtil {
         MODEL_TO_ENTITY_TYPE.put(UserLoginFailureModel.class, MapUserLoginFailureEntity.class);
         MODEL_TO_ENTITY_TYPE.put(UserModel.class, MapUserEntity.class);
         MODEL_TO_ENTITY_TYPE.put(UserSessionModel.class, MapUserSessionEntity.class);
+        MODEL_TO_ENTITY_TYPE.put(AuthenticatedClientSessionModel.class, MapAuthenticatedClientSessionEntity.class);
 
         // authz
         MODEL_TO_ENTITY_TYPE.put(PermissionTicket.class, MapPermissionTicketEntity.class);
@@ -99,6 +110,10 @@ public class ModelEntityUtil {
         MODEL_TO_ENTITY_TYPE.put(ResourceServer.class, MapResourceServerEntity.class);
         MODEL_TO_ENTITY_TYPE.put(Resource.class, MapResourceEntity.class);
         MODEL_TO_ENTITY_TYPE.put(org.keycloak.authorization.model.Scope.class, MapScopeEntity.class);
+
+        // events
+        MODEL_TO_ENTITY_TYPE.put(AdminEvent.class, MapAdminEventEntity.class);
+        MODEL_TO_ENTITY_TYPE.put(Event.class, MapAuthEventEntity.class);
     }
     private static final Map<Class<?>, Class<?>> ENTITY_TO_MODEL_TYPE = MODEL_TO_ENTITY_TYPE.entrySet().stream().collect(Collectors.toMap(Entry::getValue, Entry::getKey));
 

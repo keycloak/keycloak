@@ -102,6 +102,8 @@ public class Messages {
 
     public static final String VERIFY_EMAIL = "verifyEmailMessage";
 
+    public static final String UPDATE_EMAIL = "updateEmailMessage";
+
     public static final String LINK_IDP = "linkIdpMessage";
 
     public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
@@ -179,6 +181,10 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
 
+    public static final String IDENTITY_PROVIDER_INVALID_RESPONSE = "identityProviderInvalidResponseMessage";
+
+    public static final String IDENTITY_PROVIDER_INVALID_SIGNATURE = "identityProviderInvalidSignatureMessage";
+
     public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFoundMessage";
 
     public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
@@ -234,6 +240,8 @@ public class Messages {
     public static final String IDENTITY_PROVIDER_LOGIN_FAILURE = "identityProviderLoginFailure";
 
     public static final String INSUFFICIENT_LEVEL_OF_AUTHENTICATION = "insufficientLevelOfAuthentication";
+
+    public static final String SUCCESS_LOGOUT = "successLogout";
 
     public static final String FAILED_LOGOUT = "failedLogout";
 

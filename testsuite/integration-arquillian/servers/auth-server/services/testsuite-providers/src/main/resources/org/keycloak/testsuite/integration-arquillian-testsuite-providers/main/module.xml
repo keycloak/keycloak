@@ -38,6 +38,9 @@
         <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-server-spi-private"/>
+        <module name="org.keycloak.keycloak-model-legacy"/>
+        <module name="org.keycloak.keycloak-model-legacy-private"/>
+        <module name="org.keycloak.keycloak-model-legacy-services"/>
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.keycloak.keycloak-model-infinispan"/>
         <module name="org.keycloak.keycloak-model-jpa"/>

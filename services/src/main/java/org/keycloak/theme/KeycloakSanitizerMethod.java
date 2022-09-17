@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.owasp.html.PolicyFactory;
-
 /**
  * Allows sanitizing of html that uses Freemarker ?no_esc.  This way, html
  * can be allowed but it is still cleaned up for safety.  Tags and attributes
@@ -33,8 +31,6 @@ import org.owasp.html.PolicyFactory;
  */
 public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     
-    private static final PolicyFactory KEYCLOAK_POLICY = KeycloakSanitizerPolicy.POLICY_DEFINITION;
-
     private static final Pattern HREF_PATTERN = Pattern.compile("\\s+href=\"([^\"]*)\"");
     
     @Override
@@ -44,7 +40,7 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         }
         
         String html = list.get(0).toString();
-        String sanitized = KEYCLOAK_POLICY.sanitize(html);
+        String sanitized = KeycloakSanitizerPolicy.POLICY_DEFINITION.sanitize(html);
         
         return fixURLs(sanitized);
     }

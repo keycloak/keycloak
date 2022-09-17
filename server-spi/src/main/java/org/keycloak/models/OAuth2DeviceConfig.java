@@ -47,7 +47,7 @@ public final class OAuth2DeviceConfig implements Serializable {
     private transient Supplier<RealmModel> realmForWrite;
 
     private int lifespan = DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
-    private int poolingInterval = DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
+    private int poolingInterval = DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL;
 
     public OAuth2DeviceConfig(RealmModel realm) {
         this.realm = () -> realm;

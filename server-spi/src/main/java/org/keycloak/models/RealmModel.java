@@ -23,17 +23,9 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
-import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.client.ClientStorageProvider;
-import org.keycloak.storage.client.ClientStorageProviderModel;
-import org.keycloak.storage.role.RoleStorageProvider;
-import org.keycloak.storage.role.RoleStorageProviderModel;
-import org.keycloak.utils.StringUtil;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -663,63 +655,6 @@ public interface RealmModel extends RoleContainerModel {
     Stream<ComponentModel> getComponentsStream();
 
     ComponentModel getComponent(String id);
-
-    /**
-     * @deprecated Use {@link #getUserStorageProvidersStream() getUserStorageProvidersStream} instead.
-     */
-    @Deprecated
-    default List<UserStorageProviderModel> getUserStorageProviders() {
-        return getUserStorageProvidersStream().collect(Collectors.toList());
-    }
-
-    /**
-     * Returns sorted {@link UserStorageProviderModel UserStorageProviderModel} as a stream.
-     * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream of {@link UserStorageProviderModel}. Never returns {@code null}.
-     */
-    default Stream<UserStorageProviderModel> getUserStorageProvidersStream() {
-        return getComponentsStream(getId(), UserStorageProvider.class.getName())
-                .map(UserStorageProviderModel::new)
-                .sorted(UserStorageProviderModel.comparator);
-    }
-
-    /**
-     * @deprecated Use {@link #getClientStorageProvidersStream() getClientStorageProvidersStream} instead.
-     */
-    @Deprecated
-    default List<ClientStorageProviderModel> getClientStorageProviders() {
-        return getClientStorageProvidersStream().collect(Collectors.toList());
-    }
-
-    /**
-     * Returns sorted {@link ClientStorageProviderModel ClientStorageProviderModel} as a stream.
-     * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream of {@link ClientStorageProviderModel}. Never returns {@code null}.
-     */
-    default Stream<ClientStorageProviderModel> getClientStorageProvidersStream() {
-        return getComponentsStream(getId(), ClientStorageProvider.class.getName())
-                .map(ClientStorageProviderModel::new)
-                .sorted(ClientStorageProviderModel.comparator);
-    }
-
-    /**
-     * @deprecated Use {@link #getRoleStorageProvidersStream() getRoleStorageProvidersStream} instead.
-     */
-    @Deprecated
-    default List<RoleStorageProviderModel> getRoleStorageProviders() {
-        return getRoleStorageProvidersStream().collect(Collectors.toList());
-    }
-
-    /**
-     * Returns sorted {@link RoleStorageProviderModel RoleStorageProviderModel} as a stream.
-     * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream of {@link RoleStorageProviderModel}. Never returns {@code null}.
-     */
-    default Stream<RoleStorageProviderModel> getRoleStorageProvidersStream() {
-        return getComponentsStream(getId(), RoleStorageProvider.class.getName())
-                .map(RoleStorageProviderModel::new)
-                .sorted(RoleStorageProviderModel.comparator);
-    }
 
     /**
      * Returns stream of ComponentModels that represent StorageProviders for class storageProviderClass in this realm.
