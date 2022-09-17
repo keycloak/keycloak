@@ -107,7 +107,7 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ADMIN2)
+    @DisableFeature(value = Profile.Feature.ADMIN2, skipRestart = true)
     public void fixedFrontendUrlOldAdminPage() throws Exception {
         expectedBackendUrl = transformUrlIfQuarkusServer(AUTH_SERVER_ROOT);
 
