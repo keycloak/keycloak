@@ -41,7 +41,7 @@ jobs:
       run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2.1.21
+      uses: github/codeql-action/init@v2.1.24
       env: 
         CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
       with:
@@ -52,7 +52,7 @@ jobs:
       run: mvn -B install -DskipTests -DskipQuarkus -DskipTestsuite -DskipExamples -DskipTests
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2.1.21
+      uses: github/codeql-action/analyze@v2.1.24
       with:
         wait-for-processing: true
       env: 
