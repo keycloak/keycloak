@@ -12,21 +12,23 @@ import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.CryptoConstants;
+import org.keycloak.common.crypto.ECDSACryptoProvider;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.crypto.PemUtilsProvider;
+import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class DefaultCryptoProvider implements CryptoProvider {
 
-    private final BouncyCastleProvider bcProvider;
+    private final Provider bcProvider;
 
     private Map<String, Object> providers = new ConcurrentHashMap<>();
 
     public DefaultCryptoProvider() {
         // Make sure to instantiate this only once due it is expensive. And skip registration if already available in Java security providers (EG. due explicitly configured in java security file)
-        BouncyCastleProvider existingBc = (BouncyCastleProvider) Security.getProvider(CryptoConstants.BC_PROVIDER_ID);
+        Provider existingBc = Security.getProvider(CryptoConstants.BC_PROVIDER_ID);
         this.bcProvider = existingBc == null ? new BouncyCastleProvider() : existingBc;
 
         providers.put(CryptoConstants.A128KW, new AesKeyWrapAlgorithmProvider());
@@ -65,6 +67,22 @@ public class DefaultCryptoProvider implements CryptoProvider {
     public ECParameterSpec createECParams(String curveName) {
         ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(curveName);
         return new ECNamedCurveSpec("prime256v1", spec.getCurve(), spec.getG(), spec.getN());
+    }
+
+    @Override
+    public UserIdentityExtractorProvider getIdentityExtractorProvider() {
+        return new BCUserIdentityExtractorProvider();
+    }
+
+    @Override
+    public ECDSACryptoProvider getEcdsaCryptoProvider() {
+        return new BCECDSACryptoProvider();
+    }
+
+
+    @Override
+    public <T> T getOCSPProver(Class<T> clazz) {
+        return clazz.cast(new BCOCSPProvider());
     }
 
 }

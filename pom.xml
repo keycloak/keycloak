@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>2.7.6.Final</quarkus.version>
+        <quarkus.version>2.12.2.Final</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:
@@ -92,7 +92,7 @@
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
         <hibernate.core.version>5.3.24.Final</hibernate.core.version>
         <hibernate.c3p0.version>5.3.24.Final</hibernate.c3p0.version>
-        <infinispan.version>12.1.7.Final</infinispan.version>
+        <infinispan.version>13.0.10.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.4.1.Final</infinispan.protostream.processor.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <jackson.version>2.13.2</jackson.version>
@@ -124,7 +124,6 @@
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
         <xmlsec.version>2.2.3</xmlsec.version>
-        <glassfish.json.version>1.1.6</glassfish.json.version>
         <wildfly.common.version>1.6.0.Final</wildfly.common.version>
         <nashorn.version>15.3</nashorn.version>
         <ua-parser.version>1.5.2</ua-parser.version>
@@ -178,6 +177,7 @@
              https://issues.redhat.com/browse/KEYCLOAK-17585?focusedCommentId=16002705&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-16002705
         -->
         <microprofile-metrics-api.version>2.3</microprofile-metrics-api.version>
+        <testcontainers.version>1.16.3</testcontainers.version>
 
         <!-- Maven Plugins -->
         <replacer.plugin.version>1.3.5</replacer.plugin.version>
@@ -227,7 +227,7 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v16.13.2</node.version>
+        <node.version>v16.16.0</node.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -284,7 +284,6 @@
         <module>themes</module>
         <module>model</module>
         <module>util</module>
-        <module>wildfly</module>
         <module>integration</module>
         <module>adapters</module>
         <module>authz</module>
@@ -611,11 +610,6 @@
                 <artifactId>wildfly-dist</artifactId>
                 <version>${wildfly.version}</version>
                 <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.json</artifactId>
-                <version>${glassfish.json.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.openjdk.nashorn</groupId>
@@ -1908,6 +1902,18 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>wildfly-dist</id>
+            <activation>
+                <property>
+                    <name>includeWildFly</name>
+                </property>
+            </activation>
+            <modules>
+                <module>wildfly</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>community</id>
             <activation>

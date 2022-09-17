@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.utils.io.IOUtil;
@@ -32,8 +31,6 @@ import org.keycloak.vault.VaultTranscriber;
 import java.util.List;
 import java.util.Optional;
 
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
-
 /**
  * Tests the usage of the {@link VaultTranscriber} on the server side. The tests attempt to obtain the transcriber from
  * the session and then use it to obtain secrets from the configured provider.
@@ -41,7 +38,6 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 @EnableVault
-@AuthServerContainerExclude(REMOTE)
 public class KeycloakVaultTest extends AbstractKeycloakTest {
 
     @Override

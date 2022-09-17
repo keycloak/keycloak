@@ -46,7 +46,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.console.page.AdminConsole;
@@ -219,7 +218,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         client.close();
     }
 
-    @AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.REMOTE}, details = "Remote testsuite: max-detail-length is set to zero in standalone.xml, proposed fix - KEYCLOAK-17659")
     @Test
     public void loginWithLongRedirectUri() throws Exception {
         try (AutoCloseable c = new RealmAttributeUpdater(adminClient.realm("test"))

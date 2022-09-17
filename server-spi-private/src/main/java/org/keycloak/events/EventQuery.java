@@ -91,6 +91,20 @@ public interface EventQuery {
     EventQuery maxResults(int max);
 
     /**
+     * Order the result by descending time
+     *
+     * @return <code>this</code> for method chaining
+     */
+    EventQuery orderByDescTime();
+
+    /**
+     * Order the result by ascending time
+     *
+     * @return <code>this</code> for method chaining
+     */
+    EventQuery orderByAscTime();
+
+    /**
      * @deprecated Use {@link #getResultStream() getResultStream} instead.
      */
     @Deprecated

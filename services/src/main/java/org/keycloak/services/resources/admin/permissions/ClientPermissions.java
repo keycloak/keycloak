@@ -93,6 +93,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
      private void initialize(ClientModel client) {
         ResourceServer server = root.findOrCreateResourceServer(client);
+        if (server==null) return;
         Scope manageScope = manageScope(server);
         if (manageScope == null) {
             manageScope = authz.getStoreFactory().getScopeStore().create(server, AdminPermissionManagement.MANAGE_SCOPE);
@@ -291,6 +292,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
     @Override
     public Map<String, String> getPermissions(ClientModel client) {
+        if (authz == null) return null;
         initialize(client);
         Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission(client).getId());

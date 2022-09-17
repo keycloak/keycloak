@@ -71,6 +71,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
@@ -339,7 +340,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             case OAuth2Constants.REFRESH_TOKEN_TYPE:
                 return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
             case OAuth2Constants.SAML2_TOKEN_TYPE:
-                return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
+                return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient);
         }
 
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
@@ -393,6 +394,11 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             responseBuilder.getAccessToken().addAudience(audience);
         }
 
+        if (formParams.containsKey(OAuth2Constants.REQUESTED_SUBJECT)) {
+            // if "impersonation", store the client that originated the impersonated user session
+            targetUserSession.setNote(IMPERSONATOR_CLIENT.toString(), client.getId());
+        }
+
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
             && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
@@ -412,8 +418,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
     }
 
-    protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  ClientModel targetClient, String audience, String scope) {
+    protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, ClientModel targetClient) {
         // Create authSession with target SAML 2.0 client and authenticated user
         LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);

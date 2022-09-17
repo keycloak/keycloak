@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -93,8 +94,8 @@ public final class Database {
         return Optional.of(vendor.dialect.apply(alias));
     }
 
-    public static String[] getAliases() {
-        return DATABASES.keySet().stream().sorted().toArray(String[]::new);
+    public static List<String> getAliases() {
+        return DATABASES.keySet().stream().sorted().collect(Collectors.toList());
     }
 
     public enum Vendor {
@@ -124,7 +125,7 @@ public final class Database {
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
         ),
         MARIADB("mariadb",
-                "org.mariadb.jdbc.MySQLDataSource",
+                "org.mariadb.jdbc.MariaDbDataSource",
                 "org.mariadb.jdbc.Driver",
                 "org.hibernate.dialect.MariaDBDialect",
                 "jdbc:mariadb://${kc.db-url-host:localhost}:${kc.db-url-port:3306}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",

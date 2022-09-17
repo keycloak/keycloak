@@ -31,14 +31,25 @@ import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.jpa.entities.RealmAttributeEntity;
+import org.keycloak.models.jpa.entities.RealmAttributes;
+import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.InvalidationHandler;
+import org.keycloak.timer.ScheduledTask;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -261,4 +272,21 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEvent.setAuthDetails(authDetails);
     }
 
+    protected void clearExpiredAdminEvents() {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<RealmAttributeEntity> cr = cb.createQuery(RealmAttributeEntity.class);
+        Root<RealmAttributeEntity> root = cr.from(RealmAttributeEntity.class);
+        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.greaterThan(root.get("value").as(Long.class),Long.valueOf(0))));
+        Map<Long, List<RealmAttributeEntity>> realms = em.createQuery(cr).getResultStream().collect(Collectors.groupingBy(attribute -> Long.valueOf(attribute.getValue())));
+
+        long current = Time.currentTimeMillis();
+        realms.entrySet().forEach(entry -> {
+            List<String> realmIds = entry.getValue().stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
+            int currentNumDeleted = em.createQuery("delete from AdminEventEntity where realmId in :realmIds and time < :eventTime")
+                .setParameter("realmIds", realmIds)
+                .setParameter("eventTime", current - (Long.valueOf(entry.getKey()) * 1000))
+                .executeUpdate();
+            logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, entry.getKey());
+        });
+    }
 }

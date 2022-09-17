@@ -40,6 +40,7 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -78,7 +79,14 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         RolePolicyRepresentation representation = new RolePolicyRepresentation();
 
         try {
-            representation.setRoles(new HashSet<>(Arrays.asList(JsonSerialization.readValue(policy.getConfig().get("roles"), RolePolicyRepresentation.RoleDefinition[].class))));
+            String roles = policy.getConfig().get("roles");
+
+            if (roles == null) {
+                representation.setRoles(Collections.emptySet());
+            } else {
+                representation.setRoles(new HashSet<>(
+                        Arrays.asList(JsonSerialization.readValue(roles, RolePolicyRepresentation.RoleDefinition[].class))));
+            }
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize roles", cause);
         }

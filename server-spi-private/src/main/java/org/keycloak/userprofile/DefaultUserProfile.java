@@ -115,6 +115,9 @@ public final class DefaultUserProfile implements UserProfile {
                 List<String> updatedValue = attribute.getValue().stream().filter(Objects::nonNull).collect(Collectors.toList());
 
                 if (!CollectionUtil.collectionEquals(currentValue, updatedValue)) {
+                    if (!removeAttributes && updatedValue.isEmpty()) {
+                        continue;
+                    }
                     user.setAttribute(name, updatedValue);
 
                     if (UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {

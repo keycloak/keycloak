@@ -48,3 +48,59 @@ mvn test -Pjpa -Dtest=ClientModelTest \
 ```
 
 The results are available in the `target/profile.html` file.
+
+Usage of Testcontainers
+-----------------------
+
+Some profiles within model tests require running 3rd party software, for
+example, database or Infinispan. For running these we are using
+[Testcontainers](https://www.testcontainers.org/). This may require some
+additional configuration of your container engine.
+
+#### Podman settings
+
+For more details see the following [Podman guide from Quarkus webpage](https://quarkus.io/guides/podman).
+
+Specifically, these steps are required:
+```shell
+# Enable the podman socket with Docker REST API (only needs to be done once)
+systemctl --user enable podman.socket --now
+
+# Set the required environment variables (need to be run everytime or added to profile)
+export DOCKER_HOST=unix:///run/user/${UID}/podman/podman.sock
+```
+
+Testcontainers are using [ryuk](https://hub.docker.com/r/testcontainers/ryuk)
+to cleanup containers after tests. To make this work with Podman add the
+following line to `~/.testcontainers.properties`
+```shell
+ryuk.container.privileged=true
+```
+Alternatively, disable usage of ryuk (using this may result in stale containers
+still running after tests finish. This is not recommended especially if you are
+executing tests from Intellij IDE as it [may not stop](https://youtrack.jetbrains.com/issue/IDEA-190385) 
+the containers created during test run).
+```shell
+export TESTCONTAINERS_RYUK_DISABLED=true #not recommended - see above!
+```
+
+#### Docker settings
+
+To use Testcontainers with Docker it is necessary to
+[make Docker available for non-root users](https://docs.docker.com/engine/install/linux-postinstall/).
+
+Running HotRod tests with external Infinispan
+---------------------------------------------
+
+By default, Model tests with `hot-rod` profile spawn a new Infinispan container
+with each test execution. It is also possible, to configure Model tests to
+connect to an external instance of Infinispan. To do so, execute tests with
+the following command:
+```shell
+mvn test -Phot-rod \
+  -Dkeycloak.testsuite.start-hotrod-container=false \
+  -Dkeycloak.connectionsHotRod.host=<host> \
+  -Dkeycloak.connectionsHotRod.port=<port> \
+  -Dkeycloak.connectionsHotRod.username=<username> \
+  -Dkeycloak.connectionsHotRod.password=<password>
+```

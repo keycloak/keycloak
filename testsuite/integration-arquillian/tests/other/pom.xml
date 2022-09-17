@@ -121,15 +121,9 @@
             </modules>
         </profile>
         <profile>
-            <id>clean-start</id>
+            <id>old-admin-console</id>
             <modules>
-                <module>clean-start</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>console-ui-tests</id>
-            <modules>
-                <module>console</module>
+                <module>old-admin-console</module>
             </modules>
         </profile>
         <profile>
@@ -142,12 +136,6 @@
             <id>jpa-performance</id>
             <modules>
                 <module>jpa-performance</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>server-config-migration</id>
-            <modules>
-                <module>server-config-migration</module>
             </modules>
         </profile>
         <profile>
@@ -171,7 +159,7 @@
         <profile>
             <id>webauthn</id>
             <modules>
-                <module>console</module>
+                <module>old-admin-console</module>
                 <module>base-ui</module>
                 <module>webauthn</module>
             </modules>

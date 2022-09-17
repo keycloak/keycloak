@@ -16,9 +16,9 @@
  */
 package org.keycloak.testsuite.admin;
 
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -53,7 +53,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.resources.admin.permissions.ClientPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionManagement;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -74,8 +73,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 
 import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATION_DISABLED;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
@@ -87,11 +84,6 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
-
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -427,7 +419,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRestEvaluation() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupPolices);
         testingClient.server().run(FineGrainAdminUnitTest::setupUsers);
@@ -635,7 +626,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 // Should only return the list of users that belong to "top" group
                 List<UserRepresentation> queryUsers = realmClient.realm(TEST).users().list();
                 Assert.assertEquals(queryUsers.size(), 1);
-                Assert.assertEquals("groupmember", queryUsers.get(0).getUsername());
+                MatcherAssert.assertThat("groupmember", Matchers.equalToIgnoringCase(queryUsers.get(0).getUsername()));
                 for (UserRepresentation user : queryUsers) {
                     System.out.println(user.getUsername());
                 }
@@ -704,7 +695,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testMasterRealm() throws Exception {
         // test that master realm can still perform operations when policies are in place
         //
@@ -783,7 +773,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     // KEYCLOAK-5152
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRealmWithComposites() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setup5152);
 
@@ -846,7 +835,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRemoveCleanup() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupDeleteTest);
         testingClient.server().run(FineGrainAdminUnitTest::invokeDelete);
@@ -944,7 +932,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     @Test
     @UncaughtServerErrorExpected
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+
     public void testTokenExchangeDisabled() throws Exception {
         checkTokenExchange(false);
     }
@@ -956,7 +944,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
      */
     @Test
     @UncaughtServerErrorExpected
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+
     @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void testWithTokenExchange() throws Exception {
         String exchanged = checkTokenExchange(true);
@@ -968,7 +956,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testUserPagination() {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
@@ -1064,7 +1051,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testClientsSearch() {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
@@ -1244,7 +1230,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testClientsSearchAfterFirstPage() {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");

@@ -20,6 +20,9 @@ package org.keycloak.quarkus.runtime.cli;
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 import static picocli.CommandLine.Help.Ansi.OFF;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.keycloak.utils.StringUtil;
 
 import picocli.CommandLine;
@@ -66,6 +69,15 @@ public class OptionRenderer implements CommandLine.Help.IOptionRenderer {
     private Text formatDescription(String[] descriptions, OptionSpec option, ColorScheme scheme) {
         String description = descriptions[0];
         String defaultValue = option.defaultValue();
+        Iterable<String> completionCandidates = option.completionCandidates();
+
+        if (!option.type().equals(Boolean.class) && completionCandidates != null) {
+            List<String> expectedValues = StreamSupport.stream(completionCandidates.spliterator(), false).collect(Collectors.toList());
+
+            if (!expectedValues.isEmpty()) {
+                description = description + " Possible values are: " + String.join(", ", expectedValues) + ".";
+            }
+        }
 
         if (defaultValue != null) {
             description = description + " Default: " + defaultValue + ".";

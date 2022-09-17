@@ -45,5 +45,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Assert.assertEquals("new@email.com", user.getEmail());
+        Assert.assertEquals("Tom", user.getFirstName());
+        Assert.assertEquals("Brady", user.getLastName());
     }
 }

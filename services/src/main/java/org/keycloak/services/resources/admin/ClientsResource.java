@@ -195,7 +195,7 @@ public class ClientsResource {
                 ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
 
                 if (authorizationSettings != null) {
-                    authorizationService.resourceServer().importSettings(authorizationSettings);
+                    authorizationService.getResourceServerService().importSettings(authorizationSettings);
                 }
             }
 

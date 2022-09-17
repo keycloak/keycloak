@@ -53,10 +53,14 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     private static final Logger LOG = Logger.getLogger(MapRootAuthenticationSessionProvider.class);
     private final KeycloakSession session;
     protected final MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
+    private int authSessionsLimit;
 
-    public MapRootAuthenticationSessionProvider(KeycloakSession session, MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore) {
+    public MapRootAuthenticationSessionProvider(KeycloakSession session,
+                                                MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore,
+                                                int authSessionsLimit) {
         this.session = session;
         this.tx = sessionStore.createTransaction(session);
+        this.authSessionsLimit = authSessionsLimit;
 
         session.getTransactionManager().enlistAfterCompletion(tx);
     }
@@ -67,7 +71,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
                 tx.delete(origEntity.getId());
                 return null;
             } else {
-                return new MapRootAuthenticationSessionAdapter(session, realm, origEntity);
+                return new MapRootAuthenticationSessionAdapter(session, realm, origEntity, authSessionsLimit);
             }
         };
     }

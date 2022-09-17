@@ -1,8 +1,6 @@
 package org.keycloak.config;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class HttpOptions {
 
@@ -10,7 +8,6 @@ public class HttpOptions {
             .category(OptionCategory.HTTP)
             .description("Enables the HTTP listener.")
             .defaultValue(Boolean.FALSE)
-            .expectedValues(Boolean.TRUE, Boolean.FALSE)
             .build();
 
     public static final Option HTTP_HOST = new OptionBuilder<>("http-host", String.class)
@@ -21,7 +18,7 @@ public class HttpOptions {
 
     public static final Option HTTP_RELATIVE_PATH = new OptionBuilder<>("http-relative-path", String.class)
             .category(OptionCategory.HTTP)
-            .description("Set the path relative to '/' for serving resources.")
+            .description("Set the path relative to '/' for serving resources. The path must start with a '/'.")
             .defaultValue("/")
             .buildTime(true)
             .build();
@@ -46,9 +43,8 @@ public class HttpOptions {
 
     public static final Option HTTPS_CLIENT_AUTH = new OptionBuilder<>("https-client-auth", ClientAuth.class)
             .category(OptionCategory.HTTP)
-            .description("Configures the server to require/request client authentication. Possible Values: none, request, required.")
+            .description("Configures the server to require/request client authentication.")
             .defaultValue(ClientAuth.none)
-            .expectedValues(ClientAuth.values())
             .build();
 
     public static final Option HTTPS_CIPHER_SUITES = new OptionBuilder<>("https-cipher-suites", String.class)
@@ -104,25 +100,4 @@ public class HttpOptions {
             .description("The type of the trust store file. " +
                     "If not given, the type is automatically detected based on the file name.")
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(HTTP_ENABLED);
-        ALL_OPTIONS.add(HTTP_HOST);
-        ALL_OPTIONS.add(HTTP_RELATIVE_PATH);
-        ALL_OPTIONS.add(HTTP_PORT);
-        ALL_OPTIONS.add(HTTPS_PORT);
-        ALL_OPTIONS.add(HTTPS_CLIENT_AUTH);
-        ALL_OPTIONS.add(HTTPS_CIPHER_SUITES);
-        ALL_OPTIONS.add(HTTPS_PROTOCOLS);
-        ALL_OPTIONS.add(HTTPS_CERTIFICATE_FILE);
-        ALL_OPTIONS.add(HTTPS_CERTIFICATE_KEY_FILE);
-        ALL_OPTIONS.add(HTTPS_KEY_STORE_FILE);
-        ALL_OPTIONS.add(HTTPS_KEY_STORE_PASSWORD);
-        ALL_OPTIONS.add(HTTPS_KEY_STORE_TYPE);
-        ALL_OPTIONS.add(HTTPS_TRUST_STORE_FILE);
-        ALL_OPTIONS.add(HTTPS_TRUST_STORE_PASSWORD);
-        ALL_OPTIONS.add(HTTPS_TRUST_STORE_TYPE);
-    }
 }

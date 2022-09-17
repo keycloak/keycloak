@@ -32,8 +32,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -315,7 +313,6 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
     public void backButtonInResetPasswordFlow() throws Exception {
         // Click on "forgot password" and type username
         loginPage.open();

@@ -39,7 +39,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
@@ -47,6 +46,7 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.StringUtil;
 
@@ -87,7 +87,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     protected boolean passwordUpdateSupported;
     protected boolean passwordSet;
     protected KeycloakSession session;
-    protected FreeMarkerUtil freeMarker;
+    protected FreeMarkerProvider freeMarker;
     protected HttpHeaders headers;
     protected Map<String, Object> attributes;
 
@@ -97,9 +97,9 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     protected MessageType messageType = MessageType.ERROR;
     private boolean authorizationSupported;
 
-    public FreeMarkerAccountProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
+    public FreeMarkerAccountProvider(KeycloakSession session) {
         this.session = session;
-        this.freeMarker = freeMarker;
+        this.freeMarker = session.getProvider(FreeMarkerProvider.class);
     }
 
     public AccountProvider setUriInfo(UriInfo uriInfo) {

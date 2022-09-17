@@ -100,7 +100,7 @@ public class ClusteringTest extends BaseOperatorTest {
     }
 
     // local debug commands:
-    //    export TOKEN=$(curl --data "grant_type=password&client_id=token-test-client&username=test&password=test" http://localhost:8080/realms/token-test/protocol/openid-connect/token | jq -r '.access_token')
+    //    export TOKEN=$(curl --data "grant_type=password&client_id=token-test-client&username=test&password=test&scope=openid" http://localhost:8080/realms/token-test/protocol/openid-connect/token | jq -r '.access_token')
     //
     //    curl http://localhost:8080/realms/token-test/protocol/openid-connect/userinfo -H "Authorization: bearer $TOKEN"
     //
@@ -170,6 +170,7 @@ public class ClusteringTest extends BaseOperatorTest {
                             .param("client_id", "token-test-client")
                             .param("username", "test")
                             .param("password", "test")
+                            .param("scope", "openid")
                             .post("https://localhost:" + portForward.getLocalPort() + "/realms/token-test/protocol/openid-connect/token")
                             .body()
                             .jsonPath()
@@ -208,7 +209,7 @@ public class ClusteringTest extends BaseOperatorTest {
                     var tokenUrl = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/token-test/protocol/openid-connect/token";
                     Log.info("Checking url: " + tokenUrl);
 
-                    var tokenOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=token-test-client&username=test&password=test", tokenUrl);
+                    var tokenOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=token-test-client&username=test&password=test&scope=openid", tokenUrl);
                     Log.info("Curl Output with token: " + tokenOutput);
                     JsonNode tokenAnswer = Serialization.jsonMapper().readTree(tokenOutput);
                     assertThat(tokenAnswer.hasNonNull("access_token")).isTrue();

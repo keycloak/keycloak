@@ -122,7 +122,7 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
               MarshallUtil.unmarshallString(input),
               MarshallUtil.unmarshallString(input),
               MarshallUtil.unmarshallString(input),
-              MarshallUtil.unmarshallMap(input, HashMap::new)
+              MarshallUtil.<String, String, Map<String, String>>unmarshallMap(input, HashMap::new)
             );
         }
 

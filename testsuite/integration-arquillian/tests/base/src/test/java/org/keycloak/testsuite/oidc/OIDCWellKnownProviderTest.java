@@ -46,7 +46,6 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.BrowserFlowTest;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
@@ -70,7 +69,6 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -307,7 +305,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(REMOTE)
+    
     public void testAcrValuesSupported() throws IOException {
         Client client = AdminClientUtil.createResteasyClient();
         try {
@@ -358,7 +356,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(REMOTE)
+    
     public void testDefaultProviderCustomizations() throws IOException {
         Client client = AdminClientUtil.createResteasyClient();
         try {

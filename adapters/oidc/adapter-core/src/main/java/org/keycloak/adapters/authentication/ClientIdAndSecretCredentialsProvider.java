@@ -54,7 +54,7 @@ public class ClientIdAndSecretCredentialsProvider implements ClientCredentialsPr
 
         if (!deployment.isPublicClient()) {
             if (clientSecret != null) {
-                String authorization = BasicAuthHelper.UrlEncoded.createHeader(clientId, clientSecret);
+                String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
                 requestHeaders.put("Authorization", authorization);
             } else {
                 logger.warnf("Client '%s' doesn't have secret available", clientId);

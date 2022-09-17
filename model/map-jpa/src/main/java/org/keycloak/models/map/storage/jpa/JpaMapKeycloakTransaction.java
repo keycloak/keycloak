@@ -104,13 +104,19 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     @Override
     public E read(String key) {
         if (key == null) return null;
-        UUID uuid = StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(key);
-        if (uuid == null) return null;
-        E e = mapToEntityDelegateUnique(
-                LockObjectsForModification.isEnabled(session, modelType) ?
-                        em.find(entityType, uuid, LockModeType.PESSIMISTIC_WRITE) :
-                        em.find(entityType, uuid)
-        );
+        E e = null;
+        if (!LockObjectsForModification.isEnabled(session, modelType)) {
+            e = cacheWithinSession.get(key);
+        }
+        if (e == null) {
+            UUID uuid = StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(key);
+            if (uuid == null) return null;
+            e = mapToEntityDelegateUnique(
+                    LockObjectsForModification.isEnabled(session, modelType) ?
+                            em.find(entityType, uuid, LockModeType.PESSIMISTIC_WRITE) :
+                            em.find(entityType, uuid)
+            );
+        }
         return e != null && isExpirableEntity && isExpired((ExpirableEntity) e, true) ? null : e;
     }
 

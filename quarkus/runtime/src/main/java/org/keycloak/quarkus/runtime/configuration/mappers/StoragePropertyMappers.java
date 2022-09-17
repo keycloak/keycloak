@@ -141,7 +141,6 @@ final class StoragePropertyMappers {
                         .build(),
                 fromOption(StorageOptions.STORAGE_DEPLOYMENT_STATE_RESOURCES_VERSION_SEED)
                         .to("kc.spi-deployment-state-map-resources-version-seed")
-                        .transformer(StoragePropertyMappers::getResourcesVersionSeed)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_AUTH_SESSION_PROVIDER)
@@ -317,15 +316,6 @@ final class StoragePropertyMappers {
 
     private static Optional<String> getAreaStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
         return of(storage.isEmpty() ? "jpa" : "map");
-    }
-
-    private static Optional<String> getResourcesVersionSeed(Optional<String> parameterValue, ConfigSourceInterceptorContext context) {
-        if (!parameterValue.isEmpty()) {
-            return parameterValue;
-        }
-        Logger.getLogger(StoragePropertyMappers.class)
-                .warnf("Version seed for deployment state set with a random number. Caution: This can lead to unstable operations when serving resources from the cluster without a sticky loadbalancer or when restarting nodes. Set the '--%s' option with a secret seed to ensure stable operations.", StorageOptions.STORAGE_DEPLOYMENT_STATE_RESOURCES_VERSION_SEED.getKey());
-        return Optional.of(SecretGenerator.getInstance().randomString(10));
     }
 
     private static Optional<String> getCacheStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {

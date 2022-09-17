@@ -24,6 +24,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 
+import java.util.Collections;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -45,7 +47,7 @@ public class TestCacheUtils {
 
         realm.getClientScopesStream().map(ClientScopeModel::getId).forEach(realm::getClientScopeById);
 
-        session.users().getUsersStream(realm).forEach(user -> {
+        session.users().searchForUserStream(realm, Collections.emptyMap()).forEach(user -> {
             session.users().getUserById(realm, user.getId());
             if (user.getEmail() != null) {
                 session.users().getUserByEmail(realm, user.getEmail());

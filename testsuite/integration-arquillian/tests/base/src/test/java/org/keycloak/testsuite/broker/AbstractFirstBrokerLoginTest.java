@@ -1007,9 +1007,14 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         Assert.assertEquals("no-first-name", accountUpdateProfilePage.getUsername());
 
         RealmRepresentation consumerRealmRep = adminClient.realm(bc.consumerRealmName()).toRepresentation();
+        events.expectAccount(EventType.REGISTER).realm(consumerRealmRep).user(Matchers.any(String.class)).session((String) null)
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+                .detail(Details.REGISTER_METHOD, "broker")
+                .assertEvent(getFirstConsumerEvent());
+
         events.expectAccount(EventType.LOGIN).realm(consumerRealmRep).user(Matchers.any(String.class)).session(Matchers.any(String.class))
             .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-            .detail(Details.REGISTER_METHOD, "broker")
+            .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
             .assertEvent(getFirstConsumerEvent());
     }
 
@@ -1045,9 +1050,15 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
             .detail(Details.PREVIOUS_EMAIL, "no-first-name@localhost.com")
             .detail(Details.UPDATED_EMAIL, "new-email@localhost.com")
             .assertEvent(getFirstConsumerEvent());
-        events.expectAccount(EventType.LOGIN).realm(consumerRealmRep).user(Matchers.any(String.class)).session(Matchers.any(String.class))
+
+        events.expectAccount(EventType.REGISTER).realm(consumerRealmRep).user(Matchers.any(String.class)).session((String) null)
             .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
             .detail(Details.REGISTER_METHOD, "broker")
+            .assertEvent(events.poll());
+
+        events.expectAccount(EventType.LOGIN).realm(consumerRealmRep).user(Matchers.any(String.class)).session(Matchers.any(String.class))
+            .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+            .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
             .assertEvent(events.poll());
     }
 

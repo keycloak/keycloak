@@ -54,8 +54,6 @@
     </build>
     <modules>
         <module>admin-client</module>
-        <module>broker</module>
-        <module>cors</module>
         <module>providers</module>
         <module>js-console</module>
         <module>kerberos</module>

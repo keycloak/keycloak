@@ -17,8 +17,7 @@
 package org.keycloak.testsuite.model.parameters;
 
 import com.google.common.collect.ImmutableSet;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.events.EventStoreSpi;
 import org.keycloak.models.ActionTokenStoreSpi;
@@ -31,7 +30,6 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderF
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
-import org.keycloak.models.map.events.MapEventStoreProviderFactory;
 import org.keycloak.models.map.keys.MapPublicKeyStorageProviderFactory;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
@@ -51,10 +49,15 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.Config;
-import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
+import org.keycloak.testsuite.util.InfinispanContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.time.Duration;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -62,6 +65,8 @@ import java.util.Set;
  */
 public class HotRodMapStorage extends KeycloakModelParameters {
 
+    private final Logger LOG = Logger.getLogger(getClass());
+    public static final Boolean START_CONTAINER = Boolean.valueOf(System.getProperty("keycloak.testsuite.start-hotrod-container", "true"));
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .add(HotRodConnectionSpi.class)
       .build();
@@ -69,10 +74,9 @@ public class HotRodMapStorage extends KeycloakModelParameters {
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
       .add(HotRodMapStorageProviderFactory.class)
       .add(HotRodConnectionProviderFactory.class)
-      .add(ConcurrentHashMapStorageProviderFactory.class) // TODO: this should be removed when we have a HotRod implementation for each area
       .build();
     
-    private HotRodServerRule hotRodServerRule = new HotRodServerRule();
+    private final InfinispanContainer hotRodContainer = new InfinispanContainer();
 
     @Override
     public void updateConfig(Config cf) {
@@ -100,18 +104,25 @@ public class HotRodMapStorage extends KeycloakModelParameters {
                 .config("keyType.single-use-objects", "string");
 
         cf.spi(HotRodConnectionSpi.NAME).provider(DefaultHotRodConnectionProviderFactory.PROVIDER_ID)
-                .config("enableSecurity", "false")
-                .config("configureRemoteCaches", "false");
+                .config("host", hotRodContainer.getHost())
+                .config("port", hotRodContainer.getPort())
+                .config("username", hotRodContainer.getUsername())
+                .config("password", hotRodContainer.getPassword())
+                .config("configureRemoteCaches", "true");
     }
 
     @Override
     public void beforeSuite(Config cf) {
-        hotRodServerRule.createHotRodMapStoreServer();
+        if (START_CONTAINER) {
+            hotRodContainer.start();
+        }
     }
 
     @Override
-    public Statement classRule(Statement base, Description description) {
-        return hotRodServerRule.apply(base, description);
+    public void afterSuite() {
+        if (START_CONTAINER) {
+            hotRodContainer.stop();
+        }
     }
 
     public HotRodMapStorage() {

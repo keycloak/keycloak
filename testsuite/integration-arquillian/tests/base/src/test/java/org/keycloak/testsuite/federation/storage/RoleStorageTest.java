@@ -40,13 +40,10 @@ import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedRoleStorageProviderFactory;
 import org.junit.BeforeClass;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class RoleStorageTest extends AbstractTestRealmKeycloakTest {
 
     private String providerId;

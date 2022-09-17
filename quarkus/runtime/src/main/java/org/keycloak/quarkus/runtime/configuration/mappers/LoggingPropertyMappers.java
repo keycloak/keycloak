@@ -30,8 +30,8 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_OUTPUT)
                         .to("quarkus.log.console.json")
-                        .paramLabel("default|json")
-                        .transformer(LoggingPropertyMappers::resolveLogConsoleOutput)
+                        .paramLabel("output")
+                        .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
                         .to("quarkus.log.console.format")
@@ -39,7 +39,6 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_COLOR)
                         .to("quarkus.log.console.color")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_ENABLED)
                         .mapFrom("log")
@@ -53,12 +52,17 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE)
                         .to("quarkus.log.file.path")
-                        .paramLabel("<path>/<file-name>.log")
+                        .paramLabel("file")
                         .transformer(LoggingPropertyMappers::resolveFileLogLocation)
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
                         .to("quarkus.log.file.format")
                         .paramLabel("<format>")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_OUTPUT)
+                        .to("quarkus.log.file.json")
+                        .paramLabel("output")
+                        .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
                 fromOption(LoggingOptions.LOG_LEVEL)
                         .to("quarkus.log.level")
@@ -68,7 +72,6 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_GELF_ENABLED)
                         .mapFrom("log")
                         .to("quarkus.log.handler.gelf.enabled")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .transformer(LoggingPropertyMappers.resolveLogHandler("gelf"))
                         .build(),
                 fromOption(LoggingOptions.LOG_GELF_LEVEL)
@@ -89,7 +92,6 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_GELF_INCLUDE_STACK_TRACE)
                         .to("quarkus.log.handler.gelf.extract-stack-trace")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 fromOption(LoggingOptions.LOG_GELF_TIMESTAMP_FORMAT)
                         .to("quarkus.log.handler.gelf.timestamp-pattern")
@@ -105,11 +107,9 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_GELF_INCLUDE_LOG_MSG_PARAMS)
                         .to("quarkus.log.handler.gelf.include-log-message-parameters")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 fromOption(LoggingOptions.LOG_GELF_INCLUDE_LOCATION)
                         .to("quarkus.log.handler.gelf.include-location")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build()
         };
     }
@@ -198,7 +198,7 @@ public final class LoggingPropertyMappers {
         return rootLevel;
     }
 
-    private static Optional<String> resolveLogConsoleOutput(Optional<String> value, ConfigSourceInterceptorContext context) {
+    private static Optional<String> resolveLogOutput(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (value.get().equals(LoggingOptions.DEFAULT_CONSOLE_OUTPUT.name().toLowerCase(Locale.ROOT))) {
             return of(Boolean.FALSE.toString());
         }

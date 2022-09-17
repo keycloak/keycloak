@@ -75,6 +75,10 @@ public class JpaComponentEntity extends UpdatableEntity.Impl implements MapCompo
 
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
+    private Integer entityVersion;
+
+    @Column(insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
     private String providerType;
 
     @Type(type = "jsonb")
@@ -117,7 +121,8 @@ public class JpaComponentEntity extends UpdatableEntity.Impl implements MapCompo
 
     @Override
     public Integer getEntityVersion() {
-        return this.metadata.getEntityVersion();
+        if (isMetadataInitialized()) return this.metadata.getEntityVersion();
+        return entityVersion;
     }
 
     @Override

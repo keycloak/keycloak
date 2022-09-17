@@ -236,8 +236,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     private void checkDNChanged(RealmModel realm, UserModel local, LDAPObject ldapObject) {
         String dnFromDB = local.getFirstAttribute(LDAPConstants.LDAP_ENTRY_DN);
-        String ldapDn = ldapObject.getDn().toString();
-        if (!ldapDn.equals(dnFromDB)) {
+        String ldapDn = ldapObject.getDn() == null? null : ldapObject.getDn().toString();
+        if (ldapDn != null && !ldapDn.equals(dnFromDB)) {
             logger.debugf("Updated LDAP DN of user '%s' to '%s'", local.getUsername(), ldapDn);
             local.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapDn);
 
@@ -284,7 +284,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         if (!synchronizeRegistrations()) {
             return null;
         }
-        UserModel user = null;
+        final UserModel user;
         if (model.isImportEnabled()) {
             user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
             user.setFederationLink(model.getId());
@@ -292,10 +292,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
             user = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), username).getId());
             user.setUsername(username);
         }
-        LDAPObject ldapUser = LDAPUtils.addUserToLDAP(this, realm, user);
-        LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
-        user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapUser.getUuid());
-        user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapUser.getDn().toString());
+        LDAPObject ldapUser = LDAPUtils.addUserToLDAP(this, realm, user, ldapObject -> {
+            LDAPUtils.checkUuid(ldapObject, ldapIdentityStore.getConfig());
+            user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapObject.getUuid());
+            user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapObject.getDn().toString());
+        });
 
         // Add the user to the default groups and add default required actions
         UserModel proxy = proxy(realm, user, ldapUser, true);

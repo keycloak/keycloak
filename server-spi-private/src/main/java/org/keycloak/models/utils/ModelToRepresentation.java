@@ -19,12 +19,15 @@ package org.keycloak.models.utils;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
@@ -418,6 +421,7 @@ public class ModelToRepresentation {
         rep.setOtpPolicyType(otpPolicy.getType());
         rep.setOtpPolicyLookAheadWindow(otpPolicy.getLookAheadWindow());
         rep.setOtpSupportedApplications(otpPolicy.getSupportedApplications());
+        rep.setOtpPolicyCodeReusable(otpPolicy.isCodeReusable());
 
         WebAuthnPolicy webAuthnPolicy = realm.getWebAuthnPolicy();
         rep.setWebAuthnPolicyRpEntityName(webAuthnPolicy.getRpEntityName());
@@ -641,6 +645,7 @@ public class ModelToRepresentation {
         rep.setUsername(session.getUser().getUsername());
         rep.setUserId(session.getUser().getId());
         rep.setIpAddress(session.getIpAddress());
+        rep.setRememberMe(session.isRememberMe());
         for (AuthenticatedClientSessionModel clientSession : session.getAuthenticatedClientSessions().values()) {
             ClientModel client = clientSession.getClient();
             rep.getClients().put(client.getId(), client.getClientId());
@@ -694,7 +699,7 @@ public class ModelToRepresentation {
         rep.setNotBefore(clientModel.getNotBefore());
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
-        
+
         // adding the secret if non public or bearer only
         if (clientModel.isBearerOnly() || clientModel.isPublicClient()) {
             rep.setSecret(null);
@@ -937,7 +942,7 @@ public class ModelToRepresentation {
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export) {
         return toRepresentation(policy, authorization, genericRepresentation, export, false);
     }
-    
+
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export, boolean allFields) {
         PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
         R representation;
@@ -962,7 +967,7 @@ public class ModelToRepresentation {
         representation.setType(policy.getType());
         representation.setDecisionStrategy(policy.getDecisionStrategy());
         representation.setLogic(policy.getLogic());
-        
+
         if (allFields) {
             representation.setResourcesData(policy.getResources().stream()
                     .map(resource -> toRepresentation(resource, policy.getResourceServer(), authorization, true))
@@ -1071,4 +1076,100 @@ public class ModelToRepresentation {
 
         return representation;
     }
+
+    public static ResourceServerRepresentation toResourceServerRepresentation(KeycloakSession session, ClientModel client) {
+        AuthorizationProviderFactory providerFactory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
+        AuthorizationProvider authorization = providerFactory.create(session, client.getRealm());
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer settingsModel = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
+
+        if (settingsModel == null) {
+            return null;
+        }
+
+        ResourceServerRepresentation representation = toRepresentation(settingsModel, client);
+
+        representation.setId(null);
+        representation.setName(null);
+        representation.setClientId(null);
+
+        List<ResourceRepresentation> resources = storeFactory.getResourceStore().findByResourceServer(settingsModel)
+                .stream().map(resource -> {
+                    ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
+
+                    if (rep.getOwner().getId().equals(settingsModel.getClientId())) {
+                        rep.setOwner((ResourceOwnerRepresentation) null);
+                    } else {
+                        rep.getOwner().setId(null);
+                    }
+                    rep.getScopes().forEach(scopeRepresentation -> {
+                        scopeRepresentation.setId(null);
+                        scopeRepresentation.setIconUri(null);
+                    });
+
+                    return rep;
+                }).collect(Collectors.toList());
+
+        representation.setResources(resources);
+
+        List<PolicyRepresentation> policies = new ArrayList<>();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
+                .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope") && policy.getOwner() == null)
+                .map(policy -> toRepresentation(authorization, policy)).collect(Collectors.toList()));
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
+                .stream().filter(policy -> (policy.getType().equals("resource") || policy.getType().equals("scope") && policy.getOwner() == null))
+                .map(policy -> toRepresentation(authorization, policy)).collect(Collectors.toList()));
+
+        representation.setPolicies(policies);
+
+        List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel).stream().map(scope -> {
+            ScopeRepresentation rep = toRepresentation(scope);
+
+            rep.setPolicies(null);
+            rep.setResources(null);
+
+            return rep;
+        }).collect(Collectors.toList());
+
+        representation.setScopes(scopes);
+
+        return representation;
+    }
+
+    private static PolicyRepresentation toRepresentation(AuthorizationProvider authorizationProvider, Policy policy) {
+        try {
+            PolicyRepresentation rep = toRepresentation(policy, authorizationProvider, true, true);
+
+            Map<String, String> config = new HashMap<>(rep.getConfig());
+
+            rep.setConfig(config);
+
+            Set<Scope> scopes = policy.getScopes();
+
+            if (!scopes.isEmpty()) {
+                List<String> scopeNames = scopes.stream().map(Scope::getName).collect(Collectors.toList());
+                config.put("scopes", JsonSerialization.writeValueAsString(scopeNames));
+            }
+
+            Set<Resource> policyResources = policy.getResources();
+
+            if (!policyResources.isEmpty()) {
+                List<String> resourceNames = policyResources.stream().map(Resource::getName).collect(Collectors.toList());
+                config.put("resources", JsonSerialization.writeValueAsString(resourceNames));
+            }
+
+            Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+
+            if (!associatedPolicies.isEmpty()) {
+                config.put("applyPolicies", JsonSerialization.writeValueAsString(associatedPolicies.stream().map(associated -> associated.getName()).collect(Collectors.toList())));
+            }
+
+            return rep;
+        } catch (Exception e) {
+            throw new RuntimeException("Error while exporting policy [" + policy.getName() + "].", e);
+        }
+    }
+
 }

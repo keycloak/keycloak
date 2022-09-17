@@ -23,8 +23,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
@@ -68,7 +66,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 /**
  * @author mhajas
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     private String testAppUrl;

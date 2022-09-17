@@ -41,8 +41,8 @@ public final class Environment {
     public static final String IMPORT_EXPORT_MODE = "import_export";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
-    public static final String DATA_PATH = "/data";
-    public static final String DEFAULT_THEMES_PATH = "/themes";
+    public static final String DATA_PATH = File.separator + "data";
+    public static final String DEFAULT_THEMES_PATH = File.separator +  "themes";
     public static final String DEV_PROFILE_VALUE = "dev";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";

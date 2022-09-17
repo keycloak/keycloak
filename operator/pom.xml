@@ -114,7 +114,7 @@
             <artifactId>keycloak-common</artifactId>
         </dependency>
 
-        <!-- FIXME: Adding BC since removed from common, this will need to be removed -->
+        <!-- FIXME: Adding BC for now as removing the Bouncycastle dependencies from the operator makes it unusable on K3s and possibly on other kubernetes distributions (e.g. Rancher is based on K3s). -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>

@@ -31,7 +31,6 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
@@ -677,7 +676,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
                 .execute(r -> assertThat(r, bodyHC(containsString(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get()))));
     }
 
-    @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE) // Won't work with openshift, because openshift wouldn't see ArtifactResolutionService
+     // Won't work with openshift, because openshift wouldn't see ArtifactResolutionService
     @Test
     public void testSessionStateDuringArtifactBindingLogoutWithOneClient() {
         ClientRepresentation salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
@@ -731,7 +730,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(samlResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
-    @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE) // Won't work with openshift, because openshift wouldn't see ArtifactResolutionService
+     // Won't work with openshift, because openshift wouldn't see ArtifactResolutionService
     @Test
     public void testSessionStateDuringArtifactBindingLogoutWithMoreFrontChannelClients() {
         getCleanup()

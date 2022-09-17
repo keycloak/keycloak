@@ -48,7 +48,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.vault.DefaultVaultTranscriber;
 import org.keycloak.vault.VaultProvider;
 import org.keycloak.vault.VaultTranscriber;
@@ -83,7 +82,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserSessionProvider sessionProvider;
     private UserLoginFailureProvider userLoginFailureProvider;
     private AuthenticationSessionProvider authenticationSessionProvider;
-    private UserFederatedStorageProvider userFederatedStorageProvider;
     private final KeycloakContext context;
     private KeyManager keyManager;
     private ThemeManager themeManager;
@@ -162,15 +160,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public KeycloakSessionFactory getKeycloakSessionFactory() {
         return factory;
-    }
-
-    @Override
-    @Deprecated
-    public UserFederatedStorageProvider userFederatedStorage() {
-        if (userFederatedStorageProvider == null) {
-            userFederatedStorageProvider = getProvider(UserFederatedStorageProvider.class);
-        }
-        return userFederatedStorageProvider;
     }
 
     @Override

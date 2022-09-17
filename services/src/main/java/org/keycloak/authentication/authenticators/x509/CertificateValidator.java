@@ -18,9 +18,10 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
-
+import org.keycloak.common.crypto.CryptoConstants;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.utils.OCSPProvider;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -49,7 +50,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertPathBuilder;
-import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
@@ -76,10 +76,6 @@ import java.util.stream.Collectors;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-
-import org.bouncycastle.asn1.x509.Extensions;
-import org.bouncycastle.asn1.x509.CertificatePolicies;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
 
@@ -165,7 +161,7 @@ public class CertificateValidator {
          * @param issuerCertificate The issuer certificate
          * @return revocation status
          */
-        public abstract OCSPUtils.OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException;
+        public abstract OCSPProvider.OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException;
     }
 
     public abstract static class CRLLoaderImpl {
@@ -190,9 +186,9 @@ public class CertificateValidator {
         }
 
         @Override
-        public OCSPUtils.OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException {
+        public OCSPProvider.OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException {
 
-            OCSPUtils.OCSPRevocationStatus ocspRevocationStatus = null;
+            OCSPProvider.OCSPRevocationStatus ocspRevocationStatus = null;
             if (responderUri == null || responderUri.trim().length() == 0) {
                 // Obtains revocation status of a certificate using OCSP and assuming
                 // most common defaults. If responderUri is not specified,
@@ -203,7 +199,8 @@ public class CertificateValidator {
                 // 1) signed by the issuer certificate,
                 // 2) Includes the value of OCSPsigning in ExtendedKeyUsage v3 extension
                 // 3) Certificate is valid at the time
-                ocspRevocationStatus = OCSPUtils.check(session, cert, issuerCertificate);
+                OCSPProvider ocspProvider = CryptoIntegration.getProvider().getOCSPProver(OCSPProvider.class);
+                ocspRevocationStatus = ocspProvider.check(session, cert, issuerCertificate);
             }
             else {
                 URI uri;
@@ -219,7 +216,8 @@ public class CertificateValidator {
                 // OCSP responder's certificate is assumed to be the issuer's certificate
                 // certificate.
                 // responderUri overrides the contents (if any) of the certificate's AIA extension
-                ocspRevocationStatus = OCSPUtils.check(session, cert, issuerCertificate, uri, responderCert, null);
+                OCSPProvider ocspProvider = CryptoIntegration.getProvider().getOCSPProver(OCSPProvider.class);
+                ocspRevocationStatus = ocspProvider.check(session, cert, issuerCertificate, uri, responderCert, null);
             }
             return ocspRevocationStatus;
         }
@@ -454,7 +452,7 @@ public class CertificateValidator {
         }
 
         boolean isCritical = false;
-        Set critSet = certs[0].getCriticalExtensionOIDs();
+        Set<String> critSet = certs[0].getCriticalExtensionOIDs();
         if (critSet != null) {
             isCritical = critSet.contains("2.5.29.15");
         }
@@ -491,7 +489,7 @@ public class CertificateValidator {
         }
 
         boolean isCritical = false;
-        Set critSet = certs[0].getCriticalExtensionOIDs();
+        Set<String> critSet = certs[0].getCriticalExtensionOIDs();
         if (critSet != null) {
             isCritical = critSet.contains("2.5.29.37");
         }
@@ -510,23 +508,14 @@ public class CertificateValidator {
         }
     }
 
+
     private static void validatePolicy(X509Certificate[] certs, List<String> expectedPolicies, String policyCheckMode) throws GeneralSecurityException {
         if (expectedPolicies == null || expectedPolicies.size() == 0) {
             logger.debug("Certificate Policy validation is not enabled.");
             return;
         }
 
-        Extensions certExtensions = new JcaX509CertificateHolder(certs[0]).getExtensions();
-        if (certExtensions == null)
-            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate extensions were found");
-
-        CertificatePolicies policies = CertificatePolicies.fromExtensions(certExtensions);
-
-        if (policies == null)
-            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate policy extensions were found");
-
-        List<String> policyList = new LinkedList<>();
-        Arrays.stream(policies.getPolicyInformation()).forEach(p -> policyList.add(p.getPolicyIdentifier().toString().toLowerCase()));
+        List<String> policyList = CryptoIntegration.getProvider().getCertificateUtils().getCertificatePolicyList(certs[0]);
 
         logger.debugf("Certificate policies found: %s", String.join(",", policyList));
 
@@ -710,7 +699,7 @@ public class CertificateValidator {
         }
 
         try {
-            OCSPUtils.OCSPRevocationStatus rs = ocspChecker.check(cert, issuer);
+            OCSPProvider.OCSPRevocationStatus rs = ocspChecker.check(cert, issuer);
 
             if (rs == null) {
                 if (_ocspFailOpen)
@@ -719,13 +708,13 @@ public class CertificateValidator {
                     throw new GeneralSecurityException("Unable to check client revocation status using OCSP");
             }
 
-            if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.UNKNOWN) {
+            if (rs.getRevocationStatus() == OCSPProvider.RevocationStatus.UNKNOWN) {
                 if (_ocspFailOpen)
                     logger.warnf("Unable to determine certificate's revocation status - continuing certificate authentication because of fail-open OCSP configuration setting");
                 else
                     throw new GeneralSecurityException("Unable to determine certificate's revocation status.");
             }
-            else if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.REVOKED) {
+            else if (rs.getRevocationStatus() == OCSPProvider.RevocationStatus.REVOKED) {
 
                 StringBuilder sb = new StringBuilder();
                 sb.append("Certificate's been revoked.");
@@ -755,7 +744,7 @@ public class CertificateValidator {
 
     private static List<String> getCRLDistributionPoints(X509Certificate cert) {
         try {
-            return CRLUtils.getCRLDistributionPoints(cert);
+            return CryptoIntegration.getProvider().getCertificateUtils().getCRLDistributionPoints(cert);
         }
         catch(IOException e) {
             logger.error(e.getMessage());

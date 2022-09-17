@@ -23,7 +23,7 @@
         <version>999-SNAPSHOT</version>
     </parent>
 
-    <name>Keycloak WildFly Integration</name>
+    <name>Keycloak WildFly Server Integration Parent</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 

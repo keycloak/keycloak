@@ -97,6 +97,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
+        oauth.openid(false);
     }
 
     @Override
@@ -234,7 +235,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     @Test
     @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void grantAccessTokenWithUnassignedDynamicScope() throws Exception {;
+    public void grantAccessTokenWithUnassignedDynamicScope() throws Exception {
         oauth.scope("unknown-scope:123");
         oauth.clientId("resource-owner-public");
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "direct-login", "password");

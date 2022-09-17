@@ -18,7 +18,6 @@ package org.keycloak.testsuite.broker;
 
 import org.junit.Before;
 import org.keycloak.common.Profile;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 /**
@@ -27,7 +26,6 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
  *
  */
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class KcSamlFirstBrokerLoginWithUserProfileTest extends KcSamlFirstBrokerLoginTest {
     
     @Override

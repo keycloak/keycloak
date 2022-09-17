@@ -162,10 +162,8 @@ public class MapPolicyStore implements PolicyStore {
         }
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
-            .map(MapPolicyEntity::getId)
-            // We need to go through cache
-            .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(realm, resourceServer, id))
-            .collect(Collectors.toList());
+                .map(entityToAdapterFunc(realm, resourceServer))
+                .collect(Collectors.toList());
     }
 
     private DefaultModelCriteria<Policy> filterEntryToDefaultModelCriteria(Map.Entry<Policy.FilterOption, String[]> entry) {

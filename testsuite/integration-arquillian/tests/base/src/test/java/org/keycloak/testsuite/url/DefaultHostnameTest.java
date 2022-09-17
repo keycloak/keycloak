@@ -13,6 +13,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -25,12 +26,15 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,13 +45,10 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
-import javax.ws.rs.core.UriBuilder;
-
-@AuthServerContainerExclude({REMOTE, QUARKUS})
+@AuthServerContainerExclude({QUARKUS})
 public class DefaultHostnameTest extends AbstractHostnameTest {
 
     @ArquillianResource
@@ -99,6 +100,25 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
             assertBackendForcedToFrontendWithMatchingHostname("frontendUrl", realmFrontEndUrl);
 
             assertAdminPage("frontendUrl", realmFrontEndUrl, transformUrlIfQuarkusServer(realmFrontEndUrl, true));
+        } finally {
+            reset();
+        }
+    }
+
+    @Test
+    @DisableFeature(value = Profile.Feature.ADMIN2, skipRestart = true)
+    @EnableFeature(value = Profile.Feature.ADMIN, skipRestart = true)
+    public void fixedFrontendUrlOldAdminPage() throws Exception {
+        expectedBackendUrl = transformUrlIfQuarkusServer(AUTH_SERVER_ROOT);
+
+        oauth.clientId("direct-grant");
+
+        try (Keycloak testAdminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), getAuthServerContextRoot())) {
+
+            configureDefault(globalFrontEndUrl, false, null);
+
+            assertOldAdminPageJsPathSetCorrectly("master", transformUrlIfQuarkusServer(globalFrontEndUrl, true));
+
         } finally {
             reset();
         }
@@ -264,6 +284,21 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
 
             String welcomePage = get.asString();
             assertTrue(welcomePage.contains("<a href=\"" + expectedAdminUrl + "/admin/\">"));
+        }
+    }
+
+
+    private void assertOldAdminPageJsPathSetCorrectly(String realm, String expectedAdminUrl) throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            SimpleHttp get = SimpleHttp.doGet(AUTH_SERVER_ROOT + "/admin/" + realm + "/console/", client);
+
+            for (Map.Entry<String, String> entry : createRequestHeaders(expectedAdminUrl).entrySet()) {
+                get.header(entry.getKey(), entry.getValue());
+            }
+
+            SimpleHttp.Response response = get.asResponse();
+            String indexPage = response.asString();
+            assertTrue(indexPage.contains("/custom/js/"));
         }
     }
 

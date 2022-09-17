@@ -64,7 +64,7 @@ public interface UserQueryProvider {
         if (groupIds == null || groupIds.isEmpty()) {
             return 0;
         }
-        return countUsersInGroups(getUsersStream(realm), groupIds);
+        return countUsersInGroups(searchForUserStream(realm, Collections.emptyMap()), groupIds);
     }
 
     /**
@@ -176,26 +176,31 @@ public interface UserQueryProvider {
     }
 
     /**
-     * @deprecated Use {@link #getUsersStream(RealmModel) getUsersStream} instead.
+     * @deprecated Use {@link #searchForUserStream(RealmModel, Map)} with an empty params map instead.
      */
     @Deprecated
-    List<UserModel> getUsers(RealmModel realm);
+    default List<UserModel> getUsers(RealmModel realm) {
+        return searchForUserStream(realm, Collections.emptyMap()).collect(Collectors.toList());
+    }
     /**
      * Searches all users in the realm.
      *
      * @param realm a reference to the realm.
      * @return a non-null {@link Stream} of users.
+     * @deprecated Use {@link #searchForUserStream(RealmModel, Map)} with an empty params map instead.
      */
+    @Deprecated
     default Stream<UserModel> getUsersStream(RealmModel realm) {
-        List<UserModel> value = this.getUsers(realm);
-        return value != null ? value.stream() : Stream.empty();
+        return searchForUserStream(realm, Collections.emptyMap());
     }
 
     /**
-     * @deprecated Use {@link #getUsersStream(RealmModel, Integer, Integer) getUsersStream} instead.
+     * @deprecated Use {@link #searchForUserStream(RealmModel, Map, Integer, Integer)} with an empty params map instead.
      */
     @Deprecated
-    List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults);
+    default List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        return searchForUserStream(realm, Collections.emptyMap(), firstResult, maxResults).collect(Collectors.toList());
+    }
 
     /**
      * Searches all users in the realm, starting from the {@code firstResult} and containing at most {@code maxResults}.
@@ -204,11 +209,11 @@ public interface UserQueryProvider {
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of users.
+     * @deprecated Use {@link #searchForUserStream(RealmModel, Map, Integer, Integer)} with an empty params map instead.
      */
+    @Deprecated
     default Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        List<UserModel> value = this.getUsers(realm, firstResult == null ? -1 : firstResult,
-                maxResults == null ? -1 : maxResults);
-        return value != null ? value.stream() : Stream.empty();
+        return searchForUserStream(realm, Collections.emptyMap(), firstResult, maxResults);
     }
 
     /**
@@ -295,6 +300,14 @@ public interface UserQueryProvider {
      *     from idp with the given alias configured (case sensitive string)</li>
      *     <li>{@link UserModel#IDP_USER_ID} - search for users with federated identity with
      *     the given userId (case sensitive string)</li>
+     *     <li>{@link UserModel#SEARCH} - Searches for users whose username, email, first name or last name contain any
+     *     of the strings in {@code search} separated by whitespace. If possible, implementations should treat the
+     *     parameter values as partial match patterns (i.e. in RDMBS terms use LIKE).</li>
+     *     <li>{@link UserModel#EXACT} - Used alongside with {@link UserModel#FIRST_NAME}, {@link UserModel#LAST_NAME},
+     *     {@link UserModel#EMAIL} and {@link UserModel#USERNAME} parameters; if true searching is done using equals 
+     *     otherwise partial match should be enough to fulfill these parameters</li>
+     *     <li>{@link UserModel#INCLUDE_SERVICE_ACCOUNT} - When false, users that have a service account link are not
+     *     included in result</li>
      * </ul>
      *
      * If possible, implementations should treat the parameter values as partial match patterns i.e. in RDMBS terms use LIKE.
@@ -592,24 +605,6 @@ public interface UserQueryProvider {
         default int getUsersCount(Map<String, String> params, RealmModel realm, Set<String> groupIds) {
             return getUsersCount(realm, params, groupIds);
         }
-
-        @Override
-        default List<UserModel> getUsers(RealmModel realm) {
-            return this.getUsersStream(realm).collect(Collectors.toList());
-        }
-
-        @Override
-        default Stream<UserModel> getUsersStream(RealmModel realm) {
-            return getUsersStream(realm, null, null);
-        }
-
-        @Override
-        default List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-            return this.getUsersStream(realm, firstResult, maxResults).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults);
 
         @Override
         default List<UserModel> searchForUser(String search, RealmModel realm) {

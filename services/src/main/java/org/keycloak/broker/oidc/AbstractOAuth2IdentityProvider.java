@@ -545,8 +545,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
 
                 RealmModel realm = context.getRealm();
-
-                IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam);
+                IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam, realm);
                 ClientModel client = realm.getClientByClientId(idpBrokerState.getClientId());
 
                 AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(
