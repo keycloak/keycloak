@@ -36,10 +36,8 @@ const AuthenticationProviderList = ({
             label={provider.displayName}
             data-testid={provider.id}
             description={provider.description}
-            onChange={(_val, event) => {
-              const { id } = event.currentTarget;
-              const value = list.find((p) => p.id === id);
-              setValue(value);
+            onChange={() => {
+              setValue(provider);
             }}
           />
         ))}
@@ -65,6 +63,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
     useState<AuthenticationProviderRepresentation[]>();
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
+  const [search, setSearch] = useState("");
   const localeSort = useLocaleSort();
 
   useFetch(
@@ -93,11 +92,13 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
 
   const page = useMemo(
     () =>
-      localeSort(providers ?? [], mapByKey("displayName")).slice(
-        first,
-        first + max + 1
-      ),
-    [providers, first, max]
+      localeSort(providers ?? [], mapByKey("displayName"))
+        .filter(
+          (p) =>
+            p.displayName?.includes(search) || p.description?.includes(search)
+        )
+        .slice(first, first + max + 1),
+    [providers, search, first, max]
   );
 
   return (
@@ -139,6 +140,9 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
             setFirst(first);
             setMax(max);
           }}
+          inputGroupName="search"
+          inputGroupPlaceholder={t("common:search")}
+          inputGroupOnEnter={setSearch}
         >
           <AuthenticationProviderList list={page} setValue={setValue} />
         </PaginatingTableToolbar>
