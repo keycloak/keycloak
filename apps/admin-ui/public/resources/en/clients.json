@@ -146,6 +146,8 @@
   "allowRemoteResourceManagement": "Remote resource management",
   "resources": "Resources",
   "resource": "Resource",
+  "emptyResources": "No resources",
+  "emptyResourcesInstructions": "If you want to create a resource, please click the button below.",
   "allTypes": "All types",
   "scope": "Scope",
   "owner": "Owner",

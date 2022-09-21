@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom-v5-compat";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
@@ -44,6 +44,7 @@ type ExpandableResourceRepresentation = ResourceRepresentation & {
 
 export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   const { t } = useTranslation("clients");
+  const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -292,6 +293,16 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
           isSearchVariant
           message={t("common:noSearchResults")}
           instructions={t("common:noSearchResultsInstructions")}
+        />
+      )}
+      {noData && !searching && (
+        <ListEmptyState
+          message={t("emptyResources")}
+          instructions={t("emptyResourcesInstructions")}
+          primaryActionText={t("createResource")}
+          onPrimaryAction={() =>
+            navigate(toCreateResource({ realm, id: clientId }))
+          }
         />
       )}
     </PageSection>
