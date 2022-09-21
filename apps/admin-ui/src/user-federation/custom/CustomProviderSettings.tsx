@@ -24,6 +24,7 @@ import { SettingsCache } from "../shared/SettingsCache";
 import { ExtendedHeader } from "../shared/ExtendedHeader";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
+import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 import "./custom-provider-settings.css";
 
@@ -38,6 +39,7 @@ export default function CustomProviderSettings() {
     register,
     errors,
     reset,
+    setValue,
     handleSubmit,
     formState: { isDirty },
   } = form;
@@ -62,7 +64,7 @@ export default function CustomProviderSettings() {
     },
     (fetchedComponent) => {
       if (fetchedComponent) {
-        reset({ ...fetchedComponent });
+        convertToFormValues(fetchedComponent, setValue);
       } else if (id) {
         throw new Error(t("common:notFound"));
       }
@@ -80,12 +82,19 @@ export default function CustomProviderSettings() {
   );
 
   const save = async (component: ComponentRepresentation) => {
-    const saveComponent = {
+    const saveComponent = convertFormValuesToObject({
       ...component,
+      config: Object.fromEntries(
+        Object.entries(component.config || {}).map(([key, value]) => [
+          key,
+          Array.isArray(value) ? value : [value],
+        ])
+      ),
       providerId,
       providerType: "org.keycloak.storage.UserStorageProvider",
       parentId,
-    };
+    });
+
     try {
       if (!id) {
         await adminClient.components.create(saveComponent);

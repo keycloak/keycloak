@@ -5,6 +5,7 @@ import { FormGroup } from "@patternfly/react-core";
 import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { PasswordInput } from "../password-input/PasswordInput";
+import { convertToName } from "./DynamicComponents";
 
 export const PasswordComponent = ({
   name,
@@ -29,7 +30,7 @@ export const PasswordComponent = ({
         data-testid={name}
         isDisabled={isDisabled}
         ref={register()}
-        name={`config.${name}`}
+        name={convertToName(name!)}
         defaultValue={defaultValue?.toString()}
       />
     </FormGroup>
