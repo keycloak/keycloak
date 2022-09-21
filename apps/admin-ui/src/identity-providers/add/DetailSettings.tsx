@@ -2,13 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useFormContext,
-  useWatch,
-} from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -74,14 +68,7 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   const { t } = useTranslation("identity-providers");
-  const { alias } = useParams<{ alias: string }>();
-
-  const { control } = useFormContext();
-  const displayName = useWatch({
-    name: "displayName",
-    control,
-    defaultValue: alias,
-  });
+  const { alias: displayName } = useParams<{ alias: string }>();
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "identity-providers:disableProvider",
