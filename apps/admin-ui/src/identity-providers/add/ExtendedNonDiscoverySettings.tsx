@@ -16,13 +16,13 @@ import { TextField } from "../component/TextField";
 import { FormGroupField } from "../component/FormGroupField";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
-const promptOptions = [
-  "unspecified",
-  "none",
-  "consent",
-  "login",
-  "select_account",
-];
+const promptOptions = {
+  unspecified: "",
+  none: "none",
+  consent: "consent",
+  login: "login",
+  select_account: "select_account",
+};
 
 export const ExtendedNonDiscoverySettings = () => {
   const { t } = useTranslation("identity-providers");
@@ -50,7 +50,7 @@ export const ExtendedNonDiscoverySettings = () => {
         <FormGroupField label="prompt">
           <Controller
             name="config.prompt"
-            defaultValue={promptOptions[0]}
+            defaultValue=""
             control={control}
             render={({ onChange, value }) => (
               <Select
@@ -61,18 +61,14 @@ export const ExtendedNonDiscoverySettings = () => {
                   onChange(value as string);
                   setPromptOpen(false);
                 }}
-                selections={value}
+                selections={value || t(`prompts.unspecified`)}
                 variant={SelectVariant.single}
                 aria-label={t("prompt")}
                 isOpen={promptOpen}
               >
-                {promptOptions.map((option) => (
-                  <SelectOption
-                    selected={option === value}
-                    key={option}
-                    value={option}
-                  >
-                    {t(`prompts.${option}`)}
+                {Object.entries(promptOptions).map(([key, val]) => (
+                  <SelectOption selected={val === value} key={key} value={val}>
+                    {t(`prompts.${key}`)}
                   </SelectOption>
                 ))}
               </Select>
