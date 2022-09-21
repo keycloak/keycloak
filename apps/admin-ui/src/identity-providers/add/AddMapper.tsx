@@ -69,9 +69,7 @@ export default function AddMapper() {
     useState<IdentityProviderMapperTypeRepresentation>();
 
   const save = async (idpMapper: IdentityProviderMapperRepresentation) => {
-    const mapper = convertFormValuesToObject(
-      idpMapper
-    ) as IdentityProviderMapperRepresentation;
+    const mapper = convertFormValuesToObject(idpMapper);
     const attributes = JSON.stringify(idpMapper.config.attributes ?? []);
     const claims = JSON.stringify(idpMapper.config.claims ?? []);
 
@@ -171,6 +169,7 @@ export default function AddMapper() {
       "config.attributes",
       JSON.parse(mapper.config.attributes || "{}")
     );
+    form.setValue("config.claims", JSON.parse(mapper.config.claims || "{}"));
   };
 
   if (!mapperTypes || !currentMapper) {
