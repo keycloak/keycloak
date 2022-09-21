@@ -22,28 +22,34 @@ export const ScopeSelect = ({
 
   const {
     control,
+    getValues,
     setValue,
     formState: { errors },
   } = useFormContext();
 
   const [scopes, setScopes] = useState<ScopeRepresentation[]>([]);
+  const [selectedScopes, setSelectedScopes] = useState<ScopeRepresentation[]>(
+    []
+  );
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const firstUpdate = useRef(true);
 
+  const values: string[] | undefined = getValues("scopes");
+
   const toSelectOptions = (scopes: ScopeRepresentation[]) =>
     scopes.map((scope) => (
-      <SelectOption key={scope.id} value={scope.id}>
+      <SelectOption key={scope.id} value={scope}>
         {scope.name}
       </SelectOption>
     ));
 
   useFetch(
-    async () => {
+    async (): Promise<ScopeRepresentation[]> => {
       if (!resourceId) {
         return adminClient.clients.listAllScopes(
           Object.assign(
-            { id: clientId, first: 0, max: 10, deep: false },
+            { id: clientId, deep: false },
             search === "" ? null : { name: search }
           )
         );
@@ -59,7 +65,13 @@ export const ScopeSelect = ({
         resourceName: resourceId,
       });
     },
-    setScopes,
+    (scopes) => {
+      setScopes(scopes);
+      if (!search)
+        setSelectedScopes(
+          scopes.filter((s: ScopeRepresentation) => values?.includes(s.id!))
+        );
+    },
     [resourceId, search]
   );
 
@@ -69,7 +81,7 @@ export const ScopeSelect = ({
       defaultValue={preSelected ? [preSelected] : []}
       control={control}
       rules={{ validate: (value) => value.length > 0 }}
-      render={({ onChange, value }) => (
+      render={({ onChange }) => (
         <Select
           toggleId="scopes"
           variant={SelectVariant.typeaheadMulti}
@@ -82,13 +94,18 @@ export const ScopeSelect = ({
             onChange([]);
             setSearch("");
           }}
-          selections={value}
+          selections={selectedScopes.map((s) => s.name)}
           onSelect={(_, selectedValue) => {
-            const option = selectedValue.toString();
-            const changedValue = value.find((p: string) => p === option)
-              ? value.filter((p: string) => p !== option)
-              : [...value, option];
-            onChange(changedValue);
+            const option =
+              typeof selectedValue === "string"
+                ? selectedScopes.find((s) => s.name === selectedValue)!
+                : (selectedValue as ScopeRepresentation);
+            const changedValue = selectedScopes.find((p) => p.id === option.id)
+              ? selectedScopes.filter((p) => p.id !== option.id)
+              : [...selectedScopes, option];
+
+            onChange(changedValue.map((s) => s.id));
+            setSelectedScopes(changedValue);
             setSearch("");
           }}
           isOpen={open}

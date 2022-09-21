@@ -8,6 +8,7 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
@@ -21,7 +22,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
   const { control } = useFormContext();
 
   const [open, setOpen] = useState(false);
-  const [scopes, setScopes] = useState<JSX.Element[]>();
+  const [scopes, setScopes] = useState<ScopeRepresentation[]>();
   const [search, setSearch] = useState("");
 
   const { adminClient } = useAdminClient();
@@ -37,16 +38,16 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
       };
       return adminClient.clients.listAllScopes(params);
     },
-    (scopes) =>
-      setScopes(
-        scopes.map((option) => (
-          <SelectOption key={option.id} value={option}>
-            {option.name}
-          </SelectOption>
-        ))
-      ),
+    setScopes,
     [search]
   );
+
+  const renderScopes = (scopes?: ScopeRepresentation[]) =>
+    scopes?.map((option) => (
+      <SelectOption key={option.id} value={option}>
+        {option.name}
+      </SelectOption>
+    ));
 
   return (
     <FormGroup
@@ -72,12 +73,12 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
               expandedText: t("common:hide"),
               collapsedText: t("common:showRemaining"),
             }}
-            onToggle={(open) => setOpen(open)}
+            onToggle={setOpen}
             isOpen={open}
             selections={value.map((o: Scope) => o.name)}
             onFilter={(_, value) => {
               setSearch(value);
-              return scopes;
+              return renderScopes(scopes);
             }}
             onSelect={(_, selectedValue) => {
               const option =
@@ -96,7 +97,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
             }}
             aria-label={t("authorizationScopes")}
           >
-            {scopes}
+            {renderScopes(scopes)}
           </Select>
         )}
       />
