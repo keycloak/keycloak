@@ -117,6 +117,11 @@ public class WildFlyElytronProvider implements CryptoProvider {
 
     @Override
     public KeyFactory getKeyFactory(String algorithm) throws NoSuchAlgorithmException {
+        if("ECDSA".equals(algorithm)) {
+            // ECDSA is not a listed JavaSE KeyFactory algorithm
+            // see https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#cipher-algorithm-names
+            algorithm = "EC";
+        }
         return KeyFactory.getInstance(algorithm);
     }
 
