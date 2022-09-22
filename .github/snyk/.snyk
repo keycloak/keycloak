@@ -51,7 +51,13 @@ ignore:
           Keycloak is no longer vulnerable. The issue was fixed on Keycloak 18.0.0
           More details:
             - https://github.com/keycloak/keycloak/security/advisories/GHSA-mwm4-5qwr-g9pf   
-            - https://access.redhat.com/security/cve/cve-2021-3424                       
+            - https://access.redhat.com/security/cve/cve-2021-3424
+  SNYK-JAVA-ORGKEYCLOAK-1085642:
+    - "*":
+        reason: >
+          The issue is considered a security hardening, instead of a CVE
+          More details:
+            - https://issues.redhat.com/browse/KEYCLOAK-17250                            
   # License warnings
   snyk:lic:maven:org.eclipse.sisu:org.eclipse.sisu.plexus:EPL-1.0:
     - "*":
