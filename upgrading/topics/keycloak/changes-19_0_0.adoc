@@ -111,6 +111,21 @@ Contains all REST endpoints that directly operate on the legacy store, and have 
 These modules will be available as long as legacy stores will be supported.
 After that period, they will be removed.
 
+This change impacts deployments of existing user storage providers in the Wildfly distribution. If your
+user storage provider is deployed as a WAR archive, you need to add the `META-INF/jboss-deployment-structure.xml` file into that archive
+stating the modified dependencies as shown below:
+
+[source,xml,subs="+quotes"]
+----
+<jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.2">
+    <deployment>
+        <dependencies>
+            <module name="org.keycloak.keycloak-model-legacy" meta-inf="import"/>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>
+----
+
 == Changes in `KeycloakSession`
 
 `KeycloakSession` has been simplified.
