@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
+import java.util.Map;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
@@ -141,6 +142,19 @@ public class RoleContainerResource extends RoleResource {
             role.setDescription(rep.getDescription());
 
             rep.setId(role.getId());
+
+            if (rep.getAttributes() != null) {
+                Set<String> attrsToRemove = new HashSet<>(role.getAttributes().keySet());
+                attrsToRemove.removeAll(rep.getAttributes().keySet());
+
+                for (Map.Entry<String, List<String>> attr : rep.getAttributes().entrySet()) {
+                    role.setAttribute(attr.getKey(), attr.getValue());
+                }
+
+                for (String attr : attrsToRemove) {
+                    role.removeAttribute(attr);
+                }
+            }
 
             if (role.isClientRole()) {
                 adminEvent.resource(ResourceType.CLIENT_ROLE);
