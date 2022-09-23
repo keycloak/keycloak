@@ -14,9 +14,17 @@ final class HostnamePropertyMappers {
                         .to("kc.spi-hostname-default-hostname")
                         .paramLabel("hostname")
                         .build(),
+                fromOption(HostnameOptions.HOSTNAME_URL)
+                        .to("kc.spi-hostname-default-hostname-url")
+                        .paramLabel("url")
+                        .build(),
                 fromOption(HostnameOptions.HOSTNAME_ADMIN)
                         .to("kc.spi-hostname-default-admin")
                         .paramLabel("hostname")
+                        .build(),
+                fromOption(HostnameOptions.HOSTNAME_ADMIN_URL)
+                        .to("kc.spi-hostname-default-admin-url")
+                        .paramLabel("url")
                         .build(),
                 fromOption(HostnameOptions.HOSTNAME_STRICT)
                         .to("kc.spi-hostname-default-strict")

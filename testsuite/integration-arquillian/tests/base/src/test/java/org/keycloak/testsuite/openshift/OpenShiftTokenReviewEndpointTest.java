@@ -52,8 +52,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -82,7 +80,6 @@ import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.utils.MediaType.APPLICATION_JSON;
 
-@AuthServerContainerExclude({AuthServer.REMOTE})
 @EnableFeature(value = OPENSHIFT_INTEGRATION, skipRestart = true)
 public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakTest {
 

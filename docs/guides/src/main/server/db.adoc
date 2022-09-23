@@ -136,4 +136,21 @@ Keycloak uses XA transactions and the appropriate database drivers by default. C
 
 Keycloak automatically chooses the appropriate JDBC driver for your vendor.
 
+== Setting JPA provider configuration option for migrationStrategy
+
+To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
+
+.Setting the `migration-strategy` for the `quarkus` provider of the `connections-jpa` SPI
+<@kc.start parameters="--spi-connections-jpa-legacy-migration-strategy=manual"/>
+
+If you want to get a SQL file for DB initialization, too, you have to add this additional SPI initializeEmpty (true/false):
+
+.Setting the `initialize-empty` for the `quarkus` provider of the `connections-jpa` SPI
+<@kc.start parameters="--spi-connections-jpa-legacy-initialize-empty=false"/>
+
+In the same way the migrationExport to point to a specific file and location:
+
+.Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
+<@kc.start parameters="--spi-connections-jpa-legacy-migration-export=<path>/<file.sql>"/>
+
 </@tmpl.guide>

@@ -641,18 +641,6 @@
         </container>
     </group>
 
-    <container qualifier="auth-server-remote" mode="manual" >
-        <configuration>
-            <property name="enabled">${auth.server.remote}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.remote.RemoteDeployableContainer</property>
-
-            <property name="managementAddress">${auth.server.management.host}</property>
-            <property name="managementPort">${auth.server.management.port}</property>
-            <property name="username">admin</property>
-            <property name="password">admin</property>
-        </configuration>
-    </container>
-
     <container qualifier="auth-server-quarkus" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.quarkus}</property>
@@ -717,25 +705,6 @@
     </group>
 
     <!-- PREVIOUS VERSION OF KEYCLOAK FOR MIGRATION TESTS -->
-
-    <container qualifier="auth-server-jboss-migration" mode="manual" >
-        <configuration>
-            <property name="enabled">${auth.server.migration.legacy}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak.migration.home}</property>
-            <property name="javaVmArguments">
-                -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
-                -Djboss.socket.binding.port-offset=${auth.server.port.offset}
-                ${migration.import.props.previous}
-                ${auth.server.memory.settings}
-                -Dauth.server.truststore=${auth.server.truststore}
-                -Dauth.server.truststore.password=${auth.server.truststore.password}
-                -Dauth.server.db.host=${auth.server.db.host}
-            </property>
-            <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
-        </configuration>
-    </container>
 
     <container qualifier="auth-server-migration" mode="manual">
         <configuration>

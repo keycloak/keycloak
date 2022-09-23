@@ -39,7 +39,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
@@ -88,7 +87,6 @@ import static org.keycloak.storage.UserStorageProviderModel.EVICTION_MINUTE;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.storage.UserStorageProviderModel.MAX_LIFESPAN;
 import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getPasswordResetEmailLink;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -97,7 +95,6 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  *
  * @author tkyjovsk
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class UserStorageTest extends AbstractAuthTest {
 
@@ -345,7 +342,6 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRegisterWithRequiredEmail() throws Exception {
         try (AutoCloseable c = new RealmAttributeUpdater(testRealmResource())
           .updateWith(r -> {
@@ -361,7 +357,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
             testRealmAccountPage.navigateTo();
             loginPage.clickRegister();
-            registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
+            registerPage.register("firstName", "lastName", "email@mail.com", "verify-email", "password", "password");
 
             verifyEmailPage.assertCurrent();
 

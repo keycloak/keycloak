@@ -17,7 +17,6 @@
 package org.keycloak.services.resources.admin;
 
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
-import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
 import static org.keycloak.util.JsonSerialization.readValue;
 
 import java.security.cert.X509Certificate;
@@ -48,6 +47,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.StreamingOutput;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -71,8 +71,8 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
-import org.keycloak.exportimport.util.ExportOptions;
-import org.keycloak.exportimport.util.ExportUtils;
+import org.keycloak.exportimport.ExportAdapter;
+import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -110,6 +110,8 @@ import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.LegacyStoreSyncEvent;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
@@ -141,7 +143,7 @@ public class RealmAdminResource {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
-        this.adminEvent = adminEvent.realm(realm).resource(ResourceType.REALM);
+        this.adminEvent = adminEvent.resource(ResourceType.REALM);
     }
 
     /**
@@ -699,7 +701,7 @@ public class RealmAdminResource {
 
         logger.debug("updating realm events config: " + realm.getName());
         new RealmManager(session).updateRealmEventsConfig(rep, realm);
-        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REALM).realm(realm)
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REALM)
                 .resourcePath(session.getContext().getUri()).representation(rep)
                 // refresh the builder to consider old and new config
                 .refreshRealmEventsConfig(session)
@@ -1055,8 +1057,7 @@ public class RealmAdminResource {
      */
     @Path("partial-export")
     @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    public RealmRepresentation partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
+    public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
                                                      @QueryParam("exportClients") Boolean exportClients) {
         auth.realm().requireViewRealm();
 
@@ -1074,8 +1075,22 @@ public class RealmAdminResource {
         // this means that if clients is true but groups/roles is false the service account is exported without roles
         // the other option is just include service accounts if clientsExported && groupsAndRolesExported
         ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
-        RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
-        return stripForExport(session, rep);
+
+        ExportImportManager exportProvider = session.getProvider(DatastoreProvider.class).getExportImportManager();
+
+        Response.ResponseBuilder response = Response.ok();
+
+        exportProvider.exportRealm(realm, options, new ExportAdapter() {
+            @Override
+            public void setType(String mediaType) {
+                response.type(mediaType);
+            }
+            @Override
+            public void writeToOutputStream(ConsumerOfOutputStream consumer) {
+                response.entity((StreamingOutput) consumer::accept);
+            }
+        });
+        return response.build();
     }
 
     @Path("keys")

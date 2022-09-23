@@ -20,6 +20,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,5 +65,15 @@ public interface GroupLookupProvider {
      */
     Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults);
 
+    /**
+     * Returns the groups filtered by attribute names and attribute values for the given realm.
+     *
+     * @param realm Realm.
+     * @param attributes name-value pairs that are compared to group attributes.
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of groups with attributes matching all searched attributes. Never returns {@code null}.
+     */
+    Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults);
 
 }

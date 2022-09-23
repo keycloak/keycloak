@@ -488,13 +488,13 @@ public final class KeycloakModelUtils {
 
     }
 
-    public static List<String> resolveAttribute(GroupModel group, String name) {
-        List<String> values = group.getAttributeStream(name).collect(Collectors.toList());
-        if (!values.isEmpty()) return values;
-        if (group.getParentId() == null) return null;
-        return resolveAttribute(group.getParent(), name);
+    public static Collection<String> resolveAttribute(GroupModel group, String name, boolean aggregateAttrs) {
+        Set<String> values = group.getAttributeStream(name).collect(Collectors.toSet());
+        if ((values.isEmpty() || aggregateAttrs) && group.getParentId() != null) {
+            values.addAll(resolveAttribute(group.getParent(), name, aggregateAttrs));
+        }
+        return values;
     }
-
 
     public static Collection<String> resolveAttribute(UserModel user, String name, boolean aggregateAttrs) {
         List<String> values = user.getAttributeStream(name).collect(Collectors.toList());
@@ -505,13 +505,13 @@ public final class KeycloakModelUtils {
             }
             aggrValues.addAll(values);
         }
-        Stream<List<String>> attributes = user.getGroupsStream()
-                .map(group -> resolveAttribute(group, name))
+        Stream<Collection<String>> attributes = user.getGroupsStream()
+                .map(group -> resolveAttribute(group, name, aggregateAttrs))
                 .filter(Objects::nonNull)
                 .filter(attr -> !attr.isEmpty());
 
         if (!aggregateAttrs) {
-            Optional<List<String>> first = attributes.findFirst();
+            Optional<Collection<String>> first = attributes.findFirst();
             if (first.isPresent()) return first.get();
         } else {
             aggrValues.addAll(attributes.flatMap(Collection::stream).collect(Collectors.toSet()));

@@ -65,9 +65,12 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
 
         INFINISPAN_NAME_OVERRIDES.put(GroupModel.SearchableFields.PARENT_ID, "parentId");
         INFINISPAN_NAME_OVERRIDES.put(GroupModel.SearchableFields.ASSIGNED_ROLE, "grantedRoles");
+        INFINISPAN_NAME_OVERRIDES.put(GroupModel.SearchableFields.ATTRIBUTE, "attributes");
 
         INFINISPAN_NAME_OVERRIDES.put(RoleModel.SearchableFields.IS_CLIENT_ROLE, "clientRole");
 
+        INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE, "usernameLowercase");
+        INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.USERNAME, "username");
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.SERVICE_ACCOUNT_CLIENT, "serviceAccountClientLink");
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.CONSENT_FOR_CLIENT, "userConsents.clientId");
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.CONSENT_WITH_CLIENT_SCOPE, "userConsents.grantedClientScopesIds");

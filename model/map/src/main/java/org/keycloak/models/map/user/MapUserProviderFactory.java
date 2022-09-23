@@ -40,6 +40,9 @@ import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProvi
  */
 public class MapUserProviderFactory extends AbstractMapProviderFactory<MapUserProvider, MapUserEntity, UserModel> implements UserProviderFactory<MapUserProvider>, InvalidationHandler {
 
+    public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
+    public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
+
     public MapUserProviderFactory() {
         super(UserModel.class, MapUserProvider.class);
     }

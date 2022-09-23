@@ -32,7 +32,13 @@ import java.util.Optional;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.collect.ImmutableMap;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -46,6 +52,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -59,18 +66,23 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.ClaimsParameterTokenMapper;
+import org.keycloak.protocol.oidc.mappers.ClaimsParameterWithValueIdTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
+import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
@@ -99,6 +111,7 @@ import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecu
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory;
@@ -112,11 +125,10 @@ import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorF
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
@@ -126,9 +138,11 @@ import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseException
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -145,6 +159,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
@@ -161,6 +176,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateS
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createConsentRequiredExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createHolderOfKeyEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createIntentClientBindCheckExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
@@ -839,8 +855,6 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         successfulLoginAndLogout(clientId, clientSecret);
     }
 
-
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     @Test
     public void testClientUpdateSourceHostsCondition() throws Exception {
         // register profiles
@@ -2992,6 +3006,128 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertThat(updated.getClientSecret(), not(equalTo(firstSecret)));
         assertThat(updated.getClientSecretExpiresAt(), not(equalTo(firstSecretExpiration)));
 
+    }
+
+    @Test
+    public void testIntentClientBindCheck() throws Exception {
+        final String intentName = "openbanking_intent_id";
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
+                        .addExecutor(IntentClientBindCheckExecutorFactory.PROVIDER_ID,
+                                createIntentClientBindCheckExecutorConfig(intentName, TestApplicationResourceUrls.checkIntentClientBoundUri()))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
+                                createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList("microprofile-jwt")))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // create a client
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+        });
+        ClientResource app = findClientResourceByClientId(adminClient.realm("test"), clientId);
+        ProtocolMappersResource res = app.getProtocolMappers();
+        res.createMapper(ModelToRepresentation.toRepresentation(ClaimsParameterWithValueIdTokenMapper.createMapper("claimsParameterWithValueIdTokenMapper", "openbanking_intent_id", true))).close();
+
+        // register a binding of an intent with different client
+        String intentId = "123abc456xyz";
+        String differentClientId = "test-app";
+        Response r = testingClient.testApp().oidcClientEndpoints().bindIntentWithClient(intentId, differentClientId);
+        assertEquals(204, r.getStatus());
+
+        // create a request object with claims
+        String nonce = "naodfejawi37d";
+
+        ClaimsRepresentation claimsRep = new ClaimsRepresentation();
+        ClaimsRepresentation.ClaimValue<String> claimValue = new ClaimsRepresentation.ClaimValue<>();
+        claimValue.setEssential(Boolean.TRUE);
+        claimValue.setValue(intentId);
+        claimsRep.setIdTokenClaims(Collections.singletonMap(intentName, claimValue));
+
+        Map<String, Object> oidcRequest = new HashMap<>();
+        oidcRequest.put(OIDCLoginProtocol.CLIENT_ID_PARAM, clientId);
+        oidcRequest.put(OIDCLoginProtocol.NONCE_PARAM, nonce);
+        oidcRequest.put(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
+        oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, oauth.getRedirectUri());
+        oidcRequest.put(OIDCLoginProtocol.CLAIMS_PARAM, claimsRep);
+        oidcRequest.put(OIDCLoginProtocol.SCOPE_PARAM, "openid" + " " + "microprofile-jwt");
+        String request = new JWSBuilder().jsonContent(oidcRequest).none();
+
+        // send an authorization request
+        oauth.scope("openid" + " " + "microprofile-jwt");
+        oauth.request(request);
+        oauth.clientId(clientId);
+        oauth.nonce(nonce);
+        oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
+        assertEquals("The intent is not bound with the client", oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // register a binding of an intent with a valid client
+        r = testingClient.testApp().oidcClientEndpoints().bindIntentWithClient(intentId, clientId);
+        assertEquals(204, r.getStatus());
+
+        // send an authorization request
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        // check an authorization response
+        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+        String code = oauth.getCurrentFragment().get(OAuth2Constants.CODE);
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
+        JWSInput idToken = new JWSInput(authzResponse.getIdToken());
+        ObjectMapper mapper = JsonSerialization.mapper;
+        JsonParser parser = mapper.getFactory().createParser(idToken.readContentAsString());
+        TreeNode treeNode = mapper.readTree(parser);
+        String clientBoundIntentId = ((TextNode) treeNode.get(intentName)).asText();
+        assertEquals(intentId, clientBoundIntentId);
+
+        // send a token request
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+
+        // check a token response
+        assertEquals(200, response.getStatusCode());
+        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        idToken = new JWSInput(response.getIdToken());
+        mapper = JsonSerialization.mapper;
+        parser = mapper.getFactory().createParser(idToken.readContentAsString());
+        treeNode = mapper.readTree(parser);
+        clientBoundIntentId = ((TextNode) treeNode.get(intentName)).asText();
+        assertEquals(intentId, clientBoundIntentId);
+
+        // logout
+        oauth.doLogout(response.getRefreshToken(), clientSecret);
+        events.expectLogout(response.getSessionState()).client(clientId).clearDetails().assertEvent();
+
+        // create a request object with invalid claims
+        claimsRep = new ClaimsRepresentation();
+        claimValue = new ClaimsRepresentation.ClaimValue<>();
+        claimValue.setEssential(Boolean.TRUE);
+        claimValue.setValue(intentId);
+        claimsRep.setIdTokenClaims(Collections.singletonMap("other_intent_id", claimValue));
+        oidcRequest.put(OIDCLoginProtocol.CLAIMS_PARAM, claimsRep);
+        request = new JWSBuilder().jsonContent(oidcRequest).none();
+
+        // send an authorization request
+        oauth.request(request);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
+        assertEquals("no claim for an intent value for ID token" , oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
     }
 
     private void openVerificationPage(String verificationUri) {

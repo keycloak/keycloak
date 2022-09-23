@@ -61,9 +61,8 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
-@AuthServerContainerExclude(value = {REMOTE, QUARKUS},
+@AuthServerContainerExclude(value = {QUARKUS},
         details = "Quarkus supports its own hostname provider implementation similar to the default hostname provider")
 public class FixedHostnameTest extends AbstractHostnameTest {
 

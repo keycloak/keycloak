@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +40,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
@@ -51,7 +51,6 @@ import org.openqa.selenium.WebDriver;
  * @author Vlastimil Elias <velias@redhat.com>
  */
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class RegisterWithUserProfileTest extends RegisterTest {
 
     private static final String SCOPE_LAST_NAME = "lastName";
@@ -613,7 +612,7 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         // test that timestamp is current with 10s tollerance
         Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         // test user info is set from form
-        assertEquals(username.toLowerCase(), user.getUsername());
+        assertThat(username, Matchers.equalToIgnoringCase(user.getUsername()));
         assertEquals(email.toLowerCase(), user.getEmail());
         assertEquals(firstName, user.getFirstName());
 

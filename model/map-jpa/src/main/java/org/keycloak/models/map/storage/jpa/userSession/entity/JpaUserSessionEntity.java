@@ -347,7 +347,7 @@ public class JpaUserSessionEntity extends AbstractUserSessionEntity implements J
     public void addAuthenticatedClientSession(MapAuthenticatedClientSessionEntity clientSession) {
         JpaClientSessionEntity jpaClientSession = JpaClientSessionEntity.class.cast(CLONER.from(clientSession));
         jpaClientSession.setParent(this);
-        jpaClientSession.setEntityVersion(this.getEntityVersion());
+        jpaClientSession.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_CLIENT_SESSION);
         clientSessions.add(jpaClientSession);
     }
 

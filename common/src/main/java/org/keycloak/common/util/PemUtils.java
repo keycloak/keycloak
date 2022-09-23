@@ -37,6 +37,11 @@ public class PemUtils {
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
 
+    public static final String BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----";
+    public static final String END_PRIVATE_KEY = "-----END PRIVATE KEY-----";
+    public static final String BEGIN_RSA_PRIVATE_KEY = "-----BEGIN RSA PRIVATE KEY-----";
+    public static final String END_RSA_PRIVATE_KEY = "-----END RSA PRIVATE KEY-----";
+
     /**
      * Decode a X509 Certificate from a PEM string
      *
@@ -110,6 +115,20 @@ public class PemUtils {
 
     public static String removeBeginEnd(String pem){
         return CryptoIntegration.getProvider().getPemUtils().removeBeginEnd(pem);
+    }
+
+    public static String addPrivateKeyBeginEnd(String privateKeyPem) {
+        return new StringBuilder(PemUtils.BEGIN_PRIVATE_KEY + "\n")
+                .append(privateKeyPem)
+                .append("\n" + PemUtils.END_PRIVATE_KEY)
+                .toString();
+    }
+
+    public static String addRsaPrivateKeyBeginEnd(String privateKeyPem) {
+        return new StringBuilder(PemUtils.BEGIN_RSA_PRIVATE_KEY + "\n")
+                .append(privateKeyPem)
+                .append("\n" + PemUtils.END_RSA_PRIVATE_KEY)
+                .toString();
     }
 
     public static String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException{

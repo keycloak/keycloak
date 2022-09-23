@@ -21,10 +21,12 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.EnumWithStableIndex;
@@ -60,8 +62,10 @@ public class IckleQueryWhereClauses {
     static {
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(ClientModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
+        WHERE_CLAUSE_PRODUCER_OVERRIDES.put(GroupModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.IDP_AND_USER, IckleQueryWhereClauses::whereClauseForUserIdpAlias);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, IckleQueryWhereClauses::whereClauseForConsentClientFederationLink);
+        WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE, IckleQueryWhereClauses::whereClauseForUsernameCaseInsensitive);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, IckleQueryWhereClauses::whereClauseForCorrespondingSessionId);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(Policy.SearchableFields.CONFIG, IckleQueryWhereClauses::whereClauseForPolicyConfig);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(Event.SearchableFields.EVENT_TYPE, IckleQueryWhereClauses::whereClauseForEnumWithStableIndex);
@@ -225,5 +229,15 @@ public class IckleQueryWhereClauses {
         }
 
         return produceWhereClause(modelFieldName, op, values, parameters);
+    }
+
+    private static String whereClauseForUsernameCaseInsensitive(String modelFieldName, ModelCriteriaBuilder.Operator op, Object[] values, Map<String, Object> parameters) {
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] instanceof String) {
+                values[i] = KeycloakModelUtils.toLowerCaseSafe((String) values[i]);
+            }
+        }
+
+        return produceWhereClause(modelFieldName, op == ModelCriteriaBuilder.Operator.ILIKE ? ModelCriteriaBuilder.Operator.LIKE : op, values, parameters);
     }
 }

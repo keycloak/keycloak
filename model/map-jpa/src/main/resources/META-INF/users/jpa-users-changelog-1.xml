@@ -177,4 +177,23 @@ limitations under the License.
         <addUniqueConstraint tableName="kc_user_role" columnNames="user_id, role_id" deferrable="true" initiallyDeferred="true" />
         <addUniqueConstraint tableName="kc_user_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
     </changeSet>
+
+    <changeSet author="keycloak" id="users-14161">
+
+        <ext:addGeneratedColumn tableName="kc_user_consent">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_user_consent" indexName="user_consent_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
+
+        <ext:addGeneratedColumn tableName="kc_user_federated_identity">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_user_federated_identity" indexName="user_federated_identity_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
+
+    </changeSet>
+
 </databaseChangeLog>

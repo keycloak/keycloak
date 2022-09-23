@@ -221,12 +221,14 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
                         }
 
                         logger.debugf("Nodes %s removed from cluster. Removing tasks locked by this nodes", removedNodesAddresses.toString());
-                    /*
-                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-                        that acquires a writeLock and this removal that acquires a readLock.
-                        https://issues.redhat.com/browse/ISPN-13664
-                    */
+                        /*
+                            workaround for Infinispan 12.1.7.Final to prevent a deadlock while
+                            DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
+                            that acquires a writeLock and this removal that acquires a readLock.
+                            First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
+                            https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
+                            Tracked in https://github.com/keycloak/keycloak/issues/9871
+                        */
                         synchronized (DefaultInfinispanConnectionProviderFactory.class) {
                             workCache.entrySet().removeIf(new LockEntryPredicate(removedNodesAddresses));
                         }

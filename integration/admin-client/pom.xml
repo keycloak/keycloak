@@ -30,10 +30,6 @@
     <name>Keycloak Admin REST Client</name>
     <description/>
 
-    <properties>
-        <resteasy.versions>3.13.2.Final</resteasy.versions>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -58,22 +54,22 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
-            <version>${resteasy.versions}</version>
+            <version>${resteasy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-multipart-provider</artifactId>
-            <version>${resteasy.versions}</version>
+            <version>${resteasy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson2-provider</artifactId>
-            <version>${resteasy.versions}</version>
+            <version>${resteasy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxb-provider</artifactId>
-            <version>${resteasy.versions}</version>
+            <version>${resteasy.version}</version>
         </dependency>
     </dependencies>
 

@@ -67,18 +67,18 @@ Transaction:
 Feature:
 
 --features <feature> Enables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin2, docker,
-                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
-                       client-policies, ciba, map-storage, par, declarative-user-profile,
-                       dynamic-scopes, client-secret-rotation, step-up-authentication,
-                       recovery-codes, update-email, preview.
+                       account2, account-api, admin-fine-grained-authz, admin-api, admin, admin2,
+                       docker, impersonation, openshift-integration, scripts, token-exchange,
+                       web-authn, client-policies, ciba, map-storage, par,
+                       declarative-user-profile, dynamic-scopes, client-secret-rotation,
+                       step-up-authentication, recovery-codes, update-email, preview.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin2, docker,
-                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
-                       client-policies, ciba, map-storage, par, declarative-user-profile,
-                       dynamic-scopes, client-secret-rotation, step-up-authentication,
-                       recovery-codes, update-email, preview.
+                       account2, account-api, admin-fine-grained-authz, admin-api, admin, admin2,
+                       docker, impersonation, openshift-integration, scripts, token-exchange,
+                       web-authn, client-policies, ciba, map-storage, par,
+                       declarative-user-profile, dynamic-scopes, client-secret-rotation,
+                       step-up-authentication, recovery-codes, update-email, preview.
 
 Hostname:
 
@@ -88,6 +88,9 @@ Hostname:
                      The hostname for accessing the administration console. Use this option if you
                        are exposing the administration console using a hostname other than the
                        value set to the 'hostname' option.
+--hostname-admin-url <url>
+                     Set the base URL for accessing the administration console, including scheme,
+                       host, port and path
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>
@@ -101,6 +104,7 @@ Hostname:
                      By default backchannel URLs are dynamically resolved from request headers to
                        allow internal and external applications. If all applications use the public
                        URL this option should be enabled. Default: false.
+--hostname-url <url> Set the base URL for frontend URLs, including scheme, host, port and path.
 
 HTTP/TLS:
 
@@ -109,7 +113,8 @@ HTTP/TLS:
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
 --http-port <port>   The used HTTP port. Default: 8080.
 --http-relative-path <path>
-                     Set the path relative to '/' for serving resources. Default: /.
+                     Set the path relative to '/' for serving resources. The path must start with a
+                       '/'. Default: /.
 --https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format.
 --https-certificate-key-file <file>
@@ -173,14 +178,16 @@ Logging:
                      The format of unstructured console log entries. If the format has spaces in
                        it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
                        -5p [%c] (%t) %s%e%n.
---log-console-output <default|json>
+--log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default.
---log-file <path>/<file-name>.log
-                     Set the log file path and filename. Default: data/log/keycloak.log.
+--log-file <file>    Set the log file path and filename. Default: data/log/keycloak.log.
 --log-file-format <format>
                      Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
                        SSS} %-5p [%c] (%t) %s%e%n.
+--log-file-output <output>
+                     Set the log output to JSON or default (plain) unstructured logging. Possible
+                       values are: default, json. Default: default.
 --log-gelf-facility <name>
                      The facility (name of the process) that sends the message. Default: keycloak.
 --log-gelf-host <hostname>

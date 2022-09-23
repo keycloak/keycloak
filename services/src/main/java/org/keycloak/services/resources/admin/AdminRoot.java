@@ -23,9 +23,9 @@ import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import javax.ws.rs.NotAuthorizedException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -97,6 +97,11 @@ public class AdminRoot {
      */
     @GET
     public Response masterRealmAdminConsoleRedirect() {
+
+        if (!isAdminConsoleEnabled()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
         RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
         return Response.status(302).location(
                 session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
@@ -112,6 +117,11 @@ public class AdminRoot {
     @Path("index.{html:html}") // expression is actually "index.html" but this is a hack to get around jax-doclet bug
     @GET
     public Response masterRealmAdminConsoleRedirectHtml() {
+
+        if (!isAdminConsoleEnabled()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
         return masterRealmAdminConsoleRedirect();
     }
 
@@ -142,6 +152,11 @@ public class AdminRoot {
      */
     @Path("{realm}/console")
     public AdminConsole getAdminConsole(final @PathParam("realm") String name) {
+
+        if (!isAdminConsoleEnabled()) {
+            throw new NotFoundException();
+        }
+
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         AdminConsole service = new AdminConsole(realm);
@@ -198,6 +213,11 @@ public class AdminRoot {
      */
     @Path("realms")
     public Object getRealmsAdmin(@Context final HttpHeaders headers) {
+
+        if (!isAdminApiEnabled()) {
+            throw new NotFoundException();
+        }
+
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new AdminCorsPreflightService(request);
         }
@@ -222,6 +242,11 @@ public class AdminRoot {
      */
     @Path("serverinfo")
     public Object getServerInfo(@Context final HttpHeaders headers) {
+
+        if (!isAdminApiEnabled()) {
+            throw new NotFoundException();
+        }
+
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new AdminCorsPreflightService(request);
         }
@@ -277,4 +302,11 @@ public class AdminRoot {
         }
     }
 
+    private static boolean isAdminApiEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN_API);
+    }
+
+    private static boolean isAdminConsoleEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
+    }
 }

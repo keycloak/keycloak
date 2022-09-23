@@ -63,6 +63,10 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
     @Basic(fetch = FetchType.LAZY)
     private String clientId;
 
+    @Column(insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
+    private Integer entityVersion;
+
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
     private final JpaUserConsentMetadata metadata;
@@ -79,8 +83,13 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
         this.metadata = new JpaUserConsentMetadata(cloner);
     }
 
+    public boolean isMetadataInitialized() {
+        return metadata != null;
+    }
+
     public Integer getEntityVersion() {
-        return this.metadata.getEntityVersion();
+        if (isMetadataInitialized()) return this.metadata.getEntityVersion();
+        return entityVersion;
     }
 
     public void setEntityVersion(Integer version) {
@@ -98,7 +107,8 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
 
     @Override
     public String getClientId() {
-        return this.metadata.getClientId();
+        if (isMetadataInitialized()) return this.metadata.getClientId();
+        return clientId;
     }
 
     @Override

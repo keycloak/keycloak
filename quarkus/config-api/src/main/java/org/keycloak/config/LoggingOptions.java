@@ -95,6 +95,13 @@ public class LoggingOptions {
             .defaultValue("%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n")
             .build();
 
+    public static final Option<Output> LOG_FILE_OUTPUT = new OptionBuilder<>("log-file-output", Output.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(DEFAULT_CONSOLE_OUTPUT)
+            .description("Set the log output to JSON or default (plain) unstructured logging.")
+            .build();
+
+
     public static final Option<Boolean> LOG_GELF_ENABLED = new OptionBuilder<>("log-gelf-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
             .hidden()

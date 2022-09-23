@@ -20,7 +20,6 @@ package org.keycloak.testsuite.admin.group;
 import com.google.common.collect.Comparators;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
@@ -28,7 +27,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -78,7 +76,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import static org.keycloak.testsuite.Assert.assertNames;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -160,27 +157,6 @@ public class GroupTest extends AbstractGroupTest {
         assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.clientResourcePath(clientUuid), ResourceType.CLIENT);
     }
 
-    private GroupRepresentation createGroup(RealmResource realm, GroupRepresentation group) {
-        try (Response response = realm.groups().add(group)) {
-            String groupId = ApiUtil.getCreatedId(response);
-            getCleanup().addGroupId(groupId);
-
-            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);
-
-            // Set ID to the original rep
-            group.setId(groupId);
-            return group;
-        }
-    }
-
-    private RoleRepresentation createRealmRole(RealmResource realm, RoleRepresentation role) {
-        realm.roles().create(role);
-
-        RoleRepresentation created = realm.roles().get(role.getName()).toRepresentation();
-        getCleanup().addRoleId(created.getId());
-        return created;
-    }
-
     @Test
     public void doNotAllowSameGroupNameAtSameLevel() throws Exception {
         RealmResource realm = adminClient.realms().realm("test");
@@ -248,13 +224,6 @@ public class GroupTest extends AbstractGroupTest {
             assertEquals("HTTP 409 Conflict", e.getMessage());
         }  
     }
-    
-    private void addSubGroup(RealmResource realm, GroupRepresentation parent, GroupRepresentation child) {
-        Response response = realm.groups().add(child);
-        child.setId(ApiUtil.getCreatedId(response));
-        response = realm.groups().group(parent.getId()).subGroup(child);
-        response.close();
-    }
 
     @Test
     public void allowSameGroupNameAtDifferentLevel() throws Exception {
@@ -296,7 +265,6 @@ public class GroupTest extends AbstractGroupTest {
 
     @Test
     @UncaughtServerErrorExpected
-    @AuthServerContainerExclude(REMOTE)
     public void doNotAllowSameGroupNameAtTopLevelInDatabase() throws Exception {
         final String id = KeycloakModelUtils.generateId();
         testingClient.server().run(session -> {

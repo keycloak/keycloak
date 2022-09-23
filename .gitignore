@@ -78,6 +78,8 @@ quarkus/data/*.db
 
 # Jakarta transformed sources #
 ###############################
-
 /integration/admin-client-jakarta/src/
 /.metadata/
+
+# Git ephemeral files
+*.versionsBackup

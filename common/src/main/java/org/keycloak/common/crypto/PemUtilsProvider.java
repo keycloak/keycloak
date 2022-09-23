@@ -40,9 +40,6 @@ import org.keycloak.common.util.PemException;
  */
 public abstract class PemUtilsProvider {
 
-    public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
-    public static final String END_CERT = "-----END CERTIFICATE-----";
-
 
     /**
      * Decode a X509 Certificate from a PEM string
@@ -104,18 +101,7 @@ public abstract class PemUtilsProvider {
      * @return
      * @throws Exception
      */
-    public PrivateKey decodePrivateKey(String pem) {
-        if (pem == null) {
-            return null;
-        }
-
-        try {
-            byte[] der = pemToDer(pem);
-            return DerUtils.decodePrivateKey(der);
-        } catch (Exception e) {
-            throw new PemException(e);
-        }
-    }
+    public abstract PrivateKey decodePrivateKey(String pem);
 
 
     /**

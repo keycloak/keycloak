@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,8 +62,6 @@ import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -91,7 +90,6 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
     
     @Rule
@@ -393,7 +391,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             user.setUsername("updatedUsername");
             user = updateAndGet(user);
-            assertEquals("updatedusername", user.getUsername());
+            assertThat("updatedusername", Matchers.equalToIgnoringCase(user.getUsername()));
 
 
             realmRep.setEditUsernameAllowed(false);
@@ -924,11 +922,22 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
-    public void listApplicationsThirdParty() throws Exception {
+    public void listApplicationsThirdPartyWithoutConsentText() throws Exception {
+        listApplicationsThirdParty("acr", false);
+    }
+
+    @Test
+    public void listApplicationsThirdPartyWithConsentText() throws Exception {
+        listApplicationsThirdParty("profile", true);
+    }
+
+    public void listApplicationsThirdParty(String clientScopeName, boolean expectConsentTextAsName) throws Exception {
         String appId = "third-party";
         TokenUtil token = new TokenUtil("view-applications-access", "password");
 
-        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().stream()
+                .filter(s -> s.getName().equals(clientScopeName))
+                .findFirst().get();
         ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
         consentScopeRepresentation.setId(clientScopeRepresentation.getId());
 
@@ -963,7 +972,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(app.getConsent().getGrantedScopes().isEmpty());
         ConsentScopeRepresentation grantedScope = app.getConsent().getGrantedScopes().get(0);
         assertEquals(clientScopeRepresentation.getId(), grantedScope.getId());
-        assertEquals(clientScopeRepresentation.getAttributes().get(ClientScopeModel.CONSENT_SCREEN_TEXT) != null ? clientScopeRepresentation.getAttributes().get(ClientScopeModel.CONSENT_SCREEN_TEXT) : clientScopeRepresentation.getName(), grantedScope.getName());
+
+        if (expectConsentTextAsName) {
+            assertEquals(clientScopeRepresentation.getAttributes().get(ClientScopeModel.CONSENT_SCREEN_TEXT), grantedScope.getName());
+        }
+        else {
+            assertEquals(clientScopeRepresentation.getName(), grantedScope.getName());
+        }
     }
 
     @Test

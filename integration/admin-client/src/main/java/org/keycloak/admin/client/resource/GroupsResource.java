@@ -124,4 +124,7 @@ public interface GroupsResource {
     @Path("{id}")
     GroupResource group(@PathParam("id") String id);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> query(@QueryParam("q") String searchQuery);
 }

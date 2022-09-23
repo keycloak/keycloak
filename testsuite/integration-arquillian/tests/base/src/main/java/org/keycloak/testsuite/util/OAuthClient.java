@@ -621,8 +621,10 @@ public class OAuthClient {
             if (clientSessionHost != null) {
                 parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
             }
-            if (scope != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+
+            String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+            if (scopeParam != null && !scopeParam.isEmpty()) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
             }
 
             if (userAgent != null) {
@@ -745,14 +747,15 @@ public class OAuthClient {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getServiceAccountUrl());
 
-            String authorization = BasicAuthHelper.UrlEncoded.createHeader(clientId, clientSecret);
+            String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
             post.setHeader("Authorization", authorization);
 
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
 
-            if (scope != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+            if (scopeParam != null && !scopeParam.isEmpty()) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
             }
 
             UrlEncodedFormEntity formEntity;
@@ -1032,8 +1035,9 @@ public class OAuthClient {
                 post.addHeader("Origin", origin);
             }
 
-            if (scope != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+            if (scopeParam != null && !scopeParam.isEmpty()) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
             }
             if (nonce != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, scope));

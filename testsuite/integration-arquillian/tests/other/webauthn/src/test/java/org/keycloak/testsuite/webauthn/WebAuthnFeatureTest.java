@@ -18,39 +18,28 @@
 
 package org.keycloak.testsuite.webauthn;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.common.Profile;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.info.ServerInfoRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.feature.AbstractFeatureStateTest;
 
-import java.util.Set;
-
-public class WebAuthnFeatureTest extends AbstractTestRealmKeycloakTest {
+public class WebAuthnFeatureTest extends AbstractFeatureStateTest {
 
     @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+    public String getFeatureProviderId() {
+        return WebAuthnAuthenticatorFactory.PROVIDER_ID;
     }
 
-    @Test
-    public void testWebAuthnEnabled() {
-        testWebAuthnAvailability(true);
+    @Override
+    public String getFeatureSpiName() {
+        return AuthenticatorSpi.SPI_NAME;
     }
 
     @Test
     @DisableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true)
-    public void testWebAuthnDisabled() {
-        testWebAuthnAvailability(false);
-    }
-
-    private void testWebAuthnAvailability(boolean expectedAvailability) {
-        ServerInfoRepresentation serverInfo = adminClient.serverInfo().getInfo();
-        Set<String> authenticatorProviderIds = serverInfo.getProviders().get(AuthenticatorSpi.SPI_NAME).getProviders().keySet();
-        Assert.assertEquals(expectedAvailability, authenticatorProviderIds.contains(WebAuthnAuthenticatorFactory.PROVIDER_ID));
+    public void featureDisabled() {
+        testFeatureAvailability(false);
     }
 }

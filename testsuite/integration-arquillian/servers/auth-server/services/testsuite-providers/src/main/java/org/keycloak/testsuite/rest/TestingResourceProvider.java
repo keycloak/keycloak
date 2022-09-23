@@ -64,6 +64,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.datastore.PeriodicEventInvalidation;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
@@ -315,8 +316,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearExpiredEvents() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearExpiredEvents();
+        session.invalidate(PeriodicEventInvalidation.JPA_EVENT_STORE);
         return Response.noContent().build();
     }
+
 
     /**
      * Query events

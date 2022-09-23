@@ -81,6 +81,16 @@
             <kc-tooltip>{{:: 'otp-supported-applications.tooltip' | translate}}</kc-tooltip>
         </div>
 
+        <div class="form-group" data-ng-if="realm.otpPolicyType == 'totp'">
+            <label for="reusableCode" class="col-md-2 control-label">{{:: 'otp-reusable-code' | translate}}</label>
+            <div class="col-md-2">
+                <div>
+                    <input id="reusableCode" ng-model="realm.otpPolicyCodeReusable" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
+            <kc-tooltip>{{:: 'otp-reusable-code.tooltip' | translate}}</kc-tooltip>
+        </div>
+
 
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">

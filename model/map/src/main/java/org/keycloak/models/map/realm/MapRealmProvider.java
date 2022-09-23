@@ -398,6 +398,11 @@ public class MapRealmProvider implements RealmProvider {
     }
 
     @Override
+    public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return session.groups().searchGroupsByAttributes(realm, attributes, firstResult, maxResults);
+    }
+
+    @Override
     @Deprecated
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
         return session.roles().addRealmRole(realm, id, name);

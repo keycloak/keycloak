@@ -88,6 +88,9 @@ Hostname:
                      The hostname for accessing the administration console. Use this option if you
                        are exposing the administration console using a hostname other than the
                        value set to the 'hostname' option.
+--hostname-admin-url <url>
+                     Set the base URL for accessing the administration console, including scheme,
+                       host, port and path
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>
@@ -101,6 +104,7 @@ Hostname:
                      By default backchannel URLs are dynamically resolved from request headers to
                        allow internal and external applications. If all applications use the public
                        URL this option should be enabled. Default: false.
+--hostname-url <url> Set the base URL for frontend URLs, including scheme, host, port and path.
 
 HTTP/TLS:
 
@@ -173,14 +177,16 @@ Logging:
                      The format of unstructured console log entries. If the format has spaces in
                        it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
                        -5p [%c] (%t) %s%e%n.
---log-console-output <default|json>
+--log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default.
---log-file <path>/<file-name>.log
-                     Set the log file path and filename. Default: data/log/keycloak.log.
+--log-file <file>    Set the log file path and filename. Default: data/log/keycloak.log.
 --log-file-format <format>
                      Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
                        SSS} %-5p [%c] (%t) %s%e%n.
+--log-file-output <output>
+                     Set the log output to JSON or default (plain) unstructured logging. Possible
+                       values are: default, json. Default: default.
 --log-gelf-facility <name>
                      The facility (name of the process) that sends the message. Default: keycloak.
 --log-gelf-host <hostname>

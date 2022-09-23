@@ -26,6 +26,7 @@ import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.storage.group.GroupStorageProviderFactory;
 import org.keycloak.storage.group.GroupStorageProviderModel;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class GroupStorageManager extends AbstractStorageManager<GroupStorageProvider, GroupStorageProviderModel> implements GroupProvider {
@@ -68,6 +69,15 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
         Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class,
                         p -> p.searchForGroupByNameStream(realm, search, firstResult, maxResults));
         
+        return Stream.concat(local, ext);
+    }
+
+    @Override
+    public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        Stream<GroupModel> local = localStorage().searchGroupsByAttributes(realm, attributes, firstResult, maxResults);
+        Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupProvider.class,
+                p -> p.searchGroupsByAttributes(realm, attributes, firstResult, maxResults));
+
         return Stream.concat(local, ext);
     }
 

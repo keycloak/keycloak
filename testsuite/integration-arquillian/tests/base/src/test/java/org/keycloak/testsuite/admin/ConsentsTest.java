@@ -61,8 +61,6 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
@@ -269,7 +267,6 @@ public class ConsentsTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testConsents() {
         driver.navigate().to(getAccountUrl(consumerRealmName()));
 
@@ -347,7 +344,6 @@ public class ConsentsTest extends AbstractKeycloakTest {
      * KEYCLOAK-18954
      */
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRetrieveConsentsForUserWithClientsWithGrantedOfflineAccess() throws Exception {
 
         RealmResource providerRealm = adminClient.realm(providerRealmName());

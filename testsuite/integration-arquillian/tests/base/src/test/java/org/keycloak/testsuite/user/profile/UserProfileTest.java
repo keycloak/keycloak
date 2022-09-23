@@ -536,6 +536,85 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testReadonlyEmailCannotBeUpdated() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testReadonlyEmailCannotBeUpdated);
+    }
+
+    private static void testReadonlyEmailCannotBeUpdated(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.EMAIL, "readonly@foo.bar");
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        // configure email r/o for user
+        provider.setConfiguration("{\"attributes\": [{\"name\": \"email\", \"permissions\": {\"edit\": [ \"admin\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        UserModel user = profile.create();
+
+        assertThat(profile.getAttributes().nameSet(),
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL));
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+
+        Set<String> attributesUpdated = new HashSet<>();
+
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
+
+        attributes.put(UserModel.EMAIL, "cannot-change@foo.bar");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+
+        try {
+            profile.update();
+            fail("Should fail since email is read only");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError("email"));
+        }
+
+        assertEquals("E-Mail address shouldn't be changed", "readonly@foo.bar", user.getEmail());
+    }
+
+    @Test
+    public void testUpdateEmail() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testUpdateEmail);
+    }
+
+    private static void testUpdateEmail(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.EMAIL, "canchange@foo.bar");
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        // configure email r/w for user
+        provider.setConfiguration("{\"attributes\": [{\"name\": \"email\", \"permissions\": {\"edit\": [ \"user\", \"admin\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        UserModel user = profile.create();
+
+        assertThat(profile.getAttributes().nameSet(),
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL));
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+
+        Set<String> attributesUpdated = new HashSet<>();
+
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
+
+        attributes.put("email", "changed@foo.bar");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+
+        profile.update();
+
+        assertEquals("E-Mail address should have been changed!", "changed@foo.bar", user.getEmail());
+    }
+
+    @Test
     public void testDoNotUpdateUndefinedAttributes() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDoNotUpdateUndefinedAttributes);
     }
@@ -1338,5 +1417,78 @@ public class UserProfileTest extends AbstractUserProfileTest {
         user = session.users().getUserById(realm, user.getId());
 
         assertEquals("test@keycloak.com", user.getEmail());
+    }
+
+    @Test
+    public void testDoNotRemoveAttributes() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDoNotRemoveAttributes);
+    }
+
+    private static void testDoNotRemoveAttributes(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.EMAIL, Arrays.asList("test@test.com"));
+        attributes.put("test-attribute", Arrays.asList("Test Value"));
+        attributes.put("foo", Arrays.asList("foo"));
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        provider.setConfiguration("{\"attributes\": ["
+                + "{\"name\": \"test-attribute\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"foo\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"email\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+
+        attributes.clear();
+        attributes.put(UserModel.EMAIL, Arrays.asList("new-email@test.com"));
+        attributes.put("foo", "changed");
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(false);
+        profile = provider.create(UserProfileContext.USER_API, user);
+        Attributes userAttributes = profile.getAttributes();
+
+        assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
+        assertEquals("Test Value", userAttributes.getFirstValue("test-attribute"));
+        assertEquals("changed", userAttributes.getFirstValue("foo"));
+
+        attributes.remove("foo");
+        attributes.put("test-attribute", userAttributes.getFirstValue("test-attribute"));
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(true);
+        profile = provider.create(UserProfileContext.USER_API, user);
+        userAttributes = profile.getAttributes();
+        // remove attribute if not set
+        assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
+        assertEquals("Test Value", userAttributes.getFirstValue("test-attribute"));
+        assertNull(userAttributes.getFirstValue("foo"));
+
+        provider.setConfiguration("{\"attributes\": ["
+                + "{\"name\": \"test-attribute\", \"permissions\": {\"edit\": [\"user\"]}},"
+                + "{\"name\": \"foo\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"email\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}}]}");
+        attributes.remove("test-attribute");
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(true);
+        profile = provider.create(UserProfileContext.USER_API, user);
+        userAttributes = profile.getAttributes();
+        // do not remove test-attribute because admin does not have write permissions
+        assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
+        assertEquals("Test Value", userAttributes.getFirstValue("test-attribute"));
+
+        provider.setConfiguration("{\"attributes\": ["
+                + "{\"name\": \"test-attribute\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"foo\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"email\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}}]}");
+        attributes.remove("test-attribute");
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(true);
+        profile = provider.create(UserProfileContext.USER_API, user);
+        userAttributes = profile.getAttributes();
+        // removes the test-attribute attribute because now admin has write permission
+        assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
+        assertNull(userAttributes.getFirstValue("test-attribute"));
     }
 }

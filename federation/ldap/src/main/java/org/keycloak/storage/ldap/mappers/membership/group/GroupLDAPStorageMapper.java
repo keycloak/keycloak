@@ -751,7 +751,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public boolean isMemberOf(GroupModel group) {
-            return getGroupsStream().anyMatch(Predicate.isEqual(group));
+            return RoleUtils.isDirectMember(getGroupsStream(),group);
         }
 
         protected Stream<GroupModel> getLDAPGroupMappingsConverted() {

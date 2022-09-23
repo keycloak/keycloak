@@ -50,6 +50,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -173,7 +174,17 @@ public class UserResource {
                 wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user);
             }
 
-            UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, rep.toAttributes(), user);
+            Map<String, List<String>> attributes = new HashMap<>(rep.toAttributes());
+
+            if (rep.getAttributes() == null) {
+                // include existing attributes in case no attributes are set so that validation takes into account the existing
+                // attributes associated with the user
+                for (Map.Entry<String, List<String>> entry : user.getAttributes().entrySet()) {
+                    attributes.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+            }
+
+            UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, attributes, user);
 
             Response response = validateUserProfile(profile, user, session);
             if (response != null) {
@@ -933,7 +944,7 @@ public class UserResource {
             throw new NotFoundException("Group not found");
         }
         auth.groups().requireManageMembership(group);
-        if (!user.isMemberOf(group)){
+        if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);
             adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
         }

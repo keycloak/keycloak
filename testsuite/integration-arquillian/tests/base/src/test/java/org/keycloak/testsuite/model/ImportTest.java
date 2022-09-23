@@ -35,8 +35,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -56,13 +54,11 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ImportTest extends AbstractTestRealmKeycloakTest {
 
     @Test

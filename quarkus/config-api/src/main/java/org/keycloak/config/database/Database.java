@@ -125,7 +125,7 @@ public final class Database {
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
         ),
         MARIADB("mariadb",
-                "org.mariadb.jdbc.MySQLDataSource",
+                "org.mariadb.jdbc.MariaDbDataSource",
                 "org.mariadb.jdbc.Driver",
                 "org.hibernate.dialect.MariaDBDialect",
                 "jdbc:mariadb://${kc.db-url-host:localhost}:${kc.db-url-port:3306}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",

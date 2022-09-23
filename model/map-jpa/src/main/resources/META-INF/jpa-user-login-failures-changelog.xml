@@ -18,6 +18,5 @@ limitations under the License.
 
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
-    <!-- format of id of changelog file names: jpa-user-login-failures-changelog-${org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE}.xml -->
     <include file="META-INF/user-login-failures/jpa-user-login-failures-changelog-1.xml"/>
 </databaseChangeLog>

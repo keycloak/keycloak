@@ -30,6 +30,7 @@ public class IdentityProviderModel implements Serializable {
 
     public static final String ALLOWED_CLOCK_SKEW = "allowedClockSkew";
     public static final String LOGIN_HINT = "loginHint";
+    public static final String PASS_MAX_AGE = "passMaxAge";
 
     public static final String SYNC_MODE = "syncMode";
     
@@ -228,6 +229,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setLoginHint(boolean loginHint) {
         getConfig().put(LOGIN_HINT, String.valueOf(loginHint));
+    }
+
+    public boolean isPassMaxAge() {
+        return Boolean.valueOf(getConfig().get(PASS_MAX_AGE));
+    }
+
+    public void setPassMaxAge(boolean passMaxAge) {
+        getConfig().put(PASS_MAX_AGE, String.valueOf(passMaxAge));
     }
 
      

@@ -21,32 +21,23 @@ package org.keycloak.testsuite.forms;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
-import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
-import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.representations.IDToken;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.broker.SocialLoginTest;
 import org.keycloak.testsuite.pages.AppPage;
@@ -59,15 +50,11 @@ import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
 
 /**
@@ -225,7 +212,6 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     // Re-authentication with user form separate to the password form. The username form would be skipped
     @Test
-    @AuthServerContainerExclude(REMOTE)
     public void identityFirstFormReauthentication() {
         // Set identity-first as realm flow
         setupIdentityFirstFlow();
@@ -263,7 +249,6 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     // Re-authentication with user form separate to the password form. The username form is shown due the user linked with "github"
     @Test
-    @AuthServerContainerExclude(REMOTE)
     public void identityFirstFormReauthenticationWithGithubLink() {
         // Set identity-first as realm flow
         setupIdentityFirstFlow();

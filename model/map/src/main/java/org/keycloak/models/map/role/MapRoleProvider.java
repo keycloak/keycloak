@@ -191,13 +191,10 @@ public class MapRoleProvider implements RoleProvider {
                  .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true)
                  .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        String roleId = tx.read(withCriteria(mcb))
+        return tx.read(withCriteria(mcb))
                 .map(entityToAdapterFunc(realm))
-                .map(RoleModel::getId)
                 .findFirst()
                 .orElse(null);
-        //we need to go via session.roles() not to bypass cache
-        return roleId == null ? null : session.roles().getRoleById(realm, roleId);
     }
 
     @Override
@@ -212,13 +209,10 @@ public class MapRoleProvider implements RoleProvider {
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
           .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        String roleId = tx.read(withCriteria(mcb))
+        return tx.read(withCriteria(mcb))
                 .map(entityToAdapterFunc(client.getRealm()))
-                .map(RoleModel::getId)
                 .findFirst()
                 .orElse(null);
-        //we need to go via session.roles() not to bypass cache
-        return roleId == null ? null : session.roles().getRoleById(client.getRealm(), roleId);
     }
 
     @Override

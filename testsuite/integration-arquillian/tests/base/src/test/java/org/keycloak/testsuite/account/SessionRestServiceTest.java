@@ -38,8 +38,6 @@ import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -125,7 +123,6 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testGetSessions() throws Exception {
         oauth.setDriver(secondBrowser);
         codeGrant("public-client-0");
@@ -145,7 +142,6 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testGetDevicesResponse() throws Exception {
         assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
                 System.getProperty("browser").equals("htmlUnit"));
@@ -355,7 +351,6 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testNullOrEmptyUserAgent() throws Exception {
         assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
                 System.getProperty("browser").equals("htmlUnit"));

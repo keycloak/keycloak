@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.hamcrest.CoreMatchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,7 +43,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -50,7 +50,6 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -60,6 +59,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
@@ -80,6 +80,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -638,9 +639,15 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             Assert.assertFalse(jsonNode.get("active").asBoolean());
 
             // Try userInfo with the same old access token. Should fail as well
-            UserInfo userInfo = oauth.doUserInfoRequest(response1.getAccessToken());
-            Assert.assertNull(userInfo.getSubject());
-            Assert.assertEquals(userInfo.getOtherClaims().get(OAuth2Constants.ERROR), OAuthErrorException.INVALID_TOKEN);
+//            UserInfo userInfo = oauth.doUserInfoRequest(response1.getAccessToken());
+            Client client = AdminClientUtil.createResteasyClient();
+            Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, response1.getAccessToken());
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), userInfoResponse.getStatus());
+            String wwwAuthHeader = userInfoResponse.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+            assertNotNull(wwwAuthHeader);
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
+
             events.clear();
 
             // Try to refresh with one of the old refresh tokens before SSO re-authentication - should fail
@@ -800,7 +807,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
     public void refreshTokenAfterUserAdminLogoutEndpointAndLoginAgain() {
         try {
             String refreshToken1 = loginAndForceNewLoginPage();

@@ -5,18 +5,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.theme.Theme;
 
 import java.io.IOException;
 import java.util.List;
 
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
-
 /**
  * @author <a href="mailto:vincent.letarouilly@gmail.com">Vincent Letarouilly</a>
  */
-@AuthServerContainerExclude({REMOTE})
 public class DefaultThemeManagerTest extends AbstractKeycloakTest {
 
     private static final String THEME_NAME = "environment-agnostic";

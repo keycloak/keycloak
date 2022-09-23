@@ -31,8 +31,6 @@ import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedGroupStorageProviderFactory;
 
@@ -48,7 +46,6 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
 
     private String providerId;

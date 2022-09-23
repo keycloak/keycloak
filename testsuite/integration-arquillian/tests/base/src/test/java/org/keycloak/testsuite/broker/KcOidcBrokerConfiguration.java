@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 import static org.keycloak.testsuite.broker.BrokerTestTools.*;
@@ -44,6 +45,8 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         realm.setEnabled(true);
         realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         realm.setEventsEnabled(true);
+        realm.setInternationalizationEnabled(true);
+        realm.setSupportedLocales(Set.of("en", "hu"));
 
         return realm;
     }
@@ -56,6 +59,8 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         realm.setResetPasswordAllowed(true);
         realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         realm.setEventsEnabled(true);
+        realm.setInternationalizationEnabled(true);
+        realm.setSupportedLocales(Set.of("en", "hu"));
 
         return realm;
     }

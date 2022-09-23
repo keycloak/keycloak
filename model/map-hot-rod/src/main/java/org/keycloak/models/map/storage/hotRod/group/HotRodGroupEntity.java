@@ -26,7 +26,7 @@ import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerato
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
-import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntityNonIndexed;
+import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntity;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 import java.util.Objects;
@@ -109,8 +109,9 @@ public class HotRodGroupEntity extends AbstractHotRodEntity {
     @ProtoField(number = 6)
     public String parentId;
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 7)
-    public Set<HotRodAttributeEntityNonIndexed> attributes;
+    public Set<HotRodAttributeEntity> attributes;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 8)

@@ -30,6 +30,7 @@ import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAP
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.theme.ClasspathThemeProviderFactory.KEYCLOAK_THEMES_JSON;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.SAML_MAPPERS;
 
 import javax.persistence.Entity;
 import javax.persistence.spi.PersistenceUnitTransactionType;
@@ -74,6 +75,7 @@ import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRu
 import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
 import io.smallrye.config.ConfigValue;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
@@ -91,6 +93,7 @@ import org.keycloak.config.StorageOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
+import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
 import org.keycloak.quarkus.runtime.QuarkusProfile;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
@@ -173,6 +176,7 @@ class KeycloakProcessor {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(POLICIES, KeycloakProcessor::registerScriptPolicy);
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(MAPPERS, KeycloakProcessor::registerScriptMapper);
+        DEPLOYEABLE_SCRIPT_PROVIDERS.put(SAML_MAPPERS, KeycloakProcessor::registerSAMLScriptMapper);
     }
 
     private static ProviderFactory registerScriptAuthenticator(ScriptProviderMetadata metadata) {
@@ -185,6 +189,10 @@ class KeycloakProcessor {
 
     private static ProviderFactory registerScriptMapper(ScriptProviderMetadata metadata) {
         return new DeployedScriptOIDCProtocolMapper(metadata);
+    }
+
+    private static ProviderFactory registerSAMLScriptMapper(ScriptProviderMetadata metadata) {
+        return new DeployedScriptSAMLProtocolMapper(metadata);
     }
 
     @BuildStep
@@ -500,8 +508,19 @@ class KeycloakProcessor {
 
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder) {
-        filters.produce(new FilterBuildItem(recorder.createRequestFilter(isHealthEnabled() || isMetricsEnabled()),FilterBuildItem.AUTHORIZATION - 10));
+    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, HttpBuildTimeConfig httpBuildConfig) {
+        String rootPath = httpBuildConfig.rootPath;
+        List<String> ignoredPaths = new ArrayList<>();
+
+        if (isHealthEnabled()) {
+            ignoredPaths.add(rootPath + "health");
+        }
+
+        if (isMetricsEnabled()) {
+            ignoredPaths.add(rootPath + "metrics");
+        }
+
+        filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths),FilterBuildItem.AUTHORIZATION - 10));
     }
 
     @BuildStep
@@ -667,7 +686,7 @@ class KeycloakProcessor {
     }
 
     private boolean isScriptForSpi(Spi spi, String type) {
-        if (spi instanceof ProtocolMapperSpi && MAPPERS.equals(type)) {
+        if (spi instanceof ProtocolMapperSpi && (MAPPERS.equals(type) || SAML_MAPPERS.equals(type))) {
             return true;
         } else if (spi instanceof PolicySpi && POLICIES.equals(type)) {
             return true;

@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>2.7.6.Final</quarkus.version>
+        <quarkus.version>2.12.2.Final</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:
@@ -284,7 +284,6 @@
         <module>themes</module>
         <module>model</module>
         <module>util</module>
-        <module>wildfly</module>
         <module>integration</module>
         <module>adapters</module>
         <module>authz</module>
@@ -1903,6 +1902,18 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>wildfly-dist</id>
+            <activation>
+                <property>
+                    <name>includeWildFly</name>
+                </property>
+            </activation>
+            <modules>
+                <module>wildfly</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>community</id>
             <activation>

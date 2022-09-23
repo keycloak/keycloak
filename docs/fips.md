@@ -37,8 +37,8 @@ cd keycloak-999-SNAPSHOT/bin
 ./kc.sh start-dev
 ```
 
-NOTE: Right now, server should start, and I am able to create admin user on `http://localhost:8080`, but I am not able to finish
-login to the admin console. However the Keycloak uses bouncycastle-fips libraries and the `CryptoIntegration` uses `FIPS1402Provider`. More fixes are required to have Keycloak server working...
+NOTE: Right now, server should start, and you should be able to use `http://localhost:8080` and login to admin console etc.
+Keycloak will now use bouncycastle-fips libraries and the `CryptoIntegration` will use `FIPS1402Provider`.
 
 Run the tests in the FIPS environment
 -------------------------------------
