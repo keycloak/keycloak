@@ -222,21 +222,31 @@ class KeycloakProcessor {
             CombinedIndexBuildItem indexBuildItem,
             BuildProducer<HibernateOrmIntegrationRuntimeConfiguredBuildItem> runtimeConfigured,
             KeycloakRecorder recorder) {
+        ParsedPersistenceXmlDescriptor defaultUnitDescriptor = null;
+        List<String> userManagedEntities = new ArrayList<>();
+
         for (PersistenceXmlDescriptorBuildItem item : descriptors) {
             ParsedPersistenceXmlDescriptor descriptor = item.getDescriptor();
 
             if ("keycloak-default".equals(descriptor.getName())) {
-                configureJpaProperties(descriptor, config, jdbcDataSources);
-                configureJpaModel(descriptor, indexBuildItem);
-                runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", descriptor.getName())
+                defaultUnitDescriptor = descriptor;
+                configureDefaultPersistenceUnitProperties(defaultUnitDescriptor, config, jdbcDataSources);
+                runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", defaultUnitDescriptor.getName())
                         .setInitListener(recorder.createDefaultUnitListener()));
             } else {
                 Properties properties = descriptor.getProperties();
                 // register a listener for customizing the unit configuration at runtime
                 runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", descriptor.getName())
                         .setInitListener(recorder.createUserDefinedUnitListener(properties.getProperty(AvailableSettings.DATASOURCE))));
+                userManagedEntities.addAll(descriptor.getManagedClassNames());
             }
         }
+
+        if (defaultUnitDescriptor == null) {
+            throw new RuntimeException("No default persistence unit found.");
+        }
+
+        configureDefaultPersistenceUnitEntities(defaultUnitDescriptor, indexBuildItem, userManagedEntities);
     }
 
     @BuildStep(onlyIf = IsJpaStoreEnabled.class)
@@ -256,7 +266,7 @@ class KeycloakProcessor {
         producer.produce(new PersistenceXmlDescriptorBuildItem(descriptor));
     }
 
-    private void configureJpaProperties(ParsedPersistenceXmlDescriptor descriptor, HibernateOrmConfig config,
+    private void configureDefaultPersistenceUnitProperties(ParsedPersistenceXmlDescriptor descriptor, HibernateOrmConfig config,
             List<JdbcDataSourceBuildItem> jdbcDataSources) {
         Properties unitProperties = descriptor.getProperties();
 
@@ -271,7 +281,8 @@ class KeycloakProcessor {
         }
     }
 
-    private void configureJpaModel(ParsedPersistenceXmlDescriptor descriptor, CombinedIndexBuildItem indexBuildItem) {
+    private void configureDefaultPersistenceUnitEntities(ParsedPersistenceXmlDescriptor descriptor, CombinedIndexBuildItem indexBuildItem,
+            List<String> userManagedEntities) {
         IndexView index = indexBuildItem.getIndex();
         Collection<AnnotationInstance> annotations = index.getAnnotations(DotName.createSimple(Entity.class.getName()));
 
@@ -279,14 +290,11 @@ class KeycloakProcessor {
             AnnotationTarget target = annotation.target();
             String targetName = target.asClass().name().toString();
 
-            if (isCustomJpaModel(targetName)) {
+            if (!userManagedEntities.contains(targetName)
+                    && (!targetName.startsWith("org.keycloak") || targetName.startsWith("org.keycloak.testsuite"))) {
                 descriptor.addClasses(targetName);
             }
         }
-    }
-
-    private boolean isCustomJpaModel(String targetName) {
-        return !targetName.startsWith("org.keycloak") || targetName.startsWith("org.keycloak.testsuite");
     }
 
     /**
