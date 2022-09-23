@@ -195,6 +195,11 @@ export interface KeycloakInitOptions {
 	 * @default 10000
 	 */
 	messageReceiveTimeout?: number
+
+	/**
+	 * Automatically signs the user out on a failed token refresh.
+	 */
+	logoutOnFailedRefresh?: boolean
 }
 
 export interface KeycloakLoginOptions {
@@ -446,6 +451,11 @@ declare class Keycloak {
 	* @private Undocumented.
 	*/
 	loginRequired?: boolean;
+
+	/**
+	* Automatically signs the user out on a failed token refresh.
+	*/
+	logoutOnFailedRefresh?: boolean
 
 	/**
 	* @private Undocumented.

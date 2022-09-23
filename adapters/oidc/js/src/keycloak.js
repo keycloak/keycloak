@@ -148,6 +148,12 @@ function Keycloak (config) {
                 kc.enableLogging = false;
             }
 
+            if (typeof initOptions.logoutOnFailedRefresh === 'boolean') {
+                kc.logoutOnFailedRefresh = initOptions.logoutOnFailedRefresh;
+            } else {
+                kc.logoutOnFailedRefresh = false;
+            }
+
             if (typeof initOptions.scope === 'string') {
                 kc.scope = initOptions.scope;
             }
@@ -657,6 +663,9 @@ function Keycloak (config) {
                                 logWarn('[KEYCLOAK] Failed to refresh token');
 
                                 if (req.status == 400) {
+                                    if(kc.logoutOnFailedRefresh){
+                                        kc.logout();
+                                    }
                                     kc.clearToken();
                                 }
 
