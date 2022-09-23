@@ -94,6 +94,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 dist = createDistribution(distConfig);
             }
 
+            copyTestProvider(context.getRequiredTestClass().getAnnotation(TestProvider.class));
+            copyTestProvider(context.getRequiredTestMethod().getAnnotation(TestProvider.class));
             onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
             onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
 
@@ -103,6 +105,20 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         } else {
             configureProfile(context);
             super.beforeEach(context);
+        }
+    }
+
+    private void copyTestProvider(TestProvider provider) {
+        if (provider == null) {
+            return;
+        }
+
+        if (dist instanceof RawKeycloakDistribution) {
+            try {
+                ((RawKeycloakDistribution) dist).copyProvider(provider.value().getDeclaredConstructor().newInstance());
+            } catch (Exception cause) {
+                throw new RuntimeException("Failed to instantiate test provider: " + provider.getClass(), cause);
+            }
         }
     }
 
