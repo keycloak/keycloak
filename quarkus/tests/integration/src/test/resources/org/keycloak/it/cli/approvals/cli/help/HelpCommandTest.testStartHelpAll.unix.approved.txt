@@ -285,6 +285,12 @@ Logging:
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
 
+Security (Experimental):
+
+--fips-mode <mode>   Experimental: Sets the FIPS mode. If 'enabled' is set, FIPS is enabled but on
+                       non-approved mode. For full FIPS compliance, set 'strict' to run on approved
+                       mode. Possible values are: enabled, strict, disabled. Default: disabled.
+
 By default, this command tries to update the server configuration by running a
 'build' before starting the server. You can disable this behavior by using the
 '--optimized' option:

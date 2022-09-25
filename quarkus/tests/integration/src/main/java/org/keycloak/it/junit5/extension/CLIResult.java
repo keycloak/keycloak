@@ -17,6 +17,7 @@
 
 package org.keycloak.it.junit5.extension;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -24,6 +25,7 @@ import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
 import static org.testcontainers.shaded.org.hamcrest.Matchers.*;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -150,4 +152,8 @@ public interface CLIResult extends LaunchResult {
         }
     }
 
+    default void assertStringCount(String msg, int count) {
+        Pattern pattern = Pattern.compile(msg);
+        assertEquals(count, pattern.matcher(getOutput()).results().count());
+    }
 }

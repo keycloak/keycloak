@@ -27,11 +27,12 @@ public class CryptoIntegration {
                     cryptoProvider = detectProvider(classLoader);
                     logger.debugv("java security provider: {0}", BouncyIntegration.PROVIDER);
 
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef(dumpJavaSecurityProviders());
-                    }
                 }
             }
+        }
+
+        if (logger.isTraceEnabled()) {
+            logger.tracef(dumpJavaSecurityProviders());
         }
     }
 
@@ -67,4 +68,7 @@ public class CryptoIntegration {
         return builder.append("]").toString();
     }
 
+    public static void setProvider(CryptoProvider provider) {
+        cryptoProvider = provider;
+    }
 }

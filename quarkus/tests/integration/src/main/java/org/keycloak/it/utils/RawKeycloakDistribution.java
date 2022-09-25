@@ -53,7 +53,12 @@ import javax.net.ssl.X509TrustManager;
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.fs.util.ZipUtils;
 
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.keycloak.common.Version;
+import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -467,6 +472,31 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
+    @Override
+    public void copyOrReplaceFile(Path file, Path targetFile) {
+        if (!file.toFile().exists()) {
+            return;
+        }
+
+        File targetDir = distPath.resolve(targetFile).toFile();
+
+        targetDir.mkdirs();
+
+        try {
+            Files.copy(file, targetDir.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to copy file", cause);
+        }
+    }
+
+    public void copyProvider(String groupId, String artifactId) {
+        try {
+            Files.copy(Maven.resolveArtifact(groupId, artifactId), getDistPath().resolve("providers").resolve(artifactId + ".jar"));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to copy JAR file to 'providers' directory", cause);
+        }
+    }
+
     private void updateProperties(Consumer<Properties> propertiesConsumer, File propertiesFile) {
         Properties properties = new Properties();
 
@@ -497,5 +527,25 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     public Path getDistPath() {
         return distPath;
+    }
+
+    public void copyProvider(TestProvider provider) {
+        Path providerPackagePath = Paths.get(provider.getClass().getResource(".").getPath());
+        JavaArchive providerJar = ShrinkWrap.create(JavaArchive.class, provider.getName() + ".jar")
+                .addClasses(provider.getClasses())
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+        Map<String, String> manifestResources = provider.getManifestResources();
+
+        for (Map.Entry<String, String> resource : manifestResources.entrySet()) {
+            try {
+                providerJar.addAsManifestResource(providerPackagePath.resolve(resource.getKey()).toFile(), resource.getValue());
+            } catch (Exception cause) {
+                throw new RuntimeException("Failed to add manifest resource: " + resource.getKey(), cause);
+            }
+        }
+
+        copyOrReplaceFile(providerPackagePath.resolve("quarkus.properties"), Path.of("conf", "quarkus.properties"));
+
+        providerJar.as(ZipExporter.class).exportTo(getDistPath().resolve("providers").resolve(providerJar.getName()).toFile());
     }
 }
