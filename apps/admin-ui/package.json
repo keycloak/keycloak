@@ -55,7 +55,7 @@
     "file-saver": "^2.0.5",
     "flat": "^5.0.2",
     "i18next": "^21.9.2",
-    "i18next-http-backend": "^1.4.1",
+    "i18next-http-backend": "^1.4.4",
     "keycloak-js": "999.0.0-dev",
     "lodash-es": "^4.17.21",
     "react": "^17.0.2",
