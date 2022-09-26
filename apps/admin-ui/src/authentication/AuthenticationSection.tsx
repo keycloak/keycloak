@@ -202,8 +202,7 @@ export default function AuthenticationSection() {
                     setSelectedFlow(data);
                   },
                 },
-                ...(data.usedBy?.type !== "DEFAULT" &&
-                data.providerId !== "client-flow"
+                ...(data.usedBy?.type !== "DEFAULT"
                   ? [
                       {
                         title: t("bindFlow"),

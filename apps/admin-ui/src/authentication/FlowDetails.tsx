@@ -233,7 +233,7 @@ export default function FlowDetails() {
   const hasExecutions = executionList?.expandableList.length !== 0;
 
   const dropdownItems = [
-    ...(usedBy !== "default" && flow?.providerId !== "client-flow"
+    ...(usedBy !== "DEFAULT"
       ? [
           <DropdownItem
             data-testid="set-as-default"
