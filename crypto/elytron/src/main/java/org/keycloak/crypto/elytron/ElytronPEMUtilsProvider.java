@@ -22,6 +22,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Base64;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.PemException;
@@ -30,6 +31,8 @@ import org.keycloak.common.util.PemException;
  * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>
  */
 public class ElytronPEMUtilsProvider extends PemUtilsProvider {
+
+    Logger log = Logger.getLogger(ElytronPEMUtilsProvider.class);
 
     @Override
     protected String encode(Object obj) {
@@ -43,8 +46,8 @@ public class ElytronPEMUtilsProvider extends PemUtilsProvider {
                 c = ((Certificate)obj).getEncoded();
                 encoded = Base64.getEncoder().encodeToString(c);
             } catch (CertificateEncodingException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.warn("Failed to encoded certificate.", e);
+                throw new RuntimeException(e);
             }
         }
         return encoded;
