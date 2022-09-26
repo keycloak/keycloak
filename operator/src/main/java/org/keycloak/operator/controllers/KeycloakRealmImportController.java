@@ -19,34 +19,32 @@ package org.keycloak.operator.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
 
 import javax.inject.Inject;
-
-import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, finalizerName = NO_FINALIZER)
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 public class KeycloakRealmImportController implements Reconciler<KeycloakRealmImport>, EventSourceInitializer<KeycloakRealmImport>, ErrorStatusHandler<KeycloakRealmImport> {
 
     @Inject
@@ -56,13 +54,15 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
     ObjectMapper jsonMapper;
 
     @Override
-    public List<EventSource> prepareEventSources(EventSourceContext<KeycloakRealmImport> context) {
-        SharedIndexInformer<Job> jobInformer =
-                client.batch().v1().jobs().inNamespace(context.getConfigurationService().getClientConfiguration().getNamespace())
-                        .withLabels(org.keycloak.operator.Constants.DEFAULT_LABELS)
-                        .runnableInformer(0);
+    public Map<String, EventSource> prepareEventSources(EventSourceContext<KeycloakRealmImport> context) {
+        InformerConfiguration<Job> jobIC = InformerConfiguration
+                .from(Job.class)
+                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
+                .withNamespaces(context.getControllerConfiguration().getConfigurationService().getClientConfiguration().getNamespace())
+                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .build();
 
-        return List.of(new InformerEventSource<>(jobInformer, Mappers.fromOwnerReference()));
+        return EventSourceInitializer.nameEventSources(new InformerEventSource<>(jobIC, context));
     }
 
     @Override
@@ -104,13 +104,13 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
     }
 
     @Override
-    public Optional<KeycloakRealmImport> updateErrorStatus(KeycloakRealmImport realm, RetryInfo retryInfo, RuntimeException e) {
+    public ErrorStatusUpdateControl<KeycloakRealmImport> updateErrorStatus(KeycloakRealmImport realm, Context<KeycloakRealmImport> context, Exception e) {
         Log.error("--- Error reconciling", e);
         KeycloakRealmImportStatus status = new KeycloakRealmImportStatusBuilder()
                 .addErrorMessage("Error performing operations:\n" + e.getMessage())
                 .build();
 
         realm.setStatus(status);
-        return Optional.of(realm);
+        return ErrorStatusUpdateControl.updateStatus(realm);
     }
 }

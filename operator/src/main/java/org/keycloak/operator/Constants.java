@@ -17,6 +17,7 @@
 package org.keycloak.operator;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class Constants {
     public static final String CRDS_GROUP = "k8s.keycloak.org";
@@ -33,6 +34,10 @@ public final class Constants {
             "app", NAME,
             MANAGED_BY_LABEL, MANAGED_BY_VALUE
     );
+
+    public static final String DEFAULT_LABELS_AS_STRING = DEFAULT_LABELS.entrySet().stream()
+            .map(e -> e.getKey() + "=" + e.getValue())
+            .collect(Collectors.joining(","));
 
     public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
         "health-enabled","true",
