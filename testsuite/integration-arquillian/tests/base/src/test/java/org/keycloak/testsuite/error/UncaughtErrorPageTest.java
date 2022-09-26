@@ -102,7 +102,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             String accessToken = adminClient.tokenManager().getAccessTokenString();
 
-            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms").build());
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms/master/components").build());
             post.setEntity(new StringEntity("{ invalid : invalid }"));
             post.setHeader("Authorization", "bearer " + accessToken);
             post.setHeader("Content-Type", "application/json");
@@ -122,7 +122,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             String accessToken = adminClient.tokenManager().getAccessTokenString();
 
-            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms").build());
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms/master/components").build());
             post.setEntity(new StringEntity("{\"<img src=alert(1)>\":1}"));
             post.setHeader("Authorization", "bearer " + accessToken);
             post.setHeader("Content-Type", "application/json");
