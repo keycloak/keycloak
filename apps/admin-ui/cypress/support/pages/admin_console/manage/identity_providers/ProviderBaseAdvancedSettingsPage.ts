@@ -37,37 +37,37 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public clickStoreTokensSwitch() {
-    cy.get(this.storeTokensSwitch).click();
+    cy.get(this.storeTokensSwitch).parent().click();
     return this;
   }
 
   public clickStoredTokensReadableSwitch() {
-    cy.get(this.storedTokensReadable).click();
+    cy.get(this.storedTokensReadable).parent().click();
     return this;
   }
 
   public clickAcceptsPromptNoneForwardFromClientSwitch() {
-    cy.get(this.acceptsPromptNoneForwardFromClientSwitch).click();
+    cy.get(this.acceptsPromptNoneForwardFromClientSwitch).parent().click();
     return this;
   }
 
   public clickDisableUserInfoSwitch() {
-    cy.get(this.disableUserInfoSwitch).click();
+    cy.get(this.disableUserInfoSwitch).parent().click();
     return this;
   }
 
   public clickTrustEmailSwitch() {
-    cy.get(this.trustEmailSwitch).click();
+    cy.get(this.trustEmailSwitch).parent().click();
     return this;
   }
 
   public clickAccountLinkingOnlySwitch() {
-    cy.get(this.accountLinkingOnlySwitch).click();
+    cy.get(this.accountLinkingOnlySwitch).parent().click();
     return this;
   }
 
   public clickHideOnLoginPageSwitch() {
-    cy.get(this.hideOnLoginPageSwitch).click();
+    cy.get(this.hideOnLoginPageSwitch).parent().click();
     return this;
   }
 
@@ -104,7 +104,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public assertScopesInputEqual(text: string) {
-    cy.get(this.scopesInput).should("have.text", text);
+    cy.get(this.scopesInput).should("have.text", text).parent();
     return this;
   }
 
@@ -114,25 +114,28 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public assertStoredTokensReadableTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.get(this.storedTokensReadable), isOn);
+    super.assertSwitchStateOn(cy.get(this.storedTokensReadable).parent(), isOn);
     return this;
   }
 
   public assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
-      cy.get(this.acceptsPromptNoneForwardFromClientSwitch),
+      cy.get(this.acceptsPromptNoneForwardFromClientSwitch).parent(),
       isOn
     );
     return this;
   }
 
   public assertDisableUserInfoSwitchTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.get(this.disableUserInfoSwitch), isOn);
+    super.assertSwitchStateOn(
+      cy.get(this.disableUserInfoSwitch).parent(),
+      isOn
+    );
     return this;
   }
 
   public assertTrustEmailSwitchTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.get(this.trustEmailSwitch), isOn);
+    super.assertSwitchStateOn(cy.get(this.trustEmailSwitch).parent(), isOn);
     return this;
   }
 
@@ -142,7 +145,10 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public assertHideOnLoginPageSwitchTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.get(this.hideOnLoginPageSwitch), isOn);
+    super.assertSwitchStateOn(
+      cy.get(this.hideOnLoginPageSwitch).parent(),
+      isOn
+    );
     return this;
   }
 
