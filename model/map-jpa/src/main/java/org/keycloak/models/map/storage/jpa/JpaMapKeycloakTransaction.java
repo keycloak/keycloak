@@ -85,7 +85,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     /**
      * Use the cache within the session to ensure that there is only one instance per entity within the current session.
      */
-    private E mapToEntityDelegateUnique(RE original) {
+    protected E mapToEntityDelegateUnique(RE original) {
         if (original == null) {
             return null;
         }

@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.ImportRealmFromRepresentation;
+import org.keycloak.storage.SetDefaultsForNewRealm;
 
 /**
  * Provider to listen for {@link org.keycloak.storage.ImportRealmFromRepresentation} events.
@@ -50,6 +51,9 @@ public class RealmManagerProviderFactory implements ProviderFactory<RealmManager
                 ImportRealmFromRepresentation importRealmFromRepresentation = (ImportRealmFromRepresentation) event;
                 RealmModel realmModel = new RealmManager(importRealmFromRepresentation.getSession()).importRealm(importRealmFromRepresentation.getRealmRepresentation());
                 importRealmFromRepresentation.setRealmModel(realmModel);
+            } else if (event instanceof SetDefaultsForNewRealm) {
+                SetDefaultsForNewRealm setDefaultsForNewRealm = (SetDefaultsForNewRealm) event;
+                new RealmManager(setDefaultsForNewRealm.getSession()).setDefaultsForNewRealm(setDefaultsForNewRealm.getRealmModel());
             }
         });
     }
