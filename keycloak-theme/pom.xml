@@ -360,6 +360,19 @@
 ]]>
 </value>
                         </replacement>
+                        <replacement>
+                            <token><![CDATA[</head>]]></token>
+                            <value xml:space="preserve">
+<![CDATA[
+    <#if properties.styles?has_content>
+      <#list properties.styles?split(' ') as style>
+      <link href="${resourceUrl}/${style}" rel="stylesheet"/>
+      </#list>
+    </#if>
+  </head>
+]]>	
+</value>
+                        </replacement>
                     </replacements>
 
                 </configuration>
