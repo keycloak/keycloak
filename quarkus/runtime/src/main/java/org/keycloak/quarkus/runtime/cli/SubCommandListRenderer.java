@@ -31,7 +31,8 @@ import picocli.CommandLine.Model.UsageMessageSpec;
  * A {@link picocli.CommandLine.IHelpSectionRenderer} based on Quarkus CLI to show subcommands in help messages.
  */
 class SubCommandListRenderer implements CommandLine.IHelpSectionRenderer {
-    // @Override
+
+    @Override
     public String render(Help help) {
         CommandSpec spec = help.commandSpec();
         if (spec.subcommands().isEmpty()) {

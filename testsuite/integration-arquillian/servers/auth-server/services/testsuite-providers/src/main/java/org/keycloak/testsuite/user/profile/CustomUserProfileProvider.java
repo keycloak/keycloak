@@ -50,4 +50,8 @@ public class CustomUserProfileProvider extends DeclarativeUserProfileProvider {
         return this.create(context, attributes, (UserModel) null);
     }
 
+    @Override
+    public int order() {
+        return super.order() - 1;
+    }
 }

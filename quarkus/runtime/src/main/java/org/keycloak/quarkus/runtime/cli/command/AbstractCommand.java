@@ -17,23 +17,22 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import org.keycloak.quarkus.runtime.Environment;
+import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 
+import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.ScopeType;
 
 public abstract class AbstractCommand {
 
     @Spec
     protected CommandSpec spec;
 
-    @Option(names = "--profile",
-            arity = "1",
-            description = "Set the profile. Use 'dev' profile to enable development mode.",
-            scope = ScopeType.INHERIT)
-    public void setProfile(String profile) {
-        Environment.setProfile(profile);
+    protected void executionError(CommandLine cmd, String message) {
+        executionError(cmd, message, null);
+    }
+
+    protected void executionError(CommandLine cmd, String message, Throwable cause) {
+        cliExecutionError(cmd, message, cause);
     }
 }

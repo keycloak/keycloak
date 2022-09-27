@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,177 +17,78 @@
 
 package org.keycloak.models.map.authorization.entity;
 
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 
-public class MapPolicyEntity extends UpdatableEntity.Impl implements AbstractEntity {
-    
-    private String id;
-    private String name;
-    private String description;
-    private String type;
-    private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
-    private Logic logic = Logic.POSITIVE;
-    private final Map<String, String> config = new HashMap<>();
-    private String resourceServerId;
-    private final Set<String> associatedPoliciesIds = new HashSet<>();
-    private final Set<String> resourceIds = new HashSet<>();
-    private final Set<String> scopeIds = new HashSet<>();
-    private String owner;
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.authorization.entity.MapPolicyEntity.AbstractMapPolicyEntity"
+)
+@DeepCloner.Root
+public interface MapPolicyEntity extends UpdatableEntity, AbstractEntity {
 
-    public MapPolicyEntity(String id) {
-        this.id = id;
-    }
+    public abstract class AbstractMapPolicyEntity extends UpdatableEntity.Impl implements MapPolicyEntity {
 
-    public MapPolicyEntity() {}
+        private String id;
 
-    public String getName() {
-        return name;
-    }
+        @Override
+        public String getId() {
+            return this.id;
+        }
 
-    public void setName(String name) {
-        this.updated |= !Objects.equals(this.name, name);
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.updated |= !Objects.equals(this.description, description);
-        this.description = description;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.updated |= !Objects.equals(this.type, type);
-        this.type = type;
-    }
-
-    public DecisionStrategy getDecisionStrategy() {
-        return decisionStrategy;
-    }
-
-    public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
-        this.updated |= !Objects.equals(this.decisionStrategy, decisionStrategy);
-        this.decisionStrategy = decisionStrategy;
-    }
-
-    public Logic getLogic() {
-        return logic;
-    }
-
-    public void setLogic(Logic logic) {
-        this.updated |= !Objects.equals(this.logic, logic);
-        this.logic = logic;
-    }
-
-    public Map<String, String> getConfig() {
-        return config;
-    }
-
-    public String getConfigValue(String name) {
-        return config.get(name);
-    }
-
-    public void setConfig(Map<String, String> config) {
-        if (Objects.equals(this.config, config)) return;
-
-        this.updated = true;
-        this.config.clear();
-        if (config != null) {
-            this.config.putAll(config);
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
         }
     }
-    
-    public void removeConfig(String name) {
-        this.updated |= this.config.remove(name) != null;
-    }
 
-    public void putConfig(String name, String value) {
-        this.updated |= !Objects.equals(value, this.config.put(name, value));
-    }
+    String getRealmId();
+    void setRealmId(String realmId);
 
-    public String getResourceServerId() {
-        return resourceServerId;
-    }
+    String getName();
+    void setName(String name);
 
-    public void setResourceServerId(String resourceServerId) {
-        this.updated |= !Objects.equals(this.resourceServerId, resourceServerId);
-        this.resourceServerId = resourceServerId;
-    }
+    String getDescription();
+    void setDescription(String description);
 
-    public Set<String> getAssociatedPoliciesIds() {
-        return associatedPoliciesIds;
-    }
+    String getType();
+    void setType(String type);
 
-    public void addAssociatedPolicy(String policyId) {
-        this.updated |= this.associatedPoliciesIds.add(policyId);
-    }
+    DecisionStrategy getDecisionStrategy();
+    void setDecisionStrategy(DecisionStrategy decisionStrategy);
 
-    public void removeAssociatedPolicy(String policyId) {
-        this.updated |= this.associatedPoliciesIds.remove(policyId);
-    }
+    Logic getLogic();
+    void setLogic(Logic logic);
 
-    public Set<String> getResourceIds() {
-        return resourceIds;
-    }
+    Map<String, String> getConfigs();
+    void setConfigs(Map<String, String> config);
+    String getConfig(String name);
+    void setConfig(String name, String value);
+    void removeConfig(String name);
 
-    public void addResource(String resourceId) {
-        this.updated |= this.resourceIds.add(resourceId);
-    }
+    String getResourceServerId();
+    void setResourceServerId(String resourceServerId);
 
-    public void removeResource(String resourceId) {
-        this.updated |= this.resourceIds.remove(resourceId);
-    }
+    Set<String> getAssociatedPolicyIds();
+    void addAssociatedPolicyId(String policyId);
+    void removeAssociatedPolicyId(String policyId);
 
-    public Set<String> getScopeIds() {
-        return scopeIds;
-    }
-    
-    public void addScope(String scopeId) {
-        this.updated |= this.scopeIds.add(scopeId);
-    }
-    
-    public void removeScope(String scopeId) {
-        this.updated |= this.scopeIds.remove(scopeId);
-    }
+    Set<String> getResourceIds();
+    void addResourceId(String resourceId);
+    void removeResourceId(String resourceId);
 
-    public String getOwner() {
-        return owner;
-    }
+    Set<String> getScopeIds();
+    void addScopeId(String scopeId);
+    void removeScopeId(String scopeId);
 
-    public void setOwner(String owner) {
-        this.updated |= !Objects.equals(this.owner, owner);
-        this.owner = owner;
-    }
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(String id) {
-        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
-        this.id = id;
-        this.updated |= id != null;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s@%08x", getId(), System.identityHashCode(this));
-    }
+    String getOwner();
+    void setOwner(String owner);
 }

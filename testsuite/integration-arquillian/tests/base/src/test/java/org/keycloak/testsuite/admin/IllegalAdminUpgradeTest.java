@@ -42,15 +42,12 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class IllegalAdminUpgradeTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
@@ -82,27 +79,27 @@ public class IllegalAdminUpgradeTest extends AbstractKeycloakTest {
         UserModel realmUser = session.users().addUser(realm, "userAdmin");
         realmUser.grantRole(realmManageUsers);
         realmUser.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, realmUser, UserCredentialModel.password("password"));
+        realmUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserModel masterUser = session.users().addUser(master, "userAdmin");
         masterUser.grantRole(masterManageUsers);
         masterUser.setEnabled(true);
-        session.userCredentialManager().updateCredential(master, masterUser, UserCredentialModel.password("password"));
+        masterUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserModel masterAdmin = session.users().addUser(master, "masterAdmin");
         masterAdmin.grantRole(masterMasterManageUSers);
         masterAdmin.setEnabled(true);
-        session.userCredentialManager().updateCredential(master, masterAdmin, UserCredentialModel.password("password"));
+        masterAdmin.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserModel user = session.users().addUser(master, "user");
         user.grantRole(masterManageUsers);
         user.setEnabled(true);
-        session.userCredentialManager().updateCredential(master, user, UserCredentialModel.password("password"));
+        user.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         user = session.users().addUser(realm, "user");
         user.grantRole(realmManageUsers);
         user.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
+        user.credentialManager().updateCredential(UserCredentialModel.password("password"));
     }
 
     //@Test

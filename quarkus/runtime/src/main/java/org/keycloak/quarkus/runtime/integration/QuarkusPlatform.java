@@ -19,17 +19,26 @@ package org.keycloak.quarkus.runtime.integration;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.platform.Platform;
 import org.keycloak.platform.PlatformProvider;
 import org.keycloak.quarkus.runtime.InitializationException;
 import org.keycloak.quarkus.runtime.Environment;
+
+import io.quarkus.runtime.Quarkus;
 
 public class QuarkusPlatform implements PlatformProvider {
 
@@ -56,20 +65,11 @@ public class QuarkusPlatform implements PlatformProvider {
             for (Throwable inner : platform.getDeferredExceptions()) {
                 quarkusException.addSuppressed(inner);
             }
+            // reset this instance, mainly deferred exceptions, so that the subsequent starts do not fail due to previous errors
+            // this is mainly important when the server is running in test mode
+            platform.reset();
             throw quarkusException;
         }
-    }
-
-    /**
-     * Similar behavior as per {@code #exitOnError} but convenient to throw a {@link InitializationException} with a single
-     * {@code cause}
-     * 
-     * @param cause the cause
-     * @throws InitializationException the initialization exception with the given {@code cause}.
-     */
-    public static void exitOnError(Throwable cause) throws InitializationException{
-        addInitializationException(cause);
-        exitOnError();
     }
 
     Runnable startupHook;
@@ -91,7 +91,7 @@ public class QuarkusPlatform implements PlatformProvider {
 
     @Override
     public void exit(Throwable cause) {
-        throw new RuntimeException(cause);
+        Quarkus.asyncExit(1);
     }
 
     /**
@@ -148,17 +148,28 @@ public class QuarkusPlatform implements PlatformProvider {
                     throw new RuntimeException("It was not possible to create temporary directory keycloak-quarkus-tmp", ioex);
                 }
             } else {
-                tmpDir = new File(homeDir, "tmp");
-                tmpDir.mkdir();
+                String dataDir = Environment.getDataDir();
+                tmpDir = new File(dataDir, "tmp");
+                tmpDir.mkdirs();
             }
 
             if (tmpDir.isDirectory()) {
                 this.tmpDir = tmpDir;
                 log.debugf("Using server tmp directory: %s", tmpDir.getAbsolutePath());
             } else {
-                throw new RuntimeException("Temporary directory " + tmpDir.getAbsolutePath() + " does not exists and it was not possible to create it.");
+                throw new RuntimeException("Temporary directory " + tmpDir.getAbsolutePath() + " does not exist and it was not possible to create it.");
             }
         }
         return tmpDir;
+    }
+
+    private void reset() {
+        deferredExceptions.clear();
+    }
+
+    @Override
+    public ClassLoader getScriptEngineClassLoader(Config.Scope scriptProviderConfig) {
+        // It is fine to return null assuming that nashorn and it's dependencies are included on the classpath (usually "providers" directory)
+        return null;
     }
 }

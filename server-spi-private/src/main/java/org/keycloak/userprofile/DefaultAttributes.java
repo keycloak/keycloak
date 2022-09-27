@@ -271,10 +271,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                     values = (List<String>) value;
                 }
 
-                if (key.equals(UserModel.USERNAME)) {
-                    values = Collections.singletonList(values.get(0).toLowerCase());
-                }
-
                 newAttributes.put(key, Collections.unmodifiableList(values));
             }
         }

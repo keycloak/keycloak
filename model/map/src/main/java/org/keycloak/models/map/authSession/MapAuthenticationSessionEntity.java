@@ -16,129 +16,75 @@
  */
 package org.keycloak.models.map.authSession;
 
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapAuthenticationSessionEntity {
+@GenerateEntityImplementations
+@DeepCloner.Root
+public interface MapAuthenticationSessionEntity extends UpdatableEntity {
 
-    private String clientUUID;
+    String getTabId();
+    void setTabId(String tabId);
 
-    private String authUserId;
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the authentication session entity was created.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
 
-    private int timestamp;
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the authentication session entity was created.
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
 
-    private String redirectUri;
-    private String action;
-    private Set<String> clientScopes = new HashSet<>();
+    Map<String, String> getUserSessionNotes();
+    void setUserSessionNotes(Map<String, String> userSessionNotes);
+    void setUserSessionNote(String name, String value);
 
-    private Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus = new ConcurrentHashMap<>();
-    private String protocol;
+    String getClientUUID();
+    void setClientUUID(String clientUUID);
 
-    private Map<String, String> clientNotes= new ConcurrentHashMap<>();;
-    private Map<String, String> authNotes = new ConcurrentHashMap<>();;
-    private Set<String> requiredActions = new HashSet<>();
-    private Map<String, String> userSessionNotes = new ConcurrentHashMap<>();
+    String getAuthUserId();
+    void setAuthUserId(String authUserId);
 
-    public Map<String, String> getUserSessionNotes() {
-        return userSessionNotes;
-    }
+    String getRedirectUri();
+    void setRedirectUri(String redirectUri);
 
-    public void setUserSessionNotes(Map<String, String> userSessionNotes) {
-        this.userSessionNotes = userSessionNotes;
-    }
+    String getAction();
+    void setAction(String action);
 
-    public String getClientUUID() {
-        return clientUUID;
-    }
+    Set<String> getClientScopes();
+    void setClientScopes(Set<String> clientScopes);
 
-    public void setClientUUID(String clientUUID) {
-        this.clientUUID = clientUUID;
-    }
+    Set<String> getRequiredActions();
+    void setRequiredActions(Set<String> requiredActions);
+    void addRequiredAction(String requiredAction);
+    void removeRequiredAction(String action);
 
-    public String getAuthUserId() {
-        return authUserId;
-    }
+    String getProtocol();
+    void setProtocol(String protocol);
 
-    public void setAuthUserId(String authUserId) {
-        this.authUserId = authUserId;
-    }
+    Map<String, String> getClientNotes();
+    void setClientNotes(Map<String, String> clientNotes);
+    void setClientNote(String name, String value);
+    void removeClientNote(String name);
 
-    public int getTimestamp() {
-        return timestamp;
-    }
+    Map<String, String> getAuthNotes();
+    void setAuthNotes(Map<String, String> authNotes);
+    void setAuthNote(String name, String value);
+    void removeAuthNote(String name);
 
-    public void setTimestamp(int timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public String getRedirectUri() {
-        return redirectUri;
-    }
-
-    public void setRedirectUri(String redirectUri) {
-        this.redirectUri = redirectUri;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(String action) {
-        this.action = action;
-    }
-
-    public Set<String> getClientScopes() {
-        return clientScopes;
-    }
-
-    public void setClientScopes(Set<String> clientScopes) {
-        this.clientScopes = clientScopes;
-    }
-
-    public Set<String> getRequiredActions() {
-        return requiredActions;
-    }
-
-    public void setRequiredActions(Set<String> requiredActions) {
-        this.requiredActions = requiredActions;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public Map<String, String> getClientNotes() {
-        return clientNotes;
-    }
-
-    public void setClientNotes(Map<String, String> clientNotes) {
-        this.clientNotes = clientNotes;
-    }
-
-    public Map<String, String> getAuthNotes() {
-        return authNotes;
-    }
-
-    public void setAuthNotes(Map<String, String> authNotes) {
-        this.authNotes = authNotes;
-    }
-
-    public Map<String, AuthenticationSessionModel.ExecutionStatus> getExecutionStatus() {
-        return executionStatus;
-    }
-
-    public void setExecutionStatus(Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus) {
-        this.executionStatus = executionStatus;
-    }
+    Map<String, AuthenticationSessionModel.ExecutionStatus> getExecutionStatuses();
+    void setExecutionStatuses(Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus);
+    void setExecutionStatus(String authenticator, AuthenticationSessionModel.ExecutionStatus status);
 }

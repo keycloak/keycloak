@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 
@@ -53,7 +54,6 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public void setUsername(String username) {
-        username = KeycloakModelUtils.toLowerCaseSafe(username);
         // Do not continue if current username of entity is the requested username
         if (username != null && username.equals(entity.getUsername())) return;
 
@@ -76,7 +76,8 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public boolean isEnabled() {
-        return entity.isEnabled();
+        Boolean enabled = entity.isEnabled();
+        return enabled != null && enabled;
     }
 
     @Override
@@ -147,19 +148,20 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
     @Override
     public String getFirstAttribute(String name) {
         return getSpecialAttributeValue(name)
-                .orElseGet(() -> entity.getAttribute(name).stream().findFirst()
+                .orElseGet(() -> Optional.ofNullable(entity.getAttribute(name)).orElseGet(Collections::emptyList).stream().findFirst()
                 .orElse(null));
     }
 
     @Override
     public Stream<String> getAttributeStream(String name) {
         return getSpecialAttributeValue(name).map(Collections::singletonList)
-                .orElseGet(() -> entity.getAttribute(name)).stream();
+                .orElseGet(() -> Optional.ofNullable(entity.getAttribute(name)).orElseGet(Collections::emptyList)).stream();
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        MultivaluedHashMap<String, String> result = new MultivaluedHashMap<>(entity.getAttributes());
+        Map<String, List<String>> attributes = entity.getAttributes();
+        MultivaluedHashMap<String, String> result = attributes == null ? new MultivaluedHashMap<>() : new MultivaluedHashMap<>(attributes);
         result.add(UserModel.FIRST_NAME, entity.getFirstName());
         result.add(UserModel.LAST_NAME, entity.getLastName());
         result.add(UserModel.EMAIL, entity.getEmail());
@@ -170,7 +172,8 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public Stream<String> getRequiredActionsStream() {
-        return entity.getRequiredActions().stream();
+        Set<String> requiredActions = entity.getRequiredActions();
+        return requiredActions == null ? Stream.empty() : requiredActions.stream();
     }
 
     @Override
@@ -233,7 +236,8 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public boolean isEmailVerified() {
-        return entity.isEmailVerified();
+        Boolean emailVerified = entity.isEmailVerified();
+        return emailVerified != null && emailVerified;
     }
 
     @Override
@@ -243,11 +247,14 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public Stream<GroupModel> getGroupsStream() {
-        return session.groups().getGroupsStream(realm, entity.getGroupsMembership().stream());
+        Set<String> groups = entity.getGroupsMembership();
+        if (groups == null || groups.isEmpty()) return Stream.empty();
+        return session.groups().getGroupsStream(realm, groups.stream());
     }
 
     @Override
     public void joinGroup(GroupModel group) {
+        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
         entity.addGroupsMembership(group.getId());
     }
 
@@ -258,7 +265,7 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        return entity.getGroupsMembership().contains(group.getId());
+        return RoleUtils.isMember(getGroupsStream(), group);
     }
 
     @Override
@@ -294,12 +301,14 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public boolean hasDirectRole(RoleModel role) {
-        return entity.getRolesMembership().contains(role.getId());
+        Set<String> roles = entity.getRolesMembership();
+        return roles != null && entity.getRolesMembership().contains(role.getId());
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
-        return hasDirectRole(role);
+        return RoleUtils.hasRole(getRoleMappingsStream(), role)
+          || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     @Override
@@ -309,6 +318,8 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public Stream<RoleModel> getRoleMappingsStream() {
+        Set<String> roles = entity.getRolesMembership();
+        if (roles == null || roles.isEmpty()) return Stream.empty();
         return entity.getRolesMembership().stream().map(realm::getRoleById);
     }
 

@@ -51,6 +51,7 @@ import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.common.util.Retry;
+import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
@@ -157,7 +158,17 @@ public class InfinispanNotificationsManager {
             // Add directly to remoteCache. Will notify remote listeners on all nodes in all DCs
             Retry.executeWithBackoff((int iteration) -> {
                 try {
-                    workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
+                    /*
+                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
+                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
+                        that acquires a writeLock and this put that acquires a readLock.
+                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
+                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
+                        Tracked in https://github.com/keycloak/keycloak/issues/9871
+                    */
+                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
+                        workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
+                    }
                 } catch (HotRodClientException re) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf(re, "Failed sending notification to remote cache '%s'. Key: '%s', iteration '%s'. Will try to retry the task",
@@ -231,12 +242,24 @@ public class InfinispanNotificationsManager {
             try {
                 listenersExecutor.submit(() -> {
 
-                    Object value = remoteCache.get(key);
+                    /*
+                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
+                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
+                        that acquires a writeLock and this get that acquires a readLock.
+                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
+                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
+                        Tracked in https://github.com/keycloak/keycloak/issues/9871
+                    */
+                    Object value;
+                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
+                        value = remoteCache.get(key);
+                    }
                     eventReceived(key, (Serializable) value);
 
                 });
             } catch (RejectedExecutionException ree) {
-                logger.errorf("Rejected submitting of the event for key: %s. Value: %s, Server going to shutdown or pool exhausted. Pool: %s", key, workCache.get(key), listenersExecutor.toString());
+                // avoid touching the cache when creating a log message to avoid a deadlock in Infinispan 12.1.7.Final
+                logger.errorf("Rejected submitting of the event for key: %s. Server going to shutdown or pool exhausted. Pool: %s", key, listenersExecutor.toString());
                 throw ree;
             }
         }

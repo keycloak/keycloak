@@ -33,8 +33,6 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.util.JsonSerialization;
@@ -48,7 +46,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AuthzCleanupTest extends AbstractKeycloakTest {
 
     @BeforeClass
@@ -81,7 +78,7 @@ public class AuthzCleanupTest extends AbstractKeycloakTest {
         session.getContext().setRealm(realm);
         AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
         ClientModel myclient = realm.getClientByClientId("myclient");
-        ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findById(myclient.getId());
+        ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(myclient);
         createRolePolicy(authz, resourceServer, myclient.getClientId() + "/client-role-1");
         createRolePolicy(authz, resourceServer, myclient.getClientId() + "/client-role-2");
     }
@@ -95,7 +92,7 @@ public class AuthzCleanupTest extends AbstractKeycloakTest {
         representation.setLogic(Logic.POSITIVE);
         representation.addRole(roleName, true);
 
-        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
+        return authz.getStoreFactory().getPolicyStore().create(resourceServer, representation);
     }
 
 

@@ -33,8 +33,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
@@ -48,7 +46,6 @@ import org.keycloak.testsuite.util.WaitUtils;
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class EmailTest extends AbstractI18NTest {
 
     @Rule

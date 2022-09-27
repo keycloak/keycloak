@@ -24,6 +24,9 @@
     isMyResourcesEnabled: boolean;
     isTotpConfigured: boolean;
     deleteAccountAllowed: boolean;
+    updateEmailFeatureEnabled: boolean;
+    updateEmailActionEnabled: boolean;
+    isViewGroupsEnabled: boolean;
  }
 
 

@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.client;
 
+import org.junit.After;
 import org.junit.Test;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
@@ -26,19 +27,16 @@ import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@AuthServerContainerExclude({REMOTE})
 public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
 
     @Override
@@ -55,6 +53,11 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
     @Override
     public void beforeAbstractKeycloakTestRealmImport() {
         removeAllRealmsDespiteMaster();
+    }
+
+    @After
+    public void afterImportExport() {
+        testingClient.testing().exportImport().clear();
     }
 
     @Test

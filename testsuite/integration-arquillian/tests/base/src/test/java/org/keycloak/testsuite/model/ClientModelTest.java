@@ -32,23 +32,20 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientModelTest extends AbstractKeycloakTest {
     private ClientModel client;
     private String roleId;
@@ -174,10 +171,11 @@ public class ClientModelTest extends AbstractKeycloakTest {
             currentSession = sessionClientRoleRemoveTx2;
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
 
-            ClientModel scoped = realm.getClientByClientId("scoped");
             ClientModel from = realm.getClientByClientId("from");
             RoleModel role = currentSession.roles().getRoleById(realm, roleId);
             from.removeRole(role);
+
+            ClientModel scoped = realm.getClientByClientId("scoped");
 
             // used to throw an NPE
             assertThat("Scope Mappings is not 0", scoped.getScopeMappingsStream().count(), is(0L));

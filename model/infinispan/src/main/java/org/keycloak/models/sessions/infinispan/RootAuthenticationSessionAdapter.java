@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
@@ -30,7 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
-import org.keycloak.models.utils.RealmInfoUtil;
+import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -62,7 +63,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
     }
 
     void update() {
-        int expirationSeconds = RealmInfoUtil.getDettachedClientSessionLifespan(realm);
+        int expirationSeconds = SessionExpiration.getAuthSessionLifespan(realm);
         provider.tx.replace(cache, entity.getId(), entity, expirationSeconds, TimeUnit.SECONDS);
     }
 
@@ -117,6 +118,8 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
     @Override
     public AuthenticationSessionModel createAuthenticationSession(ClientModel client) {
+        Objects.requireNonNull(client, "client");
+
         Map<String, AuthenticationSessionEntity> authenticationSessions = entity.getAuthenticationSessions();
         if (authenticationSessions.size() >= authSessionsLimit) {
             String tabId = authenticationSessions.entrySet().stream().min(TIMESTAMP_COMPARATOR).map(Map.Entry::getKey).orElse(null);

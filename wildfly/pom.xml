@@ -20,10 +20,10 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
-    <name>Keycloak WildFly Integration</name>
+    <name>Keycloak WildFly Server Integration Parent</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 

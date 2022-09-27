@@ -16,8 +16,10 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.AuthenticationFlow;
@@ -30,11 +32,11 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -46,6 +48,7 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.mail.internet.MimeMessage;
@@ -58,7 +61,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -177,6 +179,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUpperCaseEmailWithChangedEmailAsUsername() throws IOException {
+        Assume.assumeTrue("See https://github.com/keycloak/keycloak/issues/10245", isUserCacheEnabled());
+
         String userId = registerUpperCaseAndGetUserId(false);
         assertThat(userId, notNullValue());
         oauth.openLogout();
@@ -375,7 +379,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
+     // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerification() throws Exception {
         try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
             loginPage.open();
@@ -417,7 +421,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
+     // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
         try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
             loginPage.open();
@@ -606,6 +610,23 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void registerWithLoginHint() throws IOException {
+
+        registerPage.openWithLoginHint("username_test");
+
+        assertEquals("username_test", registerPage.getUsername());
+    }
+
+    @Test
+    public void registerWithLoginHint_emailAsUsername() throws IOException {
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
+            registerPage.openWithLoginHint("test@test.com");
+
+            assertEquals("test@test.com", registerPage.getEmail());
+        }
+    }
+
     //KEYCLOAK-14161
     @Test
     public void customRegistrationPageFormTest() {
@@ -658,11 +679,12 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .assertEvent()
                 .getUserId();
 
-        events.expectLogin()
+        EventRepresentation loginEvent = events.expectLogin()
                 .detail("username", EMAIL_OR_USERNAME.toLowerCase())
                 .user(userId)
                 .assertEvent();
-
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken());
         assertUserBasicRegisterAttributes(userId, emailAsUsername ? null : USERNAME, EMAIL, "firstName", "lastName");
 
         return userId;
@@ -673,7 +695,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertThat(user, notNullValue());
 
         if (username != null) {
-            assertThat(username.toLowerCase(), is(user.getUsername()));
+            assertThat(username, Matchers.equalToIgnoringCase(user.getUsername()));
         }
         assertThat(email.toLowerCase(), is(user.getEmail()));
         assertThat(firstName, is(user.getFirstName()));

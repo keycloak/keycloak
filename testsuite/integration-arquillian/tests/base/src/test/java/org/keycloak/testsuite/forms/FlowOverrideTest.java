@@ -26,6 +26,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.challenge.BasicAuthOTPAuthenticatorFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowBindings;
@@ -40,7 +41,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.AppPage;
@@ -59,7 +60,6 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
@@ -67,7 +67,6 @@ import org.keycloak.testsuite.util.AdminClientUtil;
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     public static final String TEST_APP_DIRECT_OVERRIDE = "test-app-direct-override";
@@ -188,7 +187,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
             challengeOTP.setTopLevel(true);
             challengeOTP.setBuiltIn(true);
 
-            realm.addAuthenticationFlow(challengeOTP);
+            challengeOTP = realm.addAuthenticationFlow(challengeOTP);
 
             execution = new AuthenticationExecutionModel();
             execution.setParentFlow(challengeOTP.getId());
@@ -262,6 +261,14 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
 
         events.expectLogin().client("test-app-flow").detail(Details.USERNAME, "test-user@localhost").assertEvent();
+    }
+
+    // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void testWithClientBrowserOverrideWithDynamicScope() throws Exception {
+        // Just use existing test with DYNAMIC_SCOPES feature enabled as it was failing with DYNAMIC_SCOPES
+        testWithClientBrowserOverride();
     }
 
     @Test
@@ -529,6 +536,14 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
         httpClient.close();
         events.clear();
+    }
+
+    // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void testClientOverrideFlowUsingBrowserHttpChallengeWithDynamicScope() {
+        // Just use existing test with DYNAMIC_SCOPES feature enabled as it was failing with DYNAMIC_SCOPES
+        testClientOverrideFlowUsingBrowserHttpChallenge();
     }
 
     @Test

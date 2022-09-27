@@ -18,20 +18,15 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import picocli.AutoComplete;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(name = "completion",
-        version = "generate-completion " + CommandLine.VERSION,
         header = "Generate bash/zsh completion script for ${ROOT-COMMAND-NAME:-the root command of this command}.",
-        helpCommand = false, headerHeading = "%n", commandListHeading = "%nCommands:%n",
-        synopsisHeading = "%nUsage: ", optionListHeading = "Options:%n",
         description = {
+                "",
                 "Generate bash/zsh completion script for ${ROOT-COMMAND-NAME:-the root command of this command}.%n" +
                 "Run the following command to give `${ROOT-COMMAND-NAME:-$PARENTCOMMAND}` TAB completion in the current shell:",
                 "",
-                "  source <(${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME})",
-                ""},
-        mixinStandardHelpOptions = false)
+                "  source <(${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME})"})
 public class Completion extends AutoComplete.GenerateCompletion {
 }

@@ -17,14 +17,19 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.error;
+import static org.keycloak.quarkus.runtime.Environment.getHomePath;
+import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
+import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.Messages;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
+import io.quarkus.runtime.configuration.ProfileManager;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(name = Build.NAME,
@@ -32,46 +37,53 @@ import picocli.CommandLine.Command;
         description = {
             "%nCreates a new and optimized server image based on the configuration options passed to this command. Once created, the configuration will be persisted and read during startup without having to pass them over again.",
             "",
-            "Some configuration options require this command to be executed in order to actually change a configuration. For instance",
-            "",
-            "- Change database vendor%n" +
-            "- Enable/disable features%n" +
-            "- Enable/Disable providers or set a default",
-            "",
             "Consider running this command before running the server in production for an optimal runtime."
         },
-        footerHeading = "%nExamples:%n%n"
-                + "  Optimize the server based on a profile configuration:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --profile=prod%n%n"
-                + "  Change database settings:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --db=postgres [--db-url][--db-username][--db-password]%n%n"
+        footerHeading = "Examples:",
+        footer = "  Change the database vendor:%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --db=postgres%n%n"
                 + "  Enable a feature:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --features-<feature_name>=[enabled|disabled]%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --features=<feature_name>%n%n"
                 + "  Or alternatively, enable all tech preview features:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --features=preview%n%n"
-                + "  Enable metrics:%n%n"
+                + "  Enable health endpoints:%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --health-enabled=true%n%n"
+                + "  Enable metrics endpoints:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --metrics-enabled=true%n%n"
-                + "You can also use the \"--auto-build\" option when starting the server to avoid running this command every time you change a configuration:%n%n"
-                + "    $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} --auto-build <OPTIONS>%n%n"
-                + "By doing that you have an additional overhead when the server is starting.%n%n",
-        mixinStandardHelpOptions = true,
-        optionListHeading = "%nConfiguration Options%n%n")
+                + "  Change the relative path:%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n")
 public final class Build extends AbstractCommand implements Runnable {
 
     public static final String NAME = "build";
 
+    @CommandLine.Mixin
+    HelpAllMixin helpAllMixin;
+
     @Override
     public void run() {
+        exitWithErrorIfDevProfileIsSetAndNotStartDev();
+
         System.setProperty("quarkus.launch.rebuild", "true");
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
 
         try {
             beforeReaugmentationOnWindows();
             QuarkusEntryPoint.main();
-            println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
-            println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
+
+            if (!isDevMode()) {
+                println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
+                println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
+            }
         } catch (Throwable throwable) {
-            error(spec.commandLine(), "Failed to update server configuration.", throwable);
+            executionError(spec.commandLine(), "Failed to update server configuration.", throwable);
+        } finally {
+            cleanTempResources();
+        }
+    }
+
+    private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {
+        if (Environment.isDevProfile() && !getAllCliArgs().contains(StartDev.NAME)) {
+            executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
         }
     }
 
@@ -86,6 +98,13 @@ public final class Build extends AbstractCommand implements Runnable {
             if (classLoader instanceof RunnerClassLoader) {
                 ((RunnerClassLoader) classLoader).resetInternalCaches();
             }
+        }
+    }
+
+    private void cleanTempResources() {
+        if (!ProfileManager.getLaunchMode().isDevOrTest()) {
+            // only needed for dev/testing purposes
+            getHomePath().resolve("quarkus-artifact.properties").toFile().delete();
         }
     }
 }

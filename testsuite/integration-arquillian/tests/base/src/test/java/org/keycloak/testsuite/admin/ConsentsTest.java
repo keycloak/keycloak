@@ -31,6 +31,7 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -60,11 +61,10 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
+import org.openqa.selenium.By;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -267,7 +267,6 @@ public class ConsentsTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testConsents() {
         driver.navigate().to(getAccountUrl(consumerRealmName()));
 
@@ -345,7 +344,6 @@ public class ConsentsTest extends AbstractKeycloakTest {
      * KEYCLOAK-18954
      */
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRetrieveConsentsForUserWithClientsWithGrantedOfflineAccess() throws Exception {
 
         RealmResource providerRealm = adminClient.realm(providerRealmName());
@@ -466,6 +464,37 @@ public class ConsentsTest extends AbstractKeycloakTest {
             clientRepresentation.setConsentRequired(false);
             adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId()).update(clientRepresentation);
         }
+    }
+
+    @Test
+    public void testConsentWithAdditionalClientAttributes() {
+        // setup account client to require consent
+        RealmResource providerRealm = adminClient.realm(providerRealmName());
+        ClientResource accountClient = findClientByClientId(providerRealm, "account");
+
+        ClientRepresentation clientRepresentation = accountClient.toRepresentation();
+        clientRepresentation.setConsentRequired(true);
+        clientRepresentation.getAttributes().put(ClientModel.LOGO_URI,"https://www.keycloak.org/resources/images/keycloak_logo_480x108.png");
+        clientRepresentation.getAttributes().put(ClientModel.POLICY_URI,"https://www.keycloak.org/policy");
+        clientRepresentation.getAttributes().put(ClientModel.TOS_URI,"https://www.keycloak.org/tos");
+        accountClient.update(clientRepresentation);
+
+        // setup correct realm
+        accountPage.setAuthRealm(providerRealmName());
+
+        // navigate to account console and login
+        accountPage.navigateTo();
+        loginPage.form().login(getUserLogin(), getUserPassword());
+
+        consentPage.assertCurrent();
+        assertTrue("logoUri must be presented", driver.findElement(By.xpath("//img[@src='https://www.keycloak.org/resources/images/keycloak_logo_480x108.png']")).isDisplayed());
+        assertTrue("policyUri must be presented", driver.findElement(By.xpath("//a[@href='https://www.keycloak.org/policy']")).isDisplayed());
+        assertTrue("tosUri must be presented", driver.findElement(By.xpath("//a[@href='https://www.keycloak.org/tos']")).isDisplayed());
+
+        consentPage.confirm();
+
+        // successful login
+        accountPage.assertCurrent();
     }
 
     private String getAccountUrl(String realmName) {

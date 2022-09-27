@@ -37,7 +37,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -48,11 +47,13 @@ import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
@@ -66,7 +67,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * Test for the various alternatives of reset-credentials flow or browser flow (non-default setup of the  flows)
@@ -74,7 +74,6 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:jlieskov@redhat.com">Jan Lieskovsky</a>
  */
-@AuthServerContainerExclude(REMOTE)
 public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycloakTest {
 
     private String userId;
@@ -108,6 +107,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
     @Page
     protected LoginTotpPage loginTotpPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -357,13 +359,16 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             // Login & set up the initial OTP code for the user
             loginPage.open();
             loginPage.login("login@test.com", "password");
+            String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
             accountTotpPage.open();
             Assert.assertTrue(accountTotpPage.isCurrent());
             String customOtpLabel = "my-original-otp-label";
             accountTotpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), customOtpLabel);
 
             // Logout
-            oauth.openLogout();
+            oauth.idTokenHint(response.getIdToken()).openLogout();
 
             // Go to login page & click "Forgot password" link to perform the custom 'Reset Credential' flow
             loginPage.open();
@@ -448,7 +453,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             accountTotpPage.removeTotp();
 
             // Logout
-            oauth.openLogout();
+            driver.navigate().to(oauth.getLogoutUrl().build());
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
 
             /* Verify the 'Device Name' is optional when creating the first OTP credential via the login config TOTP page */
 
@@ -486,7 +493,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
                     .map(WebElement::getText).collect(Collectors.toList()), Matchers.hasItem(""));;
 
             // Logout
-            oauth.openLogout();
+            driver.navigate().to(oauth.getLogoutUrl().build());
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
 
             /* Verify the 'Device Name' is required for each next OTP credential created via the login config TOTP page */
 
@@ -540,7 +549,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             accountTotpPage.removeTotp();
 
             // Logout
-            oauth.openLogout();
+            driver.navigate().to(oauth.getLogoutUrl().build());
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
 
         // Undo setup changes performed within the test
         } finally {

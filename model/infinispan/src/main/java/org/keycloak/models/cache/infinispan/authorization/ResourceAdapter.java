@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,7 +81,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getResourceStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
+        updated = cacheSession.getResourceStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, getResourceServer(), cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -133,9 +133,8 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     }
 
     @Override
-    public String getResourceServer() {
-        if (isUpdated()) return updated.getResourceServer();
-        return cached.getResourceServerId();
+    public ResourceServer getResourceServer() {
+        return cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId());
     }
 
     @Override
@@ -173,7 +172,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
         if (scopes != null) return scopes;
         scopes = new LinkedList<>();
         for (String scopeId : cached.getScopesIds(modelSupplier)) {
-            scopes.add(cacheSession.getScopeStore().findById(scopeId, cached.getResourceServerId()));
+            scopes.add(cacheSession.getScopeStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, getResourceServer(), scopeId));
         }
         return scopes = Collections.unmodifiableList(scopes);
     }
@@ -204,10 +203,10 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
         for (Scope scope : updated.getScopes()) {
             if (!scopes.contains(scope)) {
                 PermissionTicketStore permissionStore = cacheSession.getPermissionTicketStore();
-                List<PermissionTicket> permissions = permissionStore.findByScope(scope.getId(), getResourceServer());
+                List<PermissionTicket> permissions = permissionStore.findByScope(getResourceServer(), scope);
 
                 for (PermissionTicket permission : permissions) {
-                    permissionStore.delete(permission.getId());
+                    permissionStore.delete(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, permission.getId());
                 }
             }
         }
@@ -216,7 +215,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
 
         for (Scope scope : updated.getScopes()) {
             if (!scopes.contains(scope)) {
-                policyStore.findByResource(getId(), getResourceServer(), policy -> policy.removeScope(scope));
+                policyStore.findByResource(getResourceServer(), this, policy -> policy.removeScope(scope));
             }
         }
 
@@ -283,6 +282,6 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     }
 
     private Resource getResourceModel() {
-        return cacheSession.getResourceStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
+        return cacheSession.getResourceStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, getResourceServer(), cached.getId());
     }
 }

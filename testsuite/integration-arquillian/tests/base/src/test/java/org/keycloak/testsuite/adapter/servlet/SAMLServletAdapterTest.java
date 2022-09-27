@@ -145,6 +145,7 @@ import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant1;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant2;
+import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
@@ -173,11 +174,9 @@ import org.xml.sax.SAXException;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
@@ -659,7 +658,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName("mycomponent");
-        rep.setParentId("demo");
+        rep.setParentId(adminClient.realm(DEMO).toRepresentation().getId());
         rep.setProviderId(ImportedRsaKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
@@ -674,7 +673,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     private void dropKeys(String priority) {
-        for (ComponentRepresentation c : testRealmResource().components().query("demo", KeyProvider.class.getName())) {
+        String parentId = adminClient.realm(DEMO).toRepresentation().getId();
+        for (ComponentRepresentation c : testRealmResource().components().query(parentId, KeyProvider.class.getName())) {
             if (c.getConfig().getFirst("priority").equals(priority)) {
                 testRealmResource().components().component(c.getId()).remove();
                 return;
@@ -804,7 +804,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         UserRepresentation topGroupUser = createUserRepresentation("topGroupUser", "top@redhat.com", "", "", true);
         setPasswordFor(topGroupUser, PASSWORD);
 
-        assertSuccessfulLogin(salesPostServletPage, topGroupUser, testRealmSAMLPostLoginPage, "principal=topgroupuser");
+        String expectedString = StoreProvider.getCurrentProvider().isMapStore() ? "principal=topGroupUser" : "principal=topgroupuser";
+        assertSuccessfulLogin(salesPostServletPage, topGroupUser, testRealmSAMLPostLoginPage, expectedString);
 
         salesPostServletPage.logout();
         checkLoggedOut(salesPostServletPage, testRealmSAMLPostLoginPage);
@@ -939,7 +940,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     @Test
     // https://issues.jboss.org/browse/KEYCLOAK-3971
     public void salesPostSigTestUnicodeCharacters() {
-        final String username = "ěščřžýáíRoàåéèíñòøöùüßÅÄÖÜ";
+        final String username = "ěščřžýáíroàåéèíñòøöùüßåäöü";
         UserRepresentation user = UserBuilder
           .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
           .addPassword(PASSWORD)
@@ -965,7 +966,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     @Test
     // https://issues.jboss.org/browse/KEYCLOAK-3971
     public void employeeSigTestUnicodeCharacters() {
-        final String username = "ěščřžýáíRoàåéèíñòøöùüßÅÄÖÜ";
+        final String username = "ěščřžýáíroàåéèíñòøöùüßåäöü";
         UserRepresentation user = UserBuilder
           .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
           .addPassword(PASSWORD)

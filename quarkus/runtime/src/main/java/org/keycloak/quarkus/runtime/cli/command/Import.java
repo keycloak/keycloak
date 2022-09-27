@@ -24,13 +24,12 @@ import static org.keycloak.exportimport.Strategy.OVERWRITE_EXISTING;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(name = "import",
-        description = "Import data from a directory or a file.",
-        mixinStandardHelpOptions = true,
-        showDefaultValues = true,
-        optionListHeading = "%nOptions%n",
-        parameterListHeading = "Available Commands%n")
+@Command(name = Import.NAME,
+        header = "Import data from a directory or a file.",
+        description = "%nImport data from a directory or a file.")
 public final class Import extends AbstractExportImportCommand implements Runnable {
+
+    public static final String NAME = "import";
 
     @Option(names = "--override",
             arity = "1",

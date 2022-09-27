@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,23 +17,17 @@
 
 package org.keycloak.models.map.realm.entity;
 
-import java.util.Objects;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapRequiredCredentialEntity extends UpdatableEntity.Impl {
-
-    private String type;
-    private String formLabel;
-    private Boolean input = false;
-    private Boolean secret = false;
-
-
-    private MapRequiredCredentialEntity() {}
-
-    public static MapRequiredCredentialEntity fromModel(RequiredCredentialModel model) {
+@GenerateEntityImplementations
+@DeepCloner.Root
+public interface MapRequiredCredentialEntity extends UpdatableEntity {
+    static MapRequiredCredentialEntity fromModel(RequiredCredentialModel model) {
         if (model == null) return null;
-        MapRequiredCredentialEntity entity = new MapRequiredCredentialEntity();
+        MapRequiredCredentialEntity entity = new MapRequiredCredentialEntityImpl();
         entity.setFormLabel(model.getFormLabel());
         entity.setType(model.getType());
         entity.setInput(model.isInput());
@@ -41,62 +35,27 @@ public class MapRequiredCredentialEntity extends UpdatableEntity.Impl {
         return entity;
     }
 
-    public static RequiredCredentialModel toModel(MapRequiredCredentialEntity entity) {
+    static RequiredCredentialModel toModel(MapRequiredCredentialEntity entity) {
         if (entity == null) return null;
         RequiredCredentialModel model = new RequiredCredentialModel();
         model.setFormLabel(entity.getFormLabel());
         model.setType(entity.getType());
-        model.setSecret(entity.isSecret());
-        model.setInput(entity.isInput());
+        Boolean secret = entity.isSecret();
+        model.setSecret(secret == null ? false : secret);
+        Boolean input = entity.isInput();
+        model.setInput(input == null ? false : input);
         return model;
     }
 
-    public String getType() {
-        return type;
-    }
+    String getType();
+    void setType(String type);
 
-    public void setType(String type) {
-        this.updated = !Objects.equals(this.type, type);
-        this.type = type;
-    }
+    String getFormLabel();
+    void setFormLabel(String formLabel);
 
-    public String getFormLabel() {
-        return formLabel;
-    }
+    Boolean isSecret();
+    void setSecret(Boolean secret);
 
-    public void setFormLabel(String formLabel) {
-        this.updated = !Objects.equals(this.formLabel, formLabel);
-        this.formLabel = formLabel;
-    }
-
-    public Boolean isSecret() {
-        return secret;
-    }
-
-    public void setSecret(boolean secret) {
-        this.updated = !Objects.equals(this.formLabel, formLabel);
-        this.secret = secret;
-    }
-
-    public Boolean isInput() {
-        return input;
-    }
-
-    public void setInput(boolean input) {
-        this.updated = !Objects.equals(this.input, input);
-        this.input = input;
-    }
-
-    @Override
-    public int hashCode() {
-        return getType().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof MapRequiredCredentialEntity)) return false;
-        final MapRequiredCredentialEntity other = (MapRequiredCredentialEntity) obj;
-        return Objects.equals(other.getType(), getType());
-    }
+    Boolean isInput();
+    void setInput(Boolean input);
 }

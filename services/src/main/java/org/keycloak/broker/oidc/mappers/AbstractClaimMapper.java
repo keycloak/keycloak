@@ -17,13 +17,14 @@
 
 package org.keycloak.broker.oidc.mappers;
 
+import static org.keycloak.utils.JsonUtils.splitClaimPath;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
 
@@ -47,7 +48,7 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
                 // found no match, try other claims
         }
 
-        List<String> split = OIDCAttributeMapperHelper.splitClaimPath(claim);
+        List<String> split = splitClaimPath(claim);
         Map<String, Object> jsonObject = token.getOtherClaims();
         final int length = split.size();
         int i = 0;

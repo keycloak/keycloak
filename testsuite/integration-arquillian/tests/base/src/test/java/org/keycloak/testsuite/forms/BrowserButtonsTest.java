@@ -17,11 +17,11 @@
 
 package org.keycloak.testsuite.forms;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -32,7 +32,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -47,9 +46,6 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UserBuilder;
-
-import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * Test for browser back/forward/refresh buttons
@@ -167,7 +163,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
 
 
         // Successfully update profile and assert user logged
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
         appPage.assertCurrent();
     }
 
@@ -214,7 +210,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         updateProfilePage.assertCurrent();
 
         // Successfully update profile and assert user logged
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
         appPage.assertCurrent();
     }
 
@@ -228,7 +224,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
         loginPage.login("login-test", "password");
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
 
         // Assert on consent screen
         grantPage.assertCurrent();
@@ -317,7 +313,6 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
     public void backButtonInResetPasswordFlow() throws Exception {
         // Click on "forgot password" and type username
         loginPage.open();

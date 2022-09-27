@@ -167,15 +167,6 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
-    public URI getActionUrl(boolean authSessionIdParam) {
-        URI uri = getActionUrl();
-        if (authSessionIdParam) {
-            uri = UriBuilder.fromUri(uri).queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId()).build();
-        }
-        return uri;
-    }
-
-    @Override
     public LoginFormsProvider form() {
         String accessCode = generateCode();
         URI action = getActionUrl(accessCode);

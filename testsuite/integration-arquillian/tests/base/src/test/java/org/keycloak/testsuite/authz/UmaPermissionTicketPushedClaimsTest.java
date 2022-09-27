@@ -38,13 +38,10 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UmaPermissionTicketPushedClaimsTest extends AbstractResourceServerTest {
 
     @Test
@@ -53,17 +50,7 @@ public class UmaPermissionTicketPushedClaimsTest extends AbstractResourceServerT
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName("Withdraw Limit Policy");
-
-        StringBuilder code = new StringBuilder();
-
-        code.append("var context = $evaluation.getContext();");
-        code.append("var attributes = context.getAttributes();");
-        code.append("var withdrawValue = attributes.getValue('my.bank.account.withdraw.value');");
-        code.append("if (withdrawValue && withdrawValue.asDouble(0) <= 100) {");
-        code.append("   $evaluation.grant();");
-        code.append("}");
-
-        policy.setCode(code.toString());
+        policy.setType("script-scripts/withdraw-limit-policy.js");
 
         AuthorizationResource authorization = getClient(getRealm()).authorization();
 

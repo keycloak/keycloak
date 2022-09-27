@@ -41,11 +41,6 @@ public class ConditionalRoleAuthenticatorFactory implements ConditionalAuthentic
     }
 
     @Override
-    public String getReferenceCategory() {
-        return "condition";
-    }
-
-    @Override
     public boolean isConfigurable() {
         return true;
     }

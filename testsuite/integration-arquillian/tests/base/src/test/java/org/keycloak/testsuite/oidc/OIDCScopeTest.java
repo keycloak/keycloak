@@ -44,7 +44,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
@@ -59,14 +58,12 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * Test for OAuth2 'scope' parameter and for some other aspects of client scopes
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
     private static String userId = KeycloakModelUtils.generateId();
@@ -91,6 +88,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         attrs.add("street", "Elm 5");
         attrs.add("phoneNumber", "111-222-333");
         attrs.add("phoneNumberVerified", "true");
+        attrs.add("updatedAt", "1643282255");
         user.setAttributes(attrs);
 
         testRealm.getUsers().add(user);
@@ -218,6 +216,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
             Assert.assertEquals("John", idToken.getGivenName());
             Assert.assertEquals("Doe", idToken.getFamilyName());
             Assert.assertEquals("John Doe", idToken.getName());
+            Assert.assertEquals(new Long(1643282255L),idToken.getUpdatedAt());
         } else {
             Assert.assertNull(idToken.getPreferredUsername());
             Assert.assertNull(idToken.getGivenName());

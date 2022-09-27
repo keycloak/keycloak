@@ -18,28 +18,23 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.util.Collections;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.JSPoliciesResource;
 import org.keycloak.admin.client.resource.JSPolicyResource;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
     
     @Test
@@ -51,7 +46,7 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setDescription("description");
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
-        representation.setCode("$evaluation.grant();");
+        representation.setType("script-scripts/default-policy.js");
 
         assertCreated(authorization, representation);
     }
@@ -65,7 +60,7 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setDescription("description");
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
-        representation.setCode("$evaluation.grant();");
+        representation.setType("script-scripts/default-policy.js");
 
         assertCreated(authorization, representation);
 
@@ -73,7 +68,6 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setDescription("changed");
         representation.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
         representation.setLogic(Logic.POSITIVE);
-        representation.setCode("$evaluation.deny()");
 
         JSPoliciesResource policies = authorization.policies().js();
         JSPolicyResource permission = policies.findById(representation.getId());
@@ -88,7 +82,7 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
         JSPolicyRepresentation representation = new JSPolicyRepresentation();
 
         representation.setName("Test Delete Policy");
-        representation.setCode("$evaluation.grant()");
+        representation.setType("script-scripts/default-policy.js");
 
         JSPoliciesResource policies = authorization.policies().js();
         try (Response response = policies.create(representation)) {
@@ -120,6 +114,6 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
     private void assertRepresentation(JSPolicyRepresentation representation, JSPolicyResource permission) {
         JSPolicyRepresentation actual = permission.toRepresentation();
         assertRepresentation(representation, actual, () -> permission.resources(), () -> Collections.emptyList(), () -> permission.associatedPolicies());
-        assertEquals(representation.getCode(), actual.getCode());
+        assertEquals(representation.getType(), actual.getType());
     }
 }

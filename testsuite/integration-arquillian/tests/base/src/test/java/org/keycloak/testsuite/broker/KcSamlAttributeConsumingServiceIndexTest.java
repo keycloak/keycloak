@@ -14,9 +14,7 @@ import java.io.Closeable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 /**

@@ -45,10 +45,6 @@
         <property name="chromeArguments">${chromeArguments}</property>
         <property name="chromeDriverVersion">${chromeDriverVersion}</property>
 
-        <!-- internet explorer -->
-        <property name="ieDriverArch">${ieDriverArch}</property>
-        <property name="ieDriverVersion">${ieDriverVersion}</property>
-
         <!-- appium -->
         <property name="appium.platformName">${appium.platformName}</property>
         <property name="appium.deviceName">${appium.deviceName}</property>
@@ -425,6 +421,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -451,6 +448,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -478,6 +476,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -504,6 +503,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -641,24 +641,16 @@
         </container>
     </group>
 
-    <container qualifier="auth-server-remote" mode="manual" >
-        <configuration>
-            <property name="enabled">${auth.server.remote}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.remote.RemoteDeployableContainer</property>
-
-            <property name="managementAddress">${auth.server.management.host}</property>
-            <property name="managementPort">${auth.server.management.port}</property>
-            <property name="username">admin</property>
-            <property name="password">admin</property>
-        </configuration>
-    </container>
-
     <container qualifier="auth-server-quarkus" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.quarkus}</property>
-            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+            <property name="adapterImplClass">
+                org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer
+            </property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
-            <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
+            <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m
+                -Djava.net.preferIPv4Stack=true -Dauth.server.db.host=some
+            </property>
         </configuration>
     </container>
 
@@ -714,23 +706,22 @@
 
     <!-- PREVIOUS VERSION OF KEYCLOAK FOR MIGRATION TESTS -->
 
-    <container qualifier="auth-server-jboss-migration" mode="manual" >
+    <container qualifier="auth-server-migration" mode="manual">
         <configuration>
-            <property name="enabled">${auth.server.jboss.migration}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak.migration.home}</property>
-            <property name="javaVmArguments">
-                -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
-                -Djboss.socket.binding.port-offset=${auth.server.port.offset}
-                ${migration.import.props.previous}
+            <property name="enabled">${auth.server.migration}</property>
+            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+            <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
+            <property name="importFile">${migration.import.file.name}</property>
+            <property name="javaOpts">
+                -Xms512m
+                -Xmx512m
+                -XX:MetaspaceSize=96M
+                -XX:MaxMetaspaceSize=512m
+                -Djava.net.preferIPv4Stack=true
                 ${auth.server.memory.settings}
-                -Dauth.server.truststore=${auth.server.truststore}
-                -Dauth.server.truststore.password=${auth.server.truststore.password}
                 -Dauth.server.db.host=${auth.server.db.host}
             </property>
-            <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
         </configuration>
     </container>
-            
+
 </arquillian>

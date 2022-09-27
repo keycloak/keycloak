@@ -29,13 +29,10 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ServerInfoTest extends AbstractKeycloakTest {
 
     @Test
@@ -64,9 +61,11 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getSystemInfo().getServerTime());
         assertNotNull(info.getSystemInfo().getUptime());
 
-        Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
-        ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
-        log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
+        if (isJpaRealmProvider()) {
+            Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
+            ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
+            log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
+        }
     }
 
     @Override

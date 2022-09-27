@@ -17,6 +17,7 @@
 
 package org.keycloak.migration.migrators;
 
+import java.util.stream.Collectors;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -70,6 +71,7 @@ public class MigrationUtils {
         client.getProtocolMappersStream()
                 .filter(mapper -> !mapper.getConfig().containsKey("userinfo.token.claim") && mapper.getConfig().containsKey("id.token.claim"))
                 .peek(mapper -> mapper.getConfig().put("userinfo.token.claim", mapper.getConfig().get("id.token.claim")))
+                .collect(Collectors.toSet()).stream() // to avoid ConcurrentModificationException
                 .forEach(client::updateProtocolMapper);
     }
 

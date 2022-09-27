@@ -18,7 +18,6 @@ package org.keycloak.models.map.storage;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
-import java.util.stream.Stream;
 
 /**
  * Implementation of this interface interacts with a persistence storage storing various entities, e.g. users, realms.
@@ -32,21 +31,6 @@ import java.util.stream.Stream;
  *            layout and thus to support no-downtime upgrade.
  */
 public interface MapStorage<V extends AbstractEntity, M> {
-
-    /**
-     * Returns criteria builder for the storage engine.
-     * The criteria are specified in the given criteria builder based on model properties.
-     * <br>
-     * <b>Note:</b> While the criteria are formulated in terms of model properties,
-     * the storage engine may in turn process them into the best form that suits the
-     * underlying storage engine query language, e.g. to conditions on storage
-     * attributes or REST query parameters.
-     * If possible, do <i>not</i> delay filtering after the models are reconstructed from
-     * storage entities, in most cases this would be highly inefficient.
-     *
-     * @return See description. Never returns {@code null}
-     */
-    ModelCriteriaBuilder<M> createCriteriaBuilder();
     
     /**
      * Creates a {@code MapKeycloakTransaction} object that tracks a new transaction related to this storage.

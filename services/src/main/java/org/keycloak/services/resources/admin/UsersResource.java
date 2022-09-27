@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -57,10 +58,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.models.utils.KeycloakModelUtils.findGroupByPath;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 /**
@@ -110,22 +116,8 @@ public class UsersResource {
         // first check if user has manage rights
         try {
             auth.users().requireManage();
-        }
-        catch (ForbiddenException exception) {
-            // if user does not have manage rights, fallback to fine grain admin permissions per group
-            if (rep.getGroups() != null) {
-                // if groups is part of the user rep, check if admin has manage_members and manage_membership on each group
-                for (String groupPath : rep.getGroups()) {
-                    GroupModel group = KeycloakModelUtils.findGroupByPath(realm, groupPath);
-                    if (group != null) {
-                        auth.groups().requireManageMembers(group);
-                        auth.groups().requireManageMembership(group);
-                    } else {
-                        return ErrorResponse.error(String.format("Group %s not found", groupPath), Response.Status.BAD_REQUEST);
-                    }
-                }
-            } else {
-                // propagate exception if no group specified
+        } catch (ForbiddenException exception) {
+            if (!canCreateGroupMembers(rep)) {
                 throw exception;
             }
         }
@@ -194,6 +186,32 @@ public class UsersResource {
             return ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }
     }
+
+    private boolean canCreateGroupMembers(UserRepresentation rep) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+            return false;
+        }
+
+        List<GroupModel> groups = Optional.ofNullable(rep.getGroups())
+                .orElse(Collections.emptyList())
+                .stream().map(path -> findGroupByPath(realm, path))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (groups.isEmpty()) {
+            return false;
+        }
+
+        // if groups is part of the user rep, check if admin has manage_members and manage_membership on each group
+        // an exception is thrown in case the current user does not have permissions to manage any of the groups
+        for (GroupModel group : groups) {
+            auth.groups().requireManageMembers(group);
+            auth.groups().requireManageMembership(group);
+        }
+
+        return true;
+    }
+
     /**
      * Get representation of the user
      *
@@ -343,6 +361,7 @@ public class UsersResource {
      * @param first    first name filter
      * @param email    email filter
      * @param username username filter
+     * @param enabled Boolean representing if user is enabled or not
      * @return the number of users that match the given criteria
      */
     @Path("count")
@@ -354,7 +373,8 @@ public class UsersResource {
                                  @QueryParam("firstName") String first,
                                  @QueryParam("email") String email,
                                  @QueryParam("emailVerified") Boolean emailVerified,
-                                 @QueryParam("username") String username) {
+                                 @QueryParam("username") String username,
+                                 @QueryParam("enabled") Boolean enabled) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
@@ -367,7 +387,7 @@ public class UsersResource {
             } else {
                 return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupsWithViewPermission());
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null) {
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -383,6 +403,9 @@ public class UsersResource {
             }
             if (emailVerified != null) {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+            }
+            if (enabled != null) {
+                parameters.put(UserModel.ENABLED, enabled.toString());
             }
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
@@ -410,7 +433,7 @@ public class UsersResource {
     }
 
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
-        session.setAttribute(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts);
+        attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
         if (!auth.users().canView()) {
             Set<String> groupModels = auth.groups().getGroupsWithViewPermission();

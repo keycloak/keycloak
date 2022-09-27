@@ -25,3 +25,5 @@ org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory
 org.keycloak.authentication.requiredactions.UpdateUserLocaleAction
 org.keycloak.authentication.requiredactions.DeleteAccount
 org.keycloak.authentication.requiredactions.VerifyUserProfile
+org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction
+org.keycloak.authentication.requiredactions.UpdateEmail

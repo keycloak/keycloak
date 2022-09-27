@@ -55,6 +55,7 @@ public interface Details {
     String UPDATED_REFRESH_TOKEN_ID = "updated_refresh_token_id";
     String NODE_HOST = "node_host";
     String REASON = "reason";
+    String GRANTED_CLIENT = "granted_client";
     String REVOKED_CLIENT = "revoked_client";
     String AUDIENCE = "audience";
     String PERMISSION = "permission";
@@ -85,4 +86,5 @@ public interface Details {
 
     String CREDENTIAL_TYPE = "credential_type";
     String SELECTED_CREDENTIAL_ID = "selected_credential_id";
+    String AUTHENTICATION_ERROR_DETAIL = "authentication_error_detail";
 }

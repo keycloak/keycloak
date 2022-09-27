@@ -15,8 +15,8 @@
  */
 
 import * as React from 'react';
-import {Button, Grid, GridItem, Title, Tooltip} from '@patternfly/react-core';
-import {RedoIcon} from '@patternfly/react-icons';
+import {Button, Grid, GridItem, Text, Title, Tooltip, Card, CardBody, Stack, StackItem, PageSection, TextContent, PageSectionVariants, SplitItem, Split} from '@patternfly/react-core';
+import {RedoIcon, SyncAltIcon} from '@patternfly/react-icons';
 
 import {Msg} from '../widgets/Msg';
 import {ContentAlert} from './ContentAlert';
@@ -40,27 +40,41 @@ export class ContentPage extends React.Component<ContentPageProps> {
     public render(): React.ReactNode {
         return (
             <React.Fragment>
-                <ContentAlert/>
-                <section id="page-heading" className="pf-c-page__main-section pf-m-light">
-                    <Grid>
-                        <GridItem span={11}><Title headingLevel='h1' size='3xl'><strong><Msg msgKey={this.props.title}/></strong></Title></GridItem>
-                        {this.props.onRefresh &&
-                            <GridItem span={1}>
-                                <Tooltip content={<Msg msgKey='refreshPage'/>}>
-                                    <Button aria-describedby="refresh page" id='refresh-page' variant='plain' onClick={this.props.onRefresh}>
-                                        <RedoIcon size='sm'/>
-                                    </Button>
-                                </Tooltip>
-                            </GridItem>
-                        }
-                        {this.props.introMessage && <GridItem span={12}> <Msg msgKey={this.props.introMessage}/></GridItem>}
-                    </Grid>
-                </section>
+            <ContentAlert />
 
-                <section className="pf-c-page__main-section pf-m-no-padding-mobile">
-                    {this.props.children}
-                </section>
-            </React.Fragment>
+            <PageSection variant={PageSectionVariants.light} className="pf-u-pb-xs">
+              <Split>
+                <SplitItem isFilled>
+                  <TextContent>
+                    <Title headingLevel="h1" size="2xl" className="pf-u-mb-xl">
+                      <Msg msgKey={this.props.title} />
+                    </Title>
+                    {this.props.introMessage && (
+                      <Text component="p">
+                        <Msg msgKey={this.props.introMessage} />
+                      </Text>
+                    )}
+                  </TextContent>
+                </SplitItem>
+                {this.props.onRefresh && (
+                  <SplitItem>
+                    <Tooltip content={<Msg msgKey="refreshPage" />}>
+                      <Button
+                        aria-label={Msg.localize('refreshPage')}
+                        id="refresh-page"
+                        variant="link"
+                        onClick={this.props.onRefresh}
+                        icon={<SyncAltIcon />}
+                      >
+                        <Msg msgKey="refresh" />
+                      </Button>
+                    </Tooltip>
+                  </SplitItem>
+                )}
+              </Split>
+            </PageSection>
+            {this.props.children}
+          </React.Fragment>
         );
     }
 };

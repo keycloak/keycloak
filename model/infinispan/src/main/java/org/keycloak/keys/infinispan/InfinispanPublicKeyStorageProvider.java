@@ -34,7 +34,6 @@ import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 
 
 /**
@@ -62,15 +61,6 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         this.tasksInProgress = tasksInProgress;
         this.minTimeBetweenRequests = minTimeBetweenRequests;
     }
-
-
-    @Override
-    public void clearCache() {
-        keys.clear();
-        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(InfinispanPublicKeyStorageProviderFactory.KEYS_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true, ClusterProvider.DCNotify.ALL_DCS);
-    }
-
 
     void addInvalidation(String cacheKey) {
         if (!transactionEnlisted) {
@@ -121,7 +111,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
         for (String cacheKey : invalidations) {
             keys.remove(cacheKey);
-            cluster.notify(InfinispanPublicKeyStorageProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, PublicKeyStorageInvalidationEvent.create(cacheKey), true, ClusterProvider.DCNotify.ALL_DCS);
+            cluster.notify(InfinispanCachePublicKeyProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, PublicKeyStorageInvalidationEvent.create(cacheKey), true, ClusterProvider.DCNotify.ALL_DCS);
         }
     }
 
@@ -142,7 +132,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         if (entry != null) {
             KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
             if (publicKey != null) {
-                return publicKey;
+                // return a copy of the key to not modify the cached one
+                return publicKey.cloneKey();
             }
         }
 
@@ -168,7 +159,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 // Computation finished. Let's see if key is available
                 KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
                 if (publicKey != null) {
-                    return publicKey;
+                    // return a copy of the key to not modify the cached one
+                    return publicKey.cloneKey();
                 }
 
             } catch (ExecutionException ee) {

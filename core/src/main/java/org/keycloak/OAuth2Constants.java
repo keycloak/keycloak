@@ -36,6 +36,10 @@ public interface OAuth2Constants {
 
     String REDIRECT_URI = "redirect_uri";
 
+    String POST_LOGOUT_REDIRECT_URI = "post_logout_redirect_uri";
+
+    String ID_TOKEN_HINT = "id_token_hint";
+
     String DISPLAY = "display";
 
     String SCOPE = "scope";
@@ -136,7 +140,6 @@ public interface OAuth2Constants {
 
     String CIBA_GRANT_TYPE = "urn:openid:params:grant-type:ciba";
 
-    String DISPLAY_CONSOLE = "console";
     String INTERVAL = "interval";
     String USER_CODE = "user_code";
 

@@ -8,15 +8,23 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.services.resources.admin.AuthenticationManagementResource;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.BROWSER_FLOW;
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.DIRECT_GRANT_FLOW;
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW;
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.REGISTRATION_FLOW;
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW;
 
 public class FlowUtil {
     private RealmModel realm;
@@ -67,23 +75,27 @@ public class FlowUtil {
     }
 
     public FlowUtil copyBrowserFlow(String newFlowAlias) {
-        return copyFlow(DefaultAuthenticationFlows.BROWSER_FLOW, newFlowAlias);
+        checkAndRestoreDefaultFlow(realm::getBrowserFlow, realm::setBrowserFlow, newFlowAlias, BROWSER_FLOW);
+        return copyFlow(BROWSER_FLOW, newFlowAlias);
     }
 
     public FlowUtil copyResetCredentialsFlow(String newFlowAlias) {
-        return copyFlow(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, newFlowAlias);
+        checkAndRestoreDefaultFlow(realm::getResetCredentialsFlow, realm::setResetCredentialsFlow, newFlowAlias, RESET_CREDENTIALS_FLOW);
+        return copyFlow(RESET_CREDENTIALS_FLOW, newFlowAlias);
     }
 
     public FlowUtil copyFirstBrokerLoginFlow(String newFlowAlias) {
-        return copyFlow(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, newFlowAlias);
+        return copyFlow(FIRST_BROKER_LOGIN_FLOW, newFlowAlias);
     }
 
     public FlowUtil copyRegistrationFlow(String newFlowAlias) {
-        return copyFlow(DefaultAuthenticationFlows.REGISTRATION_FLOW, newFlowAlias);
+        checkAndRestoreDefaultFlow(realm::getRegistrationFlow, realm::setRegistrationFlow, newFlowAlias, REGISTRATION_FLOW);
+        return copyFlow(REGISTRATION_FLOW, newFlowAlias);
     }
 
     public FlowUtil copyDirectGrantFlow(String newFlowAlias) {
-        return copyFlow(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, newFlowAlias);
+        checkAndRestoreDefaultFlow(realm::getDirectGrantFlow, realm::setDirectGrantFlow, newFlowAlias, DIRECT_GRANT_FLOW);
+        return copyFlow(DIRECT_GRANT_FLOW, newFlowAlias);
     }
 
     public FlowUtil copyFlow(String original, String newFlowAlias) {
@@ -92,6 +104,14 @@ public class FlowUtil {
         if (existingBrowserFlow == null) {
             throw new FlowUtilException("Can't copy flow: " + original + " does not exist");
         }
+
+        // remove new authentication flow with 'newFlowAlias' alias if present
+        AuthenticationFlowModel foundFlow = realm.getFlowByAlias(newFlowAlias);
+        if (foundFlow != null) {
+            clearAuthenticationFlow(foundFlow.getId());
+            realm.removeAuthenticationFlow(foundFlow);
+        }
+
         currentFlow = AuthenticationManagementResource.copyFlow(realm, existingBrowserFlow, newFlowAlias);
 
         return this;
@@ -119,7 +139,7 @@ public class FlowUtil {
     }
 
     public FlowUtil clear() {
-        realm.getAuthenticationExecutionsStream(currentFlow.getId()).forEachOrdered(realm::removeAuthenticatorExecution);
+        clearAuthenticationFlow(currentFlow.getId());
         return this;
     }
 
@@ -263,5 +283,48 @@ public class FlowUtil {
         }
 
         return this;
+    }
+
+    /**
+     * Remove authentication flows and executions included in the specified flow
+     *
+     * @param flowId id of flow, which content will be removed
+     */
+    private void clearAuthenticationFlow(String flowId) {
+        realm.getAuthenticationExecutionsStream(flowId)
+                .filter(Objects::nonNull)
+                .forEachOrdered(f -> {
+                    if (f.isAuthenticatorFlow() && f.getFlowId() != null) {
+                        clearAuthenticationFlow(f.getFlowId());
+                        realm.removeAuthenticationFlow(realm.getAuthenticationFlowById(f.getFlowId()));
+                    }
+                    realm.removeAuthenticatorExecution(f);
+                });
+    }
+
+    /**
+     * Check whether the new flow is set as default one
+     * If yes, restore the default one
+     * <p>
+     * Usable for removing flow, which must not be used as the default flow
+     *
+     * @param getFlow          getter for obtaining the default flow
+     * @param setFlow          setter for the setting of the default flow
+     * @param newFlowAlias     alias of tested flow
+     * @param defaultFlowAlias default flow alias
+     */
+    private void checkAndRestoreDefaultFlow(Supplier<AuthenticationFlowModel> getFlow,
+                                            Consumer<AuthenticationFlowModel> setFlow,
+                                            String newFlowAlias,
+                                            String defaultFlowAlias) {
+        if (getFlow == null || setFlow == null || newFlowAlias == null || defaultFlowAlias == null) return;
+
+        final String alias = Optional.ofNullable(getFlow.get())
+                .map(AuthenticationFlowModel::getAlias)
+                .orElse(null);
+
+        if (alias != null && alias.equals(newFlowAlias)) {
+            setFlow.accept(realm.getFlowByAlias(defaultFlowAlias));
+        }
     }
 }

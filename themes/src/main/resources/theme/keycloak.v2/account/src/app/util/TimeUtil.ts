@@ -20,7 +20,7 @@ declare const locale: string;
  * @author Stan Silvert
  */
 class TimeUtil {
-    private options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+    private options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
     private formatter: Intl.DateTimeFormat;
 
     constructor() {

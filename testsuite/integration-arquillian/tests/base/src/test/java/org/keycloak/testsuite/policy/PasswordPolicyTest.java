@@ -23,17 +23,22 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.policy.BlacklistPasswordPolicyProvider;
+import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
 import org.keycloak.policy.MaximumLengthPasswordPolicyProviderFactory;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
+import org.keycloak.policy.PasswordPolicyProvider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.RealmBuilder;
 
+import java.io.File;
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -43,7 +48,6 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
@@ -167,9 +171,6 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
      */
     @Test
     public void testBlacklistPasswordPolicyWithTestBlacklist() throws Exception {
-
-        ContainerAssume.assumeNotAuthServerRemote();
-
         testingClient.server("passwordPolicy").run(session -> {
 
             RealmModel realmModel = session.getContext().getRealm();
@@ -181,6 +182,19 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted2").getMessage());
             Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "bLaCkLiSteD2").getMessage());
             assertNull(policyManager.validate("jdoe", "notblacklisted"));
+        });
+    }
+
+    @Test
+    public void testBlacklistPasswordPolicyDefaultPath() throws Exception {
+        final String SEPARATOR = File.separator;
+
+        testingClient.server("passwordPolicy").run(session -> {
+            ProviderFactory<PasswordPolicyProvider> passPolicyFact = session.getKeycloakSessionFactory().getProviderFactory(
+                    PasswordPolicyProvider.class, BlacklistPasswordPolicyProviderFactory.ID);
+            assertThat(passPolicyFact, instanceOf(BlacklistPasswordPolicyProviderFactory.class));
+            assertThat(((BlacklistPasswordPolicyProviderFactory) passPolicyFact).getDefaultBlacklistsBasePath(),
+                    endsWith(SEPARATOR + "data" + SEPARATOR + "password-blacklists" + SEPARATOR));
         });
     }
 

@@ -16,269 +16,155 @@
  */
 package org.keycloak.models.map.userSession;
 
-import org.keycloak.common.util.Time;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
+import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.AbstractEntity;
-
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
+
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserSessionEntity extends UpdatableEntity.Impl implements AbstractEntity {
-    private String id;
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.userSession.MapUserSessionEntity.AbstractUserSessionEntity"
+)
+@DeepCloner.Root
+public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity, ExpirableEntity {
 
-    private String realmId;
+    abstract class AbstractUserSessionEntity extends UpdatableEntity.Impl implements MapUserSessionEntity {
+
+        private String id;
+
+        @Override
+        public String getId() {
+            return this.id;
+        }
+
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
+
+        @Override
+        public boolean isUpdated() {
+            return this.updated
+                    || Optional.ofNullable(getAuthenticatedClientSessions()).orElseGet(Collections::emptySet).stream().anyMatch(UpdatableEntity::isUpdated);
+        }
+
+        @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+            Optional.ofNullable(getAuthenticatedClientSessions()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+        }
+
+        @Override
+        public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
+            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
+            if (acss == null || acss.isEmpty()) return Optional.empty();
+
+            return acss.stream().filter(acs -> Objects.equals(acs.getClientId(), clientUUID)).findFirst();
+        }
+
+        @Override
+        public Boolean removeAuthenticatedClientSession(String clientUUID) {
+            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
+            boolean removed = acss != null && acss.removeIf(uc -> Objects.equals(uc.getClientId(), clientUUID));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public void clearAuthenticatedClientSessions() {
+            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
+            if (acss != null) {
+                acss.stream().map(MapAuthenticatedClientSessionEntity::getClientId)
+                        .collect(Collectors.toSet())
+                        .forEach(this::removeAuthenticatedClientSession);
+            }
+        }
+    }
+
+    String getRealmId();
+    void setRealmId(String realmId);
+
+    String getUserId();
+    void setUserId(String userId);
+
+    String getBrokerSessionId();
+    void setBrokerSessionId(String brokerSessionId);
+
+    String getBrokerUserId();
+    void setBrokerUserId(String brokerUserId);
+
+    String getLoginUsername();
+    void setLoginUsername(String loginUsername);
+
+    String getIpAddress();
+    void setIpAddress(String ipAddress);
+
+    String getAuthMethod();
+    void setAuthMethod(String authMethod);
+
+    Boolean isRememberMe();
+    void setRememberMe(Boolean rememberMe);
 
     /**
-     * Flag signalizing that any of the setters has been meaningfully used.
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the user session entity was created.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
      */
+    Long getTimestamp();
 
-    private String userId;
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the user session entity was created.
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
 
-    private String brokerSessionId;
-    private String brokerUserId;
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the user session entity was last refreshed.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getLastSessionRefresh();
 
-    private String loginUsername;
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the user session entity was last refreshed.
+     * @param lastSessionRefresh a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setLastSessionRefresh(Long lastSessionRefresh);
 
-    private String ipAddress;
+    Map<String, String> getNotes();
+    String getNote(String name);
+    void setNotes(Map<String, String> notes);
+    Boolean removeNote(String name);
+    void setNote(String name, String value);
 
-    private String authMethod;
+    UserSessionModel.State getState();
+    void setState(UserSessionModel.State state);
 
-    private boolean rememberMe;
+    Set<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSessions();
+    Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID);
+    void addAuthenticatedClientSession(MapAuthenticatedClientSessionEntity clientSession);
+    Boolean removeAuthenticatedClientSession(String clientUUID);
+    @IgnoreForEntityImplementationGenerator
+    void clearAuthenticatedClientSessions();
 
-    private int started;
+    Boolean isOffline();
+    void setOffline(Boolean offline);
 
-    private int lastSessionRefresh;
-
-    private long expiration;
-
-    private Map<String, String> notes = new ConcurrentHashMap<>();
-
-    private UserSessionModel.State state;
-
-    private UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.PERSISTENT;
-
-    private Map<String, String> authenticatedClientSessions = new ConcurrentHashMap<>();
-
-    private boolean offline;
-
-    public MapUserSessionEntity() {}
-
-    public MapUserSessionEntity(String id, String realmId) {
-        this.id = id;
-        this.realmId = realmId;
-    }
-
-    public MapUserSessionEntity(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
-                                     String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId,
-                                     boolean offline) {
-        this.id = id;
-        this.realmId = realm.getId();
-        this.userId = user.getId();
-        this.loginUsername = loginUsername;
-        this.ipAddress = ipAddress;
-        this.authMethod = authMethod;
-        this.rememberMe = rememberMe;
-        this.brokerSessionId = brokerSessionId;
-        this.brokerUserId = brokerUserId;
-        this.started = Time.currentTime();
-        this.lastSessionRefresh = started;
-        this.offline = offline;
-    }
-
-    @Override
-    public String getId() {
-        return this.id;
-    }
-
-    @Override
-    public void setId(String id) {
-        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
-        this.id = id;
-        this.updated |= id != null;
-    }
-
-    public String getRealmId() {
-        return realmId;
-    }
-
-    public void setRealmId(String realmId) {
-        this.updated |= !Objects.equals(this.realmId, realmId);
-        this.realmId = realmId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.updated |= !Objects.equals(this.userId, userId);
-        this.userId = userId;
-    }
-
-    public String getBrokerSessionId() {
-        return brokerSessionId;
-    }
-
-    public void setBrokerSessionId(String brokerSessionId) {
-        this.updated |= !Objects.equals(this.brokerSessionId, brokerSessionId);
-        this.brokerSessionId = brokerSessionId;
-    }
-
-    public String getBrokerUserId() {
-        return brokerUserId;
-    }
-
-    public void setBrokerUserId(String brokerUserId) {
-        this.updated |= !Objects.equals(this.brokerUserId, brokerUserId);
-        this.brokerUserId = brokerUserId;
-    }
-
-    public String getLoginUsername() {
-        return loginUsername;
-    }
-
-    public void setLoginUsername(String loginUsername) {
-        this.updated |= !Objects.equals(this.loginUsername, loginUsername);
-        this.loginUsername = loginUsername;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.updated |= !Objects.equals(this.ipAddress, ipAddress);
-        this.ipAddress = ipAddress;
-    }
-
-    public String getAuthMethod() {
-        return authMethod;
-    }
-
-    public void setAuthMethod(String authMethod) {
-        this.updated |= !Objects.equals(this.authMethod, authMethod);
-        this.authMethod = authMethod;
-    }
-
-    public boolean isRememberMe() {
-        return rememberMe;
-    }
-
-    public void setRememberMe(boolean rememberMe) {
-        this.updated |= this.rememberMe != rememberMe;
-        this.rememberMe = rememberMe;
-    }
-
-    public int getStarted() {
-        return started;
-    }
-
-    public void setStarted(int started) {
-        this.updated |= this.started != started;
-        this.started = started;
-    }
-
-    public int getLastSessionRefresh() {
-        return lastSessionRefresh;
-    }
-
-    public void setLastSessionRefresh(int lastSessionRefresh) {
-        this.updated |= this.lastSessionRefresh != lastSessionRefresh;
-        this.lastSessionRefresh = lastSessionRefresh;
-    }
-
-    public long getExpiration() {
-        return expiration;
-    }
-
-    public void setExpiration(long expiration) {
-        this.updated |= this.expiration != expiration;
-        this.expiration = expiration;
-    }
-
-    public Map<String, String> getNotes() {
-        return notes;
-    }
-
-    public String getNote(String name) {
-        return notes.get(name);
-    }
-
-    public void setNotes(Map<String, String> notes) {
-        this.updated |= !Objects.equals(this.notes, notes);
-        this.notes = notes;
-    }
-
-    public String removeNote(String name) {
-        String note = this.notes.remove(name);
-        this.updated |= note != null;
-        return note;
-    }
-
-    public void addNote(String name, String value) {
-        this.updated |= !Objects.equals(this.notes.put(name, value), value);
-    }
-
-    public UserSessionModel.State getState() {
-        return state;
-    }
-
-    public void setState(UserSessionModel.State state) {
-        this.updated |= !Objects.equals(this.state, state);
-        this.state = state;
-    }
-
-    public Map<String, String> getAuthenticatedClientSessions() {
-        return authenticatedClientSessions;
-    }
-
-    public void setAuthenticatedClientSessions(Map<String, String> authenticatedClientSessions) {
-        this.updated |= !Objects.equals(this.authenticatedClientSessions, authenticatedClientSessions);
-        this.authenticatedClientSessions = authenticatedClientSessions;
-    }
-
-    public void addAuthenticatedClientSession(String clientId, String clientSessionId) {
-        this.updated |= !Objects.equals(this.authenticatedClientSessions.put(clientId, clientSessionId), clientSessionId);
-    }
-
-    public String removeAuthenticatedClientSession(String clientId) {
-        String entity = this.authenticatedClientSessions.remove(clientId);
-        this.updated |= entity != null;
-        return entity;
-    }
-
-    public void clearAuthenticatedClientSessions() {
-        this.updated |= !authenticatedClientSessions.isEmpty();
-        this.authenticatedClientSessions.clear();
-    }
-
-    public boolean isOffline() {
-        return offline;
-    }
-
-    public void setOffline(boolean offline) {
-        this.updated |= this.offline != offline;
-        this.offline = offline;
-    }
-
-    public UserSessionModel.SessionPersistenceState getPersistenceState() {
-        return persistenceState;
-    }
-
-    public void setPersistenceState(UserSessionModel.SessionPersistenceState persistenceState) {
-        this.updated |= !Objects.equals(this.persistenceState, persistenceState);
-        this.persistenceState = persistenceState;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s@%08x", getId(), hashCode());
-    }
+    UserSessionModel.SessionPersistenceState getPersistenceState();
+    void setPersistenceState(UserSessionModel.SessionPersistenceState persistenceState);
 }

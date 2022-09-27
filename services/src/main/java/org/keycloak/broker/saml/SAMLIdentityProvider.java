@@ -90,10 +90,13 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.security.KeyPair;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 
 /**
@@ -394,9 +397,15 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
 
             // Create the AttributeConsumingService if at least one attribute importer mapper exists
-            List<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAliasStream(getConfig().getAlias()).filter(mapper -> "saml-user-attribute-idp-mapper".equals(mapper.getIdentityProviderMapper())).collect(Collectors.toList());
-
-            if (!mappers.isEmpty()) {
+            List<Entry<IdentityProviderMapperModel, SamlMetadataDescriptorUpdater>> metadataAttrProviders = new ArrayList<>();
+            realm.getIdentityProviderMappersByAliasStream(getConfig().getAlias())
+                .forEach(mapper -> {
+                    IdentityProviderMapper target = (IdentityProviderMapper) session.getKeycloakSessionFactory().getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                    if (target instanceof SamlMetadataDescriptorUpdater)
+                        metadataAttrProviders.add(new java.util.AbstractMap.SimpleEntry<>(mapper, (SamlMetadataDescriptorUpdater)target));
+                });
+                
+            if (!metadataAttrProviders.isEmpty()) {
                 int attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex() != null ? getConfig().getAttributeConsumingServiceIndex() : 1;
                 String attributeConsumingServiceName = getConfig().getAttributeConsumingServiceName();
                 //default value for attributeConsumingServiceName
@@ -419,9 +428,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 }
 
                 // Add the attribute mappers
-                mappers.forEach(mapper -> {
-                    SamlMetadataDescriptorUpdater metadataAttrProvider = (SamlMetadataDescriptorUpdater)  session.getKeycloakSessionFactory().getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                    metadataAttrProvider.updateMetadata(mapper, entityDescriptor);
+                metadataAttrProviders.forEach(mapper -> {
+                    SamlMetadataDescriptorUpdater metadataAttrProvider = mapper.getValue();
+                    metadataAttrProvider.updateMetadata(mapper.getKey(), entityDescriptor);
                 });
             }
     

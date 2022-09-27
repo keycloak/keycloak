@@ -18,40 +18,25 @@
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import liquibase.Liquibase;
-import liquibase.change.ChangeFactory;
-import liquibase.changelog.ChangeSet;
-import liquibase.changelog.DatabaseChangeLog;
+import liquibase.Scope;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
-import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.LiquibaseException;
-import liquibase.logging.LogFactory;
-import liquibase.logging.LogLevel;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
-import liquibase.servicelocator.ServiceLocator;
-import liquibase.sqlgenerator.SqlGeneratorFactory;
+import liquibase.ui.LoggerUIService;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.connections.jpa.updater.liquibase.CustomForeignKeySnapshotGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
-import org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType;
-import org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase;
-import org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase;
-import org.keycloak.connections.jpa.updater.liquibase.custom.CustomCreateIndexChange;
-import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
-import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
-import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import liquibase.changelog.ChangeLogHistoryServiceFactory;
-import liquibase.snapshot.SnapshotGeneratorFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -83,54 +68,26 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
     }
 
     protected void baseLiquibaseInitialization() {
-        ServiceLocator sl = ServiceLocator.getInstance();
-        sl.setResourceAccessor(new ClassLoaderResourceAccessor(getClass().getClassLoader()));
-
-        if (!System.getProperties().containsKey("liquibase.scan.packages")) {
-            if (sl.getPackages().remove("liquibase.core")) {
-                sl.addPackageToScan("liquibase.core.xml");
-            }
-
-            if (sl.getPackages().remove("liquibase.parser")) {
-                sl.addPackageToScan("liquibase.parser.core.xml");
-            }
-
-            if (sl.getPackages().remove("liquibase.serializer")) {
-                sl.addPackageToScan("liquibase.serializer.core.xml");
-            }
-
-            sl.getPackages().remove("liquibase.ext");
-            sl.getPackages().remove("liquibase.sdk");
-
-            String lockPackageName = DummyLockService.class.getPackage().getName();
-            logger.debugf("Added package %s to liquibase", lockPackageName);
-            sl.addPackageToScan(lockPackageName);
+        // we need to initialize the scope using the right classloader, or else Liquibase won't be able to locate the extensions.
+        ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
+            Scope.getCurrentScope();
+        } finally {
+            Thread.currentThread().setContextClassLoader(currentClassLoader);
         }
 
-        LogFactory.setInstance(new LogWrapper());
-
-        // Adding PostgresPlus support to liquibase
-        DatabaseFactory.getInstance().register(new PostgresPlusDatabase());
-        // Adding newer version of MySQL/MariaDB support to liquibase
-        DatabaseFactory.getInstance().register(new UpdatedMySqlDatabase());
-        DatabaseFactory.getInstance().register(new UpdatedMariaDBDatabase());
-
-        // Adding CustomVarcharType for MySQL 8 and newer
-        DataTypeFactory.getInstance().register(MySQL8VarcharType.class);
-
-        // Change command for creating lock and drop DELETE lock record from it
-        SqlGeneratorFactory.getInstance().register(new CustomInsertLockRecordGenerator());
-
-        // Use "SELECT FOR UPDATE" for locking database
-        SqlGeneratorFactory.getInstance().register(new CustomLockDatabaseChangeLogGenerator());
-
-        ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
-
-        // Adding CustomCreateIndexChange for handling conditional indices creation
-        ChangeFactory.getInstance().register(CustomCreateIndexChange.class);
-
-        // Contains fix for https://liquibase.jira.com/browse/CORE-3141
-        SnapshotGeneratorFactory.getInstance().register(new CustomForeignKeySnapshotGenerator());
+        // using the initialized scope, create a child scope that sets the classloader and resource accessor so that any attempt
+        // by Liquibase to load a class (e.g. custom change) using the scope's classloader uses the correct classloader.
+        final Map<String, Object> scopeValues = new HashMap<>();
+        scopeValues.put(Scope.Attr.resourceAccessor.name(), new ClassLoaderResourceAccessor(this.getClass().getClassLoader()));
+        scopeValues.put(Scope.Attr.classLoader.name(), this.getClass().getClassLoader());
+        scopeValues.put(Scope.Attr.ui.name(), new LoggerUIService());
+        try {
+            Scope.enter(scopeValues);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize Liquibase: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -184,109 +141,4 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         return new Liquibase(changelogLocation, resourceAccessor, database);
     }
 
-    private static class LogWrapper extends LogFactory {
-
-        private static final liquibase.logging.Logger logger = new liquibase.logging.Logger() {
-            @Override
-            public void setName(String name) {
-            }
-
-            @Override
-            public void setLogLevel(String level) {
-            }
-
-            @Override
-            public void setLogLevel(LogLevel level) {
-            }
-
-            @Override
-            public void setLogLevel(String logLevel, String logFile) {
-            }
-
-            @Override
-            public void severe(String message) {
-                DefaultLiquibaseConnectionProvider.logger.error(message);
-            }
-
-            @Override
-            public void severe(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.error(message, e);
-            }
-
-            @Override
-            public void warning(String message) {
-                // Ignore this warning as cascaded drops doesn't work anyway with all DBs, which we need to support
-                if ("Database does not support drop with cascade".equals(message)) {
-                    DefaultLiquibaseConnectionProvider.logger.debug(message);
-                } else {
-                    DefaultLiquibaseConnectionProvider.logger.warn(message);
-                }
-            }
-
-            @Override
-            public void warning(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.warn(message, e);
-            }
-
-            @Override
-            public void info(String message) {
-                DefaultLiquibaseConnectionProvider.logger.debug(message);
-            }
-
-            @Override
-            public void info(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.debug(message, e);
-            }
-
-            @Override
-            public void debug(String message) {
-                if (DefaultLiquibaseConnectionProvider.logger.isTraceEnabled()) {
-                    DefaultLiquibaseConnectionProvider.logger.trace(message);
-                }
-            }
-
-            @Override
-            public LogLevel getLogLevel() {
-                if (DefaultLiquibaseConnectionProvider.logger.isTraceEnabled()) {
-                    return LogLevel.DEBUG;
-                } else if (DefaultLiquibaseConnectionProvider.logger.isDebugEnabled()) {
-                    return LogLevel.INFO;
-                } else {
-                    return LogLevel.WARNING;
-                }
-            }
-
-            @Override
-            public void debug(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.trace(message, e);
-            }
-
-            @Override
-            public void setChangeLog(DatabaseChangeLog databaseChangeLog) {
-            }
-
-            @Override
-            public void setChangeSet(ChangeSet changeSet) {
-            }
-
-            @Override
-            public int getPriority() {
-                return 0;
-            }
-
-            @Override
-            public void closeLogFile() {}
-        };
-
-        @Override
-        public liquibase.logging.Logger getLog(String name) {
-            return logger;
-        }
-
-        @Override
-        public liquibase.logging.Logger getLog() {
-            return logger;
-        }
-
-    }
 }

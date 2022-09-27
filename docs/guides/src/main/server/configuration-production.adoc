@@ -1,0 +1,54 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configuring Keycloak for production"
+summary="Learn how to make Keycloak ready for production."
+includedOptions="">
+
+A Keycloak production environment provides secure authentication and authorization for deployments that range from on-premise deployments that support a few thousand users to deployments that serve millions of users.
+
+This guide describes the general areas of configuration required for a production ready Keycloak environment. This information focuses on the general concepts instead of the actual implementation, which depends on your environment. The key aspects covered in this guide apply to all environments, whether it is containerized, on-premise, GitOps, or Ansible.
+
+== TLS for secure communication
+Keycloak continually exchanges sensitive data, which means that all communication to and from Keycloak requires a secure communication channel. To prevent several attack vectors, you enable HTTP over TLS, or HTTPS, for that channel.
+
+To configure secure communication channels for Keycloak, see the <@links.server id="enabletls"/> and <@links.server id="outgoinghttp"/> guides.
+
+== The hostname for Keycloak
+In a production environment, Keycloak instances usually run in a private network, but Keycloak needs to expose certain public facing endpoints to communicate with the applications to be secured.
+
+For details on the endpoint categories and instructions on how to configure the public hostname for them, see the <@links.server id="hostname"/> guide.
+
+== Reverse proxy in a distributed environment
+Apart from <<Setting the hostname for Keycloak>>, production environments usually include a reverse proxy / load balancer component. It separates and unifies access to the network used by your company or organization. For a Keycloak production environment, this component is recommended.
+
+For details on configuring proxy communication modes in Keycloak, see the <@links.server id="reverseproxy"/> guide. That guide also recommends which paths should be hidden from public access and which paths should be exposed so that Keycloak can secure your applications.
+
+== Production grade database
+The database used by Keycloak is crucial for the overall performance, availability, reliability and integrity of Keycloak. For details on how to configure a supported database, see the <@links.server id="db"/> guide. 
+
+== Support for Keycloak in a cluster
+To ensure that users can continue to log in when a Keycloak instance goes down, a typical production environment contains two or more Keycloak instances.
+
+Keycloak runs on top of JGroups and Infinispan, which provide a reliable, high-availability stack for a clustered scenario. When deployed to a cluster, the embedded Infinispan server communication should be secured. You secure this communication either by enabling authentication and encryption or by isolating the network used for cluster communication.
+
+To find out more about using multiple nodes, the different caches and an appropriate stack for your environment, see the <@links.server id="caching"/> guide.
+
+== Configure Keycloak Server with IPv6 or IPv4
+
+The system properties `java.net.preferIPv4Stack` and `java.net.preferIPv6Addresses` are used to configure the JVM for use with IPv4 or IPv6 addresses.
+
+By default, Keycloak is configured to prefer IPv4 addresses. In order to run with IPv6 addresses,
+you need to specify `java.net.preferIPv4Stack=false` (the JVM default) and `java.net.preferIPv6Addresses=true`.
+The latter ensures that any hostname to IP address conversions always return IPv6 address variants.
+
+These system properties are conveniently set by the `JAVA_OPTS_APPEND` environment variable. For example, to change the IP stack preference from its default of IPv4 to IPv6, set an environment variable as follows:
+
+[source, bash]
+----
+export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+----
+
+</@tmpl.guide>

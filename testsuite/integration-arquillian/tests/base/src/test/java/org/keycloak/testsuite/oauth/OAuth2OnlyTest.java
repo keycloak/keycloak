@@ -109,6 +109,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
         oauth.init(driver);
+        oauth.openid(false);
     }
 
 

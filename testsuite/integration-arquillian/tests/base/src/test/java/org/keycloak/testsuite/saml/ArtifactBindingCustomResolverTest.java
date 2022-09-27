@@ -3,7 +3,6 @@ package org.keycloak.testsuite.saml;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.authentication.CustomTestingSamlArtifactResolver;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -18,11 +17,9 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@AuthServerContainerExclude(value = {REMOTE}, details = "currently remote doesn't support the SetDefaultProvider annotation")
 @SetDefaultProvider(spi = "saml-artifact-resolver", providerId = "0005")
 public class ArtifactBindingCustomResolverTest extends ArtifactBindingTest {
 

@@ -18,24 +18,34 @@
 package org.keycloak.adapters;
 
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthSchemeProvider;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.client.config.AuthSchemes;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.ConnectionConfig;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.cookie.CookieSpecProvider;
+import org.apache.http.impl.auth.SPNegoSchemeFactory;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CookieSpecRegistries;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.cookie.DefaultCookieSpecProvider;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.representations.adapters.config.AdapterHttpClientConfig;
@@ -50,15 +60,15 @@ import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.URI;
 import java.security.KeyStore;
+import java.security.Principal;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.client.params.CookiePolicy;
 
 /**
  * Abstraction for creating HttpClients. Allows SSL configuration.
@@ -67,6 +77,7 @@ import org.apache.http.client.params.CookiePolicy;
  * @version $Revision: 1 $
  */
 public class HttpClientBuilder {
+
     public static enum HostnameVerificationPolicy {
         /**
          * Hostname verification is not done on the server's certificate
@@ -118,7 +129,8 @@ public class HttpClientBuilder {
     protected long establishConnectionTimeout = -1;
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
     protected HttpHost proxyHost;
-
+    private SPNegoSchemeFactory spNegoSchemeFactory;
+    private boolean useSpNego;
 
     /**
      * Socket inactivity timeout
@@ -240,6 +252,16 @@ public class HttpClientBuilder {
         }
     }
 
+    public HttpClientBuilder spNegoSchemeFactory(SPNegoSchemeFactory spnegoSchemeFactory) {
+        this.spNegoSchemeFactory = spnegoSchemeFactory;
+        return this;
+    }
+
+    public HttpClientBuilder useSPNego(boolean useSpnego) {
+        this.useSpNego = useSpnego;
+        return this;
+    }
+
     public HttpClient build() {
         X509HostnameVerifier verifier = null;
         if (this.verifier != null) verifier = new VerifierWrapper(this.verifier);
@@ -257,7 +279,7 @@ public class HttpClientBuilder {
             }
         }
         try {
-            SSLSocketFactory sslsf = null;
+            ConnectionSocketFactory sslsf;
             SSLContext theContext = sslContext;
             if (disableTrustManager) {
                 theContext = SSLContext.getInstance("SSL");
@@ -274,40 +296,85 @@ public class HttpClientBuilder {
                 tlsContext.init(null, null, null);
                 sslsf = new SniSSLSocketFactory(tlsContext, verifier);
             }
-            SchemeRegistry registry = new SchemeRegistry();
-            registry.register(
-                    new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
-            Scheme httpsScheme = new Scheme("https", 443, sslsf);
-            registry.register(httpsScheme);
-            ClientConnectionManager cm = null;
+
+            RegistryBuilder<ConnectionSocketFactory> sf = RegistryBuilder.create();
+
+            sf.register("http", PlainConnectionSocketFactory.getSocketFactory());
+            sf.register("https", sslsf);
+
+            HttpClientConnectionManager cm;
+
             if (connectionPoolSize > 0) {
-                ThreadSafeClientConnManager tcm = new ThreadSafeClientConnManager(registry, connectionTTL, connectionTTLUnit);
+                PoolingHttpClientConnectionManager tcm = new PoolingHttpClientConnectionManager(sf.build());
                 tcm.setMaxTotal(connectionPoolSize);
                 if (maxPooledPerRoute == 0) maxPooledPerRoute = connectionPoolSize;
                 tcm.setDefaultMaxPerRoute(maxPooledPerRoute);
                 cm = tcm;
 
             } else {
-                cm = new SingleClientConnManager(registry);
+                cm = new BasicHttpClientConnectionManager(sf.build());
             }
-            BasicHttpParams params = new BasicHttpParams();
-            params.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
+
+            SocketConfig.Builder socketConfig = SocketConfig.copy(SocketConfig.DEFAULT);
+            ConnectionConfig.Builder connConfig = ConnectionConfig.copy(ConnectionConfig.DEFAULT);
+            RequestConfig.Builder requestConfig = RequestConfig.copy(RequestConfig.DEFAULT);
 
             if (proxyHost != null) {
-                params.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxyHost);
+                requestConfig.setProxy(new HttpHost(proxyHost));
             }
 
             if (socketTimeout > -1) {
-                HttpConnectionParams.setSoTimeout(params, (int) socketTimeoutUnits.toMillis(socketTimeout));
+                requestConfig.setSocketTimeout((int) socketTimeoutUnits.toMillis(socketTimeout));
 
             }
             if (establishConnectionTimeout > -1) {
-                HttpConnectionParams.setConnectionTimeout(params, (int) establishConnectionTimeoutUnits.toMillis(establishConnectionTimeout));
+                requestConfig.setConnectTimeout((int) establishConnectionTimeoutUnits.toMillis(establishConnectionTimeout));
             }
-            DefaultHttpClient client = new DefaultHttpClient(cm, params);
+
+            Registry<CookieSpecProvider> cookieSpecs = CookieSpecRegistries.createDefaultBuilder()
+                    .register(CookieSpecs.DEFAULT, new DefaultCookieSpecProvider()).build();
+
+            if (useSpNego) {
+                requestConfig.setTargetPreferredAuthSchemes(Arrays.asList(AuthSchemes.SPNEGO));
+            }
+
+            org.apache.http.impl.client.HttpClientBuilder clientBuilder = org.apache.http.impl.client.HttpClientBuilder.create()
+                    .setDefaultSocketConfig(socketConfig.build())
+                    .setDefaultConnectionConfig(connConfig.build())
+                    .setDefaultRequestConfig(requestConfig.build())
+                    .setDefaultCookieSpecRegistry(cookieSpecs)
+                    .setConnectionManager(cm);
+
+            if (spNegoSchemeFactory != null) {
+                RegistryBuilder<AuthSchemeProvider> authSchemes = RegistryBuilder.create();
+
+                authSchemes.register(AuthSchemes.SPNEGO, spNegoSchemeFactory);
+
+                clientBuilder.setDefaultAuthSchemeRegistry(authSchemes.build());
+            }
+
+            if (useSpNego) {
+                Credentials fake = new Credentials() {
+
+                    @Override
+                    public String getPassword() {
+                        return null;
+                    }
+
+                    @Override
+                    public Principal getUserPrincipal() {
+                        return null;
+                    }
+
+                };
+
+                BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+                credentialsProvider.setCredentials(AuthScope.ANY, fake);
+                clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+            }
 
             if (disableCookieCache) {
-                client.setCookieStore(new CookieStore() {
+                clientBuilder.setDefaultCookieStore(new CookieStore() {
                     @Override
                     public void addCookie(Cookie cookie) {
                         //To change body of implemented methods use File | Settings | File Templates.
@@ -330,7 +397,7 @@ public class HttpClientBuilder {
                 });
 
             }
-            return client;
+            return clientBuilder.build();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

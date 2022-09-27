@@ -20,14 +20,10 @@ package org.keycloak.quarkus.runtime.integration.jaxrs;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.persistence.EntityManagerFactory;
 import javax.ws.rs.ApplicationPath;
-
+import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.quarkus.runtime.services.resources.QuarkusWelcomeResource;
 import org.keycloak.services.resources.WelcomeResource;
@@ -39,18 +35,23 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         return !WelcomeResource.class.isInstance(o);
     }
 
-    @Inject
-    Instance<EntityManagerFactory> entityManagerFactory;
-
     @Override
     protected void startup() {
-        try {
-            forceEntityManagerInitialization();
-            initializeKeycloakSessionFactory();
-            setupScheduledTasks(sessionFactory);
-        } catch (Throwable cause) {
-            QuarkusPlatform.exitOnError(cause);
+        QuarkusKeycloakSessionFactory instance = QuarkusKeycloakSessionFactory.getInstance();
+        sessionFactory = instance;
+        instance.init();
+        ExportImportManager exportImportManager = bootstrap();
+
+        if (exportImportManager.isRunExport()) {
+            exportImportManager.runExport();
         }
+
+        sessionFactory.publish(new PostMigrationEvent(sessionFactory));
+    }
+
+    @Override
+    protected void loadConfig() {
+        // no need to load config provider because we force quarkus impl
     }
 
     @Override
@@ -60,21 +61,7 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
                 .collect(Collectors.toSet());
 
         singletons.add(new QuarkusWelcomeResource());
-        singletons.add(new QuarkusWelcomeResource());
 
         return singletons;
-    }
-
-    private void initializeKeycloakSessionFactory() {
-        QuarkusKeycloakSessionFactory instance = QuarkusKeycloakSessionFactory.getInstance();
-        sessionFactory = instance;
-        instance.init();
-        sessionFactory.publish(new PostMigrationEvent());
-    }
-
-    private void forceEntityManagerInitialization() {
-        // also forces an initialization of the entity manager so that providers don't need to wait for any initialization logic
-        // when first creating an entity manager
-        entityManagerFactory.get().createEntityManager().close();
     }
 }

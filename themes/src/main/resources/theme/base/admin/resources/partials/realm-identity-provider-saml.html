@@ -141,6 +141,13 @@
                 <kc-tooltip>{{:: 'identity-provider.saml.entity-id.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="idpEntityId">{{:: 'identity-provider.saml.idp-entity-id' | translate}}</label>
+                <div class="col-md-6">
+                    <input kc-no-reserved-chars class="form-control" id="idpEntityId" type="text" ng-model="identityProvider.config.idpEntityId">
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.saml.idp-entity-id.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="singleSignOnServiceUrl"><span class="required">*</span> {{:: 'single-signon-service-url' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="singleSignOnServiceUrl" type="text" ng-model="identityProvider.config.singleSignOnServiceUrl" required>

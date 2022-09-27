@@ -56,6 +56,7 @@ import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpoi
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
@@ -103,13 +104,15 @@ public class TestingOIDCEndpointsApplicationResource {
     private final TestApplicationResourceProviderFactory.OIDCClientData clientData;
     private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
     private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
-
+    private final ConcurrentMap<String, String> intentClientBindings;
 
     public TestingOIDCEndpointsApplicationResource(TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
-            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests, ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications) {
+            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests, ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications,
+            ConcurrentMap<String, String> intentClientBindings) {
         this.clientData = oidcClientData;
         this.authenticationChannelRequests = authenticationChannelRequests;
         this.cibaClientNotifications = cibaClientNotifications;
+        this.intentClientBindings = intentClientBindings;
     }
 
     @GET
@@ -727,5 +730,28 @@ public class TestingOIDCEndpointsApplicationResource {
             request = new ClientNotificationEndpointRequest();
         }
         return request;
+    }
+
+    @GET
+    @Path("/bind-intent-with-client")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response bindIntentWithClient(@QueryParam("intentId") String intentId, @QueryParam("clientId") String clientId) {
+        intentClientBindings.put(intentId, clientId);
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/check-intent-client-bound")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public IntentClientBindCheckExecutor.IntentBindCheckResponse checkIntentClientBound(IntentClientBindCheckExecutor.IntentBindCheckRequest request) {
+        IntentClientBindCheckExecutor.IntentBindCheckResponse response = new IntentClientBindCheckExecutor.IntentBindCheckResponse();
+        response.setIsBound(Boolean.FALSE);
+        if (intentClientBindings.containsKey(request.getIntentId()) && intentClientBindings.get(request.getIntentId()).equals(request.getClientId())) {
+            response.setIsBound(Boolean.TRUE);
+        }
+        return response;
     }
 }

@@ -19,6 +19,8 @@ package org.keycloak;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
@@ -217,5 +219,48 @@ public class JsonParserTest {
         Assert.assertNull(configRep.getConfigAsMap().get("not-existing-option"));
     }
 
+    @Test
+    public void testReadClaimsParameter() throws Exception {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("sample-claims.json");
+        ClaimsRepresentation claimsRep = JsonSerialization.readValue(is, ClaimsRepresentation.class);
+
+        Assert.assertTrue(claimsRep.isPresent("auth_time", ClaimsRepresentation.ClaimContext.ID_TOKEN));
+        Assert.assertFalse(claimsRep.isPresent("auth_time", ClaimsRepresentation.ClaimContext.USERINFO));
+
+        Assert.assertFalse(claimsRep.isPresentAsNullClaim("auth_time", ClaimsRepresentation.ClaimContext.ID_TOKEN));
+        Assert.assertTrue(claimsRep.isPresentAsNullClaim("nickname", ClaimsRepresentation.ClaimContext.USERINFO));
+        Assert.assertNull(claimsRep.getClaimValue("nickname", ClaimsRepresentation.ClaimContext.USERINFO, String.class));
+
+        ClaimsRepresentation.ClaimValue<String> email = claimsRep.getClaimValue("email", ClaimsRepresentation.ClaimContext.USERINFO, String.class);
+        assertClaimValue(email, true, null);
+
+        ClaimsRepresentation.ClaimValue<Boolean> emailVerified = claimsRep.getClaimValue("email_verified", ClaimsRepresentation.ClaimContext.USERINFO, Boolean.class);
+        assertClaimValue(emailVerified, true, null);
+        Assert.assertTrue(emailVerified.isEssential());
+
+        emailVerified = claimsRep.getClaimValue("email_verified", ClaimsRepresentation.ClaimContext.ID_TOKEN, Boolean.class);
+        assertClaimValue(emailVerified, false, true);
+        Assert.assertFalse(emailVerified.isEssential());
+
+        ClaimsRepresentation.ClaimValue<String> sub = claimsRep.getClaimValue("sub", ClaimsRepresentation.ClaimContext.ID_TOKEN, String.class);
+        assertClaimValue(sub, null, "248289761001");
+        Assert.assertFalse(sub.isEssential());
+
+        ClaimsRepresentation.ClaimValue<String> acr = claimsRep.getClaimValue("acr", ClaimsRepresentation.ClaimContext.ID_TOKEN, String.class);
+        assertClaimValue(acr, null, null, "urn:mace:incommon:iap:silver", "urn:mace:incommon:iap:gold");
+    }
+
+    private <T> void assertClaimValue(ClaimsRepresentation.ClaimValue<T> claimVal, Boolean expectedEssential, T expectedValue, T... expectedValues) {
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(expectedEssential, claimVal.getEssential()));
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(expectedValue, claimVal.getValue()));
+
+        if (expectedValues == null) {
+            Assert.assertNull(claimVal.getValues());
+        } else {
+            for (int i = 0; i<expectedValues.length ; i++) {
+                Assert.assertEquals(expectedValues[i], claimVal.getValues().get(i));
+            }
+        }
+    }
 
 }
