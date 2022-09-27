@@ -1,161 +1,38 @@
+/* Patternfly CSS places a "bg-login.jpg" as the background on this ".login-pf" class.
+   This clashes with the "keycloak-bg.png' background defined on the body below.
+   Therefore the Patternfly background must be set to none. */
+.login-pf {
+    background: none;
+}
+
 .login-pf body {
     background: url("../img/keycloak-bg.png") no-repeat center center fixed;
     background-size: cover;
     height: 100%;
 }
 
-/*IE compatibility*/
-.pf-c-form-control {
-    font-size: 14px;
-    font-size: var(--pf-global--FontSize--sm);
-    border-width: 1px;
-    border-width: var(--pf-global--BorderWidth--sm);;
-    border-color: #EDEDED #EDEDED #8A8D90 #EDEDED;
-    border-color: var(--pf-global--BorderColor--300) var(--pf-global--BorderColor--300) var(--pf-global--BorderColor--200) var(--pf-global--BorderColor--300);
-    background-color: #FFFFFF;
-    background-color: var(--pf-global--BackgroundColor--100);
-    height: 36px;
-    height: calc(var(--pf-c-form-control--FontSize) * var(--pf-c-form-control--LineHeight) + var(--pf-c-form-control--BorderWidth) * 2 + var(--pf-c-form-control--PaddingTop) + var(--pf-c-form-control--PaddingBottom));
-    padding: 5px 0.5rem;
-    padding: var(--pf-c-form-control--PaddingTop) var(--pf-c-form-control--PaddingRight) var(--pf-c-form-control--PaddingBottom) var(--pf-c-form-control--PaddingLeft);
-}
-
-.pf-c-form-control:hover, .pf-c-form-control:focus {
-    border-bottom-color: #0066CC;
-    border-bottom-color: var(--pf-global--primary-color--100);
-    border-bottom-width: 2px;
-    border-bottom-width: var(--pf-global--BorderWidth--md);
-}
-
-.pf-c-form-control[aria-invalid="true"] {
-    border-bottom-color: #C9190B;
-    border-bottom-color: var(--pf-global--danger-color--100);
-    border-bottom-width: 2px;
-    border-bottom-width: var(--pf-global--BorderWidth--md);
-}
-
-.pf-c-alert.pf-m-inline {
-    margin-bottom: 0.5rem; /* default - IE compatibility */
-    margin-bottom: var(--pf-global--spacer--sm);
-    padding: 0.25rem;
-    padding: var(--pf-global--spacer--xs);
-    border: solid #ededed;
-    border: solid var(--pf-global--BorderColor--300);
-    border-width: 1px;
-    border-width: var(--pf-c-alert--m-inline--BorderTopWidth) var(--pf-c-alert--m-inline--BorderRightWidth) var(--pf-c-alert--m-inline--BorderBottomWidth) var(--pf-c-alert--m-inline--BorderLeftWidth);
-    display: -ms-flexbox;
-    display: grid;
-    -ms-grid-columns: max-content 1fr max-content;
-    grid-template-columns:max-content 1fr max-content;
-    grid-template-columns: var(--pf-c-alert--grid-template-columns);
-    grid-template-rows: 1fr auto;
-    grid-template-rows: var(--pf-c-alert--grid-template-rows);
-}
-
-.pf-c-alert.pf-m-inline::before {
-    position: absolute;
-    top: -1px;
-    top: var(--pf-c-alert--m-inline--before--Top);
-    bottom: -1px;
-    bottom: var(--pf-c-alert--m-inline--before--Bottom);
-    left: 0;
-    width: 3px;
-    width: var(--pf-c-alert--m-inline--before--Width);
-    content: "";
-    background-color: #FFFFFF;
-    background-color: var(--pf-global--BackgroundColor--100);
-}
-
-.pf-c-alert.pf-m-inline.pf-m-success::before {
-    background-color: #92D400;
-    background-color: var(--pf-global--success-color--100);
-}
-
-.pf-c-alert.pf-m-inline.pf-m-danger::before {
-    background-color: #C9190B;
-    background-color: var(--pf-global--danger-color--100);
-}
-
-.pf-c-alert.pf-m-inline.pf-m-warning::before {
-    background-color: #F0AB00;
-    background-color: var(--pf-global--warning-color--100);
-}
-
-.pf-c-alert.pf-m-inline .pf-c-alert__icon {
-    padding: 1rem 0.5rem 1rem 1rem;
-    padding: var(--pf-c-alert--m-inline__icon--PaddingTop) var(--pf-c-alert--m-inline__icon--PaddingRight) var(--pf-c-alert--m-inline__icon--PaddingBottom) var(--pf-c-alert--m-inline__icon--PaddingLeft);
-    font-size: 16px;
-    font-size: var(--pf-c-alert--m-inline__icon--FontSize);
-}
-
-.pf-c-alert.pf-m-success .pf-c-alert__icon {
-    color: #92D400;
-    color: var(--pf-global--success-color--100);
-}
-
-.pf-c-alert.pf-m-success .pf-c-alert__title {
-    color: #486B00;
-    color: var(--pf-global--success-color--200);
-}
-
-.pf-c-alert.pf-m-danger .pf-c-alert__icon {
-    color: #C9190B;
-    color: var(--pf-global--danger-color--100);
-}
-
-.pf-c-alert.pf-m-danger .pf-c-alert__title {
-    color: #A30000;
-    color: var(--pf-global--danger-color--200);
-}
-
-.pf-c-alert.pf-m-warning .pf-c-alert__icon {
-    color: #F0AB00;
-    color: var(--pf-global--warning-color--100);
-}
-
-.pf-c-alert.pf-m-warning .pf-c-alert__title {
-    color: #795600;
-    color: var(--pf-global--warning-color--200);
+textarea.pf-c-form-control {
+	height: auto;
 }
 
 .pf-c-alert__title {
-    font-size: 14px; /* default - IE compatibility */
-    font-size: var(--pf-global--FontSize--sm);
-    padding: 5px 8px;
-    padding: var(--pf-c-alert__title--PaddingTop) var(--pf-c-alert__title--PaddingRight) var(--pf-c-alert__title--PaddingBottom) var(--pf-c-alert__title--PaddingLeft);
+    font-size: var(--pf-global--FontSize--xs);
 }
 
-.pf-c-button{
-    padding:0.375rem 1rem;
-    padding: var(--pf-global--spacer--form-element) var(--pf-global--spacer--md);
+p.instruction {
+    margin: 5px 0;
 }
 
-/* default - IE compatibility */
-.pf-m-primary {
-    color: #FFFFFF;
-    background-color: #0066CC;
-    background-color: var(--pf-global--primary-color--100);
-}
-
-/* default - IE compatibility */
-.pf-m-primary:hover {
-    background-color: #004080;
-    background-color: var(--pf-global--primary-color--200);
-}
-
-/* default - IE compatibility */
 .pf-c-button.pf-m-control {
-    border: solid 1px;
     border: solid var(--pf-global--BorderWidth--sm);
     border-color: rgba(230, 230, 230, 0.5);
 }
-/*End of IE compatibility*/
+
 h1#kc-page-title {
     margin-top: 10px;
 }
 
 #kc-locale ul {
-    background-color: #FFF;
     background-color: var(--pf-global--BackgroundColor--100);
     display: none;
     top: 20px;
@@ -163,23 +40,22 @@ h1#kc-page-title {
     padding: 0;
 }
 
-#kc-locale:hover ul {
-    display: block;
+#kc-locale-dropdown{
+    display: inline-block;
 }
 
-/* IE compatibility */
+#kc-locale-dropdown:hover ul {
+    display:block;
+}
+
 #kc-locale-dropdown a {
-    color: #6A6E73;
     color: var(--pf-global--Color--200);
     text-align: right;
-    font-size: 14px;
     font-size: var(--pf-global--FontSize--sm);
 }
 
-/* IE compatibility */
 a#kc-current-locale-link::after {
     content: "\2c5";
-    margin-left: 4px;
     margin-left: var(--pf-global--spacer--xs)
 }
 
@@ -193,14 +69,6 @@ a#kc-current-locale-link::after {
 
 #kc-logo {
     width: 100%;
-}
-
-#kc-logo-wrapper {
-    background-image: url(../img/keycloak-logo-2.png);
-    background-repeat: no-repeat;
-    height: 63px;
-    width: 300px;
-    margin: 62px auto 0;
 }
 
 div.kc-logo-text {
@@ -250,6 +118,35 @@ div.kc-logo-text span {
     padding-top: 8px;
 }
 
+#kc-form-webauthn .select-auth-box-parent {
+    pointer-events: none;
+}
+
+#kc-form-webauthn .select-auth-box-desc {
+    color: var(--pf-global--palette--black-600);
+}
+
+#kc-form-webauthn .select-auth-box-headline {
+    color: var(--pf-global--Color--300);
+}
+
+#kc-form-webauthn .select-auth-box-icon {
+    flex: 0 0 3em;
+}
+
+#kc-form-webauthn .select-auth-box-icon-properties {
+    margin-top: 10px;
+    font-size: 1.8em;
+}
+
+#kc-form-webauthn .select-auth-box-icon-properties.unknown-transport-class {
+    margin-top: 3px;
+}
+
+#kc-form-webauthn .pf-l-stack__item {
+    margin: -1px 0;
+}
+
 #kc-content-wrapper {
     margin-top: 20px;
 }
@@ -294,7 +191,6 @@ div.kc-logo-text span {
 }
 
 .required {
-    color: #A30000; /* default - IE compatibility */
     color: var(--pf-global--danger-color--200);
 }
 
@@ -365,12 +261,10 @@ ul#kc-totp-supported-apps {
 }
 
 .kc-social-gray {
-    color: #737679; /* default - IE compatibility */
     color: var(--pf-global--Color--200);
 }
 
 .kc-social-item {
-    margin-bottom: 0.5rem; /* default - IE compatibility */
     margin-bottom: var(--pf-global--spacer--sm);
     font-size: 15px;
     text-align: center;
@@ -513,14 +407,6 @@ ul#kc-totp-supported-apps {
         text-align: right;
         z-index: 9999;
     }
-
-    #kc-logo-wrapper {
-        background-size: 100px 21px;
-        height: 21px;
-        width: 100px;
-        margin: 20px 0 0 20px;
-    }
-
 }
 
 @media (min-height: 646px) {
@@ -550,32 +436,6 @@ ul#kc-totp-supported-apps {
     max-width: 360px;
     width: 40%;
 }
-
-/* Internet Explorer 11 compatibility workaround for select-authenticator screen */
-@media all and (-ms-high-contrast: none),
-(-ms-high-contrast: active) {
-    .select-auth-box-parent {
-        border-top: 1px solid #f0f0f0;
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-        cursor: pointer;
-    }
-
-    .select-auth-box-headline {
-        font-size: 16px;
-        color: #06c;
-        font-weight: bold;
-    }
-
-    .select-auth-box-desc {
-        font-size: 14px;
-    }
-
-    .pf-l-stack {
-        flex-basis: 100%;
-    }
-}
-/* End of IE11 workaround for select-authenticator screen */
 
 .select-auth-box-arrow{
     display: flex;
@@ -616,13 +476,18 @@ ul#kc-totp-supported-apps {
     font-size: var(--pf-global--FontSize--sm);
 }
 
+.select-auth-box-paragraph {
+    text-align: center;
+    font-size: var(--pf-global--FontSize--md);
+    margin-bottom: 5px;
+}
+
 .card-pf {
     margin: 0 auto;
     box-shadow: var(--pf-global--BoxShadow--lg);
     padding: 0 20px;
     max-width: 500px;
     border-top: 4px solid;
-    border-color: #0066CC; /* default - IE compatibility */
     border-color: var(--pf-global--primary-color--100);
 }
 
@@ -675,7 +540,8 @@ ul#kc-totp-supported-apps {
 
 #kc-form-login div.form-group:last-of-type,
 #kc-register-form div.form-group:last-of-type,
-#kc-update-profile-form div.form-group:last-of-type {
+#kc-update-profile-form div.form-group:last-of-type,
+#kc-update-email-form div.form-group:last-of-type{
     margin-bottom: 0px;
 }
 
@@ -686,3 +552,45 @@ ul#kc-totp-supported-apps {
 #kc-back {
     margin-top: 5px;
 }
+
+/* Recovery codes */
+.kc-recovery-codes-warning {
+    margin-bottom: 32px;
+}
+.kc-recovery-codes-warning .pf-c-alert__description p {
+    font-size: 0.875rem;
+}
+.kc-recovery-codes-list {
+    list-style: none;
+    columns: 2;
+    margin: 16px 0;
+    padding: 16px 16px 8px 16px;
+    border: 1px solid #D2D2D2;
+}
+.kc-recovery-codes-list li {
+    margin-bottom: 8px;
+    font-size: 11px;
+}
+.kc-recovery-codes-list li span {
+    color: #6A6E73;
+    width: 16px;
+    text-align: right;
+    display: inline-block;
+    margin-right: 1px;
+}
+
+.kc-recovery-codes-actions {
+    margin-bottom: 24px;
+}
+.kc-recovery-codes-actions button {
+    padding-left: 0;
+}
+.kc-recovery-codes-actions button i {
+    margin-right: 8px;
+}
+
+.kc-recovery-codes-confirmation {
+    align-items: baseline;
+    margin-bottom: 16px;
+}
+/* End Recovery codes */

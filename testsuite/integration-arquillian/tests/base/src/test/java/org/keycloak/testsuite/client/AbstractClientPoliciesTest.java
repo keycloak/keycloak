@@ -17,6 +17,35 @@
 
 package org.keycloak.testsuite.client;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.core.Response;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +61,6 @@ import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -42,18 +70,18 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -116,34 +144,6 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -176,19 +176,16 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected static final String FAPI1_BASELINE_PROFILE_NAME = "fapi-1-baseline";
     protected static final String FAPI1_ADVANCED_PROFILE_NAME = "fapi-1-advanced";
+    protected static final String FAPI_CIBA_PROFILE_NAME = "fapi-ciba";
 
     protected static final String ERR_MSG_MISSING_NONCE = "Missing parameter: nonce";
     protected static final String ERR_MSG_MISSING_STATE = "Missing parameter: state";
     protected static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
+    protected static final String ERR_MSG_REQ_NOT_ALLOWED = "request not allowed";
 
     protected ClientRegistration reg;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeClass
-    public static void beforeClientPoliciesTest() {
-        BouncyIntegration.init();
-    }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -291,7 +288,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
+        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
 
         // each profile - fapi-1-baseline
         ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);
@@ -371,7 +368,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Utilities for Request Object retrieved by reference from jwks_uri
 
-    protected KeyPair setupJwks(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
+    protected KeyPair setupJwksUrl(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
         // generate and register client keypair
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.generateKeys(algorithm);
@@ -402,31 +399,31 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     private PrivateKey decodePrivateKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(keyAlg);
         return kf.generatePrivate(spec);
     }
 
     private PublicKey decodePublicKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(keyAlg);
         return kf.generatePublic(spec);
     }
 
     private String getKeyAlgorithmFromJwaAlgorithm(String jwaAlgorithm) {
         String keyAlg = null;
         switch (jwaAlgorithm) {
-            case org.keycloak.crypto.Algorithm.RS256:
-            case org.keycloak.crypto.Algorithm.RS384:
-            case org.keycloak.crypto.Algorithm.RS512:
-            case org.keycloak.crypto.Algorithm.PS256:
-            case org.keycloak.crypto.Algorithm.PS384:
-            case org.keycloak.crypto.Algorithm.PS512:
+            case Algorithm.RS256:
+            case Algorithm.RS384:
+            case Algorithm.RS512:
+            case Algorithm.PS256:
+            case Algorithm.PS384:
+            case Algorithm.PS512:
                 keyAlg = KeyType.RSA;
                 break;
-            case org.keycloak.crypto.Algorithm.ES256:
-            case org.keycloak.crypto.Algorithm.ES384:
-            case org.keycloak.crypto.Algorithm.ES512:
+            case Algorithm.ES256:
+            case Algorithm.ES384:
+            case Algorithm.ES512:
                 keyAlg = KeyType.EC;
                 break;
             default :
@@ -543,16 +540,17 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         requestObject.setResponseType("code");
         requestObject.setRedirectUriParam(oauth.getRedirectUri());
         requestObject.setScope("openid");
-        String scope = KeycloakModelUtils.generateId();
-        oauth.stateParamHardcoded(scope);
-        requestObject.setState(scope);
+        String state = KeycloakModelUtils.generateId();
+        oauth.stateParamHardcoded(state);
+        requestObject.setState(state);
         requestObject.setMax_age(Integer.valueOf(600));
         requestObject.setOtherClaims("custom_claim_ein", "rot");
         requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
+        requestObject.setNonce(KeycloakModelUtils.generateId());
         return requestObject;
     }
 
-    protected void registerRequestObject(AuthorizationEndpointRequestObject requestObject, String clientId, Algorithm sigAlg, boolean isUseRequestUri) throws URISyntaxException, IOException {
+    protected void registerRequestObject(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri) throws URISyntaxException, IOException {
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // Set required signature for request_uri
@@ -568,12 +566,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // generate and register client keypair
-        oidcClientEndpointsResource.generateKeys(sigAlg.name());
+        oidcClientEndpointsResource.generateKeys(sigAlg);
 
         // register request object
         byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
         String encodedRequestObject = Base64Url.encode(contentBytes);
-        oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg.name());
+        oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
 
         if (isUseRequestUri) {
             oauth.request(null);
@@ -634,6 +632,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         clientRep.setPublicClient(Boolean.FALSE);
         clientRep.setServiceAccountsEnabled(Boolean.TRUE);
         clientRep.setRedirectUris(Collections.singletonList(ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPostLogoutRedirectUris(Collections.singletonList("+"));
         op.accept(clientRep);
         Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
         if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
@@ -1138,7 +1137,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void assertExpectedClientScopesCondition(String type, List<String> scopes, ClientPolicyRepresentation policyRep) {
         ClientScopesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientScopesConditionFactory.PROVIDER_ID,  ClientScopesCondition.Configuration.class);
         Assert.assertEquals(cfg.getType(), type);
-        Assert.assertEquals(cfg.getScope(), scopes);
+        Assert.assertEquals(cfg.getScopes(), scopes);
     }
 
     protected void assertExpectedClientUpdateContextCondition(List<String> updateClientSources, ClientPolicyRepresentation policyRep) {

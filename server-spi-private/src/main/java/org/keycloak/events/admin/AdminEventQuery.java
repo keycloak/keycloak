@@ -38,7 +38,7 @@ public interface AdminEventQuery {
     /**
      * Search by authentication realm
      *
-     * @param realmId realm name
+     * @param realmId realm id
      * @return Associated <code>AdminEventQuery</code> for method chaining
      */
     AdminEventQuery authRealm(String realmId);
@@ -126,6 +126,20 @@ public interface AdminEventQuery {
      * @return <code>this</code> for method chaining
      */
     AdminEventQuery maxResults(int max);
+
+    /**
+     * Order the result by descending time
+     *
+     * @return <code>this</code> for method chaining
+     */
+    AdminEventQuery orderByDescTime();
+
+    /**
+     * Order the result by ascending time
+     *
+     * @return <code>this</code> for method chaining
+     */
+    AdminEventQuery orderByAscTime();
 
     /**
      * Executes the query and returns the results

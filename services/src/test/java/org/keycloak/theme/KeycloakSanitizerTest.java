@@ -30,11 +30,11 @@ import static org.junit.Assert.fail;
  * @author Stan Silvert
  */
 public class KeycloakSanitizerTest {
-    private KeycloakSanitizerMethod kcEscape = new KeycloakSanitizerMethod();
+    private final KeycloakSanitizerMethod kcEscape = new KeycloakSanitizerMethod();
     
     @Test
     public void testEscapes() throws Exception {
-        List<String> html = new ArrayList();
+        List<String> html = new ArrayList<>();
 
         html.add("<div class=\"kc-logo-text\"><script>alert('foo');</script><span>Keycloak</span></div>");
         String expectedResult = "<div class=\"kc-logo-text\"><span>Keycloak</span></div>";
@@ -59,7 +59,27 @@ public class KeycloakSanitizerTest {
         expectedResult = "";
         assertResult(expectedResult, html);
     }
-    
+
+    @Test
+    public void testUrls() throws Exception {
+        List<String> html = new ArrayList<>();
+
+        html.add("<p><a href='https://localhost'>link</a></p>");
+        assertResult("<p><a href=\"https://localhost\" rel=\"nofollow\">link</a></p>", html);
+
+        html.set(0, "<p><a href=\"\">link</a></p>");
+        assertResult("<p>link</p>", html);
+
+        html.set(0, "<p><a href=\"javascript:alert('hello!');\">link</a></p>");
+        assertResult("<p>link</p>", html);
+
+        html.set(0, "<p><a href=\"https://localhost?key=123&msg=abc\">link</a></p>");
+        assertResult("<p><a href=\"https://localhost?key=123&msg=abc\" rel=\"nofollow\">link</a></p>", html);
+
+        html.set(0, "<p><a href='https://localhost?key=123&msg=abc'>link1</a><a href=\"https://localhost?key=abc&msg=123\">link2</a></p>");
+        assertResult("<p><a href=\"https://localhost?key=123&msg=abc\" rel=\"nofollow\">link1</a><a href=\"https://localhost?key=abc&msg=123\" rel=\"nofollow\">link2</a></p>", html);
+    }
+
     private void assertResult(String expectedResult, List<String> html) throws Exception {
         String result = kcEscape.exec(html).toString();
         assertEquals(expectedResult, result);

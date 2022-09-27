@@ -271,12 +271,26 @@
                 </div>
                 <kc-tooltip>{{:: 'force-post-binding.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml' || protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="frontchannelLogout">{{:: 'front-channel-logout' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="clientEdit.frontchannelLogout" name="frontchannelLogout" id="frontchannelLogout" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'front-channel-logout.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect' && clientEdit.frontchannelLogout">
+                <label class="col-md-2 control-label" for="frontchannelLogoutUrl">{{:: 'front-channel-logout-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="frontchannelLogoutUrl" id="frontchannelLogoutUrl" data-ng-model="clientEdit.attributes['frontchannel.logout.url']">
+                </div>
+                <kc-tooltip>{{:: 'front-channel-logout-url.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && clientEdit.frontchannelLogout">
+                <label class="col-md-2 control-label" for="frontchannelLogoutSessionRequired">{{:: 'front-channel-logout-session-required' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="frontchannelLogoutSessionRequired" name="frontchannelLogoutSessionRequired" id="frontchannelLogoutSessionRequired" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'front-channel-logout-session-required.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlForceNameIdFormat">{{:: 'force-name-id-format' | translate}}</label>
@@ -284,6 +298,13 @@
                     <input ng-model="samlForceNameIdFormat" ng-click="switchChange()" name="samlForceNameIdFormat" id="samlForceNameIdFormat" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'force-name-id-format.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="samlAllowECPFlow">{{:: 'allow-ecp-flow' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="samlAllowECPFlow" ng-click="switchChange()" name="samlAllowECPFlow" id="samlAllowECPFlow" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'allow-ecp-flow.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlNameIdFormat">{{:: 'name-id-format' | translate}}</label>
@@ -329,6 +350,28 @@
                 <kc-tooltip>{{:: 'valid-redirect-uris.tooltip' | translate}}</kc-tooltip>
             </div>
 
+            <div class="form-group clearfix block" data-ng-hide="clientEdit.bearerOnly || (!clientEdit.standardFlowEnabled && !clientEdit.implicitFlowEnabled) || protocol == 'docker-v2'">
+                <label class="col-md-2 control-label" for="newPostLogoutRedirectUri">{{:: 'valid-post-logout-redirect-uris' | translate}}</label>
+
+                <div class="col-sm-6">
+                    <div class="input-group" ng-repeat="(i, postLogoutRedirectUri) in postLogoutRedirectUris track by $index">
+                        <input class="form-control" ng-model="postLogoutRedirectUris[i]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deletePostLogoutRedirectUri($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newPostLogoutRedirectUri" id="newPostLogoutRedirectUri">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newPostLogoutRedirectUri.length > 0 && addPostLogoutRedirectUri()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <kc-tooltip>{{:: 'valid-post-logout-redirect-uris.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol != 'docker-v2'">
                 <label class="col-md-2 control-label" for="baseUrl">{{:: 'base-url' | translate}}</label>
                 <div class="col-sm-6">
@@ -362,6 +405,27 @@
                 </div>
                 <kc-tooltip>{{:: 'idp-sso-url-ref.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group" data-ng-show="protocol == 'saml' || protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="logoUri">{{:: 'logo-uri' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="logoUri" id="logoUri" data-ng-model="clientEdit.attributes.logoUri">
+                </div>
+                <kc-tooltip>{{:: 'logo-uri.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'saml' || protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="policyUri">{{:: 'policy-uri' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="policyUri" id="policyUri" data-ng-model="clientEdit.attributes.policyUri">
+                </div>
+                <kc-tooltip>{{:: 'policy-uri.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'saml' || protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="tosUri">{{:: 'tos-uri' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="tosUri" id="tosUri" data-ng-model="clientEdit.attributes.tosUri">
+                </div>
+                <kc-tooltip>{{:: 'tos-uri.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="idpInitiatedRelayState">{{:: 'idp-sso-relay-state' | translate}}</label>
                 <div class="col-sm-6">
@@ -390,21 +454,21 @@
 
                 <kc-tooltip>{{:: 'web-origins.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+            <div class="form-group" data-ng-show="protocol == 'openid-connect' && !clientEdit.bearerOnly">
                 <label class="col-md-2 control-label" for="backchannelLogoutUrl">{{:: 'backchannel-logout-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="backchannelLogoutUrl" id="backchannelLogoutUrl" data-ng-model="clientEdit.attributes['backchannel.logout.url']">
                 </div>
                 <kc-tooltip>{{:: 'backchannel-logout-url.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && !clientEdit.bearerOnly">
                 <label class="col-md-2 control-label" for="backchannelLogoutSessionRequired">{{:: 'backchannel-logout-session-required' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="backchannelLogoutSessionRequired" name="backchannelLogoutSessionRequired" id="backchannelLogoutSessionRequired" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'backchannel-logout-session-required.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && !clientEdit.bearerOnly">
                 <label class="col-md-2 control-label" for="backchannelLogoutRevokeOfflineSessions">{{:: 'backchannel-logout-revoke-offline-sessions' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="backchannelLogoutRevokeOfflineSessions" name="backchannelLogoutRevokeOfflineSessions" id="backchannelLogoutRevokeOfflineSessions" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
@@ -544,6 +608,35 @@
                 </div>
                 <kc-tooltip>{{:: 'user-info-signed-response-alg.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="userInfoEncryptedResponseAlg">{{:: 'user-info-encrypted-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="userInfoEncryptedResponseAlg"
+                                ng-change="changeUserInfoEncryptedResponseAlg()"
+                                ng-model="userInfoEncryptedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'user-info-encrypted-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="userInfoEncryptedResponseEnc">{{:: 'user-info-encrypted-response-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="userInfoEncryptedResponseEnc"
+                                ng-change="changeUserInfoEncryptedResponseEnc()"
+                                ng-model="userInfoEncryptedResponseEnc">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'user-info-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="requestObjectSignatureAlg">{{:: 'request-object-signature-alg' | translate}}</label>
                 <div class="col-sm-6">
@@ -560,6 +653,34 @@
                 <kc-tooltip>{{:: 'request-object-signature-alg.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requestObjectEncryptionAlg">{{:: 'request-object-encryption-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="requestObjectEncryptionAlg"
+                                ng-change="changeRequestObjectEncryptionAlg()"
+                                ng-model="requestObjectEncryptionAlg">
+                            <option value="any">any</option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'request-object-encryption-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requestObjectEncryptionEnc">{{:: 'request-object-encryption-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="requestObjectEncryptionEnc"
+                                ng-change="changeRequestObjectEncryptionEnc()"
+                                ng-model="requestObjectEncryptionEnc">
+                            <option value="any">any</option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'request-object-encryption-enc.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="changeRequestObjectRequired">{{:: 'request-object-required' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
@@ -571,6 +692,41 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'request-object-required.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && !clientEdit.publicClient && !clientEdit.bearerOnly && serverInfo.featureEnabled('CIBA') && oidcCibaGrantEnabled == true">
+                <label class="col-md-2 control-label" for="cibaBackchannelTokenDeliveryMode">{{:: 'ciba-backchannel-token-delivery-mode' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="cibaBackchannelTokenDeliveryMode"
+                                ng-change="changeCibaBackchannelTokenDeliveryMode()"
+                                ng-model="cibaBackchannelTokenDeliveryMode">
+                            <option value="poll">poll</option>
+                            <option value="ping">ping</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'ciba-backchannel-token-delivery-mode.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && !clientEdit.publicClient && !clientEdit.bearerOnly && serverInfo.featureEnabled('CIBA') && oidcCibaGrantEnabled == true && cibaBackchannelTokenDeliveryMode == 'ping'">
+                <label class="col-md-2 control-label" for="cibaBackchannelClientNotificationEndpoint">{{:: 'ciba-backchannel-client-notification-endpoint' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="clientEdit.attributes['ciba.backchannel.client.notification.endpoint']" class="form-control" type="text" name="cibaBackchannelClientNotificationEndpoint" id="cibaBackchannelClientNotificationEndpoint" />
+                </div>
+                <kc-tooltip>{{:: 'ciba-backchannel-client-notification-endpoint.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && !clientEdit.publicClient && !clientEdit.bearerOnly && serverInfo.featureEnabled('CIBA') && oidcCibaGrantEnabled == true">
+                <label class="col-md-2 control-label" for="cibaBackchannelAuthRequestSigningAlg">{{:: 'ciba-backchannel-auth-request-signing-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="cibaBackchannelAuthRequestSigningAlg"
+                                ng-change="changeCibaBackchannelAuthRequestSigningAlg()"
+                                ng-model="cibaBackchannelAuthRequestSigningAlg">
+                            <option value="any">any</option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('clientSignature')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'ciba-backchannel-auth-request-signing-alg.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="newRequestUri">{{:: 'request-uris' | translate}}</label>
@@ -590,6 +746,48 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'request-uris.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="authorizationSignedResponseAlg">{{:: 'authorization-signed-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="authorizationSignedResponseAlg"
+                                ng-change="changeAuthorizationSignedResponseAlg()"
+                                ng-model="authorizationSignedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('signature')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'authorization-signed-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="authorizationEncryptedResponseAlg">{{:: 'authorization-encrypted-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="authorizationEncryptedResponseAlg"
+                                ng-change="changeAuthorizationEncryptedResponseAlg()"
+                                ng-model="authorizationEncryptedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'authorization-encrypted-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="authorizationEncryptedResponseEnc">{{:: 'authorization-encrypted-response-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="authorizationEncryptedResponseEnc"
+                                ng-change="changeAuthorizationEncryptedResponseEnc()"
+                                ng-model="authorizationEncryptedResponseEnc">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'authorization-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
@@ -616,6 +814,13 @@
                     <input ng-model="useRefreshTokenForClientCredentialsGrant" ng-click="switchChange()" name="useRefreshTokenForClientCredentialsGrant" id="useRefreshTokenForClientCredentialsGrant" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'use-refresh-token-for-client-credentials-grant.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="useLowerCaseBearerTypeInTokenResponse">{{:: 'use-lower-case-bearer-in-token-responses' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="useLowerCaseBearerTypeInTokenResponse" ng-click="switchChange()" name="useLowerCaseBearerTypeInTokenResponse" id="useLowerCaseBearerTypeInTokenResponse" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'use-lower-case-bearer-in-token-responses.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
@@ -783,6 +988,58 @@
                 </div>
                 <kc-tooltip>{{:: 'pkce-code-challenge-method.tooltip' | translate}}</kc-tooltip>
             </div>
+
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requirePushedAuthorizationRequests">{{:: 'require-pushed-authorization-requests' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="requirePushedAuthorizationRequests" ng-click="switchChange()" name="requirePushedAuthorizationRequests" id="requirePushedAuthorizationRequests" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'require-pushed-authorization-requests.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect' && serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
+                <label class="col-md-2 control-label" for="newAcr">{{:: 'acr-loa-map' | translate}}</label>
+                <div class="col-sm-6">
+                    <div class="input-group input-map" ng-repeat="(acr, loa) in acrLoaMap">
+                        <input class="form-control" readonly value="{{acr}}">
+                        <input class="form-control" ng-model="acrLoaMap[acr]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteAcrLoaMapping(acr)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+                    <div class="input-group input-map">
+                        <input class="form-control" ng-model="newAcr" id="newAcr" placeholder="ACR">
+                        <input class="form-control" ng-model="newLoa" id="newLoa" placeholder="LOA">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newAcr.length > 0 && newLoa.length > 0 && addAcrLoaMapping()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'acr-loa-map-client.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect' && serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
+                <label class="col-md-2 control-label" for="newDefaultAcrValue">{{:: 'default-acr-values' | translate}}</label>
+
+                <div class="col-sm-6">
+                    <div class="input-group" ng-repeat="(i, defaultAcrValue) in defaultAcrValues track by $index">
+                        <input class="form-control" ng-model="defaultAcrValues[i]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteDefaultAcrValue($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newDefaultAcrValue" id="newDefaultAcrValue">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newDefaultAcrValue.length > 0 && addDefaultAcrValue()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <kc-tooltip>{{:: 'default-acr-values.tooltip' | translate}}</kc-tooltip>
+            </div>
+
         </fieldset>
 
         <fieldset>

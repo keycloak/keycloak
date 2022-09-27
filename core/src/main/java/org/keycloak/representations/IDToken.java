@@ -17,6 +17,7 @@
 
 package org.keycloak.representations;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenCategory;
@@ -52,6 +53,7 @@ public class IDToken extends JsonWebToken {
     public static final String UPDATED_AT = "updated_at";
     public static final String CLAIMS_LOCALES = "claims_locales";
     public static final String ACR = "acr";
+    public static final String SESSION_ID = "sid";
 
     // Financial API - Part 2: Read and Write API Security Profile
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
@@ -64,7 +66,9 @@ public class IDToken extends JsonWebToken {
 
     protected Long auth_time;
 
+    // session_state is deprecated, sid should be used instead
     @JsonProperty(SESSION_STATE)
+    @JsonAlias(SESSION_ID)
     protected String sessionState;
 
     @JsonProperty(AT_HASH)
@@ -171,6 +175,11 @@ public class IDToken extends JsonWebToken {
      */
     public void setAuthTime(int authTime) {
         this.auth_time = Long.valueOf(authTime);
+    }
+
+    @JsonProperty(SESSION_ID)
+    public String getSessionId() {
+        return sessionState;
     }
 
     public String getSessionState() {

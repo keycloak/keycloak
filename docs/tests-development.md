@@ -22,3 +22,8 @@ you need and use that as a basis.
 All tests don't have to be fully black box testing as the testsuite deploys a special feature to the Keycloak server
 that allows running code within the server. This allows writing tests that can execute functions not exposed through
 APIs as well as access data that is not exposed. For an example on how to do this look at org.keycloak.testsuite.runonserver.RunOnServerTest.
+
+As assertion method use `org.hamcrest.MatcherAssert.assertThat` where possible with a suitable matcher included 
+in the `org.hamcrest.Matchers.*` package.
+It provides much better readability of test failures messages.  
+Please avoid as much to use set of assertions from `org.junit.Assert.*` package.

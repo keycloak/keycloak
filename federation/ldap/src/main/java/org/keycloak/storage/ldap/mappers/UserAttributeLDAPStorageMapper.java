@@ -28,6 +28,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.reflection.Property;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -37,6 +38,7 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -61,6 +63,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
     public static final String IS_MANDATORY_IN_LDAP = "is.mandatory.in.ldap";
     public static final String IS_BINARY_ATTRIBUTE = "is.binary.attribute";
     public static final String ATTRIBUTE_DEFAULT_VALUE = "attribute.default.value";
+    public static final String FORCE_DEFAULT_VALUE = "attribute.force.default";
 
     public UserAttributeLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
         super(mapperModel, ldapProvider);
@@ -113,7 +116,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             Object attrValue = userModelProperty.getValue(localUser);
 
             if (attrValue == null) {
-                if (isMandatoryInLdap) {
+                if (isMandatoryInLdap && attributeDefaultValue != null) {
                     ldapUser.setSingleAttribute(ldapAttrName, attributeDefaultValue);
                 } else {
                     ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
@@ -127,7 +130,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             List<String> attrValues = localUser.getAttributeStream(userModelAttrName).collect(Collectors.toList());
 
             if (attrValues.isEmpty()) {
-                if (isMandatoryInLdap) {
+                if (isMandatoryInLdap && attributeDefaultValue != null) {
                     ldapUser.setSingleAttribute(ldapAttrName, attributeDefaultValue);
                 } else {
                     ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>());
@@ -142,6 +145,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         }
     }
 
+    @Override
+    public Set<String> mandatoryAttributeNames() {
+        boolean isMandatoryInLdap = mapperModel.get(IS_MANDATORY_IN_LDAP, false);
+        return isMandatoryInLdap? Collections.singleton(getLdapAttributeName()) : null;
+    }
+
     // throw ModelDuplicateException if there is different user in model with same email
     protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
         if (email == null || realm.isDuplicateEmailsAllowed()) return;
@@ -149,7 +158,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             // lowercase before search
             email = KeycloakModelUtils.toLowerCaseSafe(email);
 
-            UserModel that = session.userLocalStorage().getUserByEmail(realm, email);
+            UserModel that = UserStoragePrivateUtil.userLocalStorage(session).getUserByEmail(realm, email);
             if (that != null && !that.getId().equals(user.getId())) {
                 session.getTransactionManager().setRollbackOnly();
                 String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());
@@ -185,6 +194,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(mapperModel, ALWAYS_READ_VALUE_FROM_LDAP);
         final boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
         final boolean isBinaryAttribute = parseBooleanParameter(mapperModel, IS_BINARY_ATTRIBUTE);
+        final String attributeDefaultValue = getAttributeDefaultValue();
 
         // For writable mode, we want to propagate writing of attribute to LDAP as well
         if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && !isReadOnly()) {
@@ -273,8 +283,8 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                         markUpdatedAttributeInTransaction(modelAttrName);
 
                         if (value == null) {
-                            if (isMandatoryInLdap) {
-                                ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                            if (isMandatoryInLdap && attributeDefaultValue != null) {
+                                ldapUser.setSingleAttribute(ldapAttrName, attributeDefaultValue);
                             } else {
                                 ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
                             }
@@ -282,8 +292,8 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                             ldapUser.setSingleAttribute(ldapAttrName, (String) value);
                         } else {
                             List<String> asList = (List<String>) value;
-                            if (asList.isEmpty() && isMandatoryInLdap) {
-                                ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                            if (asList.isEmpty() && isMandatoryInLdap && attributeDefaultValue != null) {
+                                ldapUser.setSingleAttribute(ldapAttrName, attributeDefaultValue);
                             } else {
                                 ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>(asList));
                             }
@@ -459,7 +469,9 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     private String getAttributeDefaultValue() {
         String attributeDefaultValue = mapperModel.getConfig().getFirst(ATTRIBUTE_DEFAULT_VALUE);
-        return (attributeDefaultValue == null || attributeDefaultValue.trim().isEmpty()) ? LDAPConstants.EMPTY_ATTRIBUTE_VALUE : attributeDefaultValue;
+        attributeDefaultValue = attributeDefaultValue == null || attributeDefaultValue.trim().isEmpty()? null : attributeDefaultValue;
+        boolean forceDefault = mapperModel.get(FORCE_DEFAULT_VALUE, true);
+        return forceDefault && attributeDefaultValue == null? LDAPConstants.EMPTY_ATTRIBUTE_VALUE : attributeDefaultValue;
     }
 
     private String getUserModelAttribute() {

@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -61,7 +62,14 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
         switch (context.getEvent()) {
             case REGISTER:
                 if (context instanceof AdminClientRegisterContext || context instanceof DynamicClientRegisterContext) {
-                    confirmSecureUris(((ClientCRUDContext)context).getProposedClientRepresentation());
+                    ClientRepresentation clientRep = ((ClientCRUDContext)context).getProposedClientRepresentation();
+                    confirmSecureUris(clientRep);
+
+                    // Use rootUrl as default redirectUrl to avoid creation of redirectUris with wildcards, which is done at later stages during client creation
+                    if (clientRep.getRootUrl() != null && (clientRep.getRedirectUris() == null || clientRep.getRedirectUris().isEmpty())) {
+                        logger.debugf("Setup Redirect URI = %s for client %s", clientRep.getRootUrl(), clientRep.getClientId());
+                        clientRep.setRedirectUris(Collections.singletonList(clientRep.getRootUrl()));
+                    }
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
@@ -113,6 +121,10 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
         // OIDD : requestUris
         List<String> requestUris = getAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS);
         if (requestUris != null) confirmSecureUris(requestUris, "requestUris");
+
+        // CIBA : client notification endpoint
+        String clientNotificationEndpoint = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT);
+        if (clientNotificationEndpoint != null) confirmSecureUris(Arrays.asList(clientNotificationEndpoint), "cibaClientNotificationEndpoint");
     }
 
     private List<String> getAttributeMultivalued(ClientRepresentation clientRep, String attrKey) {

@@ -31,5 +31,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target({ElementType.METHOD})
 public @interface Migration {
-    String versionFrom();
+    String versionPrefix();
 }

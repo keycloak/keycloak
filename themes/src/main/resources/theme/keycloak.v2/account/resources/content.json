@@ -3,7 +3,7 @@
     "id": "personal-info",
     "path": "personal-info",
     "icon": "pf-icon-user",
-    "label": "personalInfoHtmlTitle",
+    "label": "personalInfoSidebarTitle",
     "descriptionLabel": "personalInfoIntroMessage",
     "modulePath": "/content/account-page/AccountPage.js",
     "componentName": "AccountPage"
@@ -11,27 +11,27 @@
   {
     "id": "security",
     "icon": "pf-icon-security",
-    "label": "accountSecurityTitle",
+    "label": "accountSecuritySidebarTitle",
     "descriptionLabel": "accountSecurityIntroMessage",
     "content": [
       {
         "id": "signingin",
         "path": "security/signingin",
-        "label": "signingIn",
+        "label": "signingInSidebarTitle",
         "modulePath": "/content/signingin-page/SigningInPage.js",
         "componentName": "SigningInPage"
       },
       {
         "id": "device-activity",
         "path": "security/device-activity",
-        "label": "device-activity",
+        "label": "deviceActivitySidebarTitle",
         "modulePath": "/content/device-activity-page/DeviceActivityPage.js",
         "componentName": "DeviceActivityPage"
       },
       {
         "id": "linked-accounts",
         "path": "security/linked-accounts",
-        "label": "linkedAccountsHtmlTitle",
+        "label": "linkedAccountsSidebarTitle",
         "modulePath": "/content/linked-accounts-page/LinkedAccountsPage.js",
         "componentName": "LinkedAccountsPage",
         "hidden": "!features.isLinkedAccountsEnabled"
@@ -46,6 +46,16 @@
     "descriptionLabel": "applicationsIntroMessage",
     "modulePath": "/content/applications-page/ApplicationsPage.js",
     "componentName": "ApplicationsPage"
+  },
+  {
+    "id": "groups",
+    "path": "groups",
+    "icon": "pf-icon-server-group",
+    "label": "groupLabel",
+    "descriptionLabel": "groupDescriptionLabel",
+    "modulePath": "/content/group-page/GroupsPage.js",
+    "componentName": "GroupsPage",
+    "hidden": "!features.isViewGroupsEnabled"
   },
   {
     "id": "resources",

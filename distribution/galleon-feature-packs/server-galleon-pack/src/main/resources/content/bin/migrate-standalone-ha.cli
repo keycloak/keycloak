@@ -888,4 +888,57 @@ if (outcome == success) && (result == "") of /subsystem=jpa:read-attribute(name=
     echo
 end-if
 
+# Migrate from 14.0.0 to 15.0.0
+
+# Add expiration lifespan configuration to every distributed and replicated cache.
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/replicated-cache=work/component=expiration/:read-attribute(name=lifespan)
+    echo Setting expiration lifespan for 'work' replicated-cache
+    /subsystem=infinispan/cache-container=keycloak/replicated-cache=work/component=expiration/:write-attribute(name=lifespan,value=900000000000000000)
+    echo
+end-if
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions/component=expiration/:read-attribute(name=lifespan)
+    echo Setting expiration lifespan for 'sessions' replicated-cache
+    /subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions/component=expiration/:write-attribute(name=lifespan,value=900000000000000000)
+    echo
+end-if
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions/component=expiration/:read-attribute(name=lifespan)
+    echo Setting expiration lifespan for 'clientSessions' distributed-cache
+    /subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions/component=expiration/:write-attribute(name=lifespan,value=900000000000000000)
+    echo
+end-if
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions/component=expiration/:read-attribute(name=lifespan)
+    echo Setting expiration lifespan for 'offlineSessions' distributed-cache
+    /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions/component=expiration/:write-attribute(name=lifespan,value=900000000000000000)
+    echo
+end-if
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions/component=expiration/:read-attribute(name=lifespan)
+    echo Setting expiration lifespan for 'offlineClientSessions' distributed-cache
+    /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions/component=expiration/:write-attribute(name=lifespan,value=900000000000000000)
+    echo
+end-if
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=authenticationSessions/component=expiration/:read-attribute(name=lifespan)
+    echo Setting expiration lifespan for 'authenticationSessions' distributed-cache
+    /subsystem=infinispan/cache-container=keycloak/distributed-cache=authenticationSessions/component=expiration/:write-attribute(name=lifespan,value=900000000000000000)
+    echo
+end-if
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures/component=expiration/:read-attribute(name=lifespan)
+    echo Setting expiration lifespan for 'loginFailures' distributed-cache
+    /subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures/component=expiration/:write-attribute(name=lifespan,value=900000000000000000)
+    echo
+end-if
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=expiration/:read-attribute(name=lifespan)
+    echo Setting expiration lifespan for 'actionTokens' distributed-cache
+    /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=expiration/:write-attribute(name=lifespan,value=900000000000000000)
+    echo
+end-if
+
+# Migrate from 15.0.0 to 16.0.0
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/:read-resource
+    echo Add pending-puts local cache clustered and expiration time 60000L
+    /subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/:add
+    /subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/component=expiration/:write-attribute(name=max-idle,value=60000L)
+    echo
+end-if
+
 echo *** End Migration ***

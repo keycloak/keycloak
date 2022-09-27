@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>15.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -32,14 +32,9 @@
     <packaging>pom</packaging>
 
     <name>Other Tests Modules</name>
-    
+
     <description>Test modules that depend on the Base TestSuite.
         This POM contains common configuration for submodules.</description>
-
-    <modules>
-        <module>adapters</module>
-        <module>sssd</module>
-    </modules>
 
     <build>
         <pluginManagement>
@@ -120,15 +115,15 @@
             </dependencies>
         </profile>
         <profile>
-            <id>clean-start</id>
+            <id>adapters</id>
             <modules>
-                <module>clean-start</module>
+                <module>adapters</module>
             </modules>
         </profile>
         <profile>
-            <id>console-ui-tests</id>
+            <id>old-admin-console</id>
             <modules>
-                <module>console</module>
+                <module>old-admin-console</module>
             </modules>
         </profile>
         <profile>
@@ -144,9 +139,9 @@
             </modules>
         </profile>
         <profile>
-            <id>server-config-migration</id>
+            <id>sssd</id>
             <modules>
-                <module>server-config-migration</module>
+                <module>sssd</module>
             </modules>
         </profile>
         <profile>
@@ -159,6 +154,14 @@
             <id>springboot</id>
             <modules>
                 <module>springboot-tests</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>webauthn</id>
+            <modules>
+                <module>old-admin-console</module>
+                <module>base-ui</module>
+                <module>webauthn</module>
             </modules>
         </profile>
     </profiles>

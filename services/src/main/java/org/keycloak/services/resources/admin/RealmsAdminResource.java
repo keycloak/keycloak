@@ -34,19 +34,24 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.ExportImportManager;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Objects;
@@ -93,16 +98,16 @@ public class RealmsAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<RealmRepresentation> getRealms() {
+    public Stream<RealmRepresentation> getRealms(@DefaultValue("false") @QueryParam("briefRepresentation") boolean briefRepresentation) {
         Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
-                .map(this::toRealmRep)
+                .map(realm -> toRealmRep(realm, briefRepresentation))
                 .filter(Objects::nonNull);
         return throwIfEmpty(realms, new ForbiddenException());
     }
 
-    protected RealmRepresentation toRealmRep(RealmModel realm) {
+    protected RealmRepresentation toRealmRep(RealmModel realm, boolean briefRep) {
         if (AdminPermissions.realms(session, auth).canView(realm)) {
-            return ModelToRepresentation.toRepresentation(session, realm, false);
+            return briefRep ? ModelToRepresentation.toBriefRepresentation(realm) : ModelToRepresentation.toRepresentation(session, realm, false);
         } else if (AdminPermissions.realms(session, auth).isAdmin(realm)) {
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
@@ -112,23 +117,21 @@ public class RealmsAdminResource {
     }
 
     /**
-     * Import a realm
-     *
+     * Import a realm.
+     * <p>
      * Imports a realm from a full representation of that realm.  Realm name must be unique.
      *
-     * @param rep JSON representation of the realm
-     * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response importRealm(final RealmRepresentation rep) {
-        RealmManager realmManager = new RealmManager(session);
+    public Response importRealm(InputStream requestBody) {
         AdminPermissions.realms(session, auth).requireCreateRealm();
 
-        logger.debugv("importRealm: {0}", rep.getRealm());
+        ExportImportManager exportImportManager = session.getProvider(DatastoreProvider.class).getExportImportManager();
 
         try {
-            RealmModel realm = realmManager.importRealm(rep);
+            RealmModel realm = exportImportManager.importRealm(requestBody);
+
             grantPermissionsToRealmCreator(realm);
 
             URI location = AdminRoot.realmsUrl(session.getContext().getUri()).path(realm.getName()).build();
@@ -137,6 +140,7 @@ public class RealmsAdminResource {
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
             logger.error("Conflict detected", e);
+            if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.exists("Conflict detected. See logs for details");
         } catch (PasswordPolicyNotMetException e) {
             logger.error("Password policy not met for user " + e.getUsername(), e);

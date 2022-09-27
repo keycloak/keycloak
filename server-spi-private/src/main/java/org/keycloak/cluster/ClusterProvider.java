@@ -27,7 +27,9 @@ import java.util.concurrent.Future;
  * Various utils related to clustering and concurrent tasks on cluster nodes
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @deprecated This is only available when the legacy store is enabled. Support for this will be eventually removed.
  */
+@Deprecated
 public interface ClusterProvider extends Provider {
 
     /**

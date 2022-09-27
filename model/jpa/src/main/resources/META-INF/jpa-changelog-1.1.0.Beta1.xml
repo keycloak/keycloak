@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
     <changeSet author="sthorger@redhat.com" id="1.1.0.Beta1">
+        <validCheckSum>7:0310eb8ba07cec616460794d42ade0fa</validCheckSum>
         <delete tableName="CLIENT_SESSION_ROLE"/>
         <delete tableName="CLIENT_SESSION"/>
         <delete tableName="USER_SESSION"/>

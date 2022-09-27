@@ -1,0 +1,1 @@
+org.keycloak.quarkus.runtime.hostname.DefaultHostnameProvider

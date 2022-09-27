@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import org.keycloak.common.util.Base64;
 import org.keycloak.dom.xmlsec.w3.xmldsig.DSAKeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
@@ -24,14 +25,8 @@ import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.WSTrustConstants;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.util.Base64;
 import org.keycloak.saml.processing.core.constants.PicketLinkFederationConstants;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;

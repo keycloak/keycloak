@@ -267,5 +267,14 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         updateAccountInformationPage.assertCurrent();
 
         assertEquals("Please specify username.", loginUpdateProfilePage.getInputErrors().getUsernameError());
+        
+        updateAccountInformationPage.updateAccountInformation("new-username", "no-first-name@localhost.com", "First Name", "Last Name");
+        waitForAccountManagementTitle();
+        accountUpdateProfilePage.assertCurrent();
+        Assert.assertEquals("First Name", accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals("Last Name", accountUpdateProfilePage.getLastName());
+        Assert.assertEquals("no-first-name@localhost.com", accountUpdateProfilePage.getEmail());
+        Assert.assertEquals("new-username", accountUpdateProfilePage.getUsername());
+
     }
 }

@@ -17,9 +17,13 @@
 
 package org.keycloak.testsuite.model.session;
 
+import org.hamcrest.Matchers;
+import org.infinispan.Cache;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -38,12 +42,21 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -68,6 +81,9 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         RealmModel realm = s.realms().createRealm("test");
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
+        realm.setOfflineSessionMaxLifespanEnabled(true);
+        realm.setClientOfflineSessionIdleTimeout(999999999);
+        realm.setClientOfflineSessionMaxLifespan(999999999);
         this.realmId = realm.getId();
         this.kcSession = s;
 
@@ -218,8 +234,146 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
             }
 
-            InfinispanTestUtil.revertTimeService();
+            InfinispanTestUtil.revertTimeService(kcSession);
         }
+    }
+
+    @Test
+    public void testLoadUserSessionsWithNotDeletedOfflineClientSessions() {
+        // Suspend periodic tasks to avoid race-conditions, which may cause missing updates of lastSessionRefresh times to UserSessionPersisterProvider
+        TimerProvider timer = kcSession.getProvider(TimerProvider.class);
+        TimerProvider.TimerTaskContext timerTaskCtx = null;
+        if (timer != null) {
+            timerTaskCtx = timer.cancelTask(PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
+            log.info("Cancelled periodic task " + PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
+        }
+
+        InfinispanTestUtil.setTestingTimeService(kcSession);
+
+        try {
+            UserSessionModel[] origSessions = inComittedTransaction(session -> {
+                // Create some online sessions in infinispan
+                return UserSessionPersisterProviderTest.createSessions(session, realmId);
+            });
+
+            inComittedTransaction(session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+                sessionManager = new UserSessionManager(session);
+                persister = session.getProvider(UserSessionPersisterProvider.class);
+
+                session.sessions().getUserSessionsStream(realm, realm.getClientByClientId("test-app")).collect(Collectors.toList())
+                        .forEach(userSession -> createOfflineSessionIncludeClientSessions(session, userSession));
+            });
+
+            log.info("Persisted 3 sessions to UserSessionPersisterProvider");
+
+            inComittedTransaction(session -> {
+                persister = session.getProvider(UserSessionPersisterProvider.class);
+
+                Assert.assertEquals(3, persister.getUserSessionsCount(true));
+            });
+
+            inComittedTransaction(session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+                persister = session.getProvider(UserSessionPersisterProvider.class);
+
+                // Expire everything except offline client sessions
+                Time.setOffset(7000000);
+
+                persister.removeExpired(realm);
+            });
+
+            inComittedTransaction(session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+                sessionManager = new UserSessionManager(session);
+                persister = session.getProvider(UserSessionPersisterProvider.class);
+
+                Assert.assertEquals(0, persister.getUserSessionsCount(true));
+
+                // create two offline user sessions
+                UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "ip1", null, false, null, null);
+                session.sessions().createOfflineUserSession(userSession);
+                session.sessions().createOfflineUserSession(origSessions[0]);
+
+                // try to load user session from persister
+                Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+            });
+
+        } finally {
+            Time.setOffset(0);
+            kcSession.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+            if (timer != null) {
+                timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
+            }
+
+            InfinispanTestUtil.revertTimeService(kcSession);
+        }
+    }
+
+    @Test
+    public void testOfflineSessionLazyLoading() throws InterruptedException {
+        // as one thread fills this list and the others read it, ensure that it is synchronized to avoid side effects
+        List<UserSessionModel> offlineUserSessions = Collections.synchronizedList(new LinkedList<>());
+        List<AuthenticatedClientSessionModel> offlineClientSessions = Collections.synchronizedList(new LinkedList<>());
+        createOfflineSessions("user1", 10, offlineUserSessions, offlineClientSessions);
+
+        closeKeycloakSessionFactory();
+
+        inIndependentFactories(4, 60, () -> {
+            withRealm(realmId, (session, realm) -> {
+                final UserModel user = session.users().getUserByUsername(realm, "user1");
+                Assert.assertTrue(assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList())));
+                return null;
+            });
+        });
+
+    }
+
+    @Test
+    public void testOfflineSessionLazyLoadingPropagationBetweenNodes() throws InterruptedException {
+        // This test is only unstable after setting "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase" to "true" and
+        // CrossDC is enabled.
+        // This is tracked in https://github.com/keycloak/keycloak/issues/14020 to be resolved.
+        Assume.assumeFalse(Objects.equals(CONFIG.scope("userSessions.infinispan").get("preloadOfflineSessionsFromDatabase"), "true") &&
+                Objects.equals(CONFIG.scope("connectionsInfinispan.default").get("remoteStoreEnabled"), "true"));
+
+        // as one thread fills this list and the others read it, ensure that it is synchronized to avoid side effects
+        List<UserSessionModel> offlineUserSessions = Collections.synchronizedList(new LinkedList<>());
+        List<AuthenticatedClientSessionModel> offlineClientSessions = Collections.synchronizedList(new LinkedList<>());
+
+        AtomicInteger index = new AtomicInteger();
+        CountDownLatch afterFirstNodeLatch = new CountDownLatch(1);
+
+        inIndependentFactories(4, 60, () -> {
+            if (index.incrementAndGet() == 1) {
+                createOfflineSessions("user1", 10, offlineUserSessions, offlineClientSessions);
+
+                afterFirstNodeLatch.countDown();
+            }
+            awaitLatch(afterFirstNodeLatch);
+
+            log.debug("Joining the cluster");
+            inComittedTransaction(session -> {
+                InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+                Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+                while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete()) {
+                    sleep(1000);
+                }
+                cache.keySet().forEach(s -> {});
+            });
+            log.debug("Cluster joined");
+
+            withRealm(realmId, (session, realm) -> {
+                final UserModel user = session.users().getUserByUsername(realm, "user1");
+                // it might take a moment to propagate, therefore loop
+                while (!assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList()))) {
+                    sleep(1000);
+                }
+                return null;
+            });
+
+        });
+
     }
 
     private static Set<String> createOfflineSessionIncludeClientSessions(KeycloakSession session, UserSessionModel
@@ -232,5 +386,58 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         }
 
         return offlineSessions;
+    }
+
+    private void createOfflineSessions(String username, int sessionsPerUser, List<UserSessionModel> offlineUserSessions, List<AuthenticatedClientSessionModel> offlineClientSessions) {
+        withRealm(realmId, (session, realm) -> {
+            final UserModel user = session.users().getUserByUsername(realm, username);
+            ClientModel testAppClient = realm.getClientByClientId("test-app");
+            ClientModel thirdPartyClient = realm.getClientByClientId("third-party");
+
+            IntStream.range(0, sessionsPerUser)
+                    .mapToObj(index -> session.sessions().createUserSession(realm, user, username + index, "ip" + index, "auth", false, null, null))
+                    .forEach(userSession -> {
+                        AuthenticatedClientSessionModel testAppClientSession = session.sessions().createClientSession(realm, testAppClient, userSession);
+                        AuthenticatedClientSessionModel thirdPartyClientSession = session.sessions().createClientSession(realm, thirdPartyClient, userSession);
+                        UserSessionModel offlineUserSession = session.sessions().createOfflineUserSession(userSession);
+                        offlineUserSessions.add(offlineUserSession);
+                        offlineClientSessions.add(session.sessions().createOfflineClientSession(testAppClientSession, offlineUserSession));
+                        offlineClientSessions.add(session.sessions().createOfflineClientSession(thirdPartyClientSession, offlineUserSession));
+                    });
+
+            return null;
+        });
+    }
+
+    private boolean assertOfflineSession(List<UserSessionModel> expectedUserSessions, List<UserSessionModel> actualUserSessions) {
+        boolean result = true;
+        // User sessions are compared by their ID given the
+        for (UserSessionModel userSession: expectedUserSessions) {
+            if (!actualUserSessions.contains(userSession)) {
+                log.warnf("missing session %s", userSession);
+                result = false;
+            }
+        }
+        for (UserSessionModel userSession: actualUserSessions) {
+            if (!expectedUserSessions.contains(userSession)) {
+                log.warnf("seeing an additional session %s by user %s", userSession.getId(), userSession.getUser().getId());
+                result = false;
+            }
+        }
+        if (!result) {
+            log.warnf("all expected sessions: %s, all actual sessions: %s",
+                    expectedUserSessions.stream().map(UserSessionModel::getId).collect(Collectors.toList()),
+                    actualUserSessions.stream().map(UserSessionModel::getId).collect(Collectors.toList()));
+        }
+        return result;
+    }
+
+    private void awaitLatch(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 }

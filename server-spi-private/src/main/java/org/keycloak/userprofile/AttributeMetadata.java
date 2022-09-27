@@ -42,28 +42,32 @@ public final class AttributeMetadata {
     public static final Predicate<AttributeContext> ALWAYS_FALSE = context -> false;
 
     private final String attributeName;
+    private String attributeDisplayName;
+    private AttributeGroupMetadata attributeGroupMetadata;
     private final Predicate<AttributeContext> selector;
-    private final Predicate<AttributeContext> writeAllowed;
+    private final List<Predicate<AttributeContext>> writeAllowed = new ArrayList<>();
     /** Predicate to decide if attribute is required, it is handled as required if predicate is null */
     private final Predicate<AttributeContext> required;
-    private final Predicate<AttributeContext> readAllowed;
+    private final List<Predicate<AttributeContext>> readAllowed = new ArrayList<>();
     private List<AttributeValidatorMetadata> validators;
     private Map<String, Object> annotations;
+    private int guiOrder;
+    
 
-    AttributeMetadata(String attributeName) {
-        this(attributeName, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE);
+    AttributeMetadata(String attributeName, int guiOrder) {
+        this(attributeName, guiOrder, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
-        this(attributeName, ALWAYS_TRUE, writeAllowed, required, ALWAYS_TRUE);
+    AttributeMetadata(String attributeName, int guiOrder, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
+        this(attributeName, guiOrder, ALWAYS_TRUE, writeAllowed, required, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, Predicate<AttributeContext> selector) {
-        this(attributeName, selector, ALWAYS_FALSE, ALWAYS_TRUE, ALWAYS_TRUE);
+    AttributeMetadata(String attributeName, int guiOrder, Predicate<AttributeContext> selector) {
+        this(attributeName, guiOrder, selector, ALWAYS_FALSE, ALWAYS_TRUE, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, List<String> scopes, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
-        this(attributeName, context -> {
+    AttributeMetadata(String attributeName, int guiOrder, List<String> scopes, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
+        this(attributeName, guiOrder, context -> {
             KeycloakSession session = context.getSession();
             AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
 
@@ -85,30 +89,72 @@ public final class AttributeMetadata {
         }, writeAllowed, required, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, Predicate<AttributeContext> selector, Predicate<AttributeContext> writeAllowed,
+    AttributeMetadata(String attributeName, int guiOrder, Predicate<AttributeContext> selector, Predicate<AttributeContext> writeAllowed,
             Predicate<AttributeContext> required,
             Predicate<AttributeContext> readAllowed) {
         this.attributeName = attributeName;
+        this.guiOrder = guiOrder;
         this.selector = selector;
-        this.writeAllowed = writeAllowed;
+        addWriteCondition(writeAllowed);
         this.required = required;
-        this.readAllowed = readAllowed;
+        addReadCondition(readAllowed);
+    }
+
+    AttributeMetadata(String attributeName, int guiOrder, Predicate<AttributeContext> selector, List<Predicate<AttributeContext>> writeAllowed,
+                      Predicate<AttributeContext> required,
+                      List<Predicate<AttributeContext>> readAllowed) {
+        this.attributeName = attributeName;
+        this.guiOrder = guiOrder;
+        this.selector = selector;
+        this.writeAllowed.addAll(writeAllowed);
+        this.required = required;
+        this.readAllowed.addAll(readAllowed);
     }
 
     public String getName() {
         return attributeName;
     }
 
+    public int getGuiOrder() {
+        return guiOrder;
+    }
+
+    public AttributeMetadata setGuiOrder(int guiOrder) {
+        this.guiOrder = guiOrder;
+        return this;
+    }
+
+    public AttributeGroupMetadata getAttributeGroupMetadata() {
+        return attributeGroupMetadata;
+    }
+
     public boolean isSelected(AttributeContext context) {
         return selector.test(context);
     }
 
+    private boolean allConditionsMet(List<Predicate<AttributeContext>> predicates, AttributeContext context) {
+        return predicates.stream().allMatch(p -> p.test(context));
+    }
+
+    public AttributeMetadata addReadCondition(Predicate<AttributeContext> readAllowed) {
+        this.readAllowed.add(readAllowed);
+        return this;
+    }
+
+    public AttributeMetadata addWriteCondition(Predicate<AttributeContext> writeAllowed) {
+        this.writeAllowed.add(writeAllowed);
+        return this;
+    }
     public boolean isReadOnly(AttributeContext context) {
-        return !writeAllowed.test(context);
+        return !canEdit(context);
     }
 
     public boolean canView(AttributeContext context) {
-        return readAllowed.test(context);
+        return allConditionsMet(readAllowed, context);
+    }
+
+    public boolean canEdit(AttributeContext context) {
+        return allConditionsMet(writeAllowed, context);
     }
 
     /**
@@ -129,13 +175,9 @@ public final class AttributeMetadata {
             this.validators = new ArrayList<>();
         }
 
+        this.validators.removeIf(validators::contains);
         this.validators.addAll(validators.stream().filter(Objects::nonNull).collect(Collectors.toList()));
 
-        return this;
-    }
-
-    public AttributeMetadata addValidator(AttributeValidatorMetadata validator) {
-        addValidator(Arrays.asList(validator));
         return this;
     }
 
@@ -156,7 +198,7 @@ public final class AttributeMetadata {
 
     @Override
     public AttributeMetadata clone() {
-        AttributeMetadata cloned = new AttributeMetadata(attributeName, selector, writeAllowed, required, readAllowed);
+        AttributeMetadata cloned = new AttributeMetadata(attributeName, guiOrder, selector, writeAllowed, required, readAllowed);
         // we clone validators list to allow adding or removing validators. Validators
         // itself are not cloned as we do not expect them to be reconfigured.
         if (validators != null) {
@@ -166,7 +208,29 @@ public final class AttributeMetadata {
         if(annotations != null) {
             cloned.addAnnotations(annotations);
         }
+        cloned.setAttributeDisplayName(attributeDisplayName);
+        if (attributeGroupMetadata != null) {
+            cloned.setAttributeGroupMetadata(attributeGroupMetadata.clone());
+        }
         return cloned;
+    }
+    
+    public String getAttributeDisplayName() {
+        if(attributeDisplayName == null || attributeDisplayName.trim().isEmpty())
+            return attributeName;
+        return attributeDisplayName;
+    }
+
+    public AttributeMetadata setAttributeDisplayName(String attributeDisplayName) {
+        if(attributeDisplayName != null)
+            this.attributeDisplayName = attributeDisplayName;
+        return this;
+    }
+
+    public AttributeMetadata setAttributeGroupMetadata(AttributeGroupMetadata attributeGroupMetadata) {
+        if(attributeGroupMetadata != null)
+            this.attributeGroupMetadata = attributeGroupMetadata;
+        return this;
     }
 
     @Override

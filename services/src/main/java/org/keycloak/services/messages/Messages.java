@@ -24,6 +24,8 @@ public class Messages {
     public static final String DISPLAY_UNSUPPORTED = "displayUnsupported";
     public static final String LOGIN_TIMEOUT = "loginTimeout";
 
+    public static final String REAUTHENTICATE = "reauthenticate";
+
     public static final String INVALID_USER = "invalidUserMessage";
 
     public static final String INVALID_USERNAME = "invalidUsernameMessage";
@@ -62,6 +64,8 @@ public class Messages {
 
     public static final String MISSING_TOTP_DEVICE_NAME = "missingTotpDeviceNameMessage";
 
+    public static final String COOKIE_NOT_FOUND = "cookieNotFoundMessage";
+
     public static final String NOTMATCH_PASSWORD = "notMatchPasswordMessage";
 
     public static final String INVALID_PASSWORD_EXISTING = "invalidPasswordExistingMessage";
@@ -88,6 +92,8 @@ public class Messages {
 
     public static final String CONFIGURE_TOTP = "configureTotpMessage";
 
+    public static final String CONFIGURE_BACKUP_CODES = "configureBackupCodesMessage";
+
     public static final String UPDATE_PROFILE = "updateProfileMessage";
 
     public static final String RESET_PASSWORD = "resetPasswordMessage";
@@ -95,6 +101,8 @@ public class Messages {
     public static final String UPDATE_PASSWORD = "updatePasswordMessage";
 
     public static final String VERIFY_EMAIL = "verifyEmailMessage";
+
+    public static final String UPDATE_EMAIL = "updateEmailMessage";
 
     public static final String LINK_IDP = "linkIdpMessage";
 
@@ -173,6 +181,10 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
 
+    public static final String IDENTITY_PROVIDER_INVALID_RESPONSE = "identityProviderInvalidResponseMessage";
+
+    public static final String IDENTITY_PROVIDER_INVALID_SIGNATURE = "identityProviderInvalidSignatureMessage";
+
     public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFoundMessage";
 
     public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
@@ -227,6 +239,10 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_LOGIN_FAILURE = "identityProviderLoginFailure";
 
+    public static final String INSUFFICIENT_LEVEL_OF_AUTHENTICATION = "insufficientLevelOfAuthentication";
+
+    public static final String SUCCESS_LOGOUT = "successLogout";
+
     public static final String FAILED_LOGOUT = "failedLogout";
 
     public static final String CONSENT_DENIED="consentDenied";
@@ -236,6 +252,8 @@ public class Messages {
     public static final String DIFFERENT_USER_AUTHENTICATED = "differentUserAuthenticated";
 
     public static final String BROKER_LINKING_SESSION_EXPIRED = "brokerLinkingSessionExpired";
+
+    public static final String ACR_NOT_FULFILLED = "acrNotFulfilled";
 
     public static final String PAGE_NOT_FOUND = "pageNotFound";
 
@@ -277,4 +295,5 @@ public class Messages {
     public static final String OAUTH2_DEVICE_VERIFICATION_FAILED = "oauth2DeviceVerificationFailedMessage";
     public static final String OAUTH2_DEVICE_VERIFICATION_FAILED_HEADER = "oauth2DeviceVerificationFailedHeader";
     public static final String OAUTH2_DEVICE_CONSENT_DENIED = "oauth2DeviceConsentDeniedMessage";
+
 }

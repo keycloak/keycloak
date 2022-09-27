@@ -8,7 +8,6 @@ import org.jboss.logging.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
 
@@ -43,12 +42,9 @@ public class LocaleDropdown {
         // open the menu
         if (driver instanceof IOSDriver) { // TODO: Fix this! It's a very, very, ... very nasty hack for Safari on iOS - see KEYCLOAK-7947
             ((IOSDriver) driver).executeScript("arguments[0].setAttribute('style', 'display: block')", dropDownMenu);
-        }
-        else if (driver instanceof AndroidDriver || driver instanceof InternetExplorerDriver) { // Android needs to tap (no cursor)
-                                                                                                // and IE has some bug so needs to click as well (instead of moving cursor)
+        } else if (driver instanceof AndroidDriver) { // Android needs to tap (no cursor)
             currentLocaleLink.click();
-        }
-        else {
+        } else {
             Actions actions = new Actions(driver);
             log.info("Moving mouse cursor to the localization menu");
             actions.moveToElement(currentLocaleLink, -10, 0)

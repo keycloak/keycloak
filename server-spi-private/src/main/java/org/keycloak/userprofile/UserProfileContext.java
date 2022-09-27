@@ -30,11 +30,26 @@ package org.keycloak.userprofile;
  */
 public enum UserProfileContext {
 
-    UPDATE_PROFILE,
-    USER_API,
-    ACCOUNT,
-    ACCOUNT_OLD,
-    IDP_REVIEW,
-    REGISTRATION_PROFILE,
-    REGISTRATION_USER_CREATION;
+    UPDATE_PROFILE(true),
+    USER_API(false),
+    ACCOUNT(true),
+    ACCOUNT_OLD(true),
+    IDP_REVIEW(false),
+    REGISTRATION_PROFILE(false),
+    REGISTRATION_USER_CREATION(false),
+    UPDATE_EMAIL(false);
+    
+    protected boolean resetEmailVerified;
+    
+    private UserProfileContext(boolean resetEmailVerified){
+        this.resetEmailVerified = resetEmailVerified;
+    }
+    
+    /**
+     * @return true means that UserModel.emailVerified flag must be reset to false in this context when email address is updated
+     */
+    public boolean isResetEmailVerified() {
+        return resetEmailVerified;
+    }
+    
 }

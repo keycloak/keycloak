@@ -24,7 +24,7 @@ import org.keycloak.models.map.common.AbstractEntity;
 
 import java.util.Objects;
 
-public abstract class AbstractResourceModel<E extends AbstractEntity<?>> extends AbstractAuthorizationModel implements Resource {
+public abstract class AbstractResourceModel<E extends AbstractEntity> extends AbstractAuthorizationModel implements Resource {
 
     protected final E entity;
 

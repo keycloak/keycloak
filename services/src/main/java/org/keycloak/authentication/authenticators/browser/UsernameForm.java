@@ -17,14 +17,32 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import java.util.List;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.freemarker.LoginFormsUtil;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 public final class UsernameForm extends UsernamePasswordForm {
+
+    @Override
+    public void authenticate(AuthenticationFlowContext context) {
+        if (context.getUser() != null) {
+            // We can skip the form when user is re-authenticating. Unless current user has some IDP set, so he can re-authenticate with that IDP
+            List<IdentityProviderModel> identityProviders = LoginFormsUtil
+                    .filterIdentityProviders(context.getRealm().getIdentityProvidersStream(), context.getSession(), context);
+            if (identityProviders.isEmpty()) {
+                context.success();
+                return;
+            }
+        }
+        super.authenticate(context);
+    }
 
     @Override
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {

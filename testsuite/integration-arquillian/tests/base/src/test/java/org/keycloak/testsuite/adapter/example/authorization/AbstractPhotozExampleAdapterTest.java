@@ -27,10 +27,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
@@ -137,11 +140,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
 
         log.debug("Changing codes \"127.0.0.1\" to \"127.3.3.3\" of \"Only From a Specific Client Address\" policies.");
         for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
-            if ("Only From a Specific Client Address".equals(policy.getName())) {
-                String code = policy.getConfig().get("code")
-                        .replaceAll("127.0.0.1", "127.3.3.3")
-                        .replaceAll("0:0:0:0:0:0:0:1", "0:0:0:0:0:ffff:7f03:303");
-                policy.getConfig().put("code", code);
+            if ("Administration Policy".equals(policy.getName())) {
+                policy.setPolicies(new HashSet<>());
+                policy.getPolicies().add("Any Admin Policy");
+                policy.getPolicies().add("Deny From a Specific Client Address");
                 getAuthorizationResource().policies().policy(policy.getId()).update(policy);
             }
         }

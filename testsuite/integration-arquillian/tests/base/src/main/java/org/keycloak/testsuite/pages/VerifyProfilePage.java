@@ -76,12 +76,36 @@ public class VerifyProfilePage extends AbstractPage {
         update(firstName, lastName);
     }
 
+    public void updateEmail(String email, String firstName, String lastName) {
+
+        emailInput.clear();
+        if (emailInput != null) {
+            emailInput.sendKeys(email);
+        }
+
+        firstNameInput.clear();
+        if (firstName != null) {
+            firstNameInput.sendKeys(firstName);
+        }
+
+        lastNameInput.clear();
+        if (lastName != null) {
+            lastNameInput.sendKeys(lastName);
+        }
+
+        submitButton.click();
+    }
+
     public String getAlertError() {
         try {
             return UIUtils.getTextFromElement(loginAlertErrorMessage);
         } catch (NoSuchElementException e) {
             return null;
         }
+    }
+    
+    public String getLabelForField(String fieldId) {
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
     }
 
     public String getFirstName() {
@@ -103,6 +127,14 @@ public class VerifyProfilePage extends AbstractPage {
     public boolean isUsernamePresent() {
         try {
             return driver.findElement(By.id("username")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
+    public boolean isUsernameEnabled() {
+        try {
+            return driver.findElement(By.id("username")).isEnabled();
         } catch (NoSuchElementException nse) {
             return false;
         }

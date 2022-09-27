@@ -19,18 +19,21 @@ package org.keycloak.testsuite.events;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -45,24 +48,23 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
 
     @Test
     public void save() {
-        testing().onAdminEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // This looks like some database issue, test should get events which are newer or equal to requested time, however it gets only newer events from remote server
     public void query() {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;
 
-        testing().onAdminEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(newest, "realmId", OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(newest, "realmId", OperationType.ACTION, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create("realmId2", OperationType.CREATE, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(oldest, "realmId", OperationType.CREATE, "realmId", "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(newest, realmId, OperationType.ACTION, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(newest, realmId, OperationType.ACTION, realmId, "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(realmId2, OperationType.CREATE, realmId2, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(oldest, realmId, OperationType.CREATE, realmId, "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(realmId, OperationType.CREATE, realmId, "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
 
         Assert.assertEquals(5, testing().getAdminEvents(null, null, null, "clientId", null, null, null, null, null, null, null).size());
-        Assert.assertEquals(5, testing().getAdminEvents(null, null, "realmId", null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(5, testing().getAdminEvents(null, null, realmId, null, null, null, null, null, null, null, null).size());
         Assert.assertEquals(4, testing().getAdminEvents(null, toList(OperationType.CREATE), null, null, null, null, null, null, null, null, null).size());
         Assert.assertEquals(6, testing().getAdminEvents(null, toList(OperationType.CREATE, OperationType.ACTION), null, null, null, null, null, null, null, null, null).size());
         Assert.assertEquals(4, testing().getAdminEvents(null, null, null, null, "userId", null, null, null, null, null, null).size());
@@ -75,8 +77,8 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
         Assert.assertEquals(newest, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, 1).get(0).getTime());
         Assert.assertEquals(oldest, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, 5, 1).get(0).getTime());
 
-        testing().clearAdminEventStore("realmId");
-        testing().clearAdminEventStore("realmId2");
+        testing().clearAdminEventStore(realmId);
+        testing().clearAdminEventStore(realmId2);
 
         Assert.assertEquals(0, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
 
@@ -102,20 +104,20 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
             e.printStackTrace();
         }
 
-        testing().onAdminEvent(create(date1, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(date1, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(date2, "realmId", OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(date2, "realmId", OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(date3, "realmId", OperationType.UPDATE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(date3, "realmId", OperationType.DELETE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(date4, "realmId2", OperationType.CREATE, "realmId2", "clientId2", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(date4, "realmId2", OperationType.CREATE, "realmId2", "clientId2", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(date1, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(date1, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(date2, realmId, OperationType.ACTION, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(date2, realmId, OperationType.ACTION, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(date3, realmId, OperationType.UPDATE, realmId, "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(date3, realmId, OperationType.DELETE, realmId, "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(date4, realmId2, OperationType.CREATE, realmId2, "clientId2", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(date4, realmId2, OperationType.CREATE, realmId2, "clientId2", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
 
         Assert.assertEquals(6, testing().getAdminEvents(null, null, null, "clientId", null, null, null, null, null, null, null).size());
         Assert.assertEquals(2, testing().getAdminEvents(null, null, null, "clientId2", null, null, null, null, null, null, null).size());
 
-        Assert.assertEquals(6, testing().getAdminEvents(null, null, "realmId", null, null, null, null, null, null, null, null).size());
-        Assert.assertEquals(2, testing().getAdminEvents(null, null, "realmId2", null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(6, testing().getAdminEvents(null, null, realmId, null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(2, testing().getAdminEvents(null, null, realmId2, null, null, null, null, null, null, null, null).size());
 
         Assert.assertEquals(4, testing().getAdminEvents(null, null, null, null, "userId", null, null, null, null, null, null).size());
         Assert.assertEquals(4, testing().getAdminEvents(null, null, null, null, "userId2", null, null, null, null, null, null).size());
@@ -150,12 +152,12 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;
 
-        testing().onAdminEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(newest, "realmId", OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(newest, "realmId", OperationType.ACTION, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create("realmId2", OperationType.CREATE, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(oldest, "realmId", OperationType.CREATE, "realmId", "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(newest, realmId, OperationType.ACTION, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(newest, realmId, OperationType.ACTION, realmId, "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(realmId2, OperationType.CREATE, realmId2, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(oldest, realmId, OperationType.CREATE, realmId, "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(realmId, OperationType.CREATE, realmId, "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
 
         Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/admin/*", null, null, null, null).size());
         Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "*/realms/*", null, null, null, null).size());
@@ -168,33 +170,79 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
 
     @Test
     public void clear() {
-        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(System.currentTimeMillis() - 20000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(System.currentTimeMillis(), "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(System.currentTimeMillis(), "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, "realmId2", OperationType.CREATE, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 20000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, realmId2, OperationType.CREATE, realmId2, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
 
-        testing().clearAdminEventStore("realmId");
+        testing().clearAdminEventStore(realmId);
 
         Assert.assertEquals(1, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
     }
 
     @Test
     public void clearOld() {
-        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(System.currentTimeMillis() - 20000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(System.currentTimeMillis(), "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(System.currentTimeMillis(), "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 20000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
 
-        testing().clearAdminEventStore("realmId", System.currentTimeMillis() - 10000);
+        testing().clearAdminEventStore(realmId, System.currentTimeMillis() - 10000);
 
         Assert.assertEquals(2, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
     }
 
     @Test
+    public void expireOld() {
+        Assume.assumeTrue("Map storage event store provider does not support changing expiration of existing events", keycloakUsingProviderWithId(EventStoreProvider.class, "jpa"));
+        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 20000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, realmId2, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId2, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+
+        // Set expiration of events for realmId .
+        RealmRepresentation realm = realmsResouce().realm(REALM_NAME_1).toRepresentation();
+        Map<String, String> attributes = realm.getAttributes();
+        attributes.put(RealmAttributes.ADMIN_EVENTS_EXPIRATION,"10");
+        realm.setAttributes(attributes);
+        realmsResouce().realm(REALM_NAME_1).update(realm);
+
+        // The first 2 events from realmId will be deleted
+        testing().clearExpiredEvents();
+        Assert.assertEquals(4, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
+
+        // Set expiration of events for realmId2 as well
+        RealmRepresentation realm2 = realmsResouce().realm(REALM_NAME_2).toRepresentation();
+        Map<String, String> attributes2 = realm2.getAttributes();
+        attributes2.put(RealmAttributes.ADMIN_EVENTS_EXPIRATION,"10");
+        realm2.setAttributes(attributes2);
+        realmsResouce().realm(REALM_NAME_2).update(realm2);
+
+        // The first event from realmId2 will be deleted now
+        testing().clearExpiredEvents();
+        Assert.assertEquals(3, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
+
+        // set time offset to the future. The remaining 2 events from realmId and 1 event from realmId2 should be expired now
+        setTimeOffset(150);
+        testing().clearExpiredEvents();
+        Assert.assertEquals(0, testing().getAdminEvents(REALM_NAME_1, null, null, null, null, null, null, null, null, null, null).size());
+
+        // Revert expirations
+        attributes.put(RealmAttributes.ADMIN_EVENTS_EXPIRATION,"0");
+        realm.setAttributes(attributes);
+        realmsResouce().realm(REALM_NAME_1).update(realm);
+        attributes2.put(RealmAttributes.ADMIN_EVENTS_EXPIRATION,"0");
+        realm2.setAttributes(attributes2);
+        realmsResouce().realm(REALM_NAME_2).update(realm2);
+    }
+
+    @Test
     public void handleCustomResourceTypeEvents() {
-        testing().onAdminEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "my-custom-resource", "error"), false);
+        testing().onAdminEvent(create(realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "my-custom-resource", "error"), false);
 
         List<AdminEventRepresentation> adminEvents = testing().getAdminEvents(null, null, null, "clientId", null, null, null, null, null, null, null);
         Assert.assertEquals(1, adminEvents.size());

@@ -2,6 +2,7 @@ package org.keycloak.testsuite.updaters;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+
 import java.util.HashMap;
 import java.util.List;
 
@@ -55,6 +56,102 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
 
     public RealmAttributeUpdater setSsoSessionMaxLifespan(Integer timeout) {
         rep.setSsoSessionMaxLifespan(timeout);
+        return this;
+    }
+
+    public RealmAttributeUpdater setSsoSessionIdleTimeoutRememberMe(Integer idleTimeout) {
+        rep.setSsoSessionIdleTimeoutRememberMe(idleTimeout);
+        return this;
+    }
+
+    public RealmAttributeUpdater setSsoSessionMaxLifespanRememberMe(Integer maxLifespan) {
+        rep.setSsoSessionMaxLifespanRememberMe(maxLifespan);
+        return this;
+    }
+
+    public RealmAttributeUpdater setRememberMe(Boolean rememberMe) {
+        rep.setRememberMe(rememberMe);
+        return this;
+    }
+
+    public RealmAttributeUpdater setRegistrationEmailAsUsername(Boolean value) {
+        rep.setRegistrationEmailAsUsername(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setDuplicateEmailsAllowed(Boolean value) {
+        rep.setDuplicateEmailsAllowed(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setPasswordPolicy(String policy) {
+        rep.setPasswordPolicy(policy);
+        return this;
+    }
+
+    public RealmAttributeUpdater setVerifyEmail(Boolean value) {
+        rep.setVerifyEmail(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setBrowserFlow(String browserFlow) {
+        rep.setBrowserFlow(browserFlow);
+        return this;
+    }
+
+    public RealmAttributeUpdater setNotBefore(Integer notBefore) {
+        rep.setNotBefore(notBefore);
+        return this;
+    }
+
+    public RealmAttributeUpdater setDefaultLocale(String defaultLocale) {
+        rep.setDefaultLocale(defaultLocale);
+        return this;
+    }
+
+    public RealmAttributeUpdater addSupportedLocale(String locale) {
+        rep.addSupportedLocales(locale);
+        return this;
+    }
+
+    public RealmAttributeUpdater setInternationalizationEnabled(Boolean internationalizationEnabled) {
+        rep.setInternationalizationEnabled(internationalizationEnabled);
+        return this;
+    }
+
+    // OTP Policy
+    public RealmAttributeUpdater setOtpPolicyAlgorithm(String otpPolicyAlgorithm) {
+        rep.setOtpPolicyAlgorithm(otpPolicyAlgorithm);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyDigits(Integer otpPolicyDigits) {
+        rep.setOtpPolicyDigits(otpPolicyDigits);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyInitialCounter(Integer otpPolicyInitialCounter) {
+        rep.setOtpPolicyInitialCounter(otpPolicyInitialCounter);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyPeriod(Integer otpPolicyPeriod) {
+        rep.setOtpPolicyPeriod(otpPolicyPeriod);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyType(String otpPolicyType) {
+        rep.setOtpPolicyType(otpPolicyType);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyLookAheadWindow(Integer otpPolicyLookAheadWindow) {
+        rep.setOtpPolicyLookAheadWindow(otpPolicyLookAheadWindow);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOtpPolicyCodeReusable(Boolean isCodeReusable) {
+        rep.setOtpPolicyCodeReusable(isCodeReusable);
         return this;
     }
 }

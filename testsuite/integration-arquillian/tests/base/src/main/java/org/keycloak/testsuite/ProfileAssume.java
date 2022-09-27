@@ -58,7 +58,7 @@ public class ProfileAssume {
     }
 
     public static void assumeFeatureDisabled(Profile.Feature feature) {
-        Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is disabled", !isFeatureEnabled(feature));
+        Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is enabled", !isFeatureEnabled(feature));
     }
 
     public static void assumePreview() {

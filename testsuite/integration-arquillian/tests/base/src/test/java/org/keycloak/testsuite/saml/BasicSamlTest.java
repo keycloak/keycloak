@@ -14,8 +14,6 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
@@ -49,7 +47,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
@@ -167,7 +165,6 @@ public class BasicSamlTest extends AbstractSamlTest {
     }
 
     @Test
-    @AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
     public void testNoPortInDestination() throws Exception {
         // note that this test relies on settings of the login-protocol.saml.knownProtocols configuration option
         testWithOverriddenPort(-1, Response.Status.OK, containsString("login"));

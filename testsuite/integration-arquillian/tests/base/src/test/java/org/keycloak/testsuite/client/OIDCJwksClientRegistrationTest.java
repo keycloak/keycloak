@@ -40,6 +40,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.client.registration.Auth;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.constants.ServiceUrlConstants;
@@ -58,18 +59,15 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.OAuthClient;
 
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTest {
 
     private static final String PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=";
@@ -179,6 +177,8 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
     @Test
     public void testTwoClientsWithSameKid() throws Exception {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+
         // Create client with manually set "kid"
         OIDCClientRepresentation response = createClientWithManuallySetKid("a1");
 
@@ -207,7 +207,8 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         assertAuthenticateClientSuccess(generatedKeys, response, "a1");
 
         // Assert item in publicKey cache for client1
-        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(REALM_NAME, response.getClientId());
+        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(
+                adminClient.realm(REALM_NAME).toRepresentation().getId(), response.getClientId());
         Assert.assertTrue(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
 
         // Assert it's not possible to authenticate as client2 with the same "kid" like client1
@@ -217,6 +218,8 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
     @Test
     public void testPublicKeyCacheInvalidatedWhenUpdatingClient() throws Exception {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+
         OIDCClientRepresentation response = createClientWithManuallySetKid("a1");
 
         Map<String, String> generatedKeys = testingClient.testApp().oidcClientEndpoints().getKeysAsPem();
@@ -225,13 +228,15 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         assertAuthenticateClientSuccess(generatedKeys, response, "a1");
 
         // Assert item in publicKey cache for client1
-        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(REALM_NAME, response.getClientId());
+        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(
+                adminClient.realm(REALM_NAME).toRepresentation().getId(), response.getClientId());
         Assert.assertTrue(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
 
 
 
         // Update client with some bad JWKS_URI
         response.setJwksUri("http://localhost:4321/non-existent");
+        response.setJwks(null);
         reg.auth(Auth.token(response.getRegistrationAccessToken()))
                 .oidc().update(response);
 
@@ -268,6 +273,8 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
     @Test
     public void createClientWithJWKSURI_rotateClientKeys() throws Exception {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+
         OIDCClientRepresentation clientRep = createRep();
 
         clientRep.setGrantTypes(Collections.singletonList(OAuth2Constants.CLIENT_CREDENTIALS));

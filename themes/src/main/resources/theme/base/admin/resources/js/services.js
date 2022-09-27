@@ -387,6 +387,14 @@ module.factory('RealmSpecificLocalizationTexts', function($resource) {
     return $resource(authUrl + '/admin/realms/:id/localization/:locale', {
         id : '@realm',
         locale : '@locale'
+    }, {
+        get: {
+            isArray: false,
+                method: 'GET',
+                params: {
+                    useRealmDefaultLocaleFallback: '@useRealmDefaultLocaleFallback'
+                }
+        }
     });
 });
 
@@ -949,15 +957,11 @@ function clientSelectControl($scope, realm, Client) {
         delay: 500,
         allowClear: true,
         query: function (query) {
-            var data = {results: []};
             Client.query({realm: realm, search: true, clientId: query.term.trim(), max: 20}, function(response) {
-                data.results = response;
-                query.callback(data);
+                query.callback({ results: response.map(function (client) {
+                    return { id: client.id, text: client.clientId }
+                })});
             });
-        },
-        formatResult: function(object, container, query) {
-            object.text = object.clientId;
-            return object.clientId;
         }
     };
 }
@@ -1017,7 +1021,7 @@ function roleControl($scope, $route, realm, role, roles, Client,
 
 
     clientSelectControl($scope, $route.current.params.realm, Client);
-    
+
     $scope.selectedClient = null;
 
 
@@ -1518,10 +1522,15 @@ module.factory('ClientSecret', function($resource) {
         realm : '@realm',
         client : '@client'
     },  {
-        update : {
-            method : 'POST'
+          update : {
+              method : 'POST'
+          },
+          invalidate: {
+              url:  authUrl + '/admin/realms/:realm/clients/:client/client-secret/rotated',
+              method: 'DELETE'
+          }
         }
-    });
+    );
 });
 
 module.factory('ClientRegistrationAccessToken', function($resource) {
@@ -1561,7 +1570,7 @@ module.factory('Current', function(Realm, $route, $rootScope) {
     };
 
     $rootScope.$on('$routeChangeStart', function() {
-        current.realms = Realm.query(null, function(realms) {
+        current.realms = Realm.query({briefRepresentation: true}, function(realms) {
             var currentRealm = null;
             if ($route.current.params.realm) {
                 for (var i = 0; i < realms.length; i++) {
@@ -1589,15 +1598,15 @@ module.factory('TimeUnit', function() {
         if (time % 60 == 0) {
             unit = 'Minutes';
             time  = time / 60;
+            if (time % 60 == 0) {
+                unit = 'Hours';
+                time = time / 60;
+                if (time % 24 == 0) {
+                    unit = 'Days';
+                }
+            }
         }
-        if (time % 60 == 0) {
-            unit = 'Hours';
-            time = time / 60;
-        }
-        if (time % 24 == 0) {
-            unit = 'Days'
-            time = time / 24;
-        }
+
         return unit;
     }
 
@@ -1642,14 +1651,14 @@ module.factory('TimeUnit2', function() {
                 if (time % 60 == 0) {
                     unit = 'Minutes';
                     time = time / 60;
-                }
-                if (time % 60 == 0) {
-                    unit = 'Hours';
-                    time = time / 60;
-                }
-                if (time % 24 == 0) {
-                    unit = 'Days'
-                    time = time / 24;
+                    if (time % 60 == 0) {
+                        unit = 'Hours';
+                        time = time / 60;
+                        if (time % 24 == 0) {
+                            unit = 'Days';
+                            time = time / 24;
+                        }
+                    }
                 }
             }
         }

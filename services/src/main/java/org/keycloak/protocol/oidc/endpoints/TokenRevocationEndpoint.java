@@ -17,10 +17,12 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -40,7 +42,7 @@ import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.TokenRevocationStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -123,6 +125,11 @@ public class TokenRevocationEndpoint {
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
         return cors.builder(Response.ok()).build();
+    }
+
+    @OPTIONS
+    public Response preflight() {
+        return Cors.add(request, Response.ok()).auth().preflight().allowedMethods("POST", "OPTIONS").build();
     }
 
     private void checkSsl() {
@@ -251,9 +258,9 @@ public class TokenRevocationEndpoint {
     }
 
     private void revokeAccessToken() {
-        TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         int currentTime = Time.currentTime();
         long lifespanInSecs = Math.max(token.getExp() - currentTime, 10);
-        revocationStore.putRevokedToken(token.getId(), lifespanInSecs);
+        singleUseStore.put(token.getId() + SingleUseObjectProvider.REVOKED_KEY, lifespanInSecs, Collections.emptyMap());
     }
 }

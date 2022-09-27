@@ -44,11 +44,20 @@ public class ErrorResponse {
     }
 
     public static Response errors(List<ErrorRepresentation> s, Response.Status status) {
-        if (s.size() == 1) {
+        return errors(s, status, true);
+    }
+    
+    public static Response errors(List<ErrorRepresentation> s, Response.Status status, boolean shrinkSingleError) {
+        if (shrinkSingleError && s.size() == 1) {
             return Response.status(status).entity(s.get(0)).type(MediaType.APPLICATION_JSON).build();
         }
         ErrorRepresentation error = new ErrorRepresentation();
         error.setErrors(s);
+        if(!shrinkSingleError && s.size() == 1) {
+            error.setErrorMessage(s.get(0).getErrorMessage());
+            error.setParams(s.get(0).getParams());
+            error.setField(s.get(0).getField());
+        }
         return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON).build();
     }
 }

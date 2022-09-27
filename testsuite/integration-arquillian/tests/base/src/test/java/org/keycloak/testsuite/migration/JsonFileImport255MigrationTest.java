@@ -19,7 +19,6 @@ package org.keycloak.testsuite.migration;
 import org.junit.Test;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -29,15 +28,12 @@ import java.util.Map;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.ProfileAssume;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(value = {AuthServer.REMOTE, AuthServer.QUARKUS}, details = "It works locally for Quarkus, but failing on CI for unknown reason")
 public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Override
@@ -46,6 +42,10 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
         try {
             reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-2.5.5.Final.json"));
             masterRep = reps.remove("master");
+
+            //the realm with special characters in its id is intended for db migration test, not json file test
+            reps.remove("test ' and ; and -- and \"");
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -67,6 +67,8 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo8_x();
         testMigrationTo9_x();
         testMigrationTo12_x(false);
+        testMigrationTo18_x();
+        testMigrationTo20_x();
     }
 
 }

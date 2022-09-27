@@ -23,6 +23,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.awaitility.core.ThrowingRunnable;
 import org.junit.Assert;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.page.AbstractPage;
@@ -36,7 +37,9 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlEquals;
@@ -68,8 +71,10 @@ public class URLAssert {
     }
 
     public static void assertCurrentUrlEquals(final String url) {
-        assertTrue("Expected URL: " + url + " ; actual: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
-                currentUrlEquals(url));
+        awaitUntilAsserted(() -> {
+            assertTrue("Expected URL: " + url + " ; actual: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
+                    currentUrlEquals(url));
+        });
     }
 
     public static void assertCurrentUrlStartsWith(final AbstractPage page, WebDriver driver) {
@@ -87,12 +92,10 @@ public class URLAssert {
    }
 
     public static void assertCurrentUrlStartsWith(final String url){
-        assertTrue("URL expected to begin with: " + removeDefaultPorts(url) + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
-        currentUrlStartsWith(removeDefaultPorts(url)));
-    }
-
-    public static void waitUntilUrlStartsWith(String url, int timeOutInSeconds) {
-        new WebDriverWait(DroneUtils.getCurrentDriver(), timeOutInSeconds).until(ExpectedConditions.urlMatches("^" + url));
+        awaitUntilAsserted(() -> {
+            assertTrue("URL expected to begin with: " + removeDefaultPorts(url) + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
+                    currentUrlStartsWith(removeDefaultPorts(url)));
+        });
     }
 
     public static void assertCurrentUrlDoesntStartWith(final AbstractPage page, WebDriver driver) {
@@ -101,7 +104,9 @@ public class URLAssert {
 
     public static void assertCurrentUrlDoesntStartWith(final String url, WebDriver driver) {
         DroneUtils.addWebDriver(driver);
-        assertCurrentUrlDoesntStartWith(url);
+        awaitUntilAsserted(() -> {
+            assertCurrentUrlDoesntStartWith(url);
+        });
         DroneUtils.removeWebDriver();
     }
 
@@ -110,8 +115,10 @@ public class URLAssert {
     }
 
     public static void assertCurrentUrlDoesntStartWith(final String url) {
-        assertTrue("URL expected NOT to begin with: " + url + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
-                currentUrlDoesntStartWith(url));
+        awaitUntilAsserted(() -> {
+            assertTrue("URL expected NOT to begin with: " + url + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
+                    currentUrlDoesntStartWith(url));
+        });
     }
 
 
@@ -193,4 +200,13 @@ public class URLAssert {
 
         protected abstract void assertResponseBody(String body) throws IOException;
     }
+
+    private static void awaitUntilAsserted(ThrowingRunnable r) {
+        await()
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .pollInSameThread() // to ensure that drones are accessible
+                .atMost(10, TimeUnit.SECONDS)
+                .untilAsserted(r);
+    }
+
 }

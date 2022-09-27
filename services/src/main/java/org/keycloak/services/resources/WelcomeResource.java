@@ -18,18 +18,19 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
@@ -176,12 +177,12 @@ public class WelcomeResource {
 
             Map<String, Object> map = new HashMap<>();
 
+            map.put("adminConsoleEnabled", isAdminConsoleEnabled());
             map.put("productName", Version.NAME);
             map.put("productNameFull", Version.NAME_FULL);
 
             map.put("properties", theme.getProperties());
             map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
-
             map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
             map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/common/keycloak");
 
@@ -190,6 +191,8 @@ public class WelcomeResource {
             if (bootstrap) {
                 boolean isLocal = isLocal();
                 map.put("localUser", isLocal);
+                map.put("localAdminUrl", "http://localhost:8080/auth");
+                map.put("adminUserCreationMessage","or use the add-user-keycloak script");
 
                 if (isLocal) {
                     String stateChecker = setCsrfCookie();
@@ -202,7 +205,7 @@ public class WelcomeResource {
             if (errorMessage != null) {
                 map.put("errorMessage", errorMessage);
             }
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
+            FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
 
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)
@@ -212,6 +215,10 @@ public class WelcomeResource {
         } catch (Exception e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private static boolean isAdminConsoleEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
     }
 
     private Theme getTheme() {
@@ -256,7 +263,7 @@ public class WelcomeResource {
     }
 
     private String setCsrfCookie() {
-        String stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
+        String stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
         String cookiePath = session.getContext().getUri().getPath();
         boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
         CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true);

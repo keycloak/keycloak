@@ -16,7 +16,7 @@
  */
 package org.keycloak.userprofile.config;
 
-import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -28,8 +28,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class UPAttributeRequired {
 
-    private List<String> roles;
-    private List<String> scopes;
+    private Set<String> roles;
+    private Set<String> scopes;
 
     /**
      * Check if this config means that the attribute is ALWAYS required.
@@ -41,19 +41,19 @@ public class UPAttributeRequired {
         return (roles == null || roles.isEmpty()) && (scopes == null || scopes.isEmpty());
     }
 
-    public List<String> getRoles() {
+    public Set<String> getRoles() {
         return roles;
     }
 
-    public void setRoles(List<String> roles) {
+    public void setRoles(Set<String> roles) {
         this.roles = roles;
     }
 
-    public List<String> getScopes() {
+    public Set<String> getScopes() {
         return scopes;
     }
 
-    public void setScopes(List<String> scopes) {
+    public void setScopes(Set<String> scopes) {
         this.scopes = scopes;
     }
 

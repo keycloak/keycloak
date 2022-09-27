@@ -11,6 +11,7 @@ import org.keycloak.client.registration.cli.aesh.AeshEnhancer;
 import org.keycloak.client.registration.cli.aesh.ValveInputStream;
 import org.keycloak.client.registration.cli.aesh.Globals;
 import org.keycloak.client.registration.cli.commands.KcRegCmd;
+import org.keycloak.common.crypto.CryptoIntegration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,6 +22,8 @@ import java.util.Arrays;
 public class KcRegMain {
 
     public static void main(String [] args) {
+
+        CryptoIntegration.init(KcRegMain.class.getClassLoader());
 
         Globals.stdin = new ValveInputStream();
 

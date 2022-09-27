@@ -26,6 +26,7 @@ import org.keycloak.models.RealmProviderFactory;
 import javax.persistence.EntityManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
@@ -61,7 +62,7 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
     @Override
     public JpaRealmProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em, null);
+        return new JpaRealmProvider(session, em, null, null);
     }
 
     @Override
@@ -83,7 +84,7 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
             } else {
                 return;
             }
-            create(e.getKeycloakSession()).preRemove(realm, role);
+            ((JpaRealmProvider) e.getKeycloakSession().getProvider(RealmProvider.class)).preRemove(realm, role);
         }
     }
 

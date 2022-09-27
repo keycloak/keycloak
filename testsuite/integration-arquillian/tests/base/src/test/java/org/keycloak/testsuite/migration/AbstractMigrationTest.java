@@ -84,6 +84,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -93,11 +94,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
+import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -310,6 +311,21 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testSamlAttributes(migrationRealm);
     }
 
+    protected void testMigrationTo18_0_0() {
+        // check that all expected scopes exist in the migrated realm.
+        testRealmDefaultClientScopes(migrationRealm);
+    }
+
+    protected void testMigrationTo19_0_0() {
+        testPostLogoutRedirectUrisSet(migrationRealm);
+    }
+
+   protected void testMigrationTo20_0_0() {
+        testViewGroups(masterRealm);
+        testViewGroups(migrationRealm);
+    }
+
+
     protected void testDeleteAccount(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
         ClientResource accountResource = realm.clients().get(accountClient.getId());
@@ -378,9 +394,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         MappingsRepresentation scopes = clientResource.getScopeMappings().getAll();
         assertNull(scopes.getRealmMappings());
         assertEquals(1, scopes.getClientMappings().size());
-        assertEquals(1, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().size());
-        assertEquals(MANAGE_ACCOUNT, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().get(0).getName());
-
+        assertEquals(2, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().size());
+        Assert.assertNames(scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), MANAGE_ACCOUNT, VIEW_GROUPS);
         List<ProtocolMapperRepresentation> mappers = clientResource.getProtocolMappers().getMappers();
         assertEquals(1, mappers.size());
         assertEquals("oidc-audience-resolve-mapper", mappers.get(0).getProtocolMapper());
@@ -482,6 +497,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         }
     }
 
+    protected void testViewGroups(RealmResource realm) {
+        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+
+        ClientResource accountResource = realm.clients().get(accountClient.getId());
+        RoleRepresentation viewAppRole = accountResource.roles().get(VIEW_GROUPS).toRepresentation();
+        assertNotNull(viewAppRole);
+    }
+
     protected void testRoleManageAccountLinks(RealmResource... realms) {
         log.info("testing role manage account links");
         for (RealmResource realm : realms) {
@@ -508,16 +531,17 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testExtractRealmKeysMasterRealm(RealmResource masterRealm) {
         log.info("testing extract realm keys");
         String expectedMasterRealmKey = "MIIEowIBAAKCAQEAiU54OXoCbHy0L0gHn1yasctcnKHRU1pHFIJnWvaI7rClJydet9dDJaiYXOxMKseiBm3eYznfN3cPyU8udYmRnMuKjiocZ77LT2IEttAjXb6Ggazx7loriFHRy0IOJeX4KxXhAPWmxqa3mkFNfLBEvFqVaBgUDHQ60cmnPvNSHYudBTW9K80s8nvmP2pso7HTwWJ1+Xatj1Ey/gTmB3CXlyqBegGWC9TeuErEYpYhdh+11TVWasgMBZyUCtL3NRPaBuhaPg1LpW8lWGk05nS+YM6dvTk3Mppv+z2RygEpxyO09oT3b4G+Zfwit1STqn0AvDTGzINdoKcNtFScV0j8TwIDAQABAoIBAHcbPKsPLZ8SJfOF1iblW8OzFulAbaaSf2pJHIMJrQrw7LKkMkPjVXoLX+/rgr7xYZmWIP2OLBWfEHCeYTzQUyHiZpSf7vgHx7Fa45/5uVQOe/ttHIiYa37bCtP4vvEdJkOpvP7qGPvljwsebqsk9Ns28LfVez66bHOjK5Mt2yOIulbTeEs7ch//h39YwKJv96vc+CHbV2O6qoOxZessO6y+287cOBvbFXmS2GaGle5Nx/EwncBNS4b7czoetmm70+9ht3yX+kxaP311YUT31KQjuaJt275kOiKsrXr27PvgO++bsIyGuSzqyS7G7fmxF2zUyphEqEpalyDGMKMnrAECgYEA1fCgFox03rPDjm0MhW/ThoS2Ld27sbWQ6reS+PBMdUTJZVZIU1D2//h6VXDnlddhk6avKjA4smdy1aDKzmjz3pt9AKn+kgkXqtTC2fD3wp+fC9hND0z+rQPGe/Gk7ZUnTdsqnfyowxr+woIgzdnRukOUrG+xQiP3RUUT7tt6NQECgYEApEz2xvgqMm+9/f/YxjLdsFUfLqc4WlafB863stYEVqlCYy5ujyo0VQ0ahKSKJkLDnf52+aMUqPOpwaGePpu3O6VkvpcKfPY2MUlZW7/6Sa9et9hxNkdTS7Gui2d1ELpaCBe1Bc62sk8EA01iHXE1PpvyUqDWrhNh+NrDICA9oU8CgYBgGDYACtTP11TmW2r9YK5VRLUDww30k4ZlN1GnyV++aMhBYVEZQ0u+y+A/EnijIFwu0vbo70H4OGknNZMCxbeMbLDoJHM5KyZbUDe5ZvgSjloFGwH59m6KTiDQOUkIgi9mVCQ/VGaFRFHcElEjxUvj60kTbxPijn8ZuR5r8l9hAQKBgQCQ9jL5pHWeoIayN20smi6M6N2lTPbkhe60dcgQatHTIG2pkosLl8IqlHAkPgSB84AiwyR351JQKwRJCm7TcJI/dxMnMZ6YWKfB3qSP1hdfsfJRJQ/mQxIUBAYrizF3e+P5peka4aLCOgMhYsJBlePThMZN7wja99EGPwXQL4IQ8wKBgB8Nis1lQK6Z30GCp9u4dYleGfEP71Lwqvk/eJb89/uz0fjF9CTpJMULFc+nA5u4yHP3LFnRg3zCU6aEwfwUyk4GH9lWGV/qIAisQtgrCEraVe4qxz0DVE59C7qjO26IhU2U66TEzPAqvQ3zqey+woDn/cz/JMWK1vpcSk+TKn3K";
-        List<ComponentRepresentation> components = masterRealm.components().query(MASTER, KeyProvider.class.getName());
+        String realmId = masterRealm.toRepresentation().getId();
+        List<ComponentRepresentation> components = masterRealm.components().query(realmId, KeyProvider.class.getName());
         assertEquals(3, components.size());
 
-        components = masterRealm.components().query(MASTER, KeyProvider.class.getName(), "rsa");
+        components = masterRealm.components().query(realmId, KeyProvider.class.getName(), "rsa");
         assertEquals(1, components.size());
 
         ComponentRepresentation component = testingClient.server(MASTER).fetch(RunHelpers.internalComponent(components.get(0).getId()));
         assertEquals(expectedMasterRealmKey, component.getConfig().getFirst("privateKey"));
 
-        components = masterRealm.components().query(MASTER, KeyProvider.class.getName(), "hmac-generated");
+        components = masterRealm.components().query(realmId, KeyProvider.class.getName(), "hmac-generated");
         assertEquals(1, components.size());
 
     }
@@ -525,17 +549,17 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testExtractRealmKeysMigrationRealm(RealmResource migrationRealm) {
         log.info("testing extract realm keys");
         String expectedMigrationRealmKey = "MIIEpAIBAAKCAQEApt6gCllWkVTZ7fy/oRIx6Bxjt9x3eKKyKGFXvN4iaafrNqpYU9lcqPngWJ9DyXGqUf8RpjPaQWiLWLxjw3xGBqLk2E1/Frb9e/dy8rj//fHGq6bujN1iguzyFwxPGT5Asd7jflRI3qU04M8JE52PArqPhGL2Fn+FiSK5SWRIGm+hVL7Ck/E/tVxM25sFG1/UTQqvrROm4q76TmP8FsyZaTLVf7cCwW2QPIX0N5HTVb3QbBb5KIsk4kKmk/g7uUxS9r42tu533LISzRr5CTyWZAL2XFRuF2RrKdE8gwqkEubw6sDmB2mE0EoPdY1DUhBQgVP/5rwJrCtTsUBR2xdEYQIDAQABAoIBAFbbsNBSOlZBpYJUOmcb8nBQPrOYhXN8tGGCccn0klMOvcdhmcJjdPDbyCQ5Gm7DxJUTwNsTSHsdcNMKlJ9Pk5+msJnKlOl87KrXXbTsCQvlCrWUmb0nCzz9GvJWTOHl3oT3cND0DE4gDksqWR4luCgCdevCGzgQvrBoK6wBD+r578uEW3iw10hnJ0+wnGiw8IvPzE1a9xbY4HD8/QrYdaLxuLb/aC1PDuzrz0cOjnvPkrws5JrbUSnbFygJiOv1z4l2Q00uGIxlHtXdwQBnTZZjVi4vOec2BYSHffgwDYEZIglw1mnrV7y0N1nnPbtJK/cegIkXoBQHXm8Q99TrWMUCgYEA9au86qcwrXZZg5H4BpR5cpy0MSkcKDbA1aRL1cAyTCqJxsczlAtLhFADF+NhnlXj4y7gwDEYWrz064nF73I+ZGicvCiyOy+tCTugTyTGS+XR948ElDMS6PCUUXsotS3dKa0b3c9wd2mxeddTjq/ArfgEVZJ6fE1KtjLt9dtfA+8CgYEAreK3JsvjR5b/Xct28TghYUU7Qnasombb/shqqy8FOMjYUr5OUm/OjNIgoCqhOlE8oQDJ4dOZofNSa7tL+oM8Gmbal+E3fRzxnx/9/EC4QV6sVaPLTIyk7EPfKTcZuzH7+BNZtAziTxJw9d6YJQRbkpg92EZIEoR8iDj2Xs5xrK8CgYEAwMVWwwYX8zT3vn7ukTM2LRH7bsvkVUXJgJqgCwT6Mrv6SmkK9vL5+cPS+Y6pjdW1sRGauBSOGL1Grf/4ug/6F03jFt4UJM8fRyxreU7Q7sNSQ6AMpsGA6BnHODycz7ZCYa59PErG5FyiL4of/cm5Nolz1TXQOPNpWZiTEqVlZC8CgYA4YPbjVF4nuxSnU64H/hwMjsbtAM9uhI016cN0J3W4+J3zDhMU9X1x+Tts0wWdg/N1fGz4lIQOl3cUyRCUc/KL2OdtMS+tmDHbVyMho9ZaE5kq10W2Vy+uDz+O/HeSU12QDK4cC8Vgv+jyPy7zaZtLR6NduUPrBRvfiyCOkr8WrwKBgQCY0h4RCdNFhr0KKLLmJipAtV8wBCGcg1jY1KoWKQswbcykfBKwHbF6EooVqkRW0ITjWB7ZZCf8TnSUxe0NXCUAkVBrhzS4DScgtoSZYOOUaSHgOxpfwgnQ3oYotKi98Yg3IsaLs1j4RuPG5Sp1z6o+ELP1uvr8azyn9YlLa+523Q==";
-
-        List<ComponentRepresentation> components = migrationRealm.components().query(MIGRATION, KeyProvider.class.getName());
+        String realmId = migrationRealm.toRepresentation().getId();
+        List<ComponentRepresentation> components = migrationRealm.components().query(realmId, KeyProvider.class.getName());
         assertEquals(3, components.size());
 
-        components = migrationRealm.components().query(MIGRATION, KeyProvider.class.getName(), "rsa");
+        components = migrationRealm.components().query(realmId, KeyProvider.class.getName(), "rsa");
         assertEquals(1, components.size());
 
         ComponentRepresentation component = testingClient.server(MIGRATION).fetch(RunHelpers.internalComponent(components.get(0).getId()));
         assertEquals(expectedMigrationRealmKey, component.getConfig().getFirst("privateKey"));
 
-        components = migrationRealm.components().query(MIGRATION, KeyProvider.class.getName(), "hmac-generated");
+        components = migrationRealm.components().query(realmId, KeyProvider.class.getName(), "hmac-generated");
         assertEquals(1, components.size());
     }
 
@@ -578,7 +602,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ClientsResource clients = migrationRealm.clients();
         ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
         ResourceRepresentation resource = clients.get(clientRepresentation.getId()).authorization().resources().findByName("Protected Resource").get(0);
-        org.junit.Assert.assertThat(resource.getUris(), containsInAnyOrder("/*"));
+        assertThat(resource.getUris(), containsInAnyOrder("/*"));
     }
 
     protected void testAuthorizationServices(RealmResource... realms) {
@@ -720,6 +744,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void testClientDefaultClientScopes(RealmResource realm) {
         log.info("Testing default client scopes transferred from client scope in realm: " + realm.toRepresentation().getRealm());
         ExportImportUtil.testClientDefaultClientScopes(realm);
+    }
+
+    private void testPostLogoutRedirectUrisSet(RealmResource realm) {
+        log.info("Testing that POST_LOGOUT_REDIRECT_URI is set to '+' for all clients in " + realm.toRepresentation().getRealm());
+        ExportImportUtil.testDefaultPostLogoutRedirectUris(realm);
     }
 
     private void testOfflineScopeAddedToClient() {
@@ -931,6 +960,18 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo14_0_0();
     }
 
+    protected void testMigrationTo18_x() {
+        testMigrationTo18_0_0();
+    }
+
+    protected void testMigrationTo19_x() {
+        testMigrationTo19_0_0();
+    }
+
+    protected void testMigrationTo20_x() {
+        testMigrationTo20_0_0();
+    }
+
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
         if (supportedAuthzServices) {
             testDecisionStrategySetOnResourceServer();
@@ -979,6 +1020,55 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                     String clientId = clientRepresentation.getClientId();
                     assertThat(clientRepresentation.getAttributes(), hasEntry(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER, ArtifactBindingUtils.computeArtifactBindingIdentifierString(clientId)));
                 });
+    }
+
+    protected void testExtremelyLongClientAttribute(RealmResource realm) {
+        log.info("Testing SAML certfificates attribute");
+
+        realm.clients().findByClientId("migration-saml-client")
+          .forEach(clientRepresentation -> {
+                assertThat(clientRepresentation.getAttributes(), hasEntry("extremely_long_attribute", 
+                      "     00000     00010     00020     00030     00040     00050     00060     00070     00080     00090"
+                    + "     00100     00110     00120     00130     00140     00150     00160     00170     00180     00190"
+                    + "     00200     00210     00220     00230     00240     00250     00260     00270     00280     00290"
+                    + "     00300     00310     00320     00330     00340     00350     00360     00370     00380     00390"
+                    + "     00400     00410     00420     00430     00440     00450     00460     00470     00480     00490"
+                    + "     00500     00510     00520     00530     00540     00550     00560     00570     00580     00590"
+                    + "     00600     00610     00620     00630     00640     00650     00660     00670     00680     00690"
+                    + "     00700     00710     00720     00730     00740     00750     00760     00770     00780     00790"
+                    + "     00800     00810     00820     00830     00840     00850     00860     00870     00880     00890"
+                    + "     00900     00910     00920     00930     00940     00950     00960     00970     00980     00990"
+                    + "     01000     01010     01020     01030     01040     01050     01060     01070     01080     01090"
+                    + "     01100     01110     01120     01130     01140     01150     01160     01170     01180     01190"
+                    + "     01200     01210     01220     01230     01240     01250     01260     01270     01280     01290"
+                    + "     01300     01310     01320     01330     01340     01350     01360     01370     01380     01390"
+                    + "     01400     01410     01420     01430     01440     01450     01460     01470     01480     01490"
+                    + "     01500     01510     01520     01530     01540     01550     01560     01570     01580     01590"
+                    + "     01600     01610     01620     01630     01640     01650     01660     01670     01680     01690"
+                    + "     01700     01710     01720     01730     01740     01750     01760     01770     01780     01790"
+                    + "     01800     01810     01820     01830     01840     01850     01860     01870     01880     01890"
+                    + "     01900     01910     01920     01930     01940     01950     01960     01970     01980     01990"
+                    + "     02000     02010     02020     02030     02040     02050     02060     02070     02080     02090"
+                    + "     02100     02110     02120     02130     02140     02150     02160     02170     02180     02190"
+                    + "     02200     02210     02220     02230     02240     02250     02260     02270     02280     02290"
+                    + "     02300     02310     02320     02330     02340     02350     02360     02370     02380     02390"
+                    + "     02400     02410     02420     02430     02440     02450     02460     02470     02480     02490"
+                    + "     02500     02510     02520     02530     02540     02550     02560     02570     02580     02590"
+                    + "     02600     02610     02620     02630     02640     02650     02660     02670     02680     02690"
+                    + "     02700     02710     02720     02730     02740     02750     02760     02770     02780     02790"
+                    + "     02800     02810     02820     02830     02840     02850     02860     02870     02880     02890"
+                    + "     02900     02910     02920     02930     02940     02950     02960     02970     02980     02990"
+                    + "     03000     03010     03020     03030     03040     03050     03060     03070     03080     03090"
+                    + "     03100     03110     03120     03130     03140     03150     03160     03170     03180     03190"
+                    + "     03200     03210     03220     03230     03240     03250     03260     03270     03280     03290"
+                    + "     03300     03310     03320     03330     03340     03350     03360     03370     03380     03390"
+                    + "     03400     03410     03420     03430     03440     03450     03460     03470     03480     03490"
+                    + "     03500     03510     03520     03530     03540     03550     03560     03570     03580     03590"
+                    + "     03600     03610     03620     03630     03640     03650     03660     03670     03680     03690"
+                    + "     03700     03710     03720     03730     03740     03750     03760     03770     03780     03790"
+                    + "     03800     03810     03820     03830     03840     03850     03860     03870     03880     03890"
+                    + "     03900     03910     03920     03930     03940     03950     03960     03970     03980"));
+          });
     }
 
     protected void testRealmAttributesMigration() {

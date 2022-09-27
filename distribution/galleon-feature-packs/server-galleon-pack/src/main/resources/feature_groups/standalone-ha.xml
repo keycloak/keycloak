@@ -26,7 +26,11 @@
                 </feature>
             </feature>
         </feature-group>
-        <feature-group name="ejb3"/>
+        <feature-group name="ejb3">
+            <feature spec="subsystem.ejb3">
+                <param name="default-sfsb-cache" value="distributable"/>
+            </feature>
+        </feature-group>
         <feature-group name="health"/>
         <feature-group name="io"/>
         <feature-group name="jaxrs"/>

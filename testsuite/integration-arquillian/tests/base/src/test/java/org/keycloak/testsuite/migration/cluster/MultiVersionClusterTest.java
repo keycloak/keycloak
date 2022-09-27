@@ -276,7 +276,7 @@ public class MultiVersionClusterTest extends AbstractClusterTest {
 
                             if (Arrays.asList(classForName.getDeclaredConstructors()).stream()
                                     .filter(c -> !c.isSynthetic())
-                                    .anyMatch(c -> c.getParameterTypes().length == 0 )) {
+                                    .anyMatch(c -> c.getParameterCount() == 0 )) {
                                 newInstance = Reflections.newInstance(classForName);
                             } else {
                                 Constructor<?> constructor = Arrays.asList(classForName.getDeclaredConstructors()).stream()

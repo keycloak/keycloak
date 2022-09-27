@@ -20,6 +20,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,15 +51,29 @@ public interface GroupLookupProvider {
     }
 
     /**
-     * Returns groups with the given string in name for the given realm.
+     * Returns the group hierarchy with the given string in name for the given realm.
+     *
+     * For a matching group node the parent group is fetched by id (with all children) and added to the result stream.
+     * This is done until the group node does not have a parent (root group)
      *
      * @param realm Realm.
      * @param search Case sensitive searched string.
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return Stream of groups with the given string in name. Never returns {@code null}.
+     * @return Stream of root groups that have the given string in their name themself or a group in their child-collection has.
+     * The returned hierarchy contains siblings that do not necessarily have a matching name. Never returns {@code null}.
      */
     Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults);
 
+    /**
+     * Returns the groups filtered by attribute names and attribute values for the given realm.
+     *
+     * @param realm Realm.
+     * @param attributes name-value pairs that are compared to group attributes.
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of groups with attributes matching all searched attributes. Never returns {@code null}.
+     */
+    Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults);
 
 }

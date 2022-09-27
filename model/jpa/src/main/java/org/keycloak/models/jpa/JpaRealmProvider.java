@@ -65,6 +65,7 @@ import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
+import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
@@ -81,11 +82,13 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     private final KeycloakSession session;
     protected EntityManager em;
     private Set<String> clientSearchableAttributes;
+    private Set<String> groupSearchableAttributes;
 
-    public JpaRealmProvider(KeycloakSession session, EntityManager em, Set<String> clientSearchableAttributes) {
+    public JpaRealmProvider(KeycloakSession session, EntityManager em, Set<String> clientSearchableAttributes, Set<String> groupSearchableAttributes) {
         this.session = session;
         this.em = em;
         this.clientSearchableAttributes = clientSearchableAttributes;
+        this.groupSearchableAttributes = groupSearchableAttributes;
     }
 
     @Override
@@ -284,8 +287,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
         TypedQuery<Map> query = em.createNamedQuery("getAllRedirectUrisOfEnabledClients", Map.class);
         query.setParameter("realm", realm.getId());
-        return query.getResultStream()
-          .filter(s -> s.get("client") != null)
+        return closing(query.getResultStream()
+          .filter(s -> s.get("client") != null))
           .collect(
             Collectors.groupingBy(
               s -> new ClientAdapter(realm, em, session, (ClientEntity) s.get("client")),
@@ -300,6 +303,26 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         query.setParameter("realm", realm.getId());
 
         return getRolesStream(query, realm, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        if (ids == null) return Stream.empty();
+
+        TypedQuery<String> query;
+
+        if (search == null) {
+            query = em.createNamedQuery("getRoleIdsFromIdList", String.class);
+        } else {
+            query = em.createNamedQuery("getRoleIdsByNameContainingFromIdList", String.class)
+                    .setParameter("search", search);
+        }
+
+        query.setParameter("realm", realm.getId())
+                .setParameter("ids", ids.collect(Collectors.toList()));
+
+        return closing(paginateQuery(query, first, max).getResultStream())
+                .map(g -> session.roles().getRoleById(realm, g));
     }
 
     @Override
@@ -538,6 +561,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         return closing(paginateQuery(groupsQuery, first, max).getResultStream()
                 .map(realm::getGroupById)
+                // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
+                .filter(Objects::nonNull)
                 .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }
@@ -903,7 +928,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         query.setParameter("clientId", client.getId());
         query.setParameter("defaultScope", defaultScope);
 
-        return query.getResultStream()
+        return closing(query.getResultStream())
                 .map(clientScopeId -> session.clientScopes().getClientScopeById(realm, clientScopeId))
                 .filter(Objects::nonNull)
                 .filter(clientScope -> Objects.equals(clientScope.getProtocol(), clientProtocol))
@@ -928,6 +953,43 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        Map<String, String> filteredAttributes = groupSearchableAttributes == null || groupSearchableAttributes.isEmpty()
+                ? attributes
+                : attributes.entrySet().stream().filter(m -> groupSearchableAttributes.contains(m.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<GroupEntity> queryBuilder = builder.createQuery(GroupEntity.class);
+        Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realm"), realm.getId()));
+
+        for (Map.Entry<String, String> entry : filteredAttributes.entrySet()) {
+            String key = entry.getKey();
+            if (key == null || key.isEmpty()) {
+                continue;
+            }
+            String value = entry.getValue();
+
+            Join<GroupEntity, GroupAttributeEntity> attributeJoin = root.join("attributes");
+
+            Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
+            Predicate attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+            predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
+        }
+
+        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
+        queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("name")));
+
+        TypedQuery<GroupEntity> query = em.createQuery(queryBuilder);
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(g -> session.groups().getGroupById(realm, g.getId()));
+    }
+
+    @Override
     public void removeExpiredClientInitialAccess() {
         int currentTime = Time.currentTime();
 
@@ -947,9 +1009,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public boolean updateLocalizationText(RealmModel realm, String locale, String key, String text) {
         RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
         if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
-            Map<String, String> keys = new HashMap<>(entity.getTexts());
-            keys.put(key, text);
-            entity.setTexts(keys);
+            entity.getTexts().put(key, text);
+
             em.persist(entity);
             return true;
         } else {
@@ -966,9 +1027,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             entity.setLocale(locale);
             entity.setTexts(new HashMap<>());
         }
-        Map<String, String> keys = new HashMap<>(entity.getTexts());
-        keys.put(key, text);
-        entity.setTexts(keys);
+        entity.getTexts().put(key, text);
         em.persist(entity);
     }
 
@@ -1008,9 +1067,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public boolean deleteLocalizationText(RealmModel realm, String locale, String key) {
         RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
         if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
-            Map<String, String> keys = new HashMap<>(entity.getTexts());
-            keys.remove(key);
-            entity.setTexts(keys);
+            entity.getTexts().remove(key);
+
             em.persist(entity);
             return true;
         } else {

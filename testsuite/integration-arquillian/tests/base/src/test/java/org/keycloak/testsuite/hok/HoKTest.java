@@ -18,6 +18,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -55,6 +56,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.drone.Different;
@@ -65,6 +67,7 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 
@@ -77,7 +80,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
     @Different
     protected WebDriver driver2;
 
-    private static final List<String> CLIENT_LIST = Arrays.asList("test-app", "named-test-app");
+    private static final List<String> CLIENT_LIST = Arrays.asList("test-app", "named-test-app", "service-account-client");
 
     public static class HoKAssertEvents extends AssertEvents {
 
@@ -132,6 +135,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         ClientRepresentation confApp = KeycloakModelUtils.createClient(testRealm, "confidential-cli");
         confApp.setSecret("secret1");
         confApp.setServiceAccountsEnabled(Boolean.TRUE);
+
+        ClientRepresentation serviceAccountApp = KeycloakModelUtils.createClient(testRealm, "service-account-client");
+        serviceAccountApp.setSecret("secret1");
+        serviceAccountApp.setServiceAccountsEnabled(Boolean.TRUE);
+        serviceAccountApp.setDirectAccessGrantsEnabled(Boolean.TRUE);
 
         ClientRepresentation pubApp = KeycloakModelUtils.createClient(testRealm, "public-cli");
         pubApp.setPublicClient(Boolean.TRUE);
@@ -634,16 +642,75 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
     }
 
+    @Test
+    public void serviceAccountWithClientCertificate() throws Exception {
+        oauth.clientId("service-account-client");
+
+        AccessTokenResponse response;
+
+        Supplier<CloseableHttpClient> previous = oauth.getHttpClient();
+
+        try {
+            // Request without HoK should fail
+            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithoutKeyStoreAndTrustStore);
+            response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+            assertEquals(400, response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            assertEquals("Client Certification missing for MTLS HoK Token Binding", response.getErrorDescription());
+
+            // Request with HoK - success
+            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
+            response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+            assertEquals(200, response.getStatusCode());
+
+            // Success Pattern
+            verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), false);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient(previous);
+        }
+    }
+
+    @Test
+    public void resourceOwnerPasswordCredentialsGrantWithClientCertificate() throws Exception {
+        oauth.clientId("service-account-client");
+
+        AccessTokenResponse response;
+
+        Supplier<CloseableHttpClient> previous = oauth.getHttpClient();
+
+        try {
+            // Request without HoK should fail
+            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithoutKeyStoreAndTrustStore);
+            response = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password", null);
+            assertEquals(400, response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            assertEquals("Client Certification missing for MTLS HoK Token Binding", response.getErrorDescription());
+
+            // Request with HoK - success
+            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
+            response = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password", null);
+            assertEquals(200, response.getStatusCode());
+
+            // Success Pattern
+            verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), false);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient(previous);
+        }
+    }
 
     private void verifyHoKTokenDefaultCertThumbPrint(AccessTokenResponse response) throws Exception {
-        verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert());
+        verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), true);
     }
 
     private void verifyHoKTokenOtherCertThumbPrint(AccessTokenResponse response) throws Exception {
-        verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromOtherClientCert());
+        verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromOtherClientCert(), true);
     }
 
-    private void verifyHoKTokenCertThumbPrint(AccessTokenResponse response, String certThumbPrint) {
+    private void verifyHoKTokenCertThumbPrint(AccessTokenResponse response, String certThumbPrint, boolean checkRefreshToken) {
         JWSInput jws = null;
         AccessToken at = null;
         try {
@@ -654,13 +721,15 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         }
         assertTrue(MessageDigest.isEqual(certThumbPrint.getBytes(), at.getCertConf().getCertThumbprint().getBytes()));
 
-        RefreshToken rt = null;
-        try {
-            jws = new JWSInput(response.getRefreshToken());
-            rt = jws.readJsonContent(RefreshToken.class);
-        } catch (JWSInputException e) {
-            Assert.fail(e.toString());
+        if (checkRefreshToken) {
+            RefreshToken rt = null;
+            try {
+                jws = new JWSInput(response.getRefreshToken());
+                rt = jws.readJsonContent(RefreshToken.class);
+            } catch (JWSInputException e) {
+                Assert.fail(e.toString());
+            }
+            assertTrue(MessageDigest.isEqual(certThumbPrint.getBytes(), rt.getCertConf().getCertThumbprint().getBytes()));
         }
-        assertTrue(MessageDigest.isEqual(certThumbPrint.getBytes(), rt.getCertConf().getCertThumbprint().getBytes()));
     }
 }

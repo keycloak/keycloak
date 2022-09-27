@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,129 +17,69 @@
 
 package org.keycloak.models.map.realm.entity;
 
-import java.util.Objects;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapOTPPolicyEntity implements UpdatableEntity {
-
-    private Integer otpPolicyInitialCounter = 0;
-    private Integer otpPolicyDigits = 0;
-    private Integer otpPolicyLookAheadWindow = 0;
-    private Integer otpPolicyPeriod = 0;
-    private String otpPolicyType;
-    private String otpPolicyAlgorithm;
-
-    private boolean updated;
-
-    private MapOTPPolicyEntity() {}
-
-    public static MapOTPPolicyEntity fromModel(OTPPolicy model) {
+@GenerateEntityImplementations
+@DeepCloner.Root
+public interface MapOTPPolicyEntity extends UpdatableEntity {
+    static MapOTPPolicyEntity fromModel(OTPPolicy model) {
         if (model == null) return null;
-        MapOTPPolicyEntity entity = new MapOTPPolicyEntity();
+        MapOTPPolicyEntity entity = new MapOTPPolicyEntityImpl();
         entity.setOtpPolicyAlgorithm(model.getAlgorithm());
         entity.setOtpPolicyDigits(model.getDigits());
         entity.setOtpPolicyInitialCounter(model.getInitialCounter());
         entity.setOtpPolicyLookAheadWindow(model.getLookAheadWindow());
         entity.setOtpPolicyType(model.getType());
         entity.setOtpPolicyPeriod(model.getPeriod());
+        entity.setOtpPolicyCodeReusable(model.isCodeReusable());
         return entity;
     }
 
-    public static OTPPolicy toModel(MapOTPPolicyEntity entity) {
+    static OTPPolicy toModel(MapOTPPolicyEntity entity) {
         if (entity == null) return null;
         OTPPolicy model = new OTPPolicy();
-        model.setDigits(entity.getOtpPolicyDigits());
+
+        Integer otpPolicyDigits = entity.getOtpPolicyDigits();
+        model.setDigits(otpPolicyDigits == null ? 0 : otpPolicyDigits);
         model.setAlgorithm(entity.getOtpPolicyAlgorithm());
-        model.setInitialCounter(entity.getOtpPolicyInitialCounter());
-        model.setLookAheadWindow(entity.getOtpPolicyLookAheadWindow());
+
+        Integer otpPolicyInitialCounter = entity.getOtpPolicyInitialCounter();
+        model.setInitialCounter(otpPolicyInitialCounter == null ? 0 : otpPolicyInitialCounter);
+
+        Integer otpPolicyLookAheadWindow = entity.getOtpPolicyLookAheadWindow();
+        model.setLookAheadWindow(otpPolicyLookAheadWindow == null ? 0 : otpPolicyLookAheadWindow);
         model.setType(entity.getOtpPolicyType());
-        model.setPeriod(entity.getOtpPolicyPeriod());
+
+        Integer otpPolicyPeriod = entity.getOtpPolicyPeriod();
+        model.setPeriod(otpPolicyPeriod == null ? 0 : otpPolicyPeriod);
+
+        Boolean isOtpPolicyReusable = entity.isOtpPolicyCodeReusable();
+        model.setCodeReusable(isOtpPolicyReusable == null ? OTPPolicy.DEFAULT_IS_REUSABLE : isOtpPolicyReusable);
+
         return model;
     }
 
-    @Override
-    public boolean isUpdated() {
-        return updated;
-    }
+    Integer getOtpPolicyInitialCounter();
+    void setOtpPolicyInitialCounter(Integer otpPolicyInitialCounter);
 
-    public Integer getOtpPolicyInitialCounter() {
-        return otpPolicyInitialCounter;
-    }
+    Integer getOtpPolicyDigits();
+    void setOtpPolicyDigits(Integer otpPolicyDigits);
 
-    public void setOtpPolicyInitialCounter(int otpPolicyInitialCounter) {
-        this.updated = !Objects.equals(this.otpPolicyInitialCounter, otpPolicyInitialCounter);
-        this.otpPolicyInitialCounter = otpPolicyInitialCounter;
-    }
+    Integer getOtpPolicyLookAheadWindow();
+    void setOtpPolicyLookAheadWindow(Integer otpPolicyLookAheadWindow);
 
-    public Integer getOtpPolicyDigits() {
-        return otpPolicyDigits;
-    }
+    Integer getOtpPolicyPeriod();
+    void setOtpPolicyPeriod(Integer otpPolicyPeriod);
 
-    public void setOtpPolicyDigits(int otpPolicyDigits) {
-        this.updated = !Objects.equals(this.otpPolicyDigits, otpPolicyDigits);
-        this.otpPolicyDigits = otpPolicyDigits;
-    }
+    String getOtpPolicyType();
+    void setOtpPolicyType(String otpPolicyType);
 
-    public Integer getOtpPolicyLookAheadWindow() {
-        return otpPolicyLookAheadWindow;
-    }
+    String getOtpPolicyAlgorithm();
+    void setOtpPolicyAlgorithm(String otpPolicyAlgorithm);
 
-    public void setOtpPolicyLookAheadWindow(int otpPolicyLookAheadWindow) {
-        this.updated = !Objects.equals(this.otpPolicyLookAheadWindow, otpPolicyLookAheadWindow);
-        this.otpPolicyLookAheadWindow = otpPolicyLookAheadWindow;
-    }
-
-    public Integer getOtpPolicyPeriod() {
-        return otpPolicyPeriod;
-    }
-
-    public void setOtpPolicyPeriod(int otpPolicyPeriod) {
-        this.updated = !Objects.equals(this.otpPolicyPeriod, otpPolicyPeriod);
-        this.otpPolicyPeriod = otpPolicyPeriod;
-    }
-
-    public String getOtpPolicyType() {
-        return otpPolicyType;
-    }
-
-    public void setOtpPolicyType(String otpPolicyType) {
-        this.updated = !Objects.equals(this.otpPolicyType, otpPolicyType);
-        this.otpPolicyType = otpPolicyType;
-    }
-
-    public String getOtpPolicyAlgorithm() {
-        return otpPolicyAlgorithm;
-    }
-
-    public void setOtpPolicyAlgorithm(String otpPolicyAlgorithm) {
-        this.updated = !Objects.equals(this.otpPolicyAlgorithm, otpPolicyAlgorithm);
-        this.otpPolicyAlgorithm = otpPolicyAlgorithm;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 59 * hash + this.otpPolicyInitialCounter;
-        hash = 59 * hash + this.otpPolicyDigits;
-        hash = 59 * hash + this.otpPolicyLookAheadWindow;
-        hash = 59 * hash + this.otpPolicyPeriod;
-        hash = 59 * hash + Objects.hashCode(this.otpPolicyType);
-        hash = 59 * hash + Objects.hashCode(this.otpPolicyAlgorithm);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof MapOTPPolicyEntity)) return false;
-        final MapOTPPolicyEntity other = (MapOTPPolicyEntity) obj;
-        return Objects.equals(other.getOtpPolicyAlgorithm(), getOtpPolicyAlgorithm()) &&
-               Objects.equals(other.getOtpPolicyDigits(), getOtpPolicyDigits()) &&
-               Objects.equals(other.getOtpPolicyInitialCounter(), getOtpPolicyInitialCounter()) &&
-               Objects.equals(other.getOtpPolicyLookAheadWindow(), getOtpPolicyLookAheadWindow()) &&
-               Objects.equals(other.getOtpPolicyPeriod(), getOtpPolicyPeriod()) &&
-               Objects.equals(other.getOtpPolicyType(), getOtpPolicyType());
-    }
-    
+    Boolean isOtpPolicyCodeReusable();
+    void setOtpPolicyCodeReusable(Boolean isOtpPolicyCodeReusable);
 }

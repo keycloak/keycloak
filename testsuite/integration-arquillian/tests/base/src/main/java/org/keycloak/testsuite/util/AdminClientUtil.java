@@ -35,16 +35,15 @@ import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
 import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
-import org.jboss.resteasy.client.jaxrs.ClientHttpEngineBuilder43;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.ClientHttpEngineBuilder43;
 import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.models.Constants;
 
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
@@ -56,14 +55,21 @@ public class AdminClientUtil {
     public static final int NUMBER_OF_CONNECTIONS = 10;
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot) throws Exception {
-        return createAdminClient(ignoreUnknownProperties, authServerContextRoot, MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, null);
+        return createAdminClient(ignoreUnknownProperties, authServerContextRoot, MASTER, ADMIN, ADMIN,
+            Constants.ADMIN_CLI_CLIENT_ID, null, null);
 
     }
-    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-        return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot(), realmName, username, password, clientId, clientSecret);
+
+    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String realmName, String username,
+        String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+        return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot(), realmName, username, password,
+            clientId, clientSecret, null);
     }
 
-    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName,
+        String username, String password, String clientId, String clientSecret, String scope)
+        throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+
         ResteasyClient resteasyClient = createResteasyClient(ignoreUnknownProperties, null);
 
         return KeycloakBuilder.builder()
@@ -73,10 +79,13 @@ public class AdminClientUtil {
                 .password(password)
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .resteasyClient(resteasyClient).build();
+                .resteasyClient(resteasyClient)
+                .scope(scope).build();
     }
 
-    public static Keycloak createAdminClientWithClientCredentials(String realmName, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+    public static Keycloak createAdminClientWithClientCredentials(String realmName, String clientId, String clientSecret, String scope)
+        throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+
         boolean ignoreUnknownProperties = false;
         ResteasyClient resteasyClient = createResteasyClient(ignoreUnknownProperties, null);
 
@@ -86,7 +95,8 @@ public class AdminClientUtil {
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .resteasyClient(resteasyClient).build();
+                .resteasyClient(resteasyClient)
+                .scope(scope).build();
     }
 
     public static Keycloak createAdminClient() throws Exception {
@@ -106,7 +116,7 @@ public class AdminClientUtil {
     }
 
     public static ResteasyClient createResteasyClient(boolean ignoreUnknownProperties, Boolean followRedirects) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-        ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
+        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
 
         if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
             File trustore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");
@@ -176,7 +186,7 @@ public class AdminClientUtil {
                 engine = super.createEngine(cm, rcBuilder, defaultProxy, responseBufferSize, verifier, theContext);
             }
             if (followRedirects != null) {
-                ((ApacheHttpClient4Engine) engine).setFollowRedirects(followRedirects);
+                engine.setFollowRedirects(followRedirects);
             }
             return engine;
         }

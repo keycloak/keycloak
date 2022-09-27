@@ -36,13 +36,13 @@ public class AsymmetricSignatureVerifierContext implements SignatureVerifierCont
 
     @Override
     public String getAlgorithm() {
-        return key.getAlgorithm();
+        return key.getAlgorithmOrDefault();
     }
 
     @Override
     public boolean verify(byte[] data, byte[] signature) throws VerificationException {
         try {
-            Signature verifier = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithm()));
+            Signature verifier = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault()));
             verifier.initVerify((PublicKey) key.getPublicKey());
             verifier.update(data);
             return verifier.verify(signature);

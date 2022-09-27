@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite;
 
+import org.hamcrest.MatcherAssert;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -46,6 +47,8 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Assert extends org.junit.Assert {
+
+    public static final Long DEFAULT_NUMBER_DEVIATION = 20L;
 
     public static <T> void assertNames(Set<T> actual, String... expected) {
         Arrays.sort(expected);
@@ -145,14 +148,22 @@ public class Assert extends org.junit.Assert {
     }
 
     public static void assertExpiration(int actual, int expected) {
-        org.junit.Assert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - 50), lessThanOrEqualTo(expected)));
+        assertExpiration((long) actual, (long) expected);
+    }
+
+    public static void assertExpiration(long actual, long expected) {
+        assertExpiration(actual, expected, DEFAULT_NUMBER_DEVIATION);
+    }
+
+    public static void assertExpiration(long actual, long expected, long deviation) {
+        MatcherAssert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - deviation), lessThanOrEqualTo(expected + deviation)));
     }
 
     public static void assertRoleAttributes(Map<String, List<String>> expected, Map<String, List<String>> actual) {
-        assertThat(actual.keySet(), equalTo(expected.keySet()));
+        MatcherAssert.assertThat(actual.keySet(), equalTo(expected.keySet()));
         for (String expectedKey : expected.keySet()) {
-            assertThat(actual.get(expectedKey).size(), is(equalTo(expected.get(expectedKey).size())));
-            assertThat(actual.get(expectedKey), containsInAnyOrder(expected.get(expectedKey).toArray()));
+            MatcherAssert.assertThat(actual.get(expectedKey).size(), is(equalTo(expected.get(expectedKey).size())));
+            MatcherAssert.assertThat(actual.get(expectedKey), containsInAnyOrder(expected.get(expectedKey).toArray()));
         }
     }
 }

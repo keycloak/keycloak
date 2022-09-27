@@ -19,9 +19,12 @@ package org.keycloak.saml.processing.core.parsers.saml;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.StreamUtil;
@@ -98,13 +101,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 /**
  * Test class for SAML parser.
  *
@@ -128,6 +130,11 @@ public class SAMLParserTest {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    @BeforeClass
+    public static void initCrypto() {
+        CryptoIntegration.init(CryptoProvider.class.getClassLoader());
+    }
 
     @Before
     public void initParser() {
@@ -185,6 +192,18 @@ public class SAMLParserTest {
         assertThat(ea, notNullValue());
         assertThat(ea.getEncryptedElement(), notNullValue());
         assertThat(ea.getEncryptedElement().getLocalName(), is("EncryptedAssertion"));
+    }
+
+    @Test
+    public void testSaml20EncryptedId() throws Exception {
+        ResponseType rt = assertParsed("saml20-encrypted-id-response.xml",  ResponseType.class);
+
+        assertThat(rt, notNullValue());
+        assertThat(rt.getAssertions(), notNullValue());
+        assertThat(rt.getAssertions().size(), is(1));
+        assertThat(rt.getAssertions().get(0).getAssertion().getSubject(), notNullValue());
+        assertThat(rt.getAssertions().get(0).getAssertion().getSubject().getSubType(), notNullValue());
+        assertThat(rt.getAssertions().get(0).getAssertion().getSubject().getSubType().getEncryptedID(), notNullValue());
     }
 
     @Test
@@ -737,7 +756,7 @@ public class SAMLParserTest {
     @Test
     public void testInvalidEndElement() throws Exception {
         thrown.expect(ParsingException.class);
-        // see KEYCLOAK-7444 
+        // see KEYCLOAK-7444
         thrown.expectMessage(containsString("NameIDFormat"));
 
         assertParsed("saml20-entity-descriptor-idp-invalid-end-element.xml", EntityDescriptorType.class);
@@ -984,7 +1003,7 @@ public class SAMLParserTest {
         AssertionType assertion = assertParsed("saml20-assertion-example.xml", AssertionType.class);
 
         AttributeStatementType attributeStatementType = assertion.getAttributeStatements().iterator().next();
-        assertThat(attributeStatementType.getAttributes(), hasSize(9));
+        assertThat(attributeStatementType.getAttributes(), hasSize(12));
 
         for (AttributeStatementType.ASTChoiceType choiceType: attributeStatementType.getAttributes()) {
             AttributeType attr = choiceType.getAttribute();
@@ -993,7 +1012,7 @@ public class SAMLParserTest {
             // test selected attributes
             switch (attrName) {
                 case "portal_id":
-                    assertEquals(value, "060D00000000SHZ");
+                    assertEquals("060D00000000SHZ", value);
                     break;
                 case "organization_id":
                     assertThat(value, instanceOf(String.class));
@@ -1009,6 +1028,9 @@ public class SAMLParserTest {
                 case "anytype_no_xml_test":
                     assertThat(value, is((Object) "value_no_xml"));
                     break;
+                case "anytype_xml_fragment":
+                    assertThat(value, is((Object) "<elem1>Foo</elem1><elem2>Bar</elem2>"));
+                    break;
                 case "logouturl":
                     assertThat(value, is((Object) "http://www.salesforce.com/security/del_auth/SsoLogoutPage.html"));
                     break;
@@ -1017,6 +1039,12 @@ public class SAMLParserTest {
                     break;
                 case "status":
                     assertThat(value, is((Object) "<status><code><status>XYZ</status></code></status>"));
+                    break;
+                case "userDefined":
+                    assertThat(value, is((Object) "<A><B>Foo</B><C>Bar</C></A>"));
+                    break;
+                case "userDefinedFragmentWithNamespace":
+                    assertThat(value, is((Object) "<myPrefix:B xmlns:myPrefix=\"urn:myNamespace\">Foo</myPrefix:B><myPrefix:C xmlns:myPrefix=\"urn:myNamespace\">Bar</myPrefix:C>"));
                     break;
                 default:
                     break;
@@ -1111,7 +1139,7 @@ public class SAMLParserTest {
                 assertThat(ac.getSequence(), notNullValue());
 
                 assertThat(ac.getSequence().getClassRef().getValue(), is(JBossSAMLURIConstants.AC_UNSPECIFIED.getUri()));
-                
+
                 assertThat(ac.getSequence(), notNullValue());
                 assertThat(ac.getSequence().getAuthnContextDecl(), notNullValue());
                 assertThat(ac.getSequence().getAuthnContextDecl().getValue(), instanceOf(Element.class));

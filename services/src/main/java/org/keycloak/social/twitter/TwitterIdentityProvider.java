@@ -47,6 +47,7 @@ import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
+import twitter4j.conf.ConfigurationBuilder;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -184,7 +185,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         public Response authResponse(@QueryParam("state") String state,
                                      @QueryParam("denied") String denied,
                                      @QueryParam("oauth_verifier") String verifier) {
-            IdentityBrokerState idpState = IdentityBrokerState.encoded(state);
+            IdentityBrokerState idpState = IdentityBrokerState.encoded(state, realm);
             String clientId = idpState.getClientId();
             String tabId = idpState.getTabId();
             if (clientId == null || tabId == null) {
@@ -201,8 +202,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             }
 
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-                Twitter twitter = new TwitterFactory().getInstance();
-
+                Twitter twitter = new TwitterFactory(new ConfigurationBuilder().setIncludeEmailEnabled(true).build()).getInstance();
                 twitter.setOAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
 
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
@@ -217,6 +217,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 identity.setIdp(TwitterIdentityProvider.this);
 
                 identity.setUsername(twitterUser.getScreenName());
+                identity.setEmail(twitterUser.getEmail());
                 identity.setName(twitterUser.getName());
 
 

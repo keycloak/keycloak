@@ -1,11 +1,31 @@
+/*
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.openshift;
 
+import org.apache.http.Header;
+import org.apache.http.HeaderElement;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -19,7 +39,6 @@ import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.openshift.OpenShiftTokenReviewRequestRepresentation;
@@ -33,30 +52,34 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import static org.keycloak.utils.MediaType.APPLICATION_JSON;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
-@AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
 @EnableFeature(value = OPENSHIFT_INTEGRATION, skipRestart = true)
 public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakTest {
 
@@ -322,6 +345,32 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
             clientRep.setPublicClient(false);
             clientRep.setSecret("password");
             testRealm().clients().get(clientRep.getId()).update(clientRep);
+        }
+    }
+
+    @Test
+    public void checkPropertyValidation() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            String url = getAuthServerContextRoot() + "/auth/realms/" + "test" + "/protocol/openid-connect/ext/openshift-token-review/";
+
+            HttpPost post = new HttpPost(url);
+            post.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString());
+            post.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.toString());
+            post.setEntity(new StringEntity("{\"<img src=alert(1)>\":1}"));
+
+            try (CloseableHttpResponse response = client.execute(post)) {
+                Header header = response.getFirstHeader("Content-Type");
+                assertThat(header, notNullValue());
+
+                // Verify the Content-Type is not text/html
+                assertThat(Arrays.stream(header.getElements())
+                        .map(HeaderElement::getName)
+                        .filter(Objects::nonNull)
+                        .anyMatch(f -> f.equals(APPLICATION_JSON)), is(true));
+
+                // OpenShiftTokenReviewRequestRepresentation ignore unknown attributes and is returned default representation
+                assertThat(EntityUtils.toString(response.getEntity()).contains("Unrecognized field \\\"<img src=alert(1)>\\\""), is(false));
+            }
         }
     }
 

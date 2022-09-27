@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.oauth;
 
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -35,10 +34,12 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -47,9 +48,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -66,29 +65,28 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.util.JsonSerialization;
+
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
 public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
-    }
 
     @Test
     @UncaughtServerErrorExpected
@@ -175,6 +173,19 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         directPublic.setEnabled(true);
         directPublic.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         directPublic.setFullScopeAllowed(false);
+        directPublic.addRedirectUri("*");
+        directPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false));
+
+        ClientModel directUntrustedPublic = realm.addClient("direct-public-untrusted");
+        directUntrustedPublic.setClientId("direct-public-untrusted");
+        directUntrustedPublic.setPublicClient(true);
+        directUntrustedPublic.setDirectAccessGrantsEnabled(true);
+        directUntrustedPublic.setEnabled(true);
+        directUntrustedPublic.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        directUntrustedPublic.setFullScopeAllowed(false);
+        directUntrustedPublic.addRedirectUri("*");
+        directUntrustedPublic.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
+        directUntrustedPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false));
 
         ClientModel directNoSecret = realm.addClient("direct-no-secret");
         directNoSecret.setClientId("direct-no-secret");
@@ -194,6 +205,15 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         noRefreshToken.setFullScopeAllowed(false);
         noRefreshToken.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
 
+        ClientModel serviceAccount = realm.addClient("my-service-account");
+        serviceAccount.setClientId("my-service-account");
+        serviceAccount.setPublicClient(false);
+        serviceAccount.setServiceAccountsEnabled(true);
+        serviceAccount.setEnabled(true);
+        serviceAccount.setSecret("secret");
+        serviceAccount.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        serviceAccount.setFullScopeAllowed(false);
+
         // permission for client to client exchange to "target" client
         ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
         clientRep.setName("to");
@@ -201,9 +221,10 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientRep.addClient(legal.getId());
         clientRep.addClient(directLegal.getId());
         clientRep.addClient(noRefreshToken.getId());
+        clientRep.addClient(serviceAccount.getId());
 
         ResourceServer server = management.realmResourceServer();
-        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
+        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
         management.clients().exchangeToPermission(target).addAssociatedPolicy(clientPolicy);
 
         // permission for user impersonation for a client
@@ -212,22 +233,35 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientImpersonateRep.setName("clientImpersonators");
         clientImpersonateRep.addClient(directLegal.getId());
         clientImpersonateRep.addClient(directPublic.getId());
+        clientImpersonateRep.addClient(directUntrustedPublic.getId());
         clientImpersonateRep.addClient(directNoSecret.getId());
         server = management.realmResourceServer();
-        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(clientImpersonateRep, server);
+        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
         management.users().setPermissionsEnabled(true);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
 
         UserModel user = session.users().addUser(realm, "user");
         user.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
+        user.credentialManager().updateCredential(UserCredentialModel.password("password"));
         user.grantRole(exampleRole);
         user.grantRole(impersonateRole);
 
         UserModel bad = session.users().addUser(realm, "bad-impersonator");
         bad.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, bad, UserCredentialModel.password("password"));
+        bad.credentialManager().updateCredential(UserCredentialModel.password("password"));
+    }
+
+    public static void setUpUserImpersonatePermissions(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName(TEST);
+        AdminPermissionManagement management = AdminPermissions.management(session, realm);
+        ResourceServer server = management.realmResourceServer();
+        Policy userImpersonationPermission = management.users().userImpersonatedPermission();
+        ClientPolicyRepresentation clientsAllowedToImpersonateRep = new ClientPolicyRepresentation();
+        clientsAllowedToImpersonateRep.setName("clientsAllowedToImpersonateRep");
+        clientsAllowedToImpersonateRep.addClient("direct-public");
+        Policy clientsAllowedToImpersonate = management.authz().getStoreFactory().getPolicyStore().create(server, clientsAllowedToImpersonateRep);
+        userImpersonationPermission.addAssociatedPolicy(clientsAllowedToImpersonate);
     }
 
     @Override
@@ -247,7 +281,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         Assert.assertEquals(token.getPreferredUsername(), "user");
-        Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
         {
             response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
@@ -257,7 +291,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
             Assert.assertEquals("target", exchangedToken.getAudience()[0]);
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
-            Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+            assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
         }
 
         {
@@ -269,12 +303,70 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             Assert.assertEquals("legal", exchangedToken.getIssuedFor());
             Assert.assertEquals("target", exchangedToken.getAudience()[0]);
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
-            Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+            assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
         }
         {
             response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
             Assert.assertEquals(403, response.getStatusCode());
         }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExchangeUsingServiceAccount() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("my-service-account");
+        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret");
+        String accessToken = response.getAccessToken();
+
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "my-service-account", "secret");
+            String exchangedTokenString = response.getAccessToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+            AccessToken exchangedToken = verifier.parse().getToken();
+            Assert.assertEquals("my-service-account", exchangedToken.getIssuedFor());
+            Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+            Assert.assertEquals(exchangedToken.getPreferredUsername(), "service-account-my-service-account");
+        }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExchangeFromPublicClient() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("direct-public");
+        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.doLogin("user", "password");
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(authzResponse.getCode(), "secret");
+
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
+        String exchangedTokenString = response.getAccessToken();
+        TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+        AccessToken exchangedToken = verifier.parse().getToken();
+        Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
+        Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+        Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
+        assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+
+        // can exchange to itself because the client is within the audience of the token issued to the public client
+        response = oauth.doTokenExchange(TEST, accessToken, null, "client-exchanger", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+
+        // can not exchange to itself because the client is not within the audience of the token issued to the public client
+        response = oauth.doTokenExchange(TEST, accessToken, null, "direct-legal", "secret");
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
+
+        response = oauth.doTokenExchange(TEST, accessToken, null, "direct-public", null);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
     }
 
     @Test
@@ -298,7 +390,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         Assert.assertEquals(token.getPreferredUsername(), "user");
-        Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
         // client-exchanger can impersonate from token "user" to user "impersonated-user"
         {
@@ -355,8 +447,218 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
             Assert.assertEquals("target", exchangedToken.getAudience()[0]);
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "impersonated-user");
-            Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+            assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
         }
+
+        try (Response response = exchangeUrl.request()
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.CLIENT_ID, "direct-public")
+                                .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+
+                ))) {
+            org.junit.Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            assertEquals("Client is not the holder of the token",
+                    response.readEntity(OAuth2ErrorRepresentation.class).getErrorDescription());
+        }
+
+        try (Response response = exchangeUrl.request()
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.CLIENT_ID, "direct-public")
+                                .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                .param(OAuth2Constants.AUDIENCE, "direct-public")
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+
+                ))) {
+            org.junit.Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            assertEquals("Client is not the holder of the token",
+                    response.readEntity(OAuth2ErrorRepresentation.class).getErrorDescription());
+        }
+
+        try (Response response = exchangeUrl.request()
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.CLIENT_ID, "direct-public")
+                                .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                .param(OAuth2Constants.AUDIENCE, "client-exchanger")
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+
+                ))) {
+            org.junit.Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            assertEquals("Client is not the holder of the token",
+                    response.readEntity(OAuth2ErrorRepresentation.class).getErrorDescription());
+        }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testIntrospectTokenAfterImpersonation() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("client-exchanger");
+
+        Client httpClient = AdminClientUtil.createResteasyClient();
+
+        WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                .path("/realms")
+                .path(TEST)
+                .path("protocol/openid-connect/token");
+        System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = tokenResponse.getAccessToken();
+
+        try (Response response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("client-exchanger", "secret"))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+
+                ))) {
+            org.junit.Assert.assertEquals(200, response.getStatus());
+            AccessTokenResponse accessTokenResponse = response.readEntity(AccessTokenResponse.class);
+            String exchangedTokenString = accessTokenResponse.getToken();
+            JsonNode json = JsonSerialization.readValue(oauth.introspectAccessTokenWithClientCredential("client-exchanger", "secret", exchangedTokenString), com.fasterxml.jackson.databind.JsonNode.class);
+            assertTrue(json.get("active").asBoolean());
+            assertEquals("impersonated-user", json.get("preferred_username").asText());
+            assertEquals("user", json.get("act").get("sub").asText());
+        }
+
+        try (Response response = exchangeUrl.request()
+                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("client-exchanger", "secret"))
+                    .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+                                    .param(OAuth2Constants.AUDIENCE, "target")
+
+                    ))) {
+            org.junit.Assert.assertEquals(200, response.getStatus());
+            AccessTokenResponse accessTokenResponse = response.readEntity(AccessTokenResponse.class);
+            String exchangedTokenString = accessTokenResponse.getToken();
+            JsonNode json = JsonSerialization.readValue(oauth.introspectAccessTokenWithClientCredential("client-exchanger", "secret", exchangedTokenString), com.fasterxml.jackson.databind.JsonNode.class);
+            assertTrue(json.get("active").asBoolean());
+            assertEquals("impersonated-user", json.get("preferred_username").asText());
+            assertEquals("user", json.get("act").get("sub").asText());
+        }
+    }
+
+    @UncaughtServerErrorExpected
+    @Test
+    public void testImpersonationUsingPublicClient() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("direct-public");
+
+        Client httpClient = AdminClientUtil.createResteasyClient();
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.doLogin("user", "password");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzResponse.getCode(), "secret");
+        String accessToken = tokenResponse.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                .path("/realms")
+                .path(TEST)
+                .path("protocol/openid-connect/token");
+        System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
+
+        Response response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-public", null))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+
+                ));
+        org.junit.Assert.assertEquals(200, response.getStatus());
+        AccessTokenResponse accessTokenResponse = response.readEntity(AccessTokenResponse.class);
+        response.close();
+
+        String exchangedTokenString = accessTokenResponse.getToken();
+        TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+        AccessToken exchangedToken = verifier.parse().getToken();
+        Assert.assertEquals("direct-public", exchangedToken.getIssuedFor());
+        Assert.assertEquals("impersonated-user", exchangedToken.getPreferredUsername());
+        Assert.assertNull(exchangedToken.getRealmAccess());
+
+        testingClient.server().run(ClientTokenExchangeTest::setUpUserImpersonatePermissions);
+    }
+
+    @UncaughtServerErrorExpected
+    @Test
+    public void testImpersonationUsingTokenIssuedToUntrustedPublicClient() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+        testingClient.server().run(ClientTokenExchangeTest::setUpUserImpersonatePermissions);
+
+        oauth.realm(TEST);
+        oauth.clientId("direct-public-untrusted");
+
+        Client httpClient = AdminClientUtil.createResteasyClient();
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.doLogin("user", "password");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzResponse.getCode(), "secret");
+        String accessToken = tokenResponse.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                .path("/realms")
+                .path(TEST)
+                .path("protocol/openid-connect/token");
+        System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
+
+        Response response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-public-untrusted", null))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+
+                ));
+        org.junit.Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        oauth.clientId("direct-public");
+        authzResponse = oauth.doLogin("user", "password");
+        tokenResponse = oauth.doAccessTokenRequest(authzResponse.getCode(), "secret");
+        accessToken = tokenResponse.getAccessToken();
+
+        response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-public", null))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+
+                ));
+        org.junit.Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
@@ -380,7 +682,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         Assert.assertEquals(token.getPreferredUsername(), "bad-impersonator");
-        Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
         // test that user does not have impersonator permission
         {
@@ -414,6 +716,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
 
         // direct-exchanger can impersonate from token "user" to user "impersonated-user"
+        // see https://issues.redhat.com/browse/KEYCLOAK-5492
         {
             Response response = exchangeUrl.request()
                     .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-exchanger", "secret"))
@@ -457,7 +760,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             Assert.assertEquals("direct-legal", exchangedToken.getIssuedFor());
             Assert.assertEquals("target", exchangedToken.getAudience()[0]);
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "impersonated-user");
-            Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+            assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
         }
 
         // direct-public fails impersonation
@@ -486,7 +789,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
                                     .param(OAuth2Constants.AUDIENCE, "target")
 
                     ));
-            Assert.assertTrue(response.getStatus() >= 400);
+            assertTrue(response.getStatus() >= 400);
             response.close();
         }
     }
@@ -526,6 +829,86 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         client.update(clientRepresentation);
     }
 
+    @Test
+    public void testClientExchangeToItself() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("client-exchanger");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        response = oauth.doTokenExchange(TEST, accessToken, null, "client-exchanger", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+
+        response = oauth.doTokenExchange(TEST, accessToken, "client-exchanger", "client-exchanger", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+    }
+
+    @Test
+    public void testClientExchange() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("direct-legal");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        response = oauth.doTokenExchange(TEST, accessToken, "target", "direct-legal", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+    }
+
+    @Test
+    public void testPublicClientNotAllowed() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("direct-legal");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        // public client has no permission to exchange with the client direct-legal to which the token was issued for
+        // if not set, the audience is calculated based on the client to which the token was issued for
+        response = oauth.doTokenExchange(TEST, accessToken, null, "direct-public", null);
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
+        assertEquals("Client is not the holder of the token", response.getErrorDescription());
+
+        // public client has no permission to exchange
+        response = oauth.doTokenExchange(TEST, accessToken, "target", "direct-public", null);
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
+        assertEquals("Client is not the holder of the token", response.getErrorDescription());
+
+        response = oauth.doTokenExchange(TEST, accessToken, "direct-legal", "direct-public", null);
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
+        assertEquals("Client is not the holder of the token", response.getErrorDescription());
+
+        // public client can not exchange a token to itself if the token was issued to another client
+        response = oauth.doTokenExchange(TEST, accessToken, "direct-public", "direct-public", null);
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
+        assertEquals("Client is not the holder of the token", response.getErrorDescription());
+
+        // client with access to exchange
+        response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+
+        // client must pass the audience because the client has no permission to exchange with the calculated audience (direct-legal)
+        response = oauth.doTokenExchange(TEST, accessToken, null, "client-exchanger", "secret");
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
+        assertEquals("Client is not within the token audience", response.getErrorDescription());
+    }
+
     private static void addDirectExchanger(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
         RoleModel exampleRole = realm.addRole("example");
@@ -559,14 +942,14 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientImpersonateRep.addClient(directExchanger.getId());
 
         ResourceServer server = management.realmResourceServer();
-        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(clientImpersonateRep, server);
+        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
         management.users().setPermissionsEnabled(true);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
 
         UserModel impersonatedUser = session.users().addUser(realm, "impersonated-user");
         impersonatedUser.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, impersonatedUser, UserCredentialModel.password("password"));
+        impersonatedUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
         impersonatedUser.grantRole(exampleRole);
     }
 

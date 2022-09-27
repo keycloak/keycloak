@@ -11,8 +11,6 @@ import org.keycloak.common.Version;
 import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.theme.Theme;
 
 import java.io.File;
@@ -28,7 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Override
@@ -74,6 +71,18 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void getResourceIllegalTraversal() {
+        testingClient.server().run(session -> {
+            try {
+                Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
+                Assert.assertNull(theme.getResourceAsStream("../templates/test.ftl"));
+            } catch (IOException e) {
+                Assert.fail(e.getMessage());
+            }
+        });
+    }
+
+    @Test
     public void gzipEncoding() throws IOException {
         final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
 
@@ -96,7 +105,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         }, Boolean.class);
 
         assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/welcome/keycloak/css/welcome.css", "body {");
-        assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/js/keycloak.js", "function(root, factory)");
+        assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/js/keycloak.js", "function Keycloak (config)");
 
         // Check no files exists inside "/tmp" directory. We need to skip this test in the rare case when there are thombstone files created by different user
         if (filesNotExistsInTmp) {

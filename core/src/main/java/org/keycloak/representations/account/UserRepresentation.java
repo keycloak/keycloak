@@ -38,6 +38,7 @@ public class UserRepresentation {
     private String lastName;
     private String email;
     private boolean emailVerified;
+    private UserProfileMetadata userProfileMetadata;
 
     @JsonDeserialize(using = StringListMapDeserializer.class)
     private Map<String, List<String>> attributes;
@@ -130,5 +131,13 @@ public class UserRepresentation {
 
 
         return attrs;
+    }
+
+    public UserProfileMetadata getUserProfileMetadata() {
+        return userProfileMetadata;
+    }
+
+    public void setUserProfileMetadata(UserProfileMetadata userProfileMetadata) {
+        this.userProfileMetadata = userProfileMetadata;
     }
 }

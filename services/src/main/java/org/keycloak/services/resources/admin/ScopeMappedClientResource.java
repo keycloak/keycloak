@@ -106,7 +106,7 @@ public class ScopeMappedClientResource {
         viewPermission.require();
 
         return scopedClient.getRolesStream()
-                .filter(((Predicate<RoleModel>) scopeContainer::hasScope).negate())
+                .filter(((Predicate<RoleModel>) scopeContainer::hasDirectScope).negate())
                 .filter(auth.roles()::canMapClientScope)
                 .map(ModelToRepresentation::toBriefRepresentation);
     }

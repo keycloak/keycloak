@@ -17,9 +17,12 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
+import java.util.List;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -51,5 +54,16 @@ public class HttpAuthenticationChannelProviderFactory implements AuthenticationC
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("httpAuthenticationChannelUri")
+                .type("string")
+                .helpText("The HTTP(S) URI of the authentication channel.")
+                .add()
+                .build();
     }
 }

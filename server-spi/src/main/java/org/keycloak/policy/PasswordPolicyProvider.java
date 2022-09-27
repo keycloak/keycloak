@@ -35,7 +35,7 @@ public interface PasswordPolicyProvider extends Provider {
 
     default Integer parseInteger(String value, Integer defaultValue) {
         try {
-            return value != null ? Integer.parseInt(value) : defaultValue;
+            return value != null ? Integer.valueOf(value) : defaultValue;
         } catch (NumberFormatException e) {
             throw new PasswordPolicyConfigException("Not a valid number");
         }

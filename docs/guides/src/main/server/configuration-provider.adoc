@@ -1,0 +1,87 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="Configuring providers"
+summary="Understand how to configure providers">
+
+The server is built with extensibility in mind and for that it provides a number of Service Provider Interfaces or SPIs, each one
+responsible for providing a specific capability to the server. In this guide, you are going to understand the core concepts around
+the configuration of SPIs and their respective providers.
+
+After reading this guide, you should be able to use the concepts and the steps herein explained to install, uninstall, enable, disable, and configure
+any provider, including those you have implemented to extend the server capabilities in order to better fulfill your requirements.
+
+== Configuration option format
+
+Providers can be configured by using a specific configuration format. The format consists of:
+
+```
+spi-<spi-id>-<provider-id>-<property>=<value>
+```
+
+The `<spi-id>` is the name of the SPI you want to configure.
+
+The `<provider-id>` is the id of the provider you want to configure. This is the id set to the corresponding provider factory implementation.
+
+The `<property>` is the actual name of the property you want to set for a given provider.
+
+All those names (for spi, provider, and property) should be in lower case and if the name is in camel-case such as `myKeycloakProvider`, it should include dashes (`-`) before upper-case letters as follows: `my-keycloak-provider`.
+
+Taking the `HttpClientSpi` SPI as an example, the name of the SPI is `connectionsHttpClient` and one of the provider implementations available is named `default`. In order to set the `connectionPoolSize` property you would use a configuration option as follows:
+
+```
+spi-connections-http-client-default-connection-pool-size=10
+```
+
+== Setting a provider configuration option
+
+Provider configuration options are provided when starting the server, as shown in the following example:
+
+.Setting the `connection-pool-size` for the `default` provider of the `connections-http-client` SPI
+<@kc.start parameters="--spi-connections-http-client-default-connection-pool-size=10"/>
+
+== Configuring a default provider
+
+Depending on the SPI, multiple provider implementations can co-exist but only one of them is going to be used at runtime.
+For these SPIs, a default provider is the primary implementation that is going to be active and used at runtime.
+
+To configure a provider as the default you should run the `build` command as follows:
+
+.Marking the `mycustomprovider` provider as the default provider for the `email-template` SPI
+<@kc.build parameters="--spi-email-template-provider=mycustomprovider"/>
+
+In the example above, we are using the `provider` property to set the id of the provider we want to mark as the default.
+
+== Enabling and disabling a provider
+
+To enable or disable a provider you should run the `build` command as follows:
+
+.Enabling a provider
+<@kc.build parameters="--spi-email-template-mycustomprovider-enabled=true"/>
+
+To disable a provider, use the same command and set the `enabled` property to `false`.
+
+== Installing and uninstalling a provider
+
+Custom providers should be packaged in a Java Archive (JAR) file and copied to the `providers` directory of the distribution. After that,
+you must run the `build` command in order to update the server's provider registry with the implementations from the JAR file.
+
+This step is needed in order to optimize the server runtime so that all providers are known ahead-of-time rather than discovered only when starting the server or at runtime.
+
+To uninstall a provider, you should remove the JAR file from the `providers` directory and run the `build` command again.
+
+== Using third-party dependencies
+
+When implementing a provider you might need to use some third-party dependency that is not available from the server distribution.
+
+In this case, you should copy any additional dependency to the `providers` directory and run the `build` command.
+Once you do that, the server is going to make these additional dependencies available at runtime for any provider that depends on them.
+
+== References
+
+* https://www.keycloak.org/server/configuration[Configuring Keycloak]
+* https://www.keycloak.org/docs/latest/server_development/#_providers[Server Developer Documentation]
+
+</@tmpl.guide>

@@ -17,11 +17,14 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
@@ -33,6 +36,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -196,7 +200,7 @@ public class UserAdapter implements CachedUserModel.Streams {
     @Override
     public String getFirstAttribute(String name) {
         if (updated != null) return updated.getFirstAttribute(name);
-        return cached.getAttributes(modelSupplier).getFirst(name);
+        return cached.getFirstAttribute(name, modelSupplier);
     }
 
     @Override
@@ -279,6 +283,57 @@ public class UserAdapter implements CachedUserModel.Streams {
     }
 
     @Override
+    public SubjectCredentialManager credentialManager() {
+        // Instantiate a new LegacyUserCredentialManager that points to the instance that is wrapped by the cache
+        // this way it the cache will know if any of the credentials are modified during validation of CredentialInputs.
+        // This assumes that each implementation in the legacy world implements the LegacyUserCredentialManager and not something else.
+        return new SubjectCredentialManagerCacheAdapter(keycloakSession, realm, this) {
+            @Override
+            public CredentialModel getStoredCredentialById(String id) {
+                if (updated == null) {
+                    return cached.getStoredCredentials(modelSupplier).stream().filter(credential ->
+                                    Objects.equals(id, credential.getId()))
+                            .findFirst().orElse(null);
+                }
+                return super.getStoredCredentialById(id);
+            }
+
+            @Override
+            public Stream<CredentialModel> getStoredCredentialsStream() {
+                if (updated == null) {
+                    return cached.getStoredCredentials(modelSupplier).stream();
+                }
+                return super.getStoredCredentialsStream();
+            }
+
+            @Override
+            public Stream<CredentialModel> getStoredCredentialsByTypeStream(String type) {
+                if (updated == null) {
+                    return cached.getStoredCredentials(modelSupplier).stream().filter(credential -> Objects.equals(type, credential.getType()));
+                }
+                return super.getStoredCredentialsByTypeStream(type);
+            }
+
+            @Override
+            public CredentialModel getStoredCredentialByNameAndType(String name, String type) {
+                if (updated == null) {
+                    return cached.getStoredCredentials(modelSupplier).stream().filter(credential ->
+                            Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
+                            .findFirst().orElse(null);
+                }
+                return super.getStoredCredentialByNameAndType(name, type);
+            }
+
+            @Override
+            public void invalidateCacheForEntity() {
+                // This implies invalidation of the cached entry,
+                // and all future calls in this session for the user will go to the store instead of the cache.
+                getDelegateForUpdate();
+            }
+        };
+    }
+
+    @Override
     public Stream<RoleModel> getRealmRoleMappingsStream() {
         if (updated != null) return updated.getRealmRoleMappingsStream();
         return getRoleMappingsStream().filter(r -> RoleUtils.isRealmRole(r, realm));
@@ -288,6 +343,12 @@ public class UserAdapter implements CachedUserModel.Streams {
     public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
         if (updated != null) return updated.getClientRoleMappingsStream(app);
         return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+    }
+
+    @Override
+    public boolean hasDirectRole(RoleModel role) {
+        if (updated != null) return updated.hasDirectRole(role);
+        return cached.getRoleMappings(modelSupplier).contains(role.getId());
     }
 
     @Override
@@ -386,4 +447,5 @@ public class UserAdapter implements CachedUserModel.Streams {
     private UserModel getUserModel() {
         return userProviderCache.getDelegate().getUserById(realm, cached.getId());
     }
+
 }

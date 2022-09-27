@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .e5ef51ce-3313-4c04-b152-23646fd2b306 {
+        fill: none;
+        clip-rule: evenodd;
+      }
+
+      .ef16f3ef-fb03-4a62-9cce-d65767c17c4c {
+        fill: #ededed;
+      }
+
+      .e0f4cb03-a97e-447b-8c37-60d897bac484 {
+        clip-path: url(#fe0cecb0-916b-4b9d-828f-63ec94884d2e);
+      }
+
+      .afb39849-fc2d-48aa-a4a4-070e36b84e51 {
+        fill: #3e82f1;
+      }
+
+      .a2ee00a5-b156-4157-adc5-b40fd1ee5ebd {
+        clip-path: url(#e022c77c-5a12-4caf-aaed-c796166a8562);
+      }
+
+      .a025e47e-f997-4bd7-8964-88ada0c7c12f {
+        fill: #32a753;
+      }
+
+      .b4e7c98a-856b-4280-8aaa-b9f157cf22ea {
+        clip-path: url(#b1e1e904-5b74-4ac6-8dc5-11a864f7f8ec);
+      }
+
+      .b0bf74a2-e960-4e68-948c-0e3dfb1bcd2a {
+        fill: #f9bb00;
+      }
+
+      .ba55bfd1-dca2-4617-b45c-128fdf3bf3b4 {
+        clip-path: url(#bcdf0102-4e91-4218-8945-e2893d757d6d);
+      }
+
+      .fae83dfa-2d64-4e2a-9cd9-b00b32869370 {
+        fill: #e74235;
+      }
+    </style>
+    <clipPath id="fe0cecb0-916b-4b9d-828f-63ec94884d2e">
+      <path class="e5ef51ce-3313-4c04-b152-23646fd2b306" d="M25.85,16.23a12.53,12.53,0,0,0-.18-2.06H16.2v3.89h5.41a4.58,4.58,0,0,1-2,3v2.53h3.25a9.81,9.81,0,0,0,3-7.39Zm0,0"/>
+    </clipPath>
+    <clipPath id="e022c77c-5a12-4caf-aaed-c796166a8562">
+      <path class="e5ef51ce-3313-4c04-b152-23646fd2b306" d="M16.2,26.05a9.61,9.61,0,0,0,6.65-2.43L19.6,21.09a6.06,6.06,0,0,1-9-3.18H7.22v2.6a10,10,0,0,0,9,5.54Zm0,0"/>
+    </clipPath>
+    <clipPath id="b1e1e904-5b74-4ac6-8dc5-11a864f7f8ec">
+      <path class="e5ef51ce-3313-4c04-b152-23646fd2b306" d="M10.58,17.91a5.86,5.86,0,0,1,0-3.82v-2.6H7.22a10,10,0,0,0,0,9l3.36-2.6Zm0,0"/>
+    </clipPath>
+    <clipPath id="bcdf0102-4e91-4218-8945-e2893d757d6d">
+      <path class="e5ef51ce-3313-4c04-b152-23646fd2b306" d="M16.2,10A5.39,5.39,0,0,1,20,11.45l2.89-2.88A9.7,9.7,0,0,0,16.2,6a10,10,0,0,0-9,5.54l3.36,2.6A6,6,0,0,1,16.2,10Zm0,0"/>
+    </clipPath>
+  </defs>
+  <g id="a06b7517-c1f4-49d5-aa34-cee2287c4769" data-name="Google">
+    <g id="fbe0f094-aaab-4b03-a7bf-452a2c250397" data-name="Full color">
+      <rect class="ef16f3ef-fb03-4a62-9cce-d65767c17c4c" width="32" height="32" rx="1.19"/>
+      <g>
+        <g class="e0f4cb03-a97e-447b-8c37-60d897bac484">
+          <rect class="afb39849-fc2d-48aa-a4a4-070e36b84e51" x="10.62" y="8.59" width="20.81" height="20.61"/>
+        </g>
+        <g class="a2ee00a5-b156-4157-adc5-b40fd1ee5ebd">
+          <rect class="a025e47e-f997-4bd7-8964-88ada0c7c12f" x="1.64" y="12.33" width="26.8" height="19.31"/>
+        </g>
+        <g class="b4e7c98a-856b-4280-8aaa-b9f157cf22ea">
+          <rect class="b0bf74a2-e960-4e68-948c-0e3dfb1bcd2a" x="0.57" y="5.9" width="15.59" height="20.19"/>
+        </g>
+        <g class="ba55bfd1-dca2-4617-b45c-128fdf3bf3b4">
+          <rect class="fae83dfa-2d64-4e2a-9cd9-b00b32869370" x="1.64" y="0.37" width="26.87" height="19.31"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
