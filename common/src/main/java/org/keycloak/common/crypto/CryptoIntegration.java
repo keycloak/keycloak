@@ -25,7 +25,8 @@ public class CryptoIntegration {
             synchronized (lock) {
                 if (cryptoProvider == null) {
                     cryptoProvider = detectProvider(classLoader);
-                    logger.debugv("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
+                    logger.debugv("java security provider: {0}", BouncyIntegration.PROVIDER);
+
                 }
             }
         }
@@ -54,7 +55,7 @@ public class CryptoIntegration {
             throw new IllegalStateException("Multiple crypto providers loaded with the classLoader: " + classLoader +
                     ". Make sure only one cryptoProvider available on the classpath. Available providers: " +foundProviders);
         } else {
-            logger.infof("Detected crypto provider: %s", foundProviders.get(0).getClass().getName());
+            logger.debugf("Detected crypto provider: %s", foundProviders.get(0).getClass().getName());
             return foundProviders.get(0);
         }
     }

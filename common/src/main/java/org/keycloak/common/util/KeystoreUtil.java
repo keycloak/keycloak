@@ -18,6 +18,7 @@
 package org.keycloak.common.util;
 
 import org.keycloak.common.constants.GenericConstants;
+import org.keycloak.common.crypto.CryptoIntegration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,12 +66,7 @@ public class KeystoreUtil {
         InputStream stream = FindFile.findFile(keystoreFile);
 
         try {
-            KeyStore keyStore = null;
-            if (format == KeystoreFormat.JKS) {
-                keyStore = KeyStore.getInstance(format.toString());
-            } else {
-                keyStore = KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
-            }
+            KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(format);
 
             keyStore.load(stream, storePassword.toCharArray());
             PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());

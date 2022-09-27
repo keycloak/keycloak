@@ -23,10 +23,10 @@ import java.util.List;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
@@ -61,7 +61,7 @@ public abstract class JWKTest {
 
     @Test
     public void publicRs256() throws Exception {
-        KeyPair keyPair = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER ).generateKeyPair();
+        KeyPair keyPair = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA).generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         X509Certificate certificate = generateV1SelfSignedCertificate(keyPair, "Test");
 
@@ -96,7 +96,7 @@ public abstract class JWKTest {
 
     @Test
     public void publicRs256Chain() throws Exception {
-        KeyPair keyPair = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER).generateKeyPair();
+        KeyPair keyPair = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA).generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         List<X509Certificate> certificates = Arrays.asList(generateV1SelfSignedCertificate(keyPair, "Test"), generateV1SelfSignedCertificate(keyPair, "Intermediate"));
 
@@ -137,7 +137,7 @@ public abstract class JWKTest {
 
     @Test
     public void publicEs256() throws Exception {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC", BouncyIntegration.PROVIDER);
+        KeyPairGenerator keyGen = CryptoIntegration.getProvider().getKeyPairGen(KeyType.EC);
         SecureRandom randomGen = new SecureRandom();
         ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
         keyGen.initialize(ecSpec, randomGen);
