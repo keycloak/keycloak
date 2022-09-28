@@ -29,6 +29,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
@@ -78,51 +79,57 @@ public class OAuth2CodeParser {
      */
     public static ParseResult parseCode(KeycloakSession session, String code, RealmModel realm, EventBuilder event) {
         ParseResult result = new ParseResult(code);
-
         String[] parsed = DOT.split(code, 3);
         if (parsed.length < 3) {
             logger.warn("Invalid format of the code");
             return result.illegalCode();
         }
-
+        String codeUUID = parsed[0];
         String userSessionId = parsed[1];
         String clientUUID = parsed[2];
 
         event.detail(Details.CODE_ID, userSessionId);
         event.session(userSessionId);
 
-        // Parse UUID
-        String codeUUID;
-        try {
-            codeUUID = parsed[0];
-        } catch (IllegalArgumentException re) {
-            logger.warn("Invalid format of the UUID in the code");
-            return result.illegalCode();
-        }
-
-        // Retrieve UserSession
-        UserSessionModel userSession = lockUserSessionsForModification(session, () -> new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSessionId, clientUUID));
-        if (userSession == null) {
-            // Needed to track if code is invalid or was already used.
-            userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, userSessionId));
-            if (userSession == null) {
-                return result.illegalCode();
-            }
-        }
-
-        result.clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
-
         SingleUseObjectProvider codeStore = session.getProvider(SingleUseObjectProvider.class);
         Map<String, String> codeData = codeStore.remove(codeUUID);
 
-        // Either code not available or was already used
-        if (codeData == null) {
-            logger.warnf("Code '%s' already used for userSession '%s' and client '%s'.", codeUUID, userSessionId, clientUUID);
-            return result.illegalCode();
+        // finish code validation in separate retriable tx in case the client session has to be detached from the user session.
+        boolean isCodeValid = KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+            RealmModel realmModel = kcSession.realms().getRealm(realm.getId());
+            // Retrieve UserSession
+            UserSessionModel userSession = lockUserSessionsForModification(kcSession, () -> new UserSessionCrossDCManager(kcSession).getUserSessionWithClient(realmModel, userSessionId, clientUUID));
+            if (userSession == null) {
+                // Needed to track if code is invalid or was already used.
+                userSession = lockUserSessionsForModification(kcSession, () -> kcSession.sessions().getUserSession(realmModel, userSessionId));
+                if (userSession == null) {
+                    return false;
+                }
+            }
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
+
+            // Either code not available or was already used
+            if (codeData == null) {
+                logger.warnf("Code '%s' already used for userSession '%s' and client '%s'.", codeUUID, userSessionId, clientUUID);
+                // Attempt to use same code twice should invalidate existing clientSession
+                if (clientSession != null) {
+                    clientSession.detachFromUserSession();
+                }
+                return false;
+            }
+
+            logger.tracef("Successfully verified code '%s'. User session: '%s', client: '%s'", codeUUID, userSessionId, clientUUID);
+            return true;
+        }, 5, 100);
+
+        if (!isCodeValid) return result.illegalCode();
+
+        // set the client session in the result.
+        UserSessionModel userSession = lockUserSessionsForModification(session, () -> new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSessionId, clientUUID));
+        if (userSession == null) {
+            userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, userSessionId));
         }
-
-        logger.tracef("Successfully verified code '%s'. User session: '%s', client: '%s'", codeUUID, userSessionId, clientUUID);
-
+        result.clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
         result.codeData = OAuth2Code.deserializeCode(codeData);
 
         // Finally doublecheck if code is not expired

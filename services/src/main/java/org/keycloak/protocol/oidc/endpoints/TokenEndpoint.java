@@ -313,15 +313,7 @@ public class TokenEndpoint {
 
         OAuth2CodeParser.ParseResult parseResult = OAuth2CodeParser.parseCode(session, code, realm, event);
         if (parseResult.isIllegalCode()) {
-            AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
-
-            // Attempt to use same code twice should invalidate existing clientSession
-            if (clientSession != null) {
-                clientSession.detachFromUserSession();
-            }
-
             event.error(Errors.INVALID_CODE);
-
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Code not valid", Response.Status.BAD_REQUEST);
         }
 
