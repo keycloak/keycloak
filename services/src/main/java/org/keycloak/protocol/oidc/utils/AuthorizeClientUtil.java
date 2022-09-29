@@ -65,7 +65,7 @@ public class AuthorizeClientUtil {
         
         if(!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            throwErrorResponseException(Errors.UNAUTHORIZED_CLIENT, "Invalid client or Invalid client credentials", Response.Status.BAD_REQUEST, cors.allowAllOrigins());
+            throwErrorResponseException(Errors.INVALID_CLIENT, "Invalid client or Invalid client credentials", Response.Status.UNAUTHORIZED, cors.allowAllOrigins());
         }
 
         if (cors != null) {
