@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.group;
 
+import java.security.Key;
 import org.jboss.logging.Logger;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.SearchableFields;
@@ -167,24 +168,34 @@ public class MapGroupProvider implements GroupProvider {
     }
 
     @Override
+    @Deprecated
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        LOG.tracef("searchForGroupByNameStream(%s, %s, %d, %d)%s", realm, search, firstResult, maxResults, getShortStackTrace());
+        return searchForGroupByNameStream(realm, search, false, firstResult, maxResults);
+    }
+
+    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        LOG.tracef("searchForGroupByNameStream(%s, %s, %s, %b, %d, %d)%s", realm, session, search, exact, firstResult, maxResults, getShortStackTrace());
 
 
         DefaultModelCriteria<GroupModel> mcb = criteria();
-        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+        if (exact != null && exact.equals(Boolean.TRUE)) {
+            mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                    .compare(SearchableFields.NAME, Operator.EQ, search);
+        } else {
+            mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                    .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+        }
 
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
-            .map(MapGroupEntity::getId)
-            .map(id -> {
-                GroupModel groupById = session.groups().getGroupById(realm, id);
-                while (Objects.nonNull(groupById.getParentId())) {
-                    groupById = session.groups().getGroupById(realm, groupById.getParentId());
-                }
-                return groupById;
-            }).sorted(GroupModel.COMPARE_BY_NAME).distinct();
+                .map(MapGroupEntity::getId)
+                .map(id -> {
+                    GroupModel groupById = session.groups().getGroupById(realm, id);
+                    while (Objects.nonNull(groupById.getParentId())) {
+                        groupById = session.groups().getGroupById(realm, groupById.getParentId());
+                    }
+                    return groupById;
+                }).sorted(GroupModel.COMPARE_BY_NAME).distinct();
     }
 
     @Override

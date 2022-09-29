@@ -77,6 +77,7 @@ public class GroupsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                  @QueryParam("q") String searchQuery,
+                                                 @QueryParam("exact") @DefaultValue("false") Boolean exact,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults,
                                                  @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
@@ -86,7 +87,7 @@ public class GroupsResource {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
             return ModelToRepresentation.searchGroupsByAttributes(session, realm, !briefRepresentation, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
-            return ModelToRepresentation.searchForGroupByName(realm, !briefRepresentation, search.trim(), firstResult, maxResults);
+            return ModelToRepresentation.searchForGroupByName(session, realm, !briefRepresentation, search.trim(), exact, firstResult, maxResults);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
             return ModelToRepresentation.toGroupHierarchy(realm, !briefRepresentation, firstResult, maxResults);
         } else {

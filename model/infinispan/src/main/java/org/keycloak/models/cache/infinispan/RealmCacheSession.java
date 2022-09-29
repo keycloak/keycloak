@@ -1025,7 +1025,12 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer first, Integer max) {
-        return getGroupDelegate().searchForGroupByNameStream(realm, search, first, max);
+        return getGroupDelegate().searchForGroupByNameStream(realm, search, false, first, max);
+    }
+
+    @Override
+    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+       return getGroupDelegate().searchForGroupByNameStream(realm, search, exact, firstResult, maxResults);
     }
 
     @Override
