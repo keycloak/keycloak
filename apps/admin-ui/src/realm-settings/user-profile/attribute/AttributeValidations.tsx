@@ -3,8 +3,6 @@ import {
   Button,
   ButtonVariant,
   Divider,
-  Flex,
-  FlexItem,
   Text,
   TextVariants,
 } from "@patternfly/react-core";
@@ -78,20 +76,16 @@ export const AttributeValidations = () => {
       )}
       <DeleteConfirm />
       <div className="kc-attributes-validations">
-        <Flex>
-          <FlexItem align={{ default: "alignRight" }}>
-            <Button
-              id="addValidator"
-              onClick={() => toggleModal()}
-              variant="link"
-              className="kc-addValidator"
-              data-testid="addValidator"
-              icon={<PlusCircleIcon />}
-            >
-              {t("realm-settings:addValidator")}
-            </Button>
-          </FlexItem>
-        </Flex>
+        <Button
+          id="addValidator"
+          onClick={() => toggleModal()}
+          variant="link"
+          data-testid="addValidator"
+          className="kc--attributes-validations--add-validation-button"
+          icon={<PlusCircleIcon />}
+        >
+          {t("realm-settings:addValidator")}
+        </Button>
         <Divider />
         <TableComposable aria-label="validators-table">
           <Thead>
@@ -110,7 +104,7 @@ export const AttributeValidations = () => {
                 <Td dataLabel={t("validatorColNames.colConfig")}>
                   {JSON.stringify(validator.value)}
                 </Td>
-                <Td>
+                <Td className="kc--attributes-validations--action-cell">
                   <Button
                     key="validator"
                     variant="link"

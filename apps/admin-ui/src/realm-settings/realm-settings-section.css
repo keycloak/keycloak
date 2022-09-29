@@ -289,3 +289,11 @@ input#kc-scopes {
 .kc-attributeCancel {
   align-self: center;
 }
+
+.kc--attributes-validations--add-validation-button {
+  margin-top: -55px;
+  float: right;
+}
+.kc--attributes-validations--action-cell {
+  text-align: right;
+}
