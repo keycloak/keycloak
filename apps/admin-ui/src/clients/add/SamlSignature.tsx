@@ -49,8 +49,12 @@ export const SamlSignature = () => {
 
   const { control, watch } = useFormContext<ClientRepresentation>();
 
-  const signDocs = watch("attributes.saml.server.signature");
-  const signAssertion = watch("attributes.saml.assertion.signature");
+  const signDocs = watch(
+    convertAttributeNameToForm("attributes.saml.server.signature")
+  );
+  const signAssertion = watch(
+    convertAttributeNameToForm("attributes.saml.assertion.signature")
+  );
 
   return (
     <FormAccess
