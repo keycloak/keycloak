@@ -26,13 +26,6 @@
     <description>Keycloak Administration UI</description>
 
     <properties>
-        <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
-        <jboss.releases.repo.id>jboss-releases-repository</jboss.releases.repo.id>
-        <jboss.releases.repo.url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
-        <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
-        <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
-
-        <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
         <frontend.maven.plugin.version>1.12.1</frontend.maven.plugin.version>
         <frontend.maven.plugin.nodeVersion>v18.9.0</frontend.maven.plugin.nodeVersion>
 
@@ -65,16 +58,14 @@
     </developers>
 
     <distributionManagement>
-        <repository>
-            <id>${jboss.releases.repo.id}</id>
-            <name>JBoss Releases Repository</name>
-            <url>${jboss.releases.repo.url}</url>
-        </repository>
         <snapshotRepository>
-            <id>${jboss.snapshots.repo.id}</id>
-            <name>JBoss Snapshots Repository</name>
-            <url>${jboss.snapshots.repo.url}</url>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
 
     <dependencies>
@@ -110,35 +101,61 @@
         <profile>
             <id>release</id>
             <build>
-              <plugins>
-                <plugin>
-                  <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-javadoc-plugin</artifactId>
-                  <version>3.4.1</version>
-                  <executions>
-                    <execution>
-                      <id>attach-javadocs</id>
-                      <goals>
-                        <goal>jar</goal>
-                      </goals>
-                    </execution>
-                  </executions>
-                </plugin>
-                <plugin>
-                  <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-source-plugin</artifactId>
-                  <version>3.2.1</version>
-                  <executions>
-                    <execution>
-                      <id>attach-sources</id>
-                      <phase>verify</phase>
-                      <goals>
-                        <goal>jar-no-fork</goal>
-                      </goals>
-                    </execution>
-                  </executions>
-                </plugin>
-              </plugins>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.4.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <version>2.8.2</version>
+                        <configuration>
+                            <retryFailedDeploymentCount>10</retryFailedDeploymentCount>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>nexus</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.13</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
         <profile>
@@ -169,6 +186,7 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>install-tarball</id>
             <activation>
@@ -232,16 +250,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>${nexus.staging.plugin.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <serverId>${jboss.releases.repo.id}</serverId>
-                    <nexusUrl>${jboss.repo.nexusUrl}</nexusUrl>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.github.eirslett</groupId>
