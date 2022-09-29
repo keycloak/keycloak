@@ -762,7 +762,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "unauthorized_client", Errors.CLIENT_NOT_FOUND);
+        assertError(response, 401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -775,6 +775,10 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
         assertError(response, null, "unauthorized_client", Errors.CLIENT_NOT_FOUND);
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_client", response.getError());
+
     }
 
     @Test
@@ -786,7 +790,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "unauthorized_client", Errors.CLIENT_NOT_FOUND);
+        assertError(response, 401,null, "unauthorized_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -816,7 +820,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "unknown-client", "unauthorized_client", Errors.CLIENT_NOT_FOUND);
+        assertError(response,401, "unknown-client", "unauthorized_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -834,7 +838,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "client1", "unauthorized_client", Errors.CLIENT_DISABLED);
+        assertError(response,401, "client1", "invalid_client", Errors.CLIENT_DISABLED);
 
         ClientManager.realm(adminClient.realm("test")).clientId("client1").enabled(true);
     }
@@ -863,7 +867,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, "client_credentials_setup_required");
+        assertError(response,401, "client1", OAuthErrorException.INVALID_CLIENT, "client_credentials_setup_required");
 
         ClientManager.realm(adminClient.realm("test")).clientId("client1").updateAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, backupClient1Cert.certificate);
     }
@@ -1034,7 +1038,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testMissingAudienceClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("audience");
-        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response,401, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -1090,6 +1094,15 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     private void assertError(OAuthClient.AccessTokenResponse response, String clientId, String responseError, String eventError) {
         assertEquals(400, response.getStatusCode());
+        assertMessageError(response,clientId,responseError,eventError);
+    }
+
+    private void assertError(OAuthClient.AccessTokenResponse response, int erroCode, String clientId, String responseError, String eventError) {
+        assertEquals(erroCode, response.getStatusCode());
+        assertMessageError(response, clientId, responseError, eventError);
+    }
+
+    private void assertMessageError(OAuthClient.AccessTokenResponse response, String clientId, String responseError, String eventError) {
         assertEquals(responseError, response.getError());
 
         events.expectClientLogin()
@@ -1100,6 +1113,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                 .user((String) null)
                 .assertEvent();
     }
+
 
     private void assertSuccess(OAuthClient.AccessTokenResponse response, String clientId, String userId, String userName) {
         assertEquals(200, response.getStatusCode());

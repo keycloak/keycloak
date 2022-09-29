@@ -337,8 +337,8 @@ public class CustomFlowTest extends AbstractFlowTest {
         testingClient.testing().updateAuthenticator(state);
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
-        assertEquals(400, response.getStatusCode());
-        assertEquals("unauthorized_client", response.getError());
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_client", response.getError());
 
         events.expectLogin()
                 .client((String) null)

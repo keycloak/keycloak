@@ -147,8 +147,8 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code,
                 jwt);
 
-        assertEquals(400, response.getStatusCode());
-        assertEquals("unauthorized_client", response.getError());
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_client", response.getError());
     }
 
     @Test
