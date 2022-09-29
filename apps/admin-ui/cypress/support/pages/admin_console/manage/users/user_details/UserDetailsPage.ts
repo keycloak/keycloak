@@ -10,8 +10,6 @@ export default class UserDetailsPage extends PageObject {
   firstNameValue: string;
   lastNameInput: string;
   lastNameValue: string;
-  enabledSwitch: string;
-  enabledValue: boolean;
   requiredUserActions: RequiredActionAlias[];
   identityProviderLinksTab: string;
 
@@ -29,8 +27,6 @@ export default class UserDetailsPage extends PageObject {
     this.firstNameValue = "firstname";
     this.lastNameInput = "lastName-input";
     this.lastNameValue = "lastname";
-    this.enabledSwitch = "user-enabled-switch";
-    this.enabledValue = true;
     this.requiredUserActions = [RequiredActionAlias.UPDATE_PASSWORD];
     this.identityProviderLinksTab = "identity-provider-links-tab";
   }
@@ -47,7 +43,6 @@ export default class UserDetailsPage extends PageObject {
     cy.findByTestId(this.emailInput).type(this.emailValue());
     cy.findByTestId(this.firstNameInput).type(this.firstNameValue);
     cy.findByTestId(this.lastNameInput).type(this.lastNameValue);
-    cy.findByTestId(this.enabledSwitch).check({ force: true });
 
     return this;
   }

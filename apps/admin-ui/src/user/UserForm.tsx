@@ -314,30 +314,6 @@ export const UserForm = ({
         </FormGroup>
       )}
       <FormGroup
-        label={t("common:enabled")}
-        fieldId="kc-enabled"
-        labelIcon={
-          <HelpItem helpText="users-help:disabled" fieldLabelId="enabled" />
-        }
-      >
-        <Controller
-          name="enabled"
-          defaultValue={true}
-          control={control}
-          render={({ onChange, value }) => (
-            <Switch
-              data-testid="user-enabled-switch"
-              id={"kc-user-enabled"}
-              onChange={(value) => onChange(value)}
-              isChecked={value}
-              label={t("common:on")}
-              labelOff={t("common:off")}
-              aria-label={t("common:enabled")}
-            />
-          )}
-        />
-      </FormGroup>
-      <FormGroup
         label={t("requiredUserActions")}
         fieldId="kc-required-user-actions"
         validated={errors.requiredActions ? "error" : "default"}

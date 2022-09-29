@@ -8,7 +8,7 @@ import {
   TabTitleText,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
@@ -150,25 +150,37 @@ const UsersTabs = () => {
     <>
       <ImpersonateConfirm />
       <DeleteConfirm />
-      <ViewHeader
-        titleKey={user?.id ? user.username! : t("createUser")}
-        divider={!id}
-        dropdownItems={[
-          <DropdownItem
-            key="impersonate"
-            isDisabled={!user?.access?.impersonate}
-            onClick={() => toggleImpersonateDialog()}
-          >
-            {t("impersonate")}
-          </DropdownItem>,
-          <DropdownItem
-            key="delete"
-            isDisabled={!user?.access?.manage}
-            onClick={() => toggleDeleteDialog()}
-          >
-            {t("common:delete")}
-          </DropdownItem>,
-        ]}
+      <Controller
+        name="enabled"
+        control={userForm.control}
+        defaultValue={true}
+        render={({ onChange, value }) => (
+          <ViewHeader
+            titleKey={user?.id ? user.username! : t("createUser")}
+            divider={!id}
+            dropdownItems={[
+              <DropdownItem
+                key="impersonate"
+                isDisabled={!user?.access?.impersonate}
+                onClick={() => toggleImpersonateDialog()}
+              >
+                {t("impersonate")}
+              </DropdownItem>,
+              <DropdownItem
+                key="delete"
+                isDisabled={!user?.access?.manage}
+                onClick={() => toggleDeleteDialog()}
+              >
+                {t("common:delete")}
+              </DropdownItem>,
+            ]}
+            isEnabled={value}
+            onToggle={(value) => {
+              onChange(value);
+              save(userForm.getValues());
+            }}
+          />
+        )}
       />
       <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...userForm}>
