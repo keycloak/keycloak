@@ -11,7 +11,7 @@ export type MapperParams = {
 };
 
 export const MapperRoute: RouteDef = {
-  path: "/:realm/client-scopes/:id/:type/mappers/:mapperId",
+  path: "/:realm/client-scopes/:id/mappers/:type/:mapperId",
   component: lazy(() => import("../details/MappingDetails")),
   breadcrumb: (t) => t("common:mappingDetails"),
   access: "view-clients",
