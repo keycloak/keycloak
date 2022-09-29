@@ -40,6 +40,7 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -937,10 +938,19 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer first, Integer max) {
-        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByNameContaining", String.class)
-                .setParameter("realm", realm.getId())
-                .setParameter("search", search);
+        return searchForGroupByNameStream(realm, search, false, first, max);
+    }
 
+    @Override
+    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer first, Integer max) {
+        TypedQuery<String> query;
+        if (Boolean.TRUE.equals(exact)) {
+            query = em.createNamedQuery("getGroupIdsByName", String.class);
+        } else {
+            query = em.createNamedQuery("getGroupIdsByNameContaining", String.class);
+        }
+        query.setParameter("realm", realm.getId())
+                .setParameter("search", search);
         Stream<String> groups =  paginateQuery(query, first, max).getResultStream();
 
         return closing(groups.map(id -> {
@@ -951,7 +961,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             return groupById;
         }).sorted(GroupModel.COMPARE_BY_NAME).distinct());
     }
-
     @Override
     public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         Map<String, String> filteredAttributes = groupSearchableAttributes == null || groupSearchableAttributes.isEmpty()
