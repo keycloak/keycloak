@@ -21,6 +21,9 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import java.util.Set;
 
+import org.jboss.logging.Logger;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+
 /**
  * Parse the parameters from request queryString
  *
@@ -28,12 +31,28 @@ import java.util.Set;
  */
 public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
 
+    private static final Logger logger = Logger.getLogger(AuthzEndpointRequestParser.class);
+
     private final MultivaluedMap<String, String> requestParams;
+
+    private final boolean isResponseTypeParameterRequired;
 
     private String invalidRequestMessage = null;
 
-    public AuthzEndpointQueryStringParser(MultivaluedMap<String, String> requestParams) {
+    public AuthzEndpointQueryStringParser(MultivaluedMap<String, String> requestParams, boolean isResponseTypeParameterRequired) {
         this.requestParams = requestParams;
+        this.isResponseTypeParameterRequired = isResponseTypeParameterRequired;
+    }
+
+    @Override
+    protected void validateResponseTypeParameter(String responseTypeParameter, AuthorizationEndpointRequest request) {
+        // response_type parameter is required in the query string even if present in 'request' object. This is per OIDC core specification
+        if (isResponseTypeParameterRequired && responseTypeParameter == null) {
+            logger.warn("Missing parameter 'response_type' in the OAuth 2.0 request parameters");
+            invalidRequestMessage = "Missing parameter: response_type";
+        }
+
+        super.validateResponseTypeParameter(responseTypeParameter, request);
     }
 
     @Override
