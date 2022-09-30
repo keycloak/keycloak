@@ -288,6 +288,7 @@
         <module>adapters</module>
         <module>authz</module>
         <module>misc</module>
+        <module>quarkus</module>
     </modules>
 
     <dependencyManagement>
@@ -1908,18 +1909,6 @@
 
     <profiles>
         <profile>
-            <id>wildfly-dist</id>
-            <activation>
-                <property>
-                    <name>includeWildFly</name>
-                </property>
-            </activation>
-            <modules>
-                <module>wildfly</module>
-            </modules>
-        </profile>
-
-        <profile>
             <id>community</id>
             <activation>
                 <property>
@@ -1952,19 +1941,6 @@
                     --add-opens=java.base/java.lang=ALL-UNNAMED
                 </surefire.system.args>
             </properties>
-        </profile>
-
-        <profile>
-            <id>quarkus</id>
-            <activation>
-                <jdk>[11,)</jdk>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <modules>
-                <module>quarkus</module>
-            </modules>
         </profile>
 
         <profile>

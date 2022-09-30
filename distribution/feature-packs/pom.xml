@@ -33,19 +33,4 @@
     <modules>
         <module>adapter-feature-pack</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>wildfly-dist</id>
-            <activation>
-                <property>
-                    <name>includeWildFly</name>
-                </property>
-            </activation>
-            <modules>
-                <module>server-feature-pack-dependencies</module>
-                <module>server-feature-pack</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>
