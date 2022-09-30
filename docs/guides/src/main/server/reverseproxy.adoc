@@ -43,9 +43,10 @@ Take extra precautions to ensure that the X-Forwarded-For header is set by your 
 If this header is incorrectly configured, rogue clients can set this header and trick Keycloak into thinking the client is connected from a different IP address than the actual address.
 This precaution can be more critical if you do any deny or allow listing of IP addresses.
 
-== Hosting keyclock on subpath
+== Different context-path on reverse proxy
 
-When Keycloak is hosted behind a reverse proxy, it is usually served from a subpath (not from rool url), for this to work properly Keyclock should be configured to serve resources from a subpath. Use `KC_HTTP_RELATIVE_PATH` for this, e.g. if you want to set Keyclock to host from subpath `/auth` then set this environment variable to `/auth`, see details https://www.keycloak.org/server/all-config?f=build
+Keycloak assumes it is exposed through the reverse proxy under the same context path as Keycloak is configured for. By default Keycloak is exposed through the root (`/`).
+You can use `hostname-path` or `hostname-url` in these cases, or alternatively you can also change the context path of Keycloak itself to match the context path for the reverse proxy using the `http-relative-path` option. e.g. to configure it using `http-relative-path`, if you want to set Keyclock to host from subpath `/auth` then set `http-relative-path` to `/auth`, see details https://www.keycloak.org/server/all-config?f=build
 
 == Trust the proxy to set hostname
 
