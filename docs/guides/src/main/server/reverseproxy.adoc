@@ -45,8 +45,10 @@ This precaution can be more critical if you do any deny or allow listing of IP a
 
 == Different context-path on reverse proxy
 
-Keycloak assumes it is exposed through the reverse proxy under the same context path as Keycloak is configured for. By default Keycloak is exposed through the root (`/`).
-You can use `hostname-path` or `hostname-url` in these cases, or alternatively you can also change the context path of Keycloak itself to match the context path for the reverse proxy using the `http-relative-path` option. e.g. to configure it using `http-relative-path`, if you want to set Keyclock to host from subpath `/auth` then set `http-relative-path` to `/auth`, see details https://www.keycloak.org/server/all-config?f=build
+Keycloak assumes it is exposed through the reverse proxy under the same context path as Keycloak is configured for. By default Keycloak is exposed through the root (`/`), which means it expects to be exposed through the reverse proxy on `/` as well.
+You can use `hostname-path` or `hostname-url` in these cases, for example using `--hostname-path=/auth` if Keycloak is exposed through the reverse proxy on `/auth`.
+ 
+Alternatively you can also change the context path of Keycloak itself to match the context path for the reverse proxy using the `http-relative-path` option, which will change the context-path of Keycloak itself to match the context path used by the reverse proxy. see details of configuration options at https://www.keycloak.org/server/all-config?f=build
 
 == Trust the proxy to set hostname
 
