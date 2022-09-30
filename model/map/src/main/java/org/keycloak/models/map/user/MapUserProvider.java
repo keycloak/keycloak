@@ -367,7 +367,10 @@ public class MapUserProvider implements UserProvider.Streams {
 
         if (addDefaultRequiredActions){
             realm.getRequiredActionProvidersStream()
-                    .filter(RequiredActionProviderModel::isEnabled)
+                    /* Required Action enabled does not mean to asign it to new user but only if default is enabled.
+                       If we let this, the isDefaultAction is meaningless!               
+                       doc tool tip says about Default: "If enabled, any new user will have this required action assigned to it." */
+                    //.filter(RequiredActionProviderModel::isEnabled) 
                     .filter(RequiredActionProviderModel::isDefaultAction)
                     .map(RequiredActionProviderModel::getAlias)
                     .forEach(userModel::addRequiredAction);
