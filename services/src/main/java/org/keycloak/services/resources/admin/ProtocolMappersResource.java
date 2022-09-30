@@ -231,12 +231,7 @@ public class ProtocolMappersResource {
 
     private void validateModel(ProtocolMapperModel model) {
         try {
-            ProtocolMapper mapper = (ProtocolMapper)session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
-            if (mapper != null) {
-                mapper.validateConfig(session, realm, client, model);
-            } else {
-                throw new NotFoundException("ProtocolMapper provider not found");
-            }
+            RepresentationToModel.validateProtocolMapperModel(session, client, model);
         } catch (ProtocolMapperConfigException ex) {
             logger.error(ex.getMessage());
             Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());

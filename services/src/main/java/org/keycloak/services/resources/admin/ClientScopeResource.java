@@ -106,7 +106,7 @@ public class ClientScopeResource {
         auth.clients().requireManageClientScopes();
         validateDynamicScopeUpdate(rep);
         try {
-            RepresentationToModel.updateClientScope(rep, clientScope);
+            RepresentationToModel.updateClientScope(session, rep, clientScope);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
