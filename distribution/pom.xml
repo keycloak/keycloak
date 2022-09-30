@@ -85,17 +85,6 @@
             </modules>
         </profile>
         <profile>
-            <id>legacy-dist</id>
-            <activation>
-                <property>
-                    <name>legacy-dist</name>
-                </property>
-            </activation>
-            <modules>
-                <module>server-legacy-dist</module>
-            </modules>
-        </profile>
-        <profile>
             <id>distribution-downloads</id>
             <modules>
                 <module>api-docs-dist</module>
