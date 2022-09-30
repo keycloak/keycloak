@@ -237,7 +237,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    }
 
    private void assertTokenNotObtained(OAuthClient.AccessTokenResponse token) {
-      Assert.assertEquals(400, token.getStatusCode());
+      Assert.assertEquals(401, token.getStatusCode());
       Assert.assertNull(token.getAccessToken());
    }
 
