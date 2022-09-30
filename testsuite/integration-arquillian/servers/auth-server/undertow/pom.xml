@@ -29,7 +29,7 @@
     <name>Auth Server - Undertow</name>
 
     <properties>
-        <common.resources>${basedir}/../jboss/common</common.resources>
+        <common.resources>${basedir}/../common</common.resources>
     </properties>
 
     <dependencies>

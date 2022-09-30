@@ -67,9 +67,9 @@ As an example, to run tests using a MySQL docker container on Undertow auth-serv
 
 If you want to run tests using a pre-configured Keycloak distribution (instead of Undertow):
 
-    mvn -f testsuite/integration-arquillian clean verify -Pdb-mysql,jpa,auth-server-wildfly
+    mvn -f testsuite/integration-arquillian clean verify -Pdb-mysql,jpa,auth-server-quarkus
 
-Note that you must always activate the `jpa` profile when using auth-server-wildfly.
+Note that you must always activate the `jpa` profile when using auth-server-quarkus.
 
 If the mvn command fails for any reason, it may also fail to remove the container which
 must be then removed manually.
@@ -102,11 +102,11 @@ the allocation and deallocation need to happen when building the `integration-ar
 it happens in other cases).
 
 In order to use the DB Allocator Service, you must use the `jpa` profile with one of the `db-allocator-*`. Here's a full example to
-run JPA with Auth Server Wildfly and MSSQL 2016:
+run JPA with Auth Server Quarkus and MSSQL 2016:
 
 ```
 mvn -f testsuite/integration-arquillian/pom.xml clean verify \
-    -Pjpa,auth-server-wildfly,db-allocator-db-mssql2016 \
+    -Pjpa,auth-server-quarkus,db-allocator-db-mssql2016 \
     -Ddballocator.uri=<<db-allocator-servlet-url>> \
     -Ddballocator.user=<<db-allocator-user>> \
     -Dmaven.test.failure.ignore=true
