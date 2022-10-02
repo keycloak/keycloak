@@ -345,11 +345,11 @@
                     <regex>false</regex>
                     <replacements>
                         <replacement>
-                            <token>src="</token>
+                            <token>src="./</token>
                             <value>src="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
-                            <token>href="</token>
+                            <token>href="./</token>
                             <value>href="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
