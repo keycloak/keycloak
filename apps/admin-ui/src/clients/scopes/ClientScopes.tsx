@@ -78,7 +78,9 @@ export const ClientScopes = ({
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const [rest, setRest] = useState<ClientScopeRepresentation[]>();
-  const [selectedRows, setSelectedRows] = useState<Row[]>([]);
+  const [selectedRows, setSelectedRowState] = useState<Row[]>([]);
+  const setSelectedRows = (rows: Row[]) =>
+    setSelectedRowState(rows.filter(({ id }) => id !== DEDICATED_ROW));
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -225,22 +227,19 @@ export const ClientScopes = ({
                 onClick={async () => {
                   try {
                     await Promise.all(
-                      selectedRows.map(async (row) => {
-                        await removeClientScope(
+                      selectedRows.map((row) =>
+                        removeClientScope(
                           adminClient,
                           clientId,
                           { ...row },
                           row.type as ClientScope
-                        );
-                      })
+                        )
+                      )
                     );
 
                     setKebabOpen(false);
                     setSelectedRows([]);
-                    addAlert(
-                      t("clients:clientScopeRemoveSuccess"),
-                      AlertVariant.success
-                    );
+                    addAlert(t("clients:clientScopeRemoveSuccess"));
                     refresh();
                   } catch (error) {
                     addError("clients:clientScopeRemoveError", error);
