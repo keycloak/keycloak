@@ -15,7 +15,7 @@ One important thing to note about using client-side applications is that the cli
 credentials in a client-side application. This makes it very important to make sure the redirect URIs you have configured for the client are correct and as specific as possible.
 
 To use the JavaScript adapter you must first create a client for your application in the {project_name} Admin Console. Make sure `public`
-is selected for `Access Type`.
+is selected for `Access Type`.  You achieve this in Capability config by turning OFF client authentication toggle.
 
 You also need to configure `Valid Redirect URIs` and `Web Origins`. Be as specific as possible as failing to do so may result in a security vulnerability.
 
