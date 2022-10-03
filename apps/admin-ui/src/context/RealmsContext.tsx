@@ -1,6 +1,12 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { sortBy } from "lodash-es";
-import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import axios from "axios";
 
 import { RecentUsed } from "../components/realm-selector/recent-used";
@@ -24,6 +30,7 @@ export const RealmsProvider: FunctionComponent = ({ children }) => {
   const { keycloak, adminClient } = useAdminClient();
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
   const recentUsed = useMemo(() => new RecentUsed(), []);
+  const firstRender = useRef(0);
 
   function updateRealms(realms: RealmRepresentation[]) {
     setRealms(sortBy(realms, "realm"));
@@ -32,6 +39,10 @@ export const RealmsProvider: FunctionComponent = ({ children }) => {
 
   useFetch(
     async () => {
+      if (firstRender.current === 0) {
+        firstRender.current = 1;
+        return [];
+      }
       try {
         return await adminClient.realms.find({ briefRepresentation: true });
       } catch (error) {
