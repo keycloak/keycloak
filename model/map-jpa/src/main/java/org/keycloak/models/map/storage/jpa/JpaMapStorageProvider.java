@@ -27,7 +27,7 @@ import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 
 public class JpaMapStorageProvider implements MapStorageProvider {
-
+    // Comment for executing Map storage tests
     private final JpaMapStorageProviderFactory factory;
     private final KeycloakSession session;
     private final EntityManager em;
