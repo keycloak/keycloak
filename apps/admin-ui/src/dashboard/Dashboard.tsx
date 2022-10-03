@@ -128,9 +128,7 @@ const Dashboard = () => {
     <>
       <PageSection variant="light">
         <TextContent className="pf-u-mr-sm">
-          <Text component="h1">
-            {t("realmName", { name: toUpperCase(realm) })}
-          </Text>
+          <Text component="h1">{t("realmName", { name: realm })}</Text>
           <Text>
             <Trans t={t} i18nKey="adminUiVersion">
               <strong>Admin UI version</strong>

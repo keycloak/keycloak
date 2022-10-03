@@ -20,7 +20,6 @@ import { useRealms } from "../../context/RealmsContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { toAddRealm } from "../../realm/routes/AddRealm";
-import { toUpperCase } from "../../util";
 import { RecentUsed } from "./recent-used";
 
 import "./realm-selector.css";
@@ -59,7 +58,7 @@ export const RealmSelector = () => {
 
   const RealmText = ({ value }: { value: string }) => (
     <Split className="keycloak__realm_selector__list-item-split">
-      <SplitItem isFilled>{toUpperCase(value)}</SplitItem>
+      <SplitItem isFilled>{value}</SplitItem>
       <SplitItem>{value === realm && <CheckIcon />}</SplitItem>
     </Split>
   );
@@ -112,9 +111,9 @@ export const RealmSelector = () => {
       {realms.length > 5 && (
         <ContextSelector
           data-testid="realmSelector"
-          toggleText={toUpperCase(realm)}
+          toggleText={realm}
           isOpen={open}
-          screenReaderLabel={toUpperCase(realm)}
+          screenReaderLabel={realm}
           onToggle={() => setOpen(!open)}
           onSelect={(_, r) => {
             let element: ReactElement;
@@ -159,7 +158,7 @@ export const RealmSelector = () => {
               onToggle={() => setOpen(!open)}
               className="keycloak__realm_selector_dropdown__toggle"
             >
-              {toUpperCase(realm)}
+              {realm}
             </DropdownToggle>
           }
           dropdownItems={[...dropdownItems, addRealmComponent]}

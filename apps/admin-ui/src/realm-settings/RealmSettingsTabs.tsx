@@ -26,11 +26,7 @@ import { useRealms } from "../context/RealmsContext";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
-import {
-  convertFormValuesToObject,
-  convertToFormValues,
-  toUpperCase,
-} from "../util";
+import { convertFormValuesToObject, convertToFormValues } from "../util";
 
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { EventsTab } from "./event-config/EventsTab";
@@ -120,7 +116,7 @@ const RealmSettingsHeader = ({
         onClose={() => setPartialExportOpen(false)}
       />
       <ViewHeader
-        titleKey={toUpperCase(realmName)}
+        titleKey={realmName}
         subKey="realm-settings:realmSettingsExplain"
         helpUrl={helpUrls.realmSettingsUrl}
         divider={false}
