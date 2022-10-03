@@ -40,6 +40,7 @@ export const ClientDescription = ({
           ref={register({ required: true })}
           type="text"
           id="kc-client-id"
+          data-testid="kc-client-id"
           name="clientId"
           validated={
             errors.clientId ? ValidatedOptions.error : ValidatedOptions.default

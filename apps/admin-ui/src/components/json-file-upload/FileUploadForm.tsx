@@ -127,6 +127,7 @@ export const FileUploadForm = ({
           helperText={t(helpText)}
         >
           <FileUpload
+            data-testid={id}
             id={id}
             {...rest}
             type="text"

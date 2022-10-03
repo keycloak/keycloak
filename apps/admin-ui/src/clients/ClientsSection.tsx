@@ -125,6 +125,7 @@ export default function ClientsSection() {
               <Link {...props} to={toImportClient({ realm })} />
             )}
             variant="link"
+            data-testid="importClient"
           >
             {t("importClient")}
           </Button>

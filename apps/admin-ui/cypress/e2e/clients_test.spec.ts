@@ -432,6 +432,47 @@ describe("Clients test", () => {
       });
       initialAccessTokenTab.shouldBeEmpty();
     });
+
+    it("Should fail to create imported client with empty ID", () => {
+      commonPage.sidebar().goToClients();
+      commonPage.masthead().closeAllAlertMessages();
+      cy.findByTestId("importClient").click();
+      cy.findByTestId("kc-client-id").click();
+      cy.findByText("Save").click();
+      cy.findByText("Required field");
+    });
+
+    const identicalClientId = "identical";
+    it("Should fail to create client with same ID", () => {
+      commonPage.sidebar().goToClients();
+      commonPage.tableToolbarUtils().createClient();
+
+      createClientPage.fillClientData(identicalClientId).continue().save();
+
+      commonPage.masthead().closeAllAlertMessages();
+      commonPage.sidebar().goToClients();
+      cy.findByTestId("importClient").click();
+      cy.findByTestId("realm-file").selectFile(
+        "cypress/fixtures/partial-import-test-data/import-identical-client.json",
+        { action: "drag-drop" }
+      );
+
+      cy.wait(1000);
+      //cy.findByTestId("realm-file").contains('"clientId": "identical"')
+      cy.findByTestId("kc-client-id").click();
+      cy.findByText("Save").click();
+      commonPage
+        .masthead()
+        .checkNotificationMessage(
+          "Could not import client: Client identical already exists",
+          true
+        );
+    });
+
+    it("should delete 'identical' client id", () => {
+      commonPage.sidebar().goToClients();
+      adminClient.deleteClient(identicalClientId);
+    });
   });
 
   describe("Roles tab test", () => {
