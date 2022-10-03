@@ -2132,7 +2132,7 @@
                 </property>
             </activation>
             <properties>
-                <keycloak.crypto.artifactId>keycloak-crypto-default</keycloak.crypto.artifactId>
+                <keycloak.crypto.artifactId>keycloak-crypto-elytron</keycloak.crypto.artifactId>
             </properties>
         </profile>
 
