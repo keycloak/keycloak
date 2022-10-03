@@ -92,7 +92,7 @@
     "@types/tar-fs": "^2.0.1",
     "@vitejs/plugin-react": "^2.1.0",
     "babel-loader": "^8.2.5",
-    "cypress": "^10.8.0",
+    "cypress": "^10.9.0",
     "decompress": "^4.2.1",
     "del": "^7.0.0",
     "gunzip-maybe": "^1.4.2",
