@@ -1,0 +1,29 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: development-kv
+
+jobs:
+  - job: Docker
+    displayName: Docker image - Build and Publish
+    steps:
+      - task: CmdLine@2
+        displayName: Build image
+        inputs:
+          script: |
+            ./container/build-image-fork.sh
+      - task: Docker@2
+        displayName: Push image to Docker hub
+        inputs:
+          containerRegistry: 'Docker hub upload-profiili-tunnistus'
+          repository: 'helsinki/helsinki-keycloak'
+          command: push
+          tags: |
+            $(keycloakImage)
+            latest
