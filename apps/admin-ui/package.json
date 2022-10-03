@@ -97,7 +97,7 @@
     "del": "^7.0.0",
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
-    "jsdom": "^20.0.0",
+    "jsdom": "^20.0.1",
     "node-fetch": "^3.2.10",
     "progress-promise": "^0.0.6",
     "tar-fs": "^2.1.1",
