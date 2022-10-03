@@ -1,0 +1,3 @@
+= RESTEasy Version Update
+
+Updated the RESTEasy version of Keycloak Admin REST Client to the next major version.
