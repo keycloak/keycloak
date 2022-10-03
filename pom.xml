@@ -43,26 +43,16 @@
 
         <quarkus.version>2.13.2.Final</quarkus.version>
 
-        <!--
-        Performing a Wildfly upgrade? Run the:
+        <project.build-time>${timestamp}</project.build-time>
 
-             "./misc/scripts/upgrade-wildfly/upgrade-keycloak-to-wildfly-tag.py"
-
-        script with the corresponding Wildfly tag, e.g. '20.0.0.Final' to get necessary Keycloak bits
-        updated automatically based on corresponding artifact versions used in Wildfly and Wildfly Core
-
-        IMPORTANT: If you add new dependency name / version property below, be sure to update the
-        "./misc/scripts/upgrade-wildfly/upgrade-keycloak-to-wildfly-tag.py" script too to ensure
-        the script continues to work
-        -->
-
-        <product.rhsso.version>7.5.0.GA</product.rhsso.version>
-
-        <product.build-time>${timestamp}</product.build-time>
         <wildfly.version>26.1.1.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
         <eap.version>7.4.0.GA-redhat-00005</eap.version>
         <wildfly.core.version>18.1.1.Final</wildfly.core.version>
+        <apache.httpcomponents.fuse.version>4.5.2</apache.httpcomponents.fuse.version>
+        <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
+        <ee.maven.groupId>org.wildfly</ee.maven.groupId>
+        <ee.maven.version>${wildfly.version}</ee.maven.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -1908,29 +1898,6 @@
 
     <profiles>
         <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <properties>
-                <product.name>Keycloak</product.name>
-                <product.name.full>Keycloak</product.name.full>
-                <product.slot>keycloak</product.slot>
-                <product.wildfly.console.slot>main</product.wildfly.console.slot>
-                <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
-                <product.version>${project.version}</product.version>
-                <product.default-profile>community</product.default-profile>
-                <apache.httpcomponents.fuse.version>4.5.2</apache.httpcomponents.fuse.version>
-                <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
-                <ee.maven.groupId>org.wildfly</ee.maven.groupId>
-                <ee.maven.version>${wildfly.version}</ee.maven.version>
-                <product.filename.version>${project.version}</product.filename.version>
-            </properties>
-        </profile>
-
-        <profile>
             <id>jdk9</id>
             <activation>
                 <jdk>[9,)</jdk>
@@ -1940,57 +1907,6 @@
                     --add-opens=java.base/java.lang=ALL-UNNAMED
                 </surefire.system.args>
             </properties>
-        </profile>
-
-        <profile>
-            <id>product</id>
-            <activation>
-                <property>
-                    <name>product</name>
-                </property>
-            </activation>
-            <properties>
-                <product.name.full>Red Hat Single Sign-On</product.name.full>
-                <product.name>rh-sso</product.name>
-                <product.slot>rh-sso</product.slot>
-                <product.wildfly.console.slot>eap</product.wildfly.console.slot>
-                <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
-                <product.version>${product.rhsso.version}</product.version>
-                <apache.httpcomponents.fuse.version>4.5.2.redhat-2</apache.httpcomponents.fuse.version>
-                <apache.httpcomponents.httpcore.fuse.version>4.4.4.redhat-2</apache.httpcomponents.httpcore.fuse.version>
-                <product.default-profile>product</product.default-profile>
-                <ee.maven.groupId>org.jboss.eap</ee.maven.groupId>
-                <ee.maven.version>${eap.version}</ee.maven.version>
-                <!-- Properties that drive the names of various directories produced by and used in the build -->
-                <server.output.dir.prefix>${product.name}</server.output.dir.prefix>
-                <!-- Version suffix that is appended to directories. Default is the maven GAV version but this can be edited to use a short form version -->
-                <server.output.dir.version>${product.filename.version}</server.output.dir.version>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>build-helper-maven-plugin</artifactId>
-                        <version>1.7</version>
-                        <executions>
-                            <execution>
-                                <id>set-product-filename-version</id>
-                                <goals>
-                                    <goal>regex-property</goal>
-                                </goals>
-                                <phase>initialize</phase>
-                                <configuration>
-                                    <name>product.filename.version</name>
-                                    <value>${product.rhsso.version}</value>
-                                    <regex>^(\d+(\.\d+)?).*?$</regex>
-                                    <replacement>$1</replacement>
-                                    <failIfNoMatch>true</failIfNoMatch>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
 
         <profile>
