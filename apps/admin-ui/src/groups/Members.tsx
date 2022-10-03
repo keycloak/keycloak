@@ -251,6 +251,12 @@ export const Members = () => {
             instructions={isManager ? t("users:emptyInstructions") : undefined}
             primaryActionText={isManager ? t("addMember") : undefined}
             onPrimaryAction={() => setAddMembers(true)}
+            secondaryActions={[
+              {
+                text: t("includeSubGroups"),
+                onClick: () => setIncludeSubGroup(true),
+              },
+            ]}
           />
         }
       />
