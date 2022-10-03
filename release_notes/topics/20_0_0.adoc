@@ -1,0 +1,12 @@
+= Allow setting a base URL when configuring the hostname
+
+In this release, we are introducing two additional server options to set a base URL for front end and Admin Console URLs.
+
+* `hostname-url`
+* `hostname-admin-url`
+
+More details can be found at the https://www.keycloak.org/server/hostname[Configuring the Hostname Guide].
+
+= Improvements to `kc.bat` when running Keycloak on Windows
+
+In this release, we are making important changes to `kc.bat` in order to give the same experience as when running on Linux.
