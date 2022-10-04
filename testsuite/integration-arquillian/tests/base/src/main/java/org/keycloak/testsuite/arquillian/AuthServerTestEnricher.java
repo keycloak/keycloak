@@ -676,12 +676,6 @@ public class AuthServerTestEnricher {
         }
     }
 
-    protected boolean isAuthServerJBossBased() {
-        return containerRegistry.get().getContainers().stream()
-              .map(ContainerInfo::new)
-              .anyMatch(ContainerInfo::isJBossBased);
-    }
-
     public void initializeOAuthClient(@Observes(precedence = 4) BeforeClass event) {
         // TODO workaround. Check if can be removed
         OAuthClient.updateURLs(suiteContext.getAuthServerInfo().getContextRoot().toString());

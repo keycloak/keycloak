@@ -160,11 +160,6 @@ public class GroupSearchTest extends AbstractGroupTest {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             System.setProperty(SEARCHABLE_ATTRS_PROP, String.join(",", searchableAttributes));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
-        } else if (suiteContext.getAuthServerInfo().isJBossBased()) {
-            searchableAttributes = Arrays.stream(searchableAttributes).map(a -> a.replace("\"", "\\\\\\\"")).toArray(String[]::new);
-            String s = "\\\"" + String.join("\\\",\\\"", searchableAttributes) + "\\\"";
-            executeCli("/subsystem=keycloak-server/spi=group:add()",
-                    "/subsystem=keycloak-server/spi=group/provider=jpa/:add(properties={searchableAttributes => \"[" + s + "]\"},enabled=true)");
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
             searchableAttributes = Arrays.stream(searchableAttributes)
                     .map(a -> a.replace(" ", "\\ ").replace("\"", "\\\\\\\""))
@@ -188,8 +183,6 @@ public class GroupSearchTest extends AbstractGroupTest {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             System.clearProperty(SEARCHABLE_ATTRS_PROP);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
-        } else if (suiteContext.getAuthServerInfo().isJBossBased()) {
-            executeCli("/subsystem=keycloak-server/spi=group:remove");
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             container.setAdditionalBuildArgs(Collections.emptyList());
@@ -198,22 +191,6 @@ public class GroupSearchTest extends AbstractGroupTest {
             throw new RuntimeException("Don't know how to config");
         }
         reconnectAdminClient();
-    }
-
-    private void executeCli(String... commands) throws Exception {
-        OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
-        Administration administration = new Administration(client);
-
-        log.debug("Running CLI commands:");
-        for (String c : commands) {
-            log.debug(c);
-            client.execute(c).assertSuccess();
-        }
-        log.debug("Done");
-
-        administration.reload();
-
-        client.close();
     }
 
     private boolean isLegacyJpaStore() {
