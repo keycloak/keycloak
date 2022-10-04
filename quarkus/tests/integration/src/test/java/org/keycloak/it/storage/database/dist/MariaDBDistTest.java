@@ -20,10 +20,12 @@ package org.keycloak.it.storage.database.dist;
 import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.WithDatabase;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.storage.database.MariaDBTest;
 
 @DistributionTest(removeBuildOptionsAfterBuild = true)
 @WithDatabase(alias = "mariadb")
+@WithLegacyStoreOnly
 public class MariaDBDistTest extends MariaDBTest {
 
 }

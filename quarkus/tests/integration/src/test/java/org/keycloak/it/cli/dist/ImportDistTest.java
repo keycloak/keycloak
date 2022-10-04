@@ -27,6 +27,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
@@ -36,6 +37,7 @@ public class ImportDistTest {
     @Test
     @Order(1)
     @Launch({"export", "--realm=master", "--dir=."})
+    @WithLegacyStoreOnly
     void testExport(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Export of realm 'master' requested.");
@@ -45,6 +47,7 @@ public class ImportDistTest {
     @Test
     @Order(2)
     @Launch({"import", "--dir=." })
+    @WithLegacyStoreOnly
     void testMissingDir(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Realm 'master' imported");

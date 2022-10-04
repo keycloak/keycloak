@@ -17,7 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
-import java.util.function.Consumer;
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -26,10 +27,10 @@ import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
+import java.util.function.Consumer;
 
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
@@ -49,6 +50,7 @@ public class BuildAndStartDistTest {
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(2)
+    @WithLegacyStoreOnly
     void testStartUsingCliArgs(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
@@ -67,6 +69,7 @@ public class BuildAndStartDistTest {
     @Test
     @Launch({ "start", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(4)
+    @WithLegacyStoreOnly
     void testStartUsingConfFile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();

@@ -24,6 +24,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 
 @RawDistOnly(reason = "Containers are immutable")
 @DistributionTest
@@ -31,6 +32,7 @@ public class ExportDistTest {
 
     @Test
     @Launch({"export", "--realm=master", "--dir=."})
+    @WithLegacyStoreOnly
     void testExport(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Export of realm 'master' requested.");
@@ -40,6 +42,7 @@ public class ExportDistTest {
 
     @Test
     @Launch({"export", "--realm=master" })
+    @WithLegacyStoreOnly
     void testMissingDir(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Must specify either --dir or --file options.");

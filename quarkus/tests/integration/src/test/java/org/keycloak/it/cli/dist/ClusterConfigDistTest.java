@@ -28,6 +28,7 @@ import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -39,6 +40,7 @@ public class ClusterConfigDistTest {
 
     @Test
     @Launch({ "start-dev", "--cache=ispn" })
+    @WithLegacyStoreOnly
     void changeClusterSetting(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertClusteredCache();
@@ -46,12 +48,14 @@ public class ClusterConfigDistTest {
 
     @Test
     @Launch({ "build", "--cache-config-file=invalid" })
+    @WithLegacyStoreOnly
     void failInvalidClusterConfig(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: Could not load cluster configuration file"));
     }
 
     @Test
     @Launch({ "start-dev", "--cache=ispn", "--cache-stack=kubernetes" })
+    @WithLegacyStoreOnly
     void failMisConfiguredClusterStack(LaunchResult result) {
         assertTrue(result.getOutput().contains("ERROR: dns_query can not be null or empty"));
     }
@@ -64,6 +68,7 @@ public class ClusterConfigDistTest {
 
     @Test
     @Launch({ "start-dev", "--cache-config-file=cache-ispn.xml" })
+    @WithLegacyStoreOnly
     void testExplicitCacheConfigFile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
@@ -73,6 +78,7 @@ public class ClusterConfigDistTest {
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start", "--log-level=info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true", "--hostname-strict=false" })
+    @WithLegacyStoreOnly
     void testStartDefaultsToClustering(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
@@ -101,6 +107,7 @@ public class ClusterConfigDistTest {
     @Test
     @BeforeStartDistribution(ConfigureCacheUsingAsyncEncryption.class)
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-asym-enc.xml" })
+    @WithLegacyStoreOnly
     void testCustomCacheStackInConfigFile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertTrue(cliResult.getOutput().contains("ERROR: server.jks"));

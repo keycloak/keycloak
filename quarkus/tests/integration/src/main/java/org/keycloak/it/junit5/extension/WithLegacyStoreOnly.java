@@ -15,25 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.it.storage.database;
+package org.keycloak.it.junit5.extension;
 
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.CLITest;
-import org.keycloak.it.junit5.extension.WithDatabase;
-import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@CLITest
-@WithDatabase(alias = "mariadb")
-@WithLegacyStoreOnly
-public class MariaDBTest extends BasicDatabaseTest {
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface WithLegacyStoreOnly {
 
-    @Override
-    protected void assertWrongPassword(CLIResult cliResult) {
-        cliResult.assertMessage("Access denied for user");
-    }
-
-    @Override
-    protected void assertWrongUsername(CLIResult cliResult) {
-        cliResult.assertMessage("Access denied for user 'wrong'");
-    }
 }

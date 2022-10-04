@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.WithDatabase;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -28,6 +29,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
 @WithDatabase(alias = "postgres")
+@WithLegacyStoreOnly
 public class DatabaseOptionsDistTest {
 
     @Test

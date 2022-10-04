@@ -26,6 +26,7 @@ import org.keycloak.it.junit5.extension.CLITest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 
 @CLITest
 public class StartCommandTest {
@@ -39,6 +40,7 @@ public class StartCommandTest {
 
     @Test
     @Launch({ "--profile=dev", "start" })
+    @WithLegacyStoreOnly
     void failUsingDevProfile(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
@@ -46,6 +48,7 @@ public class StartCommandTest {
 
     @Test
     @Launch({ "-v", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @WithLegacyStoreOnly
     void testHttpEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();

@@ -28,6 +28,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
@@ -48,6 +49,7 @@ class BuildCommandDistTest {
 
     @Test
     @Launch({ "--profile=dev", "build" })
+    @WithLegacyStoreOnly
     void failIfDevProfile(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: Failed to run 'build' command."),
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");

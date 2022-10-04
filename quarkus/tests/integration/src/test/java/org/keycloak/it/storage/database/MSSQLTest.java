@@ -24,9 +24,11 @@ import org.keycloak.it.junit5.extension.WithDatabase;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 
 @CLITest
 @WithDatabase(alias = "mssql")
+@WithLegacyStoreOnly
 public class MSSQLTest extends BasicDatabaseTest {
 
     /**

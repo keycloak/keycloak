@@ -26,6 +26,7 @@ import com.acme.provider.user.CustomUserProvider;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
 @RawDistOnly(reason = "Containers are immutable")
@@ -34,6 +35,7 @@ public class CustomJpaUserProviderDistTest {
     @Test
     @TestProvider(CustomUserProvider.class)
     @Launch({ "start-dev", "--log-level=org.hibernate.jpa.internal.util.LogHelper:debug" })
+    @WithLegacyStoreOnly
     void testUserManagedEntityNotAddedToDefaultPU(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStringCount("name: user-store", 1);

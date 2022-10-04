@@ -31,6 +31,7 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
@@ -38,6 +39,7 @@ public class StartCommandDistTest extends StartCommandTest {
 
     @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @WithLegacyStoreOnly
     void failIfAutoBuildUsingDevProfile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."));
@@ -67,6 +69,7 @@ public class StartCommandDistTest extends StartCommandTest {
 
     @Test
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @WithLegacyStoreOnly
     void testStartUsingOptimizedDoesNotAllowBuildOptions(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Unknown option: '--cache'");

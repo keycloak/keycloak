@@ -33,6 +33,7 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeepServerAlive;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -74,6 +75,7 @@ public class QuarkusPropertiesDistTest {
     @Test
     @Launch({ "-Dquarkus.log.console.level=info", "build" })
     @Order(4)
+    @WithLegacyStoreOnly
     void testIgnoreQuarkusSystemPropertyAtBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("INFO"));
@@ -113,6 +115,7 @@ public class QuarkusPropertiesDistTest {
     @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
     @Launch({ "build", "--metrics-enabled=true" })
     @Order(8)
+    @WithLegacyStoreOnly
     void buildFirstWithUnknownQuarkusBuildProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
@@ -122,6 +125,7 @@ public class QuarkusPropertiesDistTest {
     @KeepServerAlive
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(9)
+    @WithLegacyStoreOnly
     void testUnknownQuarkusBuildTimePropertyApplied(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();

@@ -31,8 +31,8 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.utils.RawDistRootPath;
-import org.keycloak.quarkus.runtime.configuration.mappers.LoggingPropertyMappers;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -69,7 +69,13 @@ public class LoggingDistTest {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus"));
         assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
-        assertTrue(cliResult.getOutput().contains("INFO  [org.infinispan.CONTAINER]"));
+
+        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
+        if (useCHMStorageWhenPossible) {
+            assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory]"));
+        } else {
+            assertTrue(cliResult.getOutput().contains("INFO  [org.infinispan.CONTAINER]"));
+        }
     }
 
     @Test
@@ -79,7 +85,13 @@ public class LoggingDistTest {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus"));
         assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
-        assertTrue(cliResult.getOutput().contains("INFO  [org.infinispan.CONTAINER]"));
+
+        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
+        if (useCHMStorageWhenPossible) {
+            assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory]"));
+        } else {
+            assertTrue(cliResult.getOutput().contains("INFO  [org.infinispan.CONTAINER]"));
+        }
     }
 
     @Test
@@ -95,6 +107,7 @@ public class LoggingDistTest {
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-level=\"off,org.keycloak:warn,debug\"" })
+    @WithLegacyStoreOnly
     void testWinSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertTrue(cliResult.getOutput().contains("DEBUG [org.hibernate"));
@@ -125,8 +138,14 @@ public class LoggingDistTest {
     void testLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
+
+        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
+        if (useCHMStorageWhenPossible) {
+            assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory\",\"level\":\"DEBUG\",\"message\":\"Initializing new map storage: users\""));
+        } else {
+            assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
+            assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
+        }
     }
 
     @Test
@@ -135,9 +154,17 @@ public class LoggingDistTest {
     void testWinLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory\",\"level\":\"DEBUG\""));
+
+        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
+        if (useCHMStorageWhenPossible) {
+            assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory\",\"level\":\"DEBUG\",\"message\":\"Initializing new map storage: realms\""));
+            assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory\",\"level\":\"DEBUG\",\"message\":\"Initializing new map storage: users\""));
+        } else {
+            assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory\",\"level\":\"DEBUG\""));
+            assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
+        }
+
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
     }
 
     @Test

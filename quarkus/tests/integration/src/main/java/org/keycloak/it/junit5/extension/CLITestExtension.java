@@ -25,11 +25,13 @@ import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NA
 
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
@@ -37,6 +39,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
@@ -100,7 +103,34 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
 
             if (launch != null) {
-                result = dist.run(Arrays.asList(launch.value()));
+                List<String> argsFromLaunchAnnotation = new ArrayList<>(Arrays.asList(launch.value()));
+
+                WithLegacyStoreOnly withLegacyStoreOnly = context.getRequiredTestMethod().getAnnotation(WithLegacyStoreOnly.class);
+                if (withLegacyStoreOnly == null) {
+                    withLegacyStoreOnly = context.getTestClass()
+                            .orElse(Object.class)
+                            .getDeclaredAnnotation(WithLegacyStoreOnly.class);
+                }
+
+                Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
+                if (useCHMStorageWhenPossible &&
+                    withLegacyStoreOnly == null &&
+                    CollectionUtil.isNotEmpty(argsFromLaunchAnnotation)) {
+
+                    argsFromLaunchAnnotation.add(1, "--storage=chm");
+
+                    AtomicReference<String> featuresOptionFound = new AtomicReference<>(null);
+                    argsFromLaunchAnnotation.stream()
+                                            .filter(oneOption -> oneOption.startsWith("--features="))
+                                            .findFirst()
+                                            .ifPresent(oneOption -> featuresOptionFound.set(oneOption));
+                    if (featuresOptionFound.get() != null) {
+                        argsFromLaunchAnnotation.remove(featuresOptionFound.get());
+                        argsFromLaunchAnnotation.add(featuresOptionFound.get() + ",map-storage");
+                    }
+                }
+
+                result = dist.run(argsFromLaunchAnnotation);
             }
         } else {
             configureProfile(context);

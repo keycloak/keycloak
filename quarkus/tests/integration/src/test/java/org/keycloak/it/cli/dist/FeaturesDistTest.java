@@ -12,6 +12,7 @@ import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
@@ -38,6 +39,7 @@ public class FeaturesDistTest {
     @Test
     @Launch({ Start.NAME, "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(2)
+    @WithLegacyStoreOnly
     public void testFeatureEnabledOnStart(LaunchResult result) {
         assertPreviewFeaturesEnabled((CLIResult) result);
     }

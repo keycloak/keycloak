@@ -20,9 +20,11 @@ package org.keycloak.it.storage.database;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.WithDatabase;
+import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 
 @CLITest
 @WithDatabase(alias = "oracle")
+@WithLegacyStoreOnly
 public class OracleTest extends BasicDatabaseTest {
 
     @Override
