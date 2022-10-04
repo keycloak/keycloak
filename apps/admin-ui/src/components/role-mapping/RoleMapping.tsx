@@ -195,7 +195,7 @@ export const RoleMapping = ({
       <DeleteConfirm />
       <KeycloakDataTable
         data-testid="assigned-roles"
-        key={key}
+        key={`${id}${key}`}
         loader={loader}
         canSelectAll
         onSelect={(rows) => setSelected(rows)}
