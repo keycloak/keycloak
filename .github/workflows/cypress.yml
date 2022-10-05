@@ -81,10 +81,6 @@ jobs:
     needs: [build-keycloak, install-nightly]
     if: always() && ( needs.build-keycloak.result == 'success' || needs.install-nightly.result == 'success' )
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        containers: [1, 2, 3, 4, 5]
     steps:
       - name: Check out Admin UI
         uses: actions/checkout@v3
@@ -117,7 +113,6 @@ jobs:
         with:
           install: false
           record: true
-          parallel: true
           browser: chrome
           wait-on: http://localhost:8080
           working-directory: apps/admin-ui
