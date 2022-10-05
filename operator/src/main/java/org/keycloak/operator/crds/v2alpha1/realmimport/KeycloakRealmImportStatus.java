@@ -16,6 +16,8 @@
  */
 package org.keycloak.operator.crds.v2alpha1.realmimport;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -32,6 +34,7 @@ public class KeycloakRealmImportStatus {
         this.conditions = conditions;
     }
 
+    @JsonIgnore
     public boolean isDone() {
         return conditions
                 .stream()

@@ -43,15 +43,16 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSASignatureProvider;
@@ -88,6 +89,8 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
+
+import com.sun.jna.StringArray;
 
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
@@ -759,7 +762,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, 401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -771,7 +774,8 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
+
     }
 
     @Test
@@ -783,7 +787,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, 401,null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -798,7 +802,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -813,7 +817,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "unknown-client", "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response,401, "unknown-client", "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -831,7 +835,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "client1", "unauthorized_client", Errors.CLIENT_DISABLED);
+        assertError(response,401, "client1", "invalid_client", Errors.CLIENT_DISABLED);
 
         ClientManager.realm(adminClient.realm("test")).clientId("client1").enabled(true);
     }
@@ -860,7 +864,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, "client_credentials_setup_required");
+        assertError(response,400, "client1", OAuthErrorException.INVALID_CLIENT, "client_credentials_setup_required");
 
         ClientManager.realm(adminClient.realm("test")).clientId("client1").updateAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, backupClient1Cert.certificate);
     }
@@ -986,6 +990,8 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         setTimeOffset(0);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        
+        
     }
 
 
@@ -1017,19 +1023,19 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testMissingIssuerClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("issuer");
-        assertError(response, null, OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response,401, null, OAuthErrorException.INVALID_CLIENT, Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
     public void testMissingSubjectClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("subject");
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
     public void testMissingAudienceClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("audience");
-        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response,400, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -1085,6 +1091,15 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     private void assertError(OAuthClient.AccessTokenResponse response, String clientId, String responseError, String eventError) {
         assertEquals(400, response.getStatusCode());
+        assertMessageError(response,clientId,responseError,eventError);
+    }
+
+    private void assertError(OAuthClient.AccessTokenResponse response, int erroCode, String clientId, String responseError, String eventError) {
+        assertEquals(erroCode, response.getStatusCode());
+        assertMessageError(response, clientId, responseError, eventError);
+    }
+
+    private void assertMessageError(OAuthClient.AccessTokenResponse response, String clientId, String responseError, String eventError) {
         assertEquals(responseError, response.getError());
 
         events.expectClientLogin()
@@ -1095,6 +1110,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                 .user((String) null)
                 .assertEvent();
     }
+
 
     private void assertSuccess(OAuthClient.AccessTokenResponse response, String clientId, String userId, String userName) {
         assertEquals(200, response.getStatusCode());
@@ -1382,7 +1398,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     private static KeyStore getKeystore(InputStream is, String storePassword, String format) throws Exception {
-        KeyStore keyStore = format.equals("JKS") ? KeyStore.getInstance(format) : KeyStore.getInstance(format, BouncyIntegration.PROVIDER);
+        KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreFormat.valueOf(format));
         keyStore.load(is, storePassword.toCharArray());
         return keyStore;
     }
@@ -1455,14 +1471,14 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     private static PrivateKey decodePrivateKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
+        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(keyAlg);
         return kf.generatePrivate(spec);
     }
 
     private static PublicKey decodePublicKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
+        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(keyAlg);
         return kf.generatePublic(spec);
     }
 

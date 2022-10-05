@@ -37,6 +37,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureProvider;
@@ -784,7 +785,8 @@ public class AuthenticationManager {
         CookieHelper.addCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, cookiePath, null, null, maxAge, secureOnly, true, SameSiteAttributeValue.NONE);
         //builder.cookie(new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly));// todo httponly , true);
 
-        String sessionCookieValue = realm.getName() + "/" + user.getId();
+        // With user-storage providers, user ID can contain special characters, which need to be encoded
+        String sessionCookieValue = realm.getName() + "/" + Encode.urlEncode(user.getId());
         if (session != null) {
             sessionCookieValue += "/" + session.getId();
         }

@@ -128,18 +128,18 @@ Transaction:
 Feature:
 
 --features <feature> Enables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin2, docker,
-                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
-                       client-policies, ciba, map-storage, par, declarative-user-profile,
-                       dynamic-scopes, client-secret-rotation, step-up-authentication,
-                       recovery-codes, update-email, preview.
+                       account2, account-api, admin-fine-grained-authz, admin-api, admin, admin2,
+                       docker, impersonation, openshift-integration, scripts, token-exchange,
+                       web-authn, client-policies, ciba, map-storage, par,
+                       declarative-user-profile, dynamic-scopes, client-secret-rotation,
+                       step-up-authentication, recovery-codes, update-email, preview.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin2, docker,
-                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
-                       client-policies, ciba, map-storage, par, declarative-user-profile,
-                       dynamic-scopes, client-secret-rotation, step-up-authentication,
-                       recovery-codes, update-email, preview.
+                       account2, account-api, admin-fine-grained-authz, admin-api, admin, admin2,
+                       docker, impersonation, openshift-integration, scripts, token-exchange,
+                       web-authn, client-policies, ciba, map-storage, par,
+                       declarative-user-profile, dynamic-scopes, client-secret-rotation,
+                       step-up-authentication, recovery-codes, update-email, preview.
 
 Hostname:
 
@@ -174,7 +174,8 @@ HTTP/TLS:
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
 --http-port <port>   The used HTTP port. Default: 8080.
 --http-relative-path <path>
-                     Set the path relative to '/' for serving resources. Default: /.
+                     Set the path relative to '/' for serving resources. The path must start with a
+                       '/'. Default: /.
 --https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format.
 --https-certificate-key-file <file>
@@ -277,6 +278,12 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+
+Security (Experimental):
+
+--fips-mode <mode>   Experimental: Sets the FIPS mode. If 'enabled' is set, FIPS is enabled but on
+                       non-approved mode. For full FIPS compliance, set 'strict' to run on approved
+                       mode. Possible values are: enabled, strict, disabled. Default: disabled.
 
 Do NOT start the server using this command when deploying to production.
 

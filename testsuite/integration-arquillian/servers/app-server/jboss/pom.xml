@@ -759,18 +759,6 @@
                 <module>wildfly</module>
             </modules>
         </profile>
-        <profile>
-            <id>app-server-relative</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>relative</value>
-                </property>
-            </activation>
-            <modules>
-                <module>relative</module>
-            </modules>
-        </profile>
     </profiles>
 
 </project>

@@ -36,7 +36,6 @@
 
     <modules>
         <module>services</module>
-        <module>jboss</module>
         <module>undertow</module>
     </modules>
     

@@ -701,8 +701,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             setTimeOffset(2);
             response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
 
-            assertEquals(400, response.getStatusCode());
-            assertEquals("unauthorized_client", response.getError());
+            assertEquals(401, response.getStatusCode());
+            assertEquals("invalid_client", response.getError());
 
             events.expectRefresh(refreshToken.getId(), sessionId).user((String) null).session((String) null).clearDetails().error(Errors.CLIENT_DISABLED).assertEvent();
         } finally {

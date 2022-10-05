@@ -61,7 +61,6 @@ import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -71,9 +70,9 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
@@ -400,14 +399,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     private PrivateKey decodePrivateKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
+        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(keyAlg);
         return kf.generatePrivate(spec);
     }
 
     private PublicKey decodePublicKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
+        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(keyAlg);
         return kf.generatePublic(spec);
     }
 
