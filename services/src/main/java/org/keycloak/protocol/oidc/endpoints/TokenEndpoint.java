@@ -31,6 +31,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -48,6 +49,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
@@ -105,6 +107,7 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -172,6 +175,32 @@ public class TokenEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @POST
     public Response processGrantRequest() {
+        // grant request needs to be run in a retriable transaction as concurrent execution of this action can lead to
+        // exceptions on DBs with SERIALIZABLE isolation level.
+        Object result = KeycloakModelUtils.runJobInRetriableTransaction(this.session.getKeycloakSessionFactory(), kcSession -> {
+            try {
+                RealmModel realmModel = kcSession.realms().getRealm(realm.getId());
+                kcSession.getContext().setRealm(realmModel);
+                // create another instance of the endpoint that will be run within the new session.
+                Resteasy.pushContext(KeycloakSession.class, kcSession);
+                TokenEndpoint other = new TokenEndpoint(new TokenManager(), realmModel, new EventBuilder(realmModel, kcSession, clientConnection));
+                ResteasyProviderFactory.getInstance().injectProperties(other);
+                return other.processGrantRequestInternal();
+            } catch (WebApplicationException we) {
+                // WebApplicationException needs to be returned and treated (rethrown) by the calling code because the new transaction
+                // still needs to be committed when this exception is thrown. It captures final business states that won't change when
+                // being retried, like an invalid code.
+                return we;
+            }
+        }, 10, 100);
+        if (WebApplicationException.class.isInstance(result)) {
+            throw (WebApplicationException) result;
+        } else {
+            return (Response) result;
+        }
+    }
+
+    private Response processGrantRequestInternal() {
         cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         MultivaluedMap<String, String> formParameters = request.getDecodedFormParameters();
@@ -179,7 +208,7 @@ public class TokenEndpoint {
         if (formParameters == null) {
             formParameters = new MultivaluedHashMap<>();
         }
-        
+
         formParams = formParameters;
         grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
 
