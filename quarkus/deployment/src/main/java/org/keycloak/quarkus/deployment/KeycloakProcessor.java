@@ -89,6 +89,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.StorageOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -305,7 +306,7 @@ class KeycloakProcessor {
      *
      * @param recorder
      */
-    @Consume(BootstrapConfigSetupCompleteBuildItem.class)
+    @Consume(CryptoProviderInitBuildItem.class)
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     KeycloakSessionFactoryPreInitBuildItem configureProviders(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
@@ -572,15 +573,16 @@ class KeycloakProcessor {
         }));
     }
 
-    @Consume(KeycloakSessionFactoryPreInitBuildItem.class)
+    @Consume(BootstrapConfigSetupCompleteBuildItem.class)
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
-    void setCryptoProvider(KeycloakRecorder recorder) {
-        SecurityOptions.FipsMode fipsMode = Configuration.getOptionalValue(
+    CryptoProviderInitBuildItem setCryptoProvider(KeycloakRecorder recorder) {
+        FipsMode fipsMode = Configuration.getOptionalValue(
                 MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
-                SecurityOptions.FipsMode::valueOf).orElse(SecurityOptions.FipsMode.disabled);
+                FipsMode::valueOf).orElse(FipsMode.disabled);
 
         recorder.setCryptoProvider(fipsMode);
+        return new CryptoProviderInitBuildItem();
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)
