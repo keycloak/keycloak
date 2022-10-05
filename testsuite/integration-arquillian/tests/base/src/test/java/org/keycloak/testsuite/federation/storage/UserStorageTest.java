@@ -50,6 +50,7 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.TestCleanup;
+import org.openqa.selenium.Cookie;
 
 import javax.mail.internet.MimeMessage;
 import javax.ws.rs.NotFoundException;
@@ -72,14 +73,18 @@ import java.util.stream.Stream;
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
+import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_SESSION_COOKIE;
+import static org.keycloak.services.util.CookieHelper.LEGACY_COOKIE;
 import static org.keycloak.storage.UserStorageProviderModel.CACHE_POLICY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_DAY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
@@ -240,6 +245,26 @@ public class UserStorageTest extends AbstractAuthTest {
         loginSuccessAndLogout("tbrady", "goat");
         loginSuccessAndLogout("thor", "hammer");
         loginBadPassword("tbrady");
+    }
+
+    @Test
+    public void testLoginSuccessWithSpecialCharacter() {
+        testRealmAccountPage.navigateTo();
+        testRealmLoginPage.form().login("spécial", "pw");
+        assertCurrentUrlStartsWith(testRealmAccountPage);
+
+        Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
+        Cookie legacySessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE + LEGACY_COOKIE);
+
+        String cookieValue = sameSiteSessionCookie.getValue();
+        Assert.assertThat(cookieValue.contains("spécial"), is(false));
+        Assert.assertThat(cookieValue.contains("sp%C3%A9cial"), is(true));
+
+        String legacyCookieValue = legacySessionCookie.getValue();
+        Assert.assertThat(legacyCookieValue.contains("spécial"), is(false));
+        Assert.assertThat(legacyCookieValue.contains("sp%C3%A9cial"), is(true));
+
+        testRealmAccountPage.logOut();
     }
 
     @Test
@@ -419,11 +444,12 @@ public class UserStorageTest extends AbstractAuthTest {
             usernames.add(user.getUsername());
             log.info(user.getUsername());
         }
-        Assert.assertEquals(8, queried.size());
+        Assert.assertEquals(9, queried.size());
         Assert.assertTrue(usernames.contains("thor"));
         Assert.assertTrue(usernames.contains("zeus"));
         Assert.assertTrue(usernames.contains("apollo"));
         Assert.assertTrue(usernames.contains("perseus"));
+        Assert.assertTrue(usernames.contains("spécial"));
         Assert.assertTrue(usernames.contains("tbrady"));
         Assert.assertTrue(usernames.contains("rob"));
         Assert.assertTrue(usernames.contains("jules"));
