@@ -1385,6 +1385,25 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
+        // check whether client_id exists in both query parameter and request object
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.setClientId(null);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // check whether response_type exists in both query parameter and request object
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.setResponseType(null);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // Check scope required
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.setScope(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
         oauth.scope(null);
         oauth.openid(false);
