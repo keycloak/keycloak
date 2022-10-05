@@ -84,7 +84,7 @@ jobs:
 
       - name: Analyze Test and/or Coverage Results
         uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -174,7 +174,7 @@ jobs:
 
       - name: Analyze Test and/or Coverage Results
         uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -258,7 +258,7 @@ jobs:
 
       - name: Analyze Test and/or Coverage Results
         uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -354,7 +354,7 @@ jobs:
 
       - name: Analyze Test and/or Coverage Results
         uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -414,7 +414,7 @@ jobs:
 
       - name: Analyze Test and/or Coverage Results
         uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -482,7 +482,7 @@ jobs:
 
       - name: Analyze Test and/or Coverage Results
         uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
