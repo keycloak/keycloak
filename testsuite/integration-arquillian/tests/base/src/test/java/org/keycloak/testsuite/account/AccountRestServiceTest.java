@@ -391,7 +391,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             user.setUsername("updatedUsername");
             user = updateAndGet(user);
-            assertThat("updatedusername", Matchers.equalToIgnoringCase(user.getUsername()));
+            assertThat("updatedusername", Matchers.equalTo(user.getUsername()));
 
 
             realmRep.setEditUsernameAllowed(false);
