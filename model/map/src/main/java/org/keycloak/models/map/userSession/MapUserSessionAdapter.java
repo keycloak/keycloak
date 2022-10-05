@@ -131,10 +131,10 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
                     .filter(this::filterAndRemoveExpiredClientSessions)
                     .filter(this::matchingOfflineFlag)
                     .filter(this::filterAndRemoveClientSessionWithoutClient)
-                    .collect(Collectors.toMap(MapAuthenticatedClientSessionEntity::getClientId, this::clientEntityToModel));
+                    .collect(Collectors.toMap(MapAuthenticatedClientSessionEntity::getClientId, this::clientSessionEntityToModel));
     }
 
-    private AuthenticatedClientSessionModel clientEntityToModel(MapAuthenticatedClientSessionEntity clientSessionEntity) {
+    private AuthenticatedClientSessionModel clientSessionEntityToModel(MapAuthenticatedClientSessionEntity clientSessionEntity) {
         return new MapAuthenticatedClientSessionAdapter(session, realm, this, clientSessionEntity) {
             @Override
             public void detachFromUserSession() {
@@ -187,7 +187,7 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
                 .filter(this::filterAndRemoveExpiredClientSessions)
                 .filter(this::matchingOfflineFlag)
                 .filter(this::filterAndRemoveClientSessionWithoutClient)
-                .map(this::clientEntityToModel)
+                .map(this::clientSessionEntityToModel)
                 .orElse(null);
     }
     @Override
