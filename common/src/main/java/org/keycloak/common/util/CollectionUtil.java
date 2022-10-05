@@ -17,6 +17,7 @@
 
 package org.keycloak.common.util;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -74,5 +75,17 @@ public class CollectionUtil {
 
     public static boolean isNotEmpty(Collection<?> collection) {
         return !isEmpty(collection);
+    }
+
+    /**
+     * Check if any element is present in the collection
+     *
+     * @param collection collection
+     * @param elements   elements that will be searched in the collection
+     * @return true if any of these elements is present in the collection, false otherwise
+     */
+    public static <T> boolean elementsArePresent(Collection<T> collection, T... elements) {
+        if (isEmpty(collection)) return false;
+        return Arrays.stream(elements).anyMatch(collection::contains);
     }
 }

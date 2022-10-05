@@ -20,12 +20,9 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
-import io.fabric8.kubernetes.api.model.ExecActionBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -33,6 +30,9 @@ import io.quarkus.logging.Log;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.config.DeploymentConfig;
+import org.keycloak.operator.controllers.config.HostnameConfig;
+import org.keycloak.operator.controllers.config.TlsConfig;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
@@ -40,6 +40,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +51,11 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static org.keycloak.utils.OperatorConditions.checkCondition;
+import static org.keycloak.utils.OperatorConditions.isNull;
+import static org.keycloak.utils.OperatorConditions.notNull;
 
 public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
@@ -59,9 +65,15 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     private final StatefulSet baseDeployment;
     private final String adminSecretName;
 
+    private Set<String> serverConfigNames;
     private Set<String> serverConfigSecretsNames;
 
     private boolean migrationInProgress;
+
+    private static final List<DeploymentConfig> DEPLOYMENT_CONFIGS = List.of(
+            new TlsConfig(),
+            new HostnameConfig()
+    );
 
     public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, StatefulSet existingDeployment, String adminSecretName) {
         super(client, keycloakCR);
@@ -72,13 +84,17 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         if (existingDeployment != null) {
             Log.info("Existing Deployment provided by controller");
             this.existingDeployment = existingDeployment;
-        }
-        else {
+        } else {
             Log.info("Trying to fetch existing Deployment from the API");
             this.existingDeployment = fetchExistingDeployment();
         }
 
         baseDeployment = createBaseDeployment();
+    }
+
+    @Override
+    public String getName() {
+        return keycloakCR.getMetadata().getName();
     }
 
     @Override
@@ -88,8 +104,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         if (existingDeployment == null) {
             Log.info("No existing Deployment found, using the default");
             reconciledDeployment = baseDeployment;
-        }
-        else {
+        } else {
             Log.info("Existing Deployment found, updating specs");
             reconciledDeployment = new StatefulSetBuilder(existingDeployment).build();
 
@@ -98,7 +113,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
             // don't fully overwrite annotations in pod templates to support rolling restarts (K8s sets some extra annotation to track restart)
             // instead, merge it
-            if (existingDeployment.getSpec() != null && existingDeployment.getSpec().getTemplate() != null) {
+            if (notNull(() -> existingDeployment.getSpec().getTemplate())) {
                 mergeMaps(
                         Optional.ofNullable(existingDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
                         Optional.ofNullable(reconciledDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
@@ -111,6 +126,41 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         return Optional.of(reconciledDeployment);
     }
 
+    @Override
+    public void updateStatus(KeycloakStatusBuilder status) {
+        validatePodTemplate(status);
+        if (existingDeployment == null) {
+            status.addNotReadyMessage("No existing StatefulSet found, waiting for creating a new one");
+            return;
+        }
+
+        final boolean needMoreReplicas = isNull(() -> existingDeployment.getStatus().getReadyReplicas())
+                || checkCondition(() -> existingDeployment.getStatus().getReadyReplicas() < keycloakCR.getSpec().getInstances());
+
+        if (needMoreReplicas) {
+            status.addNotReadyMessage("Waiting for more replicas");
+        }
+
+        if (migrationInProgress) {
+            status.addNotReadyMessage("Performing Keycloak upgrade, scaling down the deployment");
+        } else {
+            final boolean isRollingUpdate = checkCondition(() -> !existingDeployment.getStatus().getCurrentRevision().equals(existingDeployment.getStatus().getUpdateRevision()));
+            if (isRollingUpdate) {
+                status.addRollingUpdateMessage("Rolling out deployment update");
+            }
+        }
+
+        DEPLOYMENT_CONFIGS.forEach(f -> f.validateConfiguration(this, status));
+    }
+
+    public Keycloak getKeycloakCR() {
+        return keycloakCR;
+    }
+
+    private void configureDeploymentProperties(StatefulSet deployment) {
+        DEPLOYMENT_CONFIGS.forEach(f -> f.configure(this, deployment));
+    }
+
     private StatefulSet fetchExistingDeployment() {
         return client
                 .apps()
@@ -121,36 +171,24 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     }
 
     public void validatePodTemplate(KeycloakStatusBuilder status) {
-        if (keycloakCR.getSpec() == null ||
-                keycloakCR.getSpec().getUnsupported() == null ||
-                keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
+        if (isNull(() -> keycloakCR.getSpec().getUnsupported().getPodTemplate())) {
             return;
         }
         var overlayTemplate = this.keycloakCR.getSpec().getUnsupported().getPodTemplate();
 
-        if (overlayTemplate.getMetadata() != null &&
-            overlayTemplate.getMetadata().getName() != null) {
+        if (notNull(() -> overlayTemplate.getMetadata().getName())) {
             status.addWarningMessage("The name of the podTemplate cannot be modified");
         }
 
-        if (overlayTemplate.getMetadata() != null &&
-            overlayTemplate.getMetadata().getNamespace() != null) {
+        if (notNull(() -> overlayTemplate.getMetadata().getNamespace())) {
             status.addWarningMessage("The namespace of the podTemplate cannot be modified");
         }
 
-        if (overlayTemplate.getSpec() != null &&
-            overlayTemplate.getSpec().getContainers() != null &&
-            overlayTemplate.getSpec().getContainers().size() > 0 &&
-            overlayTemplate.getSpec().getContainers().get(0) != null &&
-            overlayTemplate.getSpec().getContainers().get(0).getName() != null) {
+        if (notNull(() -> overlayTemplate.getSpec().getContainers().get(0).getName())) {
             status.addWarningMessage("The name of the keycloak container cannot be modified");
         }
 
-        if (overlayTemplate.getSpec() != null &&
-            overlayTemplate.getSpec().getContainers() != null &&
-            overlayTemplate.getSpec().getContainers().size() > 0 &&
-            overlayTemplate.getSpec().getContainers().get(0) != null &&
-            overlayTemplate.getSpec().getContainers().get(0).getImage() != null) {
+        if (notNull(() -> overlayTemplate.getSpec().getContainers().get(0).getImage())) {
             status.addWarningMessage("The image of the keycloak container cannot be modified using podTemplate");
         }
 
@@ -181,9 +219,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     }
 
     private void mergePodTemplate(PodTemplateSpec baseTemplate) {
-        if (keycloakCR.getSpec() == null ||
-            keycloakCR.getSpec().getUnsupported() == null ||
-            keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
+        if (isNull(() -> keycloakCR.getSpec().getUnsupported().getPodTemplate())) {
             return;
         }
 
@@ -203,9 +239,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         var overlaySpec = overlayTemplate.getSpec();
 
         var containers = new ArrayList<Container>();
-        var overlayContainers =
-                (overlaySpec == null || overlaySpec.getContainers() == null) ?
-                        new ArrayList<Container>() : overlaySpec.getContainers();
+        var overlayContainers = isNull(() -> overlaySpec.getContainers()) ? new ArrayList<Container>() : overlaySpec.getContainers();
+
         if (overlayContainers.size() >= 1) {
             var keycloakBaseContainer = baseSpec.getContainers().get(0);
             var keycloakOverlayContainer = overlayContainers.get(0);
@@ -329,146 +364,38 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         }
     }
 
-    private void configureHostname(StatefulSet deployment) {
-        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-        var hostname = this.keycloakCR.getSpec().getHostname();
-        var envVars =  kcContainer.getEnv();
-        if (this.keycloakCR.getSpec().isHostnameDisabled()) {
-            var disableStrictHostname = List.of(
-                new EnvVarBuilder()
-                        .withName("KC_HOSTNAME_STRICT")
-                        .withValue("false")
-                        .build(),
-                new EnvVarBuilder()
-                        .withName("KC_HOSTNAME_STRICT_BACKCHANNEL")
-                        .withValue("false")
-                        .build());
-
-            envVars.addAll(disableStrictHostname);
-        } else {
-            var enabledStrictHostname = List.of(
-                new EnvVarBuilder()
-                        .withName("KC_HOSTNAME")
-                        .withValue(hostname)
-                        .build());
-
-            envVars.addAll(enabledStrictHostname);
-        }
-    }
-
-    private void configureTLS(StatefulSet deployment) {
-        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-        var tlsSecret = this.keycloakCR.getSpec().getTlsSecret();
-        var envVars =  kcContainer.getEnv();
-
-        if (this.keycloakCR.getSpec().isHttp()) {
-            var disableTls = List.of(
-                    new EnvVarBuilder()
-                            .withName("KC_HTTP_ENABLED")
-                            .withValue("true")
-                            .build(),
-                    new EnvVarBuilder()
-                            .withName("KC_HOSTNAME_STRICT_HTTPS")
-                            .withValue("false")
-                            .build(),
-                    new EnvVarBuilder()
-                            .withName("KC_PROXY")
-                            .withValue("edge")
-                            .build());
-
-            envVars.addAll(disableTls);
-        } else {
-            var enabledTls = List.of(
-                    new EnvVarBuilder()
-                            .withName("KC_HTTPS_CERTIFICATE_FILE")
-                            .withValue(Constants.CERTIFICATES_FOLDER + "/tls.crt")
-                            .build(),
-                    new EnvVarBuilder()
-                            .withName("KC_HTTPS_CERTIFICATE_KEY_FILE")
-                            .withValue(Constants.CERTIFICATES_FOLDER + "/tls.key")
-                            .build(),
-                    new EnvVarBuilder()
-                            .withName("KC_PROXY")
-                            .withValue("passthrough")
-                            .build());
-
-            envVars.addAll(enabledTls);
-
-            var volume = new VolumeBuilder()
-                    .withName("keycloak-tls-certificates")
-                    .withNewSecret()
-                    .withSecretName(tlsSecret)
-                    .withOptional(false)
-                    .endSecret()
-                    .build();
-
-            var volumeMount = new VolumeMountBuilder()
-                    .withName(volume.getName())
-                    .withMountPath(Constants.CERTIFICATES_FOLDER)
-                    .build();
-
-            deployment.getSpec().getTemplate().getSpec().getVolumes().add(volume);
-            kcContainer.getVolumeMounts().add(volumeMount);
-        }
-
-        var userRelativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY);
-        var kcRelativePath = (userRelativePath == null) ? "" : userRelativePath;
-        var protocol = (this.keycloakCR.getSpec().isHttp()) ? "http" : "https";
-        var kcPort = (this.keycloakCR.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
-
-        var baseProbe = new ArrayList<>(List.of("curl", "--head", "--fail", "--silent"));
-
-        if (!this.keycloakCR.getSpec().isHttp()) {
-            baseProbe.add("--insecure");
-        }
-
-        var readyProbe = new ArrayList<>(baseProbe);
-        readyProbe.add(protocol + "://127.0.0.1:" + kcPort + kcRelativePath + "/health/ready");
-        var liveProbe = new ArrayList<>(baseProbe);
-        liveProbe.add(protocol + "://127.0.0.1:" + kcPort + kcRelativePath + "/health/live");
-
-        kcContainer
-                .getReadinessProbe()
-                .setExec(new ExecActionBuilder().withCommand(readyProbe).build());
-        kcContainer
-                .getLivenessProbe()
-                .setExec(new ExecActionBuilder().withCommand(liveProbe).build());
-    }
-
-    public String readConfigurationValue(String key) {
-        if (this.keycloakCR != null &&
-                this.keycloakCR.getSpec() != null &&
-                this.keycloakCR.getSpec().getServerConfiguration() != null
-        ) {
+    public Optional<String> readConfigurationValue(String key) {
+        if (notNull(() -> this.keycloakCR.getSpec().getServerConfiguration())) {
             var serverConfigValue = this.keycloakCR
                     .getSpec()
                     .getServerConfiguration()
                     .stream()
                     .filter(sc -> sc.getName().equals(key))
                     .findFirst();
-            if (serverConfigValue.isPresent()) {
-                if (serverConfigValue.get().getValue() != null) {
-                    return serverConfigValue.get().getValue();
-                } else {
-                    var secretSelector = serverConfigValue.get().getSecret();
-                    if (secretSelector == null) {
-                        throw new IllegalStateException("Secret " + serverConfigValue.get().getName() + " not defined");
-                    }
-                    var secret = client.secrets().inNamespace(getNamespace()).withName(secretSelector.getName()).get();
-                    if (secret == null) {
-                        throw new IllegalStateException("Secret " + secretSelector.getName() + " not found in cluster");
-                    }
-                    if (secret.getData().containsKey(secretSelector.getKey())) {
-                        return new String(Base64.getDecoder().decode(secret.getData().get(secretSelector.getKey())), StandardCharsets.UTF_8);
-                    } else {
-                        throw new IllegalStateException("Secret " + secretSelector.getName() + " doesn't contain the expected key " + secretSelector.getKey());
-                    }
-                }
+
+            if (serverConfigValue.isEmpty()) return empty();
+
+            if (notNull(() -> serverConfigValue.get().getValue())) {
+                return of(serverConfigValue.get().getValue());
+            }
+
+            var secretSelector = serverConfigValue.get().getSecret();
+            if (secretSelector == null) {
+                throw new IllegalStateException("Secret " + serverConfigValue.get().getName() + " not defined");
+            }
+
+            var secret = client.secrets().inNamespace(getNamespace()).withName(secretSelector.getName()).get();
+            if (secret == null) {
+                throw new IllegalStateException("Secret " + secretSelector.getName() + " not found in cluster");
+            }
+
+            if (secret.getData().containsKey(secretSelector.getKey())) {
+                return of(new String(Base64.getDecoder().decode(secret.getData().get(secretSelector.getKey())), StandardCharsets.UTF_8));
             } else {
-                return null;
+                throw new IllegalStateException("Secret " + secretSelector.getName() + " doesn't contain the expected key " + secretSelector.getKey());
             }
         } else {
-            return null;
+            return empty();
         }
     }
 
@@ -537,8 +464,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         container.setEnv(getEnvVars());
 
-        configureHostname(baseDeployment);
-        configureTLS(baseDeployment);
+        configureDeploymentProperties(baseDeployment);
+
         mergePodTemplate(baseDeployment.getSpec().getTemplate());
 
         return baseDeployment;
@@ -551,7 +478,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .collect(Collectors.toList());
 
         // merge with the CR; the values in CR take precedence
-        if (keycloakCR.getSpec().getServerConfiguration() != null) {
+        if (notNull(() -> keycloakCR.getSpec().getServerConfiguration())) {
             serverConfig.removeAll(keycloakCR.getSpec().getServerConfiguration());
             serverConfig.addAll(keycloakCR.getSpec().getServerConfiguration());
         }
@@ -606,29 +533,6 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         return envVars;
     }
 
-    public void updateStatus(KeycloakStatusBuilder status) {
-        validatePodTemplate(status);
-        if (existingDeployment == null) {
-            status.addNotReadyMessage("No existing StatefulSet found, waiting for creating a new one");
-            return;
-        }
-
-        if (existingDeployment.getStatus() == null
-                || existingDeployment.getStatus().getReadyReplicas() == null
-                || existingDeployment.getStatus().getReadyReplicas() < keycloakCR.getSpec().getInstances()) {
-            status.addNotReadyMessage("Waiting for more replicas");
-        }
-
-        if (migrationInProgress) {
-            status.addNotReadyMessage("Performing Keycloak upgrade, scaling down the deployment");
-        } else if (existingDeployment.getStatus() != null
-                && existingDeployment.getStatus().getCurrentRevision() != null
-                && existingDeployment.getStatus().getUpdateRevision() != null
-                && !existingDeployment.getStatus().getCurrentRevision().equals(existingDeployment.getStatus().getUpdateRevision())) {
-            status.addRollingUpdateMessage("Rolling out deployment update");
-        }
-    }
-
     public Set<String> getConfigSecretsNames() {
         Set<String> ret = new HashSet<>(serverConfigSecretsNames);
         if (!keycloakCR.getSpec().isHttp()) {
@@ -637,9 +541,23 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         return ret;
     }
 
-    @Override
-    public String getName() {
-        return keycloakCR.getMetadata().getName();
+    private Set<String> setUpServerConfigNames() {
+        if (isNull(() -> keycloakCR.getSpec().getServerConfiguration())) return Collections.emptySet();
+
+        return this.keycloakCR
+                .getSpec()
+                .getServerConfiguration()
+                .stream()
+                .map(ValueOrSecret::getName)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<String> getServerConfigNames() {
+        if (serverConfigNames == null) {
+            serverConfigNames = setUpServerConfigNames();
+        }
+
+        return serverConfigNames;
     }
 
     public void rollingRestart() {
@@ -650,13 +568,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     }
 
     public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment) {
-        if (previousDeployment == null
-                || previousDeployment.getSpec() == null
-                || previousDeployment.getSpec().getTemplate() == null
-                || previousDeployment.getSpec().getTemplate().getSpec() == null
-                || previousDeployment.getSpec().getTemplate().getSpec().getContainers() == null
-                || previousDeployment.getSpec().getTemplate().getSpec().getContainers().get(0) == null)
-        {
+        if (isNull(() -> previousDeployment.getSpec().getTemplate().getSpec().getContainers().get(0))) {
             return;
         }
 
