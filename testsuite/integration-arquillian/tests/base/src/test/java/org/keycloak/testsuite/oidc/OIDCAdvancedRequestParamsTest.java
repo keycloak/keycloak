@@ -644,8 +644,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         errorPage.assertCurrent();
 
         // Test that "response_type" mandatory in the query even if set in the "request" object
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "some-state", "none");
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
         oauth.clientId("test-app");
         oauth.responseType(null);
         oauth.openLoginForm();
