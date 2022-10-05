@@ -52,6 +52,7 @@ public class JpaUserMapKeycloakTransaction extends JpaMapKeycloakTransaction<Jpa
                 root.get("entityVersion"),
                 root.get("realmId"),
                 root.get("username"),
+                root.get("usernameWithCase"),
                 root.get("firstName"),
                 root.get("lastName"),
                 root.get("email"),

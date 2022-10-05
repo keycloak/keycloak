@@ -80,8 +80,7 @@ import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProvi
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
-import static org.keycloak.models.map.user.MapUserProviderFactory.REALM_ATTR_USERNAME_CASE_SENSITIVE;
-import static org.keycloak.models.map.user.MapUserProviderFactory.REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT;
+import static org.keycloak.models.utils.KeycloakModelUtils.isUsernameCaseSensitive;
 
 public class MapUserProvider implements UserProvider.Streams {
 
@@ -93,10 +92,6 @@ public class MapUserProvider implements UserProvider.Streams {
         this.session = session;
         this.tx = store.createTransaction(session);
         session.getTransactionManager().enlist(tx);
-    }
-
-    private Boolean getUsernameCaseSensitiveAttribute(RealmModel realm) {
-        return realm.getAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT);
     }
 
     private Function<MapUserEntity, UserModel> entityToAdapterFunc(RealmModel realm) {
@@ -336,7 +331,7 @@ public class MapUserProvider implements UserProvider.Streams {
         LOG.tracef("addUser(%s, %s, %s, %s, %s)%s", realm, id, username, addDefaultRoles, addDefaultRequiredActions, getShortStackTrace());
         DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                 .compare(getUsernameCaseSensitiveAttribute(realm) ? 
+                 .compare(isUsernameCaseSensitive(realm) ? 
                          SearchableFields.USERNAME : 
                          SearchableFields.USERNAME_CASE_INSENSITIVE, Operator.EQ, username);
         
@@ -496,7 +491,7 @@ public class MapUserProvider implements UserProvider.Streams {
         LOG.tracef("getUserByUsername(%s, %s)%s", realm, username, getShortStackTrace());
         DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                 .compare(getUsernameCaseSensitiveAttribute(realm) ? 
+                 .compare(isUsernameCaseSensitive(realm) ? 
                          SearchableFields.USERNAME : 
                          SearchableFields.USERNAME_CASE_INSENSITIVE, Operator.EQ, username);
 
@@ -596,7 +591,7 @@ public class MapUserProvider implements UserProvider.Streams {
                     criteria = mcb.and(criteria, searchCriteria);
                     break;
                 case USERNAME:
-                    criteria = getUsernameCaseSensitiveAttribute(realm) ?
+                    criteria = isUsernameCaseSensitive(realm) ?
                             criteria.compare(SearchableFields.USERNAME, Operator.LIKE, searchedString) : 
                             criteria.compare(SearchableFields.USERNAME_CASE_INSENSITIVE, Operator.ILIKE, searchedString);
                     break;
@@ -783,7 +778,7 @@ public class MapUserProvider implements UserProvider.Streams {
         }
 
         return mcb.or(
-                getUsernameCaseSensitiveAttribute(realm) ?
+                isUsernameCaseSensitive(realm) ?
                         mcb.compare(SearchableFields.USERNAME, Operator.LIKE, value) :
                         mcb.compare(SearchableFields.USERNAME_CASE_INSENSITIVE, Operator.ILIKE, value),
                 mcb.compare(SearchableFields.EMAIL, Operator.ILIKE, value),

@@ -20,7 +20,6 @@ import java.io.Serializable;
 
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.user.MapUserEntityImpl;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * Class that contains all the user metadata that is written as JSON into the database.
@@ -38,7 +37,7 @@ public class JpaUserMetadata extends MapUserEntityImpl implements Serializable {
     }
 
     private Integer entityVersion;
-    private String usernameLowerCase;
+    private String usernameWithCase;
 
     public Integer getEntityVersion() {
         return entityVersion;
@@ -48,7 +47,11 @@ public class JpaUserMetadata extends MapUserEntityImpl implements Serializable {
         this.entityVersion = entityVersion;
     }
 
-    public void setUsernameLowerCase(String username) {
-        this.usernameLowerCase = KeycloakModelUtils.toLowerCaseSafe(username);
+    public void setUsernameWithCase(String username) {
+        this.usernameWithCase = username;
+    }
+
+    public String getUsernameWithCase() {
+        return this.usernameWithCase;
     }
 }
