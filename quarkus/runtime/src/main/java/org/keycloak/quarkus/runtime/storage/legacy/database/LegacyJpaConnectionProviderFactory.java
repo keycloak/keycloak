@@ -30,6 +30,7 @@ import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import javax.enterprise.inject.Instance;
 import javax.persistence.EntityManager;
@@ -50,8 +51,10 @@ import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.dblock.DBLockManager;
-import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.dblock.DBLockGlobalLockProvider;
+import org.keycloak.models.locking.GlobalLock;
+import org.keycloak.models.locking.GlobalLockProvider;
+import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -291,25 +294,21 @@ public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionPro
     }
 
     private void update(Connection connection, String schema, KeycloakSession session, JpaUpdaterProvider updater) {
-        DBLockManager dbLockManager = new DBLockManager(session);
-        DBLockProvider dbLock2 = dbLockManager.getDBLock();
-        dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
-        try {
+        GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
+        try (GlobalLock l = globalLock.acquireLock(DBLockGlobalLockProvider.DATABASE)) {
             updater.update(connection, schema);
-        } finally {
-            dbLock2.releaseLock();
+        } catch (LockAcquiringTimeoutException e) {
+            throw new RuntimeException("Acquiring database failed.", e);
         }
     }
 
     private void export(Connection connection, String schema, File databaseUpdateFile, KeycloakSession session,
             JpaUpdaterProvider updater) {
-        DBLockManager dbLockManager = new DBLockManager(session);
-        DBLockProvider dbLock2 = dbLockManager.getDBLock();
-        dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
-        try {
+        GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
+        try (GlobalLock l = globalLock.acquireLock(DBLockGlobalLockProvider.DATABASE)) {
             updater.export(connection, schema, databaseUpdateFile);
-        } finally {
-            dbLock2.releaseLock();
+        } catch (LockAcquiringTimeoutException e) {
+            throw new RuntimeException("Acquiring database failed.", e);
         }
     }
 

@@ -316,7 +316,7 @@
             <id>map</id>
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                <keycloak.model.parameters>LegacyJpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>Map,ConcurrentHashMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
@@ -324,7 +324,7 @@
             <id>hot-rod</id>
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                <keycloak.model.parameters>LegacyJpa,Map,HotRodMapStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>Map,HotRodMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
@@ -332,7 +332,7 @@
             <id>map-ldap</id>
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                <keycloak.model.parameters>Jpa,Map,LdapMapStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>Map,LdapMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 

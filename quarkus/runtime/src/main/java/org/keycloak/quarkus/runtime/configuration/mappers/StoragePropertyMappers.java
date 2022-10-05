@@ -195,10 +195,10 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_DBLOCK)
-                        .to("kc.spi-dblock-provider")
+                fromOption(StorageOptions.STORAGE_GLOBAL_LOCK_PROVIDER)
+                        .to("kc.spi-global-lock-provider")
                         .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::getDbLockProvider)
+                        .transformer(StoragePropertyMappers::getGlobalLockProvider)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_CACHE_REALM_ENABLED)
@@ -308,8 +308,8 @@ final class StoragePropertyMappers {
         return of(storage.isEmpty() ? "infinispan" : "map");
     }
 
-    private static Optional<String> getDbLockProvider(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        return of(storage.isEmpty() ? "jpa" : "none");
+    private static Optional<String> getGlobalLockProvider(Optional<String> storage, ConfigSourceInterceptorContext context) {
+        return of(storage.isEmpty() ? "dblock" : "none");
     }
 
     private static Optional<String> getUserSessionPersisterStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
