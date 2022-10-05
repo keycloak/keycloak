@@ -45,6 +45,7 @@ import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.UserSpi;
+import org.keycloak.models.locking.GlobalLockProviderSpi;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.Provider;
@@ -102,7 +103,6 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.models.DeploymentStateProviderFactory;
-import org.keycloak.models.dblock.DBLockSpi;
 
 /**
  * Base of testcases that operate on session level. The tests derived from this class
@@ -219,7 +219,7 @@ public abstract class KeycloakModelTest {
       .add(ClientSpi.class)
       .add(ComponentFactorySpi.class)
       .add(ClusterSpi.class)
-      .add(DBLockSpi.class)
+      .add(GlobalLockProviderSpi.class)
       .add(EventStoreSpi.class)
       .add(ExecutorsSpi.class)
       .add(GroupSpi.class)

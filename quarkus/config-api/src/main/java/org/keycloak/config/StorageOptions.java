@@ -217,7 +217,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_DBLOCK = new OptionBuilder<>("storage-dblock", String.class)
+    public static final Option<String> STORAGE_GLOBAL_LOCK_PROVIDER = new OptionBuilder<>("storage-global-lock-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
