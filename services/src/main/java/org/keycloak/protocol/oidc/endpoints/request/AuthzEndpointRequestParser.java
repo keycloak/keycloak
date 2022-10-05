@@ -77,13 +77,19 @@ public abstract class AuthzEndpointRequestParser {
 
     public void parseRequest(AuthorizationEndpointRequest request) {
         String clientId = getParameter(OIDCLoginProtocol.CLIENT_ID_PARAM);
-
-        if (request.clientId != null && !request.clientId.equals(clientId)) {
+        if (clientId != null && request.clientId != null && !request.clientId.equals(clientId)) {
             throw new IllegalArgumentException("The client_id parameter doesn't match the one from OIDC 'request' or 'request_uri'");
         }
+        if (clientId != null) {
+            request.clientId = clientId;
+        }
 
-        request.clientId = clientId;
-        request.responseType = replaceIfNotNull(request.responseType, getParameter(OIDCLoginProtocol.RESPONSE_TYPE_PARAM));
+        String responseType = getParameter(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        validateResponseTypeParameter(responseType, request);
+        if (responseType != null) {
+            request.responseType = responseType;
+        }
+
         request.responseMode = replaceIfNotNull(request.responseMode, getParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM));
         request.redirectUriParam = replaceIfNotNull(request.redirectUriParam, getParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
         request.state = replaceIfNotNull(request.state, getParameter(OIDCLoginProtocol.STATE_PARAM));
@@ -104,6 +110,13 @@ public abstract class AuthzEndpointRequestParser {
         request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
 
         extractAdditionalReqParams(request.additionalReqParams);
+    }
+
+    protected void validateResponseTypeParameter(String responseTypeParameter, AuthorizationEndpointRequest request) {
+        if (responseTypeParameter != null && request.responseType != null && !request.responseType.equals(responseTypeParameter)) {
+            logger.warnf("The response_type parameter doesn't match the one from OIDC 'request' or 'request_uri'");
+            request.setInvalidRequestMessage("Parameter response_type does not match");
+        }
     }
 
     protected void extractAdditionalReqParams(Map<String, String> additionalReqParams) {

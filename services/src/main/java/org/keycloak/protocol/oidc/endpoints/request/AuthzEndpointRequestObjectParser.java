@@ -48,16 +48,6 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
             throw new RuntimeException("Failed to verify signature on 'request' object");
         }
 
-        JsonNode clientId = this.requestParams.get(OAuth2Constants.CLIENT_ID);
-
-        if (clientId == null) {
-            throw new RuntimeException("Request object must be set with the client_id");
-        }
-
-        if (!client.getClientId().equals(clientId.asText())) {
-            throw new RuntimeException("The client_id in the request object is not the same as the authorizing client");
-        }
-
         if (requestParams.has(OIDCLoginProtocol.REQUEST_URI_PARAM)) {
             throw new RuntimeException("The request_uri claim should not be set in the request object");
         }

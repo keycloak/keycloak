@@ -50,11 +50,13 @@ public class ParEndpointRequestParserProcessor {
         try {
             AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
 
-            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(requestParams);
+            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(requestParams, false);
             parser.parseRequest(request);
 
             if (parser.getInvalidRequestMessage() != null) {
                 request.setInvalidRequestMessage(parser.getInvalidRequestMessage());
+            }
+            if (request.getInvalidRequestMessage() != null) {
                 return request;
             }
 
