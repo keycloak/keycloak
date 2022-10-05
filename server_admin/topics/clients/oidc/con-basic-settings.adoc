@@ -5,7 +5,7 @@
 The *Settings* tab includes many options to configure this client.
 
 .Settings tab
-image:{project_images}/client-settings-oidc.png[Settings tab]
+image:images/client-settings-oidc.png[Settings tab]
 
 == General Settings
 

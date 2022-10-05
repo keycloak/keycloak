@@ -45,7 +45,7 @@ The client scopes *profile*, *email*, *address* and *phone* are defined in the h
 For example, when you open the *phone* client scope and open the *Mappers* tab, you will see the protocol mappers which correspond to the claims defined in the specification for the scope *phone*.
 
 .Client scope mappers
-image:{project_images}/client-scopes-phone.png[]
+image:images/client-scopes-phone.png[]
 
 When the *phone* client scope is linked to a client, the client automatically inherits all the protocol mappers defined in the *phone* client scope. Access tokens issued for this client contain the phone number information about the user, assuming that the user has a defined phone number.
 

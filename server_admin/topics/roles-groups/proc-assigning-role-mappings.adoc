@@ -5,33 +5,19 @@
 You can assign role mappings to a user through the *Role Mappings* tab for that user.
 
 .Procedure
-ifeval::[{project_product}==true]
-. Click *Users* in the menu.
-. Click the user that you want to perform a role mapping on. If the user is not displayed, click *View all users*.
-. Click the *Role Mappings* tab.
-. Click the role you want to assign to the user in the *Available Roles* box.
-. Click *Add selected*.
-endif::[]
-ifeval::[{project_community}==true]
 . Click *Users* in the menu.
 . Click the user that you want to perform a role mapping on.
 . Click the *Role mappings* tab.
 . Click *Assign role*.
 . Select the role you want to assign to the user from the dialog.
 . Click *Assign*.
-endif::[]
 
 .Role mappings
-image:{project_images}/user-role-mappings.png[Role mappings]
+image:images/user-role-mappings.png[Role mappings]
 
 In the preceding example, we are assigning the composite role *developer* to a user. That role was created in the <<_composite-roles, Composite Roles>> topic.
 
 .Effective role mappings
-image:{project_images}/effective-role-mappings.png[Effective role mappings]
+image:images/effective-role-mappings.png[Effective role mappings]
 
-ifeval::[{project_community}==true]
 When the *developer* role is assigned, the *employee* role associated with the *developer* composite is displayed with *Inherited* "True". *Inherited* roles are the roles explicitly assigned to users and roles that are inherited from composites.
-endif::[]
-ifeval::[{project_product}==true]
-When the *developer* role is assigned, the *employee* role associated with the *developer* composite is displayed in the *Effective Roles* box. *Effective Roles* are the roles explicitly assigned to users and roles that are inherited from composites.
-endif::[]

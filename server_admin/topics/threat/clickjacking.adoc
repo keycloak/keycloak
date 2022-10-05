@@ -14,6 +14,6 @@ In the Admin Console, you can specify the values of the X-Frame-Options and Cont
 . Click the *Security Defenses* tab.
 +
 .Security Defenses
-image:{project_images}/security-headers.png[Security Defenses]
+image:images/security-headers.png[Security Defenses]
 
 By default, {project_name} only sets up a _same-origin_ policy for iframes.

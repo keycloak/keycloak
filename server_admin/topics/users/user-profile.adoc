@@ -42,7 +42,7 @@ include::../templates/techpreview.adoc[]
 In addition to enabling the `declarative_user_profile` feature, you should enable User Profile for a realm. To do that, click on the `Realm Settings` link on
 the left side menu and turn on the `User Profile Enabled` switch.
 
-image:{project_images}/user-profile-enabling.png[]
+image:images/user-profile-enabling.png[]
 
 Once you enable it and click on the `Save` button, you can access the `User Profile` tab from where you can manage the configuration for user attributes.
 
@@ -60,7 +60,7 @@ The user profile configuration is managed on a per-realm basis. For that, click 
 `Realm Settings` link on the left side menu and then click on the `User Profile` tab.
 
 .User Profile Tab
-image:{project_images}/user-profile-tab.png[]
+image:images/user-profile-tab.png[]
 
 In the `Attributes` sub-tab you have a list of the attributes currently associated with the user profile. By default, the configuration is created based on the user root attributes and each attribute is configured with some defaults in terms of validation and permissioning.
 
@@ -79,15 +79,10 @@ In the next section, you are going to learn how to manage the configuration from
 
 At the `Attributes` sub-tab you can create, edit, and delete the attributes associated with the user profile.
 
-ifeval::[{project_community}==true]
 To define a new attribute and associate it with the user profile, click on the *Create attribute* button at the top the attribute listing.
-endif::[]
-ifeval::[{project_product}==true]
-To define a new attribute and associate it with the user profile, click on the `Create` button in the top-right corner of the attribute listing.
-endif::[]
 
 .Attribute Configuration
-image:{project_images}/user-profile-create-attribute.png[]
+image:images/user-profile-create-attribute.png[]
 
 When configuring the attribute you can define the following settings:
 
@@ -121,7 +116,7 @@ In this section, you can associate annotations to the attribute. Annotations are
 In the `Permission` section, you can define the level of access users and administrators have to read and write to an attribute.
 
 .Attribute Permission
-image:{project_images}/user-profile-permission.png[]
+image:images/user-profile-permission.png[]
 
 For that, you can use the following settings:
 
@@ -157,7 +152,7 @@ Make sure to set the correct permissions whenever you add a new attribute to the
 In the `Validation` section, you can choose from different forms of validation to make sure the attribute value conforms to specific rules.
 
 .Attribute Validation
-image:{project_images}/user-profile-validation.png[]
+image:images/user-profile-validation.png[]
 
 {project_name} provides different validators out of the box:
 
@@ -236,34 +231,29 @@ image:{project_images}/user-profile-validation.png[]
 ==== Managing annotations
 
 In order to pass additional information to frontends, attributes can be decorated with
-annotations to dictate how attributes are rendered. This capability is mainly useful when extending {project_name} themes 
-to render pages dynamically based on the annotations associated with attributes. 
+annotations to dictate how attributes are rendered. This capability is mainly useful when extending {project_name} themes
+to render pages dynamically based on the annotations associated with attributes.
 This mechanism is used for example to link:#_configurin_form_input_field_for_attribute[configure Form input filed for attribute].
 
 .Attribute Annotation
-image:{project_images}/user-profile-annotation.png[]
+image:images/user-profile-annotation.png[]
 
 == Managing Attribute Groups
 
 At the `Attribute Groups` sub-tab you can create, edit, and delete attribute groups. An attribute group allows you to define a container for correlated attributes so that they are rendered together when at the user-facing forms.
 
 .Attribute Group List
-image:{project_images}/user-profile-attribute-group-list.png[]
+image:images/user-profile-attribute-group-list.png[]
 
 [NOTE]
 ====
 You can't delete attribute groups that are bound to attributes. For that, you should first update the attributes to remove the binding.
 ====
 
-ifeval::[{project_community}==true]
 To create a new group, click on the *Create attributes group* button on the top of the attribute groups listing.
-endif::[]
-ifeval::[{project_product}==true]
-To create a new group, click on the `Create` button in the top-right corner of the attribute groups listing.
-endif::[]
 
 .Attribute Group Configuration
-image:{project_images}/user-profile-create-attribute-group.png[]
+image:images/user-profile-create-attribute-group.png[]
 
 When configuring the group you can define the following settings:
 
@@ -284,7 +274,7 @@ In this section, you can associate annotations to the attribute. Annotations are
 The user profile configuration is stored using a well-defined JSON schema. You can choose from editing the user profile configuration directly by clicking on the `JSON Editor` sub-tab.
 
 .JSON Configuration
-image:{project_images}/user-profile-json-config.png[]
+image:images/user-profile-json-config.png[]
 
 The JSON schema is defined as follows:
 
@@ -455,15 +445,10 @@ The default rendering mechanism provides the following capabilities:
 
 === Ordering attributes
 
-ifeval::[{project_community}==true]
 The attributes order is set by dragging and dropping the attribute rows on the attribute listing page.
-endif::[]
-ifeval::[{project_product}==true]
-The attributes order is set by clicking on the up and down arrows when at the attribute listing page.
-endif::[]
 
 .Ordering Attributes
-image:{project_images}/user-profile-attribute-list-order.png[]
+image:images/user-profile-attribute-list-order.png[]
 
 The order you set in this page is respected when fields are rendered in dynamic forms.
 
@@ -494,11 +479,11 @@ Available annotations are:
 |Type of the form input field. Available types are described in a table below.
 
 |inputHelperTextBefore
-|Helper text rendered before (above) the input field. Direct text or internationalization pattern (like `${i18n.key}`) can be used here. 
-Text is NOT html escaped when rendered into the page, so you can use html tags here to format the text, but you also have to correctly escape html control characters.  
+|Helper text rendered before (above) the input field. Direct text or internationalization pattern (like `${i18n.key}`) can be used here.
+Text is NOT html escaped when rendered into the page, so you can use html tags here to format the text, but you also have to correctly escape html control characters.
 
 |inputHelperTextAfter
-|Helper text rendered after (under) the input field. Direct text or internationalization pattern (like `${i18n.key}`) can be used here. 
+|Helper text rendered after (under) the input field. Direct text or internationalization pattern (like `${i18n.key}`) can be used here.
 Text is NOT html escaped when rendered into the page, so you can use html tags here to format the text, but you also have to correctly escape html control characters.
 
 |inputOptionsFromValidation
@@ -511,38 +496,38 @@ Text is NOT html escaped when rendered into the page, so you can use html tags h
 |Annotation for select and multiselect types. Optional map to define UI labels for options (directly or using internationalization). See link:#_managing_options_for_select_fields[detailed description] below.
 
 |inputTypePlaceholder
-|HTML input `placeholder` attribute applied to the field - specifies a short hint that describes the expected value of an input field (e.g. a sample value 
+|HTML input `placeholder` attribute applied to the field - specifies a short hint that describes the expected value of an input field (e.g. a sample value
 or a short description of the expected format). The short hint is displayed in the input field before the user enters a value.
 
 |inputTypeSize
-|HTML input `size` attribute applied to the field - specifies the width, in characters, of an single line input field. For fields based on HTML `select` type 
+|HTML input `size` attribute applied to the field - specifies the width, in characters, of an single line input field. For fields based on HTML `select` type
 it specifies number of rows with options shown. May not work, depending on css in used theme!
 
 |inputTypeCols
 |HTML input `cols` attribute applied to the field - specifies the width, in characters, for `textarea` type. May not work, depending on css in used theme!
 
 |inputTypeRows
-|HTML input `rows` attribute applied to the field - specifies the height, in characters, for `textarea` type. For select fields it specifies number 
+|HTML input `rows` attribute applied to the field - specifies the height, in characters, for `textarea` type. For select fields it specifies number
 of rows with options shown. May not work, depending on css in used theme!
 
 |inputTypePattern
-|HTML input `pattern` attribute applied to the field providing client side validation - specifies a regular expression that an input field's value 
+|HTML input `pattern` attribute applied to the field providing client side validation - specifies a regular expression that an input field's value
 is checked against. Useful for single line inputs.
 
 |inputTypeMaxLength
-|HTML input `maxlength` attribute applied to the field providing client side validation - maximal length of the text which can be entered into the input 
+|HTML input `maxlength` attribute applied to the field providing client side validation - maximal length of the text which can be entered into the input
 field. Useful for text fields.
 
 |inputTypeMinLength
-|HTML input `minlength` attribute applied to the field providing client side validation - minimal length of the text which can be entered into the input 
+|HTML input `minlength` attribute applied to the field providing client side validation - minimal length of the text which can be entered into the input
 field. Useful for text fields.
 
 |inputTypeMax
-|HTML input `max` attribute applied to the field providing client side validation - maximal value which can be entered into the input field. 
+|HTML input `max` attribute applied to the field providing client side validation - maximal value which can be entered into the input field.
 Useful for numeric fields.
 
 |inputTypeMin
-|HTML input `min` attribute applied to the field providing client side validation - minimal value which can be entered into the input field. 
+|HTML input `min` attribute applied to the field providing client side validation - minimal value which can be entered into the input field.
 Useful for numeric fields.
 
 |inputTypeStep
@@ -552,9 +537,9 @@ Useful for numeric fields.
 
 [NOTE]
 ====
-Field types use HTML form field tags and attributes applied to them - they behave based on the HTML specifications and browser support for them. 
+Field types use HTML form field tags and attributes applied to them - they behave based on the HTML specifications and browser support for them.
 
-Visual rendering also depends on css styles applied in the used theme.  
+Visual rendering also depends on css styles applied in the used theme.
 ====
 
 Available `inputType` annotation values:
@@ -633,30 +618,30 @@ Available `inputType` annotation values:
 [[_managing_options_for_select_fields]]
 ==== Defining options for select and multiselect fields
 
-Options for select and multiselect fields are taken from validation applied to the attribute to be 
+Options for select and multiselect fields are taken from validation applied to the attribute to be
 sure validation and field options presented in UI are always consistent. By default, options are taken from built-in `options` validation.
 
-You can use various ways to provide nice human readable labels for select and multiselect options. The simplest 
+You can use various ways to provide nice human readable labels for select and multiselect options. The simplest
 case is when attribute values are same as UI labels. No any extra configuration is necessary in this case.
 
-.Option values same as UI labels 
-image:{project_images}/user-profile-select-options-simple.png[]
+.Option values same as UI labels
+image:images/user-profile-select-options-simple.png[]
 
-When attribute value is kind of ID not suitable for UI, you can use simple internationalization support provided 
+When attribute value is kind of ID not suitable for UI, you can use simple internationalization support provided
 by `inputOptionLabelsI18nPrefix` annotation. It defines prefix for internationalization keys, option value is dot appended to this prefix.
 
-.Simple internationalization for UI labels using i18n key prefix 
-image:{project_images}/user-profile-select-options-simple-i18n.png[]
+.Simple internationalization for UI labels using i18n key prefix
+image:images/user-profile-select-options-simple-i18n.png[]
 
-Localized UI label texts for option value have to be provided by `userprofile.jobtitle.sweng` and `userprofile.jobtitle.swarch` 
+Localized UI label texts for option value have to be provided by `userprofile.jobtitle.sweng` and `userprofile.jobtitle.swarch`
 keys then, using common localization mechanism.
 
-You can also use `inputOptionLabels` annotation to provide labels for individual options. It contains map of labels for option - key in the map is 
-option value (defined in validation), and value in the map is UI label text itself or its internationalization pattern (like `${i18n.key}`) for that option. 
+You can also use `inputOptionLabels` annotation to provide labels for individual options. It contains map of labels for option - key in the map is
+option value (defined in validation), and value in the map is UI label text itself or its internationalization pattern (like `${i18n.key}`) for that option.
 
 [NOTE]
 ====
-You have to use User Profile `JSON Editor` to enter map as `inputOptionLabels` annotation value.  
+You have to use User Profile `JSON Editor` to enter map as `inputOptionLabels` annotation value.
 ====
 
 
@@ -668,7 +653,7 @@ Example of directly entered labels for individual options without internationali
 {
   "name": "jobTitle",
   "validations": {
-    "options": { 
+    "options": {
       "options":[
         "sweng",
         "swarch"
@@ -695,7 +680,7 @@ Example of the internationalized labels for individual options:
 {
   "name": "jobTitle",
   "validations": {
-    "options": { 
+    "options": {
       "options":[
         "sweng",
         "swarch"
@@ -715,8 +700,8 @@ Example of the internationalized labels for individual options:
 ----
 Localized texts have to be provided by `jobtitle.swengineer` and `jobtitle.swarchitect` keys then, using common localization mechanism.
 
-Custom validator can be used to provide options thanks to `inputOptionsFromValidation` attribute annotation. 
-This validation have to have `options` config providing array of options. Internationalization works the same way as for options 
+Custom validator can be used to provide options thanks to `inputOptionsFromValidation` attribute annotation.
+This validation have to have `options` config providing array of options. Internationalization works the same way as for options
 provided by built-in `options` validation.
 
 .Options provided by custom validator
@@ -739,16 +724,10 @@ When enabled, the `VerifyProfile` action is going to perform the following steps
 * If the user profile is compliant with the configuration, no additional step is performed, and the user continues with the authentication process.
 
 By default, the `VerifyProfile` action is disabled. To enabled it, click on the
-`Authentication` link on the left side menu and then click on the `Required Actions` tab.
-ifeval::[{project_community}==true]
-At this tab, select the *Enabled* switch of the `VerifyProfile` action.
-endif::[]
-ifeval::[{project_product}==true]
-At this tab, click on the `Register` button and select the `VerifyProfile` action.
-endif::[]
+`Authentication` link on the left side menu and then click on the `Required Actions` tab. At this tab, select the *Enabled* switch of the `VerifyProfile` action.
 
 .Registring the VerifyProfile Required Action
-image:{project_images}/user-profile-register-verify-profile-action.png[]
+image:images/user-profile-register-verify-profile-action.png[]
 
 == Migrating to User Profile
 

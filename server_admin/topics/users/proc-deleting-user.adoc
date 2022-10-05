@@ -11,18 +11,8 @@ You can delete a user, who no longer needs access to applications. If a user is 
 .Procedure
 . Click *Users* in the menu. The *Users* page is displayed.
 . Click *View all users* to find a user to delete.
-ifeval::[{project_community}==true]
 . Click *Users* in the menu. The *Users* page is displayed.
 +
 NOTE: Alternatively, you can use the search bar to find a user.
 +
 . Click *Delete* from the action menu next to the user you want to remove and confirm deletion.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Users* in the menu. The *Users* page is displayed.
-. Click *View all users* to find a user to delete.
-+
-NOTE: Alternatively, you can use the search bar to find a user.
-+
-. Click *Delete* next to the user you want to remove and confirm deletion.
-endif::[]

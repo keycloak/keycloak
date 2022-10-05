@@ -2,6 +2,8 @@
 === Locale selector
 
 By default, the locale is selected using the `DefaultLocaleSelectorProvider` which implements the `LocaleSelectorProvider` interface. English is the default language when internationalization is disabled.
+
+
 With internationalization enabled, the locale is resolved according to the logic described in the link:{adminguide_link}#_user_locale_selection[{adminguide_name}].
 
 This behavior can be changed through the `LocaleSelectorSPI` by implementing the `LocaleSelectorProvider` and `LocaleSelectorProviderFactory`.
@@ -13,4 +15,3 @@ Custom implementations can extend the `DefaultLocaleSelectorProvider` in order t
 [role="_additional-resources"]
 === Additional resources
 * For more details on creating and deploying a custom provider, see <<_providers,Service Provider Interfaces>>.
-

@@ -16,15 +16,11 @@ To add a storage provider, perform the following procedure:
 . Click *User Federation* in the menu.
 +
 .User federation
-image:{project_images}/user-federation.png[User federation]
+image:images/user-federation.png[User federation]
 +
-ifeval::[{project_community}==true]
 . Select the provider type card from the listed cards.
-endif::[]
-ifeval::[{project_product}==true]
-. Select the provider type from the *Add Provider* list.
-endif::[]
- {project_name} brings you to that provider's configuration page.
++
+{project_name} brings you to that provider's configuration page.
 
 === Dealing with provider failures
 

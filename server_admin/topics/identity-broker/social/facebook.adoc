@@ -7,7 +7,7 @@
 . From the `Add provider` list, select `Facebook`. {project_name} displays the configuration page for the Facebook identity provider.
 +
 .Add identity provider
-image:{project_images}/facebook-add-identity-provider.png[Add Identity Provider]
+image:images/facebook-add-identity-provider.png[Add Identity Provider]
 . Copy the value of *Redirect URI* to your clipboard.
 . In a separate browser tab, follow the https://developers.facebook.com/docs/development/[Facebook Developer Guide's] instructions to create a project and client in Facebook.
 .. Ensure your app is a website-type app.
@@ -15,9 +15,7 @@ image:{project_images}/facebook-add-identity-provider.png[Add Identity Provider]
 .. Ensure the app is public.
 +
 . Enter the https://developers.facebook.com/docs/facebook-login/guides/access-tokens[`Client ID` and `Client Secret`] values from your Facebook app into the `Client ID` and `Client Secret` fields in {project_name}.
-ifeval::[{project_community}==true]
 . Click *Add*
-endif::[]
 
 . Enter the required scopes into the *Default Scopes* field. By default, {project_name} uses the `email` scope. See https://developers.facebook.com/docs/graph-api[Graph API] for more information about Facebook scopes. 
 

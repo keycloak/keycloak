@@ -8,4 +8,4 @@ Mapping can be also specified at the client level in case that particular client
 
 image:images/realm-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 
-For further details see  <<_step-up-flow,Step-up Authentication>> and  https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[the offical OIDC specification].
+For further details see  <<_step-up-flow,Step-up Authentication>> and  https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[the official OIDC specification].

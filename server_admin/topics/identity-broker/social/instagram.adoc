@@ -6,7 +6,7 @@
 . From the `Add provider` list, select `Instagram`. {project_name} displays the configuration page for the Instagram identity provider.
 +
 .Add identity provider
-image:{project_images}/instagram-add-identity-provider.png[Add Identity Provider]
+image:images/instagram-add-identity-provider.png[Add Identity Provider]
 . Copy the value of *Redirect URI* to your clipboard.
 . In a separate browser tab, open the https://developers.facebook.com/[Facebook Developer Console].
 .. Click *My Apps*.
@@ -56,9 +56,6 @@ image:images/instagram-app-settings.png[Setup the App]
 .. Follow the instructions on the screen.
 . In {project_name}, paste the value of the *Instagram App ID* into the *Client ID* field.
 . In {project_name}, paste the value of the *Instagram App Secret* into the *Client Secret* field.
-ifeval::[{project_community}==true]
+
 . Click *Add*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Save*.
-endif::[]
+

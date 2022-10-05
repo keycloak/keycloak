@@ -11,7 +11,7 @@ Therefore the final binding and SP URL are selected in the following way:
 
 1. If the specific *Assertion Consumer Service POST Binding URL* is defined (inside *Fine Grain SAML Endpoint Configuration* section
 of the client settings) _POST_ binding is used through that URL.
-2. If the general *Master SAML Processing URL* is specified then _POST_ binding is used again throught this general URL.
+2. If the general *Master SAML Processing URL* is specified then _POST_ binding is used again throughout this general URL.
 3. As the last resort, if the *Assertion Consumer Service Redirect Binding URL* is configured (inside
 *Fine Grain SAML Endpoint Configuration*) _REDIRECT_ binding is used with this URL.
 

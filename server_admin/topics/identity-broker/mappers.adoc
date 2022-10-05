@@ -12,17 +12,12 @@ Each user logging into your realm using an external identity provider has an ent
 . Click the *Mappers* tab.
 +
 .Identity provider mappers
-image:{project_images}/identity-provider-mappers.png[identity provider mappers]
+image:images/identity-provider-mappers.png[identity provider mappers]
 +
-ifeval::[{project_community}==true]
 . Click *Add mapper*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Create*.
-endif::[]
 +
 .Identity provider mapper
-image:{project_images}/identity-provider-mapper.png[identity provider mapper]
+image:images/identity-provider-mapper.png[identity provider mapper]
 +
 . Select a value for *Sync Mode Override*. The mapper updates user information when users log in repeatedly according to this setting.
 .. Select *legacy* to use the behavior of the previous {project_name} version.

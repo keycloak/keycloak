@@ -41,7 +41,7 @@ If you require WebAuthn for all users:
 . Click *Add*.
 . Select *Required* for the *WebAuthn Authenticator* authentication type to set its requirement to required.
 +
-image:{project_images}/webauthn-browser-flow-required.png[Webauthn browser flow required]
+image:images/webauthn-browser-flow-required.png[Webauthn browser flow required]
 +
 . Click the *Action* menu on the top of the screen.
 . Select *Bind flow* from the drop-down list.
@@ -69,7 +69,7 @@ Users can log in with WebAuthn if they have a WebAuthn credential registered onl
 . Drag and drop *WebAuthn Authenticator* into the *Conditional 2FA* flow
 . Select *Alternative* for the *WebAuthn Authenticator* to set its requirement to alernative.
 +
-image:{project_images}/webauthn-browser-flow-conditional.png[Webauthn browser flow conditional]
+image:images/webauthn-browser-flow-conditional.png[Webauthn browser flow conditional]
 
 The user can choose between using WebAuthn and OTP for the second factor:
 
@@ -80,7 +80,7 @@ The user can choose between using WebAuthn and OTP for the second factor:
 . Click *Add*.
 . Select *Alternative* for the *OTP Form* to set its requirement to alernative.
 +
-image:{project_images}/webauthn-browser-flow-conditional-with-OTP.png[WebAuthn browser flow conditional with OTP]
+image:images/webauthn-browser-flow-conditional-with-OTP.png[WebAuthn browser flow conditional with OTP]
 
 ==== Authenticate with WebAuthn authenticator
 
@@ -218,7 +218,7 @@ Set up WebAuthn passwordless support as follows:
 The final configuration of the flow looks similar to this:
 
 .PasswordLess flow
-image:{project_images}/webauthn-passwordless-flow.png[PasswordLess flow]
+image:images/webauthn-passwordless-flow.png[PasswordLess flow]
 
 You can now add *WebAuthn Register Passwordless* as the required action to a user, already known to {project_name}, to test this. During the first authentication, the user must use the password and second-factor WebAuthn credential. The user does not need to provide the password and second-factor WebAuthn credential if they use the WebAuthn Passwordless credential.
 
@@ -245,7 +245,7 @@ Set up WebAuthn Loginless support as follows:
 The final configuration of the flow looks similar to this:
 
 .LoginLess flow
-image:{project_images}/webauthn-loginless-flow.png[LoginLess flow]
+image:images/webauthn-loginless-flow.png[LoginLess flow]
 
 You can now add the required action `WebAuthn Register Passwordless` to a user, already known to {project_name}, to test this. The user with the required action configured will have to authenticate (with a username/password for example) and will then be prompted to register a security key to be used for loginless authentication.
 

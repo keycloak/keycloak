@@ -13,14 +13,8 @@ When a realm is created a key pair and a self-signed certificate is automaticall
 .Procedure
 . Click *Realm settings* in the menu.
 . Click *Keys*.
-ifeval::[{project_product}==true]
-. Click *Passive* to view passive keys.
-. Click *Disabled* to view disabled keys.
-endif::[]
-ifeval::[{project_community}==true]
 . Select *Passive keys* from the filter dropdown to view passive keys.
 . Select *Disabled keys* from the filter dropdown to view disabled keys.
-endif::[]
 
 A keypair can have the status `Active`, but still not be selected as the currently active keypair for the realm.
 The selected active pair which is used for signatures is selected based on the first key provider sorted by priority
@@ -47,19 +41,9 @@ Rotating keys also applies to offline tokens. To make sure they are updated, the
 . Click *Realm settings* in the menu.
 . Click the *Keys* tab.
 . Click the *Providers* tab.
-ifeval::[{project_product}==true]
-. Click *Add keystore* and select *rsa-generated*.
-endif::[]
-ifeval::[{project_community}==true]
 . Click *Add provider* and select *rsa-generated*.
-endif::[]
 . Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair.
-ifeval::[{project_product}==true]
-. Select a value for *keysize*.
-endif::[]
-ifeval::[{project_community}==true]
 . Select a value for *AES Key size*.
-endif::[]
 . Click *Save*.
 
 This action will generated a new keypair including a self-signed certificate.
@@ -80,23 +64,10 @@ the priority to make sure the new keypair becomes the active keypair.
 . Click *Realm settings*.
 . Click the *Keys* tab.
 . Click the *Providers* tab.
-ifeval::[{project_product}==true]
-. Click *Add keystore* and select *rsa*.
-endif::[]
-ifeval::[{project_community}==true]
 . Click *Add provider* and select *rsa*.
-endif::[]
 . Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair.
-ifeval::[{project_product}==true]
-. Enter a value for *Keystore*.
-. Enter a value for *Keystore Password*.
-. Enter a value for *Key Alias*.
-. Enter a value for *Key Password*.
-endif::[]
-ifeval::[{project_community}==true]
 . Click *Browse...* beside *Private RSA Key* to upload the private key file.
 . If you have a signed certificate for your private key,  click *Browse...* beside *X509 Certificate* to upload the certificate file. {project_name} automatically generates a self-signed certificate if you do not upload a certificate.
-endif::[]
 . Click *Save*.
 
 ==== Loading keys from a Java Keystore
@@ -111,12 +82,7 @@ For the associated certificate chain to be loaded it must be imported to the Jav
 . Click *Realm settings* in the menu.
 . Click the *Keys* tab.
 . Click the *Providers* tab.
-ifeval::[{project_product}==true]
-. Click *Add keystore* and select *java-keystore*.
-endif::[]
-ifeval::[{project_community}==true]
 . Click *Add provider* and select *java-keystore*.
-endif::[]
 . Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair.
 . Enter a value for *Keystore*.
 . Enter a value for *Keystore Password*.
@@ -130,19 +96,9 @@ endif::[]
 . Select the realm in the Admin Console.
 . Click *Realm settings* in the menu.
 . Click the *Keys* tab.
-ifeval::[{project_product}==true]
-. Click the *Active* tab.
-endif::[]
-ifeval::[{project_community}==true]
 . Click the *Providers* tab.
-endif::[]
 . Click the provider of the key you want to make passive.
-ifeval::[{project_product}==true]
-. Toggle *Active* to *OFF*.
-endif::[]
-ifeval::[{project_community}==true]
 . Toggle *Active* to *Off*.
-endif::[]
 . Click *Save*.
 
 ==== Disabling keys
@@ -151,19 +107,9 @@ endif::[]
 . Select the realm in the Admin Console.
 . Click *Realm settings* in the menu.
 . Click the *Keys* tab.
-ifeval::[{project_product}==true]
-. Click the *Active* tab.
-endif::[]
-ifeval::[{project_community}==true]
 . Click the *Providers* tab.
-endif::[]
 . Click the provider of the key you want to make passive.
-ifeval::[{project_product}==true]
-. Toggle *Enabled* to *OFF*.
-endif::[]
-ifeval::[{project_community}==true]
 . Toggle *Enabled* to *Off*.
-endif::[]
 . Click *Save*.
 
 ==== Compromised keys
@@ -177,17 +123,10 @@ Alternatively, you can delete the provider from the `Providers` table.
 .Procedure
 . Click *Clients* in the menu.
 . Click *security-admin-console*.
-ifeval::[{project_product}==true]
-. Fill in the *Admin URL* field.
-. Click the *Revocation* tab.
-. Click *Set to now*.
-endif::[]
-ifeval::[{project_community}==true]
 . Scroll down to the *Capability config* section.
 . Fill in the *Admin URL* field.
 . Click the *Advanced* tab.
 . Click *Set to now* in the *Revocation* section.
-endif::[]
 . Click *Push*.
 
 Pushing the not-before policy ensures that client applications do not accept the existing tokens signed by the compromised key. The client application is forced to download new key pairs from {project_name} also so the tokens signed by the compromised key will be invalid.

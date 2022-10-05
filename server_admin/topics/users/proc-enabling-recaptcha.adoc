@@ -25,25 +25,15 @@ NOTE: The localhost works by default. You do not have to specify a domain.
 . Navigate to the {project_name} admin console.
 . Click *Authentication* in the menu. 
 . Click the *Flows* tab.
-ifeval::[{project_community}==true]
 . Select *Registration* from the list.
-endif::[]
-ifeval::[{project_product}==true]
-. Select *Registration* from the drop down menu.
-endif::[]
 . Set the *reCAPTCHA* requirement to *Required*. This enables
 reCAPTCHA.  
-ifeval::[{project_community}==true]
 . Click the *gear icon* ⚙️ on the *reCAPTCHA* row.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Actions* to the right of the reCAPTCHA flow entry.
-endif::[]
 . Click the *Config* link.
 
 +
 .Recaptcha config page
-image:{project_images}/recaptcha-config.png[]
+image:images/recaptcha-config.png[]
 
 .. Enter the *Recaptcha Site Key* generated from the Google reCAPTCHA website.
 .. Enter the *Recaptcha Secret* generated from the Google reCAPTCHA website.

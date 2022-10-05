@@ -8,45 +8,20 @@ Browsers and applications that interact with the realm honor the SSL/HTTPS requi
 
 .Procedure 
 
-ifeval::[{project_product}==true]
-. Click *Realm Settings* in the menu.
-. Click the *Login* tab.
-+
-.Login tab
-image:{project_images}/login-tab.png[Login tab]
-endif::[]
-
-ifeval::[{project_community}==true]
 . Click *Realm settings* in the menu.
 . Click the *General* tab.
 +
 .General tab
-image:{project_images}/general-tab.png[General Tab]
-endif::[]
+image:images/general-tab.png[General Tab]
 
 . Set *Require SSL* to one of the following SSL modes:
 
-ifeval::[{project_product}==true]
-* *external requests*
-endif::[]
-ifeval::[{project_community}==true]
 * *External requests*
-endif::[]
   Users can interact with {project_name} without SSL so long as they stick to private IP addresses such as `localhost`, `127.0.0.1`, `10.x.x.x`, `192.168.x.x`, and `172.16.x.x`.
   If you try to access {project_name} without SSL from a non-private IP address, you will get an error.
 
-ifeval::[{project_product}==true]
-* *none*
-endif::[]
-ifeval::[{project_community}==true]
 * *None*
-endif::[]
   {project_name} does not require SSL.  This choice applies only in development when you are experimenting and do not plan to support this deployment.
 
-ifeval::[{project_product}==true]
-* *all requests*
-endif::[]
-ifeval::[{project_community}==true]
 * *All requests*
-endif::[]  
   {project_name} requires SSL for all IP addresses.

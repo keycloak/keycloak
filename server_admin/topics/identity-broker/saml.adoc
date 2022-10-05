@@ -8,9 +8,10 @@
 . From the `Add provider` list, select `SAML v2.0`.
 +
 .Add identity provider
-image:{project_images}/saml-add-identity-provider.png[Add Identity Provider]
+image:images/saml-add-identity-provider.png[Add Identity Provider]
 +
 . Enter your initial configuration options. See <<_general-idp-config, General IDP Configuration>> for more information about configuration options.
+
 .SAML Config
 |===
 |Configuration|Description

@@ -10,7 +10,7 @@
 . From the `Add provider` list, select `OpenID Connect v1.0`.
 +
 .Add identity provider
-image:{project_images}/oidc-add-identity-provider.png[Add Identity Provider]
+image:images/oidc-add-identity-provider.png[Add Identity Provider]
 +
 . Enter your initial configuration options. See <<_general-idp-config, General IDP Configuration>> for more information about configuration options.
 +
@@ -62,9 +62,6 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 
 |Validate Signatures
 |Specifies if {project_name} verifies signatures on the external ID Token signed by this IDP. If *ON*, {project_name} must know the public key of the external OIDC IDP. For performance purposes, {project_name} caches the public key of the external OIDC identity provider.
-ifeval::[{project_product}==true]
-If your identity provider's private key is compromised, update your keys and clear the keys cache. See <<_clear-cache, Clearing the cache>> for more details.
-endif::[]
 
 |Use JWKS URL
 |This switch is applicable if `Validate Signatures` is *ON*. If *Use JWKS URL* is *ON*, {project_name} downloads the IDP's public keys from the JWKS URL. New keys download when the identity provider generates a new keypair. If *OFF*, {project_name} uses the public key (or certificate) from its database, so when the IDP keypair changes, import the new key to the {project_name} database as well.

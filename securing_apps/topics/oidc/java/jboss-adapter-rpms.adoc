@@ -7,7 +7,7 @@ NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the te
 
 You must subscribe to the {appserver_name} {appserver_version} repository before you can install the {appserver_name} 7 adapters from an RPM.
 
-* Ensure that your Red Hat Enterprise Linux system is registered to your account using Red Hat Subscription Manager. For more information see the link:https://access.redhat.com/documentation/en-us/red_hat_subscription_management/1/html-single/quick_registration_for_rhel/index[Red Hat Subscription Management documentation].
+* Ensure that your Red Hat Enterprise Linux system is registered to your account using Red Hat Subscription Manager. For more information see the link:https://access.redhat.com/documentation/en-us/red_hat_subscription_management/2022[Red Hat Subscription Management documentation].
 
 * If you are already subscribed to another JBoss EAP repository, you must unsubscribe from that repository first.
 +
@@ -63,7 +63,7 @@ You must subscribe to the JBoss EAP 6 repository before you can install the EAP 
 
 .Prerequisites
 
-* Ensure that your Red Hat Enterprise Linux system is registered to your account using Red Hat Subscription Manager. For more information see the link:https://access.redhat.com/documentation/en-us/red_hat_subscription_management/1/html-single/quick_registration_for_rhel/index[Red Hat Subscription Management documentation].
+* Ensure that your Red Hat Enterprise Linux system is registered to your account using Red Hat Subscription Manager. For more information see the link:https://access.redhat.com/documentation/en-us/red_hat_subscription_management/2022[Red Hat Subscription Management documentation].
 
 * If you are already subscribed to another JBoss EAP repository, you must unsubscribe from that repository first.
 +

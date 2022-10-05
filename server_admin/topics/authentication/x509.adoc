@@ -75,7 +75,6 @@ The certificate identity mapping can map the extracted user identity to an exist
 [[_browser_flow]]
 ==== Adding X.509 client certificate authentication to browser flows
 
-ifeval::[{project_community}==true]
 . Click *Authentication* in the menu.
 . Click the *Browser* flow.
 . From the *Action* list, select *Duplicate*. 
@@ -84,54 +83,28 @@ ifeval::[{project_community}==true]
 . Click *Add step*.
 . Click "X509/Validate Username Form".
 . Click *Add*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Authentication* in the menu.
-. Click the "Browser" flow.
-. Click *Copy* to make a copy of the built-in "Browser" flow.
-. Enter a name for the copy.
-. Click *Ok*.
-. Click the copy in the *Add policy* drop-down box.
-. Click *Add execution*.
-. Click "X509/Validate Username Form".
-. Click *Save*.
-endif::[]
-
 +
 .X509 execution
-image:{project_images}/x509-execution.png[X509 Execution]
-+
+image:images/x509-execution.png[X509 Execution]
 
-ifeval::[{project_community}==true]
-. Click and dragthe "X509/Validate Username Form" over the "Browser Forms" execution.
-endif::[]
-ifeval::[{project_product}==true]
-. Click the up/down arrow buttons to move the "X509/Validate Username Form" over the "Browser Forms" execution.
-endif::[]
+. Click and drag the "X509/Validate Username Form" over the "Browser Forms" execution.
 . Set the requirement to "ALTERNATIVE".
 +
 .X509 browser flow
-image:{project_images}/x509-browser-flow.png[X509 Browser Flow]
+image:images/x509-browser-flow.png[X509 Browser Flow]
 +
-ifeval::[{project_community}==true]
 . Click the *Action* menu.
 . Click the *Bind flow*.
 . Click the *Browser flow* from the drop-down list.
-endif::[]
-ifeval::[{project_product}==true]
-. Click the *Bindings* tab.
-. Click the *Browser Flow* drop-down list.
-. Click the copy of the browser flow from the drop-down list.
-endif::[]
 . Click *Save*.
 +
 .X509 browser flow bindings
-image:{project_images}/x509-browser-flow-bindings.png[X509 Browser Flow Bindings]
+image:images/x509-browser-flow-bindings.png[X509 Browser Flow Bindings]
 
 ==== Configuring X.509 client certificate authentication
 
 .X509 configuration
-image:{project_images}/x509-configuration.png[X509 Configuration]
+image:images/x509-configuration.png[X509 Configuration]
 
 *User Identity Source*::
 Defines the method for extracting the user identity from a client certificate.
@@ -164,7 +137,7 @@ The path to a file containing a CRL list. The value must be a path to a valid fi
 Checks the certificate revocation status by using Online Certificate Status Protocol.
 
 *OCSP Fail-Open Behavior*::
-By default the OCSP check must return a positive response in order to continue with a successful authentication. Sometimes however this check can be inconclusive: for example, the OCSP server could be unreachable, overloaded, or the client certificate may not contain an OCSP responder URI. When this setting is turned ON, authentication will be denied only if an explicit negative response is received by the OCSP responder and the certificate is definitely revoked. If a valid OCSP response is not avalaible the authentication attempt will be accepted.
+By default the OCSP check must return a positive response in order to continue with a successful authentication. Sometimes however this check can be inconclusive: for example, the OCSP server could be unreachable, overloaded, or the client certificate may not contain an OCSP responder URI. When this setting is turned ON, authentication will be denied only if an explicit negative response is received by the OCSP responder and the certificate is definitely revoked. If a valid OCSP response is not available the authentication attempt will be accepted.
 
 *OCSP Responder URI*::
 Override the value of the OCSP responder URI in the certificate.
@@ -192,7 +165,6 @@ If set, the client certificate trust chain will be always verified at the applic
 
 
 . Click *Authentication* in the menu.
-ifeval::[{project_community}==true]
 . Select *Duplicate* from the "Action list" to make a copy of the built-in "Direct grant" flow.
 . Enter a name for the copy.
 . Click *Duplicate*.
@@ -202,24 +174,9 @@ ifeval::[{project_community}==true]
 . Click *Add step*.
 . Click "X509/Validate Username".
 . Click *Add*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Authentication* in the menu.
-. Click the "Direct Grant" flow.
-. Click *Copy* to make a copy of the "Direct Grant" flow.
-. Enter a name for the copy.
-. Click *Ok*.
-. Click on the *Actions* link for "Username Validation" and click *Delete*.
-. Click *Delete*.
-. Click on the *Actions* link for "Password" and click *Delete*.
-. Click *Delete*.
-. Click *Add execution*.
-. Click "X509/Validate Username".
-. Click *Save*.
-endif::[]
 +
 .X509 direct grant execution
-image:{project_images}/x509-directgrant-execution.png[X509 Direct Grant Execution]
+image:images/x509-directgrant-execution.png[X509 Direct Grant Execution]
 +
 . Set up the x509 authentication configuration by following the steps described in the <<_browser_flow, x509 Browser Flow>> section.
 . Click the *Bindings* tab.
@@ -228,4 +185,4 @@ image:{project_images}/x509-directgrant-execution.png[X509 Direct Grant Executio
 . Click *Save*.
 +
 .X509 direct grant flow bindings
-image:{project_images}/x509-directgrant-flow-bindings.png[X509 Direct Grant Flow Bindings]
+image:images/x509-directgrant-flow-bindings.png[X509 Direct Grant Flow Bindings]

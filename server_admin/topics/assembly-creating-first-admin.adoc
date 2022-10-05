@@ -15,7 +15,7 @@ If your server is accessible from `localhost`, perform these steps.
 . Supply a username and password that you can recall.
 +
 .Welcome page
-image:{project_images}/initial-welcome-page.png[Welcome page]
+image:images/initial-welcome-page.png[Welcome page]
 
 === Creating the account remotely
 

@@ -14,9 +14,7 @@ To view all the flows, actions, and checks, each flow requires:
 . Click on the _Browser_ item in the list to see the details.
 
 .Browser flow
-image:{project_images}/browser-flow.png[Browser Flow]
-
-Two sections exist.
+image:images/browser-flow.png[Browser Flow]
 
 ===== Auth type
 The name of the authentication or the action to execute. If an authentication is indented, it is in a sub-flow. It may or may not be executed, depending on the behavior of its parent. 
@@ -96,12 +94,12 @@ Top-Level Flow Type::
   The type of flow. The type *client* is used only for the authentication of clients (applications). For all other cases, choose *generic*.
 
 .Create a top-level flow
-image:{project_images}/Create-top-level-flow.png[Top Level Flow]
+image:images/Create-top-level-flow.png[Top Level Flow]
 
 When {project_name} has created the flow, {project_name} displays the *Add step*, and *Add flow* buttons.
 
 .An empty new flow
-image:{project_images}/New-flow.png[New Flow]
+image:images/New-flow.png[New Flow]
 
 Three factors determine the behavior of flows and sub-flows.
 
@@ -112,7 +110,7 @@ Three factors determine the behavior of flows and sub-flows.
 Executions have a wide variety of actions, from sending a reset email to validating an OTP. Add executions with the *Add step* button. Hover over the question mark next to *Provider*, to see a description of the execution.
 
 .Adding an authentication execution
-image:{project_images}/Create-authentication-execution.png[Adding an Authentication Execution]
+image:images/Create-authentication-execution.png[Adding an Authentication Execution]
 
 Two types of executions exist, _automatic executions_ and _interactive executions_. _Automatic executions_ are similar to the *Cookie* execution and will automatically
 perform their action in the flow. _Interactive executions_ halt the flow to get input. Executions executing successfully set their status to _success_.  For a flow to complete, it needs at least one execution with a status of _success_. 
@@ -168,7 +166,7 @@ To illustrate the creation of flows, this section describes creating an advanced
 . Select *Alternative* for the *Forms* authentication type to set its requirement to alternative.
 +
 .The common part with the browser flow
-image:{project_images}/Passwordless-browser-login-common.png[Passwordless browser login]
+image:images/Passwordless-browser-login-common.png[Passwordless browser login]
 +
 . Click *+* menu of the *Forms* execution.
 . Select *Add step*.
@@ -211,7 +209,7 @@ Finally, change the bindings.
 . Click *Save*.
 
 .A password-less browser login
-image:{project_images}/Passwordless-browser-login.png[Passwordless browser login]
+image:images/Passwordless-browser-login.png[Passwordless browser login]
 
 After entering the username, the flow works as follows:
 
@@ -275,7 +273,7 @@ Now you configure the flow for the first authentication level.
 . Click *Save*
 +
 .Configure the condition for the first authentication level
-image:{project_images}/authentication-step-up-condition-1.png[Authentication step up condition 1]
+image:images/authentication-step-up-condition-1.png[Authentication step up condition 1]
 
 . Click *+* menu of the *1st Condition Flow*.
 . Click *Add step*.
@@ -302,7 +300,7 @@ Now you configure the flow for the second authentication level.
 . Click *Save*
 +
 .Configure the condition for the second authentication level
-image:{project_images}/authentication-step-up-condition-2.png[Autehtnication step up condition 2]
+image:images/authentication-step-up-condition-2.png[Autehtnication step up condition 2]
 
 . Click *+* menu of the *2nd Condition Flow*.
 . Click *Add step*.
@@ -318,7 +316,7 @@ Finally, change the bindings.
 . Click *Save*.
 
 .Browser login with step-up mechanism
-image:{project_images}/authentication-step-up-flow.png[Authentication step up flow]
+image:images/authentication-step-up-flow.png[Authentication step up flow]
 
 .Request a certain authentication level
 To use the step-up mechanism, you specify a requested level of authentication (LoA) in your authentication request. The `claims` parameter is used for this purpose:
@@ -418,7 +416,7 @@ To add session limits to a flow, perform the following steps.
 . Enter the required maximum number of sessions that a user can have in this realm. For example, if 2 is the value, 2 SSO sessions is the maximum that each user can have in this realm. If 0 is the value, this check is disabled.
 . Enter the required maximum number of sessions a user can have for the client. For example, if 2 is the value, then 2 SSO sessions is the maximum in this realm for each client. So when a user is trying to authenticate to client `foo`, but that user has already authenticated in 2 SSO sessions to client `foo`, either the authentication will be denied or an existing sessions will be killed based on the behavior configured. If a value of 0 is used, this check is disabled.
 If both session limits and client session limits are enabled, it makes sense to have client session limits to be always lower than session limits. The limit per client can never exceed the limit of all SSO sessions of this user.
-. Select the behavior that is required when the user tries to create a session after the limit is reached. Available bahaviors are:
+. Select the behavior that is required when the user tries to create a session after the limit is reached. Available behaviors are:
 
   - *Deny new session* - when a new session is requested and the session limit is reached, no new sessions can be created.
   - *Terminate oldest session* - when a new session is requested and the session limit has been reached, the oldest session will be removed and the new session created.
@@ -430,7 +428,7 @@ The authenticator should be added at the point when the user is already known du
 ALTERNATIVE and REQUIRED executions at the same level. For example for the default browser flow, it may be necessary to wrap the existing flow as a REQUIRED level-1 subflow and 
 add `User Session Count Limiter` to the same level as this new subflow. Example of such flow is below.
 
-image:{project_images}/authentication-user-session-limits.png[Authentication User Session Limits Flow]
+image:images/authentication-user-session-limits.png[Authentication User Session Limits Flow]
 
 Currently, the administrator is responsible for maintaining consistency between the different configurations.
 

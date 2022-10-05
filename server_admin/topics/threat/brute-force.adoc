@@ -18,7 +18,7 @@ To enable this protection:
 . Click the *Brute Force Detection* tab.
 +
 .Brute force detection
-image:{project_images}/brute-force.png[]
+image:images/brute-force.png[]
 
 {project_name} can deploy permanent lockout and temporary lockout actions when it detects an attack. Permanent lockout disables a user account until an administrator re-enables it. Temporary lockout disables a user account for a specific period of time. The time period that the account is disabled increases as the attack continues.
 

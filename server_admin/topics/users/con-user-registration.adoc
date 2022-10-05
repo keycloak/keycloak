@@ -9,7 +9,7 @@
 You can use {project_name} as a third-party authorization server to manage application users, including users who self-register. If you enable self-registration, the login page displays a registration link so that user can create an account.
 
 .Registration link
-image:{project_images}/registration-link.png[]
+image:images/registration-link.png[]
 
 A user must add profile information to the registration form to complete registration. The registration form can be customized by removing or adding the fields that must be completed by a user.
 

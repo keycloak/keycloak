@@ -13,4 +13,4 @@
 . Click *Clear* for the cache you want to evict.
 +
 .Cache tab
-image:{project_images}/cache-tab.png[Cache tab]
+image:images/cache-tab.png[Cache tab]

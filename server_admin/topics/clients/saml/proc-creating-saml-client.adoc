@@ -11,7 +11,7 @@ POST and Redirect bindings are supported. You can choose to require client signa
 . Set *Client type* to *SAML*.
 +
 .Create client
-image:{project_images}/add-client-saml.png[]
+image:images/add-client-saml.png[]
 
 . Enter the *Client ID* of the client. This is often a URL and is the expected *issuer* value in SAML requests sent by the application.
 
@@ -24,7 +24,7 @@ The following sections describe each setting on this tab.
 The *Settings* tab includes many options to configure this client.
 
 .Client settings
-image:{project_images}/client-settings-saml.png[]
+image:images/client-settings-saml.png[]
 
 === General settings
 

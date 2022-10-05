@@ -6,7 +6,7 @@
 . From the `Add provider` list, select `Openshift`.
 +
 .Add identity provider
-image:{project_images}/openshift-add-identity-provider.png[Add Identity Provider]
+image:images/openshift-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.
 . Register your client using the `oc` command-line tool.
@@ -32,12 +32,8 @@ grantMethod: prompt <4>
 +
 . In {project_name}, paste the value of the *Client ID* into the *Client ID* field.
 . In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
-ifeval::[{project_community}==true]
+
 . Click *Add*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Save*.
-endif::[]
 
 ==== OpenShift 4
 
@@ -57,7 +53,7 @@ curl -s -k -H "Authorization: Bearer $(oc whoami -t)" \https://<openshift-user-f
 . From the `Add provider` list, select `Openshift`.
 +
 .Add identity provider
-image:{project_images}/openshift-4-add-identity-provider.png[Add Identity Provider]
+image:images/openshift-4-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.
 . Register your client using the `oc` command-line tool.
@@ -83,11 +79,7 @@ grantMethod: prompt <4>
 +
 . In {project_name}, paste the value of the *Client ID* into the *Client ID* field.
 . In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
-ifeval::[{project_community}==true]
+
 . Click *Add*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Save*.
-endif::[]
 
 See https://docs.okd.io/latest/authentication/configuring-oauth-clients.html#oauth-register-additional-client_configuring-oauth-clients[official OpenShift documentation] for more information.

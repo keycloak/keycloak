@@ -8,7 +8,7 @@ To log in with Bitbucket, perform the following procedure.
 . From the `Add provider` list, select `Bitbucket`.
 +
 .Add identity provider
-image:{project_images}/bitbucket-add-identity-provider.png[Add Identity Provider]
+image:images/bitbucket-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.
 . In a separate browser tab, perform the https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/[OAuth on Bitbucket Cloud] process. When you click *Add Consumer*:
@@ -17,9 +17,5 @@ image:{project_images}/bitbucket-add-identity-provider.png[Add Identity Provider
 . Note the `Key` and `Secret` values Bitbucket displays when you create your consumer.
 . In {project_name}, paste the value of the `Key` into the *Client ID* field.
 . In {project_name}, paste the value of the `Secret` into the *Client Secret* field.
-ifeval::[{project_community}==true]
 . Click *Add*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Save*.
-endif::[]
+

@@ -12,14 +12,10 @@ By default, {project_name} maps the username, email, first name, and last name o
 . Click *User Federation* in the menu.
 +
 .User federation
-image:{project_images}/user-federation.png[User federation]
+image:images/user-federation.png[User federation]
 +
-ifeval::[{project_community}==true]
 . Click *Add LDAP providers*.
-endif::[]
-ifeval::[{project_product}==true]
-. Select _ldap_ from the *Add Provider* list.
-endif::[]
++
 {project_name} brings you to the LDAP configuration page.
 
 ==== Storage mode

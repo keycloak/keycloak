@@ -79,7 +79,7 @@ For the MIT Kerberos example above, we exported keytab to the `/tmp/http.keytab`
 By default, {project_name} disables SPNEGO protocol support. To enable it, go to the <<_authentication-flows, browser flow>> and enable *Kerberos*.
 
 .Browser flow
-image:{project_images}/browser-flow.png[Browser Flow]
+image:images/browser-flow.png[Browser Flow]
 
 Set the *Kerberos* requirement from _disabled_ to _alternative_ (Kerberos is optional) or _required_ (browser must have Kerberos enabled). If you have not configured the browser to work with SPNEGO or Kerberos, {project_name} falls back to the regular login screen.
 
@@ -93,7 +93,7 @@ To authenticate with Kerberos backed by an LDAP server, configure the <<_ldap, L
 . Go to the configuration page for your LDAP provider.
 +
 .Ldap kerberos integration
-image:{project_images}/ldap-kerberos.png[LDAP Kerberos Integration]
+image:images/ldap-kerberos.png[LDAP Kerberos Integration]
 +
 . Toggle *Allow Kerberos authentication* to *ON*
 
@@ -106,7 +106,7 @@ If an LDAP server is not backing up your Kerberos solution, use the *Kerberos* U
 . Select *Kerberos* from the *Add provider* select box.
 +
 .Kerberos user storage provider
-image:{project_images}/kerberos-provider.png[Kerberos User Storage Provider]
+image:images/kerberos-provider.png[Kerberos User Storage Provider]
 
 The *Kerberos* provider parses the Kerberos ticket for simple principal information and imports the information into the local {project_name} database.
 User profile information, such as first name, last name, and email, are not provisioned.

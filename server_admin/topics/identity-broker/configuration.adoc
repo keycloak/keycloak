@@ -9,22 +9,17 @@ The foundations of the identity broker configuration are identity providers (IDP
 . Click *Identity Providers* in the menu.
 +
 .Identity Providers
-image:{project_images}/identity-providers.png[Identity Providers]
+image:images/identity-providers.png[Identity Providers]
 +
-ifeval::[{project_community}==true]
 . Select an identity provider. {project_name} displays the configuration page for the identity provider you selected.
-endif::[]
-ifeval::[{project_product}==true]
-. From the `Add provider` list, select the identity provider you want to add. {project_name} displays the configuration page for the identity provider you selected.
-endif::[]
 +
 .Add facebook identity Provider
-image:{project_images}/add-identity-provider.png[Add Facebook Identity Provider]
+image:images/add-identity-provider.png[Add Facebook Identity Provider]
 +
 When you configure an identity provider, the identity provider appears on the {project_name} login page as an option. You can place custom icons on the login screen for each identity provider. See  link:{developerguide_link}#custom-identity-providers-icons[custom icons] for more information.
 +
 .IDP login page
-image:{project_images}/identity-provider-login-page.png[]
+image:images/identity-provider-login-page.png[]
 
 Social::
   Social providers enable social authentication in your realm. With {project_name}, users can log in to your application using a social network account. Supported providers include Twitter, Facebook, Google, LinkedIn, Instagram, Microsoft, PayPal, Openshift v3, GitHub, GitLab, Bitbucket, and Stack Overflow.

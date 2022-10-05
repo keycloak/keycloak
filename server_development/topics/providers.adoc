@@ -82,7 +82,7 @@ Example service configuration file (`META-INF/services/org.keycloak.theme.ThemeS
 org.acme.provider.MyThemeSelectorProviderFactory
 ----
 
-To configure your provider, see the (https://www.keycloak.org/server/configuration-provider)[Configuring Providers] guide.
+To configure your provider, see the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] guide.
 
 For example, to configure a provider you can set options as follows:
 
@@ -347,7 +347,7 @@ Once you have a JAR file with a descriptor and the scripts you want to deploy, y
 
 ===== Deploy the script engine on Java 15 and later
 
-To run the scripts, JavaScript providers require that a JavaScript engine is available in your Java application. Java 14 and lower versions include the Nashorn JavaScript Engine. It is 
+To run the scripts, JavaScript providers require that a JavaScript engine is available in your Java application. Java 14 and lower versions include the Nashorn JavaScript Engine. It is
 automatically available as part of the Java itself and JavaScript providers are able to use this script engine by default. However, for Java 15 or higher versions, the script engine is not part
 of the Java itself. It needs to be added to your server because {project_name} does not have any script engine by default. Java 15 and higher versions require an extra step when deploying script
 providers - adding the script engine of your choice to your distribution.

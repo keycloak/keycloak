@@ -8,6 +8,6 @@ Default roles allow you to automatically assign user role mappings when any user
 To specify default roles go to the *Roles* left menu item, and click the *Default Roles* tab.
 
 .Default roles
-image:{project_images}/default-roles.png[]
+image:images/default-roles.png[]
 
 This screenshot shows that some _default roles_ already exist.

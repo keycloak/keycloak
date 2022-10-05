@@ -19,7 +19,7 @@ Use this procedure to start auditing admin actions.
 The `Include Representation` switch includes JSON documents sent through the admin REST API so you can view the administrators actions.
 +
 .Admin events settings
-image:{project_images}/admin-events-settings.png[Admin events settings]
+image:images/admin-events-settings.png[Admin events settings]
 
 . Click *Save*.
 
@@ -33,19 +33,5 @@ You can now view admin events.
 . Click the *Admin events* tab.
 +
 .Admin events
-image:{project_images}/admin-events.png[Admin events]
-
-////
-Not sure if there a new version of this for the new Admin Console.
-
-. If the `Details` column has a *Representation* button, click the *Representation* button to view the JSON {project_name} sent with the operation.
-+
-.Admin representation
-image:{project_images}/admin-events-representation.png[Admin Representation]
-
-. Click `Filter` to view specific events.
-+
-.Admin event filter
-image:{project_images}/admin-events-filter.png[Admin Event Filter]
-////
+image:images/admin-events.png[Admin events]
 

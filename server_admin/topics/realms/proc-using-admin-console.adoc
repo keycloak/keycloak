@@ -13,13 +13,13 @@ You configure realms and perform most administrative tasks in the {project_name}
 For example, for localhost, use this URL: http://localhost:8080{kc_admins_path}/
 +
 .Login page
-image:{project_images}/login-page.png[Login page]
+image:images/login-page.png[Login page]
 
 . Enter the username and password you created on the Welcome Page or the `add-user-keycloak` script in the bin directory.
 This action displays the Admin Console.
 +
 .Admin Console
-image:{project_images}/admin-console.png[Admin Console]
+image:images/admin-console.png[Admin Console]
 
 . Note the menus and other options that you can use:
 +
@@ -27,9 +27,5 @@ image:{project_images}/admin-console.png[Admin Console]
 +
 * Click the top right list to view your account or log out.
 +
-ifeval::[{project_product}==true]
 * Hover over a question mark *?* icon to show a tooltip text that describes that field. The image above shows the tooltip in action.
-endif::[]
-ifeval::[{project_community}==true]
 * Click a question mark *?* icon to show a tooltip text that describes that field. The image above shows the tooltip in action.
-endif::[]

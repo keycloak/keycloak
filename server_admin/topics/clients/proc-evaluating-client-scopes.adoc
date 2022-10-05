@@ -11,7 +11,7 @@ The *Mappers* tab contains the protocol mappers and the *Scope* tab contains the
 This will also show you the value of the *scope* parameter. This parameter needs to be sent from the application to the {project_name} OpenID Connect authorization endpoint.
 
 .Evaluating client scopes
-image:{project_images}/client-scopes-evaluate.png[]
+image:images/client-scopes-evaluate.png[]
 
 [NOTE]
 ====

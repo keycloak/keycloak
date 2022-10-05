@@ -1,111 +1,30 @@
 [[_themes]]
-ifeval::[{project_product}==true]
-= Configuring themes and internationalization
-
-For a given realm, you can change the appearance of any UI, including the language that appears, in {project_name} by using themes.
-endif::[]
-ifeval::[{project_community}==true]
 = Configuring themes
 
 For a given realm, you can change the appearance of any UI in {project_name} by using themes.
-endif::[]
 
 .Procedure
 
-ifeval::[{project_product}==true]
-. Click *Realm Setting* in the menu.
-endif::[]
-
-ifeval::[{project_product}==true]
 . Click *Realm setting* in the menu.
-endif::[]
-
 . Click the *Themes* tab.
 +
 .Themes tab
-image:{project_images}/themes-tab.png[Themes tab]
+image:images/themes-tab.png[Themes tab]
 
 . Pick the theme you want for each UI category and click *Save*.
 +
-ifeval::[{project_product}==true]
-Login Theme::
-endif::[]
-
-ifeval::[{project_community}==true]
 Login theme::
-endif::[]
   Username password entry, OTP entry, new user registration, and other similar screens related to login.
 
-ifeval::[{project_product}==true]
-Account Theme::
-endif::[]
-
-ifeval::[{project_community}==true]
 Account theme::
-endif::[]
   Each user has an User Account Management UI.
 
-ifeval::[{project_product}==true]
-Admin Console Theme::
-endif::[]
-
-ifeval::[{project_community}==true]
 Admin console theme::
-endif::[]
   The skin of the {project_name} Admin Console.
 
-ifeval::[{project_product}==true]
-Email Theme::
-endif::[]
-
-ifeval::[{project_community}==true]
 Email theme::
-endif::[]
   Whenever {project_name} has to send out an email, it uses templates defined in this theme to craft the email.
 
 .Additional resources
 * The link:{developerguide_link}[{developerguide_name}] describes how to create a new theme or modify existing ones.
 
-ifeval::[{project_product}==true]
-== Enabling internationalization
-
-Every UI screen is internationalized in {project_name}.  The default language is English, but you can choose which locales you want to support and what the default locale
-will be.
-
-.Procedure
-
-. Click *Realm Settings* in the menu.
-
-. Click the *Theme* tab.
-
-. Set *Internationalization* to *ON*.
-
-The next time a user logs in, that user can choose a language on the login page to use for the login screens, Account Console, and Admin Console.
-
-.Additional resources
-
-* The link:{developerguide_link}[{developerguide_name}] explains
-how you can offer additional languages. All internationalized texts which are provided by the theme can be overwritten by realm-specific texts on the *Localization* tab.
-
-[[_user_locale_selection]]
-== User locale selection
-
-A locale selector provider suggests the best locale on the information available. However, it is often unknown who the user is. For this reason, the previously authenticated user's locale is remembered in a persisted cookie.
-
-The logic for selecting the locale uses the first of the following that is available:
-
-* User selected - when the user has selected a locale using the drop-down locale selector
-* User profile - when there is an authenticated user and the user has a preferred locale set
-* Client selected - passed by the client using for example ui_locales parameter
-* Cookie - last locale selected on the browser
-* Accepted language - locale from *Accept-Language* header
-* Realm default
-* If none of the above, fall back to English
-
-When a user is authenticated an action is triggered to update the locale in the persisted cookie mentioned earlier. If the
-user has actively switched the locale through the locale selector on the login pages the users locale is also updated at
-this point.
-
-If you want to change the logic for selecting the locale, you have an option to create custom `LocaleSelectorProvider`. For details, please refer to the
-link:{developerguide_link}#_locale_selector[{developerguide_name}].
-endif::[]
