@@ -23,6 +23,8 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -32,6 +34,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -197,6 +200,29 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         try {
             checkPageNotFound("/auth/realms/master/nosuch");
             checkPageNotFound("/auth/nosuch");
+        } finally {
+            rep.setInternationalizationEnabled(false);
+            testRealm.update(rep);
+        }
+    }
+
+    @Test
+    public void switchLocale() throws MalformedURLException {
+        RealmResource testRealm = realmsResouce().realm("master");
+        RealmRepresentation rep = testRealm.toRepresentation();
+        rep.setInternationalizationEnabled(true);
+        rep.setDefaultLocale("en");
+        HashSet<String> supported = new HashSet<>();
+        supported.add("en");
+        supported.add("de");
+        rep.setSupportedLocales(supported);
+        testRealm.update(rep);
+
+        try {
+            checkPageNotFound("/auth/realms/master/nosuch");
+            String url = driver.findElement(By.xpath("//a[text()='Deutsch']")).getAttribute("href");
+            driver.navigate().to(url);
+            errorPage.assertCurrent();
         } finally {
             rep.setInternationalizationEnabled(false);
             testRealm.update(rep);
