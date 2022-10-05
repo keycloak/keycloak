@@ -112,7 +112,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
 
-        events.expectRegister("rolerichuser", "registerExistingUser@email")
+        events.expectRegister("roleRichUser", "registerExistingUser@email")
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("username_in_use").assertEvent();
     }
@@ -136,7 +136,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
 
-        events.expectRegister("registerexistinguser", "registerExistingUser@email")
+        events.expectRegister("registerExistingUser", "registerExistingUser@email")
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("email_in_use").assertEvent();
     }
@@ -330,7 +330,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", null, "registerUserMissingEmail", "password", "password");
         registerPage.assertCurrent();
         assertEquals("Please specify email.", registerPage.getInputAccountErrors().getEmailError());
-        events.expectRegister("registerusermissingemail", null)
+        events.expectRegister("registerUserMissingEmail", null)
                 .removeDetail("email")
                 .error("invalid_registration").assertEvent();
     }
@@ -345,7 +345,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
         assertEquals("registerUserInvalidEmailemail", registerPage.getEmail());
         assertEquals("Invalid email address.", registerPage.getInputAccountErrors().getEmailError());
-        events.expectRegister("registeruserinvalidemail", "registerUserInvalidEmailemail")
+        events.expectRegister("registerUserInvalidEmail", "registerUserInvalidEmailemail")
                 .error("invalid_registration").assertEvent();
     }
 

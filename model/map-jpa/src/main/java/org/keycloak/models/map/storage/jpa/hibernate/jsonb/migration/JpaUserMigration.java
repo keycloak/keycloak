@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * Migration functions for users.
@@ -35,9 +34,9 @@ public class JpaUserMigration {
             JpaUserMigration::migrateTreeFrom1To2
     );
 
-    // adds lower-case variant of username into json 
+    // adds a usernameWithCase column into json
     private static ObjectNode migrateTreeFrom1To2(ObjectNode node) {
         JsonNode usernameNode = node.path("fUsername");
-        return node.put("usernameLowerCase", KeycloakModelUtils.toLowerCaseSafe(usernameNode.asText()));
+        return node.put("usernameWithCase", usernameNode.asText());
     }
 }

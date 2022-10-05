@@ -626,7 +626,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 // Should only return the list of users that belong to "top" group
                 List<UserRepresentation> queryUsers = realmClient.realm(TEST).users().list();
                 Assert.assertEquals(queryUsers.size(), 1);
-                MatcherAssert.assertThat("groupmember", Matchers.equalToIgnoringCase(queryUsers.get(0).getUsername()));
+                MatcherAssert.assertThat("groupmember", Matchers.equalTo(queryUsers.get(0).getUsername()));
                 for (UserRepresentation user : queryUsers) {
                     System.out.println(user.getUsername());
                 }
