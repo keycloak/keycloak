@@ -27,7 +27,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
-import static org.keycloak.services.util.IframeUtil.returnIframeFromResources;
+import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframeFromResources;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
