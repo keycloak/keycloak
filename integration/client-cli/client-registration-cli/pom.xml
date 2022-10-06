@@ -96,18 +96,6 @@
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.bouncycastle:bcprov-jdk15on</artifact>
-                                    <includes>
-                                        <include>**/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.bouncycastle:bcpkix-jdk15on</artifact>
-                                    <excludes>
-                                        <exclude>**/**</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
                                     <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
                                     <includes>
                                         <include>**/**</include>

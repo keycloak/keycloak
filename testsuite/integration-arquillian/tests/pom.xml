@@ -1802,14 +1802,6 @@
                 </dependency>
 
                 <dependency>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcpkix-jdk15on</artifactId>
-                </dependency>
-                <dependency>
                     <groupId>org.hamcrest</groupId>
                     <artifactId>hamcrest</artifactId>
                 </dependency>
@@ -1826,11 +1818,6 @@
                 </dependency>
 
                 <!-- CLI -->
-                <!--
-                  - This dependency must come after org.bouncycastle dependencies since it contains BC classes,
-                  - and MAC signature check on classes would fail otherwise with:
-                  - 'java.lang.SecurityException: JCE cannot authenticate the provider BC'
-                -->
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-client-cli-dist</artifactId>
