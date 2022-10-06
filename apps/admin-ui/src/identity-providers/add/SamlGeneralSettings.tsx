@@ -6,8 +6,6 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
 import { DisplayOrder } from "../component/DisplayOrder";
-import { useParams } from "react-router";
-import type { IdentityProviderParams } from "../routes/IdentityProvider";
 import { FormattedLink } from "../../components/external-link/FormattedLink";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -15,10 +13,17 @@ import environment from "../../environment";
 
 import "./saml-general-settings.css";
 
-export const SamlGeneralSettings = ({ id }: { id: string }) => {
+type SamlGeneralSettingsProps = {
+  id: string;
+  isAliasReadonly?: boolean;
+};
+
+export const SamlGeneralSettings = ({
+  id,
+  isAliasReadonly = false,
+}: SamlGeneralSettingsProps) => {
   const { t } = useTranslation("identity-providers");
   const { realm } = useRealm();
-  const { tab } = useParams<IdentityProviderParams>();
 
   const {
     register,
@@ -53,7 +58,7 @@ export const SamlGeneralSettings = ({ id }: { id: string }) => {
           id="alias"
           data-testid="alias"
           name="alias"
-          isReadOnly={tab === "settings"}
+          isReadOnly={isAliasReadonly}
           validated={
             errors.alias ? ValidatedOptions.error : ValidatedOptions.default
           }

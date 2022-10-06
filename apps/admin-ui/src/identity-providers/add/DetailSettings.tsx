@@ -271,7 +271,7 @@ export default function DetailSettings() {
             </>
           )}
           {isOIDC && <OIDCGeneralSettings id={alias} />}
-          {isSAML && <SamlGeneralSettings id={alias} />}
+          {isSAML && <SamlGeneralSettings id={alias} isAliasReadonly />}
         </FormAccess>
       ),
     },
