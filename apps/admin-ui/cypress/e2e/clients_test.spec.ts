@@ -18,6 +18,7 @@ import ClientDetailsPage, {
 import CommonPage from "../support/pages/CommonPage";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import AttributesTab from "../support/pages/admin_console/manage/AttributesTab";
+import DedicatedScopesMappersTab from "../support/pages/admin_console/manage/clients/client_details/DedicatedScopesMappersTab";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -27,6 +28,7 @@ const clientDetailsPage = new ClientDetailsPage();
 const commonPage = new CommonPage();
 const listingPage = new ListingPage();
 const attributesTab = new AttributesTab();
+const dedicatedScopesMappersTab = new DedicatedScopesMappersTab();
 
 describe("Clients test", () => {
   describe("Client details - Client scopes subtab", () => {
@@ -71,8 +73,8 @@ describe("Clients test", () => {
       keycloakBefore();
       loginPage.logIn();
       commonPage.sidebar().goToClients();
-      cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
       commonPage.tableToolbarUtils().searchItem(clientId);
+      cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
       commonPage.tableUtils().clickRowItemLink(clientId);
       cy.wait("@fetchClient");
       clientDetailsPage.goToClientScopesTab();
@@ -536,8 +538,8 @@ describe("Clients test", () => {
     it("Should add attribute to client role", () => {
       cy.intercept("/admin/realms/master/roles-by-id/*").as("load");
       commonPage.tableUtils().clickRowItemLink(itemId);
+      cy.wait("@load");
       rolesTab.goToAttributesTab();
-      cy.wait(["@load", "@load"]);
       attributesTab
         .addAttribute("crud_attribute_key", "crud_attribute_value")
         .save();
@@ -550,8 +552,8 @@ describe("Clients test", () => {
     it("Should delete attribute from client role", () => {
       cy.intercept("/admin/realms/master/roles-by-id/*").as("load");
       commonPage.tableUtils().clickRowItemLink(itemId);
+      cy.wait("@load");
       rolesTab.goToAttributesTab();
-      cy.wait(["@load", "@load"]);
       attributesTab.deleteAttribute(1);
       commonPage
         .masthead()
@@ -896,9 +898,8 @@ describe("Clients test", () => {
     it("Add mapping to openid client", () => {
       clientDetailsPage
         .goToClientScopesTab()
-        .clickDedicatedScope(mappingClient)
-        .goToMappersTab()
-        .addPredefinedMapper();
+        .clickDedicatedScope(mappingClient);
+      dedicatedScopesMappersTab.addPredefinedMapper();
       clientDetailsPage.modalUtils().table().clickHeaderItem(1, "input");
       clientDetailsPage.modalUtils().confirmModal();
       clientDetailsPage
@@ -967,6 +968,7 @@ describe("Clients test", () => {
         .checkTabExists(ClientsDetailsTab.Settings, true)
         .checkTabExists(ClientsDetailsTab.Roles, true)
         .checkTabExists(ClientsDetailsTab.Sessions, true)
+        .checkTabExists(ClientsDetailsTab.Authorization, true)
         .checkTabExists(ClientsDetailsTab.Permissions, true)
         .checkTabExists(ClientsDetailsTab.Advanced, true)
         .checkNumberOfTabsIsEqual(5);

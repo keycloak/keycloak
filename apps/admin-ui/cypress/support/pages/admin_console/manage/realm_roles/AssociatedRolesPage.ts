@@ -34,7 +34,7 @@ export default class AssociatedRolesPage {
   }
 
   addAssociatedRoleFromSearchBar(roleName: string, isClientRole?: boolean) {
-    cy.findByTestId(this.addRoleToolbarButton).click();
+    cy.findByTestId(this.addRoleToolbarButton).click({ force: true });
 
     if (isClientRole) {
       cy.findByTestId(this.filterTypeDropdown).click();

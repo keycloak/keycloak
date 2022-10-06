@@ -27,7 +27,7 @@ describe("Authentication test", () => {
     cy.wrap(adminClient.createRealm("test"));
     keycloakBefore();
     loginPage.logIn();
-    sidebarPage.goToRealm("Test");
+    sidebarPage.goToRealm("test");
   });
 
   after(() => adminClient.deleteRealm("test"));
@@ -191,10 +191,10 @@ describe("Required actions", () => {
   const requiredActionsPage = new RequiredActions();
 
   before(() => {
-    cy.wrap(adminClient.createRealm("Test"));
+    cy.wrap(adminClient.createRealm("test"));
     keycloakBefore();
     loginPage.logIn();
-    sidebarPage.goToRealm("Test");
+    sidebarPage.goToRealm("test");
   });
 
   beforeEach(() => {
@@ -202,7 +202,7 @@ describe("Required actions", () => {
     requiredActionsPage.goToTab();
   });
 
-  after(() => adminClient.deleteRealm("Test"));
+  after(() => adminClient.deleteRealm("test"));
 
   it("should enable delete account", () => {
     const action = "Delete Account";

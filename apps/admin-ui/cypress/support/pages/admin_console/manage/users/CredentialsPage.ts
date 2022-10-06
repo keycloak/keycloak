@@ -116,7 +116,7 @@ export default class CredentialsPage {
   }
 
   clickCloseDataDialogBtn() {
-    cy.get(this.closeDataDialogBtn).eq(1).click({ force: true });
+    cy.get(this.closeDataDialogBtn).click({ force: true });
 
     return this;
   }

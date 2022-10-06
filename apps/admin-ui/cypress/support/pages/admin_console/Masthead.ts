@@ -1,6 +1,6 @@
 import CommonElements from "../CommonElements";
 export default class Masthead extends CommonElements {
-  private logoBtn = "#masthead-logo";
+  private logoBtn = ".pf-c-page__header-brand-link img";
   private helpBtn = "#help";
   private closeAlertMessageBtn = ".pf-c-alert__action button";
   private closeLastAlertMessageBtn =

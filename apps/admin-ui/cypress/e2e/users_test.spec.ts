@@ -161,20 +161,18 @@ describe("User creation", () => {
       .addAttribute(attributeKey, "other value")
       .save();
 
+    masthead.checkNotificationMessage("The user has been saved");
+
     cy.wait("@save-user").should(({ request, response }) => {
       expect(response?.statusCode).to.equal(204);
-
       expect(request.body.attributes, "response body").deep.equal({
         key: ["value"],
         "key-multiple": ["other value"],
       });
     });
-
-    masthead.checkNotificationMessage("The user has been saved");
   });
 
   it("Add user to groups test", () => {
-    masthead.closeAllAlertMessages();
     // Go to user groups
     listingPage.searchItem(itemId).itemExist(itemId);
     listingPage.goToItemDetails(itemId);

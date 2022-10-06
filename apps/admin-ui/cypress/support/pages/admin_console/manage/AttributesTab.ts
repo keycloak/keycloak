@@ -2,7 +2,7 @@ export default class AttributesTab {
   private saveAttributeBtn = "save-attributes";
   private addAttributeBtn = "attributes-add-row";
   private attributesTab = "attributes";
-  private attributeRow = "[data-testid=row]";
+  private attributeRow = "row";
   private keyInput = (index: number) => `attributes[${index}].key`;
   private valueInput = (index: number) => `attributes[${index}].value`;
 
@@ -13,11 +13,13 @@ export default class AttributesTab {
   }
 
   public addAttribute(key: string, value: string) {
-    cy.get(this.attributeRow)
+    cy.findAllByTestId(this.attributeRow)
       .its("length")
       .then((index) => {
-        cy.findByTestId(this.keyInput(index - 1)).type(key);
-        cy.findByTestId(this.valueInput(index - 1)).type(value);
+        cy.findByTestId(this.keyInput(index - 1)).type(key, { force: true });
+        cy.findByTestId(this.valueInput(index - 1)).type(value, {
+          force: true,
+        });
       });
     return this;
   }
@@ -33,7 +35,7 @@ export default class AttributesTab {
   }
 
   public deleteAttributeButton(row: number) {
-    cy.findByTestId(`attributes[${row - 1}].remove`).click();
+    cy.findByTestId(`attributes[${row - 1}].remove`).click({ force: true });
     return this;
   }
 

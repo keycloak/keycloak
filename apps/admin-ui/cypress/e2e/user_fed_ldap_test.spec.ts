@@ -458,6 +458,8 @@ describe("User Federation LDAP tests", () => {
       providersPage.ldapEditModeInput,
       editModeUnsynced
     );
+
+    masthead.closeAllAlertMessages();
   });
 
   it("Should update display name", () => {
