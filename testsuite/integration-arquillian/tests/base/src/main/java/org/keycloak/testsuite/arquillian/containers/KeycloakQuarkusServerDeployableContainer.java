@@ -163,6 +163,14 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             final File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
             final List<String> commands = new ArrayList<>();
 
+            final StoreProvider storeProvider = StoreProvider.getCurrentProvider();
+
+            // Set DB for the DB migration tests
+            commands.add(getCommand());
+            commands.add("build");
+            addStorageOptions(storeProvider, commands);
+            commands.add("&&");
+
             commands.add(getCommand());
             commands.add("import");
             commands.add("--file=" + wrkDir.toPath().relativize(path));
