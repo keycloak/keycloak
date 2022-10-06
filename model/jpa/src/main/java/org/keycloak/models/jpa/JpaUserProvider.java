@@ -208,15 +208,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
-
-        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId, LockModeType.NONE);
-        if (consentEntity != null) {
-            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + userId + "]");
-        }
-
+        
         long currentTime = Time.currentTimeMillis();
 
-        consentEntity = new UserConsentEntity();
+        UserConsentEntity consentEntity = new UserConsentEntity();
         consentEntity.setId(KeycloakModelUtils.generateId());
         consentEntity.setUser(em.getReference(UserEntity.class, userId));
         StorageId clientStorageId = new StorageId(clientId);
