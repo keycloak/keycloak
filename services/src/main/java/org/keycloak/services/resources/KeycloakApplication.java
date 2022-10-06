@@ -105,7 +105,10 @@ public class KeycloakApplication extends Application {
                 singletons.add(new AdminRoot());
             }
             classes.add(ThemeResource.class);
-            classes.add(JsResource.class);
+
+            if (Profile.isFeatureEnabled(Profile.Feature.JS_ADAPTER)) {
+                classes.add(JsResource.class);
+            }
 
             classes.add(KeycloakSecurityHeadersFilter.class);
             classes.add(KeycloakErrorHandler.class);
