@@ -6,7 +6,7 @@ import type { RouteDef } from "../../route-config";
 export type EditClientPolicyConditionParams = {
   realm: string;
   policyName?: string;
-  conditionName: string;
+  conditionName?: string;
 };
 
 export const EditClientPolicyConditionRoute: RouteDef = {

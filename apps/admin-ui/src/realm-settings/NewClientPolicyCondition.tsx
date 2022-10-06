@@ -26,10 +26,7 @@ import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/li
 import { useRealm } from "../context/realm-context/RealmContext";
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type ClientPolicyConditionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyConditionRepresentation";
-import {
-  EditClientPolicyParams,
-  toEditClientPolicy,
-} from "./routes/EditClientPolicy";
+import { toEditClientPolicy } from "./routes/EditClientPolicy";
 import type { EditClientPolicyConditionParams } from "./routes/EditCondition";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 
@@ -58,8 +55,8 @@ export default function NewClientPolicyCondition() {
     ConfigPropertyRepresentation[]
   >([]);
 
-  const { policyName } = useParams<EditClientPolicyParams>();
-  const { conditionName } = useParams<EditClientPolicyConditionParams>();
+  const { policyName, conditionName } =
+    useParams<EditClientPolicyConditionParams>();
 
   const serverInfo = useServerInfo();
   const form = useForm({
@@ -163,7 +160,7 @@ export default function NewClientPolicyCondition() {
         policies: updatedPolicies,
       });
       setPolicies(updatedPolicies);
-      navigate(toEditClientPolicy({ realm, policyName }));
+      navigate(toEditClientPolicy({ realm, policyName: policyName! }));
       addAlert(
         conditionName
           ? t("realm-settings:updateClientConditionSuccess")
@@ -268,7 +265,7 @@ export default function NewClientPolicyCondition() {
               variant="link"
               data-testid="addCondition-cancelBtn"
               onClick={() =>
-                navigate(toEditClientPolicy({ realm, policyName }))
+                navigate(toEditClientPolicy({ realm, policyName: policyName! }))
               }
             >
               {t("common:cancel")}
