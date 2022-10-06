@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.util;
+package org.keycloak.protocol.oidc.endpoints;
 
 import org.keycloak.common.Version;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.P3PHelper;
 
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Response;
@@ -37,7 +39,7 @@ public class IframeUtil {
             cacheControl = CacheControlUtil.noCache();
         }
 
-        InputStream resource = IframeUtil.class.getClassLoader().getResourceAsStream(fileName);
+        InputStream resource = IframeUtil.class.getResourceAsStream(fileName);
         if (resource != null) {
             P3PHelper.addP3PHeader();
             session.getProvider(SecurityHeadersProvider.class).options().allowAnyFrameAncestor();
