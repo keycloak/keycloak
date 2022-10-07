@@ -9,7 +9,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr data-ng-repeat="r in realms">
+            <tr data-ng-repeat="r in realms | orderBy:'realm'">
                 <td><a href="#/realms/{{r.realm}}">{{r.realm}}</a></td>
             </tr>
         </tbody>
