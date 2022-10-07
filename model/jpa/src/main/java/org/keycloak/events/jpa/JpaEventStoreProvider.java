@@ -276,17 +276,32 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<RealmAttributeEntity> cr = cb.createQuery(RealmAttributeEntity.class);
         Root<RealmAttributeEntity> root = cr.from(RealmAttributeEntity.class);
-        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.greaterThan(root.get("value").as(Long.class),Long.valueOf(0))));
-        Map<Long, List<RealmAttributeEntity>> realms = em.createQuery(cr).getResultStream().collect(Collectors.groupingBy(attribute -> Long.valueOf(attribute.getValue())));
+        // unable to cast the CLOB to a BIGINT in the select for H2 2.x, therefore comparing strings only in the DB, and filtering again in the next statement
+        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.notEqual(root.get("value"), "0")));
+        Map<Long, List<RealmAttributeEntity>> realms = em.createQuery(cr).getResultStream()
+                // filtering again on the attribute as paring the CLOB to BIGINT didn't work in H2 2.x
+                .filter(attribute -> {
+                    try {
+                        return Long.parseLong(attribute.getValue()) > 0;
+                    } catch (NumberFormatException ex) {
+                        logger.warnf("Unable to parse value '%s' for attribute '%s' in realm '%s' (expecting it to be decimal numeric)",
+                                attribute.getValue(),
+                                RealmAttributes.ADMIN_EVENTS_EXPIRATION,
+                                attribute.getRealm().getId(),
+                                ex);
+                        return false;
+                    }
+                })
+                .collect(Collectors.groupingBy(attribute -> Long.valueOf(attribute.getValue())));
 
         long current = Time.currentTimeMillis();
-        realms.entrySet().forEach(entry -> {
-            List<String> realmIds = entry.getValue().stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
+        realms.forEach((key, value) -> {
+            List<String> realmIds = value.stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
             int currentNumDeleted = em.createQuery("delete from AdminEventEntity where realmId in :realmIds and time < :eventTime")
-                .setParameter("realmIds", realmIds)
-                .setParameter("eventTime", current - (Long.valueOf(entry.getKey()) * 1000))
-                .executeUpdate();
-            logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, entry.getKey());
+                    .setParameter("realmIds", realmIds)
+                    .setParameter("eventTime", current - (key * 1000))
+                    .executeUpdate();
+            logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, key);
         });
     }
 }
