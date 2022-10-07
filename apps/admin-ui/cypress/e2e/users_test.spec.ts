@@ -383,10 +383,9 @@ describe("User creation", () => {
   it("Delete credential", () => {
     listingPage.goToItemDetails(itemIdWithCred);
     credentialsPage.goToCredentialsTab();
-    masthead.closeAllAlertMessages();
+
     cy.wait(2000);
     listingPage.deleteItem(itemCredential);
-
     modalUtils.checkModalTitle("Delete credentials?").confirmModal();
 
     masthead.checkNotificationMessage(

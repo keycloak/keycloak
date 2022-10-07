@@ -21,7 +21,7 @@ export default class CredentialsPage {
   private readonly labelField = "userLabelFld";
   private readonly editConfirmationBtn = "editUserLabelAcceptBtn";
   private readonly showDataDialogBtn = "showDataBtn";
-  private readonly closeDataDialogBtn = '[aria-label^="Close"]';
+  private readonly closeDataDialogBtn = '.pf-c-modal-box [aria-label^="Close"]';
 
   goToCredentialsTab() {
     cy.findByTestId(this.credentialsTab).click();
