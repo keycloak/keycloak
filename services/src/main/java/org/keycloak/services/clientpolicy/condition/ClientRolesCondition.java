@@ -70,14 +70,18 @@ public class ClientRolesCondition extends AbstractClientPolicyConditionProvider<
         switch (context.getEvent()) {
             case AUTHORIZATION_REQUEST:
             case TOKEN_REQUEST:
+            case TOKEN_RESPONSE:
             case SERVICE_ACCOUNT_TOKEN_REQUEST:
+            case SERVICE_ACCOUNT_TOKEN_RESPONSE:
             case TOKEN_REFRESH:
+            case TOKEN_REFRESH_RESPONSE:
             case TOKEN_REVOKE:
             case TOKEN_INTROSPECT:
             case USERINFO_REQUEST:
             case LOGOUT_REQUEST:
             case BACKCHANNEL_AUTHENTICATION_REQUEST:
             case BACKCHANNEL_TOKEN_REQUEST:
+            case BACKCHANNEL_TOKEN_RESPONSE:
             case PUSHED_AUTHORIZATION_REQUEST:
             case REGISTERED:
             case UPDATED:
