@@ -123,6 +123,7 @@ public class MapFieldPredicates {
         put(GROUP_PREDICATES, GroupModel.SearchableFields.NAME,                   MapGroupEntity::getName);
         put(GROUP_PREDICATES, GroupModel.SearchableFields.PARENT_ID,              MapGroupEntity::getParentId);
         put(GROUP_PREDICATES, GroupModel.SearchableFields.ASSIGNED_ROLE,          MapFieldPredicates::checkGrantedGroupRole);
+        put(GROUP_PREDICATES, GroupModel.SearchableFields.ATTRIBUTE,              MapFieldPredicates::checkGroupAttributes);
 
         put(ROLE_PREDICATES, RoleModel.SearchableFields.REALM_ID,                 MapRoleEntity::getRealmId);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.CLIENT_ID,                MapRoleEntity::getClientId);
@@ -369,6 +370,28 @@ public class MapFieldPredicates {
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
+
+    private static MapModelCriteriaBuilder<Object, MapGroupEntity, GroupModel> checkGroupAttributes(MapModelCriteriaBuilder<Object, MapGroupEntity, GroupModel> mcb, Operator op, Object[] values) {
+        if (values == null || values.length != 2) {
+            throw new CriterionNotSupportedException(GroupModel.SearchableFields.ATTRIBUTE, op, "Invalid arguments, expected attribute_name-value pair, got: " + Arrays.toString(values));
+        }
+
+        final Object attrName = values[0];
+        if (! (attrName instanceof String)) {
+            throw new CriterionNotSupportedException(GroupModel.SearchableFields.ATTRIBUTE, op, "Invalid arguments, expected (String attribute_name), got: " + Arrays.toString(values));
+        }
+        String attrNameS = (String) attrName;
+        Object[] realValues = new Object[values.length - 1];
+        System.arraycopy(values, 1, realValues, 0, values.length - 1);
+        Predicate<Object> valueComparator = CriteriaOperator.predicateFor(op, realValues);
+        Function<MapGroupEntity, ?> getter = ue -> {
+            final List<String> attrs = ue.getAttribute(attrNameS);
+            return attrs != null && attrs.stream().anyMatch(valueComparator);
+        };
+
+        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
+    }
+
 
     private static MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> checkCompositeRoles(MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> mcb, Operator op, Object[] values) {
         String roleIdS = ensureEqSingleValue(RoleModel.SearchableFields.COMPOSITE_ROLE, "composite_role_id", op, values);

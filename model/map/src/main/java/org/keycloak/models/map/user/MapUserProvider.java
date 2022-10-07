@@ -505,8 +505,8 @@ public class MapUserProvider implements UserProvider.Streams {
             List<MapUserEntity> users = s.collect(Collectors.toList());
             if (users.isEmpty()) return null;
             if (users.size() != 1) {
-                LOG.warnf("There are colliding usernames for users with usernames and ids: %s", 
-                        users.stream().collect(Collectors.toMap(MapUserEntity::getUsername, MapUserEntity::getId)));
+                throw new ModelDuplicateException(String.format("There are colliding usernames for users with usernames and ids: %s", 
+                        users.stream().collect(Collectors.toMap(MapUserEntity::getUsername, MapUserEntity::getId))));
             }
             return entityToAdapterFunc(realm).apply(users.get(0));
         }

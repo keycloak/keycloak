@@ -44,6 +44,12 @@ public interface GroupModel extends RoleMapperModel {
          * A role can be checked for belonging only via EQ operator. Role is referred by their ID
          */
         public static final SearchableModelField<GroupModel> ASSIGNED_ROLE  = new SearchableModelField<>("assignedRole", String.class);
+
+        /**
+         * Search for attribute value. The parameters is a pair {@code (attribute_name, values...)} where {@code attribute_name}
+         * is always checked for equality, and the value is checked per the operator.
+         */
+        public static final SearchableModelField<GroupModel> ATTRIBUTE       = new SearchableModelField<>("attribute", String[].class);
     }
 
     interface GroupRemovedEvent extends ProviderEvent {

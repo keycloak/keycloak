@@ -90,25 +90,43 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         PersistentAuthenticatedClientSessionAdapter adapter = new PersistentAuthenticatedClientSessionAdapter(session, clientSession);
         PersistentClientSessionModel model = adapter.getUpdatedModel();
 
-        PersistentClientSessionEntity entity = new PersistentClientSessionEntity();
+        String userSessionId = clientSession.getUserSession().getId();
+        String clientId;
+        String clientStorageProvider;
+        String externalClientId;
         StorageId clientStorageId = new StorageId(clientSession.getClient().getId());
         if (clientStorageId.isLocal()) {
-            entity.setClientId(clientStorageId.getId());
-            entity.setClientStorageProvider(PersistentClientSessionEntity.LOCAL);
-            entity.setExternalClientId(PersistentClientSessionEntity.LOCAL);
-
+            clientId = clientStorageId.getId();
+            clientStorageProvider = PersistentClientSessionEntity.LOCAL;
+            externalClientId = PersistentClientSessionEntity.LOCAL;
         } else {
-            entity.setClientId(PersistentClientSessionEntity.EXTERNAL);
-            entity.setClientStorageProvider(clientStorageId.getProviderId());
-            entity.setExternalClientId(clientStorageId.getExternalId());
+            clientId = PersistentClientSessionEntity.EXTERNAL;
+            clientStorageProvider = clientStorageId.getProviderId();
+            externalClientId = clientStorageId.getExternalId();
         }
-        entity.setTimestamp(clientSession.getTimestamp());
         String offlineStr = offlineToString(offline);
-        entity.setOffline(offlineStr);
-        entity.setUserSessionId(clientSession.getUserSession().getId());
+        boolean exists = false;
+
+        PersistentClientSessionEntity entity = em.find(PersistentClientSessionEntity.class, new PersistentClientSessionEntity.Key(userSessionId, clientId, clientStorageProvider, externalClientId, offlineStr));
+        if (entity != null) {
+            // client session can already exist in some circumstances (EG. in case it was already present, but expired in the infinispan, but not yet expired in the DB)
+            exists = true;
+        } else {
+            entity = new PersistentClientSessionEntity();
+            entity.setUserSessionId(userSessionId);
+            entity.setClientId(clientId);
+            entity.setClientStorageProvider(clientStorageProvider);
+            entity.setExternalClientId(externalClientId);
+            entity.setOffline(offlineStr);
+        }
+
+        entity.setTimestamp(clientSession.getTimestamp());
         entity.setData(model.getData());
-        em.persist(entity);
-        em.flush();
+
+        if (!exists) {
+            em.persist(entity);
+            em.flush();
+        }
     }
 
     @Override

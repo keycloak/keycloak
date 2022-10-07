@@ -26,6 +26,7 @@ import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.storage.group.GroupStorageProviderFactory;
 import org.keycloak.storage.group.GroupStorageProviderModel;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class GroupStorageManager extends AbstractStorageManager<GroupStorageProvider, GroupStorageProviderModel> implements GroupProvider {
@@ -63,14 +64,36 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
      *
      */
     @Override
+    @Deprecated
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        Stream<GroupModel> local = localStorage().searchForGroupByNameStream(realm, search,  firstResult, maxResults);
-        Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class,
-                        p -> p.searchForGroupByNameStream(realm, search, firstResult, maxResults));
-        
+        return searchForGroupByNameStream(realm, search, false, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        Stream<GroupModel> local = localStorage().searchGroupsByAttributes(realm, attributes, firstResult, maxResults);
+        Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupProvider.class,
+                p -> p.searchGroupsByAttributes(realm, attributes, firstResult, maxResults));
+
         return Stream.concat(local, ext);
     }
 
+    /**
+     * Obtaining groups from an external client storage is time-bounded. In case the external group storage
+     * isn't available at least groups from a local storage are returned. For this purpose
+     * the {@link org.keycloak.services.DefaultKeycloakSessionFactory#getClientStorageProviderTimeout()} property is used.
+     * Default value is 3000 milliseconds and it's configurable.
+     * See {@link org.keycloak.services.DefaultKeycloakSessionFactory} for details.
+     *
+     */
+    @Override
+    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        Stream<GroupModel> local = localStorage().searchForGroupByNameStream(realm, search, exact,  firstResult, maxResults);
+        Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class,
+                p -> p.searchForGroupByNameStream(realm, search, exact, firstResult, maxResults));
+
+        return Stream.concat(local, ext);
+    }
     /* GROUP PROVIDER METHODS - provided only by local storage (e.g. not supported by storage providers) */
 
     @Override

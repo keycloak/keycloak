@@ -18,28 +18,8 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
-import org.apache.http.client.methods.HttpGet;
-import org.keycloak.common.crypto.CryptoConstants;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.utils.OCSPProvider;
-import org.keycloak.common.util.BouncyIntegration;
-import org.keycloak.common.util.Time;
-import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.truststore.TruststoreProvider;
-import org.keycloak.utils.CRLUtils;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
 
-import javax.naming.Context;
-import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -49,19 +29,19 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.security.cert.CRLException;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
-import java.security.cert.CRLException;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
-import java.security.cert.X509CertSelector;
 import java.security.cert.X509CRL;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -73,11 +53,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import javax.security.auth.x500.X500Principal;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Time;
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.truststore.TruststoreProvider;
+import org.keycloak.utils.CRLUtils;
+import org.keycloak.utils.OCSPProvider;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -643,12 +642,11 @@ public class CertificateValidator {
         for (X509Certificate clientCert : certChain) {
             intermediateCerts.add(clientCert);
         }
-        CertStore intermediateCertStore = CertStore.getInstance("Collection",
-            new CollectionCertStoreParameters(intermediateCerts), BouncyIntegration.PROVIDER);
+        CertStore intermediateCertStore = CryptoIntegration.getProvider().getCertStore(new CollectionCertStoreParameters(intermediateCerts));
         pkixParams.addCertStore(intermediateCertStore);
 
         // Build and verify the certification chain
-        CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", BouncyIntegration.PROVIDER);
+        CertPathBuilder builder = CryptoIntegration.getProvider().getCertPathBuilder();
         PKIXCertPathBuilderResult result =
             (PKIXCertPathBuilderResult) builder.build(pkixParams);
         return result;

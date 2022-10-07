@@ -96,7 +96,7 @@ see <@links.server id="enabletls"/> guide.
 In this example, the server is running behind a TLS termination proxy and publicly available from `https://mykeycloak`.
 
 .Configuration:
-<@kc.start parameters="--hostname=mykeycloak --proxy-edge"/>
+<@kc.start parameters="--hostname=mykeycloak --proxy=edge"/>
 
 === Exposing the server without a proxy
 

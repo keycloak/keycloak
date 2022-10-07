@@ -39,6 +39,14 @@
             <artifactId>keycloak-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>${keycloak.crypto.artifactId}</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
@@ -66,9 +74,9 @@
                                     <artifact>org.keycloak:keycloak-core</artifact>
                                     <includes>
                                         <include>org/keycloak/util/**</include>
+                                        <include>org/keycloak/crypto/**</include>
                                         <include>org/keycloak/json/**</include>
-                                        <include>org/keycloak/jose/jws/**</include>
-                                        <include>org/keycloak/jose/jwk/**</include>
+                                        <include>org/keycloak/jose/**</include>
                                         <include>org/keycloak/representations/adapters/config/**</include>
                                         <include>org/keycloak/representations/AccessTokenResponse.class</include>
                                         <include>org/keycloak/representations/idm/ClientRepresentation.class</include>
@@ -84,6 +92,7 @@
                                     <artifact>org.keycloak:keycloak-common</artifact>
                                     <includes>
                                         <include>org/keycloak/common/util/**</include>
+                                        <include>org/keycloak/common/crypto/**</include>
                                     </includes>
                                 </filter>
                                 <filter>

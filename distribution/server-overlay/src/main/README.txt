@@ -1,1 +1,0 @@
-Server overlay for WildFly @wildfly.version@

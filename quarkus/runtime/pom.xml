@@ -148,7 +148,17 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>${keycloak.crypto.artifactId}</artifactId>
+            <artifactId>keycloak-crypto-default</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-crypto-fips1402</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

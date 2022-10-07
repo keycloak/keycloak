@@ -129,7 +129,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         checkRealm();
         checkClient(clientId);
 
-        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params);
+        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.OIDC_AUTH_ENDPOINT);
 
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
                 .event(event)

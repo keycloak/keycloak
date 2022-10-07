@@ -118,7 +118,7 @@
         <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.2.14.Final</undertow.version>
+        <undertow.version>2.2.19.Final</undertow.version>
         <elytron.version>1.18.3.Final</elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
@@ -131,7 +131,7 @@
         <google.guava.version>30.1-jre</google.guava.version>
 
         <!-- Openshift -->
-        <version.com.openshift.openshift-restclient-java>8.0.0.Final</version.com.openshift.openshift-restclient-java>
+        <version.com.openshift.openshift-restclient-java>9.0.5.Final</version.com.openshift.openshift-restclient-java>
 
         <!-- Others -->
         <commons-lang.version>2.6</commons-lang.version>
@@ -288,6 +288,7 @@
         <module>adapters</module>
         <module>authz</module>
         <module>misc</module>
+        <module>quarkus</module>
     </modules>
 
     <dependencyManagement>
@@ -1612,6 +1613,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-crypto-elytron</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-cli</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1903,18 +1909,6 @@
 
     <profiles>
         <profile>
-            <id>wildfly-dist</id>
-            <activation>
-                <property>
-                    <name>includeWildFly</name>
-                </property>
-            </activation>
-            <modules>
-                <module>wildfly</module>
-            </modules>
-        </profile>
-
-        <profile>
             <id>community</id>
             <activation>
                 <property>
@@ -1947,19 +1941,6 @@
                     --add-opens=java.base/java.lang=ALL-UNNAMED
                 </surefire.system.args>
             </properties>
-        </profile>
-
-        <profile>
-            <id>quarkus</id>
-            <activation>
-                <jdk>[11,)</jdk>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <modules>
-                <module>quarkus</module>
-            </modules>
         </profile>
 
         <profile>

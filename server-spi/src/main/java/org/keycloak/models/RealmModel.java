@@ -846,7 +846,7 @@ public interface RealmModel extends RoleContainerModel {
     Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max);
 
     /**
-     * @deprecated Use {@link #searchForGroupByNameStream(String, Integer, Integer) searchForGroupByName} instead.
+     * @deprecated Use {@link GroupProvider#searchForGroupByNameStream(RealmModel, String, Boolean, Integer, Integer)} instead.
      */
     @Deprecated
     default List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
@@ -859,7 +859,9 @@ public interface RealmModel extends RoleContainerModel {
      * @param first {@code Integer} Index of the first desired group. Ignored if negative or {@code null}.
      * @param max {@code Integer} Maximum number of returned groups. Ignored if negative or {@code null}.
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     * @deprecated Use {@link GroupProvider#searchForGroupByNameStream(RealmModel, String, Boolean, Integer, Integer)} instead.
      */
+    @Deprecated
     Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max);
 
     boolean removeGroup(GroupModel group);

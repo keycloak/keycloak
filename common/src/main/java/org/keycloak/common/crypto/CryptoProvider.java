@@ -1,7 +1,26 @@
 package org.keycloak.common.crypto;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.Signature;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertStore;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
+
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKeyFactory;
+
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 
 /**
  * Abstraction to handle differences between the APIs for non-fips and fips mode
@@ -57,5 +76,25 @@ public interface CryptoProvider {
      * @return
      */
     ECParameterSpec createECParams(String curveName);
+
+    KeyPairGenerator getKeyPairGen(String algorithm) throws NoSuchAlgorithmException, NoSuchProviderException;
+
+    KeyFactory getKeyFactory(String algorithm) throws NoSuchAlgorithmException, NoSuchProviderException;
+
+    Cipher getAesCbcCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException;
+    
+    Cipher getAesGcmCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException;
+
+    SecretKeyFactory getSecretKeyFact(String keyAlgorithm) throws NoSuchAlgorithmException, NoSuchProviderException;
+
+    KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException;
+
+    CertificateFactory getX509CertFactory() throws CertificateException, NoSuchProviderException;
+
+    CertStore getCertStore(CollectionCertStoreParameters collectionCertStoreParameters) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException;
+
+    CertPathBuilder getCertPathBuilder() throws NoSuchAlgorithmException, NoSuchProviderException;
+
+    Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException;
 
 }

@@ -45,6 +45,7 @@ import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
@@ -158,9 +159,33 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static Stream<GroupRepresentation> searchGroupsByAttributes(KeycloakSession session, RealmModel realm, boolean full, Map<String,String> attributes, Integer first, Integer max) {
+        return session.groups().searchGroupsByAttributes(realm, attributes, first, max)
+                // We need to return whole group hierarchy when any child group fulfills the attribute search,
+                // therefore for each group from the result, we need to find root group
+                .map(group -> {
+                    while (Objects.nonNull(group.getParentId())) {
+                        group = group.getParent();
+                    }
+                    return group;
+                })
+
+                // More child groups of one root can fulfill the search, so we need to filter duplicates
+                .filter(StreamsUtil.distinctByKey(GroupModel::getId))
+
+                // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
+                .map(g -> toGroupHierarchy(g, full, attributes));
+    }
+
+    @Deprecated
     public static Stream<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max) {
         return realm.searchForGroupByNameStream(search, first, max)
-                .map(g -> toGroupHierarchy(g, full, search));
+            .map(g -> toGroupHierarchy(g, full, search));
+    }
+
+    public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
+        return session.groups().searchForGroupByNameStream(realm, search, exact, first, max)
+                .map(g -> toGroupHierarchy(g, full, search, exact));
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
@@ -189,27 +214,48 @@ public class ModelToRepresentation {
     }
 
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
-        return toGroupHierarchy(group, full, null);
+        return toGroupHierarchy(group, full, (String) null);
     }
 
+    @Deprecated
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search) {
+        return toGroupHierarchy(group, full, search, false);
+    }
+
+    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search, Boolean exact) {
         GroupRepresentation rep = toRepresentation(group, full);
         List<GroupRepresentation> subGroups = group.getSubGroupsStream()
-                .filter(g -> groupMatchesSearchOrIsPathElement(g, search))
-                .map(subGroup -> toGroupHierarchy(subGroup, full, search)).collect(Collectors.toList());
+                .filter(g -> groupMatchesSearchOrIsPathElement(g, search, exact))
+                .map(subGroup -> toGroupHierarchy(subGroup, full, search, exact)).collect(Collectors.toList());
         rep.setSubGroups(subGroups);
         return rep;
     }
 
-    private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search) {
+    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, Map<String,String> attributes) {
+        GroupRepresentation rep = toRepresentation(group, full);
+        List<GroupRepresentation> subGroups = group.getSubGroupsStream()
+                .map(subGroup -> toGroupHierarchy(subGroup, full, attributes)).collect(Collectors.toList());
+        rep.setSubGroups(subGroups);
+        return rep;
+    }
+
+    private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search, Boolean exact) {
         if (StringUtil.isBlank(search)) {
             return true;
         }
-        if (group.getName().contains(search)) {
-            return true;
+        if(exact !=null && exact.equals(true)){
+            if (group.getName().equals(search)){
+                return true;
+            }
+        } else {
+            if (group.getName().contains(search)) {
+                return true;
+            }
         }
+
         return group.getSubGroupsStream().findAny().isPresent();
     }
+
 
     public static UserRepresentation toRepresentation(KeycloakSession session, RealmModel realm, UserModel user) {
         UserRepresentation rep = new UserRepresentation();

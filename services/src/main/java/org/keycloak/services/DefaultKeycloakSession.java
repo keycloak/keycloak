@@ -127,6 +127,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public void enlistForClose(Provider provider) {
+        for (Provider p : closable) {
+            if (p == provider) {    // Do not add the same provider twice
+                return;
+            }
+        }
         closable.add(provider);
     }
 

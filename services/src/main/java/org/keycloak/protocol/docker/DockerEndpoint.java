@@ -66,7 +66,7 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
         checkSsl();
         checkRealm();
 
-        final AuthorizationEndpointRequest authRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params);
+        final AuthorizationEndpointRequest authRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.DOCKER_ENDPOINT);
         authenticationSession = createAuthenticationSession(client, authRequest.getState());
 
         updateAuthenticationSession();

@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.par.endpoints.request;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestObjectParser;
 
 /**
@@ -36,5 +37,11 @@ public class ParEndpointRequestObjectParser extends AuthzEndpointRequestObjectPa
     protected <T> T replaceIfNotNull(T previousVal, T newVal) {
         // force parameters values from request object as per spec any parameter set directly should be ignored
         return newVal;
+    }
+
+    @Override
+    protected void validateResponseTypeParameter(String responseType, AuthorizationEndpointRequest request) {
+        // Don't need to validate duplicated "response_type" parameter as per spec any parameter set directly should be ignored
+        // and the value from "request" object should be used
     }
 }

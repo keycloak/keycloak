@@ -857,9 +857,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         oauth.clientId("test-device-public2");
         OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest("test-device-public2", null);
 
-        Assert.assertEquals(400, response.getStatusCode());
+        Assert.assertEquals(401, response.getStatusCode());
         Assert.assertEquals(Errors.INVALID_CLIENT, response.getError());
-        Assert.assertEquals("Invalid client credentials", response.getErrorDescription());
+        Assert.assertEquals("Invalid client or Invalid client credentials", response.getErrorDescription());
     }
     @Test
     public void testClientWithErrors() throws Exception {
