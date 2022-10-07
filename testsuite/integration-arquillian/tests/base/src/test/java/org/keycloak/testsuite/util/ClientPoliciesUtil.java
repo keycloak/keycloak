@@ -317,9 +317,9 @@ public final class ClientPoliciesUtil {
     }
 
     public static TestRaiseExceptionExecutor.Configuration createTestRaiseExeptionExecutorConfig(List<ClientPolicyEvent> events) {
-           TestRaiseExceptionExecutor.Configuration conf = new TestRaiseExceptionExecutor.Configuration();
-           conf.setEvents(events);
-           return conf;
+        TestRaiseExceptionExecutor.Configuration conf = new TestRaiseExceptionExecutor.Configuration();
+        conf.setEvents(events);
+        return conf;
     }
 
     public static ClientPolicyConditionConfigurationRepresentation createAnyClientConditionConfig() {
