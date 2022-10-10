@@ -54,7 +54,7 @@ export const TableToolbar: FunctionComponent<TableToolbarProps> = ({
         <ToolbarContent>
           {inputGroupName && (
             <ToolbarItem>
-              <InputGroup>
+              <InputGroup data-testid={inputGroupName}>
                 {searchTypeComponent}
                 {inputGroupPlaceholder && (
                   <SearchInput

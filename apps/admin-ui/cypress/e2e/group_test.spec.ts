@@ -117,6 +117,7 @@ describe("Group test", () => {
         .searchGroup(groupNames[0], true)
         .deleteGroupItem(groupNames[0])
         .assertNotificationGroupDeleted()
+        .searchGroup(groupNames[0], true)
         .assertNoSearchResultsMessageExist(true);
     });
 
@@ -199,8 +200,8 @@ describe("Group test", () => {
 
       it("Navigate to sub-group details", () => {
         searchGroupPage
-          .searchGroup(predefinedGroups[1])
-          .goToGroupChildGroupsTab(predefinedGroups[1])
+          .searchGlobal(predefinedGroups[1])
+          .goToGroupChildGroupsFromTree(predefinedGroups[1])
           .assertGroupItemExist(predefinedGroups[2], true);
       });
     });
@@ -462,12 +463,12 @@ describe("Group test", () => {
 
     it("Assign roles from empty state", () => {
       roleMappingTab.assignRole();
-      groupDetailPage.createRoleMappingSearch();
+      groupDetailPage.createRoleMapping();
       roleMappingTab.assign();
     });
 
     it("Show and search roles", () => {
-      groupDetailPage.checkRoles();
+      groupDetailPage.checkDefaultRole();
     });
 
     it("Check hide inherited roles option", () => {
@@ -476,7 +477,7 @@ describe("Group test", () => {
     });
 
     it("Remove roles", () => {
-      roleMappingTab.selectRow("offline_access");
+      roleMappingTab.selectRow("default-roles");
       roleMappingTab.unAssign();
       groupDetailPage.deleteRole();
     });

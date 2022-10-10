@@ -10,7 +10,6 @@ import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { routes } from "../../route-config";
-import { GroupBreadCrumbs } from "./GroupBreadCrumbs";
 
 export const PageBreadCrumbs = () => {
   const { t } = useTranslation();
@@ -30,19 +29,17 @@ export const PageBreadCrumbs = () => {
     }),
     elementText
   );
-  return (
-    <>
-      {crumbs.length > 1 && (
-        <Breadcrumb>
-          {crumbs.map(({ match, breadcrumb: crumb }, i) => (
-            <BreadcrumbItem key={i} isActive={crumbs.length - 1 === i}>
-              {crumbs.length - 1 !== i && <Link to={match.url}>{crumb}</Link>}
-              {crumbs.length - 1 === i && crumb}
-            </BreadcrumbItem>
-          ))}
-        </Breadcrumb>
-      )}
-      <GroupBreadCrumbs />
-    </>
-  );
+  return crumbs.length > 1 ? (
+    <Breadcrumb>
+      {crumbs.map(({ match, breadcrumb: crumb }, i) => (
+        <BreadcrumbItem key={i} isActive={crumbs.length - 1 === i}>
+          {crumbs.length - 1 !== i ? (
+            <Link to={match.url}>{crumb}</Link>
+          ) : (
+            crumb
+          )}
+        </BreadcrumbItem>
+      ))}
+    </Breadcrumb>
+  ) : null;
 };

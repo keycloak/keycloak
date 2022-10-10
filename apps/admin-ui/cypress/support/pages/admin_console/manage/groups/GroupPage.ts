@@ -15,7 +15,7 @@ export default class GroupPage extends PageObject {
   protected createGroupEmptyStateBtn = "no-groups-in-this-realm-empty-action";
   private createGroupBtn = "openCreateGroupModal";
   protected actionDrpDwnButton = "action-dropdown";
-  private actionDrpDwnItemSearchGroup = "searchGroup";
+  private searchField = "[data-testid='group-search']";
 
   public openCreateGroupModal(emptyState: boolean) {
     if (emptyState) {
@@ -36,9 +36,30 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  public searchGroup(groupName: string, wait: boolean = false) {
-    listingPage.searchItem(groupName, wait);
+  public searchGroup(searchValue: string, wait: boolean = false) {
+    this.search(this.searchField, searchValue, wait);
+
     return this;
+  }
+
+  protected search(searchField: string, searchValue: string, wait: boolean) {
+    if (wait) {
+      const searchUrl = `/admin/realms/master/*${searchValue}*`;
+      cy.intercept(searchUrl).as("search");
+    }
+
+    cy.get(searchField + " input").clear();
+    if (searchValue) {
+      cy.get(searchField + " input").type(searchValue);
+      cy.get(searchField + " button[type='submit']").click({ force: true });
+    } else {
+      // TODO: Remove else and move clickSearchButton outside of the if
+      cy.get(searchField).type("{enter}");
+    }
+
+    if (wait) {
+      cy.wait(["@search"]);
+    }
   }
 
   public goToGroupChildGroupsTab(groupName: string) {

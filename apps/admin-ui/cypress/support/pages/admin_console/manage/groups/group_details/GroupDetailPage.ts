@@ -154,15 +154,19 @@ export default class GroupDetailPage extends GroupPage {
     listingPage.clickItemCheckbox("default-roles-");
   }
 
+  checkDefaultRole() {
+    listingPage.itemExist("default-roles");
+  }
+
   createRoleMappingSearch() {
     listingPage.searchItemInModal("offline_access");
     listingPage.clickItemCheckbox("offline_access");
   }
 
-  checkRoles() {
-    listingPage.itemExist("offline_access");
-    listingPage.searchItem("offline_access", false);
-    listingPage.itemExist("offline_access");
+  checkRoles(roleName: string | undefined = "offline_access") {
+    listingPage.itemExist(roleName);
+    listingPage.searchItem(roleName, false);
+    listingPage.itemExist(roleName);
     listingPage.searchItem("non-existant-role", false);
     groupPage.assertNoSearchResultsMessageExist(true);
   }

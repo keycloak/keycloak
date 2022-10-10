@@ -108,9 +108,8 @@ export const GroupPickerDialog = ({
     ].some((group) => group === row?.name);
   };
 
-  const hasSubgroups = (group: GroupRepresentation) => {
-    return group.subGroups!.length !== 0;
-  };
+  const hasSubgroups = (group: GroupRepresentation) =>
+    group.subGroups?.length !== 0;
 
   const findSubGroup = (
     group: GroupRepresentation,

@@ -9,6 +9,7 @@
   "global": "Global",
   "local": "Local",
   "searchGroups": "Search groups",
+  "filterGroups": "Filter groups",
   "searchGroup": "Search group",
   "renameGroup": "Rename group",
   "deleteGroup": "Delete group",
