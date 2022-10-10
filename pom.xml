@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>2.12.2.Final</quarkus.version>
+        <quarkus.version>2.13.2.Final</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:
@@ -95,9 +95,8 @@
         <infinispan.version>13.0.10.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.4.1.Final</infinispan.protostream.processor.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-        <jackson.version>2.13.2</jackson.version>
-        <jackson.databind.version>2.13.2.2</jackson.databind.version>
-        <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
+        <jackson.version>2.13.4</jackson.version>
+        <jackson.annotations.version>${jackson.version}</jackson.annotations.version>
         <jakarta.mail.version>1.6.5</jakarta.mail.version>
         <jboss-jaxrs-api_2.1_spec>2.0.1.Final</jboss-jaxrs-api_2.1_spec>
         <jboss.logging.version>3.4.1.Final</jboss.logging.version>
@@ -487,7 +486,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.databind.version}</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
