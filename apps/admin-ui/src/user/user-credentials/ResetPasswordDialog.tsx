@@ -91,16 +91,19 @@ export const ResetPasswordDialog = ({
           value: password,
         },
       });
-      const { id } = (
-        await adminClient.users.getCredentials({ id: user.id! })
-      ).find((c) => c.type === "password")!;
-      await adminClient.users.updateCredentialLabel(
-        {
-          id: user.id!,
-          credentialId: id!,
-        },
-        t("defaultPasswordLabel")
-      );
+      const credentials = await adminClient.users.getCredentials({
+        id: user.id!,
+      });
+      const credentialLabel = credentials.find((c) => c.type === "password");
+      if (credentialLabel) {
+        await adminClient.users.updateCredentialLabel(
+          {
+            id: user.id!,
+            credentialId: credentialLabel.id!,
+          },
+          t("defaultPasswordLabel")
+        );
+      }
       addAlert(
         isResetPassword
           ? t("resetCredentialsSuccess")
