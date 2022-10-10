@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -89,6 +89,12 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const [tableRows, setTableRows] = useState<IRow[]>([]);
 
   const themeTypes = useServerInfo().themes!;
+  const allLocales = useMemo(() => {
+    const locales = Object.values(themeTypes).flatMap((theme) =>
+      theme.flatMap(({ locales }) => (locales ? locales : []))
+    );
+    return Array.from(new Set(locales));
+  }, [themeTypes]);
   const bundleForm = useForm<BundleForm>({ mode: "onChange" });
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
@@ -411,7 +417,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                       isOpen={supportedLocalesOpen}
                       placeholderText={t("selectLocales")}
                     >
-                      {themeTypes.login![0].locales.map((locale) => (
+                      {allLocales.map((locale) => (
                         <SelectOption
                           selected={value.includes(locale)}
                           key={locale}
