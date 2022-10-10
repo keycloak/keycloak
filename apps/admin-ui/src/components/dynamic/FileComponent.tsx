@@ -18,6 +18,7 @@ export const FileComponent = ({
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
   const [filename, setFilename] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <FormGroup
@@ -35,8 +36,18 @@ export const FileComponent = ({
           <FileUpload
             id={name!}
             value={value}
+            type="text"
             filename={filename}
             isDisabled={isDisabled}
+            onFileInputChange={(_, file) => setFilename(file.name)}
+            onReadStarted={() => setIsLoading(true)}
+            onReadFinished={() => setIsLoading(false)}
+            onClearClick={() => {
+              onChange("");
+              setFilename("");
+            }}
+            isLoading={isLoading}
+            allowEditingUploadedText={false}
             onChange={(value, filename) => {
               onChange(value);
               setFilename(filename);
