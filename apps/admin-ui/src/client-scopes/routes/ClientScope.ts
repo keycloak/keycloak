@@ -13,21 +13,14 @@ export type ClientScopeParams = {
 };
 
 export const ClientScopeRoute: RouteDef = {
-  path: "/:realm/client-scopes/:id/:tab",
+  path: "/:realm/client-scopes/:id/:tab/:type",
   component: lazy(() => import("../form/ClientScopeForm")),
   breadcrumb: (t) => t("client-scopes:clientScopeDetails"),
   access: "view-clients",
 };
 
-export const ClientScopeWithTypeRoute: RouteDef = {
-  ...ClientScopeRoute,
-  path: "/:realm/client-scopes/:id/:tab/:type",
-};
-
 export const toClientScope = (params: ClientScopeParams): Partial<Path> => {
-  const path = params.type
-    ? ClientScopeWithTypeRoute.path
-    : ClientScopeRoute.path;
+  const path = ClientScopeRoute.path;
 
   return {
     pathname: generatePath(path, params),
