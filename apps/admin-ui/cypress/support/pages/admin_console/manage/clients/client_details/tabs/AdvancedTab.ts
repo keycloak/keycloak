@@ -1,6 +1,6 @@
-import CommonPage from "../../../../../CommonPage";
+import PageObject from "../../../../components/PageObject";
 
-export default class AdvancedTab extends CommonPage {
+export default class AdvancedTab extends PageObject {
   private setToNowBtn = "#setToNow";
   private clearBtn = "#clear";
   private pushBtn = "#push";
@@ -21,6 +21,32 @@ export default class AdvancedTab extends CommonPage {
   private accessTokenSignatureAlgorithmInput = "#accessTokenSignatureAlgorithm";
   private fineGrainSaveBtn = "#fineGrainSave";
   private fineGrainRevertBtn = "#fineGrainRevert";
+  private OIDCCompatabilitySaveBtn = "OIDCCompatabilitySave";
+  private OIDCCompatabilityRevertBtn = "OIDCCompatabilityRevert";
+  private OIDCAdvancedSaveBtn = "OIDCAdvancedSave";
+  private OIDCAdvancedRevertBtn = "OIDCAdvancedRevert";
+  private OIDCAuthFlowOverrideSaveBtn = "OIDCAuthFlowOverrideSave";
+  private OIDCAuthFlowOverrideRevertBtn = "OIDCAuthFlowOverrideRevert";
+
+  private excludeSessionStateSwitch =
+    "#excludeSessionStateFromAuthenticationResponse-switch";
+  private useRefreshTokenSwitch = "#useRefreshTokens";
+  private useRefreshTokenForClientCredentialsGrantSwitch =
+    "#useRefreshTokenForClientCredentialsGrant";
+  private useLowerCaseBearerTypeSwitch = "#useLowerCaseBearerType";
+
+  private oAuthMutualSwitch = "#oAuthMutual-switch";
+  private keyForCodeExchangeInput = "#keyForCodeExchange";
+  private pushedAuthorizationRequestRequiredSwitch =
+    "#pushedAuthorizationRequestRequired";
+
+  private browserFlowInput = "#browserFlow";
+  private directGrantInput = "#directGrant";
+
+  private jumpToOIDCCompatabilitySettings =
+    "jump-link-open-id-connect-compatibility-modes";
+  private jumpToAdvancedSettings = "jump-link-advanced-settings";
+  private jumpToAuthFlowOverride = "jump-link-authentication-flow-overrides";
 
   setRevocationToNow() {
     cy.get(this.setToNowBtn).click();
@@ -118,6 +144,145 @@ export default class AdvancedTab extends CommonPage {
 
   revertFineGrain() {
     cy.get(this.fineGrainRevertBtn).click();
+    return this;
+  }
+
+  saveCompatibility() {
+    cy.findByTestId(this.OIDCCompatabilitySaveBtn).click();
+    return this;
+  }
+
+  revertCompatibility() {
+    cy.findByTestId(this.OIDCCompatabilityRevertBtn).click();
+    cy.findByTestId(this.jumpToOIDCCompatabilitySettings).click();
+    //uncomment when revert function reverts all switches, rather than just the first one
+    //this.assertSwitchStateOn(cy.get(this.useRefreshTokenForClientCredentialsGrantSwitch));
+    this.assertSwitchStateOn(cy.get(this.excludeSessionStateSwitch));
+    return this;
+  }
+
+  jumpToCompatability() {
+    cy.findByTestId(this.jumpToOIDCCompatabilitySettings).click();
+    return this;
+  }
+
+  clickAllCompatibilitySwitch() {
+    cy.get(this.excludeSessionStateSwitch).parent().click();
+    this.assertSwitchStateOn(cy.get(this.excludeSessionStateSwitch));
+    cy.get(this.useRefreshTokenSwitch).parent().click();
+    this.assertSwitchStateOff(cy.get(this.useRefreshTokenSwitch));
+    cy.get(this.useRefreshTokenForClientCredentialsGrantSwitch)
+      .parent()
+      .click();
+    this.assertSwitchStateOn(
+      cy.get(this.useRefreshTokenForClientCredentialsGrantSwitch)
+    );
+    cy.get(this.useLowerCaseBearerTypeSwitch).parent().click();
+    this.assertSwitchStateOn(cy.get(this.useLowerCaseBearerTypeSwitch));
+    return this;
+  }
+
+  clickExcludeSessionStateSwitch() {
+    cy.get(this.excludeSessionStateSwitch).parent().click();
+    this.assertSwitchStateOff(cy.get(this.excludeSessionStateSwitch));
+  }
+  clickUseRefreshTokenForClientCredentialsGrantSwitch() {
+    cy.get(this.useRefreshTokenForClientCredentialsGrantSwitch)
+      .parent()
+      .click();
+    this.assertSwitchStateOff(
+      cy.get(this.useRefreshTokenForClientCredentialsGrantSwitch)
+    );
+  }
+
+  saveAdvanced() {
+    cy.findByTestId(this.OIDCAdvancedSaveBtn).click();
+    return this;
+  }
+
+  revertAdvanced() {
+    cy.findByTestId(this.OIDCAdvancedRevertBtn).click();
+    return this;
+  }
+
+  jumpToAdvanced() {
+    cy.findByTestId(this.jumpToAdvancedSettings).click();
+    return this;
+  }
+
+  clickAdvancedSwitches() {
+    cy.get(this.oAuthMutualSwitch).parent().click();
+    cy.get(this.pushedAuthorizationRequestRequiredSwitch).parent().click();
+    return this;
+  }
+
+  checkAdvancedSwitchesOn() {
+    this.assertSwitchStateOn(cy.get(this.oAuthMutualSwitch));
+    this.assertSwitchStateOn(
+      cy.get(this.pushedAuthorizationRequestRequiredSwitch)
+    );
+    return this;
+  }
+
+  checkAdvancedSwitchesOff() {
+    this.assertSwitchStateOff(cy.get(this.oAuthMutualSwitch));
+    this.assertSwitchStateOff(
+      cy.get(this.pushedAuthorizationRequestRequiredSwitch)
+    );
+    return this;
+  }
+
+  SelectKeyForCodeExchangeInput(input: string) {
+    cy.get(this.keyForCodeExchangeInput).click();
+    cy.get(this.keyForCodeExchangeInput + " + ul")
+      .contains(input)
+      .click();
+    return this;
+  }
+
+  CheckKeyForCodeExchangeInput(input: string) {
+    cy.get(this.keyForCodeExchangeInput).should("have.text", input);
+    return this;
+  }
+
+  saveAuthFlowOverride() {
+    cy.findByTestId(this.OIDCAuthFlowOverrideSaveBtn).click();
+    return this;
+  }
+
+  revertAuthFlowOverride() {
+    cy.findByTestId(this.OIDCAuthFlowOverrideRevertBtn).click();
+    return this;
+  }
+
+  jumpToAuthFlow() {
+    cy.findByTestId(this.jumpToAuthFlowOverride).click();
+    return this;
+  }
+
+  SelectBrowserFlowInput(input: string) {
+    cy.get(this.browserFlowInput).click();
+    cy.get(this.browserFlowInput + " + ul")
+      .contains(input)
+      .click();
+    return this;
+  }
+
+  SelectDirectGrantInput(input: string) {
+    cy.get(this.directGrantInput).click();
+    cy.get(this.directGrantInput + " + ul")
+      .contains(input)
+      .click();
+    return this;
+  }
+
+  CheckBrowserFlowInput(input: string) {
+    cy.get(this.browserFlowInput).should("have.text", input);
+    return this;
+  }
+
+  CheckDirectGrantInput(input: string) {
+    cy.get(this.directGrantInput).should("have.text", input);
     return this;
   }
 }

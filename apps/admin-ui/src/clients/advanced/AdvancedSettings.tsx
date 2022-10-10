@@ -205,10 +205,14 @@ export const AdvancedSettings = ({
         </>
       )}
       <ActionGroup>
-        <Button variant="secondary" onClick={save}>
+        <Button
+          variant="secondary"
+          onClick={save}
+          data-testid="OIDCAdvancedSave"
+        >
           {t("common:save")}
         </Button>
-        <Button variant="link" onClick={reset}>
+        <Button variant="link" onClick={reset} data-testid="OIDCAdvancedRevert">
           {t("common:revert")}
         </Button>
       </ActionGroup>

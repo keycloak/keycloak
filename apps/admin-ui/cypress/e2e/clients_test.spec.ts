@@ -711,7 +711,9 @@ describe("Clients test", () => {
       commonPage.sidebar().waitForPageLoad();
 
       createClientPage.save();
-
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Client created successfully");
       clientDetailsPage.goToAdvancedTab();
     });
 
@@ -726,6 +728,7 @@ describe("Clients test", () => {
 
       advancedTab.registerNodeManually().fillHost("localhost").saveHost();
       advancedTab.checkTestClusterAvailability(true);
+      commonPage.masthead().checkNotificationMessage("Node successfully added");
       advancedTab.deleteClusterNode();
       commonPage.modalUtils().confirmModal();
       commonPage
@@ -744,6 +747,64 @@ describe("Clients test", () => {
         .selectAccessTokenSignatureAlgorithm("HS384")
         .revertFineGrain();
       advancedTab.checkAccessTokenSignatureAlgorithm(algorithm);
+    });
+
+    it("OIDC Compatibility Modes configuration", () => {
+      advancedTab.clickAllCompatibilitySwitch();
+      advancedTab.saveCompatibility();
+      advancedTab.jumpToCompatability();
+      advancedTab.clickExcludeSessionStateSwitch();
+      advancedTab.clickUseRefreshTokenForClientCredentialsGrantSwitch();
+      advancedTab.revertCompatibility();
+    });
+
+    it("Advanced settings", () => {
+      advancedTab.jumpToAdvanced();
+
+      advancedTab.clickAdvancedSwitches();
+      advancedTab.jumpToAdvanced();
+      advancedTab.SelectKeyForCodeExchangeInput("S256");
+
+      advancedTab.saveAdvanced();
+      advancedTab.jumpToAdvanced();
+      advancedTab.checkAdvancedSwitchesOn();
+      advancedTab.CheckKeyForCodeExchangeInput("S256");
+
+      advancedTab.SelectKeyForCodeExchangeInput("plain");
+      advancedTab.CheckKeyForCodeExchangeInput("plain");
+
+      advancedTab.jumpToAdvanced();
+      advancedTab.clickAdvancedSwitches();
+
+      advancedTab.revertAdvanced();
+      advancedTab.jumpToAdvanced();
+      advancedTab.CheckKeyForCodeExchangeInput("S256");
+      //uncomment when revert button reverts all switches
+      //and ACR to LoA Mapping + Default ACR Values
+      //advancedTab.checkAdvancedSwitchesOn();
+    });
+
+    it("Authentication flow override", () => {
+      advancedTab.jumpToAuthFlow();
+      advancedTab.SelectBrowserFlowInput("browser");
+      advancedTab.SelectDirectGrantInput("docker auth");
+      advancedTab.CheckBrowserFlowInput("browser");
+      advancedTab.CheckDirectGrantInput("docker auth");
+
+      advancedTab.revertAuthFlowOverride();
+      advancedTab.jumpToAuthFlow();
+      advancedTab.CheckBrowserFlowInput("");
+      advancedTab.CheckDirectGrantInput("");
+      advancedTab.SelectBrowserFlowInput("browser");
+      advancedTab.SelectDirectGrantInput("docker auth");
+
+      advancedTab.saveAuthFlowOverride();
+      advancedTab.SelectBrowserFlowInput("first broker login");
+      advancedTab.SelectDirectGrantInput("first broker login");
+      advancedTab.revertAuthFlowOverride();
+      //revert doesn't work after saving.
+      //advancedTab.CheckBrowserFlowInput("browser");
+      //advancedTab.CheckDirectGrantInput("docker auth");
     });
   });
 

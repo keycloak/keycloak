@@ -128,10 +128,18 @@ export const AuthenticationOverrides = ({
         </FormGroup>
       )}
       <ActionGroup>
-        <Button variant="secondary" onClick={save}>
+        <Button
+          variant="secondary"
+          onClick={save}
+          data-testid="OIDCAuthFlowOverrideSave"
+        >
           {t("common:save")}
         </Button>
-        <Button variant="link" onClick={reset}>
+        <Button
+          variant="link"
+          onClick={reset}
+          data-testid="OIDCAuthFlowOverrideRevert"
+        >
           {t("common:revert")}
         </Button>
       </ActionGroup>

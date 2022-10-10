@@ -141,10 +141,18 @@ export const OpenIdConnectCompatibilityModes = ({
         />
       </FormGroup>
       <ActionGroup>
-        <Button variant="secondary" onClick={save}>
+        <Button
+          variant="secondary"
+          onClick={save}
+          data-testid="OIDCCompatabilitySave"
+        >
           {t("common:save")}
         </Button>
-        <Button variant="link" onClick={reset}>
+        <Button
+          variant="link"
+          onClick={reset}
+          data-testid="OIDCCompatabilityRevert"
+        >
           {t("common:revert")}
         </Button>
       </ActionGroup>
