@@ -46,7 +46,7 @@ export const ExecutionConfigModal = ({
   const [configDescription, setConfigDescription] =
     useState<AuthenticatorConfigInfoRepresentation>();
 
-  const form = useForm<ExecutionConfigModalForm>();
+  const form = useForm<ExecutionConfigModalForm>({ shouldUnregister: false });
   const {
     register,
     setValue,
