@@ -191,7 +191,8 @@ public class Profile {
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
         RECOVERY_CODES("Recovery codes", Type.PREVIEW),
-        UPDATE_EMAIL("Update Email Action", Type.PREVIEW);
+        UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
+        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT);
 
 
         private final Type typeProject;
