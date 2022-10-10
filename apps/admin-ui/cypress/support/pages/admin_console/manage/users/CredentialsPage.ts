@@ -24,7 +24,10 @@ export default class CredentialsPage {
   private readonly closeDataDialogBtn = '.pf-c-modal-box [aria-label^="Close"]';
 
   goToCredentialsTab() {
+    cy.intercept("/admin/realms/*/users/*/credentials").as("load");
     cy.findByTestId(this.credentialsTab).click();
+    cy.wait("@load");
+    cy.wait(200);
 
     return this;
   }
@@ -108,9 +111,7 @@ export default class CredentialsPage {
   }
 
   clickShowDataDialogBtn() {
-    cy.findByTestId(this.showDataDialogBtn)
-      .should("be.visible")
-      .click({ force: true });
+    cy.findByTestId(this.showDataDialogBtn).click();
 
     return this;
   }
