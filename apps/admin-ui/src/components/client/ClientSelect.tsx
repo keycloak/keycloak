@@ -52,10 +52,14 @@ export const ClientSelect = ({
     [search]
   );
 
-  const convert = (clients: ClientRepresentation[]) =>
-    clients.map((option) => (
+  const convert = (clients: ClientRepresentation[]) => [
+    <SelectOption key="empty" value="">
+      {t("common:none")}
+    </SelectOption>,
+    ...clients.map((option) => (
       <SelectOption key={option.id} value={option.clientId} />
-    ));
+    )),
+  ];
 
   return (
     <FormGroup
