@@ -2,6 +2,7 @@
   "name": "keycloak-ui",
   "workspaces": [
     "libs/keycloak-js",
+    "apps/account-ui",
     "apps/admin-ui"
   ],
   "scripts": {

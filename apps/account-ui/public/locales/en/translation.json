@@ -1,0 +1,16 @@
+{
+  "accountSecurity": "Account security",
+  "applications": "Applications",
+  "deviceActivity": "Device activity",
+  "globalNavigation": "Global navigation",
+  "groups": "Groups",
+  "linkedAccounts": "Linked accounts",
+  "logo": "Logo",
+  "personalInfo": "Personal info",
+  "resources": "Resources",
+  "signingIn": "Signing in",
+  "somethingWentWrong": "Something went wrong",
+  "somethingWentWrongDescription": "Sorry, an unexpected error has occurred.",
+  "tryAgain": "Try again",
+  "welcomeMessage": "Welcome to Keycloak Account Management."
+}
