@@ -31,6 +31,7 @@ import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,29 +40,37 @@ public class KeycloakDeploymentConfigTest {
 
     @Test
     public void enabledFeatures() {
-        testFeatures(true, "docker", "authorization");
+        testFirstClassCitizenEnvVars("KC_FEATURES", KeycloakDeploymentConfig::configureFeatures, "docker", "authorization");
     }
 
     @Test
     public void disabledFeatures() {
-        testFeatures(false, "admin", "step-up-authentication");
+        testFirstClassCitizenEnvVars("KC_FEATURES_DISABLED", KeycloakDeploymentConfig::configureFeatures, "admin", "step-up-authentication");
     }
 
-    private void testFeatures(boolean enabledFeatures, String... features) {
-        final String featureEnvVar = enabledFeatures ? "KC_FEATURES" : "KC_FEATURES_DISABLED";
+    @Test
+    public void transactions() {
+        testFirstClassCitizenEnvVars("KC_TRANSACTION_XA_ENABLED", KeycloakDeploymentConfig::configureTransactions, "false");
+    }
 
-        final Keycloak keycloak = K8sUtils.getResourceFromFile("/test-serialization-keycloak-cr.yml", Keycloak.class);
+    /* UTILS */
+    private void testFirstClassCitizenEnvVars(String varName, Consumer<KeycloakDeploymentConfig> config, String... expectedValues) {
+        testFirstClassCitizenEnvVars("/test-serialization-keycloak-cr.yml", varName, config, expectedValues);
+    }
+
+    private void testFirstClassCitizenEnvVars(String crName, String varName, Consumer<KeycloakDeploymentConfig> config, String... expectedValues) {
+        final Keycloak keycloak = K8sUtils.getResourceFromFile(crName, Keycloak.class);
         final StatefulSet deployment = getBasicKcDeployment();
         final KeycloakDeploymentConfig deploymentConfig = new KeycloakDeploymentConfig(keycloak, deployment, null);
 
         final Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(container).isNotNull();
 
-        assertEnvVarNotPresent(container.getEnv(), featureEnvVar);
+        assertEnvVarNotPresent(container.getEnv(), varName);
 
-        deploymentConfig.configureFeatures();
+        config.accept(deploymentConfig);
 
-        assertContainerEnvVar(container.getEnv(), featureEnvVar, features);
+        assertContainerEnvVar(container.getEnv(), varName, expectedValues);
     }
 
     /**
