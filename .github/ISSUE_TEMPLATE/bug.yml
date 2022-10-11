@@ -12,8 +12,12 @@ body:
     attributes:
       label: Version
       description: What version of Keycloak are you running?
+  - type: input
+    attributes:
+      label: Environment
+      description: What is your environment? (e.g. Browser [chrome, safari] - version [22]
     validations:
-      required: true
+      required: false
   - type: textarea
     attributes:
       label: Expected behavior
