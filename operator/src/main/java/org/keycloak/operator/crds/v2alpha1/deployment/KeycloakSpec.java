@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -66,6 +67,10 @@ public class KeycloakSpec {
     @JsonProperty("features")
     @JsonPropertyDescription("In this section you can configure Keycloak features, which should be enabled/disabled.")
     private FeatureSpec featureSpec;
+
+    @JsonProperty("transaction")
+    @JsonPropertyDescription("In this section you can find all properties related to the settings of transaction behavior.")
+    private TransactionsSpec transactionsSpec;
 
     public String getHostname() {
         return hostname;
@@ -115,6 +120,14 @@ public class KeycloakSpec {
 
     public void setFeatureSpec(FeatureSpec featureSpec) {
         this.featureSpec = featureSpec;
+    }
+
+    public TransactionsSpec getTransactionsSpec() {
+        return transactionsSpec;
+    }
+
+    public void setTransactionsSpec(TransactionsSpec transactionsSpec) {
+        this.transactionsSpec = transactionsSpec;
     }
 
     public int getInstances() {
