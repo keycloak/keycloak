@@ -54,6 +54,8 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
   const [openGenerateKeys, toggleOpenGenerateKeys, setOpenGenerateKeys] =
     useToggle();
   const [openImportKeys, toggleOpenImportKeys, setOpenImportKeys] = useToggle();
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(key + 1);
 
   const useJwksUrl = useWatch({
     control,
@@ -64,7 +66,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
   useFetch(
     () => adminClient.clients.getKeyInfo({ id: clientId, attr }),
     (info) => setKeyInfo(info),
-    []
+    [key]
   );
 
   const generate = async (config: KeyStoreConfig) => {
@@ -81,6 +83,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
         `keystore.${config.format == "PKCS12" ? "p12" : "jks"}`
       );
       addAlert(t("generateSuccess"), AlertVariant.success);
+      refresh();
     } catch (error) {
       addError("clients:generateError", error);
     }
@@ -100,6 +103,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
         formData
       );
       addAlert(t("importSuccess"), AlertVariant.success);
+      refresh();
     } catch (error) {
       addError("clients:importError", error);
     }
