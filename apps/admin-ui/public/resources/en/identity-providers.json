@@ -189,5 +189,8 @@
   },
   "stackoverflow": {
     "key": "Key"
+  },
+  "linkedin": {
+    "profileProjection": "Profile Projection"
   }
 }

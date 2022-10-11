@@ -110,5 +110,8 @@
   },
   "stackoverflow": {
     "key": "The Key obtained from Stack Overflow client registration."
+  },
+  "linkedin": {
+    "profileProjection": "Projection parameter for profile request. Leave empty for default projection."
   }
 }

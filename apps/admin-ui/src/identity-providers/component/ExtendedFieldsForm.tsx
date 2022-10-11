@@ -23,6 +23,8 @@ export const ExtendedFieldsForm = ({ providerId }: ExtendedFieldsFormProps) => {
       return <PaypalFields />;
     case "stackoverflow":
       return <StackoverflowFields />;
+    case "linkedin":
+      return <LinkedInFields />;
     default:
       return null;
   }
@@ -265,6 +267,30 @@ const StackoverflowFields = () => {
         name="config.key"
         ref={register({ required: true })}
         isRequired
+      />
+    </FormGroup>
+  );
+};
+
+const LinkedInFields = () => {
+  const { t } = useTranslation("identity-providers");
+  const { register } = useFormContext();
+
+  return (
+    <FormGroup
+      label={t("linkedin.profileProjection")}
+      labelIcon={
+        <HelpItem
+          helpText="identity-providers-help:linkedin.profileProjection"
+          fieldLabelId="identity-providers:linkedin.profileProjection"
+        />
+      }
+      fieldId="profileProjection"
+    >
+      <KeycloakTextInput
+        id="profileProjection"
+        name="config.profileProjection"
+        ref={register}
       />
     </FormGroup>
   );
