@@ -21,7 +21,7 @@ export const NewPermissionRoute: RouteDef = {
 
 export const NewPermissionWithSelectedIdRoute: RouteDef = {
   ...NewPermissionRoute,
-  path: "/:realm/clients/:id/authorization/permission/new/:permissionType/:selectedId?",
+  path: "/:realm/clients/:id/authorization/permission/new/:permissionType/:selectedId",
 };
 
 export const toNewPermission = (params: NewPermissionParams): Partial<Path> => {
