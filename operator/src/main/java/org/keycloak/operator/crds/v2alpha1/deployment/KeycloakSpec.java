@@ -17,10 +17,12 @@
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -29,10 +31,13 @@ public class KeycloakSpec {
 
     @JsonPropertyDescription("Number of Keycloak instances in HA mode. Default is 1.")
     private int instances = 1;
+
     @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
+
     @JsonPropertyDescription("Secret(s) that might be used when pulling an image from a private container image registry or repository.")
     private List<LocalObjectReference> imagePullSecrets;
+
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
     private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
@@ -44,16 +49,23 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Hostname for the Keycloak server.\n" +
             "The special value `" + Constants.INSECURE_DISABLE + "` disables the hostname strict resolution.")
     private String hostname;
+
     @NotNull
     @JsonPropertyDescription("A secret containing the TLS configuration for HTTPS. Reference: https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets.\n" +
             "The special value `" + Constants.INSECURE_DISABLE + "` disables https.")
     private String tlsSecret;
+
     @JsonPropertyDescription("Disable the default ingress.")
     private boolean disableDefaultIngress;
+
     @JsonPropertyDescription(
-        "In this section you can configure podTemplate advanced features, not production-ready, and not supported settings.\n" +
-        "Use at your own risk and open an issue with your use-case if you don't find an alternative way.")
+            "In this section you can configure podTemplate advanced features, not production-ready, and not supported settings.\n" +
+                    "Use at your own risk and open an issue with your use-case if you don't find an alternative way.")
     private KeycloakSpecUnsupported unsupported;
+
+    @JsonProperty("features")
+    @JsonPropertyDescription("In this section you can configure Keycloak features, which should be enabled/disabled.")
+    private FeatureSpec featureSpec;
 
     public String getHostname() {
         return hostname;
@@ -95,6 +107,14 @@ public class KeycloakSpec {
 
     public void setUnsupported(KeycloakSpecUnsupported unsupported) {
         this.unsupported = unsupported;
+    }
+
+    public FeatureSpec getFeatureSpec() {
+        return featureSpec;
+    }
+
+    public void setFeatureSpec(FeatureSpec featureSpec) {
+        this.featureSpec = featureSpec;
     }
 
     public int getInstances() {

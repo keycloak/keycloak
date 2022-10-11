@@ -18,9 +18,15 @@
 package org.keycloak.operator.testsuite.unit;
 
 import io.fabric8.kubernetes.client.utils.Serialization;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 
+import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,6 +40,24 @@ public class CRSerializationTest {
         assertEquals("my-image", keycloak.getSpec().getImage());
         assertEquals("my-tls-secret", keycloak.getSpec().getTlsSecret());
         assertTrue(keycloak.getSpec().isDisableDefaultIngress());
+    }
+
+    @Test
+    public void featureSpecificationDeserialization(){
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+
+        final FeatureSpec featureSpec = keycloak.getSpec().getFeatureSpec();
+        assertThat(featureSpec, notNullValue());
+
+        final List<String> enabledFeatures = featureSpec.getEnabledFeatures();
+        assertThat(enabledFeatures.size(), CoreMatchers.is(2));
+        assertThat(enabledFeatures.get(0), CoreMatchers.is("docker"));
+        assertThat(enabledFeatures.get(1), CoreMatchers.is("authorization"));
+
+        final List<String> disabledFeatures = featureSpec.getDisabledFeatures();
+        assertThat(disabledFeatures.size(), CoreMatchers.is(2));
+        assertThat(disabledFeatures.get(0), CoreMatchers.is("admin"));
+        assertThat(disabledFeatures.get(1), CoreMatchers.is("step-up-authentication"));
     }
 
 }
