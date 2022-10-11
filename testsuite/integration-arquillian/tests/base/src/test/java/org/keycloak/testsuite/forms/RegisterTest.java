@@ -59,8 +59,8 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -374,7 +374,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(user);
         Assert.assertNotNull(user.getCreatedTimestamp());
         // test that timestamp is current with 10s tollerance
-        Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
+        assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         assertUserBasicRegisterAttributes(userId, username, email, "firstName", "lastName");
     }
 
@@ -606,7 +606,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             Assert.assertNotNull(user);
             Assert.assertNotNull(user.getCreatedTimestamp());
             // test that timestamp is current with 10s tollerance
-            Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
+            assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         }
     }
 
