@@ -17,6 +17,10 @@ export default defineConfig({
   numTestsKeptInMemory: 30,
   videoUploadOnPasses: false,
 
+  retries: {
+    runMode: 3,
+  },
+
   e2e: {
     setupNodeEvents(on) {
       on(
