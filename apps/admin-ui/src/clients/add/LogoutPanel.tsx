@@ -35,7 +35,6 @@ export const LogoutPanel = ({
       isHorizontal
       fineGrainedAccess={access?.configure}
       role="manage-clients"
-      className="pf-u-pb-4xl"
     >
       <FormGroup
         label={t("frontchannelLogout")}

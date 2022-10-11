@@ -4,6 +4,7 @@ img.keycloak__pageheader_brand {
 
 .keycloak__form {
   max-width: 1024px;
+  padding-bottom: var(--pf-global--spacer--4xl);
 }
 
 input[type="checkbox"] {
