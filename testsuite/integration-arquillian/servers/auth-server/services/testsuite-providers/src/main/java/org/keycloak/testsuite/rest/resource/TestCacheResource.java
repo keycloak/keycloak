@@ -33,14 +33,11 @@ import javax.ws.rs.Produces;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.remoting.transport.Transport;
-import org.jgroups.JChannel;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.testsuite.rest.representation.JGroupsStats;
 import org.keycloak.utils.MediaType;
 import org.infinispan.stream.CacheCollectors;
 
@@ -112,26 +109,6 @@ public class TestCacheResource {
     public void processExpiration() {
         cache.getAdvancedCache().getExpirationManager().processExpiration();
     }
-
-    @GET
-    @Path("/jgroups-stats")
-    @Produces(MediaType.APPLICATION_JSON)
-    public JGroupsStats getJgroupsStats() {
-        Transport transport = cache.getCacheManager().getTransport();
-        if (transport == null) {
-            return new JGroupsStats(0, 0, 0, 0);
-        } else {
-            try {
-                // Need to use reflection due some incompatibilities between ispn 8.2.6 and 9.0.1
-                JChannel channel = (JChannel) transport.getClass().getMethod("getChannel").invoke(transport);
-
-                return new JGroupsStats(channel.getSentBytes(), channel.getSentMessages(), channel.getReceivedBytes(), channel.getReceivedMessages());
-            } catch (Exception nsme) {
-                throw new RuntimeException(nsme);
-            }
-        }
-    }
-
 
     @GET
     @Path("/remote-cache-stats")
