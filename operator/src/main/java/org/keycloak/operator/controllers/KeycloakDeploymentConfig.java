@@ -57,7 +57,8 @@ public class KeycloakDeploymentConfig {
             "hostname",
             "tlsSecret",
             "features",
-            "features-disabled"
+            "features-disabled",
+            "transaction-xa-enabled"
     );
 
     /**
@@ -67,6 +68,7 @@ public class KeycloakDeploymentConfig {
         configureHostname();
         configureTLS();
         configureFeatures();
+        configureTransactions();
     }
 
     /**
@@ -206,6 +208,21 @@ public class KeycloakDeploymentConfig {
             envVars.add(new EnvVarBuilder()
                     .withName("KC_FEATURES_DISABLED")
                     .withValue(CollectionUtil.join(disabledFeatures, ","))
+                    .build());
+        }
+    }
+
+    public void configureTransactions() {
+        var transactionsSpec = keycloakCR.getSpec().getTransactionsSpec();
+        if (transactionsSpec == null) return;
+
+        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        var envVars = kcContainer.getEnv();
+
+        if (transactionsSpec.isXaEnabled() != null) {
+            envVars.add(new EnvVarBuilder()
+                    .withName("KC_TRANSACTION_XA_ENABLED")
+                    .withValue(String.valueOf(transactionsSpec.isXaEnabled()))
                     .build());
         }
     }

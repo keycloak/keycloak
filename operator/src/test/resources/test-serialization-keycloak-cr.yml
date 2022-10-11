@@ -20,6 +20,8 @@ spec:
       - admin
       - step-up-authentication
   disableDefaultIngress: true
+  transaction:
+    xaEnabled: false
   unsupported:
     podTemplate:
       metadata:

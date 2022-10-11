@@ -22,6 +22,7 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import java.util.List;
 
@@ -40,6 +41,11 @@ public class CRSerializationTest {
         assertEquals("my-image", keycloak.getSpec().getImage());
         assertEquals("my-tls-secret", keycloak.getSpec().getTlsSecret());
         assertTrue(keycloak.getSpec().isDisableDefaultIngress());
+
+        final TransactionsSpec transactionsSpec = keycloak.getSpec().getTransactionsSpec();
+        assertThat(transactionsSpec, notNullValue());
+        assertThat(transactionsSpec.isXaEnabled(), notNullValue());
+        assertThat(transactionsSpec.isXaEnabled(), CoreMatchers.is(false));
     }
 
     @Test
