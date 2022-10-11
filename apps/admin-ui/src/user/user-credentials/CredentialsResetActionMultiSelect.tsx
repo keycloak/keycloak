@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { Controller, useFormContext } from "react-hook-form";
 import {
   FormGroup,
@@ -8,13 +9,25 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 
-import { RequiredActionAlias } from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 
 export const CredentialsResetActionMultiSelect = () => {
   const { t } = useTranslation("users");
+  const { adminClient } = useAdminClient();
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
+  const [requiredActions, setRequiredActions] = useState<
+    RequiredActionProviderRepresentation[]
+  >([]);
+
+  useFetch(
+    () => adminClient.authenticationManagement.getRequiredActions(),
+    (actions) => {
+      setRequiredActions(actions);
+    },
+    []
+  );
 
   return (
     <FormGroup
@@ -55,13 +68,13 @@ export const CredentialsResetActionMultiSelect = () => {
             }}
             typeAheadAriaLabel={t("resetActions")}
           >
-            {Object.values(RequiredActionAlias).map((action, index) => (
+            {requiredActions.map(({ alias, name }) => (
               <SelectOption
-                key={index}
-                value={action}
-                data-testid={`${action}-option`}
+                key={alias}
+                value={alias}
+                data-testid={`${alias}-option`}
               >
-                {t(action)}
+                {name}
               </SelectOption>
             ))}
           </Select>
