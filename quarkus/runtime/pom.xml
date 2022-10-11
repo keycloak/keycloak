@@ -148,11 +148,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-crypto-default</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-crypto-fips1402</artifactId>
+            <artifactId>keycloak-crypto-elytron</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

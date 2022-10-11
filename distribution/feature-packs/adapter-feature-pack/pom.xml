@@ -60,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-crypto-default</artifactId>
+            <artifactId>keycloak-crypto-elytron</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
