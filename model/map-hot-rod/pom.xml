@@ -13,6 +13,12 @@
     <name>Keycloak Model Hot Rod</name>
     <description/>
 
+    <properties>
+        <maven.compiler.release>11</maven.compiler.release>
+        <!-- overriding compiler plugin version as default 3.8.1-jboss-1 can't find multiple packages when building with java 11 -->
+        <version.compiler.plugin>3.8.1</version.compiler.plugin>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -59,6 +65,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${version.compiler.plugin}</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
@@ -70,11 +77,6 @@
                             <groupId>org.keycloak</groupId>
                             <artifactId>keycloak-model-build-processor</artifactId>
                             <version>${project.version}</version>
-                        </path>
-                        <path>
-                            <groupId>javax.annotation</groupId>
-                            <artifactId>javax.annotation-api</artifactId>
-                            <version>${javax.annotation-api.version}</version>
                         </path>
                     </annotationProcessorPaths>
                     <annotationProcessors>
