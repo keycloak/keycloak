@@ -8,8 +8,17 @@ spec:
   serverConfiguration:
     - name: key1
       value: value1
+    - name: features
+      value: docker
   hostname: my-hostname
   tlsSecret: my-tls-secret
+  features:
+    enabled:
+      - docker
+      - authorization
+    disabled:
+      - admin
+      - step-up-authentication
   disableDefaultIngress: true
   unsupported:
     podTemplate:
