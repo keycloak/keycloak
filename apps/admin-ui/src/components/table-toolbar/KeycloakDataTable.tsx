@@ -21,6 +21,7 @@ import {
   TableVariant,
 } from "@patternfly/react-table";
 import { get, cloneDeep, differenceBy } from "lodash-es";
+import useLocalStorage from "react-use-localstorage";
 
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
@@ -205,7 +206,11 @@ export function KeycloakDataTable<T>({
   const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
   const [loading, setLoading] = useState(false);
 
-  const [max, setMax] = useState(10);
+  const [defaultPageSize, setDefaultPageSize] = useLocalStorage(
+    "pageSize",
+    "10"
+  );
+  const [max, setMax] = useState(parseInt(defaultPageSize));
   const [first, setFirst] = useState(0);
   const [search, setSearch] = useState<string>("");
   const prevSearch = useRef<string>();
@@ -403,6 +408,7 @@ export function KeycloakDataTable<T>({
           onPerPageSelect={(first, max) => {
             setFirst(first);
             setMax(max);
+            setDefaultPageSize(`${max}`);
           }}
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined

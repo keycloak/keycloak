@@ -68,6 +68,7 @@
     "react-router": "^5.3.4",
     "react-router-dom": "^5.3.4",
     "react-router-dom-v5-compat": "^6.4.2",
+    "react-use-localstorage": "^3.5.3",
     "use-react-router-breadcrumbs": "^2.0.2"
   },
   "devDependencies": {

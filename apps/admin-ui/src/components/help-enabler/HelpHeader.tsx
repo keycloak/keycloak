@@ -11,6 +11,7 @@ import {
 import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
 import { FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
+import useLocalStorage from "react-use-localstorage";
 
 import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
@@ -31,13 +32,13 @@ export const HelpContext = createNamedContext<HelpContextProps | undefined>(
 export const useHelp = () => useRequiredContext(HelpContext);
 
 export const Help: FunctionComponent = ({ children }) => {
-  const [enabled, setHelp] = useState(true);
+  const [enabled, setHelp] = useLocalStorage("helpEnabled", "true");
 
   function toggleHelp() {
-    setHelp((help) => !help);
+    setHelp(enabled === "true" ? "false" : "true");
   }
   return (
-    <HelpContext.Provider value={{ enabled, toggleHelp }}>
+    <HelpContext.Provider value={{ enabled: enabled === "true", toggleHelp }}>
       {children}
     </HelpContext.Provider>
   );
