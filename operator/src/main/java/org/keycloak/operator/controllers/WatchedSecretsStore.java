@@ -43,6 +43,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.common.util.NullSafeChecks.isNotNull;
+
 /**
  * Represents a version store of Secrets that are watched by a CR but is not owned by it. E.g. Secrets with
  * credentials provided by user.
@@ -136,14 +138,13 @@ public class WatchedSecretsStore extends OperatorManagedResource {
     }
 
     private Map<String, String> getNewLastObservedVersions() {
-        if (existingStore != null && existingStore.getData() != null) {
+        if (isNotNull(() -> existingStore.getData())) {
             return existingStore.getData().entrySet().stream()
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
                             e -> new String(Base64.getDecoder().decode(e.getValue()))
                     ));
-        }
-        else {
+        } else {
             return Collections.emptyMap();
         }
     }

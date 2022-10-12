@@ -45,6 +45,9 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static org.keycloak.common.util.NullSafeChecks.isNotNull;
+import static org.keycloak.common.util.NullSafeChecks.isNull;
+import static org.keycloak.common.util.NullSafeChecks.isTrue;
 
 public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
@@ -95,7 +98,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
             // don't fully overwrite annotations in pod templates to support rolling restarts (K8s sets some extra annotation to track restart)
             // instead, merge it
-            if (existingDeployment.getSpec() != null && existingDeployment.getSpec().getTemplate() != null) {
+            if (isNotNull(() -> existingDeployment.getSpec().getTemplate())) {
                 mergeMaps(
                         Optional.ofNullable(existingDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
                         Optional.ofNullable(reconciledDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
@@ -118,36 +121,24 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     }
 
     public void validatePodTemplate(KeycloakStatusBuilder status) {
-        if (keycloakCR.getSpec() == null ||
-                keycloakCR.getSpec().getUnsupported() == null ||
-                keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
+        if (isNull(() -> keycloakCR.getSpec().getUnsupported().getPodTemplate())) {
             return;
         }
         var overlayTemplate = this.keycloakCR.getSpec().getUnsupported().getPodTemplate();
 
-        if (overlayTemplate.getMetadata() != null &&
-            overlayTemplate.getMetadata().getName() != null) {
+        if (isNotNull(() -> overlayTemplate.getMetadata().getName())) {
             status.addWarningMessage("The name of the podTemplate cannot be modified");
         }
 
-        if (overlayTemplate.getMetadata() != null &&
-            overlayTemplate.getMetadata().getNamespace() != null) {
+        if (isNotNull(() -> overlayTemplate.getMetadata().getNamespace())) {
             status.addWarningMessage("The namespace of the podTemplate cannot be modified");
         }
 
-        if (overlayTemplate.getSpec() != null &&
-            overlayTemplate.getSpec().getContainers() != null &&
-            overlayTemplate.getSpec().getContainers().size() > 0 &&
-            overlayTemplate.getSpec().getContainers().get(0) != null &&
-            overlayTemplate.getSpec().getContainers().get(0).getName() != null) {
+        if (isNotNull(() -> overlayTemplate.getSpec().getContainers().get(0).getName())) {
             status.addWarningMessage("The name of the keycloak container cannot be modified");
         }
 
-        if (overlayTemplate.getSpec() != null &&
-            overlayTemplate.getSpec().getContainers() != null &&
-            overlayTemplate.getSpec().getContainers().size() > 0 &&
-            overlayTemplate.getSpec().getContainers().get(0) != null &&
-            overlayTemplate.getSpec().getContainers().get(0).getImage() != null) {
+        if (isNotNull(() -> overlayTemplate.getSpec().getContainers().get(0).getImage())) {
             status.addWarningMessage("The image of the keycloak container cannot be modified using podTemplate");
         }
 
@@ -178,9 +169,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     }
 
     private void mergePodTemplate(PodTemplateSpec baseTemplate) {
-        if (keycloakCR.getSpec() == null ||
-            keycloakCR.getSpec().getUnsupported() == null ||
-            keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
+        if (isNull(() -> keycloakCR.getSpec().getUnsupported().getPodTemplate())) {
             return;
         }
 
@@ -200,9 +189,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         var overlaySpec = overlayTemplate.getSpec();
 
         var containers = new ArrayList<Container>();
-        var overlayContainers =
-                (overlaySpec == null || overlaySpec.getContainers() == null) ?
-                        new ArrayList<Container>() : overlaySpec.getContainers();
+        var overlayContainers = isNull(() -> overlaySpec.getContainers()) ? new ArrayList<Container>() : overlaySpec.getContainers();
+
         if (overlayContainers.size() >= 1) {
             var keycloakBaseContainer = baseSpec.getContainers().get(0);
             var keycloakOverlayContainer = overlayContainers.get(0);
@@ -408,7 +396,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .collect(Collectors.toList());
 
         // merge with the CR; the values in CR take precedence
-        if (keycloakCR.getSpec().getServerConfiguration() != null) {
+        if (isNotNull(() -> keycloakCR.getSpec().getServerConfiguration())) {
             serverConfig.removeAll(keycloakCR.getSpec().getServerConfiguration());
             serverConfig.addAll(keycloakCR.getSpec().getServerConfiguration());
         }
@@ -470,18 +458,14 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
             return;
         }
 
-        if (existingDeployment.getStatus() == null
-                || existingDeployment.getStatus().getReadyReplicas() == null
-                || existingDeployment.getStatus().getReadyReplicas() < keycloakCR.getSpec().getInstances()) {
+        if (isNull(() -> existingDeployment.getStatus().getReadyReplicas()) ||
+                isTrue(() -> existingDeployment.getStatus().getReadyReplicas() < keycloakCR.getSpec().getInstances())) {
             status.addNotReadyMessage("Waiting for more replicas");
         }
 
         if (migrationInProgress) {
             status.addNotReadyMessage("Performing Keycloak upgrade, scaling down the deployment");
-        } else if (existingDeployment.getStatus() != null
-                && existingDeployment.getStatus().getCurrentRevision() != null
-                && existingDeployment.getStatus().getUpdateRevision() != null
-                && !existingDeployment.getStatus().getCurrentRevision().equals(existingDeployment.getStatus().getUpdateRevision())) {
+        } else if (isTrue(() -> !existingDeployment.getStatus().getCurrentRevision().equals(existingDeployment.getStatus().getUpdateRevision()))) {
             status.addRollingUpdateMessage("Rolling out deployment update");
         }
 
@@ -509,13 +493,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     }
 
     public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment) {
-        if (previousDeployment == null
-                || previousDeployment.getSpec() == null
-                || previousDeployment.getSpec().getTemplate() == null
-                || previousDeployment.getSpec().getTemplate().getSpec() == null
-                || previousDeployment.getSpec().getTemplate().getSpec().getContainers() == null
-                || previousDeployment.getSpec().getTemplate().getSpec().getContainers().get(0) == null)
-        {
+        if (isNull(() -> previousDeployment.getSpec().getTemplate().getSpec().getContainers().get(0))) {
             return;
         }
 

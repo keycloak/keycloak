@@ -27,6 +27,8 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 import java.util.HashMap;
 import java.util.Optional;
 
+import static org.keycloak.common.util.NullSafeChecks.isNull;
+
 public class KeycloakIngress extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
     private final Ingress existingIngress;
@@ -49,7 +51,7 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
             var defaultIngress = newIngress();
             var resultIngress = (existingIngress != null) ? existingIngress : defaultIngress;
 
-            if (resultIngress.getMetadata().getAnnotations() == null) {
+            if (isNull(() -> resultIngress.getMetadata().getAnnotations())) {
                 resultIngress.getMetadata().setAnnotations(new HashMap<>());
             }
             resultIngress.getMetadata().getAnnotations().putAll(defaultIngress.getMetadata().getAnnotations());

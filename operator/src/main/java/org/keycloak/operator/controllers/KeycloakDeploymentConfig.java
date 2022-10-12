@@ -32,9 +32,10 @@ import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.keycloak.common.util.NullSafeChecks.isNotNull;
 
 /**
  * Configuration for the KeycloakDeployment
@@ -213,11 +214,7 @@ public class KeycloakDeploymentConfig {
     /* ---------- END of configuration of first-class citizen fields ---------- */
 
     protected String readConfigurationValue(String key) {
-        if (keycloakCR != null &&
-                keycloakCR.getSpec() != null &&
-                keycloakCR.getSpec().getServerConfiguration() != null
-        ) {
-
+        if (isNotNull(() -> keycloakCR.getSpec().getServerConfiguration())) {
             var serverConfigValue = keycloakCR
                     .getSpec()
                     .getServerConfiguration()
