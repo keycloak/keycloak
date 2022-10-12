@@ -184,15 +184,18 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean delete(String key) {
         if (key == null) return false;
         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return false;
-        cacheWithinSession.remove(key);
+        removeFromCache(key);
         em.remove(em.getReference(entityType, uuid));
         logger.tracef("tx %d: delete entity %s", hashCode(), key);
         return true;
+    }
+
+    protected void removeFromCache(String key) {
+        cacheWithinSession.remove(key);
     }
 
     @Override
