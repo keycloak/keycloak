@@ -68,7 +68,7 @@ public abstract class PemUtilsTest {
 
         // RSA key in the "traditional" PKCS1 format
         String privateKey2 = "-----BEGIN RSA PRIVATE KEY-----\n" +
-        ((BouncyIntegration.PROVIDER.equals("BC"))?
+        ((BouncyIntegration.PROVIDER.startsWith("BC"))?
                 "MIICXAIBAAKBgQCjcGqTkOq0CR3rTx0ZSQSIdTrDrFAYl29611xN8aVgMQIWtDB/\n" +
                 "lD0W5TpKPuU9iaiG/sSn/VYt6EzN7Sr332jj7cyl2WrrHI6ujRswNy4HojMuqtfa\n" +
                 "b5FFDpRmCuvl35fge18OvoQTJELhhJ1EvJ5KUeZiuJ3u3YyMnxxXzLuKbQIDAQAB\n" +
