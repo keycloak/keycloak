@@ -34,4 +34,9 @@ limitations under the License.
 
     </changeSet>
 
+    <changeSet author="keycloak" id="users-14797">
+        <addUniqueConstraint tableName="kc_user" columnNames="realmid, username, usernamewithcase"/>
+        <addUniqueConstraint tableName="kc_user" columnNames="realmid, emailconstraint"/>
+    </changeSet>
+
 </databaseChangeLog>
