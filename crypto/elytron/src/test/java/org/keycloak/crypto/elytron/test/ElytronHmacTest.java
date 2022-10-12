@@ -39,7 +39,7 @@ public class ElytronHmacTest extends HmacTest {
     public void testHmacSignaturesUsingKeyGen() throws Exception {
         
         KeyGenerator keygen = KeyGenerator.getInstance("HmacSHA256");
-        SecureRandom random = SecureRandom.getInstance("NativePRNG");
+        SecureRandom random = isWindows() ? SecureRandom.getInstance("Windows-PRNG") : SecureRandom.getInstance("NativePRNG");
         random.setSeed(UUID.randomUUID().toString().getBytes());
         keygen.init(random);
         SecretKey secret = keygen.generateKey();
@@ -49,5 +49,8 @@ public class ElytronHmacTest extends HmacTest {
         System.out.println("length: " + encoded.length());
         JWSInput input = new JWSInput(encoded);
         Assert.assertTrue(HMACProvider.verify(input, secret));
+    }
+    private boolean isWindows(){
+        return System.getProperty("os.name").startsWith("Windows");
     }
 }
