@@ -96,7 +96,7 @@
   "userFedUnlinkUsersConfirmTitle": "Unlink all users?",
   "userFedUnlinkUsersConfirm": "Do you want to unlink all the users? Any users without a password in the database will not be able to authenticate anymore.",
   "removeImportedUsers": "Remove imported users?",
-  "removeImportedUsersMessage": "Do you really want to remove all imported users?",
+  "removeImportedUsersMessage": "Do you really want to remove all imported users? The option \"Unlink users\" makes sense just for the Edit Mode \"Unsynced\" and there should be a warning that \"unlinked\" users without the password in Keycloak database won't be able to authenticate.",
   "removeImportedUsersSuccess": "Imported users have been removed.",
   "removeImportedUsersError": "Could not remove imported users: '{{error}}'",
   "syncUsersSuccess": "Sync of users finished successfully.",
