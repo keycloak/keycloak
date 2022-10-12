@@ -18,6 +18,8 @@
 package org.keycloak.it.cli.dist;
 
 import java.util.function.Consumer;
+
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -33,7 +35,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 @RawDistOnly(reason = "Containers are immutable")
 public class FipsDistTest {
 
-    @Test
+    @Ignore @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--fips-mode=enabled", "--cache=local", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
     @BeforeStartDistribution(FipsDistTest.InstallBcFipsDependencies.class)
     void testFipsNonApprovedMode(LaunchResult result) {
@@ -43,7 +45,7 @@ public class FipsDistTest {
                 + " KC(BCFIPS version 1.000203) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
     }
 
-    @Test
+    @Ignore @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--fips-mode=strict", "--cache=local", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
     @BeforeStartDistribution(FipsDistTest.InstallBcFipsDependencies.class)
     void testFipsApprovedMode(LaunchResult result) {
@@ -54,7 +56,7 @@ public class FipsDistTest {
                 + " KC(BCFIPS version 1.000203 Approved Mode) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
     }
 
-    @Test
+    @Ignore @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--fips-mode=enabled", "--cache=local", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
     void failStartDueToMissingFipsDependencies(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
