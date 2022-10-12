@@ -65,7 +65,8 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
 @Entity
 @Table(name = "kc_user",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"realmId", "username"}),
+                // if same username it can differ only in usernameWithCase
+                @UniqueConstraint(columnNames = {"realmId", "username", "usernameWithCase"}),
                 @UniqueConstraint(columnNames = {"realmId", "emailConstraint"})
         })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
