@@ -21,6 +21,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { emailRegexPattern } from "../util";
 import { AddUserEmailModal } from "./AddUserEmailModal";
+import { PasswordInput } from "../components/password-input/PasswordInput";
 import "./realm-settings-section.css";
 
 type RealmSettingsEmailTabProps = {
@@ -372,16 +373,15 @@ export const RealmSettingsEmailTab = ({
                     />
                   }
                 >
-                  <KeycloakTextInput
-                    type="password"
+                  <PasswordInput
                     id="kc-password"
                     data-testid="password-input"
                     name="smtpServer.password"
-                    ref={register({ required: true })}
-                    placeholder="Login password"
+                    aria-label={t("password")}
                     validated={
                       errors.smtpServer?.password ? "error" : "default"
                     }
+                    ref={register({ required: true })}
                   />
                 </FormGroup>
               </>
