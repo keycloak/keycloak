@@ -27,6 +27,8 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 import java.util.HashMap;
 import java.util.Optional;
 
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
+
 public class KeycloakIngress extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
     private final Ingress existingIngress;
@@ -59,8 +61,8 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
     }
 
     private Ingress newIngress() {
-        var port = (keycloak.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
-        var backendProtocol = (keycloak.getSpec().isHttp()) ? "HTTP" : "HTTPS";
+        var port = KeycloakService.getServicePort(keycloak);
+        var backendProtocol = (!isTlsConfigured(keycloak)) ? "HTTP" : "HTTPS";
 
         Ingress ingress = new IngressBuilder()
                 .withNewMetadata()

@@ -25,8 +25,13 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.util.Collections;
@@ -34,23 +39,54 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
+import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusDoesNotContainMessage;
 
 @QuarkusTest
 public class KeycloakDistConfiguratorTest {
 
     @Test
     public void enabledFeatures() {
-        testFirstClassCitizenEnvVars("KC_FEATURES", KeycloakDistConfigurator::configureFeatures, "docker", "authorization");
+        testFirstClassCitizen("KC_FEATURES", "features",
+                KeycloakDistConfigurator::configureFeatures, "docker", "authorization");
     }
 
     @Test
     public void disabledFeatures() {
-        testFirstClassCitizenEnvVars("KC_FEATURES_DISABLED", KeycloakDistConfigurator::configureFeatures, "admin", "step-up-authentication");
+        testFirstClassCitizen("KC_FEATURES_DISABLED", "features-disabled",
+                KeycloakDistConfigurator::configureFeatures, "admin", "step-up-authentication");
     }
 
     @Test
     public void transactions() {
-        testFirstClassCitizenEnvVars("KC_TRANSACTION_XA_ENABLED", KeycloakDistConfigurator::configureTransactions, "false");
+        testFirstClassCitizen("KC_TRANSACTION_XA_ENABLED", "transaction-xa-enabled",
+                KeycloakDistConfigurator::configureTransactions, "false");
+    }
+
+    @Test
+    public void httpEnabled() {
+        testFirstClassCitizen("KC_HTTP_ENABLED", "http-enabled",
+                KeycloakDistConfigurator::configureHttp, "true");
+    }
+
+    @Test
+    public void httpPort() {
+        testFirstClassCitizen("KC_HTTP_PORT", "http-port",
+                KeycloakDistConfigurator::configureHttp, "123");
+    }
+
+    @Test
+    public void httpsPort() {
+        testFirstClassCitizen("KC_HTTPS_PORT", "https-port",
+                KeycloakDistConfigurator::configureHttp, "456");
+    }
+
+    @Test
+    public void tlsSecret() {
+        testFirstClassCitizen("KC_HTTPS_CERTIFICATE_FILE", "https-certificate-file",
+                KeycloakDistConfigurator::configureHttp, Constants.CERTIFICATES_FOLDER + "/tls.crt");
+        testFirstClassCitizen("KC_HTTPS_CERTIFICATE_KEY_FILE", "https-certificate-key-file",
+                KeycloakDistConfigurator::configureHttp, Constants.CERTIFICATES_FOLDER + "/tls.key");
     }
 
     @Test
@@ -66,11 +102,11 @@ public class KeycloakDistConfiguratorTest {
     }
 
     /* UTILS */
-    private void testFirstClassCitizenEnvVars(String varName, Consumer<KeycloakDistConfigurator> config, String... expectedValues) {
-        testFirstClassCitizenEnvVars("/test-serialization-keycloak-cr.yml", varName, config, expectedValues);
+    private void testFirstClassCitizen(String envVarName, String optionName, Consumer<KeycloakDistConfigurator> config, String... expectedValues) {
+        testFirstClassCitizen("/test-serialization-keycloak-cr.yml", envVarName, optionName, config, expectedValues);
     }
 
-    private void testFirstClassCitizenEnvVars(String crName, String varName, Consumer<KeycloakDistConfigurator> config, String... expectedValues) {
+    private void testFirstClassCitizen(String crName, String envVarName, String optionName, Consumer<KeycloakDistConfigurator> config, String... expectedValues) {
         final Keycloak keycloak = K8sUtils.getResourceFromFile(crName, Keycloak.class);
         final StatefulSet deployment = getBasicKcDeployment();
         final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
@@ -78,11 +114,15 @@ public class KeycloakDistConfiguratorTest {
         final Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(container).isNotNull();
 
-        assertEnvVarNotPresent(container.getEnv(), varName);
+        assertEnvVarNotPresent(container.getEnv(), envVarName);
+        assertWarningStatus(distConfig, optionName, false);
 
         config.accept(distConfig);
 
-        assertContainerEnvVar(container.getEnv(), varName, expectedValues);
+        assertContainerEnvVar(container.getEnv(), envVarName, expectedValues);
+
+        keycloak.getSpec().setServerConfiguration(List.of(new ValueOrSecret(optionName, "foo")));
+        assertWarningStatus(distConfig, optionName, true);
     }
 
     /**
@@ -107,6 +147,19 @@ public class KeycloakDistConfiguratorTest {
 
     private void assertEnvVarNotPresent(List<EnvVar> envVars, String varName) {
         assertThat(containsEnvironmentVariable(envVars, varName)).isFalse();
+    }
+
+    private void assertWarningStatus(KeycloakDistConfigurator distConfig, String optionName, boolean expectWarning) {
+        final String message = "warning: You need to specify these fields as the first-class citizen of the CR: " + optionName;
+        final KeycloakStatusBuilder statusBuilder = new KeycloakStatusBuilder();
+        distConfig.validateOptions(statusBuilder);
+        final KeycloakStatus status = statusBuilder.build();
+
+        if (expectWarning) {
+            assertKeycloakStatusCondition(status, KeycloakStatusCondition.HAS_ERRORS, false, message);
+        } else {
+            assertKeycloakStatusDoesNotContainMessage(status, message);
+        }
     }
 
     private StatefulSet getBasicKcDeployment() {

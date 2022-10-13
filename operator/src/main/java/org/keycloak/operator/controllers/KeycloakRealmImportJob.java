@@ -38,8 +38,7 @@ import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus
 import java.util.List;
 import java.util.Optional;
 
-import static org.keycloak.operator.Constants.DEFAULT_DIST_CONFIG;
-import static org.keycloak.operator.controllers.KeycloakDeployment.getEnvVarName;
+import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 
 public class KeycloakRealmImportJob extends OperatorManagedResource {
 
@@ -144,8 +143,8 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
                 .get(0)
                 .getEnv();
 
-        var cacheEnvVarName = getEnvVarName("cache");
-        var healthEnvVarName = getEnvVarName("health-enabled");
+        var cacheEnvVarName = getKeycloakOptionEnvVarName("cache");
+        var healthEnvVarName = getKeycloakOptionEnvVarName("health-enabled");
         envvars.removeIf(e -> e.getName().equals(cacheEnvVarName) || e.getName().equals(healthEnvVarName));
 
         // The Job should not connect to the cache
