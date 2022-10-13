@@ -27,4 +27,3 @@ Email theme::
 
 .Additional resources
 * The link:{developerguide_link}[{developerguide_name}] describes how to create a new theme or modify existing ones.
-

@@ -8,7 +8,9 @@ The {project_name} server was upgraded to use Wildfly 23.0.2.Final as the underl
 
 Support for OAuth 2.0 Device Authorization Grant is now available.
 
-Thanks to https://github.com/wadahiro[Hiroyuki Wada], https://github.com/splatch[Łukasz Dywicki]
+Thanks to
+// https://github.com/wadahiro [Hiroyuki Wada]  <-- URL fails
+Hiroyuki Wada, https://github.com/splatch[Łukasz Dywicki]
 and https://github.com/Michito-Okai[Michito Okai].
 
 == OpenID Connect Client Initiated Backchannel Authentication (CIBA)

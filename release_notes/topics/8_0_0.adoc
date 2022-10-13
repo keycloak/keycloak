@@ -42,8 +42,9 @@ Keycloak server was upgraded to use WildFly 18 under the covers.
 == W3C Web Authentication support
 
 In this release, we added initial support for W3C Web Authentication (WebAuthn). There are a few limitations in current implementation,
-however we are working on further improvements in this area. Thanks to https://github.com/tnorimat[tnorimat] for the contribution. Also thanks to
-https://github.com/ynojima[ynojima] for the help and feedback.
+however we are working on further improvements in this area. Thanks to https://github.com/tnorimat[tnorimat] for the contribution. Also thanks to 
+// https://github.com/ynojima[ynojima] <-- Broken URL
+ynojima for the help and feedback.
 
 == Support for password-less authentication, multi-factor authentication and multiple credentials per user
 

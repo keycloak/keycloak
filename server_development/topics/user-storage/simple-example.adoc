@@ -256,10 +256,8 @@ To deploy this jar, copy it to the `providers/` directory, then run `bin/kc.[sh|
 
 You enable user storage providers per realm within the *User Federation* page in the Admin Console.
 
-ifeval::[{project_community}==true]
 .User Federation
-image:{project_images}/empty-user-federation-page.png[]
-endif::[]
+image:images/empty-user-federation-page.png[]
 
 .Procedure
 
@@ -268,20 +266,15 @@ endif::[]
 The configuration page for our provider displays.
 
 . Click *Save* because we have nothing to configure.
-ifeval::[{project_community}==true]
 +
 .Configured Provider
-image:{project_images}/storage-provider-created.png[]
-endif::[]
+image:images/storage-provider-created.png[]
 
 . Return to the main *User Federation* page
 +
 You now see your provider listed.
-
-ifeval::[{project_community}==true]
 +
 .User Federation
-image:{project_images}/user-federation-page.png[]
-endif::[]
+image:images/user-federation-page.png[]
 
 You will now be able to log in with a user declared in the `users.properties` file. This user will only be able to view the account page after logging in.

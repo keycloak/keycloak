@@ -26,7 +26,10 @@ Finally, we did some work on defects related to the authentication flows.
 A number of improvements have been made to how the locale for the login page is selected, as well as when the locale
 is updated for a user.
 
+////
+This section is no longer included. We will need to create a new section and move the anchor.
 See the link:{adminguide_link}#_user_locale_selection[{adminguide_name}] for more details.
+////
 
 == Other improvements
 

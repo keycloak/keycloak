@@ -9,3 +9,4 @@ org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
 ----
 
 To deploy this jar, copy it to the `providers/` directory, then run `bin/kc.[sh|bat] build`.
+

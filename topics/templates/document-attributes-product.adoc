@@ -24,7 +24,7 @@
 
 :project_openshift_product_name: {project_name} for OpenShift
 
-:project_operator: Red Hat Build of Keycloak Operator
+:project_operator: Keycloak Operator
 :operatorRepo_link: https://github.com/keycloak/keycloak-operator
 :application_monitoring_operator: Red Hat Managed Integration (RHMI) Application Monitoring Operator
 :application_monitoring_operator_installation_link: https://github.com/integr8ly/application-monitoring-operator#installation

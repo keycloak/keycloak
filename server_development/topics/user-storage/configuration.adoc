@@ -107,5 +107,5 @@ Now that the configuration is enabled, you can set the `path` variable when you 
 
 ifeval::[{project_community}==true]
 .Configured Provider
-image:{project_images}/storage-provider-with-config.png[]
+image:images/storage-provider-with-config.png[]
 endif::[]
