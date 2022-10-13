@@ -53,6 +53,18 @@ public class KeycloakDistConfiguratorTest {
         testFirstClassCitizenEnvVars("KC_TRANSACTION_XA_ENABLED", KeycloakDistConfigurator::configureTransactions, "false");
     }
 
+    @Test
+    public void testEmptyLists() {
+        final Keycloak keycloak = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-with-empty-list.yml", Keycloak.class);
+        final StatefulSet deployment = getBasicKcDeployment();
+        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
+
+        final List<EnvVar> envVars = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        distConfig.configureFeatures();
+        assertEnvVarNotPresent(envVars, "KC_FEATURES");
+        assertEnvVarNotPresent(envVars, "KC_FEATURES_DISABLED");
+    }
+
     /* UTILS */
     private void testFirstClassCitizenEnvVars(String varName, Consumer<KeycloakDistConfigurator> config, String... expectedValues) {
         testFirstClassCitizenEnvVars("/test-serialization-keycloak-cr.yml", varName, config, expectedValues);

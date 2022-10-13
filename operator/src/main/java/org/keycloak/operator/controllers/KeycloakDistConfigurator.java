@@ -39,6 +39,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -316,7 +317,7 @@ public class KeycloakDistConfigurator {
             return mapOption(optionName, s -> {
                 var value = optionValueSupplier.apply(s);
                 if (value == null) return null;
-                return value.stream().map(String::valueOf).collect(Collectors.joining(","));
+                return value.stream().filter(Objects::nonNull).map(String::valueOf).collect(Collectors.joining(","));
             });
         }
     }
