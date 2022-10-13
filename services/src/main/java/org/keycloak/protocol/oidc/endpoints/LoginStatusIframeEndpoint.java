@@ -33,7 +33,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.Set;
 
-import static org.keycloak.services.util.IframeUtil.returnIframeFromResources;
+import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframeFromResources;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
