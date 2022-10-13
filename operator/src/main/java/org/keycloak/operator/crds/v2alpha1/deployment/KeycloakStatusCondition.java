@@ -68,4 +68,13 @@ public class KeycloakStatusCondition {
     public int hashCode() {
         return Objects.hash(getType(), getStatus(), getMessage());
     }
+
+    @Override
+    public String toString() {
+        return "KeycloakStatusCondition{" +
+                "type='" + type + '\'' +
+                ", status=" + status +
+                ", message='" + message + '\'' +
+                '}';
+    }
 }
