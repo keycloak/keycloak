@@ -14,6 +14,5 @@ spec:
     - name: db-password
       value: testpassword
   hostname: example.com
-  tlsSecret: INSECURE-DISABLE
   unsupported:
     podTemplate:
