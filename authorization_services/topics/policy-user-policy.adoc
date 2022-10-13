@@ -6,7 +6,7 @@ You can use this type of policy to define conditions for your permissions where 
 To create a new user-based policy, select *User* in the item list in the upper right corner of the policy listing.
 
 .Add a User Policy
-image:{project_images}/policy/create-user.png[alt="Add User Policy"]
+image:images/policy/create-user.png[alt="Add User Policy"]
 
 == Configuration
 

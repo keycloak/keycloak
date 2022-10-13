@@ -4,7 +4,7 @@
 On the *Resource* page, you see a list of the resources associated with a resource server.
 
 .Resources
-image:{project_images}/resource/view.png[alt="Resources"]
+image:images/resource/view.png[alt="Resources"]
 
 The resource list provides information about the protected resources, such as:
 

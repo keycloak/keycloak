@@ -7,15 +7,10 @@ By default, roles added to this policy are not specified as required and the pol
 
 Role policies can be useful when you need more restricted role-based access control (RBAC), where specific roles must be enforced to grant access to an object. For instance, you can enforce that a user must consent to allowing a client application (which is acting on the user's behalf) to access the user's resources. You can use {project_name} Client Scope Mapping to enable consent pages or even enforce clients to explicitly provide a scope when obtaining access tokens from a {project_name} server.
 
-ifeval::[{project_community}==true]
 To create a new role-based policy, select *Role* from the policy type list.
-endif::[]
-ifeval::[{project_product}==true]
-To create a new role-based policy, select *Role* in the item list in the upper right corner of the policy listing.
-endif::[]
 
 .Add Role Policy
-image:{project_images}/policy/create-role.png[alt="Add Role Policy"]
+image:images/policy/create-role.png[alt="Add Role Policy"]
 
 == Configuration
 

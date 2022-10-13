@@ -140,19 +140,14 @@ Clients that want to exchange tokens for a different client need to be authorize
 You need to define a `token-exchange` fine grain permission in the target client you want permission to exchange to.
 
 .Target Client Permission
-image:{project_images}/exchange-target-client-permission-unset.png[Target Client Permission]
+image:images/exchange-target-client-permission-unset.png[Target Client Permission]
 
 .Procedure
 
-ifeval::[{project_community}==true]
 . Toggle *Permissions Enabled* to *On*.
-endif::[]
-ifeval::[{project_product}==true]
-. Toggle *Permissions Enabled* to *ON*.
-endif::[]
 +
 .Target Client Permission
-image:{project_images}/exchange-target-client-permission-set.png[Target Client Exchange Permission Set]
+image:images/exchange-target-client-permission-set.png[Target Client Exchange Permission Set]
 +
 That page displays a *token-exchange* link.
 
@@ -161,39 +156,29 @@ That page displays a *token-exchange* link.
 This setup page displays.
 +
 .Target Client Exchange Permission Setup
-image:{project_images}/exchange-target-client-permission-setup.png[Target Client Exchange Permission Setup]
+image:images/exchange-target-client-permission-setup.png[Target Client Exchange Permission Setup]
 
-ifeval::[{project_community}==true]
 . Click *Client details* in the breadcrumbs at the top of the screen.
 . Define a policy for this permission.
-endif::[]
-ifeval::[{project_product}==true]
 . Click *Authorization* in the breadcrumbs at the top of the screen.
 . Define a policy for this permission.
-endif::[]
-
 . Click the *Policies* tab.
-
-ifeval::[{project_community}==true]
 . Create a *Client* Policy by clicking *Create policy* button.
-endif::[]
-ifeval::[{project_product}==true]
-. Create a *Client* Policy.
-endif::[]
 +
 .Client Policy Creation
-image:{project_images}/exchange-target-client-policy.png[Client Policy Creation]
+image:images/exchange-target-client-policy.png[Client Policy Creation]
 
 . Enter in the starting client that is the authenticated client that is requesting a token exchange.
 
 . After you create this policy, go back to the target client's *token-exchange* permission and add the client policy you just defined.
 +
 .Apply Client Policy
-image:{project_images}/exchange-target-client-exchange-apply-policy.png[Apply Client Policy]
+image:images/exchange-target-client-exchange-apply-policy.png[Apply Client Policy]
 
 Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you
 try to make an exchange.
 
+[[_internal_external_making_request]]
 ==== Making the request
 
 When your client is exchanging an existing token for a token targeting another client, you use the `audience` parameter.
@@ -249,19 +234,14 @@ discussed more in the <<_internal_external_making_request, Making the Request>> 
 Internal to external token exchange requests will be denied with a 403, Forbidden response until you grant permission for the calling client to exchange tokens with the external identity provider.  To grant permission to the client, you go to the identity provider's configuration page to the *Permissions* tab.
 
 .Identity Provider Permission
-image:{project_images}/exchange-idp-permission-unset.png[Identity Provider Exchange Permission]
+image:images/exchange-idp-permission-unset.png[Identity Provider Exchange Permission]
 
 .Procedure
 
-ifeval::[{project_community}==true]
 . Toggle *Permissions Enabled* to *On*.
-endif::[]
-ifeval::[{project_product}==true]
-. Toggle *Permissions Enabled* to *ON*.
-endif::[]
 +
 .Identity Provider Permission
-image:{project_images}/exchange-idp-permission-set.png[Identity Provider Exchange Permission Set]
+image:images/exchange-idp-permission-set.png[Identity Provider Exchange Permission Set]
 +
 The page displays *token-exchange* link.
 
@@ -270,64 +250,9 @@ The page displays *token-exchange* link.
 This setup page appears.
 +
 .Identity Provider Exchange Permission Setup
-image:{project_images}/exchange-idp-permission-setup.png[Identity Provider Exchange Permission Setup]
+image:images/exchange-idp-permission-setup.png[Identity Provider Exchange Permission Setup]
 
-ifeval::[{project_community}==true]
 . Click *Client details* in the breadcrumbs at the top of the screen.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Authorization* in the breadcrumbs at the top of the screen.
-endif::[]
-
-. Click *Policies* tab to create a client policy.
-+
-.Client Policy Creation
-image:{project_images}/exchange-idp-client-policy.png[Client Policy Creation]
-
-. Enter the starting client that is the authenticated client that is requesting a token exchange.
-
-. Return to the identity provider's *token-exchange* permission and add the client policy you just defined.
-+
-.Apply Client Policy
-image:{project_images}/exchange-idp-apply-policy.png[Apply Client Policy]
-
-Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you try to make an exchange.
-
-[[_internal_external_making_request]]
-==== Making the request
-
-When your client is exchanging an existing internal token to an external one, you provide the `requested_issuer` parameter.  The parameter must be the alias of a configured identity provider.
-
-[source,bash,subs="attributes+"]
-----
-curl -X POST \
-    -d "client_id=starting-client" \
-    -d "client_secret=the client secret" \
-    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
-    -d "subject_token=...." \
-    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
-    -d "requested_issuer=google" \
-    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
-----
-
-The `subject_token` parameter must be an access token for the target realm.  The `requested_token_type` parameter
-must be `urn:ietf:params:oauth:token-type:access_token` or left blank.  No other requested token type is supported
-at this time.  Here's
-an example successful JSON response you get back from this call.
-
-[source,json]
-----
-{
-   "access_token" : "....",
-   "expires_in" : 3600
-   "account-link-url" : "https://...."
-}
-----
-
-If the external identity provider is not linked for whatever reason, you will get an HTTP 400 response code with
-this JSON document:
-
-[source,json]
 ----
 {
    "error" : "....",
@@ -469,41 +394,27 @@ Additionally, the calling client must be granted permission to impersonate users
 . Click the *Permissions* tab.
 +
 .User Permissions
-image:{project_images}/exchange-users-permission-unset.png[User Permissions]
+image:images/exchange-users-permission-unset.png[User Permissions]
 
 . Toggle *Permissions Enabled* to *On*.
 +
 .Identity Provider Permission
-image:{project_images}/exchange-users-permission-set.png[Users Impersonation Permission Set]
+image:images/exchange-users-permission-set.png[Users Impersonation Permission Set]
 +
-
-ifeval::[{project_community}==true]
 The page displays an *impersonate* link.
-endif::[]
-ifeval::[{project_product}==true]
-The page displays an *impersonation* link.
-endif::[]
-
 . Click that link to start defining the permission.
 +
 This setup page displays.
 +
 .Users Impersonation Permission Setup
-image:{project_images}/exchange-users-permission-setup.png[Users Impersonation Permission Setup]
+image:images/exchange-users-permission-setup.png[Users Impersonation Permission Setup]
 
-ifeval::[{project_community}==true]
 . Click *Client details* in the breadcrumbs at the top of the screen.
 . Define a policy for this permission.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Authorization* in the breadcrumbs at the top of the screen.
-. Define a policy for this permission.
-endif::[]
-
 . Go to the *Policies* tab and create a client policy.
 +
 .Client Policy Creation
-image:{project_images}/exchange-users-client-policy.png[Client Policy Creation]
+image:images/exchange-users-client-policy.png[Client Policy Creation]
 
 . Enter the starting client that is the authenticated client that is requesting a token exchange.
 
@@ -511,7 +422,7 @@ image:{project_images}/exchange-users-client-policy.png[Client Policy Creation]
 defined.
 +
 .Apply Client Policy
-image:{project_images}/exchange-users-apply-policy.png[Apply Client Policy]
+image:images/exchange-users-apply-policy.png[Apply Client Policy]
 
 Your client now has permission to impersonate users.  If you do not do this correctly, you will get a 403 Forbidden response if you
 try to make this type of exchange.

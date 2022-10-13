@@ -5,15 +5,10 @@ You can use this type of policy to define conditions for your permissions where 
 
 By default, client scopes added to this policy are not specified as required and the policy will grant access if the client requesting access has been granted any of these client scopes. However, you can specify a specific client scope as <<_policy_client_scope_required, required>> if you want to enforce a specific client scope.
 
-ifeval::[{project_community}==true]
 To create a new client scope-based policy, select *Client Scope* from the policy type list.
-endif::[]
-ifeval::[{project_product}==true]
-To create a new client scope-based policy, select *Client Scope* in the item list in the upper right corner of the policy listing.
-endif::[]
 
 .Add Client Scope Policy
-image:{project_images}/policy/create-client-scope.png[alt="Add Client Scope Policy"]
+image:images/policy/create-client-scope.png[alt="Add Client Scope Policy"]
 
 == Configuration
 

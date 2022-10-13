@@ -46,15 +46,9 @@ You must first obtain the adapter configuration before building and deploying th
 . In the client listing, click the *app-authz-vanilla* client application. The Client Settings page opens.
 +
 .Client Settings
-image:{project_images}/getting-started/hello-world/enable-authz.png[alt="Client Settings"]
+image:images/getting-started/hello-world/enable-authz.png[alt="Client Settings"]
 
-ifeval::[{project_community}==true]
 . From the *Action* list, select *Download adapter config*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click the *Installation* tab.
-endif::[]
-
 . From the Format Option list, select *Keycloak OIDC JSON*.
 +
 The adapter configuration is displayed in JSON format.
@@ -62,7 +56,7 @@ The adapter configuration is displayed in JSON format.
 . Click *Download*.
 +
 .Adapter configuration
-image:{project_images}/getting-started/hello-world/adapter-config.png[alt="Adapter configuration"]
+image:images/getting-started/hello-world/adapter-config.png[alt="Adapter configuration"]
 
 . Move the file `keycloak.json` to the `app-authz-jee-vanilla/config` directory.
 
@@ -93,14 +87,14 @@ $ mvn clean package wildfly:deploy
 If your application was successfully deployed, you can access it at http://localhost:8080/app-authz-vanilla[http://localhost:8080/app-authz-vanilla]. The {project_name} Login page opens.
 
 .Login page
-image:{project_images}/getting-started/hello-world/login-page.png[alt="Login page"]
+image:images/getting-started/hello-world/login-page.png[alt="Login page"]
 
 .Procedure
 
 . Log in as *alice* using the password you specified for that user. The following page is displayed:
 +
 .Hello World Authz main page
-image:{project_images}/getting-started/hello-world/main-page.png[alt="Hello World Authz main page"]
+image:images/getting-started/hello-world/main-page.png[alt="Hello World Authz main page"]
 +
 The <<_resource_server_default_config, default settings>> defined by {project_name} when you enable authorization services for a client application provide a simple
 policy that always grants access to the resources protected by this policy.
@@ -116,7 +110,7 @@ Now we are going to change the `Logic` to `Negative` using the dropdown list in 
 +
 You can no longer access the application.
 +
-image:{project_images}/getting-started/hello-world/access-denied-page.png[alt="Access Denied page"]
+image:images/getting-started/hello-world/access-denied-page.png[alt="Access Denied page"]
 
 [role="_additional-resources"]
 .Additional resources

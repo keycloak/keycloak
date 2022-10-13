@@ -14,7 +14,7 @@ this functionality, you must first enable User-Managed Access for your realm.
 
 . Click the user name at the top right of the Admin Console and select *Manage Account*.
 +
-image:{project_images}/service/account-my-resource.png[alt="My Resources"]
+image:images/service/account-my-resource.png[alt="My Resources"]
 
 . Click *My Resources* in the menu option. A page displays with the following options.
 * Manage *My resources*
@@ -25,7 +25,7 @@ When there is a permission requests awaiting approval an icon is put next to the
 These requests are connected to the parties (users) requesting access to a particular resource.
 Users are allowed to approve or deny these requests. You can do so by clicking the icon
 +
-image:{project_images}/service/account-my-resource-detail.png[alt="Resource Detail"]
+image:images/service/account-my-resource-detail.png[alt="Resource Detail"]
 +
 * Manage *Resources shared with me*
 +

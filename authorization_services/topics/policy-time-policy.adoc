@@ -6,7 +6,7 @@ You can use this type of policy to define time conditions for your permissions.
 To create a new time-based policy, select *Time* in the item list in the upper right corner of the policy listing.
 
 .Add Time Policy
-image:{project_images}/policy/create-time.png[alt="Add Time Policy"]
+image:images/policy/create-time.png[alt="Add Time Policy"]
 
 == Configuration
 
@@ -19,28 +19,12 @@ can identify them more easily.
 +
 A string containing details about this policy.
 +
-ifeval::[{project_community}==true]
 * *Start time*
 +
 Defines the time before which access must *not* be granted. Permission is granted only if the current date/time is later than or equal to this value.
 * *Expire time*
 +
-Defines the time after which access must *not* be granted. Permission is granted only if the current date/time is earlier than or equal to this value.
-endif::[]
-ifeval::[{project_product}==true]
-* *Not Before*
-+
-Defines the time before which access must *not* be granted. Permission is granted only if the current date/time is later than or equal to this value.
-+
-+
-* *Not On or After*
-+
-Defines the time after which access must *not* be granted. Permission is granted only if the current date/time is earlier than or equal to this value.
-endif::[]
-
-ifeval::[{project_community}==true]
-Select *Repeat* to repeat access being granted on a specific *Day of Month*, *Month*, *Year*, *Hour* or *Minute*.
-endif::[]
+Defines the time after which access must *not* be granted. Permission is granted only if the current date/time is earlier than or equal to this value. Select *Repeat* to repeat access being granted on a specific *Day of Month*, *Month*, *Year*, *Hour* or *Minute*.
 
 * *Day of Month*
 +

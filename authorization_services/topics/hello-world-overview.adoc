@@ -11,3 +11,4 @@ This guide explains key concepts about {project_name} Authorization Services:
 * Configuring a client application to be a resource server, with protected resources
 * Defining permissions and authorization policies to govern access to protected resources
 * Enabling policy enforcement in your applications.
+

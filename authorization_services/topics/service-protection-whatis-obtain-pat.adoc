@@ -5,7 +5,7 @@ A *protection API token* (PAT) is a special OAuth2 access token with a scope def
 creates a role, _uma_protection_, for the corresponding client application and associates it with the client's service account.
 
 .Service Account granted with *uma_protection* role
-image:{project_images}/service/rs-uma-protection-role.png[alt="Service Account granted with uma_protection role"]
+image:images/service/rs-uma-protection-role.png[alt="Service Account granted with uma_protection role"]
 
 Resource servers can obtain a PAT from {project_name} like any other OAuth2 access token. For example, using curl:
 

@@ -5,7 +5,7 @@ When creating a role-based policy, you can specify a specific role as `Required`
 only if the user requesting access has been granted *all* the *required* roles. Both realm and client roles can be configured as such.
 
 .Example of a required role
-image:{project_images}/policy/create-role.png[alt="Example of a required role"]
+image:images/policy/create-role.png[alt="Example of a required role"]
 
 To specify a role as required, select the `Required` checkbox for the role you want to configure as required.
 

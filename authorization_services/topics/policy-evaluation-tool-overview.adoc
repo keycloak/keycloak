@@ -6,7 +6,7 @@ When designing your policies, you can simulate authorization requests to test ho
 You can access the Policy Evaluation Tool by clicking the `Evaluate` tab when editing a resource server. There you can specify different inputs to simulate real authorization requests and test the effect of your policies.
 
 .Policy evaluation tool
-image:{project_images}/policy-evaluation-tool/policy-evaluation-tool.png[alt="Policy evaluation tool"]
+image:images/policy-evaluation-tool/policy-evaluation-tool.png[alt="Policy evaluation tool"]
 
 == Providing identity information
 

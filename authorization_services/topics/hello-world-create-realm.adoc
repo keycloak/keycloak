@@ -8,45 +8,26 @@ The first step in this tutorial is to create a realm and a user in that realm. T
 . Create a realm with a name *hello-world-authz*. Once created, a page similar to the following is displayed:
 +
 .Realm hello-world-authz
-image:{project_images}/getting-started/hello-world/create-realm.png[alt="Realm hello-world-authz"]
+image:images/getting-started/hello-world/create-realm.png[alt="Realm hello-world-authz"]
 
 . Click *Users*.
 +
 The user list page displays where you can create a user.
 
-ifeval::[{project_community}==true]
 . Click *Create user*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Add User*.
-endif::[]
-
 . Complete the *Username*, *Email*, *First Name*, and *Last Name* fields.
-
 . Toggle *User Enabled* to *ON*.
-
-ifeval::[{project_community}==true]
 . Click *Create*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Save*.
-endif::[]
-
 +
 .Add User
-image:{project_images}/getting-started/hello-world/create-user.png[alt="Add User"]
+image:images/getting-started/hello-world/create-user.png[alt="Add User"]
 
 . Set a password for the user by clicking the *Credentials* tab.
 +
 .Set user password
-image:{project_images}/getting-started/hello-world/reset-user-pwd.png[alt="Set user password"]
+image:images/getting-started/hello-world/reset-user-pwd.png[alt="Set user password"]
 
 . Complete the *New Password* and *Password Confirmation* fields and toggle *Temporary* to *OFF*.
 
-ifeval::[{project_community}==true]
 . Click *Save*.
 . Click *Save password*.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Set Password* to set the user's password.
-endif::[]

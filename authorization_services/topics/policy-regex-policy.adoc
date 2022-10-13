@@ -3,15 +3,10 @@
 
 You can use this type of policy to define regex conditions for your permissions.
 
-ifeval::[{project_community}==true]
 To create a new regex-based policy, select *Regex* from the policy type list.
-endif::[]
-ifeval::[{project_product}==true]
-To create a new regex-based policy, select *Regex* in the item list in the upper right corner of the policy listing.
-endif::[]
 
 .Add Regex Policy
-image:{project_images}/policy/create-regex.png[alt="Add Regex Policy"]
+image:images/policy/create-regex.png[alt="Add Regex Policy"]
 
 == Configuration
 

@@ -13,16 +13,10 @@ The configuration settings for a resource server (or client) can be exported and
 
 . Click *Clients* in the menu.
 . Click the client you created as a resource server.
-ifeval::[{project_community}==true]
 . Click the *Export* tab.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Clients* in the menu.
-. Click the client you created as a resource server.
-endif::[]
 +
 .Export Settings
-image:{project_images}/resource-server/authz-export.png[Export Settings]
+image:images/resource-server/authz-export.png[Export Settings]
 
 The configuration file is exported in JSON format and displayed in a text area, from which you can copy and paste. You can also click *Download* to download the configuration file and save it.
 
@@ -35,11 +29,6 @@ You can import a configuration file for a resource server.
 . Navigate to the *Resource Server Settings* page.
 +
 .Import Settings
-image:{project_images}/resource-server/authz-settings.png[Import Settings]
+image:images/resource-server/authz-settings.png[Import Settings]
 
-ifeval::[{project_community}==true]
 . Click *Import* and choose a file containing the configuration that you want to import.
-endif::[]
-ifeval::[{project_product}==true]
-. Click *Select file* and choose a file containing the configuration that you want to import.
-endif::[]

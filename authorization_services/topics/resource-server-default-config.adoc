@@ -12,7 +12,7 @@ The default configuration consists of:
 The default protected resource is referred to as the *default resource* and you can view it if you navigate to the *Resources* tab.
 
 .Default resource
-image:{project_images}/resource-server/default-resource.png[alt="Default resource"]
+image:images/resource-server/default-resource.png[alt="Default resource"]
 
 This resource defines a `Type`, namely `urn:my-resource-server:resources:default` and a `URI` `/*`. Here, the `URI` field defines a
 wildcard pattern that indicates to {project_name} that this resource represents all the paths in your application. In other words,
@@ -25,7 +25,7 @@ to the default resource or any other resource you create using the same type.
 The default policy is referred to as the *only from realm policy* and you can view it if you navigate to the *Policies* tab.
 
 .Default policy
-image:{project_images}/resource-server/default-policy.png[alt="Default policy"]
+image:images/resource-server/default-policy.png[alt="Default policy"]
 
 This policy is a <<_policy_js, JavaScript-based policy>> defining a condition that always grants access to the resources protected by this policy. If you click this policy you can see that it defines a rule as follows:
 
@@ -37,7 +37,7 @@ $evaluation.grant();
 Lastly, the default permission is referred to as the *default permission* and you can view it if you navigate to the *Permissions* tab.
 
 .Default Permission
-image:{project_images}/resource-server/default-permission.png[alt="Default Permission"]
+image:images/resource-server/default-permission.png[alt="Default Permission"]
 
 This permission is a <<_permission_create_resource, resource-based permission>>, defining a set of one or more policies that are applied to all resources with a given type.
 

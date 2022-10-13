@@ -23,7 +23,7 @@ Perform the following procedure to generate the Apache HTTPD module configuratio
 . Select the *Mod Auth Mellon* files option.
 +
 .mod_auth_mellon config download
-image:{project_images}/mod-auth-mellon-config-download.png[]
+image:images/mod-auth-mellon-config-download.png[]
 
 . Click *Download* to download a ZIP file that contains the XML descriptor and PEM files you need.
 endif::[]
