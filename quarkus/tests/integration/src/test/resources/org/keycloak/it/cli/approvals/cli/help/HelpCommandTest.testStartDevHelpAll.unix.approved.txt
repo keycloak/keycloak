@@ -32,9 +32,6 @@ Storage (Experimental):
 
 --storage <type>     Experimental: Sets the default storage mechanism for all areas. Possible
                        values are: jpa, chm, hotrod.
---storage-area-action-token <type>
-                     Experimental: Sets a storage mechanism for action tokens. Possible values are:
-                       jpa, chm, hotrod.
 --storage-area-auth-session <type>
                      Experimental: Sets a storage mechanism for authentication sessions. Possible
                        values are: jpa, chm, hotrod.

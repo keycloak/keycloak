@@ -66,4 +66,8 @@ limitations under the License.
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="single-use-object-13334">
+        <dropIndex tableName="kc_single_use_obj" indexName="kc_single_use_obj_nonce"/>
+    </changeSet>
+
 </databaseChangeLog>

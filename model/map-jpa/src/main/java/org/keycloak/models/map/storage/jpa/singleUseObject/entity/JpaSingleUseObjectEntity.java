@@ -142,26 +142,6 @@ public class JpaSingleUseObjectEntity extends MapSingleUseObjectEntity.AbstractS
     }
 
     @Override
-    public String getActionId() {
-        return this.metadata.getActionId();
-    }
-
-    @Override
-    public void setActionId(String actionId) {
-        this.metadata.setActionId(actionId);
-    }
-
-    @Override
-    public String getActionVerificationNonce() {
-        return this.metadata.getActionVerificationNonce();
-    }
-
-    @Override
-    public void setActionVerificationNonce(String actionVerificationNonce) {
-        this.metadata.setActionVerificationNonce(actionVerificationNonce);
-    }
-
-    @Override
     public Map<String, String> getNotes() {
         return this.notes.stream()
                 .collect(Collectors.toMap(JpaSingleUseObjectNoteEntity::getName, JpaSingleUseObjectNoteEntity::getValue));
@@ -190,16 +170,6 @@ public class JpaSingleUseObjectEntity extends MapSingleUseObjectEntity.AbstractS
             if (value != null && !value.trim().isEmpty())
                 this.notes.add(new JpaSingleUseObjectNoteEntity(this, name, value));
         }
-    }
-
-    @Override
-    public String getUserId() {
-        return this.metadata.getUserId();
-    }
-
-    @Override
-    public void setUserId(String userId) {
-        this.metadata.setUserId(userId);
     }
 
     @Override

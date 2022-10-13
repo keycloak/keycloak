@@ -23,7 +23,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -98,7 +98,7 @@ public class MapFieldPredicates {
     public static final Map<SearchableModelField<UserSessionModel>, UpdatePredicatesFunc<Object, MapUserSessionEntity, UserSessionModel>> USER_SESSION_PREDICATES = basePredicates(UserSessionModel.SearchableFields.ID);
     public static final Map<SearchableModelField<Event>, UpdatePredicatesFunc<Object, MapAuthEventEntity, Event>> AUTH_EVENTS_PREDICATES = basePredicates(Event.SearchableFields.ID);
     public static final Map<SearchableModelField<AdminEvent>, UpdatePredicatesFunc<Object, MapAdminEventEntity, AdminEvent>> ADMIN_EVENTS_PREDICATES = basePredicates(AdminEvent.SearchableFields.ID);
-    public static final Map<SearchableModelField<ActionTokenValueModel>, UpdatePredicatesFunc<Object, MapSingleUseObjectEntity, ActionTokenValueModel>> ACTION_TOKEN_PREDICATES = basePredicates(ActionTokenValueModel.SearchableFields.ID);
+    public static final Map<SearchableModelField<SingleUseObjectValueModel>, UpdatePredicatesFunc<Object, MapSingleUseObjectEntity, SingleUseObjectValueModel>> ACTION_TOKEN_PREDICATES = basePredicates(SingleUseObjectValueModel.SearchableFields.ID);
 
     @SuppressWarnings("unchecked")
     private static final Map<Class<?>, Map> PREDICATES = new HashMap<>();
@@ -221,10 +221,7 @@ public class MapFieldPredicates {
         put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.RESOURCE_TYPE, MapAdminEventEntity::getResourceType);
         put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.RESOURCE_PATH, MapAdminEventEntity::getResourcePath);
 
-        put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.USER_ID,                    MapSingleUseObjectEntity::getUserId);
-        put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.ACTION_ID,                  MapSingleUseObjectEntity::getActionId);
-        put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE,  MapSingleUseObjectEntity::getActionVerificationNonce);
-        put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.OBJECT_KEY,                 MapSingleUseObjectEntity::getObjectKey);
+        put(ACTION_TOKEN_PREDICATES, SingleUseObjectValueModel.SearchableFields.OBJECT_KEY,                 MapSingleUseObjectEntity::getObjectKey);
     }
 
     static {
@@ -244,7 +241,7 @@ public class MapFieldPredicates {
         PREDICATES.put(UserLoginFailureModel.class,             USER_LOGIN_FAILURE_PREDICATES);
         PREDICATES.put(Event.class,                             AUTH_EVENTS_PREDICATES);
         PREDICATES.put(AdminEvent.class,                        ADMIN_EVENTS_PREDICATES);
-        PREDICATES.put(ActionTokenValueModel.class,             ACTION_TOKEN_PREDICATES);
+        PREDICATES.put(SingleUseObjectValueModel.class,             ACTION_TOKEN_PREDICATES);
     }
 
     private static <K, V extends AbstractEntity, M, L extends Comparable<L>> void put(

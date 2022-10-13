@@ -17,7 +17,7 @@
 
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
@@ -28,22 +28,19 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class SingleUseObjectKeycloakTransaction<K> extends ConcurrentHashMapKeycloakTransaction<K, MapSingleUseObjectEntity, ActionTokenValueModel> {
+public class SingleUseObjectKeycloakTransaction<K> extends ConcurrentHashMapKeycloakTransaction<K, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
 
-    public SingleUseObjectKeycloakTransaction(ConcurrentHashMapCrudOperations<MapSingleUseObjectEntity, ActionTokenValueModel> map,
+    public SingleUseObjectKeycloakTransaction(ConcurrentHashMapCrudOperations<MapSingleUseObjectEntity, SingleUseObjectValueModel> map,
                                               StringKeyConverter<K> keyConverter,
                                               DeepCloner cloner,
-                                              Map<SearchableModelField<? super ActionTokenValueModel>,
-                                                    MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapSingleUseObjectEntity, ActionTokenValueModel>> fieldPredicates) {
+                                              Map<SearchableModelField<? super SingleUseObjectValueModel>,
+                                                    MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapSingleUseObjectEntity, SingleUseObjectValueModel>> fieldPredicates) {
         super(map, keyConverter, cloner, fieldPredicates);
     }
 
     @Override
     public MapSingleUseObjectEntity create(MapSingleUseObjectEntity value) {
         if (value.getId() == null) {
-            if (value.getUserId() != null && value.getActionId() != null && value.getActionVerificationNonce() != null) {
-                value.setId(value.getUserId() + ":" + value.getActionId() + ":" + value.getActionVerificationNonce());
-            }
             if (value.getObjectKey() != null) {
                 value.setId(value.getObjectKey());
             }
