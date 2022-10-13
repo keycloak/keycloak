@@ -313,7 +313,11 @@ public class KeycloakDistConfigurator {
         }
 
         protected <R extends Collection<?>> OptionMapper<T> mapOptionFromCollection(String optionName, Function<T, R> optionValueSupplier) {
-            return mapOption(optionName, s -> optionValueSupplier.apply(s).stream().map(String::valueOf).collect(Collectors.joining(",")));
+            return mapOption(optionName, s -> {
+                var value = optionValueSupplier.apply(s);
+                if (value == null) return null;
+                return value.stream().map(String::valueOf).collect(Collectors.joining(","));
+            });
         }
     }
 }
