@@ -22,8 +22,6 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.config.StorageOptions;
 import org.keycloak.config.StorageOptions.StorageType;
 
@@ -193,18 +191,6 @@ final class StoragePropertyMappers {
                         .build(),
                 fromOption(StorageOptions.STORAGE_AUTHORIZATION_STORE)
                         .to("kc.spi-authorization-persister-map-storage-provider")
-                        .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
-                        .paramLabel("type")
-                        .build(),
-                fromOption(StorageOptions.STORAGE_ACTION_TOKEN_PROVIDER)
-                        .to("kc.spi-action-token-provider")
-                        .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::getCacheStorage)
-                        .paramLabel("type")
-                        .build(),
-                fromOption(StorageOptions.STORAGE_ACTION_TOKEN_STORE)
-                        .to("kc.spi-action-token-map-storage-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")

@@ -22,7 +22,6 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.events.EventStoreSpi;
-import org.keycloak.models.ActionTokenStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.SingleUseObjectSpi;
@@ -103,7 +102,6 @@ public class LdapMapStorage extends KeycloakModelParameters {
                 .spi("authenticationSessions").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(EventStoreSpi.NAME).config("map.storage-admin-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(EventStoreSpi.NAME).config("map.storage-auth-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                .spi(ActionTokenStoreSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(SingleUseObjectSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi("publicKeyStorage").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
 

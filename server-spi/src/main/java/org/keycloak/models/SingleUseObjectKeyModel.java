@@ -24,7 +24,7 @@ import java.util.UUID;
  *
  * @author hmlnarik
  */
-public interface ActionTokenKeyModel {
+public interface SingleUseObjectKeyModel {
 
     /**
      * @return ID of user which this token is for.

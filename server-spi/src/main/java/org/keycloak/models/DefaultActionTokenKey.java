@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.authentication.actiontoken;
+package org.keycloak.models;
 
 import org.keycloak.common.util.Base64;
-import org.keycloak.models.ActionTokenKeyModel;
 import org.keycloak.representations.JsonWebToken;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,7 +29,7 @@ import java.util.regex.Pattern;
  *
  * @author hmlnarik
  */
-public class DefaultActionTokenKey extends JsonWebToken implements ActionTokenKeyModel {
+public class DefaultActionTokenKey extends JsonWebToken implements SingleUseObjectKeyModel {
 
     /** The authenticationSession note with ID of the user authenticated via the action token */
     public static final String ACTION_TOKEN_USER_ID = "ACTION_TOKEN_USER";

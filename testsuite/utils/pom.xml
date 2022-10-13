@@ -327,7 +327,6 @@
                                 <systemProperty><key>keycloak.userSession.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.loginFailure.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.authorization.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.actionToken.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.singleUseObject.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.eventsStore.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.publicKeyStorage.provider</key><value>map</value></systemProperty>

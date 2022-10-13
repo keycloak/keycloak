@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 
 import java.io.*;
 import java.util.*;
@@ -26,12 +26,12 @@ import org.infinispan.commons.marshall.SerializeWith;
 /**
  * @author hmlnarik
  */
-@SerializeWith(ActionTokenValueEntity.ExternalizerImpl.class)
-public class ActionTokenValueEntity implements ActionTokenValueModel {
+@SerializeWith(SingleUseObjectValueEntity.ExternalizerImpl.class)
+public class SingleUseObjectValueEntity implements SingleUseObjectValueModel {
 
     private final Map<String, String> notes;
 
-    public ActionTokenValueEntity(Map<String, String> notes) {
+    public SingleUseObjectValueEntity(Map<String, String> notes) {
         this.notes = notes == null ? Collections.EMPTY_MAP : new HashMap<>(notes);
     }
 
@@ -47,15 +47,15 @@ public class ActionTokenValueEntity implements ActionTokenValueModel {
 
     @Override
     public String toString() {
-        return String.format("ActionTokenValueEntity [ notes=%s ]", notes.toString());
+        return String.format("SingleUseObjectValueEntity [ notes=%s ]", notes.toString());
     }
 
-    public static class ExternalizerImpl implements Externalizer<ActionTokenValueEntity> {
+    public static class ExternalizerImpl implements Externalizer<SingleUseObjectValueEntity> {
 
         private static final int VERSION_1 = 1;
 
         @Override
-        public void writeObject(ObjectOutput output, ActionTokenValueEntity t) throws IOException {
+        public void writeObject(ObjectOutput output, SingleUseObjectValueEntity t) throws IOException {
             output.writeByte(VERSION_1);
 
             output.writeBoolean(t.notes.isEmpty());
@@ -65,7 +65,7 @@ public class ActionTokenValueEntity implements ActionTokenValueModel {
         }
 
         @Override
-        public ActionTokenValueEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+        public SingleUseObjectValueEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
             byte version = input.readByte();
             
             if (version != VERSION_1) {
@@ -75,7 +75,7 @@ public class ActionTokenValueEntity implements ActionTokenValueModel {
 
             Map<String, String> notes = notesEmpty ? Collections.EMPTY_MAP : (Map<String, String>) input.readObject();
             
-            return new ActionTokenValueEntity(notes);
+            return new SingleUseObjectValueEntity(notes);
         }
     }
 }
