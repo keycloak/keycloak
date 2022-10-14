@@ -63,18 +63,23 @@ public class MigrateTo9_0_0 implements Migration {
     }
 
     private void addAccountApiRoles(RealmModel realm) {
+        LOG.debugf("Finding client '%s' on realm '%s'", Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, realm.getId());
         ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        RoleModel viewAppRole = accountClient.addRole(AccountRoles.VIEW_APPLICATIONS);
-        viewAppRole.setDescription("${role_" + AccountRoles.VIEW_APPLICATIONS + "}");
-        LOG.debugf("Added the role %s to the '%s' client.", AccountRoles.VIEW_APPLICATIONS, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        RoleModel viewConsentRole = accountClient.addRole(AccountRoles.VIEW_CONSENT);
-        viewConsentRole.setDescription("${role_" + AccountRoles.VIEW_CONSENT + "}");
-        LOG.debugf("Added the role %s to the '%s' client.", AccountRoles.VIEW_CONSENT, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        RoleModel manageConsentRole = accountClient.addRole(AccountRoles.MANAGE_CONSENT);
-        manageConsentRole.setDescription("${role_" + AccountRoles.MANAGE_CONSENT + "}");
-        LOG.debugf("Added the role %s to the '%s' client.", AccountRoles.MANAGE_CONSENT, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        manageConsentRole.addCompositeRole(viewConsentRole);
-        LOG.debugf("Added the %s role as a composite role to %s", AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
+        if(accountClient != null) {
+            RoleModel viewAppRole = accountClient.addRole(AccountRoles.VIEW_APPLICATIONS);
+            viewAppRole.setDescription("${role_" + AccountRoles.VIEW_APPLICATIONS + "}");
+            LOG.debugf("Added the role %s to the '%s' client.", AccountRoles.VIEW_APPLICATIONS, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            RoleModel viewConsentRole = accountClient.addRole(AccountRoles.VIEW_CONSENT);
+            viewConsentRole.setDescription("${role_" + AccountRoles.VIEW_CONSENT + "}");
+            LOG.debugf("Added the role %s to the '%s' client.", AccountRoles.VIEW_CONSENT, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            RoleModel manageConsentRole = accountClient.addRole(AccountRoles.MANAGE_CONSENT);
+            manageConsentRole.setDescription("${role_" + AccountRoles.MANAGE_CONSENT + "}");
+            LOG.debugf("Added the role %s to the '%s' client.", AccountRoles.MANAGE_CONSENT, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            manageConsentRole.addCompositeRole(viewConsentRole);
+            LOG.debugf("Added the %s role as a composite role to %s", AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
+        } else {
+            LOG.warnf("Client '%s' do not exists at realm '%s'.", Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, realm.getId());
+        }
     }
 
     protected void addAccountConsoleClient(RealmModel realm) {
@@ -92,8 +97,13 @@ public class MigrateTo9_0_0 implements Migration {
 
             client.setProtocol("openid-connect");
 
-            RoleModel role = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.MANAGE_ACCOUNT);
-            if (role != null) client.addScopeMapping(role);
+            ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            if (accountClient != null) {
+                RoleModel role = accountClient.getRole(AccountRoles.MANAGE_ACCOUNT);
+                if (role != null) {
+                    client.addScopeMapping(role);
+                }
+            }
 
             ProtocolMapperModel audienceMapper = new ProtocolMapperModel();
             audienceMapper.setName("audience resolve");
