@@ -559,20 +559,7 @@ public class MapUserProvider implements UserProvider {
         return (int) storeWithRealm(realm).getCount(withCriteria(mcb));
     }
 
-    @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, search, firstResult, maxResults, getShortStackTrace());
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put(UserModel.SEARCH, search);
-        attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString());
-        return searchForUserStream(realm, attributes, firstResult, maxResults);
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, attributes, firstResult, maxResults, getShortStackTrace());
-
-        final DefaultModelCriteria<UserModel> mcb = criteria();
+    private DefaultModelCriteria<UserModel> resolveCriteria(RealmModel realm, Map<String, String> attributes, DefaultModelCriteria<UserModel> mcb) {
         DefaultModelCriteria<UserModel> criteria = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         final boolean exactSearch = Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()));
@@ -649,6 +636,34 @@ public class MapUserProvider implements UserProvider {
                     break;
             }
         }
+        return criteria;
+    }
+
+    @Override
+    public int getUsersCount(RealmModel realm, Map<String, String> attributes) {
+        LOG.tracef("getUsersCount(%s, %s)%s", realm, attributes, getShortStackTrace());
+
+        final DefaultModelCriteria<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> criteria = resolveCriteria(realm, attributes, mcb);
+
+        return (int) storeWithRealm(realm).getCount(withCriteria(criteria));
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+        LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, search, firstResult, maxResults, getShortStackTrace());
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(UserModel.SEARCH, search);
+        attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString());
+        return searchForUserStream(realm, attributes, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, attributes, firstResult, maxResults, getShortStackTrace());
+
+        final DefaultModelCriteria<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> criteria = resolveCriteria(realm, attributes, mcb);
 
         // Only return those results that the current user is authorized to view,
         // i.e. there is an intersection of groups with view permission of the current
