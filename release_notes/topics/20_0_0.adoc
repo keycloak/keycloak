@@ -9,4 +9,11 @@ More details can be found at the https://www.keycloak.org/server/hostname[Config
 
 = Improvements to `kc.bat` when running Keycloak on Windows
 
-In this release, we are making important changes to `kc.bat` in order to give the same experience as when running on Linux.
+In this release, we are making important changes to `kc.bat` to give the same experience as when running on Linux.
+
+= Upgrade of embedded H2 database
+
+{project_name} ships for development purposes with an H2 database driver. As it is intended for development purposes only, it should never be used in a production environment.
+
+In this release, the H2 driver has been upgraded from version 1.x to version 2.x.
+See link:{upgradingguide_link}[{upgradingguide_name}] for details on how to migrate.
