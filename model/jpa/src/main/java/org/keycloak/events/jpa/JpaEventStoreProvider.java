@@ -64,11 +64,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     private final KeycloakSession session;
     private final EntityManager em;
     private final int maxDetailLength;
+    private final int maxFieldLength;
 
-    public JpaEventStoreProvider(KeycloakSession session, EntityManager em, int maxDetailLength) {
+    public JpaEventStoreProvider(KeycloakSession session, EntityManager em, int maxDetailLength, int maxFieldLength) {
         this.session = session;
         this.em = em;
         this.maxDetailLength = maxDetailLength;
+        this.maxFieldLength = maxFieldLength;
     }
 
     @Override
@@ -171,9 +173,9 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         try {
             if (maxDetailLength > 0 && event.getDetails() != null) {
                 Map<String, String> result = new HashMap<>(event.getDetails());
-                result.entrySet().forEach(t -> t.setValue(trimToMaxLength(t.getValue())));
+                result.entrySet().forEach(t -> t.setValue(trimToMaxDetailLength(t.getValue())));
 
-                eventEntity.setDetailsJson(mapper.writeValueAsString(result));
+                eventEntity.setDetailsJson(trimToMaxFieldLength(mapper.writeValueAsString(result)));
             } else {
                 eventEntity.setDetailsJson(mapper.writeValueAsString(event.getDetails()));
             }
@@ -183,14 +185,23 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         return eventEntity;
     }
 
-    private String trimToMaxLength(String detail) {
+    private String trimToMaxDetailLength(String detail) {
         if (detail != null && detail.length() > maxDetailLength) {
+            logger.warnf("Detail '%s' will be truncated.", detail);
             // (maxDetailLength - 3) takes "..." into account
-            String result = detail.substring(0, maxDetailLength - 3).concat("...");
-            logger.warn("Detail was truncated to " + result);
-            return result;
+            return detail.substring(0, maxDetailLength - 3).concat("...");
         } else {
             return detail;
+        }
+    }
+
+    private String trimToMaxFieldLength(String field) {
+        if (maxFieldLength > 0 && field != null && field.length() > maxFieldLength) {
+            logger.warnf("Field '%s' will be truncated.", field);
+            // (maxFieldLength - 3) takes "..." into account
+            return field.substring(0, maxFieldLength - 3).concat("...");
+        } else {
+            return field;
         }
     }
 
@@ -214,7 +225,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         return event;
     }
     
-    static AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+    private AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
         adminEventEntity.setId(adminEvent.getId() == null ? UUID.randomUUID().toString() : adminEvent.getId());
         adminEventEntity.setTime(adminEvent.getTime());
@@ -230,7 +241,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEventEntity.setError(adminEvent.getError());
         
         if(includeRepresentation) {
-            adminEventEntity.setRepresentation(adminEvent.getRepresentation());
+            adminEventEntity.setRepresentation(trimToMaxFieldLength(adminEvent.getRepresentation()));
         }
         return adminEventEntity;
     }
