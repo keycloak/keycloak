@@ -49,17 +49,6 @@ public interface KeycloakSessionFactory extends ProviderEventManager, Invalidati
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String realmId, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter);
 
     /**
-     * Returns list of provider factories for the given provider.
-     * @param clazz {@code Class<? extends Provider>}
-     * @return {@code List<ProviderFactory>} List of provider factories
-     * @deprecated Use {@link #getProviderFactoriesStream(Class) getProviderFactoriesStream} instead.
-     */
-    @Deprecated
-    default List<ProviderFactory> getProviderFactories(Class<? extends Provider> clazz) {
-        return getProviderFactoriesStream(clazz).collect(Collectors.toList());
-    }
-
-    /**
      * Returns stream of provider factories for the given provider.
      * @param clazz {@code Class<? extends Provider>}
      * @return {@code Stream<ProviderFactory>} Stream of provider factories. Never returns {@code null}.

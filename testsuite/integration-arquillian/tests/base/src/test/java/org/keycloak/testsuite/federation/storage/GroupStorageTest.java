@@ -101,7 +101,7 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
                 assertThat(session.groups()
-                            .searchForGroupByName(realm, "group", null, null).stream()
+                            .searchForGroupByNameStream(realm, "group", false, null, null)
                             .map(GroupModel::getName)
                             .collect(Collectors.toList()),
                         allOf(
@@ -119,7 +119,7 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
                 // search for groups and check hardcoded-group is not present
                 assertThat(session.groups()
-                            .searchForGroupByName(realm, "group", null, null).stream()
+                            .searchForGroupByNameStream(realm, "group", false, null, null)
                             .map(GroupModel::getName)
                             .collect(Collectors.toList()),
                         allOf(
