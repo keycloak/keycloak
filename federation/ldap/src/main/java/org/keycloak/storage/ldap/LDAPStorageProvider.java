@@ -93,11 +93,11 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  */
 public class LDAPStorageProvider implements UserStorageProvider,
         CredentialInputValidator,
-        CredentialInputUpdater.Streams,
+        CredentialInputUpdater,
         CredentialAuthentication,
-        UserLookupProvider.Streams,
+        UserLookupProvider,
         UserRegistrationProvider,
-        UserQueryProvider.Streams,
+        UserQueryProvider,
         ImportedUserValidation {
     private static final Logger logger = Logger.getLogger(LDAPStorageProvider.class);
     private static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;

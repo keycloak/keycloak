@@ -35,43 +35,16 @@ public interface ClientSessionContext {
     Set<String> getClientScopeIds();
 
     /**
-     * @deprecated Use {@link #getClientScopesStream() getClientScopesStream} instead.
-     * @return Set of protocol mappers
-     */
-    @Deprecated
-    default Set<ClientScopeModel> getClientScopes() {
-        return getClientScopesStream().collect(Collectors.toSet());
-    }
-
-    /**
      * Returns client scopes as a stream.
      * @return Stream of client scopes. Never returns {@code null}.
      */
     Stream<ClientScopeModel> getClientScopesStream();
 
     /**
-     * @deprecated Use {@link #getRolesStream() getRolesStream} instead.
-     * @return expanded roles (composite roles already applied)
-     */
-    @Deprecated
-    default Set<RoleModel> getRoles() {
-        return getRolesStream().collect(Collectors.toSet());
-    }
-
-    /**
      * Returns all roles including composite ones as a stream.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
     Stream<RoleModel> getRolesStream();
-
-    /**
-     * @deprecated Use {@link #getProtocolMappersStream() getProtocolMappersStream} instead.
-     * @return Set of protocol mappers
-     */
-    @Deprecated
-    default Set<ProtocolMapperModel> getProtocolMappers() {
-        return getProtocolMappersStream().collect(Collectors.toSet());
-    }
 
     /**
      * Returns protocol mappers as a stream.

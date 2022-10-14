@@ -82,7 +82,7 @@ import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 import static org.keycloak.models.utils.KeycloakModelUtils.isUsernameCaseSensitive;
 
-public class MapUserProvider implements UserProvider.Streams {
+public class MapUserProvider implements UserProvider {
 
     private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
     private final KeycloakSession session;

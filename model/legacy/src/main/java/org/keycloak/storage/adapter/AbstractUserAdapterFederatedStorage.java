@@ -73,9 +73,16 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         return UserStorageUtil.userFederatedStorage(session);
     }
 
-    @Override
+    /**
+     * @deprecated Use {@link #getRequiredActionsStream()} instead
+     */
     public Set<String> getRequiredActions() {
         return getFederatedStorage().getRequiredActions(realm, this.getId());
+    }
+
+    @Override
+    public Stream<String> getRequiredActionsStream() {
+        return getRequiredActions().stream();
     }
 
     @Override
@@ -128,13 +135,18 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      *
      *
      * @return
+     * @deprecated Use {@link #getGroupsStream()} instead
      */
-    @Override
     public Set<GroupModel> getGroups() {
         Set<GroupModel> set = new HashSet<>(getFederatedStorage().getGroups(realm, this.getId()));
         if (appendDefaultGroups()) set.addAll(realm.getDefaultGroupsStream().collect(Collectors.toSet()));
         set.addAll(getGroupsInternal());
         return set;
+    }
+
+    @Override
+    public Stream<GroupModel> getGroupsStream() {
+        return getGroups().stream();
     }
 
     @Override
@@ -161,10 +173,16 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      *
      *
      * @return
+     *
+     * @deprecated Use {@link #getRealmRoleMappingsStream()} instead
      */
-    @Override
     public Set<RoleModel> getRealmRoleMappings() {
         return this.getRoleMappings().stream().filter(RoleUtils::isRealmRole).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return getRealmRoleMappings().stream();
     }
 
     /**
@@ -174,10 +192,15 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      *
      *
      * @return
+     * @deprecated Use {@link #getClientRoleMappingsStream(ClientModel)} instead
      */
-    @Override
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         return getRoleMappings().stream().filter(r -> RoleUtils.isClientRole(r, app)).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return getClientRoleMappings(app).stream();
     }
 
     @Override
@@ -213,13 +236,19 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      * to pull role mappings from provider.  Implementors can override that method
      *
      * @return
+     *
+     * @deprecated Use {@link #getRoleMappingsStream()} instead
      */
-    @Override
     public Set<RoleModel> getRoleMappings() {
         Set<RoleModel> set = new HashSet<>(getFederatedRoleMappings());
         if (appendDefaultRolesToRoleMappings()) set.addAll(realm.getDefaultRole().getCompositesStream().collect(Collectors.toSet()));
         set.addAll(getRoleMappingsInternal());
         return set;
+    }
+
+    @Override
+    public Stream<RoleModel> getRoleMappingsStream() {
+        return getRoleMappings().stream();
     }
 
     protected Set<RoleModel> getFederatedRoleMappings() {
@@ -364,13 +393,20 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         return attributes;
     }
 
-    @Override
+    /**
+     * @deprecated Use {@link #getAttributeStream(String)} instead
+     */
     public List<String> getAttribute(String name) {
         if (UserModel.USERNAME.equals(name)) {
             return Collections.singletonList(getUsername());
         }
         List<String> result = getFederatedStorage().getAttributes(realm, this.getId()).get(mapAttribute(name));
         return (result == null) ? Collections.emptyList() : result;
+    }
+
+    @Override
+    public Stream<String> getAttributeStream(String name) {
+        return getAttribute(name).stream();
     }
 
     protected String mapAttribute(String attributeName) {
@@ -423,12 +459,13 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     /**
-     * The {@link AbstractUserAdapterFederatedStorage.Streams} class extends the {@link AbstractUserAdapterFederatedStorage}
-     * abstract class and implements the {@link UserModel.Streams} interface, allowing subclasses to focus on the implementation
-     * of the {@link Stream}-based query methods and providing default implementations for the collections-based variants
-     * that delegate to their {@link Stream} counterparts.
+     * The {@link Streams} interface makes all collection-based methods in {@link AbstractUserAdapterFederatedStorage} default by providing
+     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
      */
-    public abstract static class Streams extends AbstractUserAdapterFederatedStorage implements UserModel.Streams {
+    public abstract static class Streams extends AbstractUserAdapterFederatedStorage implements UserModel {
 
         public Streams(final KeycloakSession session, final RealmModel realm, final ComponentModel storageProviderModel) {
             super(session, realm, storageProviderModel);

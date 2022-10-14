@@ -61,12 +61,12 @@ public abstract class UserModelDefaultMethods implements UserModel {
         return getClass().getName() + "@" + getId();
     }
 
+
     /**
-     * The {@link UserModelDefaultMethods.Streams} class extends the {@link UserModelDefaultMethods} abstract class and
-     * implements the {@link UserModel.Streams} interface, allowing subclasses to focus on the implementation of the
-     * {@link Stream}-based query methods and providing default implementations for the collections-based variants that
-     * delegate to their {@link Stream} counterparts.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
-    public abstract static class Streams extends UserModelDefaultMethods implements UserModel.Streams {
+    @Deprecated
+    public abstract static class Streams extends UserModelDefaultMethods implements UserModel {
     }
 }

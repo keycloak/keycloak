@@ -525,18 +525,8 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public Set<RoleModel> getScopeMappings() {
-        return getDelegate().getScopeMappings();
-    }
-
-    @Override
     public Stream<RoleModel> getScopeMappingsStream() {
         return getDelegate().getScopeMappingsStream();
-    }
-
-    @Override
-    public Set<RoleModel> getRealmScopeMappings() {
-        return getDelegate().getRealmScopeMappings();
     }
 
     @Override
@@ -585,18 +575,8 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public Set<RoleModel> getRoles() {
-        return getDelegate().getRoles();
-    }
-
-    @Override
     public Stream<RoleModel> getRolesStream() {
         return getDelegate().getRolesStream();
-    }
-
-    @Override
-    public Set<RoleModel> getRoles(Integer firstResult, Integer maxResults) {
-        return getDelegate().getRoles(firstResult, maxResults);
     }
 
     @Override
@@ -605,18 +585,8 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
-        return getDelegate().searchForRoles(search, first, max);
-    }
-
-    @Override
     public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
         return getDelegate().searchForRolesStream(search, first, max);
-    }
-
-    @Override
-    public List<String> getDefaultRoles() {
-        return getDelegate().getDefaultRoles();
     }
 
     @Override
@@ -637,11 +607,6 @@ public class ClientModelLazyDelegate implements ClientModel {
     @Override
     public void removeDefaultRoles(String... defaultRoles) {
         getDelegate().removeDefaultRoles(defaultRoles);
-    }
-
-    @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return getDelegate().getProtocolMappers();
     }
 
     @Override
