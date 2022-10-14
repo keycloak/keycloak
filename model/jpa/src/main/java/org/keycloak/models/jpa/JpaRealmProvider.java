@@ -220,8 +220,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
     @Override
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
+        logger.tracef("addRealmRole(%s, %s, %s)", realm.getId(), id, name);
         if (getRealmRole(realm, name) != null) {
-            throw new ModelDuplicateException();
+            throw new ModelDuplicateException(String.format("Role '%s' already exists on realm '%s'.", name, realm.getId()));
         }
         RoleEntity entity = new RoleEntity();
         entity.setId(id);
@@ -251,8 +252,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public RoleModel addClientRole(ClientModel client, String id, String name) {
+        logger.tracef("addClientRole(%s, %s, %s)", client.getId(), id, name);
         if (getClientRole(client, name) != null) {
-            throw new ModelDuplicateException();
+            throw new ModelDuplicateException(String.format("Role '%s' already exists on client '%s'.", name, client.getId()));
         }
         RoleEntity roleEntity = new RoleEntity();
         roleEntity.setId(id);
@@ -740,7 +742,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public ClientModel getClientByClientId(RealmModel realm, String clientId) {
-        logger.tracef("getClientByClientId(%s, %s)%s", realm, clientId, getShortStackTrace());
+        logger.tracef("getClientByClientId(%s, %s)%s", realm, clientId);
 
         TypedQuery<String> query = em.createNamedQuery("findClientIdByClientId", String.class);
         query.setParameter("clientId", clientId);
