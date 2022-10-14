@@ -88,11 +88,11 @@ public class LDAPUserPropertiesMappingTest extends AbstractLDAPTest {
             KeycloakContext context = session.getContext();
             RealmModel realm = context.getRealm();
 
-            UserModel test10 = session.users().getUserByUsername(DIETMAR, realm);
+            UserModel test10 = session.users().getUserByUsername(realm, DIETMAR);
             Assert.assertTrue(test10.isEnabled());
             Assert.assertTrue(test10.isEmailVerified());
 
-            UserModel test11 = session.users().getUserByUsername(STEFAN, realm);
+            UserModel test11 = session.users().getUserByUsername(realm, STEFAN);
             Assert.assertFalse(test11.isEnabled());
             Assert.assertFalse(test11.isEmailVerified());
 

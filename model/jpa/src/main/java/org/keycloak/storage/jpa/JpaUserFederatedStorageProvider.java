@@ -72,7 +72,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class JpaUserFederatedStorageProvider implements
         UserFederatedStorageProvider.Streams,
-        UserCredentialStore.Streams {
+        UserCredentialStore {
 
     protected static final Logger logger = Logger.getLogger(JpaUserFederatedStorageProvider.class);
 

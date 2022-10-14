@@ -51,26 +51,10 @@ public interface RoleContainerModel {
     boolean removeRole(RoleModel role);
 
     /**
-     * @deprecated Use {@link #getRolesStream() getRolesStream} instead.
-     */
-    @Deprecated
-    default Set<RoleModel> getRoles() {
-        return getRolesStream().collect(Collectors.toSet());
-    }
-
-    /**
      * Returns available roles as a stream.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
     Stream<RoleModel> getRolesStream();
-
-    /**
-     * @deprecated Use {@link #getRolesStream(Integer, Integer) getRolesStream} instead.
-     */
-    @Deprecated
-    default Set<RoleModel> getRoles(Integer firstResult, Integer maxResults) {
-        return getRolesStream(firstResult, maxResults).collect(Collectors.toSet());
-    }
 
     /**
      * Returns available roles as a stream.
@@ -79,14 +63,6 @@ public interface RoleContainerModel {
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
     Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults);
-
-    /**
-     * @deprecated Use {@link #searchForRolesStream(String, Integer, Integer) searchForRolesStream} instead.
-     */
-    @Deprecated
-    default Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
-        return searchForRolesStream(search, first, max).collect(Collectors.toSet());
-    }
 
     /**
      * Searches roles by the given name. Returns all roles that match the given filter.

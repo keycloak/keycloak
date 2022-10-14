@@ -46,7 +46,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAdapter implements CachedUserModel.Streams {
+public class UserAdapter implements CachedUserModel {
 
     private final Supplier<UserModel> modelSupplier;
     protected final CachedUser cached;

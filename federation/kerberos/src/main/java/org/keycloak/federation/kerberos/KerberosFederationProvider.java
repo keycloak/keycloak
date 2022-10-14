@@ -51,9 +51,9 @@ import java.util.stream.Stream;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KerberosFederationProvider implements UserStorageProvider,
-        UserLookupProvider.Streams,
+        UserLookupProvider,
         CredentialInputValidator,
-        CredentialInputUpdater.Streams,
+        CredentialInputUpdater,
         CredentialAuthentication,
         ImportedUserValidation {
 
