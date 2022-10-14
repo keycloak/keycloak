@@ -25,7 +25,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.operator.controllers.KeycloakDeploymentConfig;
+import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -36,39 +36,51 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @QuarkusTest
-public class KeycloakDeploymentConfigTest {
+public class KeycloakDistConfiguratorTest {
 
     @Test
     public void enabledFeatures() {
-        testFirstClassCitizenEnvVars("KC_FEATURES", KeycloakDeploymentConfig::configureFeatures, "docker", "authorization");
+        testFirstClassCitizenEnvVars("KC_FEATURES", KeycloakDistConfigurator::configureFeatures, "docker", "authorization");
     }
 
     @Test
     public void disabledFeatures() {
-        testFirstClassCitizenEnvVars("KC_FEATURES_DISABLED", KeycloakDeploymentConfig::configureFeatures, "admin", "step-up-authentication");
+        testFirstClassCitizenEnvVars("KC_FEATURES_DISABLED", KeycloakDistConfigurator::configureFeatures, "admin", "step-up-authentication");
     }
 
     @Test
     public void transactions() {
-        testFirstClassCitizenEnvVars("KC_TRANSACTION_XA_ENABLED", KeycloakDeploymentConfig::configureTransactions, "false");
+        testFirstClassCitizenEnvVars("KC_TRANSACTION_XA_ENABLED", KeycloakDistConfigurator::configureTransactions, "false");
+    }
+
+    @Test
+    public void testEmptyLists() {
+        final Keycloak keycloak = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-with-empty-list.yml", Keycloak.class);
+        final StatefulSet deployment = getBasicKcDeployment();
+        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
+
+        final List<EnvVar> envVars = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        distConfig.configureFeatures();
+        assertEnvVarNotPresent(envVars, "KC_FEATURES");
+        assertEnvVarNotPresent(envVars, "KC_FEATURES_DISABLED");
     }
 
     /* UTILS */
-    private void testFirstClassCitizenEnvVars(String varName, Consumer<KeycloakDeploymentConfig> config, String... expectedValues) {
+    private void testFirstClassCitizenEnvVars(String varName, Consumer<KeycloakDistConfigurator> config, String... expectedValues) {
         testFirstClassCitizenEnvVars("/test-serialization-keycloak-cr.yml", varName, config, expectedValues);
     }
 
-    private void testFirstClassCitizenEnvVars(String crName, String varName, Consumer<KeycloakDeploymentConfig> config, String... expectedValues) {
+    private void testFirstClassCitizenEnvVars(String crName, String varName, Consumer<KeycloakDistConfigurator> config, String... expectedValues) {
         final Keycloak keycloak = K8sUtils.getResourceFromFile(crName, Keycloak.class);
         final StatefulSet deployment = getBasicKcDeployment();
-        final KeycloakDeploymentConfig deploymentConfig = new KeycloakDeploymentConfig(keycloak, deployment, null);
+        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
 
         final Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(container).isNotNull();
 
         assertEnvVarNotPresent(container.getEnv(), varName);
 
-        config.accept(deploymentConfig);
+        config.accept(distConfig);
 
         assertContainerEnvVar(container.getEnv(), varName, expectedValues);
     }
