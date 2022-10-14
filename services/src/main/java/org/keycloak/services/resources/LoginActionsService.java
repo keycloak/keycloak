@@ -1028,13 +1028,22 @@ public class LoginActionsService {
 
 
         Response response;
-        
+
+        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
         if (isCancelAppInitiatedAction(factory.getId(), authSession, context)) {
             provider.initiatedActionCanceled(session, authSession);
             AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
             context.success();
         } else {
             provider.processAction(context);
+        }
+        if (userSession != null) {
+            // the action might relink sessions under a new root session with the same id as the user session
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSession.getId());
+            if (rootAuthSession != null) {
+                // refresh the auth session to ensure it is updated
+                authSession = rootAuthSession.getAuthenticationSession(authSession.getClient(), tabId);
+            }
         }
 
         if (action != null) {

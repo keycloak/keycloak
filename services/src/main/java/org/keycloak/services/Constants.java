@@ -20,4 +20,5 @@ public final class Constants {
 
     public static final String USER_SESSION_ID = "user.session.id";
     public static final String ASSOCIATED_AUTH_SESSION_ID = "associated.auth.session.id.";
+    public static final String ASSOCIATED_LOGOUT_AUTH_SESSION_ID = "associated.logout.auth.session.id";
 }

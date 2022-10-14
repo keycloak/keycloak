@@ -154,8 +154,8 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
         if (other instanceof MapRootAuthenticationSessionAdapter) {
             MapRootAuthenticationSessionAdapter otherAdapter = (MapRootAuthenticationSessionAdapter) other;
             for (MapAuthenticationSessionEntity sessionEntity : otherAdapter.entity.getAuthenticationSessions()) {
-//                otherAdapter.removeAuthenticationSessionByTabId(sessionEntity.getTabId());
                 this.entity.addAuthenticationSession(sessionEntity);
+                otherAdapter.removeAuthenticationSessionByTabId(sessionEntity.getTabId());
             }
         }
     }
@@ -171,5 +171,24 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
     private MapAuthenticationSessionAdapter setAuthContext(MapAuthenticationSessionAdapter adapter) {
         session.getContext().setAuthenticationSession(adapter);
         return adapter;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getId(), hashCode());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RootAuthenticationSessionModel)) return false;
+
+        RootAuthenticationSessionModel that = (RootAuthenticationSessionModel) o;
+        return Objects.equals(that.getId(), getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
     }
 }

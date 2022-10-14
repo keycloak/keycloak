@@ -771,42 +771,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void refreshTokenAfterAdminLogoutAllAndLoginAgain() {
-        String refreshToken1 = loginAndForceNewLoginPage();
-
-        adminClient.realm("test").logoutAll();
-        // Must wait for server to execute the request. Sometimes, there is issue with the execution and another tests failed, because of this.
-        WaitUtils.pause(500);
-
-        events.clear();
-
-        // Set time offset to 2 (Just to simulate to be more close to real situation)
-        setTimeOffset(2);
-
-        // Continue with login
-        WaitUtils.waitForPageToLoad();
-        loginPage.login("password");
-
-        assertFalse(loginPage.isCurrent());
-
-        OAuthClient.AccessTokenResponse tokenResponse2 = null;
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
-
-        setTimeOffset(4);
-
-        // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
-        OAuthClient.AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1, "password");
-        assertEquals(400, responseReuseExceeded.getStatusCode());
-
-        setTimeOffset(6);
-
-        // Finally try with valid refresh token
-        responseReuseExceeded = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken(), "password");
-        assertEquals(200, responseReuseExceeded.getStatusCode());
-    }
-
-    @Test
     public void refreshTokenAfterUserAdminLogoutEndpointAndLoginAgain() {
         try {
             String refreshToken1 = loginAndForceNewLoginPage();

@@ -204,7 +204,7 @@ public abstract class AuthorizationEndpointBase {
                     userSession.setNote(ASSOCIATED_AUTH_SESSION_ID + authSession.getTabId(), rootAuthSession.getId());
                     authSession.setAuthNote(USER_SESSION_ID, userSessionId);
                     logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
-                            "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());
+                            "Re-created root authentication session with id %s. Client is: %s . New authentication session tab ID: %s", userSessionId, rootAuthSession.getId(), client.getClientId(), authSession.getTabId());
                 }
             } else {
                 authSession = createNewAuthenticationSession(manager, client);

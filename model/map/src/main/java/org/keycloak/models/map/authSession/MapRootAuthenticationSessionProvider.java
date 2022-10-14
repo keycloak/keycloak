@@ -131,6 +131,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
+        LOG.tracef("removeRootAuthenticationSession(%s, %s)%s", realm, authenticationSession, getShortStackTrace());
         Objects.requireNonNull(authenticationSession, "The provided root authentication session can't be null!");
         tx.delete(authenticationSession.getId());
     }
