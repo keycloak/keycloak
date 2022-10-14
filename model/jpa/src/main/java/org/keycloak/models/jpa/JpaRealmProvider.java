@@ -742,7 +742,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public ClientModel getClientByClientId(RealmModel realm, String clientId) {
-        logger.tracef("getClientByClientId(%s, %s)%s", realm, clientId);
+        logger.tracef("getClientByClientId(%s, %s)", realm, clientId);
 
         TypedQuery<String> query = em.createNamedQuery("findClientIdByClientId", String.class);
         query.setParameter("clientId", clientId);
