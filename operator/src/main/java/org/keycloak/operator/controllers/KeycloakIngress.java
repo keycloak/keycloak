@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 
@@ -42,7 +43,8 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        if (keycloak.getSpec().isDisableDefaultIngress()) {
+        IngressSpec ingressSpec = keycloak.getSpec().getIngressSpec();
+        if (ingressSpec != null && !ingressSpec.isIngressEnabled()) {
             if (existingIngress != null) {
                 deleteExistingIngress();
             }
@@ -121,9 +123,13 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
     }
 
     public void updateStatus(KeycloakStatusBuilder status) {
-        if (!keycloak.getSpec().isDisableDefaultIngress() && existingIngress == null) {
+        IngressSpec ingressSpec = keycloak.getSpec().getIngressSpec();
+        if (ingressSpec == null) {
+            ingressSpec = new IngressSpec();
+            ingressSpec.setIngressEnabled(true);
+        }
+        if (ingressSpec.isIngressEnabled() && existingIngress == null) {
             status.addNotReadyMessage("No existing Keycloak Ingress found, waiting for creating a new one");
-            return;
         }
     }
 
