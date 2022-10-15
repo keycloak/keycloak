@@ -25,6 +25,7 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import javax.validation.constraints.NotNull;
@@ -54,13 +55,15 @@ public class KeycloakSpec {
     @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
     private HttpSpec httpSpec;
 
-    @JsonPropertyDescription("Disable the default ingress.")
-    private boolean disableDefaultIngress;
-
     @JsonPropertyDescription(
             "In this section you can configure podTemplate advanced features, not production-ready, and not supported settings.\n" +
                     "Use at your own risk and open an issue with your use-case if you don't find an alternative way.")
     private UnsupportedSpec unsupported;
+
+    @JsonProperty("ingress")
+    @JsonPropertyDescription("The deployment is, by default, exposed through a basic ingress.\n" +
+            "You can change this behaviour by setting the enabled property to false.")
+    private IngressSpec ingressSpec;
 
     @JsonProperty("features")
     @JsonPropertyDescription("In this section you can configure Keycloak features, which should be enabled/disabled.")
@@ -91,14 +94,6 @@ public class KeycloakSpec {
         this.httpSpec = httpSpec;
     }
 
-    public void setDisableDefaultIngress(boolean value) {
-        this.disableDefaultIngress = value;
-    }
-
-    public boolean isDisableDefaultIngress() {
-        return this.disableDefaultIngress;
-    }
-
     public UnsupportedSpec getUnsupported() {
         return unsupported;
     }
@@ -121,6 +116,14 @@ public class KeycloakSpec {
 
     public void setTransactionsSpec(TransactionsSpec transactionsSpec) {
         this.transactionsSpec = transactionsSpec;
+    }
+
+    public IngressSpec getIngressSpec() {
+        return ingressSpec;
+    }
+
+    public void setIngressSpec(IngressSpec ingressSpec) {
+        this.ingressSpec = ingressSpec;
     }
 
     public int getInstances() {
