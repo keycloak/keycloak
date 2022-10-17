@@ -5,6 +5,7 @@ import org.keycloak.storage.SearchableModelField;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 
@@ -69,6 +70,21 @@ public class QueryParameters<M> {
         return this;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        QueryParameters<?> that = (QueryParameters<?>) o;
+        // there is currently no equals method for the ModelCriteriaBuilder, take its String representation as a substitute.
+        return Objects.equals(offset, that.offset) && Objects.equals(limit, that.limit) && Objects.equals(orderBy, that.orderBy) && Objects.equals(mcb.toString(), that.mcb.toString());
+    }
+
+    @Override
+    public int hashCode() {
+        // there is currently no equals method for the ModelCriteriaBuilder, take its String representation as a substitute.
+        return Objects.hash(offset, limit, orderBy, mcb.toString());
+    }
+
     /**
      * Sets offset parameter
      *
@@ -105,6 +121,16 @@ public class QueryParameters<M> {
 
     public List<OrderBy<M>> getOrderBy() {
         return orderBy;
+    }
+
+    @Override
+    public String toString() {
+        return "QueryParameters{" +
+                "offset=" + offset +
+                ", limit=" + limit +
+                ", orderBy=" + orderBy +
+                ", mcb=" + mcb +
+                '}';
     }
 
     /**
