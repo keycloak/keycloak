@@ -306,10 +306,9 @@ class KeycloakProcessor {
      *
      * @param recorder
      */
-    @Consume(CryptoProviderInitBuildItem.class)
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    KeycloakSessionFactoryPreInitBuildItem configureProviders(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
+    KeycloakSessionFactoryPreInitBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
         Profile.setInstance(new QuarkusProfile());
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
@@ -576,13 +575,12 @@ class KeycloakProcessor {
     @Consume(BootstrapConfigSetupCompleteBuildItem.class)
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
-    CryptoProviderInitBuildItem setCryptoProvider(KeycloakRecorder recorder) {
+    void setCryptoProvider(KeycloakRecorder recorder) {
         FipsMode fipsMode = Configuration.getOptionalValue(
                 MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
                 FipsMode::valueOf).orElse(FipsMode.disabled);
 
         recorder.setCryptoProvider(fipsMode);
-        return new CryptoProviderInitBuildItem();
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)

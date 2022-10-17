@@ -288,11 +288,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Check whether HEAD^ contains crypto related changes
-        run: echo "GIT_CRYPTO_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e 'crypto' )" >> $GITHUB_ENV
-
       - name: Cache Maven packages
-        if: ${{ github.event_name != 'pull_request' || env.GIT_CRYPTO_RELEVANT_DIFF != 0 }}
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
@@ -300,7 +296,6 @@ jobs:
           restore-keys: cache-1-${{ runner.os }}-m2
 
       - name: Download built keycloak
-        if: ${{ github.event_name != 'pull_request' || env.GIT_CRYPTO_RELEVANT_DIFF != 0 }}
         id: download-keycloak
         uses: actions/download-artifact@v3
         with:
@@ -313,18 +308,14 @@ jobs:
       #     ls -lR ~/.m2/repository
 
       - uses: actions/setup-java@v3
-        if: ${{ github.event_name != 'pull_request' || env.GIT_CRYPTO_RELEVANT_DIFF != 0 }}
         with:
           distribution: 'temurin'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
-        if: ${{ github.event_name != 'pull_request' || env.GIT_CRYPTO_RELEVANT_DIFF != 0 }}
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Prepare quarkus distribution with BCFIPS
-        if: ${{ github.event_name != 'pull_request' || env.GIT_CRYPTO_RELEVANT_DIFF != 0 }}
         run: ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
       - name: Run base tests
-        if: ${{ github.event_name != 'pull_request' || env.GIT_CRYPTO_RELEVANT_DIFF != 0 }}
         run: |
           declare -A PARAMS TESTGROUP
           PARAMS["bcfips-nonapproved-pkcs12"]="-Pauth-server-quarkus,auth-server-fips140-2"
