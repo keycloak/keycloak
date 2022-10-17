@@ -34,7 +34,7 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="usersInRole", query="select u from UserRoleMappingEntity m, UserEntity u where m.roleId=:roleId and u.id=m.user"),        
+        @NamedQuery(name="usersInRole", query="select u from UserRoleMappingEntity m, UserEntity u where m.roleId=:roleId and u.id=m.user order by u.username"),
         @NamedQuery(name="userHasRole", query="select m from UserRoleMappingEntity m where m.user = :user and m.roleId = :roleId"),
         @NamedQuery(name="userRoleMappings", query="select m from UserRoleMappingEntity m where m.user = :user"),
         @NamedQuery(name="userRoleMappingIds", query="select m.roleId from UserRoleMappingEntity m where m.user = :user"),
