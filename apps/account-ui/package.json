@@ -7,9 +7,9 @@
     "lint": "eslint . --ext js,jsx,mjs,ts,tsx"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.215.1",
-    "@patternfly/react-core": "^4.239.0",
-    "@patternfly/react-icons": "^4.90.0",
+    "@patternfly/patternfly": "^4.217.1",
+    "@patternfly/react-core": "^4.250.1",
+    "@patternfly/react-icons": "^4.92.6",
     "i18next": "^21.10.0",
     "i18next-http-backend": "^1.4.4",
     "react": "^17.0.2",
