@@ -52,10 +52,20 @@ import org.keycloak.provider.Spi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 public class JpaMapStorage extends KeycloakModelParameters {
 
     private static final Logger LOG = Logger.getLogger(JpaMapStorage.class.getName());
+
+    private static final Boolean START_CONTAINER = Boolean.valueOf(System.getProperty("postgres.start-container", "true"));
+    private static final String POSTGRES_DOCKER_IMAGE_NAME = System.getProperty("keycloak.map.storage.postgres.docker.image", "postgres:alpine");
+    private static final PostgreSQLContainer POSTGRES_CONTAINER = new PostgreSQLContainer(POSTGRES_DOCKER_IMAGE_NAME);
+    private static final String POSTGRES_DB_DEFAULT_NAME = System.getProperty("keycloak.map.storage.connectionsJpa.databaseName", "keycloak");
+    private static final String POSTGRES_DB_USER = System.getProperty("keycloak.map.storage.connectionsJpa.user", "keycloak");
+    private static final String POSTGRES_DB_PASSWORD = System.getProperty("keycloak.map.storage.connectionsJpa.password", "pass");
+
+    private static String POSTGRES_DB_JDBC_URL = System.getProperty("keycloak.map.storage.connectionsJpa.url");
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
             .add(MapJpaUpdaterSpi.class)
@@ -81,9 +91,9 @@ public class JpaMapStorage extends KeycloakModelParameters {
 
         cf.spi(MapStorageSpi.NAME)
                 .provider(JpaMapStorageProviderFactory.PROVIDER_ID)
-                .config("url", System.getProperty("keycloak.map.storage.connectionsJpa.url"))
-                .config("user", System.getProperty("keycloak.map.storage.connectionsJpa.user"))
-                .config("password", System.getProperty("keycloak.map.storage.connectionsJpa.password"))
+                .config("url", POSTGRES_DB_JDBC_URL)
+                .config("user", POSTGRES_DB_USER)
+                .config("password", POSTGRES_DB_PASSWORD)
                 .config("driver", "org.postgresql.Driver")
                 .config("driverDialect", "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
 
@@ -103,5 +113,25 @@ public class JpaMapStorage extends KeycloakModelParameters {
           .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi(EventStoreSpi.NAME).provider(MapEventStoreProviderFactory.PROVIDER_ID)                                   .config("storage-admin-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
                                                                                                                         .config("storage-auth-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID);
+    }
+
+    @Override
+    public void beforeSuite(Config cf) {
+        if (START_CONTAINER) {
+            POSTGRES_CONTAINER
+                    .withDatabaseName(POSTGRES_DB_DEFAULT_NAME)
+                    .withUsername(POSTGRES_DB_USER)
+                    .withPassword(POSTGRES_DB_PASSWORD)
+                    .start();
+
+            POSTGRES_DB_JDBC_URL = POSTGRES_CONTAINER.getJdbcUrl();
+        }
+    }
+
+    @Override
+    public void afterSuite() {
+        if (START_CONTAINER) {
+            POSTGRES_CONTAINER.stop();
+        }
     }
 }
