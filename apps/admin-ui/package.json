@@ -60,7 +60,7 @@
     "lodash-es": "^4.17.21",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-dropzone": "^14.2.2",
+    "react-dropzone": "^14.2.3",
     "react-error-boundary": "^3.1.4",
     "react-flow-renderer": "^9.7.4",
     "react-hook-form": "^6.15.8",
