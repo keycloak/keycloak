@@ -73,11 +73,13 @@ public class TotpLoginBean {
 
         private final String id;
         private final String userLabel;
+        private final Integer digits;
 
         public OTPCredential(CredentialModel credentialModel) {
             this.id = credentialModel.getId();
             // TODO: "Unnamed" OTP credentials should be displayed in the UI in gray
             this.userLabel = credentialModel.getUserLabel() == null || credentialModel.getUserLabel().isEmpty() ? OTPFormAuthenticator.UNNAMED : credentialModel.getUserLabel();
+            this.digits = credentialModel.getDigits();
         }
 
         public String getId() {
@@ -86,6 +88,10 @@ public class TotpLoginBean {
 
         public String getUserLabel() {
             return userLabel;
+        }
+        
+        public Integer getDigits(){
+            return digits;
         }
     }
 }
