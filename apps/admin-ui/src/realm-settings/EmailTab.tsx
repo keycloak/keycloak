@@ -405,7 +405,11 @@ export const RealmSettingsEmailTab = ({
               >
                 {t("common:testConnection")}
               </Button>
-              <Button variant="link" onClick={reset}>
+              <Button
+                variant="link"
+                onClick={reset}
+                data-testid="email-tab-revert"
+              >
                 {t("common:revert")}
               </Button>
             </ActionGroup>

@@ -54,8 +54,8 @@ export default class RealmSettingsPage extends CommonPage {
   loginActionTimeoutSelectMenuList =
     "#kc-login-action-timeout-select-menu > div > ul";
 
-  selectDefaultLocale = "select-default-locale";
-  defaultLocaleList = "select-default-locale > div > ul";
+  selectDefaultLocale = "#kc-default-locale";
+  defaultLocaleList = "select-default-locale";
   supportedLocalesTypeahead =
     "#kc-l-supported-locales-select-multi-typeahead-typeahead";
   supportedLocalesToggle = "#kc-l-supported-locales";
@@ -229,6 +229,13 @@ export default class RealmSettingsPage extends CommonPage {
   private realmDisplayName = "#kc-display-name";
   private frontEndURL = "#kc-frontend-url";
   private requireSSL = "#kc-require-ssl";
+  private fromDisplayName = "from-display-name";
+  private replyToEmail = "#kc-reply-to";
+  private port = "#kc-port";
+
+  private keysList = ".kc-keys-list > tbody > tr > td";
+  private publicKeyBtn =
+    ".kc-keys-list > tbody > tr > td > .button-wrapper > button";
   private realmSettingsEventsTab = new RealmSettingsEventsTab();
 
   private realmName?: string;
@@ -304,6 +311,18 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.realmDisplayName).clear().type(displayName);
   }
 
+  fillFromDisplayName(displayName: string) {
+    cy.findByTestId(this.fromDisplayName).clear().type(displayName);
+  }
+
+  fillReplyToEmail(email: string) {
+    cy.get(this.replyToEmail).clear().type(email);
+  }
+
+  fillPort(port: string) {
+    cy.get(this.port).clear().type(port);
+  }
+
   fillFrontendURL(url: string) {
     cy.get(this.frontEndURL).clear().type(url);
   }
@@ -322,7 +341,7 @@ export default class RealmSettingsPage extends CommonPage {
 
   setDefaultLocale(locale: string) {
     cy.get(this.selectDefaultLocale).click();
-    cy.get(this.defaultLocaleList).contains(locale).click();
+    cy.findByTestId(this.defaultLocaleList).contains(locale).click();
     return this;
   }
 
@@ -364,6 +383,14 @@ export default class RealmSettingsPage extends CommonPage {
       "Success. The provider has been deleted."
     );
     return this;
+  }
+
+  checkKeyPublic() {
+    cy.get(this.publicKeyBtn).contains("Public key").click();
+    this.modalUtils().checkModalTitle("Public key").confirmModal();
+
+    cy.get(this.publicKeyBtn).contains("Certificate").click();
+    this.modalUtils().checkModalTitle("Certificate").confirmModal();
   }
 
   switchToActiveFilter() {

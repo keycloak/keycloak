@@ -233,6 +233,12 @@ describe("Realm settings events tab tests", () => {
     realmSettingsPage.deleteProvider("test_aes-generated");
   });
 
+  it("list keys", () => {
+    sidebarPage.goToRealmSettings();
+    cy.findByTestId("rs-keys-tab").click();
+    realmSettingsPage.checkKeyPublic();
+  });
+
   it("add locale", () => {
     sidebarPage.goToRealmSettings();
 
@@ -258,6 +264,8 @@ describe("Realm settings events tab tests", () => {
     masthead.checkNotificationMessage(
       "Success! The message bundle has been added."
     );
+    realmSettingsPage.setDefaultLocale("dansk");
+    cy.findByTestId("localization-tab-save").click();
   });
 
   it("Realm header settings", () => {

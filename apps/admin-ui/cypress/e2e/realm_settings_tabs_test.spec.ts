@@ -81,6 +81,21 @@ describe("Realm settings tabs tests", () => {
     const msg: string = "Error! Failed to send email.";
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-email-tab").click();
+    //required fields not filled in or not filled properly
+    realmSettingsPage.addSenderEmail("not a valid email");
+    realmSettingsPage.fillFromDisplayName("displayName");
+    realmSettingsPage.fillReplyToEmail("replyTo@email.com");
+    realmSettingsPage.fillPort("10");
+    cy.findByTestId("email-tab-save").click();
+    cy.get("#kc-display-name-helper").contains("You must enter a valid email.");
+    cy.get("#kc-host-helper").contains("Required field");
+    //revert
+    cy.wait(100);
+    cy.findByTestId("email-tab-revert").click();
+    cy.findByTestId("sender-email-address").should("be.empty");
+    cy.findByTestId("from-display-name").should("be.empty");
+    cy.get("#kc-port").should("be.empty");
+
     realmSettingsPage.addSenderEmail("example@example.com");
     realmSettingsPage.toggleCheck(realmSettingsPage.enableSslCheck);
     realmSettingsPage.toggleCheck(realmSettingsPage.enableStartTlsCheck);
@@ -89,10 +104,12 @@ describe("Realm settings tabs tests", () => {
     cy.findByTestId(realmSettingsPage.testConnectionButton).click();
     cy.wait("@load");
 
+    //ln109-113 cause the tests to fail locally, but is needed for the test to pass on the dashboard.
     realmSettingsPage.fillEmailField(
       "example" + (Math.random() + 1).toString(36).substring(7) + "@example.com"
     );
     cy.findByTestId(realmSettingsPage.modalTestConnectionButton).click();
+
     masthead.checkNotificationMessage(msg, true);
   });
 
