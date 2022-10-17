@@ -19,7 +19,9 @@ package org.keycloak.models.map.storage.jpa;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -32,6 +34,8 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
+import org.hibernate.Session;
+import org.hibernate.internal.SessionImpl;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -45,6 +49,7 @@ import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.utils.LockObjectsForModification;
 
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 import static org.keycloak.models.map.storage.jpa.PaginationUtils.paginateQuery;
@@ -120,9 +125,31 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         return e != null && isExpirableEntity && isExpired((ExpirableEntity) e, true) ? null : e;
     }
 
+    private final static String JPA_MAP_CACHE = "keycloak.jpamap.cache";
+
     @Override
     @SuppressWarnings("unchecked")
     public Stream<E> read(QueryParameters<M> queryParameters) {
+        Map<QueryParameters<M>, List<RE>> cache = getQueryCache();
+        if (!LockObjectsForModification.isEnabled(this.session, modelType)) {
+            List<RE> previousResult = cache.get(queryParameters);
+            //noinspection resource
+            SessionImpl session = (SessionImpl) em.unwrap(Session.class);
+            // only do dirty checking if there is a previously cached result that would match the query
+            if (previousResult != null) {
+                // if the session is dirty, data has been modified, and the cache must not be used
+                // check if there are queued actions already, as this allows us to skip the expensive dirty check
+                if (!session.getActionQueue().areInsertionsOrDeletionsQueued() && session.getActionQueue().numberOfUpdates() == 0 && session.getActionQueue().numberOfCollectionUpdates() == 0 &&
+                    !session.isDirty()) {
+                    logger.tracef("tx %d: cache hit for %s for model %s%s", hashCode(), queryParameters, modelType.getName(), getShortStackTrace());
+                    return closing(previousResult.stream()).map(this::mapToEntityDelegateUnique);
+                } else {
+                    logger.tracef("tx %d: cache ignored due to dirty session for %s for model %s%s", hashCode(), queryParameters, modelType.getName(), getShortStackTrace());
+                }
+            }
+        }
+        logger.tracef("tx %d: cache miss for %s for model %s%s", hashCode(), queryParameters, modelType.getName(), getShortStackTrace());
+
         JpaModelCriteriaBuilder mcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createJpaModelCriteriaBuilder());
 
@@ -161,8 +188,34 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         if (LockObjectsForModification.isEnabled(session, modelType)) {
             emQuery = emQuery.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         }
-        return closing(paginateQuery(emQuery, queryParameters.getOffset(), queryParameters.getLimit()).getResultStream())
-                .map(this::mapToEntityDelegateUnique);
+
+        // In order to cache the result, the full result needs to be retrieved.
+        // There is also no difference to that in Hibernate, as Hibernate will first retrieve all elements from the ResultSet.
+        List<RE> resultList = paginateQuery(emQuery, queryParameters.getOffset(), queryParameters.getLimit()).getResultList();
+        cache.put(queryParameters, resultList);
+
+        return closing(resultList.stream()).map(this::mapToEntityDelegateUnique);
+    }
+
+    private Map<QueryParameters<M>, List<RE>> getQueryCache() {
+        //noinspection resource,unchecked
+        Map<Class<?>, Map<QueryParameters<M>, List<RE>>> cache = (Map<Class<?>, Map<QueryParameters<M>, List<RE>>>) em.unwrap(Session.class).getProperties().get(JPA_MAP_CACHE);
+        if (cache == null) {
+            cache = new HashMap<>();
+            //noinspection resource
+            em.unwrap(Session.class).setProperty(JPA_MAP_CACHE, cache);
+        }
+        return cache.computeIfAbsent(modelType, k -> new HashMap<>());
+    }
+
+    public static void clearQueryCache(Session session) {
+        logger.tracef("query cache cleared");
+        //noinspection unchecked
+        Map<Class<?>, Map<?,?>> queryCache = (HashMap<Class<?>, Map<?, ?>>) session.getProperties().get(JPA_MAP_CACHE);
+        if (queryCache != null) {
+            // Can't set null as a property values as it is not serializable. Clearing each map so that the current query result might be saved.
+            queryCache.forEach((queryParameters, map) -> map.clear());
+        }
     }
 
     @Override
@@ -184,7 +237,6 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean delete(String key) {
         if (key == null) return false;
         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(key);
