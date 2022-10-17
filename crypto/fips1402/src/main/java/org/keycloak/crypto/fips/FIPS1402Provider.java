@@ -21,6 +21,7 @@ import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,7 +34,9 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.fips.FipsRSA;
 import org.bouncycastle.crypto.fips.FipsSHS;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.math.ec.ECCurve;
+import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
 import org.keycloak.common.crypto.CryptoConstants;
@@ -52,6 +55,8 @@ import org.keycloak.crypto.JavaAlgorithm;
  */
 public class FIPS1402Provider implements CryptoProvider {
 
+    private static final Logger log = Logger.getLogger(FIPS1402Provider.class);
+
     private final BouncyCastleFipsProvider bcFipsProvider;
     private final Map<String, Object> providers = new ConcurrentHashMap<>();
 
@@ -66,6 +71,14 @@ public class FIPS1402Provider implements CryptoProvider {
         providers.put(CryptoConstants.RSA_OAEP_256, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP.withDigest(FipsSHS.Algorithm.SHA256)));
 
         Security.insertProviderAt(new KeycloakFipsSecurityProvider(bcFipsProvider), 1);
+        if (existingBcFipsProvider == null) {
+            Security.insertProviderAt(this.bcFipsProvider, 2);
+            Provider bcJsseProvider = new BouncyCastleJsseProvider("fips:BCFIPS");
+            Security.insertProviderAt(bcJsseProvider, 3);
+            log.debugf("Inserted security providers: %s", Arrays.asList(this.bcFipsProvider.getName(),bcJsseProvider.getName()));
+        } else {
+            log.debugf("Security provider %s already loaded", existingBcFipsProvider.getName());
+        }
     }
 
 

@@ -47,6 +47,7 @@ import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.model.StoreProvider;
 
@@ -227,8 +228,10 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         final Supplier<Boolean> shouldSetUpDb = () -> !restart.get() && !storeProvider.equals(StoreProvider.DEFAULT);
         final Supplier<String> getClusterConfig = () -> System.getProperty("auth.server.quarkus.cluster.config", "local");
 
+        log.debugf("FIPS Mode: %s", configuration.getFipsMode());
+
         // only run build during first execution of the server (if the DB is specified), restarts or when running cluster tests
-        if (restart.get() || shouldSetUpDb.get() || "ha".equals(getClusterConfig.get())) {
+        if (restart.get() || shouldSetUpDb.get() || "ha".equals(getClusterConfig.get()) || configuration.getFipsMode() != FipsMode.disabled) {
             commands.removeIf("--optimized"::equals);
             commands.add("--http-relative-path=/auth");
 
@@ -240,6 +243,10 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
                 } else {
                     commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
                 }
+            }
+
+            if (configuration.getFipsMode() != FipsMode.disabled) {
+                addFipsOptions(commands);
             }
         }
 
@@ -255,6 +262,26 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     private void addStorageOptions(StoreProvider storeProvider, List<String> commands) {
         log.debugf("Store '%s' is used.", storeProvider.name());
         storeProvider.addStoreOptions(commands);
+    }
+
+    private void addFipsOptions(List<String> commands) {
+        commands.add("--fips-mode=" + configuration.getFipsMode().toString());
+
+        log.debugf("Keystore file: %s, keystore type: %s, truststore file: %s, truststore type: %s",
+                configuration.getKeystoreFile(), configuration.getKeystoreType(),
+                configuration.getTruststoreFile(), configuration.getTruststoreType());
+        commands.add("--https-key-store-file=" + configuration.getKeystoreFile());
+        commands.add("--https-key-store-type=" + configuration.getKeystoreType());
+        commands.add("--https-key-store-password=" + configuration.getKeystorePassword());
+        commands.add("--https-trust-store-file=" + configuration.getTruststoreFile());
+        commands.add("--https-trust-store-type=" + configuration.getTruststoreType());
+        commands.add("--https-trust-store-password=" + configuration.getTruststorePassword());
+        commands.add("--spi-truststore-file-file=" + configuration.getTruststoreFile());
+        commands.add("--spi-truststore-file-password=" + configuration.getTruststorePassword());
+        commands.add("--spi-truststore-file-type=" + configuration.getTruststoreType());
+        commands.add("--log-level=INFO,org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE,org.keycloak.truststore:TRACE");
+
+        configuration.appendJavaOpts("-Djava.security.properties=" + System.getProperty("auth.server.java.security.file"));
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {
