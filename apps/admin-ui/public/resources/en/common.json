@@ -207,5 +207,6 @@
   "temporaryPassword": "Temporary",
   "temporaryPasswordHelpText": "If enabled, the user must change the password on next login",
   "forbidden_one": "Forbidden, permission needed:",
-  "forbidden_other": "Forbidden, permissions needed:"
+  "forbidden_other": "Forbidden, permissions needed:",
+  "noRealmRolesToAssign": "There are no realm roles to assign"
 }

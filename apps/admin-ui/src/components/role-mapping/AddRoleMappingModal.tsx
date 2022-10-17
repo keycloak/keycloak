@@ -17,6 +17,7 @@ import useLocaleSort from "../../utils/useLocaleSort";
 import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
 import { getAvailableRoles } from "./queries";
 import { getAvailableClientRoles } from "./resource";
+import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -39,7 +40,7 @@ export const AddRoleMappingModal = ({
   onAssign,
   onClose,
 }: AddRoleMappingModalProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation(type);
   const { adminClient } = useAdminClient();
 
   const [searchToggle, setSearchToggle] = useState(false);
@@ -104,9 +105,11 @@ export const AddRoleMappingModal = ({
     <Modal
       variant={ModalVariant.large}
       title={
-        isLDAPmapper ? t("assignRole") : t("assignRolesTo", { client: name })
+        isLDAPmapper
+          ? t("common:assignRole")
+          : t("common:assignRolesTo", { client: name })
       }
-      isOpen={true}
+      isOpen
       onClose={onClose}
       actions={[
         <Button
@@ -119,7 +122,7 @@ export const AddRoleMappingModal = ({
             onClose();
           }}
         >
-          {t("assign")}
+          {t("common:assign")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -177,9 +180,24 @@ export const AddRoleMappingModal = ({
           },
           {
             name: "role.description",
-            displayKey: t("description"),
+            displayKey: "common:description",
           },
         ]}
+        emptyState={
+          <ListEmptyState
+            message={t("noRoles")}
+            instructions={t("common:noRealmRolesToAssign")}
+            secondaryActions={[
+              {
+                text: t("common:filterByClients"),
+                onClick: () => {
+                  setFilterType("clients");
+                  refresh();
+                },
+              },
+            ]}
+          />
+        }
       />
     </Modal>
   );
