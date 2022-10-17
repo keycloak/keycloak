@@ -17,6 +17,8 @@ import {
 
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import { isValidComponentType } from "./policy/PolicyDetails";
+import { useMemo } from "react";
+import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 type NewPolicyDialogProps = {
   policyProviders?: PolicyProviderRepresentation[];
@@ -30,6 +32,13 @@ export const NewPolicyDialog = ({
   toggleDialog,
 }: NewPolicyDialogProps) => {
   const { t } = useTranslation("clients");
+  const localeSort = useLocaleSort();
+
+  const sortedPolicies = useMemo(
+    () =>
+      policyProviders ? localeSort(policyProviders, mapByKey("name")) : [],
+    [policyProviders]
+  );
 
   return (
     <Modal
@@ -52,7 +61,7 @@ export const NewPolicyDialog = ({
           </Tr>
         </Thead>
         <Tbody>
-          {policyProviders?.map((provider) => (
+          {sortedPolicies.map((provider) => (
             <Tr
               key={provider.type}
               data-testid={provider.type}
