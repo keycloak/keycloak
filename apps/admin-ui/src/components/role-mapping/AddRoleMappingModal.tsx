@@ -67,7 +67,13 @@ export const AddRoleMappingModal = ({
     }
 
     const roles = await getAvailableRoles(adminClient, type, { ...params, id });
-    return localeSort(roles, compareRow);
+    const sorted = localeSort(roles, compareRow);
+    return sorted.map((row) => {
+      return {
+        role: row.role,
+        id: row.role.id,
+      };
+    });
   };
 
   const clientRolesLoader = async (
@@ -88,6 +94,7 @@ export const AddRoleMappingModal = ({
       roles.map((e) => ({
         client: { clientId: e.client, id: e.clientId },
         role: { id: e.id, name: e.role, description: e.description },
+        id: e.id,
       })),
       compareRow
     );

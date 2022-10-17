@@ -33,6 +33,7 @@ export type CompositeRole = RoleRepresentation & {
 export type Row = {
   client?: ClientRepresentation;
   role: RoleRepresentation | CompositeRole;
+  id?: string; // KeycloakDataTable expects an id for the row
 };
 
 export const mapRoles = (

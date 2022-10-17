@@ -175,7 +175,7 @@ export type DataListProps<T> = Omit<
  * @param {Field<T>} props.detailColumns - definition of the columns expandable columns
  * @param {Action[]} props.actions - the actions that appear on the row
  * @param {IActionsResolver} props.actionResolver Resolver for the given action
- * @param {ReactNode} props.toolbarItem - Toolbar items that appear on the top of the table {@link ToolbarItem}
+ * @param {ReactNode} props.toolbarItem - Toolbar items that appear on the top of the table {@link toolbarItem}
  * @param {ReactNode} props.emptyState - ReactNode show when the list is empty could be any component but best to use {@link ListEmptyState}
  */
 export function KeycloakDataTable<T>({
