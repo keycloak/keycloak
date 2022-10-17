@@ -47,12 +47,7 @@ public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
         }
 
         if (name == null || name.isEmpty()) {
-            name = Config.scope("theme").get("default", Version.NAME.toLowerCase());
-            if ((type == Theme.Type.ACCOUNT) && Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
-                name = name.concat(".v2");
-            } else if ((type == Theme.Type.ADMIN) && Profile.isFeatureEnabled(Profile.Feature.ADMIN2)) {
-                name = name.concat(".v2");
-            }
+            name = getDefaultThemeName(type);
         }
 
         return name;
