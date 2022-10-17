@@ -31,9 +31,6 @@
 	<build>
 		<resources>
 			<resource>
-				<directory>static</directory>
-			</resource>
-			<resource>
 				<directory>dist</directory>
 			</resource>
 		</resources>

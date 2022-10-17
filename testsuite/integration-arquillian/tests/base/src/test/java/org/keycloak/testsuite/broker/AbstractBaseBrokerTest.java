@@ -265,6 +265,11 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         updateAccountInformation();
     }
 
+    protected void logInAsUserInIDPForFirstTimeAndAssertSuccess() {
+        logInAsUserInIDPForFirstTime();
+        assertLoggedInAccountManagement();
+    }
+
     protected void updateAccountInformation() {
         waitForPage(driver, "update account information", false);
 

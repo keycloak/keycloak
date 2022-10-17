@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntityImpl;
@@ -35,10 +35,8 @@ import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModelScope;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.client.MapClientEntityImpl;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
@@ -240,7 +238,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         LOG.debugf("Initializing new map storage: %s", mapName);
 
         ConcurrentHashMapStorage<K, V, M> store;
-        if(modelType == ActionTokenValueModel.class) {
+        if(modelType == SingleUseObjectValueModel.class) {
             store = new SingleUseObjectConcurrentHashMapStorage(kc, CLONER) {
                 @Override
                 public String toString() {

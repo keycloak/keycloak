@@ -217,18 +217,6 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_ACTION_TOKEN_PROVIDER = new OptionBuilder<>("storage-action-token-provider", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<StorageType> STORAGE_ACTION_TOKEN_STORE = new OptionBuilder<>("storage-area-action-token", StorageType.class)
-            .category(OptionCategory.STORAGE)
-            .description(descriptionForStorageAreas("action tokens"))
-            .buildTime(true)
-            .build();
-
     public static final Option<String> STORAGE_DBLOCK = new OptionBuilder<>("storage-dblock", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()

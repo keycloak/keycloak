@@ -66,6 +66,13 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
         KeycloakSession getKeycloakSession();
     }
 
+    interface ClientIdChangeEvent extends ProviderEvent {
+        ClientModel getUpdatedClient();
+        String getPreviousClientId();
+        String getNewClientId();
+        KeycloakSession getKeycloakSession();
+    }
+
     interface ClientRemovedEvent extends ProviderEvent {
         ClientModel getClient();
         KeycloakSession getKeycloakSession();

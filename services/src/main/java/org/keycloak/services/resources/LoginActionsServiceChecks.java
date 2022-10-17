@@ -24,12 +24,12 @@ import org.keycloak.authentication.actiontoken.ExplainedTokenVerificationExcepti
 import org.keycloak.common.VerificationException;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.ActionTokenKeyModel;
-import org.keycloak.models.ActionTokenStoreProvider;
+import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -165,7 +165,7 @@ public class LoginActionsServiceChecks {
      *  Verifies whether the user given by ID both exists in the current realm. If yes,
      *  it optionally also injects the user using the given function (e.g. into session context).
      */
-    public static <T extends JsonWebToken & ActionTokenKeyModel> void checkIsUserValid(T token, ActionTokenContext<T> context) throws VerificationException {
+    public static <T extends JsonWebToken & SingleUseObjectKeyModel> void checkIsUserValid(T token, ActionTokenContext<T> context) throws VerificationException {
         try {
             checkIsUserValid(context.getSession(), context.getRealm(), token.getUserId(), context.getAuthenticationSession()::setAuthenticatedUser);
         } catch (ExplainedVerificationException ex) {
@@ -299,10 +299,10 @@ public class LoginActionsServiceChecks {
         return true;
     }
 
-    public static <T extends JsonWebToken & ActionTokenKeyModel> void checkTokenWasNotUsedYet(T token, ActionTokenContext<T> context) throws VerificationException {
-        ActionTokenStoreProvider actionTokenStore = context.getSession().getProvider(ActionTokenStoreProvider.class);
+    public static <T extends JsonWebToken & SingleUseObjectKeyModel> void checkTokenWasNotUsedYet(T token, ActionTokenContext<T> context) throws VerificationException {
+        SingleUseObjectProvider singleUseObjectProvider = context.getSession().getProvider(SingleUseObjectProvider.class);
 
-        if (actionTokenStore.get(token) != null) {
+        if (singleUseObjectProvider.get(token.serializeKey()) != null) {
             throw new ExplainedTokenVerificationException(token, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
         }
     }

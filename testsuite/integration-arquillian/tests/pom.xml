@@ -1360,7 +1360,6 @@
                                     <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
                                     <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
                                     <keycloak.eventStore.map.storage.provider>hotrod</keycloak.eventStore.map.storage.provider>
-                                    <keycloak.actionToken.map.storage.provider>hotrod</keycloak.actionToken.map.storage.provider>
                                     <keycloak.singleUseObject.map.storage.provider>hotrod</keycloak.singleUseObject.map.storage.provider>
                                     <infinispan.version>${infinispan.version}</infinispan.version>
                                     <keycloak.testsuite.start-hotrod-container>${keycloak.testsuite.start-hotrod-container}</keycloak.testsuite.start-hotrod-container>

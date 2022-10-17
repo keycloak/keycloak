@@ -33,6 +33,7 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.QueryParameters;
 
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Map;
 import java.util.Objects;
@@ -259,6 +260,8 @@ public class MapGroupProvider implements GroupProvider {
     public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
         LOG.tracef("moveGroup(%s, %s, %s)%s", realm, group, toParent, getShortStackTrace());
 
+        GroupModel previousParent = group.getParent();
+
         if (toParent != null && group.getId().equals(toParent.getId())) {
             return;
         }
@@ -282,6 +285,33 @@ public class MapGroupProvider implements GroupProvider {
         }
         group.setParent(toParent);
         if (toParent != null) toParent.addChild(group);
+
+        String newPath = KeycloakModelUtils.buildGroupPath(group);
+        String previousPath = KeycloakModelUtils.buildGroupPath(group, previousParent);
+
+        GroupModel.GroupPathChangeEvent event =
+                new GroupModel.GroupPathChangeEvent() {
+                    @Override
+                    public RealmModel getRealm() {
+                        return realm;
+                    }
+
+                    @Override
+                    public String getNewPath() {
+                        return newPath;
+                    }
+
+                    @Override
+                    public String getPreviousPath() {
+                        return previousPath;
+                    }
+
+                    @Override
+                    public KeycloakSession getKeycloakSession() {
+                        return session;
+                    }
+                };
+        session.getKeycloakSessionFactory().publish(event);
     }
 
     @Override
