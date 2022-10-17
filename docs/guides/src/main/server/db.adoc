@@ -36,7 +36,7 @@ For each supported database, the server provides some opinionated defaults to si
 
 . Start the server and set the options for the database host and credentials by entering this command:
 +
-<@kc.start parameters="--db-url-host mypostgres --db-username myuser --db-password change_me"/>
+<@kc.start parameters="--optimized --db-url-host mypostgres --db-username myuser --db-password change_me"/>
 +
 This command includes the minimum settings needed to connect to the database.
 
