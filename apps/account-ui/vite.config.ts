@@ -8,6 +8,9 @@ export default defineConfig({
   server: {
     port: 8080,
   },
+  build: {
+    target: "ES2022",
+  },
   resolve: {
     // Resolve the 'module' entrypoint at all times (not the default due to Node.js compatibility issues).
     mainFields: ["module"],

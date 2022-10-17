@@ -34,7 +34,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        command: [lint, test, build, "cy:check-types"]
+        include:
+          - workspace: admin-ui
+            command: lint
+          - workspace: admin-ui
+            command: test
+          - workspace: admin-ui
+            command: build
+          - workspace: admin-ui
+            command: cy:check-types
+          - workspace: account-ui
+            command: lint
+          - workspace: account-ui
+            command: build
     steps:
       - name: Restore setup
         uses: actions/cache@v3
@@ -48,4 +60,4 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Run ${{ matrix.command }} task
-        run: npm run ${{ matrix.command }} --workspace=admin-ui
+        run: npm run ${{ matrix.command }} --workspace=${{ matrix.workspace }}
