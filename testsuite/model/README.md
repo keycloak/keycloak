@@ -104,3 +104,21 @@ mvn test -Phot-rod \
   -Dkeycloak.connectionsHotRod.username=<username> \
   -Dkeycloak.connectionsHotRod.password=<password>
 ```
+
+Running tests with `map-jpa` profile using external Postgres database
+---------------------------------------------
+
+By default, Model tests with `map-jpa` profile spawns a new Postgres container
+with each test execution. Default image used is "postgres:alpine". To spawn different 
+version, it can be used "keycloak.map.storage.postgres.docker.image" system property.
+
+It is also possible, to configure Model tests to connect to an external instance 
+of Postgres. To do so, execute tests with the following command:
+```shell
+mvn test -Pmap-jpa \
+  -Dpostgres.start-container=false \
+  -Dkeycloak.map.storage.connectionsJpa.url=<jdbc_url> \
+  -Dkeycloak.map.storage.connectionsJpa.user=<user> \
+  -Dkeycloak.map.storage.connectionsJpa.password=<password>
+```
+
