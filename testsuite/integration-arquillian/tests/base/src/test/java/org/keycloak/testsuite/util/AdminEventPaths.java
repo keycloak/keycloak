@@ -38,6 +38,7 @@ import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.admin.client.resource.UserStorageProviderResource;
 
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
@@ -51,6 +52,11 @@ public class AdminEventPaths {
 
     public static String deleteSessionPath(String userSessionId) {
         URI uri = UriBuilder.fromUri("").path(RealmResource.class, "deleteSession").build(userSessionId);
+        return uri.toString();
+    }
+    public static String removeImportedUsersPath(String componentId) {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "userStorage")
+                .path(UserStorageProviderResource.class, "removeImportedUsers").build(componentId);
         return uri.toString();
     }
 
