@@ -23,8 +23,6 @@
         -->
         <resteasy.version>4.7.7.Final</resteasy.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <jackson.version>2.13.3</jackson.version>
-        <jackson.databind.version>2.13.3</jackson.databind.version>
         <kubernetes-client.version>5.12.3</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
