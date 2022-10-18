@@ -23,6 +23,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import javax.validation.constraints.NotNull;
@@ -43,18 +45,14 @@ public class KeycloakSpec {
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
     private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
-    // TODO: switch to this serverConfig when all the options are ported
-    // private ServerConfig serverConfig;
-
     @NotNull
     @JsonPropertyDescription("Hostname for the Keycloak server.\n" +
             "The special value `" + Constants.INSECURE_DISABLE + "` disables the hostname strict resolution.")
     private String hostname;
 
-    @NotNull
-    @JsonPropertyDescription("A secret containing the TLS configuration for HTTPS. Reference: https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets.\n" +
-            "The special value `" + Constants.INSECURE_DISABLE + "` disables https.")
-    private String tlsSecret;
+    @JsonProperty("http")
+    @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
+    private HttpSpec httpSpec;
 
     @JsonPropertyDescription("Disable the default ingress.")
     private boolean disableDefaultIngress;
@@ -62,7 +60,7 @@ public class KeycloakSpec {
     @JsonPropertyDescription(
             "In this section you can configure podTemplate advanced features, not production-ready, and not supported settings.\n" +
                     "Use at your own risk and open an issue with your use-case if you don't find an alternative way.")
-    private KeycloakSpecUnsupported unsupported;
+    private UnsupportedSpec unsupported;
 
     @JsonProperty("features")
     @JsonPropertyDescription("In this section you can configure Keycloak features, which should be enabled/disabled.")
@@ -85,6 +83,14 @@ public class KeycloakSpec {
         return this.hostname.equals(Constants.INSECURE_DISABLE);
     }
 
+    public HttpSpec getHttpSpec() {
+        return httpSpec;
+    }
+
+    public void setHttpSpec(HttpSpec httpSpec) {
+        this.httpSpec = httpSpec;
+    }
+
     public void setDisableDefaultIngress(boolean value) {
         this.disableDefaultIngress = value;
     }
@@ -93,24 +99,11 @@ public class KeycloakSpec {
         return this.disableDefaultIngress;
     }
 
-    public String getTlsSecret() {
-        return tlsSecret;
-    }
-
-    public void setTlsSecret(String tlsSecret) {
-        this.tlsSecret = tlsSecret;
-    }
-
-    @JsonIgnore
-    public boolean isHttp() {
-        return this.tlsSecret.equals(Constants.INSECURE_DISABLE);
-    }
-
-    public KeycloakSpecUnsupported getUnsupported() {
+    public UnsupportedSpec getUnsupported() {
         return unsupported;
     }
 
-    public void setUnsupported(KeycloakSpecUnsupported unsupported) {
+    public void setUnsupported(UnsupportedSpec unsupported) {
         this.unsupported = unsupported;
     }
 

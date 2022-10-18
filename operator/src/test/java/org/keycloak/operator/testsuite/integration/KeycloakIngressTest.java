@@ -39,7 +39,8 @@ public class KeycloakIngressTest extends BaseOperatorTest {
     public void testIngressOnHTTP() {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
         kc.getSpec().setHostname(Constants.INSECURE_DISABLE);
-        kc.getSpec().setTlsSecret(Constants.INSECURE_DISABLE);
+        kc.getSpec().getHttpSpec().setTlsSecret(null);
+        kc.getSpec().getHttpSpec().setHttpEnabled(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         Awaitility.await()

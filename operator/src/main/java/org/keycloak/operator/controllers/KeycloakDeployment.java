@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.ExecActionBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -34,7 +35,9 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +47,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
@@ -392,6 +395,31 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         container.setEnv(getEnvVars());
 
+        // probes
+        var tlsConfigured = isTlsConfigured(keycloakCR);
+        var userRelativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY);
+        var kcRelativePath = (userRelativePath == null) ? "" : userRelativePath;
+        var protocol = !tlsConfigured ? "http" : "https";
+        var kcPort = KeycloakService.getServicePort(keycloakCR);
+
+        var baseProbe = new ArrayList<>(List.of("curl", "--head", "--fail", "--silent"));
+
+        if (tlsConfigured) {
+            baseProbe.add("--insecure");
+        }
+
+        var readyProbe = new ArrayList<>(baseProbe);
+        readyProbe.add(protocol + "://127.0.0.1:" + kcPort + kcRelativePath + "/health/ready");
+        var liveProbe = new ArrayList<>(baseProbe);
+        liveProbe.add(protocol + "://127.0.0.1:" + kcPort + kcRelativePath + "/health/live");
+
+        container
+                .getReadinessProbe()
+                .setExec(new ExecActionBuilder().withCommand(readyProbe).build());
+        container
+                .getLivenessProbe()
+                .setExec(new ExecActionBuilder().withCommand(liveProbe).build());
+
         return baseDeployment;
     }
 
@@ -417,7 +445,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         serverConfigSecretsNames = new HashSet<>();
         List<EnvVar> envVars = serverConfig.stream()
                 .map(v -> {
-                    var envBuilder = new EnvVarBuilder().withName(getEnvVarName(v.getName()));
+                    var envBuilder = new EnvVarBuilder().withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(v.getName()));
                     var secret = v.getSecret();
                     if (secret != null) {
                         envBuilder.withValueFrom(
@@ -490,8 +518,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
     public Set<String> getConfigSecretsNames() {
         Set<String> ret = new HashSet<>(serverConfigSecretsNames);
-        if (!keycloakCR.getSpec().isHttp()) {
-            ret.add(keycloakCR.getSpec().getTlsSecret());
+        if (isTlsConfigured(keycloakCR)) {
+            ret.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
         }
         return ret;
     }
@@ -535,8 +563,41 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         }
     }
 
-    public static String getEnvVarName(String kcConfigName) {
-        // TODO make this use impl from Quarkus dist (Configuration.toEnvVarFormat)
-        return "KC_" + replaceNonAlphanumericByUnderscores(kcConfigName).toUpperCase();
+    protected String readConfigurationValue(String key) {
+        if (keycloakCR != null &&
+                keycloakCR.getSpec() != null &&
+                keycloakCR.getSpec().getServerConfiguration() != null
+        ) {
+
+            var serverConfigValue = keycloakCR
+                    .getSpec()
+                    .getServerConfiguration()
+                    .stream()
+                    .filter(sc -> sc.getName().equals(key))
+                    .findFirst();
+            if (serverConfigValue.isPresent()) {
+                if (serverConfigValue.get().getValue() != null) {
+                    return serverConfigValue.get().getValue();
+                } else {
+                    var secretSelector = serverConfigValue.get().getSecret();
+                    if (secretSelector == null) {
+                        throw new IllegalStateException("Secret " + serverConfigValue.get().getName() + " not defined");
+                    }
+                    var secret = client.secrets().inNamespace(keycloakCR.getMetadata().getNamespace()).withName(secretSelector.getName()).get();
+                    if (secret == null) {
+                        throw new IllegalStateException("Secret " + secretSelector.getName() + " not found in cluster");
+                    }
+                    if (secret.getData().containsKey(secretSelector.getKey())) {
+                        return new String(Base64.getDecoder().decode(secret.getData().get(secretSelector.getKey())), StandardCharsets.UTF_8);
+                    } else {
+                        throw new IllegalStateException("Secret " + secretSelector.getName() + " doesn't contain the expected key " + secretSelector.getKey());
+                    }
+                }
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
 }

@@ -1,10 +1,12 @@
 package org.keycloak.common.crypto;
 
+import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Security;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.jboss.logging.Logger;
@@ -33,6 +35,7 @@ public class CryptoIntegration {
 
         if (logger.isTraceEnabled()) {
             logger.tracef(dumpJavaSecurityProviders());
+            logger.tracef(dumpSecurityProperties());
         }
     }
 
@@ -68,7 +71,19 @@ public class CryptoIntegration {
         return builder.append("]").toString();
     }
 
+    public static String dumpSecurityProperties() {
+        StringBuilder builder = new StringBuilder("Security properties: [ \n")
+                .append(" Java security properties file: " + System.getProperty("java.security.properties") + "\n")
+                .append(" Default keystore type: " + KeyStore.getDefaultType() + "\n")
+                .append(" keystore.type.compat: " + Security.getProperty("keystore.type.compat") + "\n");
+        Stream.of("javax.net.ssl.trustStoreType", "javax.net.ssl.trustStore", "javax.net.ssl.trustStoreProvider",
+                        "javax.net.ssl.keyStoreType", "javax.net.ssl.keyStore", "javax.net.ssl.keyStoreProvider")
+                .forEach(propertyName -> builder.append(" " + propertyName + ": " + System.getProperty(propertyName) + "\n"));
+        return builder.append("]").toString();
+    }
+
     public static void setProvider(CryptoProvider provider) {
+        logger.debugf("Using the crypto provider: %s", provider.getClass().getName());
         cryptoProvider = provider;
     }
 }
