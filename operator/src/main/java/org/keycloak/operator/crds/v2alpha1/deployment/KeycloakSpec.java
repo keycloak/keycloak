@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
@@ -29,6 +30,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 
 public class KeycloakSpec {
@@ -72,6 +74,10 @@ public class KeycloakSpec {
     @JsonProperty("transaction")
     @JsonPropertyDescription("In this section you can find all properties related to the settings of transaction behavior.")
     private TransactionsSpec transactionsSpec;
+
+    @JsonProperty("db")
+    @JsonPropertyDescription("In this section you can find all properties related to connect to a database.")
+    private DatabaseSpec databaseSpec;
 
     public String getHostname() {
         return hostname;
@@ -126,6 +132,14 @@ public class KeycloakSpec {
         this.ingressSpec = ingressSpec;
     }
 
+    public DatabaseSpec getDatabaseSpec() {
+        return databaseSpec;
+    }
+
+    public void setDatabaseSpec(DatabaseSpec databaseSpec) {
+        this.databaseSpec = databaseSpec;
+    }
+
     public int getInstances() {
         return instances;
     }
@@ -151,6 +165,9 @@ public class KeycloakSpec {
     }
 
     public List<ValueOrSecret> getServerConfiguration() {
+        if (serverConfiguration == null) {
+            serverConfiguration = new ArrayList<>();
+        }
         return serverConfiguration;
     }
 
