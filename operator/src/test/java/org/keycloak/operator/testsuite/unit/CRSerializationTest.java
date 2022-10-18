@@ -39,7 +39,7 @@ public class CRSerializationTest {
 
         assertEquals("my-hostname", keycloak.getSpec().getHostname());
         assertEquals("my-image", keycloak.getSpec().getImage());
-        assertEquals("my-tls-secret", keycloak.getSpec().getTlsSecret());
+        assertEquals("my-tls-secret", keycloak.getSpec().getHttpSpec().getTlsSecret());
         assertTrue(keycloak.getSpec().isDisableDefaultIngress());
 
         final TransactionsSpec transactionsSpec = keycloak.getSpec().getTransactionsSpec();

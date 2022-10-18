@@ -11,7 +11,11 @@ spec:
     - name: features
       value: docker
   hostname: my-hostname
-  tlsSecret: my-tls-secret
+  http:
+    httpEnabled: true
+    httpPort: 123
+    httpsPort: 456
+    tlsSecret: my-tls-secret
   features:
     enabled:
       - docker

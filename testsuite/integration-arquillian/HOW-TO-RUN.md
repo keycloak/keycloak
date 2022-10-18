@@ -923,3 +923,25 @@ DefaultHostnameTest.java:226)
 when running these tests on your local machine. This happens when something on your machine or network is blocking DNS queries to [nip.io](https://nip.io)
 One possible workaround is to add a commonly used public dns server (e.g. 8.8.8.8 for google dns server) to your local 
 networks dns configuration and run the tests. 
+
+## FIPS 140-2 testing
+
+On the FIPS enabled platform with FIPS enabled OpenJDK 11, you can run this to test against Keycloak server on Quarkus
+with FIPS 140.2 integration enabled
+```
+mvn -B -f testsuite/integration-arquillian/pom.xml \
+  clean install \
+  -Pauth-server-quarkus,auth-server-fips140-2 \
+  -Dcom.redhat.fips=false
+```
+NOTE 1: The property `com.redhat.fips` is needed so that testsuite itself is executed in the JVM with FIPS disabled. However
+most important part is that Keycloak itself is running on the JVM with FIPS enabled. You can check log from server startup and
+there should be messages similar to those:
+```
+2022-10-11 19:34:29,521 DEBUG [org.keycloak.common.crypto.CryptoIntegration] (main) Using the crypto provider: org.keycloak.crypto.fips.FIPS1402Provider
+2022-10-11 19:34:31,072 TRACE [org.keycloak.common.crypto.CryptoIntegration] (main) Java security providers: [ 
+ KC(BCFIPS version 1.000203) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
+ BCFIPS version 1.000203 - class org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider, 
+ BCJSSE version 1.001202 - class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider,
+]
+```

@@ -40,7 +40,7 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.config.SecurityOptions;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
@@ -166,7 +166,7 @@ public class KeycloakRecorder {
         };
     }
 
-    public void setCryptoProvider(SecurityOptions.FipsMode fipsMode) {
+    public void setCryptoProvider(FipsMode fipsMode) {
         String cryptoProvider = fipsMode.getProviderClassName();
 
         try {

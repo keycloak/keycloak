@@ -25,8 +25,12 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import java.util.Optional;
+
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.getValueFromSubSpec;
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 public class KeycloakService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
@@ -40,10 +44,9 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
     }
 
     private ServiceSpec getServiceSpec() {
-      var port = (this.keycloak.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
-      return new ServiceSpecBuilder()
+        return new ServiceSpecBuilder()
               .addNewPort()
-              .withPort(port)
+              .withPort(getServicePort(keycloak))
               .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
               .endPort()
               .withSelector(Constants.DEFAULT_LABELS)
@@ -90,5 +93,14 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
 
     public String getName() {
         return cr.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
+    }
+
+    public static int getServicePort(Keycloak keycloak) {
+        // we assume HTTP when TLS is not configureed
+        if (!isTlsConfigured(keycloak)) {
+            return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
+        } else {
+            return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpsPort).orElse(Constants.KEYCLOAK_HTTPS_PORT);
+        }
     }
 }
