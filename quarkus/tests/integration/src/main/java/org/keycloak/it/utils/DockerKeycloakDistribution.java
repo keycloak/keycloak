@@ -28,7 +28,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private String stderr = "";
     private ToStringConsumer backupConsumer = new ToStringConsumer();
 
-    private File distributionFile = new File("../../dist/target/keycloak-" + Version.VERSION_KEYCLOAK + ".tar.gz");
+    private File distributionFile = new File("../../dist/target/keycloak-" + Version.VERSION + ".tar.gz");
     private File dockerFile = new File("../../container/Dockerfile");
 
     private GenericContainer<?> keycloakContainer = null;

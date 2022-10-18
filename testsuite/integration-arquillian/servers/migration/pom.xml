@@ -152,39 +152,4 @@
             </plugin>
         </plugins>
     </build>
-    
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-deploy-plugin</artifactId>
-                        <configuration>
-                            <skip>true</skip>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>productized-server</id>
-            <activation>
-                <property>
-                    <name>previous.product.unpacked.folder.name</name>
-                </property>
-            </activation>
-            <properties>
-                <auth.server.home>${project.build.directory}/unpacked/${previous.product.unpacked.folder.name}
-                </auth.server.home>
-            </properties>
-        </profile>
-    </profiles>
 </project>

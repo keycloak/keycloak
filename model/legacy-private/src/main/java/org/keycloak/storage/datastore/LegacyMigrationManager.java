@@ -120,7 +120,7 @@ public class LegacyMigrationManager implements MigrationManager {
         session.setAttribute(Constants.STORAGE_BATCH_SIZE, Integer.getInteger("keycloak.migration.batch-size"));
         MigrationModel model = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
 
-        ModelVersion currentVersion = new ModelVersion(Version.VERSION_KEYCLOAK);
+        ModelVersion currentVersion = new ModelVersion(Version.VERSION);
         ModelVersion latestUpdate = migrations[migrations.length-1].getVersion();
         ModelVersion databaseVersion = model.getStoredVersion() != null ? new ModelVersion(model.getStoredVersion()) : null;
 
