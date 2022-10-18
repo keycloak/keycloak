@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.keycloak.services.Constants.USER_SESSION_ID;
+import static org.keycloak.services.util.AuthenticationSessionUtil.getEventCode;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
@@ -1117,7 +1118,7 @@ public class AuthenticationProcessor {
         if (nextRequiredAction != null) {
             return AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
         } else {
-            event.detail(Details.CODE_ID, authenticationSession.getAuthNote(USER_SESSION_ID) != null ? authenticationSession.getAuthNote(USER_SESSION_ID) : authenticationSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
+            event.detail(Details.CODE_ID, getEventCode(authenticationSession));  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
             return AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
         }
     }

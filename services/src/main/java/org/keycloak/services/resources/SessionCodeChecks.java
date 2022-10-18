@@ -50,7 +50,7 @@ import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import static org.keycloak.services.Constants.USER_SESSION_ID;
+import static org.keycloak.services.util.AuthenticationSessionUtil.getEventCode;
 
 
 public class SessionCodeChecks {
@@ -214,7 +214,7 @@ public class SessionCodeChecks {
         }
 
         // Client checks
-        event.detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) :  authSession.getParentSession().getId());
+        event.detail(Details.CODE_ID, getEventCode(authSession));
         ClientModel client = authSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);

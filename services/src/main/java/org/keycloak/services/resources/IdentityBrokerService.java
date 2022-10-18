@@ -83,6 +83,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
+import org.keycloak.services.util.AuthenticationSessionUtil;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
@@ -120,7 +121,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.services.Constants.USER_SESSION_ID;
+import static org.keycloak.services.util.AuthenticationSessionUtil.getEventCode;
 
 /**
  * <p></p>
@@ -306,6 +307,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         // Create AuthenticationSessionModel with same ID like userSession and refresh cookie
         UserSessionModel userSession = cookieResult.getSession();
 
+//        AuthenticationSessionModel authSession;
         // Auth session with ID corresponding to our userSession may already exists in some rare cases (EG. if some client tried to login in another browser tab with "prompt=login")
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realmModel, userSession.getId());
         if (rootAuthSession == null) {
@@ -657,7 +659,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private Response afterFirstBrokerLogin(AuthenticationSessionModel authSession) {
         try {
-            this.event.detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId())
+            this.event.detail(Details.CODE_ID, getEventCode(authSession))
                     .removeDetail("auth_method");
 
             SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
@@ -855,7 +857,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
             return AuthenticationManager.redirectToRequiredActions(session, realmModel, authSession, session.getContext().getUri(), nextRequiredAction);
         } else {
-            event.detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
+            event.detail(Details.CODE_ID, getEventCode(authSession));  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
             return AuthenticationManager.finishedRequiredActions(session, authSession, null, clientConnection, request, session.getContext().getUri(), event);
         }
     }

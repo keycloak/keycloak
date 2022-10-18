@@ -44,7 +44,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.util.concurrent.TimeUnit;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.services.Constants.USER_SESSION_ID;
+import static org.keycloak.services.util.AuthenticationSessionUtil.getEventCode;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -105,7 +105,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             event.clone().event(EventType.SEND_RESET_PASSWORD)
                          .user(user)
                          .detail(Details.USERNAME, username)
-                         .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getAuthNote(USER_SESSION_ID) != null ? authenticationSession.getAuthNote(USER_SESSION_ID) : authenticationSession.getParentSession().getId()).success();
+                         .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, getEventCode(authenticationSession)).success();
             context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
         } catch (EmailException e) {
             event.clone().event(EventType.SEND_RESET_PASSWORD)

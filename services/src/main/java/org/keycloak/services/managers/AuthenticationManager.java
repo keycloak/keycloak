@@ -115,6 +115,7 @@ import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2D
 import static org.keycloak.services.Constants.ASSOCIATED_AUTH_SESSION_ID;
 import static org.keycloak.services.Constants.ASSOCIATED_LOGOUT_AUTH_SESSION_ID;
 import static org.keycloak.services.Constants.USER_SESSION_ID;
+import static org.keycloak.services.util.AuthenticationSessionUtil.getEventCode;
 import static org.keycloak.services.util.CookieHelper.getCookie;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -1179,7 +1180,7 @@ public class AuthenticationManager {
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
 
-        event.detail(Details.CODE_ID, authSession.getAuthNote(USER_SESSION_ID) != null ? authSession.getAuthNote(USER_SESSION_ID) : authSession.getParentSession().getId());
+        event.detail(Details.CODE_ID, getEventCode(authSession));
 
         Stream<String> requiredActions = user.getRequiredActionsStream();
         Response action = executionActions(session, authSession, request, event, realm, user, requiredActions);
