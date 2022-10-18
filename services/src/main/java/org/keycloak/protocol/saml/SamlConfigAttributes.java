@@ -45,4 +45,16 @@ public interface SamlConfigAttributes {
     String SAML_ASSERTION_LIFESPAN = "saml.assertion.lifespan";
     String SAML_ARTIFACT_BINDING_IDENTIFIER = "saml.artifact.binding.identifier";
     String SAML_ALLOW_ECP_FLOW = "saml.allow.ecp.flow";
+    String SAML_ATTRIBUTE_QUERY_ISSUER = "saml.attributeQuery.issuer";
+    String SAML_ATTRIBUTE_QUERY_SIGNING_CERT = "saml.attributeQuery.signingCert";
+    String SAML_ATTRIBUTE_QUERY_TARGET_AUDIENCE = "saml.attributeQuery.targetAudience";
+    String SAML_ATTRIBUTE_QUERY_ENCRYPTION_CERT = "saml.attributeQuery.encryptionCert";
+    String SAML_ATTRIBUTE_QUERY_USER_LOOKUP_ATTRIBUTE = "saml.attributeQuery.userLookupAttribute";
+    String SAML_ATTRIBUTE_QUERY_FILTERS = "saml.attributeQuery.filters";
+    String SAML_ATTRIBUTE_QUERY_REQUIRE_SIGNED_REQ = "saml.attributeQuery.requireSignedRequest";
+    String SAML_ATTRIBUTE_QUERY_REQUIRE_ENCRYPTED_REQ = "saml.attributeQuery.requireEncryptedRequest";
+    String SAML_ATTRIBUTE_QUERY_SIGN_DOC = "saml.attributeQuery.signResponseDocument";
+    String SAML_ATTRIBUTE_QUERY_SIGN_ASSERTION = "saml.attributeQuery.signResponseAssertion";
+    String SAML_ATTRIBUTE_QUERY_ENCRYPT_RESPONSE = "saml.attributeQuery.encryptResponse";
+    String SAML_ATTRIBUTE_QUERY_SUPPORTED = "saml.attributeQuery.supported";
 }

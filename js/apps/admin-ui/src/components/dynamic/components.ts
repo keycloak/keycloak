@@ -15,11 +15,14 @@ import { ScriptComponent } from "./ScriptComponent";
 import { StringComponent } from "./StringComponent";
 import { TextComponent } from "./TextComponent";
 import { UserProfileAttributeListComponent } from "./UserProfileAttributeListComponent";
+import { KeyComponent } from "./KeyComponent";
+import { ProviderInstanceComponent } from "./ProviderInstanceComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isDisabled?: boolean;
   isNew?: boolean;
   stringify?: boolean;
+  defaultValue?: any;
 };
 
 const ComponentTypes = [
@@ -37,6 +40,8 @@ const ComponentTypes = [
   "MultivaluedString",
   "File",
   "Password",
+  "Key",
+  "ProviderInstance",
 ] as const;
 
 export type Components = (typeof ComponentTypes)[number];
@@ -58,6 +63,8 @@ export const COMPONENTS: {
   MultivaluedString: MultiValuedStringComponent,
   File: FileComponent,
   Password: PasswordComponent,
+  Key: KeyComponent,
+  ProviderInstance: ProviderInstanceComponent,
 } as const;
 
 export const isValidComponentType = (value: string): value is Components =>

@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.keycloak.common.util.HtmlUtils.escapeAttribute;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 
 /**
@@ -72,6 +73,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     protected PublicKey encryptionPublicKey;
     protected String encryptionAlgorithm = "AES";
     protected boolean encrypt;
+    protected boolean encryptSubject;
     protected String canonicalizationMethodType = CanonicalizationMethod.EXCLUSIVE;
     protected String keyEncryptionAlgorithm;
     protected String keyEncryptionDigestMethod;
@@ -123,8 +125,30 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         return (T)this;
     }
 
-    public T encrypt(PublicKey publicKey) {
+    /**
+     * Encrypt the NameID portion of the subject
+     * @return BaseSAML2BindingBuilder
+     */
+    public T encryptSubject(){
+        encryptSubject = true;
+        return (T)this;
+    }
+
+    /**
+     * Encrypt the assertions
+     * @return BaseSAML2BindingBuilder
+     */
+    public T encrypt() {
         encrypt = true;
+        return (T)this;
+    }
+
+    /**
+     * Set the public key to encrypt elements of the document with
+     * @param publicKey The public key to use for encryption
+     * @return BaseSAML2BindingBuilder
+     */
+    public T encryptWith(PublicKey publicKey){
         encryptionPublicKey = publicKey;
         return (T)this;
     }
@@ -204,6 +228,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             this.builder = builder;
             this.document = document;
             if (builder.encrypt) builder.encryptDocument(document);
+            if (builder.encryptSubject) builder.encryptSubject(document);
             if (builder.signAssertions) {
                 builder.signAssertion(document);
             }
@@ -295,6 +320,44 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             throw new ProcessingException("failed to encrypt", e);
         }
 
+    }
+
+    /**
+     * Encrypt the NameID element of the subject
+     * @param samlDocument The SAML document containing a NAMEID element
+     * @throws ProcessingException
+     */
+    public void encryptSubject(Document samlDocument) throws ProcessingException {
+        // Extract the NAMEID node
+        Node nameIdNode = samlDocument.getDocumentElement()
+                .getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.NAMEID.get()).item(0);
+        if (nameIdNode == null) {
+            throw new IllegalStateException("Unable to find subject in saml document");
+        }
+
+        String samlNSPrefix = nameIdNode.getPrefix();
+
+        try {
+            // extract NAMEID element
+            QName nameIdQName = new QName(ASSERTION_NSURI.get(), JBossSAMLConstants.NAMEID.get(), samlNSPrefix);
+            Element nameIdElement = org.keycloak.saml.common.util.DocumentUtil.getElement(samlDocument, nameIdQName);
+            if (nameIdElement == null) {
+                throw new RuntimeException("Assertion doesn't contain NameId " + org.keycloak.saml.common.util.DocumentUtil.asString(samlDocument));
+            }
+
+            // Add xmlns:saml attribute to NameId element,
+            // this is necessary as it is decrypted as a separate doc and saml namespace is not know
+            // unless added to NameId element
+            nameIdElement.setAttribute("xmlns:" + samlNSPrefix, ASSERTION_NSURI.get());
+
+            // encrypt NAMEID element
+            byte[] secret = RandomSecret.createRandomSecret(encryptionKeySize / 8);
+            SecretKey secretKey = new SecretKeySpec(secret, encryptionAlgorithm);
+            QName encryptedIdElementQName = new QName(ASSERTION_NSURI.get(), JBossSAMLConstants.ENCRYPTED_ID.get(), samlNSPrefix);
+            XMLEncryptionUtil.encryptElement(nameIdQName, samlDocument, encryptionPublicKey, secretKey, encryptionKeySize, encryptedIdElementQName, true);
+        } catch (Exception e) {
+            throw new ProcessingException("failed to encrypt", e);
+        }
     }
 
     public void signDocument(Document samlDocument) throws ProcessingException {

@@ -3,7 +3,7 @@ import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
-export type UserTab = "list" | "permissions";
+export type UserTab = "list" | "permissions" | "attributeStore";
 
 export type UsersParams = { realm: string; tab?: UserTab };
 

@@ -36,6 +36,7 @@ import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
@@ -125,7 +126,7 @@ public class SamlProtocolUtils {
         return getPublicKey(certPem);
     }
 
-    private static PublicKey getPublicKey(String certPem) throws VerificationException {
+    public static PublicKey getPublicKey(String certPem) throws VerificationException {
         if (certPem == null) throw new VerificationException("Client does not have a public key.");
         X509Certificate cert = null;
         try {
@@ -279,6 +280,25 @@ public class SamlProtocolUtils {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         SAMLResponseWriter writer = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(bos));
         writer.write(responseType);
+        return DocumentUtil.getDocument(new ByteArrayInputStream(bos.toByteArray()));
+    }
+
+    /**
+     * Convert a generic SAML2 Response into a document
+     * @param responseType The SAML2 response to convert
+     * @return  The responseType as a Document
+     *
+     * @throws ProcessingException
+     * @throws ConfigurationException
+     * @throws ParsingException
+     */
+    public static Document convert(ResponseType responseType) throws ProcessingException, ConfigurationException, ParsingException {
+        // serialize SAML2 response
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        SAMLResponseWriter writer = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(bos));
+        writer.write(responseType);
+
+        // parse as document
         return DocumentUtil.getDocument(new ByteArrayInputStream(bos.toByteArray()));
     }
 }

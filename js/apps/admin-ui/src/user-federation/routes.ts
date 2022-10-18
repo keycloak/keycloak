@@ -1,6 +1,13 @@
 import type { AppRouteObject } from "../routes";
-import { CustomUserFederationRoute } from "./routes/CustomUserFederation";
-import { NewCustomUserFederationRoute } from "./routes/NewCustomUserFederation";
+import {
+  NewCustomUserFederationInstanceRoute,
+  UpdateCustomUserFederationInstanceRoute,
+  UpdateCustomUserFederationInstanceRouteWithTab,
+} from "./routes/CustomUserFederation";
+import {
+  UpdateCustomUserFederationMapperRoute,
+  CreateCustomUserFederationMapperRoute,
+} from "./routes/CustomInstanceMapper";
 import { NewKerberosUserFederationRoute } from "./routes/NewKerberosUserFederation";
 import { NewLdapUserFederationRoute } from "./routes/NewLdapUserFederation";
 import { UserFederationRoute } from "./routes/UserFederation";
@@ -23,8 +30,11 @@ const routes: AppRouteObject[] = [
   UserFederationLdapRoute,
   UserFederationLdapWithTabRoute,
   UserFederationLdapMapperRoute,
-  NewCustomUserFederationRoute,
-  CustomUserFederationRoute,
+  NewCustomUserFederationInstanceRoute,
+  UpdateCustomUserFederationInstanceRoute,
+  UpdateCustomUserFederationInstanceRouteWithTab,
+  CreateCustomUserFederationMapperRoute,
+  UpdateCustomUserFederationMapperRoute,
 ];
 
 export default routes;

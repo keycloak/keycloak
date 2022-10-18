@@ -220,4 +220,14 @@ public class Urls {
     public static URI clientRegistration(URI baseUri, String realm, String protocol, String clientId) {
         return realmBase(baseUri).path(RealmsResource.class, "getClientsService").path(ClientRegistrationService.class, "provider").path(OIDCClientRegistrationProvider.class, "getOIDC").build(realm, protocol, clientId);
     }
+
+    /**
+     * Return the URI for the SAML2 attribute query endpoint. This endpoint is used to handle attribute query SAML requests
+     * @param baseUri the realm baseuri
+     * @param realmName the realm name
+     * @return the full attribute query endpoint
+     */
+    public static URI samlAttributeEndpoint(URI baseUri, String realmName) {
+        return realmBase(baseUri).path(RealmsResource.class, "getProtocol").path(SamlProtocol.ATTRIBUTE_QUERY_SERVICE_PATH).build(realmName, SamlProtocol.LOGIN_PROTOCOL);
+    }
 }

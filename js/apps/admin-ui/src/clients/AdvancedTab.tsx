@@ -8,11 +8,13 @@ import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 import type { AddAlertFunction } from "../components/alert/Alerts";
 import { convertAttributeNameToForm, toUpperCase } from "../util";
 import type { FormFields, SaveOptions } from "./ClientDetails";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { AdvancedSettings } from "./advanced/AdvancedSettings";
 import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
 import { ClusteringPanel } from "./advanced/ClusteringPanel";
 import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
+import { SamlAttributeQueryConfig } from "./advanced/SamlAttributeQueryConfig";
 import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
 
 export const parseResult = (
@@ -52,6 +54,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   const { t } = useTranslation();
   const openIdConnect = "openid-connect";
 
+  const isFeatureEnabled = useIsFeatureEnabled();
   const { setValue } = useFormContext();
   const {
     publicClient,
@@ -159,6 +162,38 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "saml_single_logout_service_url_artifact",
                       "saml_artifact_binding_url",
                       "saml_artifact_resolution_service_url",
+                    ])
+                  }
+                />
+              </>
+            ),
+          },
+          {
+            title: t("samlAttributeQueryConfig.label"),
+            isHidden:
+              protocol === openIdConnect ||
+              !isFeatureEnabled(Feature.AttributeStore),
+            panel: (
+              <>
+                <Text className="pf-u-pb-lg">
+                  {t("samlAttributeQueryConfig.help")}
+                </Text>
+                <SamlAttributeQueryConfig
+                  save={() => save()}
+                  reset={() =>
+                    resetFields([
+                      "saml.attributeQuery.issuer",
+                      "saml.attributeQuery.signingCert",
+                      "saml.attributeQuery.targetAudience",
+                      "saml.attributeQuery.encryptionCert",
+                      "saml.attributeQuery.userLookupAttribute",
+                      "saml.attributeQuery.filters",
+                      "saml.attributeQuery.requireSignedRequest",
+                      "saml.attributeQuery.requireEncryptedRequest",
+                      "saml.attributeQuery.signResponseDocument",
+                      "saml.attributeQuery.signResponseAssertion",
+                      "saml.attributeQuery.encryptResponse",
+                      "saml.attributeQuery.supported",
                     ])
                   }
                 />

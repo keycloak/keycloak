@@ -302,6 +302,13 @@ export default function ClientDetails() {
         ),
       );
     }
+    if (client.attributes?.["saml.attributeQuery.filters"]) {
+      form.setValue(
+        convertAttributeNameToForm("attributes.saml.attributeQuery.filters"),
+        // @ts-ignore
+        JSON.parse(client.attributes["saml.attributeQuery.filters"]),
+      );
+    }
   };
 
   useFetch(
@@ -348,6 +355,13 @@ export default function ClientDetails() {
             .map(({ key, value }) => [key, value]),
         ),
       );
+    }
+
+    if (submittedClient.attributes?.["saml.attributeQuery.filters"]) {
+      submittedClient.attributes["saml.attributeQuery.filters"] =
+        JSON.stringify(
+          submittedClient.attributes["saml.attributeQuery.filters"],
+        );
     }
 
     try {

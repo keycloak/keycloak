@@ -157,3 +157,68 @@ This tab has many fields for specific situations.  Some fields are covered in ot
 
 *Artifact Resolution Service*:: URL of the client SOAP endpoint where to send the `ArtifactResolve` messages to.
 
+*Attribute Query*
+
+SAML clients can be used perform attribute query requests to external IdPs and respond to attribute query requests from
+external IdPs as described in https://docs.oasis-open.org/security/saml/v2.0/saml-profiles-2.0-os.pdf[section 6 of the SAML2 profile]
+and the https://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-x509-authn-attrib-profile-cd.html[SAML2 X509 attribute sharing profile].
+
+SAML clients may be used to respond to attribute query requests to Keycloak's SAML attribute endpoint (/realms/REALM_NAME/protocol/saml/attributes). To configure this functionality,
+perform the following steps:
+
+. Go to the `Advanced` tab in the SAML client
+. Scroll to `SAML Attribute Query`
+. Select `Enabled`
+image:images/client-saml-attribute-query-config.png[]
+. Populate the configuration fields for the client that will be requesting attributes from Keycloak
+
+.Configuration Values
+
+|===
+|Name |Description |Example Value
+
+|Request Issuer
+|The issuer URI of the client requesting attributes from Keycloak. Used to validate the issuer on the attribute query request.
+|https://myrp.org/realms/attr-lookup
+
+|Response Audience
+|The URI to set as the audience on the attribute query response.
+|https://myrp.org/realms/attr-lookup
+
+|Request Signing Certificate
+|The certificate the client used to sign the attribute query request. Used to verify signatures on the attribute query request.
+|MIIClzCC...9A7GuvUQ==
+
+|Response Encryption Certificate
+|The certificate used to encrypt the attribute query response created by Keycloak.
+|MIIClzCC...6SJqby2w==
+
+|User Lookup Attribute
+|Alternate attribute used to lookup users in Keycloak when processing attribute query requests. Can be used to implement the X509 Attribute Sharing Profile which requires the subject of the request to be the X509 DN.
+|x509dn
+
+|Filters
+|Regex filters used to determine which attributes are returned. Attributes with a key matching any of the regex filters are returned.
+|prefix.*?
+
+|Require Signed Requests
+|Requires the request document to be signed by the client. If this is set and the received request is not signed, the request will be denied.
+|True
+
+|Require Encrypted Requests
+|Requires the subject in the request document to be encrypted by the client. If this is set and the received request is not encrypted, the request will fail.
+|True
+
+|Sign Response Document
+|Sign the generated response document. The signing certificate for this SAML client will be used to sign the response.
+|True
+
+|Sign Response Assertion
+|Sign the assertion element in the generated response document. The signing certificate for this SAML client will be used to sign the response.
+|True
+
+|Encrypt Response
+|Encrypt the assertion element in the generated response document. The encryption certificate for this SAML client will be used to encrypt the response.
+|True
+
+|===

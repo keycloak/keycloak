@@ -32,7 +32,6 @@ import { toUpperCase } from "../util";
 import { useFetch } from "../utils/useFetch";
 import { ManagePriorityDialog } from "./ManagePriorityDialog";
 import { toCustomUserFederation } from "./routes/CustomUserFederation";
-import { toNewCustomUserFederation } from "./routes/NewCustomUserFederation";
 import { toUserFederationKerberos } from "./routes/UserFederationKerberos";
 import { toUserFederationLdap } from "./routes/UserFederationLdap";
 
@@ -77,7 +76,7 @@ export default function UserFederationSection() {
         <DropdownItem
           key={p.id}
           onClick={() =>
-            navigate(toNewCustomUserFederation({ realm, providerId: p.id! }))
+            navigate(toCustomUserFederation({ realm, providerId: p.id! }))
           }
         >
           {p.id.toUpperCase() == "LDAP"
@@ -212,7 +211,7 @@ export default function UserFederationSection() {
                   key={p.id}
                   onClick={() =>
                     navigate(
-                      toNewCustomUserFederation({ realm, providerId: p.id! }),
+                      toCustomUserFederation({ realm, providerId: p.id! }),
                     )
                   }
                   data-testid={`${p.id}-card`}
