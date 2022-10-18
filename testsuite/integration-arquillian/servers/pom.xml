@@ -33,6 +33,7 @@
         <script.suffix>sh</script.suffix>
 
         <!--app container versions-->
+        <eap.version>7.4.0.GA-redhat-00005</eap.version>
         <eap71.version>7.1.5.GA-redhat-00002</eap71.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>
 
