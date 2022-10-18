@@ -35,6 +35,7 @@ import org.keycloak.models.map.storage.hotRod.common.HotRodVersionUtils;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -118,7 +119,6 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
         LOG.debugf("Uploading proto schema to Infinispan server.");
         registerSchemata();
 
-
         String reindexCaches = config.get("reindexCaches", null);
         RemoteCacheManagerAdmin administration = remoteCacheManager.administration();
         if (reindexCaches != null && reindexCaches.equals("all")) {
@@ -141,22 +141,33 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
 
     private void registerSchemata() {
         final RemoteCache<String, String> protoMetadataCache = remoteCacheManager.getCache(ProtobufMetadataManagerConstants.PROTOBUF_METADATA_CACHE_NAME);
+        Set<String> cachesForIndexUpdate = new HashSet<>();
 
         // First add Common classes definitions
         GeneratedSchema commonSchema = CommonPrimitivesProtoSchemaInitializer.INSTANCE;
-        if (isUpdateNeeded(commonSchema.getProtoFileName(),
-                CommonPrimitivesProtoSchemaInitializer.COMMON_PRIMITIVES_VERSION,
-                protoMetadataCache.get(commonSchema.getProtoFileName()))) {
+        String currentProtoFile = protoMetadataCache.get(commonSchema.getProtoFileName());
+        // there is no proto file deployed on the server
+        if (currentProtoFile == null) {
             protoMetadataCache.put(commonSchema.getProtoFileName(), commonSchema.getProtoFile());
+        }
+        else if (isUpdateNeeded(commonSchema.getProtoFileName(), CommonPrimitivesProtoSchemaInitializer.COMMON_PRIMITIVES_VERSION, currentProtoFile)) {
+            protoMetadataCache.put(commonSchema.getProtoFileName(), commonSchema.getProtoFile());
+
+            // if there is a change in common primitives, update all caches as we don't track in what areas are these common primitives used
+            cachesForIndexUpdate = ENTITY_DESCRIPTOR_MAP.values().stream().map(HotRodEntityDescriptor::getCacheName).collect(Collectors.toSet());
         }
 
         // Add schema for each entity descriptor
         for (HotRodEntityDescriptor<?,?> descriptor : ENTITY_DESCRIPTOR_MAP.values()) {
             GeneratedSchema schema = descriptor.getProtoSchema();
-            if (isUpdateNeeded(schema.getProtoFileName(),
-                    descriptor.getCurrentVersion(),
-                    protoMetadataCache.get(schema.getProtoFileName()))) {
+            currentProtoFile = protoMetadataCache.get(schema.getProtoFileName());
+            // there is no proto file deployed on the server
+            if (currentProtoFile == null) {
                 protoMetadataCache.put(schema.getProtoFileName(), schema.getProtoFile());
+            }
+            else if (isUpdateNeeded(schema.getProtoFileName(), descriptor.getCurrentVersion(), currentProtoFile)) {
+                protoMetadataCache.put(schema.getProtoFileName(), schema.getProtoFile());
+                cachesForIndexUpdate.add(descriptor.getCacheName());
             }
         }
 
@@ -173,6 +184,10 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
 
             throw new IllegalStateException("Some Protobuf schema files contain errors: " + errors);
         }
+
+        // update index schema for caches, where a proto schema was updated
+        RemoteCacheManagerAdmin administration = remoteCacheManager.administration();
+        cachesForIndexUpdate.forEach(administration::updateIndexSchema);
     }
 
     /**
