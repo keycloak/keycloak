@@ -18,6 +18,7 @@
 package org.keycloak.models.utils;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.otp.OTPApplicationProvider;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -456,7 +457,8 @@ public class ModelToRepresentation {
         rep.setOtpPolicyInitialCounter(otpPolicy.getInitialCounter());
         rep.setOtpPolicyType(otpPolicy.getType());
         rep.setOtpPolicyLookAheadWindow(otpPolicy.getLookAheadWindow());
-        rep.setOtpSupportedApplications(otpPolicy.getSupportedApplications());
+
+        rep.setOtpSupportedApplications(session.getAllProviders(OTPApplicationProvider.class).stream().map(OTPApplicationProvider::getName).collect(Collectors.toList()));
         rep.setOtpPolicyCodeReusable(otpPolicy.isCodeReusable());
 
         WebAuthnPolicy webAuthnPolicy = realm.getWebAuthnPolicy();
