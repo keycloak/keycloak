@@ -29,7 +29,8 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.controllers.KeycloakDeployment;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecUnsupported;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,9 +57,13 @@ public class PodTemplateTest {
         };
         var kc = new Keycloak();
         var spec = new KeycloakSpec();
-        spec.setUnsupported(new KeycloakSpecUnsupported(podTemplate));
+        spec.setUnsupported(new UnsupportedSpec(podTemplate));
         spec.setHostname("example.com");
-        spec.setTlsSecret("example-tls-secret");
+
+        var httpSpec = new HttpSpec();
+        httpSpec.setTlsSecret("example-tls-secret");
+        spec.setHttpSpec(httpSpec);
+
         kc.setSpec(spec);
         var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin");
         return (StatefulSet) deployment.getReconciledResource().get();

@@ -38,8 +38,6 @@ import javax.mail.internet.MimeMultipart;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.UnsupportedEncodingException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
@@ -49,9 +47,8 @@ import java.util.Properties;
  */
 public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
-    private static final String SUPPORTED_SSL_PROTOCOLS = getSupportedSslProtocols();
-
     private static final Logger logger = Logger.getLogger(DefaultEmailSenderProvider.class);
+    private static final String SUPPORTED_SSL_PROTOCOLS = getSupportedSslProtocols();
 
     private final KeycloakSession session;
 

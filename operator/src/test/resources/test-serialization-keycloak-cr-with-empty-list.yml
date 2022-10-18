@@ -7,4 +7,5 @@ spec:
     enabled:
       -
   hostname: my-hostname
-  tlsSecret: my-tls-secret
+  http:
+    tlsSecret: my-tls-secret

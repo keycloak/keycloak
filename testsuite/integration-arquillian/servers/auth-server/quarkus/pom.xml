@@ -21,6 +21,7 @@
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <!-- Path to testsuite/test resources : Themes-->
         <keycloak.base.test.resource>${project.parent.basedir}/../../tests/base/src/test/resources</keycloak.base.test.resource>
+        <auth.server.fips.mode>disabled</auth.server.fips.mode>
     </properties>
     
     <dependencies>
@@ -298,6 +299,69 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>auth-server-fips140-2</id>
+            <properties>
+                <auth.server.fips.mode>enabled</auth.server.fips.mode>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-crypto-fips1402</artifactId>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-fips-pki-conf</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/conf</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/fips</directory>
+                                            <includes>
+                                                <include>**</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-bcfips-deps</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/lib/bootstrap</outputDirectory>
+                                    <includeArtifactIds>bc-fips,bctls-fips,bcpkix-fips</includeArtifactIds>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+
         </profile>
 
     </profiles>
