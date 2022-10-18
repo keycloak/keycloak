@@ -518,9 +518,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
     public Set<String> getConfigSecretsNames() {
         Set<String> ret = new HashSet<>(serverConfigSecretsNames);
-        if (isTlsConfigured(keycloakCR)) {
-            ret.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
-        }
+        ret.addAll(distConfigurator.getSecretNames());
         return ret;
     }
 

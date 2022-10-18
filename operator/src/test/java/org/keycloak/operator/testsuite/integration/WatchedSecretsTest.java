@@ -269,6 +269,9 @@ public class WatchedSecretsTest extends BaseOperatorTest {
     }
 
     private void hardcodeDBCredsInCR(Keycloak kc) {
+        kc.getSpec().getDatabaseSpec().setUsernameSecret(null);
+        kc.getSpec().getDatabaseSpec().setPasswordSecret(null);
+
         var username = new ValueOrSecret("db-username", "postgres");
         var password = new ValueOrSecret("db-password", "testpassword");
 

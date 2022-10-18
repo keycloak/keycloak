@@ -37,6 +37,7 @@ import org.keycloak.operator.testsuite.utils.K8sUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
@@ -99,6 +100,28 @@ public class KeycloakDistConfiguratorTest {
         distConfig.configureFeatures();
         assertEnvVarNotPresent(envVars, "KC_FEATURES");
         assertEnvVarNotPresent(envVars, "KC_FEATURES_DISABLED");
+    }
+
+    @Test
+    public void testDatabaseSettings() {
+        testFirstClassCitizen("KC_DB", "db",
+                KeycloakDistConfigurator::configureDatabase, "vendor");
+        testFirstClassCitizen("KC_DB_USERNAME", "db-username",
+                KeycloakDistConfigurator::configureDatabase, "usernameSecret");
+        testFirstClassCitizen("KC_DB_PASSWORD", "db-password",
+                KeycloakDistConfigurator::configureDatabase, "passwordSecret");
+        testFirstClassCitizen("KC_DB_SCHEMA", "db-schema",
+                KeycloakDistConfigurator::configureDatabase, "schema");
+        testFirstClassCitizen("KC_DB_URL_HOST", "db-url-host",
+                KeycloakDistConfigurator::configureDatabase, "host");
+        testFirstClassCitizen("KC_DB_URL_PORT", "db-url-port",
+                KeycloakDistConfigurator::configureDatabase, "123");
+        testFirstClassCitizen("KC_DB_POOL_INITIAL_SIZE", "db-pool-initial-size",
+                KeycloakDistConfigurator::configureDatabase, "1");
+        testFirstClassCitizen("KC_DB_POOL_MIN_SIZE", "db-pool-min-size",
+                KeycloakDistConfigurator::configureDatabase, "2");
+        testFirstClassCitizen("KC_DB_POOL_MAX_SIZE", "db-pool-max-size",
+                KeycloakDistConfigurator::configureDatabase, "3");
     }
 
     /* UTILS */
@@ -190,7 +213,20 @@ public class KeycloakDistConfiguratorTest {
 
         return envVars.stream().filter(f -> varName.equals(f.getName()))
                 .findFirst()
-                .map(EnvVar::getValue)
+                .map(new Function<EnvVar, String>() {
+                    @Override
+                    public String apply(EnvVar envVar) {
+                        if (envVar.getValue() != null) {
+                            return envVar.getValue();
+                        }
+
+                        if (envVar.getValueFrom() != null && envVar.getValueFrom().getSecretKeyRef() != null) {
+                            return envVar.getValueFrom().getSecretKeyRef().getName();
+                        }
+
+                        return null;
+                    }
+                })
                 .map(f -> f.split(","))
                 .map(List::of)
                 .orElseGet(Collections::emptyList);

@@ -19,17 +19,24 @@ package org.keycloak.operator.testsuite.unit;
 
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class CRSerializationTest {
 
@@ -46,6 +53,28 @@ public class CRSerializationTest {
         assertThat(transactionsSpec, notNullValue());
         assertThat(transactionsSpec.isXaEnabled(), notNullValue());
         assertThat(transactionsSpec.isXaEnabled(), CoreMatchers.is(false));
+
+        List<ValueOrSecret> serverConfiguration = keycloak.getSpec().getServerConfiguration();
+
+        assertNotNull(serverConfiguration);
+        assertFalse(serverConfiguration.isEmpty());
+        assertThat(serverConfiguration, hasItem(hasProperty("name", is("key1"))));
+
+        DatabaseSpec databaseSpec = keycloak.getSpec().getDatabaseSpec();
+        assertNotNull(databaseSpec);
+        assertEquals("vendor", databaseSpec.getVendor());
+        assertEquals("database", databaseSpec.getDatabase());
+        assertEquals("host", databaseSpec.getHost());
+        assertEquals(123, databaseSpec.getPort());
+        assertEquals("url", databaseSpec.getUrl());
+        assertEquals("schema", databaseSpec.getSchema());
+        assertEquals(1, databaseSpec.getPoolInitialSize());
+        assertEquals(2, databaseSpec.getPoolMinSize());
+        assertEquals(3, databaseSpec.getPoolMaxSize());
+        assertEquals("usernameSecret", databaseSpec.getUsernameSecret().getName());
+        assertEquals("usernameSecretKey", databaseSpec.getUsernameSecret().getKey());
+        assertEquals("passwordSecret", databaseSpec.getPasswordSecret().getName());
+        assertEquals("passwordSecretKey", databaseSpec.getPasswordSecret().getKey());
     }
 
     @Test
