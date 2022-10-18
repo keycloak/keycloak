@@ -11,6 +11,22 @@ spec:
     - name: features
       value: docker
   hostname: my-hostname
+  db:
+    vendor: vendor
+    usernameSecret:
+      name: usernameSecret
+      key: usernameSecretKey
+    passwordSecret:
+      name: passwordSecret
+      key: passwordSecretKey
+    host: host
+    database: database
+    url: url
+    port: 123
+    schema: schema
+    poolInitialSize: 1
+    poolMinSize: 2
+    poolMaxSize: 3
   ingress:
     enabled: false
   http:
