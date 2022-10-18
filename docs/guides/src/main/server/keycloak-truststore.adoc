@@ -2,7 +2,7 @@
 <#import "/templates/kc.adoc" as kc>
 
 <@tmpl.guide
-title="Configuring a Truststore"
+title="Configuring trusted certificates for outgoing requests"
 summary="How to configure the Keycloak Truststore to communicate with external services through TLS."
 includedOptions="">
 
