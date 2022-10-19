@@ -16,7 +16,7 @@ the Keycloak Server validates Subject DN field of the client's certificate.
 
 For this release, we improved policy evaluation performance across the board, increasing reliability and throughput. The main
 changes we did were related with trying to optimize the policy evaluation path by avoiding unnecessary flows and collect decisions
-as soon as they happen. We also introduced a policy decision cache on a per request basis, avoiding redundant decisions from policies
+as soon as they happen. We also introduced a policy decision cache on a per-request basis, avoiding redundant decisions from policies
 previously evaluated.
 
 We are also working on other layers of cache which should give a much better experience. See https://issues.redhat.com/browse/KEYCLOAK-7952[KEYCLOAK-7952].

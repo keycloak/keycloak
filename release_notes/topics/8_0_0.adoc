@@ -27,7 +27,7 @@ Message bundles in theme resources enables internationalization of custom provid
 We have added a new SPI that allows for the configuration of custom role mappers that are used by the SAML adapters to map
 the roles extracted from the SAML assertion into roles that exist in the SP application environment. This is particularly useful
 when the adapters need to communicate with third party IDPs and the roles set by the IDP in the assertion do not correspond to
-the roles that were defined for the SP application. The provider to be used can configured in the `keycloak-saml.xml`
+the roles that were defined for the SP application. The provider to be used can be configured in the `keycloak-saml.xml`
 file or in the `keycloak-saml` subsystem. An implementation that performs the role mappings based on the contents of a properties
 file was also provided.
 

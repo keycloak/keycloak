@@ -11,7 +11,7 @@ applications from the legacy/deprecated API to the native promise API.
 == Reverted breaking API changes to LocaleSelectorSPI
 
 In 9.0.0 a breaking API change was introduced to LocaleSelectorSPI. With 9.0.1 the changes to
-this API is now reverted, and a new LocaleUpdatorSPI has been introduced.
+this API is now reverted, and a new LocaleUpdaterSPI has been introduced.
 
 == Fixed the automatic resolution of `KeycloakConfigResolver` instances for Spring Boot Applications
 

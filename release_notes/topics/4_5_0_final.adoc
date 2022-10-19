@@ -2,7 +2,7 @@
 
 The Signature SPI makes it possible to plug-in additional signature algorithms. This enables additional signatures and also enables changing how signatures are generated. For example, using this allows using an HSM device to sign tokens.
 
-Thanks to https://github.com/tnorimat[tnorimat] for contributing a signficant part of this work.
+Thanks to https://github.com/tnorimat[tnorimat] for contributing a significant part of this work.
 
 = New Signature Algorithms
 
@@ -17,7 +17,7 @@ HMAC (HS256/384/512) are also very useful when you do not want your application 
 Since these are symmetric signatures only Keycloak is able to verify the signature, which requires the
 application to use the token introspection endpoint to verify tokens.
 
-Thanks to https://github.com/tnorimat[tnorimat] for contributing a signficant part of this work.
+Thanks to https://github.com/tnorimat[tnorimat] for contributing a significant part of this work.
 
 = Better Audience Support for OpenID Connect clients
 

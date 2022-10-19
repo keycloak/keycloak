@@ -6,7 +6,7 @@ The following notes apply to the RH-SSO 7.3 release.
 
 = New or Improved Features
 
-Some of the new features in this release are technology preview features, which means they are available, but not fully supported. You may use these for testing, but features marked for technology preview are not supported for use in production. These are marked as technology preview in this list and in our documentation. Because they are not fully supported for production use, technology preview features are disabled by default, but the features can be enabled if you want to try them out. We are seeking feedback on the technology preview features, so please log a support ticket if you have comments on a technology preview feature. Once a feature transitions from technology preview to production supported, the API and functionality are fixed for the lifecyle of the major version, so comments during the tech preview period are critical to influencing a feature in the way you want.
+Some of the new features in this release are technology preview features, which means they are available, but not fully supported. You may use these for testing, but features marked for technology preview are not supported for use in production. These are marked as technology preview in this list and in our documentation. Because they are not fully supported for production use, technology preview features are disabled by default, but the features can be enabled if you want to try them out. We are seeking feedback on the technology preview features, so please log a support ticket if you have comments on a technology preview feature. Once a feature transitions from technology preview to production supported, the API and functionality are fixed for the lifecycle of the major version, so comments during the tech preview period are critical to influencing a feature in the way you want.
 
 Existing features that remain in tech preview in this release include:
 
@@ -56,7 +56,7 @@ Features marked for technology preview are not supported for use in production.
 
 == New Capabilities in Client Adapters
 
-* Fuse 7 - Fuse adapter aligned with latest Fuse 7 release
+* Fuse 7 - Fuse adapter aligned with the latest Fuse 7 release
 
 * Sprint Boot 2 support
 

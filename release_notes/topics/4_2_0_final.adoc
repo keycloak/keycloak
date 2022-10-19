@@ -8,7 +8,7 @@ Thanks to https://github.com/gtudan[gtudan] for the contribution.
 
 = SAML adapter multitenancy support
 
-The SAML adapter can support multi-tenancy now just like the built in adapter for OpenID Connect.
+The SAML adapter can support multi-tenancy now just like the built-in adapter for OpenID Connect.
 
 
 = An option to create claims with dots (.) in them

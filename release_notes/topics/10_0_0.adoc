@@ -29,7 +29,7 @@ Thanks to https://github.com/y-tabata[Yoshiyuki Tabata]
 
 A new SPI was introduced to allow better flexibility when setting security related headers on responses. This provides
 a cleaner implementation within Keycloak, but also allows full customisation if needed. Security headers are now set
-by a response filter instead of within the code itself, which makes it less error prone, removing the chance that
+by a response filter instead of within the code itself, which makes it less error-prone, removing the chance that
 some response are missing headers.
 
 
