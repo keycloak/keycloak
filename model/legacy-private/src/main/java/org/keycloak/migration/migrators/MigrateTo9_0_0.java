@@ -63,7 +63,7 @@ public class MigrateTo9_0_0 implements Migration {
     }
 
     private void addAccountApiRoles(RealmModel realm) {
-        LOG.debugf("Finding client '%s' on realm '%s'", Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, realm.getId());
+        LOG.debugf("Searching for client '%s' in realm '%s'", Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, realm.getId());
         ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if(accountClient != null) {
             RoleModel viewAppRole = accountClient.addRole(AccountRoles.VIEW_APPLICATIONS);
