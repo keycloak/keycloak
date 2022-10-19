@@ -24,7 +24,7 @@ Resource owners are allowed to manage permissions to their resources and decide 
 {project_name} is a UMA 2.0 compliant authorization server that provides most UMA capabilities.
 
 As an example, consider a user Alice (resource owner) using an Internet Banking Service (resource server) to manage her Bank Account (resource). One day, Alice decides
-to open her bank account to Bob (requesting party), a accounting professional. However, Bob should only have access to view (scope) Alice's account.
+to open her bank account to Bob (requesting party), an accounting professional. However, Bob should only have access to view (scope) Alice's account.
 
 As a resource server, the Internet Banking Service must be able to protect Alice's Bank Account. For that, it relies on {project_name}
 Resource Registration Endpoint to create a resource in the server representing Alice's Bank Account.

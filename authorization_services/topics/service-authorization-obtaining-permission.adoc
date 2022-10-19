@@ -92,7 +92,7 @@ Indicates that responses from the server should contain any permission granted b
 +
 If the authorization request does not map to any permission, a `403` HTTP status code is returned instead.
 
-Example of a authorization request when a client is seeking access to two resources protected by a resource server.
+Example of an authorization request when a client is seeking access to two resources protected by a resource server.
 
 [source,bash,subs="attributes+"]
 ----
@@ -105,7 +105,7 @@ curl -X POST \
   --data "permission=Resource B#Scope B"
 ----
 
-Example of a authorization request when a client is seeking access to any resource and scope protected by a resource server.
+Example of an authorization request when a client is seeking access to any resource and scope protected by a resource server.
 NOTE: This will not evaluate the permissions for all resources. Instead, the permissions for resources owned by the resource server, owned by the requesting user,
 and explicitly granted to the requesting user by other owners are evaluated.
 

@@ -61,7 +61,7 @@ That is, you can create individual policies, then reuse them with different perm
 Policy providers are implementations of specific policy types. {project_name} provides built-in policies, backed by their corresponding
 policy providers, and you can create your own policy types to support your specific requirements.
 
-{project_name} provides a SPI (Service Provider Interface) that you can use to plug in your own policy provider implementations.
+{project_name} provides an SPI (Service Provider Interface) that you can use to plug in your own policy provider implementations.
 
 [[_overview_terminology_permission_ticket]]
 == Permission ticket

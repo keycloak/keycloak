@@ -41,7 +41,7 @@ curl -v -X POST \
   }'
 ----
 
-By default, the owner of a resource is the resource server. If you want to define a different owner, such as an
+By default, the owner of a resource is the resource server. If you want to define a different owner, such as a
 specific user, you can send a request as follows:
 
 [source,bash,subs="attributes+"]

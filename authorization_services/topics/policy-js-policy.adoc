@@ -74,8 +74,8 @@ if (identity.hasClientRole('my-client', 'my-client-role')) {
 }
 ```
 
-=== Checking for roles granted to an user
-To check for realm roles granted to an user:
+=== Checking for roles granted to a user
+To check for realm roles granted to a user:
 
 ```javascript
 const realm = $evaluation.getRealm();
@@ -85,7 +85,7 @@ if (realm.isUserInRealmRole('marta', 'role-a')) {
 }
 ```
 
-Or for client roles granted to an user:
+Or for client roles granted to a user:
 
 ```javascript
 const realm = $evaluation.getRealm();
