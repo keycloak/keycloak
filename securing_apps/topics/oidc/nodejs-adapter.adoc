@@ -94,7 +94,7 @@ Now we are ready to obtain the `keycloak.json` file by visiting the {project_nam
 
 Paste the downloaded file on the root folder of our project.
 
-Instantiation with this method results in all of the reasonable defaults
+Instantiation with this method results in all the reasonable defaults
 being used. As alternative, it's also possible to provide a configuration
 object, rather than the `keycloak.json` file:
 

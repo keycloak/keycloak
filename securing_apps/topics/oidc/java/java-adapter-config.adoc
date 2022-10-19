@@ -65,8 +65,8 @@ resource::
 realm-public-key::
   _OPTIONAL_ and it's not recommended to set it. PEM format of the realm public key. You can obtain this from the Admin Console.
    If not set, the adapter will download this from {project_name} and
-  it will always re-download it when needed (eg. {project_name} rotates its keys). However if realm-public-key is set, then adapter
-  will never download new keys from {project_name}, so when {project_name} rotate it's keys, adapter will break.
+  it will always re-download it when needed (e.g. {project_name} rotates its keys). However if realm-public-key is set, then adapter
+  will never download new keys from {project_name}, so when {project_name} rotate its keys, adapter will break.
 
 auth-server-url::
   _REQUIRED._ The base URL of the {project_name} server. All other {project_name} pages and REST service endpoints are derived from this. It is usually of the form `\https://host:port{kc_base_path}`.
@@ -156,7 +156,8 @@ socket-timeout-millis::
   A timeout value of zero is interpreted as an infinite timeout.
   A negative value is interpreted as undefined (system default if applicable).
   The default value is `-1`.
-  onnection-timeout-millis::
+
+connection-timeout-millis::
   Timeout for establishing the connection with the remote host in milliseconds.
   A timeout value of zero is interpreted as an infinite timeout.
   A negative value is interpreted as undefined (system default if applicable).
@@ -192,7 +193,7 @@ truststore::
   If you prefix the path with `classpath:`, then the truststore will be obtained from the deployment's classpath instead.
   Used for outgoing HTTPS communications to the {project_name} server.
   Client making HTTPS requests need a way to verify the host of the server they are talking to.
-  This is what the trustore does.
+  This is what the truststore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
   You can create this truststore by extracting the public certificate of the {project_name} server's SSL keystore.
   _REQUIRED_ unless `ssl-required` is `none` or `disable-trust-manager` is `true`.
@@ -258,14 +259,14 @@ token-minimum-time-to-live::
 min-time-between-jwks-requests::
   Amount of time, in seconds, specifying minimum interval between two requests to {project_name} to retrieve new public keys.
   It is 10 seconds by default.
-  Adapter will always try to download new public key when it recognize token with unknown `kid` . However it won't try it more
+  Adapter will always try to download new public key when it recognizes token with unknown `kid` . However it won't try it more
   than once per 10 seconds (by default). This is to avoid DoS when attacker sends lots of tokens with bad `kid` forcing adapter
   to send lots of requests to {project_name}.
 
 public-key-cache-ttl::
   Amount of time, in seconds, specifying maximum interval between two requests to {project_name} to retrieve new public keys.
   It is 86400 seconds (1 day) by default.
-  Adapter will always try to download new public key when it recognize token with unknown `kid` . If it recognize token with known `kid`, it will
+  Adapter will always try to download new public key when it recognizes token with unknown `kid` . If it recognizes token with known `kid`, it will
   just use the public key downloaded previously. However at least once per this configured interval (1 day by default) will be new
   public key always downloaded even if the `kid` of token is already known.
 

@@ -216,7 +216,7 @@ Use this procedure to set important client configuration parameters.
 
 Many SAML SPs determine authorization based on a user's membership in a group. The {project_name} IdP can manage user group information but it does not supply the user's groups unless the IdP is configured to supply it as a SAML attribute.
 
-Perform the following procedure to configure the IdP to supply the user's groups as as a SAML attribute.
+Perform the following procedure to configure the IdP to supply the user's groups as a SAML attribute.
 
 .Procedure
 

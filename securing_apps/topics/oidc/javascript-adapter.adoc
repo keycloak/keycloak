@@ -221,7 +221,7 @@ Keycloak support hybrid mobile apps developed with https://cordova.apache.org/[A
 The default is cordova, which the adapter will automatically select if no adapter type has been configured and window.cordova is present.
 When logging in, it will open an https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-inappbrowser/[InApp Browser] that lets the user interact with {project_name} and afterwards returns to the app by redirecting to `http://localhost`. Because of this, you must whitelist this URL as a valid redirect-uri in the client configuration section of the Admin Console.
 
-While this mode is easy to setup, it also has some disadvantages:
+While this mode is easy to set up, it also has some disadvantages:
 
 * The InApp-Browser is a browser embedded in the app and is not the phone's default browser. Therefore it will have different settings and stored credentials will not be available.
 * The InApp-Browser might also be slower, especially when rendering more complex themes.
@@ -252,7 +252,7 @@ The technical details for linking to an app differ on each platform and special 
 Please refer to the Android and iOS sections of the https://github.com/e-imaxina/cordova-plugin-deeplinks/blob/master/README.md[deeplinks plugin documentation] for further instructions.
 
 There are different kinds of links for opening apps: custom schemes (i.e. `myapp://login` or `android-app://com.example.myapp/https/example.com/login`) and https://developer.apple.com/ios/universal-links/[Universal Links (iOS)]) / https://developer.android.com/training/app-links/deep-linking[Deep Links (Android)].
-While the former are easier to setup and tend to work more reliably, the later offer extra security as they are unique and only the owner of a domain can register them.
+While the former are easier to set up and tend to work more reliably, the later offer extra security as they are unique and only the owner of a domain can register them.
 Custom-URLs are deprecated on iOS.
 We recommend that you use universal links, combined with a fallback site with a custom-url link on it for best reliability.
 
@@ -287,7 +287,7 @@ keycloak.init({
 
 This specific package does not exist, but it gives a pretty good example of how such an adapter could be passed into the client.
 
-It's also possible to make your own adapter, to do so you will have to implement the methods described in the `KeycloakAdapter` interface. For example the following TypeScript code ensures that all of the methods are properly implemented:
+It's also possible to make your own adapter, to do so you will have to implement the methods described in the `KeycloakAdapter` interface. For example the following TypeScript code ensures that all the methods are properly implemented:
 
 [source,typescript]
 ----
@@ -468,7 +468,7 @@ provider instead. More info in the link:{adminguide_link}#_client_suggested_idp[
 * acr - Contains the information about `acr` claim, which will be sent inside `claims` parameter to the {project_name} server. Typical usage
 is for step-up authentication. Example of use `{ values: ["silver", "gold"], essential: true }`. See OpenID Connect specification
 and link:{adminguide_link}#_step-up-flow[Step-up authentication documentation] for more details.
-* action - If value is `register` then user is redirected to registration page, if the value is `UPDATE_PASSWORD` then the user will redirected to the reset password page (if not authenticated will send user to login page first and redirect after authenticated), otherwise to login page.
+* action - If value is `register` then user is redirected to registration page, if the value is `UPDATE_PASSWORD` then the user will be redirected to the reset password page (if not authenticated will send user to login page first and redirect after authenticated), otherwise to login page.
 * locale - Sets the 'ui_locales' query param in compliance with https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest[section 3.1.2.1 of the OIDC 1.0 specification].
 * cordovaOptions - Specifies the arguments that are passed to the Cordova in-app-browser (if applicable). Options `hidden` and `location` are not affected by these arguments. All available options are defined at https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-inappbrowser/. Example of use: `{ zoom: "no", hardwareback: "yes" }`;
 
@@ -488,7 +488,7 @@ Options is an Object, where:
 
 *createLogoutUrl(options)*
 
-Returns the URL to logout the user.
+Returns the URL to log out the user.
 
 Options is an Object, where:
 
@@ -596,4 +596,4 @@ The available events are:
 * *onAuthRefreshSuccess* - Called when the token is refreshed.
 * *onAuthRefreshError* - Called if there was an error while trying to refresh the token.
 * *onAuthLogout* - Called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode).
-* *onTokenExpired* - Called when the access token is expired. If a refresh token is available the token can be refreshed with updateToken, or in cases where it is not (that is, with implicit flow) you can redirect to login screen to obtain a new access token.
+* *onTokenExpired* - Called when the access token is expired. If a refresh token is available the token can be refreshed with updateToken, or in cases where it is not (that is, with implicit flow) you can redirect to the login screen to obtain a new access token.

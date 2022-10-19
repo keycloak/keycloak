@@ -39,7 +39,7 @@ allowAnyHostname::
   but host name validation is not done.
   This setting should only be used during development and *never* in production
   as it will partly disable verification of SSL certificates.
-  This seting may be useful in test environments. This is _OPTIONAL_.
+  This setting may be useful in test environments. This is _OPTIONAL_.
   The default value is `false`.
 
 truststore::
@@ -47,7 +47,7 @@ truststore::
   If you prefix the path with `classpath:`, then the truststore will be obtained from the deployment's classpath instead.
   Used for outgoing HTTPS communications to the {project_name} server.
   Client making HTTPS requests need a way to verify the host of the server they are talking to.
-  This is what the trustore does.
+  This is what the truststore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
   You can create this truststore by extracting the public certificate of the {project_name} server's SSL keystore.
   This is _REQUIRED_ unless `disableTrustManager` is `true`.

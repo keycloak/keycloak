@@ -14,13 +14,13 @@ reads the user credentials from `STDIN`.
 
 To authenticate a user with the `desktop` variant the `KeycloakInstalled` 
 adapter opens a desktop browser window where a user uses the regular {project_name} 
-login pages to login when the `loginDesktop()` method is called on the `KeycloakInstalled` object.
+login pages to log in when the `loginDesktop()` method is called on the `KeycloakInstalled` object.
 
 The login page URL is opened with redirect parameter 
 that points to a local `ServerSocket` listening on a free ephemeral port 
 on `localhost` which is started by the adapter.
 
-After a succesful login the `KeycloakInstalled` receives the authorization code
+After a successful login the `KeycloakInstalled` receives the authorization code
 from the incoming HTTP request and performs the authorization code flow. 
 Once the code to token exchange is completed the `ServerSocket` is shutdown.
 
@@ -60,7 +60,7 @@ in the adapter configuration. Enabling PKCE is highly recommended, to avoid code
 
 ===== Usage
 
-The `KeycloakInstalled` adapter reads it's configuration from
+The `KeycloakInstalled` adapter reads its configuration from
 `META-INF/keycloak.json` on the classpath. Custom configurations
 can be supplied with an `InputStream` or a `KeycloakDeployment`
 through the `KeycloakInstalled` constructor.

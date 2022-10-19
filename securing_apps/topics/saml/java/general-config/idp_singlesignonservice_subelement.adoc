@@ -4,7 +4,7 @@
 
 The `SingleSignOnService` sub element defines the login SAML endpoint of the IDP.
 The client adapter will send requests
-to the IDP formatted via the settings within this element when it wants to login.
+to the IDP formatted via the settings within this element when it wants to log in.
 
 [source,xml]
 ----
@@ -22,7 +22,7 @@ signRequest::
   Defaults to whatever the IDP `signaturesRequired` element value is. 
 
 validateResponseSignature::
-  Should the client expect the IDP to sign the assertion response document sent back from an auhtn request?
+  Should the client expect the IDP to sign the assertion response document sent back from an authn request?
   This setting _OPTIONAL_. Defaults to whatever the IDP `signaturesRequired` element value is.
 
 requestBinding::

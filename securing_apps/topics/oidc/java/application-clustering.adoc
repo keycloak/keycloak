@@ -72,7 +72,7 @@ If admin URL contains `${application.session.host}` it will be replaced with the
 
 The previous section describes how {project_name} can send logout request to node associated with a specific HTTP session.
 However, in some cases admin may want to propagate admin tasks to all registered cluster nodes, not just one of them.
-For example to push a new not before policy to the application or to logout all users from the application.
+For example to push a new not before policy to the application or to log out all users from the application.
 
 In this case {project_name} needs to be aware of all application cluster nodes, so it can send the event to all of them.
 To achieve this, we support auto-discovery mechanism:
@@ -97,7 +97,7 @@ This means the adapter will send the registration request on startup and re-regi
 
 In the {project_name} Admin Console you can specify the maximum node re-registration timeout (should be larger than _register-node-period_ from
 the adapter configuration). You can also manually add and remove cluster nodes in through the Admin Console, which is useful if you don't want to rely
-on the automatic registration feature or if you want to remove stale application nodes in the event your not using the automatic unregistration feature.
+on the automatic registration feature or if you want to remove stale application nodes in the event you're not using the automatic unregistration feature.
 
 [[_refresh_token_each_req]]
 ===== Refresh token in each request

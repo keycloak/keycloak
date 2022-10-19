@@ -122,7 +122,7 @@ The downside to this approach is that you have to make a network invocation to t
 server if you have too many validation requests going on at the same time.  {project_name} issued access tokens are https://datatracker.ietf.org/doc/html/rfc7519[JSON Web Tokens (JWT)] digitally signed and encoded using https://datatracker.ietf.org/doc/html/rfc7515[JSON Web Signature (JWS)].
 Because they are encoded in this way, this allows you to locally validate access tokens using the public key of the issuing realm.  You can either hard code the
 realm's public key in your validation code, or lookup and cache the public key using the <<_certificate_endpoint, certificate endpoint>> with the Key ID (KID) embedded within the
-JWS.  Depending what language you code in, there are a multitude of third party libraries out there that can help you with JWS validation.
+JWS.  Depending on what language you code in, there are a multitude of third party libraries out there that can help you with JWS validation.
 
 
 ==== Flows

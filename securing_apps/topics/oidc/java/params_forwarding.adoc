@@ -22,7 +22,7 @@ defined on particular client. Note that the scope `openid` will be always be add
 enter the scope options `address phone`, then the request to {project_name} will contain the scope parameter `scope=openid address phone`.
 
 * prompt - {project_name} supports these settings:
-** `login` - SSO will be ignored and the {project_name} login page will be always shown, even if the user is already authenticated
+** `login` - SSO will be ignored and the {project_name} login page will always be shown, even if the user is already authenticated
 ** `consent` - Applicable only for the clients with `Consent Required`. If it is used, the Consent page will always be displayed,
 even if the user previously granted consent to this client.
 ** `none` - The login page will never be shown; instead the user will be redirected to the application, with an error if the user

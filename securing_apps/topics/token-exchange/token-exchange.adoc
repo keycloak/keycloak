@@ -98,7 +98,7 @@ a JSON document as described in the link:https://datatracker.ietf.org/doc/html/d
 
 Clients requesting a refresh token will get back both an access and refresh token in the response.  Clients requesting only
 access token type will only get an access token in the response.  Expiration information may or may not be included for
-clients requesting an external issuer through the `requested_issuer` paramater.
+clients requesting an external issuer through the `requested_issuer` parameter.
 
 Error responses generally fall under the 400 HTTP response code category, but other error status codes may be returned
 depending on the severity of the error.  Error responses may include content depending on the `requested_issuer`.
@@ -462,7 +462,7 @@ are any untrustworthy clients that are managed by your realm, public clients may
 This is why direct naked exchanges do not allow public clients and will abort with an error if the calling client is public.
 
 It is possible to exchange social tokens provided by Facebook, Google, etc. for a realm token.  Be careful and vigilante on what
-the exchange token is allowed to do as its not hard to create fake accounts on these social websites.  Use default roles, groups, and identity provider mappers to control what attributes and roles
+the exchange token is allowed to do as it's not hard to create fake accounts on these social websites.  Use default roles, groups, and identity provider mappers to control what attributes and roles
 are assigned to the external social user.
 
 Direct naked exchanges are quite dangerous.  You are putting a lot of trust in the calling client that it will never leak out

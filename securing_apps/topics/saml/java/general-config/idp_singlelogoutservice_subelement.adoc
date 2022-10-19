@@ -2,7 +2,7 @@
 ===== IDP SingleLogoutService sub element
 
 The `SingleLogoutService` sub element defines the logout SAML endpoint of the IDP.   The client adapter will send requests
-to the IDP formatted via the settings within this element when it wants to logout.
+to the IDP formatted via the settings within this element when it wants to log out.
 
 [source,xml]
 ----

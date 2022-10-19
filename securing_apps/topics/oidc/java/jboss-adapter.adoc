@@ -63,7 +63,7 @@ ifeval::[{project_product}==true]
 
 .Procedure
 
-. Install the adapter that applies to your application server from the link:https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[Sotware Downloads] site.
+. Install the adapter that applies to your application server from the link:https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[Software Downloads] site.
 
 * Install on JBoss EAP 7:
 +

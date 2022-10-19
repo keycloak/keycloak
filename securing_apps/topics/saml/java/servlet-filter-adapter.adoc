@@ -11,7 +11,7 @@ Instead you define a filter mapping using the {project_name} servlet filter adap
 
 NOTE: Backchannel logout works a bit differently than the standard adapters.
       Instead of invalidating the http session it instead marks the session ID as logged out.
-      There's just no way of arbitrarily invalidating an http session based on a session ID.
+      There's just no way of arbitrarily invalidating an HTTP session based on a session ID.
 
 WARNING: Backchannel logout does not currently work when you have a clustered application that uses the SAML filter. 
 

@@ -35,7 +35,7 @@ ServerName ${HOSTIP}
     OIDCClientSecret ${CLIENT_SECRET}
     OIDCRedirectURI http://${HOSTIP}/${CLIENT_APP_NAME}/redirect_uri
 
-    # maps the prefered_username claim to the REMOTE_USER environment variable 
+    # maps the preferred_username claim to the REMOTE_USER environment variable
     OIDCRemoteUserClaim preferred_username
 
     <Location /${CLIENT_APP_NAME}/>
