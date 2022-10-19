@@ -41,7 +41,7 @@ jobs:
       run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2.1.26
+      uses: github/codeql-action/init@v2.1.28
       with:
         languages: java
       
@@ -49,7 +49,7 @@ jobs:
       run: mvn -B install -DskipTests -DskipQuarkus -DskipTestsuite -DskipExamples -DskipTests
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2.1.26
+      uses: github/codeql-action/analyze@v2.1.28
       with:
         wait-for-processing: true
       env: 
