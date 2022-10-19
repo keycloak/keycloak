@@ -8,7 +8,7 @@ bin/kc.sh start-dev --features-disabled=admin2
 
 An alternative approach to continue using the old admin console is to set the theme for the master realm or any other realm to `keycloak`.
 
-As the new admin console is signficiantly different to the old admin console, is now based on React and uses a newer version of PatternFly, any custom themes will most likely have to be re-implemented from scratch. To create a custom theme for the new admin console the theme should extend `keycloak.v2` instead of `keycloak`.
+As the new admin console is significantly different to the old admin console, is now based on React and uses a newer version of PatternFly, any custom themes will most likely have to be re-implemented from scratch. To create a custom theme for the new admin console the theme should extend `keycloak.v2` instead of `keycloak`.
 
 If you have explicitly set the admin console theme to `keycloak` for the master realm or any other realm, it will continue to use the old admin console. To update to the new admin console you need to change the theme to `keycloak.v2`.
 
@@ -132,7 +132,7 @@ stating the modified dependencies as shown below:
 Several methods have been deprecated in `KeycloakSession` and will be removed in a future version.
 
 `KeycloakSession` session contains several methods for obtaining a provider for a particular object type, such as for a `UserProvider` there are `users()`, `userLocalStorage()`, `userCache()`, `userStorageManager()`, and `userFederatedStorage()`.
-This situaton may be confusing for the developer who has to understand the exact meaning of each method, and depends on current store layout.
+This situation may be confusing for the developer who has to understand the exact meaning of each method, and depends on current store layout.
 The new store does not distinguish federated from local storage.
 
 For those reasons, only the `users()` method will be kept in `KeycloakSession`, and should replace all other calls listed above.
@@ -227,7 +227,7 @@ public class MyClass extends LegacyRealmModel {
 
 == Interface `UserCache` moved to the legacy module
 
-As the caching status of objects will be trasparent to services, the interface `UserCache`
+As the caching status of objects will be transparent to services, the interface `UserCache`
 has been moved to the module `keycloak-legacy`.
 Calls to `session.userCache()` will therefore return only a `UserProvider`, which is a breaking change.
 

@@ -62,7 +62,7 @@ https://account.live.com/developers/applications/create[Microsoft Application Re
 === Google Identity Provider updated to use Google Sign-in authentication system
 
 The Google Identity Provider implementation in {project_name} up to version 7.2.5 relies on the Google+ API endpoints
-endpoints for authorization and obtaining the user profile. From March 2019 onwards, Google is removing support
+for authorization and obtaining the user profile. From March 2019 onwards, Google is removing support
 for the Google+ API in favor of the new Google Sign-in authentication system. The {project_name} identity provider has been updated
 to use the new endpoints so if this integration is in use make sure you upgrade to {project_name} version 7.2.6 or later.
 

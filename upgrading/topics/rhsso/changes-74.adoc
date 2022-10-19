@@ -28,7 +28,7 @@ Previously, it was possible to have REQUIRED and ALTERNATIVE executions in the s
 
 So when migrating to this version, your existing authentication flows will be migrated but retain the behavior of the previous version. If  an authentication flow contains ALTERNATIVE executions at the same level as REQUIRED executions, the ALTERNATIVE executions are added to the separate REQUIRED subflow.
 
-This strategy should ensure the same or similar behavior of the each authentication flow as in the previous version. However, you may review the configuration of your authentication flow and double check that it works as expected. This recommendation applies in particular for customized authentication flows with custom authenticator implementations.
+This strategy should ensure the same or similar behavior of each authentication flow as in the previous version. However, you may review the configuration of your authentication flow and double check that it works as expected. This recommendation applies in particular for customized authentication flows with custom authenticator implementations.
 
 ==== OPTIONAL execution requirement removed
 
@@ -42,7 +42,7 @@ Some changes exist in the Java Authentication SPI and Credential Provider SPI.
 
 The interface Authenticator is not changed, but you may be affected if you develop advanced authenticators that introduce some new credential types (subclasses of CredentialModel). Changes exist on the CredentialProvider interface and introduction of some new interfaces such as CredentialValidator.
 
-Also, you may be affected if your authenticator supported the OPTIONAL execution requirement. It is recommended that you double check the latest authentication examples in the server development guide for more details.
+Also, you may be affected if your authenticator supported the OPTIONAL execution requirement. It is recommended that you double-check the latest authentication examples in the server development guide for more details.
 
 ==== Freemarker template changes
 

@@ -102,7 +102,7 @@ use:
 * Custom JavaScript authorization policies, which establish authorization based on some user attribute
 * X.509 authenticator with custom attribute for mapping the X.509 certificate to the user identity
 * Any other custom functionality, where some of the user attributes are used as the metadata for storing authentication/authorization/identity context rather
-than simple user profile informations.
+than simple user profile information.
 
 See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
 
@@ -165,7 +165,7 @@ No additional setup is required.
 ==== Client Credentials Grant without refresh token by default
 
 From this {project_name} version, the OAuth2 Client Credentials Grant endpoint does not issue refresh tokens by default. This behavior is aligned with the OAuth2 specification.
-As a side-effect of this change, no user session is created on the {project_name} server side after successful Client Credentials authentication, which results
+As a side effect of this change, no user session is created on the {project_name} server side after successful Client Credentials authentication, which results
 in improved performance and memory consumption. Clients that use Client Credentials Grant are encouraged to stop using
 refresh tokens and instead always authenticate at every request with `grant_type=client_credentials` instead of using `refresh_token` as grant type.
 In relation to this, {project_name} has support for revocation of access tokens in the OAuth2 Revocation Endpoint, hence clients are allowed
@@ -226,15 +226,15 @@ Instagram IdP now uses new API as the old legacy API was *deprecated*. This requ
 please refer to the link:{adminguide_link}#instagram[{adminguide_name}].
 
 Special attention is required for existing users that use Instagram IdP, specially the ones for whom it is the only authentication
-option. Such users have to login to Keycloak using Instagram IdP before September 30th, 2020. After that day they'll have
-to use a different authentication method (like password) to login to manually update their Instagram social link, or create
+option. Such users have to log in to Keycloak using Instagram IdP before September 30th, 2020. After that day they'll have
+to use a different authentication method (like password) to log in to manually update their Instagram social link, or create
 a new account in Keycloak. This is because Instagram user IDs are not compatible between the old and new API, however the
 new API temporarily returns both new and old user IDs to allow migration. Keycloak automatically migrates the ID once user
 logs in.
 
 ==== Non-standard token introspection endpoint removed
 
-In previous versions, Keycloak advertized two introspection endpoints: `token_introspection_endpoint` and `introspection_endpoint`.
+In previous versions, Keycloak advertised two introspection endpoints: `token_introspection_endpoint` and `introspection_endpoint`.
 The latter is the one defined by https://datatracker.ietf.org/doc/html/rfc8414#section-2[RFC-8414]. The former, previously deprecated,
 has now been removed.
 
@@ -250,7 +250,7 @@ recommended to update applications to use native promise API (`then` and `catch`
 
 Version 9.0.1 fixes a problem which could create duplicated top level groups in the realm. Nevertheless the existence
 of previous duplicated groups makes the upgrade process fail. The {project_name} server can be affected by this issue
-if it is using a H2, MariaDB, MySQL or PostgreSQL database. Before launching the upgrade, check if the server contains
+if it is using an H2, MariaDB, MySQL or PostgreSQL database. Before launching the upgrade, check if the server contains
 duplicated top level groups. For example the following SQL query can be executed at database level to list them:
 
 ----
@@ -289,7 +289,7 @@ REQUIRED and ALTERNATIVE executions not supported at same flow::
     So when migrating to the newest version, your existing authentication flows will be automatically migrated preserved the same behavior as existed in the previous version.
     If they contain ALTERNATIVE executions at the same level as some REQUIRED executions, then the ALTERNATIVE executions will be added to the separate REQUIRED subflow. This
     should ensure same/similar behavior of the particular authentication flow as in the previous version. We always recommend
-    to doublecheck the configuration of your authentication flow and test it to doublecheck that everything works as expected.
+    to double-check the configuration of your authentication flow and test it to double-check that everything works as expected.
     This recommendation is true in particular if you have some more customized authentication flows with custom authenticator implementations.
 
 === Migrating to 8.0.0
@@ -343,12 +343,12 @@ Changes in the Java SPI::
     Some changes exist in the Java Authentication SPI and Credential Provider SPI. The interface `Authenticator` is not changed,
     but you may be affected if you're developing more advanced authenticators, which introduce some new credential types (subclasses of `CredentialModel`).
     There are changes on the `CredentialProvider` interface and introduction of some new interfaces like `CredentialValidator`. Also you
-    may be affected if your authenticator supported the OPTIONAL execution requirement. It is recommended to double check the latest authentication
+    may be affected if your authenticator supported the OPTIONAL execution requirement. It is recommended to double-check the latest authentication
     examples in the server development guide for more details.
 
 Freemarker template changes::
    Some changes in the freemarker templates exist. You may be affected if you have your own theme with custom freemarker
-   templates for login forms or some account forms, especially for the forms related to OTP. It is recommended to double check changes in
+   templates for login forms or some account forms, especially for the forms related to OTP. It is recommended to double-check changes in
    the Freemarker templates in the latest {project_name} and align your templates according to it.
 
 ==== User credentials changes
@@ -437,7 +437,7 @@ Cross-Datacenter Replication changes::
 ==== Google Identity Provider updated to use Google Sign-in authentication system
 
 The Google Identity Provider implementation in {project_name} up to version 4.8.1 relies on the Google+ API endpoints
-endpoints for authorization and obtaining the user profile. From March 2019 onwards, Google is removing support
+for authorization and obtaining the user profile. From March 2019 onwards, Google is removing support
 for the Google+ API in favor of the new Google Sign-in authentication system. The {project_name} identity provider has been updated
 to use the new endpoints so if this integration is in use make sure you upgrade to {project_name} version 4.8.2 or later.
 
@@ -605,7 +605,7 @@ We added support for UMA 2.0. This version of the UMA specification introduced s
 Here are the main changes introduced by UMA 2.0 support. See link:{authorizationguide_link}[{authorizationguide_name}] for details.
 
 Authorization API was removed::
-  Prior to UMA 2.0 (UMA 1.0), client applications were using the Authorization API to obtain permissions from the server in the format of a RPT. The new version
+  Prior to UMA 2.0 (UMA 1.0), client applications were using the Authorization API to obtain permissions from the server in the format of an RPT. The new version
   of UMA specification has removed the Authorization API which was also removed from {project_name}. In UMA 2.0, RPTs can now be obtained from the token endpoint by using a specific grant type.
   See link:{authorizationguide_link}#_service_obtaining_permissions[{authorizationguide_name}] for details.
 
@@ -691,7 +691,7 @@ Second change is changing of some signatures in methods of authentication SPI. T
 `RequiredActionProvider`. Classes `AuthenticationFlowContext` and `RequiredActionContext` now allow to retrieve authentication session
 instead of client session.
 
-We also added some initial support for sticky sessions. You may want to change your loadbalancer/proxy server and configure it if you don't want to suffer from it and want to have better performance.
+We also added some initial support for sticky sessions. You may want to change your load balancer/proxy server and configure it if you don't want to suffer from it and want to have better performance.
 The route is added to the new `AUTH_SESSION_ID` cookie. More info in the clustering documentation.
 
 Another change is, that `token.getClientSession()` was removed. This may affect you for example if you're using Client Initiated Identity Broker Linking feature.
@@ -720,7 +720,7 @@ refreshed tokens will have KID in the header, so after all users exchange their 
 ==== Changes to the Infinispan caches
 
 The `realms` cache defined in the infinispan subsystem in `standalone.xml` or `standalone-ha.xml` configuration file, now has the eviction with the 10000 records by default.
-This is the same default like the `users` cache.
+This is the same default as the `users` cache.
 
 Also the `authorization` cache now doesn't have any eviction on it by default.
 
@@ -824,7 +824,7 @@ We've removed the option auth-server-url-for-backend-requests due to issues in s
 it was possible to access the Keycloak server from 2 different contexts (internal and external), which was causing issues in token validations etc.
 
 If you still want to use the optimization of network, which this option provided (avoid the application to send backchannel requests
-through loadbalancer but send them to local Keycloak server directly) you may need to handle it at hosts configuration (DNS) level.
+through load balancer but send them to local Keycloak server directly) you may need to handle it at hosts configuration (DNS) level.
 
 
 === Migrating to 1.9.0
@@ -996,7 +996,7 @@ The Direct Grant API is now always enabled and the option to enable/disable for 
 ==== Database changed
 
 There are again few database changes.
-Remember to backup your database prior to upgrading.
+Remember to back up your database prior to upgrading.
 
 ==== UserFederationProvider changed
 
@@ -1039,7 +1039,7 @@ It also contains all documentation and examples.
 
 This release contains again a number of changes to the database.
 The biggest one is Application and OAuth client merge.
-Remember to backup your database prior to upgrading.
+Remember to back up your database prior to upgrading.
 
 ==== Application and OAuth client merge
 
@@ -1053,7 +1053,7 @@ The previously set Applications will be converted into Clients with `Consent req
 ==== Database changed
 
 This release contains a number of changes to the database.
-Remember to backup your database prior to upgrading.
+Remember to back up your database prior to upgrading.
 
 ==== `iss` in access and id tokens
 
@@ -1085,7 +1085,7 @@ This was used to configure which attributes should go into access token for part
 This was removed and is replaced with protocol mappers which are more flexible.
 
 You don't need to care about migration of database from previous version.
-We did migration scripts for both RDBMS and Mongo, which should ensure that claims configured for particular application/client will be converted into corresponding protocol mappers (Still it's safer to backup DB before migrating to newer version though). Same applies for exported JSON representation from previous version.
+We did migration scripts for both RDBMS and Mongo, which should ensure that claims configured for particular application/client will be converted into corresponding protocol mappers (Still it's safer to back up DB before migrating to newer version though). Same applies for exported JSON representation from previous version.
 
 ==== Social migration to identity brokering
 

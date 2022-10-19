@@ -70,7 +70,7 @@ image:images/patching-standalone-tab.png[The Patch Management Screen for a Stand
 image:images/patching-domain-tab.png[The Patch Management Screen for a Managed Domain]
 
 . Click *Apply a New Patch*.
-.. If you are patching a managed domain host, on the next screen select whether to shutdown the servers on the host, and click *Next*.
+.. If you are patching a managed domain host, on the next screen select whether to shut down the servers on the host, and click *Next*.
 
 . Click the *Browse* button, select the downloaded patch you want to apply, and then click *Next*.
 +
@@ -137,7 +137,7 @@ shutdown --restart=true
 +
 .Recent Patch History Screen
 image:images/patching-rollback-table.png[Recent Patch History Screen]
-.. If you are rolling back a patch on a managed domain host, on the next screen select whether to shutdown the servers on the host, and click *Next*.
+.. If you are rolling back a patch on a managed domain host, on the next screen select whether to shut down the servers on the host, and click *Next*.
 
 . Choose your options for the rollback process, then click *Next*.
 +
@@ -145,7 +145,7 @@ image:images/patching-rollback-table.png[Recent Patch History Screen]
 image:images/patching-rollback-options.png[Patch Rollback Options]
 
 . Confirm the options and the patch to be rolled back, then click *Next*.
-.. If there are any conflicts in attempting to rollback the patch and the *Override all* option was not selected, a warning will be displayed. Click *View error details* to see the detail of the conflicts. If there is a conflict, you can either cancel the operation, or click *Choose Options* and try the operation again with the *Override all* check box selected. Overriding conflicts will result in the rollback operation overriding any user modifications.
+.. If there are any conflicts in attempting to roll back the patch and the *Override all* option was not selected, a warning will be displayed. Click *View error details* to see the detail of the conflicts. If there is a conflict, you can either cancel the operation, or click *Choose Options* and try the operation again with the *Override all* check box selected. Overriding conflicts will result in the rollback operation overriding any user modifications.
 
 . After the patch has been successfully rolled back, select whether to restart the RH-SSO server now for the changes to take effect, and click *Finish*.
 

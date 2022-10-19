@@ -19,7 +19,7 @@ A number of things have changed since the preview Quarkus distribution was relea
 * Clearer separation between `build options` and `runtime configuration`.
 * Custom Quarkus configuration is done through `conf/quarkus.properties`.
 * `h2-mem` and `h2-file` databases renamed to `dev-mem` and `dev-file`.
-* Features are now enabled/disabled with `--features` and `--features-disabled` replacing the previous approach that had an separate config key for each feature.
+* Features are now enabled/disabled with `--features` and `--features-disabled` replacing the previous approach that had a separate config key for each feature.
 * Runtime configuration can no longer be passed to `kc.[sh|bat] build` and is no longer persisted in the build
 * Logging level and format is now configured with `--log-level` and `--log-format`, while in the past these had to be configured using unsupported Quarkus properties.
 

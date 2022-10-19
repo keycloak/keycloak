@@ -2,7 +2,7 @@
 = Patching an RPM Installation
 
 .Prerequisites
-* Ensure that the base operating system is up to date, and is subscribed and enabled to get updates from the standard Red Hat Enterprise Linux repositories.
+* Ensure that the base operating system is up-to-date, and is subscribed and enabled to get updates from the standard Red Hat Enterprise Linux repositories.
 * Ensure that you are subscribed to the relevant RH-SSO repository for the update.
 * Back up all configuration files, deployments, and user data.
 

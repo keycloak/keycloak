@@ -9,7 +9,7 @@ We added support for UMA 2.0. This version of the UMA specification introduced s
 Here are the main changes introduced by UMA 2.0 support. See link:{authorizationguide_link}[{authorizationguide_name}] for details.
 
 Authorization API was removed::
-  Prior to UMA 2.0 (UMA 1.0), client applications were using the Authorization API to obtain permissions from the server in the format of a RPT. The new version
+  Prior to UMA 2.0 (UMA 1.0), client applications were using the Authorization API to obtain permissions from the server in the format of an RPT. The new version
   of UMA specification has removed the Authorization API which was also removed from {project_name}. In UMA 2.0, RPTs can now be obtained from the token endpoint by using a specific grant type.
   See link:{authorizationguide_link}#_service_obtaining_permissions[{authorizationguide_name}] for details.
 
@@ -140,7 +140,7 @@ https://account.live.com/developers/applications/create[Microsoft Application Re
 === Google Identity Provider updated to use Google Sign-in authentication system
 
 The Google Identity Provider implementation in {project_name} used to rely on the Google+ API endpoints
-endpoints for authorization and obtaining the user profile. From March 2019 onwards, Google is removing support
+for authorization and obtaining the user profile. From March 2019 onwards, Google is removing support
 for the Google+ API in favor of the new Google Sign-in authentication system. The {project_name} identity provider has been updated
 to use the new endpoints so if this integration is in use make sure you upgrade to the latest {project_name} version.
 

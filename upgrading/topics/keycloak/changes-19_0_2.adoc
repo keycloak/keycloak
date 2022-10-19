@@ -1,7 +1,7 @@
 = OpenID Connect Logout Prompt
 At Keycloak 18.0.0, the logout is now compatible with the new OIDC specification, which changed the handling for the url parameters. However, to also remain compatible with earlier versions, a compatibility flag is introduced. See the link:{upgradingguide_link}#openid-connect-logout[{upgradingguide_name}] for further information for the backwards compatibility option, which allows your application to still use the old format for the url parameters.
 
-While the url parameters can now be configured to be compatible, there was still one incompatibility with keycloak 17 and earlier releases. If the user does not provide an valid `idTokenHint`, a logout prompt appears instead of a successful logout redirect. Therefore, a new compatibility flag `suppress-logout-confirmation-screen` is introduced to suppress the logout screen.
+While the url parameters can now be configured to be compatible, there was still one incompatibility with keycloak 17 and earlier releases. If the user does not provide a valid `idTokenHint`, a logout prompt appears instead of a successful logout redirect. Therefore, a new compatibility flag `suppress-logout-confirmation-screen` is introduced to suppress the logout screen.
 
 You can enable this parameter when you start the server by entering the following command:
 
