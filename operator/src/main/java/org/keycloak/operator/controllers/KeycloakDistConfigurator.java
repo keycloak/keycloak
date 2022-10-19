@@ -33,6 +33,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
@@ -91,30 +92,12 @@ public class KeycloakDistConfigurator {
     /* ---------- Configuration of first-class citizen fields ---------- */
 
     public void configureHostname() {
-        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-        var hostname = keycloakCR.getSpec().getHostname();
-        var envVars = kcContainer.getEnv();
-        if (keycloakCR.getSpec().isHostnameDisabled()) {
-            var disableStrictHostname = List.of(
-                    new EnvVarBuilder()
-                            .withName("KC_HOSTNAME_STRICT")
-                            .withValue("false")
-                            .build(),
-                    new EnvVarBuilder()
-                            .withName("KC_HOSTNAME_STRICT_BACKCHANNEL")
-                            .withValue("false")
-                            .build());
-
-            envVars.addAll(disableStrictHostname);
-        } else {
-            var enabledStrictHostname = List.of(
-                    new EnvVarBuilder()
-                            .withName("KC_HOSTNAME")
-                            .withValue(hostname)
-                            .build());
-
-            envVars.addAll(enabledStrictHostname);
-        }
+        optionMapper(keycloakCR.getSpec().getHostnameSpec())
+                .mapOption("hostname", HostnameSpec::getHostname)
+                .mapOption("hostname-admin", HostnameSpec::getAdmin)
+                .mapOption("hostname-admin-url", HostnameSpec::getAdminUrl)
+                .mapOption("hostname-strict", HostnameSpec::isStrict)
+                .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel);
     }
 
     public void configureFeatures() {

@@ -13,6 +13,7 @@ spec:
       value: postgres
     - name: db-password
       value: testpassword
-  hostname: example.com
+  hostname:
+    hostname: example.com
   unsupported:
     podTemplate:
