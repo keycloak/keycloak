@@ -15,6 +15,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
+import java.util.stream.Stream;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -88,6 +89,21 @@ public interface CryptoProvider {
     SecretKeyFactory getSecretKeyFact(String keyAlgorithm) throws NoSuchAlgorithmException, NoSuchProviderException;
 
     KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException;
+
+    /**
+     * @return Keystore types/algorithms supported by this CryptoProvider
+     */
+    default Stream<KeystoreFormat> getSupportedKeyStoreTypes() {
+        return Stream.of(KeystoreFormat.values())
+                .filter(format -> {
+                    try {
+                        getKeyStore(format);
+                        return true;
+                    } catch (KeyStoreException | NoSuchProviderException ex) {
+                        return false;
+                    }
+                });
+    }
 
     CertificateFactory getX509CertFactory() throws CertificateException, NoSuchProviderException;
 

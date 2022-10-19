@@ -63,6 +63,8 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @resource Client Attribute Certificate
@@ -268,9 +270,7 @@ public class ClientAttributeCertificateResource {
     public byte[] getKeystore(final KeyStoreConfig config) {
         auth.clients().requireView(client);
 
-        if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
-            throw new NotAcceptableException("Only support jks or pkcs12 format.");
-        }
+        checkKeystoreFormat(config);
 
         CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix);
         String privatePem = info.getPrivateKey();
@@ -307,9 +307,7 @@ public class ClientAttributeCertificateResource {
     public byte[] generateAndGetKeystore(final KeyStoreConfig config) {
         auth.clients().requireConfigure(client);
 
-        if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
-            throw new NotAcceptableException("Only support jks or pkcs12 format.");
-        }
+        checkKeystoreFormat(config);
         if (config.getKeyPassword() == null) {
             throw new ErrorResponseException("password-missing", "Need to specify a key password for jks generation and download", Response.Status.BAD_REQUEST);
         }
@@ -366,6 +364,21 @@ public class ClientAttributeCertificateResource {
             return rtn;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void checkKeystoreFormat(KeyStoreConfig config) throws NotAcceptableException {
+        if (config.getFormat() != null) {
+            Set<KeystoreFormat> supportedKeystoreFormats = CryptoIntegration.getProvider().getSupportedKeyStoreTypes()
+                    .collect(Collectors.toSet());
+            try {
+                KeystoreFormat format = Enum.valueOf(KeystoreFormat.class, config.getFormat().toUpperCase());
+                if (config.getFormat() != null && !supportedKeystoreFormats.contains(format)) {
+                    throw new NotAcceptableException("Not supported keystore format. Supported keystore formats: " + supportedKeystoreFormats);
+                }
+            } catch (IllegalArgumentException iae) {
+                throw new NotAcceptableException("Not supported keystore format. Supported keystore formats: " + supportedKeystoreFormats);
+            }
         }
     }
 
