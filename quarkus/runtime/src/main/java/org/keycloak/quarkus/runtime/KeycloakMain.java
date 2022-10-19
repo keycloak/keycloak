@@ -63,7 +63,7 @@ public class KeycloakMain implements QuarkusApplication {
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
     public static void main(String[] args) {
-        System.setProperty("kc.version", Version.VERSION_KEYCLOAK);
+        System.setProperty("kc.version", Version.VERSION);
         List<String> cliArgs = Picocli.parseArgs(args);
 
         if (cliArgs.isEmpty()) {

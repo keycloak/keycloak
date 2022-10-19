@@ -13,7 +13,7 @@ public class Features {
 
     public Features() {
         this.features = Arrays.stream(Profile.Feature.values())
-                .filter(f -> !f.getTypeProject().equals(Profile.Type.EXPERIMENTAL))
+                .filter(f -> !f.getType().equals(Profile.Type.EXPERIMENTAL))
                 .map(f -> new Feature(f))
                 .sorted(Comparator.comparing(Feature::getName))
                 .collect(Collectors.toList());
@@ -52,7 +52,7 @@ public class Features {
         }
 
         private Profile.Type getType() {
-            return profileFeature.getTypeProject();
+            return profileFeature.getType();
         }
 
     }

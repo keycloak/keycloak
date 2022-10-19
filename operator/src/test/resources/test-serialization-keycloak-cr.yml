@@ -11,6 +11,8 @@ spec:
     - name: features
       value: docker
   hostname: my-hostname
+  ingress:
+    enabled: false
   http:
     httpEnabled: true
     httpPort: 123
@@ -23,7 +25,6 @@ spec:
     disabled:
       - admin
       - step-up-authentication
-  disableDefaultIngress: true
   transaction:
     xaEnabled: false
   unsupported:

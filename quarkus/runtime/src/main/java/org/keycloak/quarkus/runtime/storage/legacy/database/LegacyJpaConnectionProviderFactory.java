@@ -252,7 +252,7 @@ public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionPro
 
         JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class);
 
-        boolean requiresMigration = version == null || !version.equals(new ModelVersion(Version.VERSION_KEYCLOAK).toString());
+        boolean requiresMigration = version == null || !version.equals(new ModelVersion(Version.VERSION).toString());
         session.setAttribute(VERIFY_AND_RUN_MASTER_CHANGELOG, requiresMigration);
 
         JpaUpdaterProvider.Status status = updater.validate(connection, schema);

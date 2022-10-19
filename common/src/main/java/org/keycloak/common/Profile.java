@@ -34,12 +34,9 @@ import org.jboss.logging.Logger;
  */
 public class Profile {
 
-    public static final String PRODUCT_NAME = ProductValue.RHSSO.getName();
-    public static final String PROJECT_NAME = ProductValue.KEYCLOAK.getName();
     private static final Logger logger = Logger.getLogger(Profile.class);
 
     private static Profile CURRENT;
-    private final ProductValue product;
     private final ProfileValue profile;
     private final Set<Feature> disabledFeatures = new HashSet<>();
     private final Set<Feature> previewFeatures = new HashSet<>();
@@ -50,12 +47,11 @@ public class Profile {
         this.propertyResolver = resolver;
         Config config = new Config();
 
-        product = PRODUCT_NAME.toLowerCase().equals(Version.NAME) ? ProductValue.RHSSO : ProductValue.KEYCLOAK;
         profile = ProfileValue.valueOf(config.getProfile().toUpperCase());
 
         for (Feature f : Feature.values()) {
             Boolean enabled = config.getConfig(f);
-            Type type = product.equals(ProductValue.RHSSO) ? f.getTypeProduct() : f.getTypeProject();
+            Type type = f.getType();
 
             switch (type) {
                 case DEFAULT:
@@ -142,10 +138,6 @@ public class Profile {
         return !getInstance().disabledFeatures.contains(feature);
     }
 
-    public static boolean isProduct() {
-        return getInstance().profile.equals(ProfileValue.PRODUCT);
-    }
-
     public enum Type {
         DEFAULT,
         DISABLED_BY_DEFAULT,
@@ -195,55 +187,25 @@ public class Profile {
         JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT);
 
 
-        private final Type typeProject;
-        private final Type typeProduct;
+        private final Type type;
         private String label;
 
         Feature(String label, Type type) {
-            this(label, type, type);
-        }
-
-        Feature(String label, Type typeProject, Type typeProduct) {
             this.label = label;
-            this.typeProject = typeProject;
-            this.typeProduct = typeProduct;
+            this.type = type;
         }
 
         public String getLabel() {
             return label;
         }
 
-        public Type getTypeProject() {
-            return typeProject;
-        }
-
-        public Type getTypeProduct() {
-            return typeProduct;
-        }
-
-        public boolean hasDifferentProductType() {
-            return typeProject != typeProduct;
-        }
-    }
-
-    private enum ProductValue {
-        KEYCLOAK("Keycloak"),
-        RHSSO("RH-SSO");
-
-        private final String name;
-
-        ProductValue(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
+        public Type getType() {
+            return type;
         }
     }
 
     private enum ProfileValue {
-        COMMUNITY,
-        PRODUCT,
+        DEFAULT,
         PREVIEW
     }
 
@@ -281,10 +243,14 @@ public class Profile {
 
             profile = properties.getProperty("profile");
             if (profile != null) {
+                if (profile.equals("community")) {
+                    profile = "default";
+                }
+
                 return profile;
             }
 
-            return Version.DEFAULT_PROFILE;
+            return ProfileValue.DEFAULT.name();
         }
 
         public Boolean getConfig(Feature feature) {

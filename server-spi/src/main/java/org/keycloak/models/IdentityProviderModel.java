@@ -205,6 +205,10 @@ public class IdentityProviderModel implements Serializable {
         this.displayName = displayName;
     }
 
+    public String getDisplayIconClasses() {
+        return null;
+    }
+
     /**
      * <p>Validates this configuration.
      * 

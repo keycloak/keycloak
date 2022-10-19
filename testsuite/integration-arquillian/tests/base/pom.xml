@@ -405,25 +405,6 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>product</id>
-            <activation>
-                <property>
-                    <name>product</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.igormaznitsa</groupId>
-                        <artifactId>mvn-golang-wrapper</artifactId>
-                        <configuration>
-                            <skip>true</skip>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
 
         <profile>
             <id>app-server-jetty94</id>
