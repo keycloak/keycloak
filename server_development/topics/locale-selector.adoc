@@ -9,7 +9,7 @@ This behavior can be changed through the `LocaleSelectorSPI` by implementing the
 
 The `LocaleSelectorProvider` interface has a single method, `resolveLocale`, which must return a locale given a `RealmModel` and a nullable `UserModel`. The actual request is available from the `KeycloakSession#getContext` method.
 
-Custom implementations can extend the `DefaultLocaleSelectorProvider` in order to reuse parts of the default behavior. For example to ignore the `Accept-Language` request header, a custom implementation could extend the default provider, override it's `getAcceptLanguageHeaderLocale`, and return a null value. As a result the locale selection will fall back on the realms's default language.
+Custom implementations can extend the `DefaultLocaleSelectorProvider` in order to reuse parts of the default behavior. For example to ignore the `Accept-Language` request header, a custom implementation could extend the default provider, override it's `getAcceptLanguageHeaderLocale`, and return a null value. As a result the locale selection will fall back on the realm's default language.
 
 [role="_additional-resources"]
 === Additional resources

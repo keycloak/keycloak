@@ -1,7 +1,7 @@
 [[_saml_role_mappings_spi]]
 == SAML role mappings SPI
 
-{project_name} defines a SPI for mapping SAML roles into roles that exist in the SP environment. The roles returned by
+{project_name} defines an SPI for mapping SAML roles into roles that exist in the SP environment. The roles returned by
 a third-party IDP might not always correspond to the roles that were defined for the SP application so there is a need for a
 mechanism that allows mapping the SAML roles into different roles. It is used by the SAML adapter after it extracts the roles
 from the SAML assertion to set up the container's security context.

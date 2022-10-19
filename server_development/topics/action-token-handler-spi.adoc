@@ -1,7 +1,7 @@
 [[_action_token_handler_spi]]
 == Action Token Handler SPI
 
-An action token is a special instance of Json Web Token (JWT) that permits its bearer to perform some actions, e. g. to
+An action token is a special instance of Json Web Token (JWT) that permits its bearer to perform some actions, e.g. to
 reset a password or validate e-mail address. They are usually sent to users in form of a link that points to an endpoint
 processing action tokens for a particular realm.
 
@@ -160,7 +160,7 @@ token, only the last token would be invalidated. In that case, you should use
 `org.keycloak.models.SingleUseObjectProvider` in action token handler to invalidate the used tokens manually.
 +
 Default implementation of most of the `ActionTokenHandler` methods is the
-`org.keycloak.authentication.actiontoken.AbstractActionTokenHander` abstract class in `keycloak-services` module. The
+`org.keycloak.authentication.actiontoken.AbstractActionTokenHandler` abstract class in `keycloak-services` module. The
 only method that needs to be implemented is `handleToken(token, context)` that performs the actual action.
 
  *  `org.keycloak.authentication.actiontoken.ActionTokenHandlerFactory` - factory that instantiates action token

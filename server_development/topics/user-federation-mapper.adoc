@@ -3,7 +3,7 @@
 
 === LDAP mapper
 
-For the more advanced usecases, you have the possibility to create your own implementation of LDAP mapper or just subclass from some already existing mapper
+For the more advanced use cases, you have the possibility to create your own implementation of LDAP mapper or just subclass from some already existing mapper
 implementation. You will need to implement `UserFederationMapperFactory` interface.
 
 In most cases, instead of creating `UserFederationMapperFactory` from scratch, you can create subclasses of `AbstractLDAPFederationMapperFactory`, which itself

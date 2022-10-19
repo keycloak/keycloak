@@ -100,7 +100,7 @@ public void init(Config.Scope config) {
 }
 ----
 
-Your provider can also lookup other providers if needed. For example:
+Your provider can also look up other providers if needed. For example:
 
 [source,java]
 ----
@@ -123,7 +123,7 @@ public class MyThemeSelectorProvider implements ThemeSelectorProvider {
 ==== Show info from your SPI implementation in the Admin Console
 
 Sometimes it is useful to show additional info about your Provider to a {project_name} administrator. You can show provider build time information (for example, version of
-custom provider currently installed), current configuration of the provider (eg. url of remote system your provider talks to) or some operational info
+custom provider currently installed), current configuration of the provider (e.g. url of remote system your provider talks to) or some operational info
 (average time of response from remote system your provider talks to). {project_name} Admin Console provides Server Info page to show this kind of information.
 
 To show info from your provider it is enough to implement `org.keycloak.provider.ServerInfoAwareProviderFactory` interface in your `ProviderFactory`.

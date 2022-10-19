@@ -10,7 +10,7 @@ The Admin Console supports applying, ordering, and configuring these new mechani
 Different aspects of this form can be enabled and disabled for example
 Recaptcha support can be turned off and on.
 The same authentication SPI can be used to add another page to the registration flow or reimplement it entirely.
-There's also an additional fine-grained SPI you can use to add specific validations and user extensions to the built in registration form.
+There's also an additional fine-grained SPI you can use to add specific validations and user extensions to the built-in registration form.
 
 A required action in {project_name} is an action that a user has to perform after he authenticates.
 After the action is performed successfully, the user doesn't have to perform the action again.
@@ -700,7 +700,7 @@ public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory,
 The next thing the factory is responsible for is to specify the allowed requirement switches.
 While there are four different requirement types:  ALTERNATIVE, REQUIRED, CONDITIONAL, DISABLED, AuthenticatorFactory implementations can limit which
 requirement options are shown in the Admin Console when defining a flow. CONDITIONAL should only always be used for subflows, and unless there's a good
-reason for doing otherwise, the requirement on a authenticator should be REQUIRED, ALTERNATIVE and DISABLED:
+reason for doing otherwise, the requirement on an authenticator should be REQUIRED, ALTERNATIVE and DISABLED:
 
 [source,java]
 ----
@@ -792,7 +792,7 @@ Let's take a bigger look at secret-question.ftl  Here's a small code snippet:
         </form>
 ----
 
-Any piece of text enclosed in `${}` corresponds to an attribute or template funtion.
+Any piece of text enclosed in `${}` corresponds to an attribute or template function.
 If you see the form's action, you see it points to `${url.loginAction}`.
 This value is automatically generated when you invoke the AuthenticationFlowContext.form() method.
 You can also obtain this value by calling the AuthenticationFlowContext.getActionURL() method in Java code.
@@ -940,7 +940,7 @@ Your new required action should now be displayed and enabled in the required act
 === Modifying or extending the registration form
 
 It is entirely possible for you to implement your own flow with a set of Authenticators to totally change how registration is done in {project_name}.
-But what you'll usually want to do is just add a little bit of validation to the out of the box registration page.
+But what you'll usually want to do is just add a bit of validation to the out-of-the-box registration page.
 An additional SPI was created to be able to do this.
 It basically allows you to add validation of form elements on the page as well as to initialize UserModel attributes and data after the user has been registered.
 We'll look at both the implementation of the user profile registration processing as well as the registration Google Recaptcha plugin.
@@ -1153,7 +1153,7 @@ One thing to note if you are extending the reset credentials flow.
 The first "authenticator" is just a page to obtain the username or email.
 If the username or email exists, then the AuthenticationFlowContext.getUser() will return the located user.
 Otherwise this will be null.
-This form *WILL NOT* re-ask the user to enter in an email or username if the previous email or username did not exist.
+This form *WILL NOT* re-ask the user to enter an email or username if the previous email or username did not exist.
 You need to prevent attackers from being able to guess valid users.
 So, if AuthenticationFlowContext.getUser() returns null, you should proceed with the flow to make it look like a valid user was selected.
 I suggest that if you want to add secret questions to this flow, you should ask these questions after the email is sent.
@@ -1187,7 +1187,7 @@ Actually {project_name} has 2 default implementations of client authentication:
 
 Traditional authentication with client_id and client_secret::
   This is default mechanism mentioned in the https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]                                or https://datatracker.ietf.org/doc/html/rfc6749[OAuth2] specification and {project_name} supports it since it's early days.
-  The public client needs to include `client_id` parameter with its ID in the POST request (so it's defacto not authenticated) and the confidential client needs to include `Authorization: Basic` header with the clientId and clientSecret used as username and password.
+  The public client needs to include `client_id` parameter with its ID in the POST request (so it's de facto not authenticated) and the confidential client needs to include `Authorization: Basic` header with the clientId and clientSecret used as username and password.
 
 Authentication with signed JWT::
   This is based on the https://datatracker.ietf.org/doc/html/rfc7523[JWT Bearer Token Profiles for OAuth 2.0] specification.

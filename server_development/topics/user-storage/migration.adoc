@@ -63,7 +63,7 @@ return a `ReadOnlyException`.
 
 The `UserFederationProvider` query methods such as `searchByAttributes()` and `getGroupMembers()` are now encapsulated
 in an optional interface `UserQueryProvider`. If you do not implement this interface, then users will not be viewable
-in the admin console.  You'll still be able to login though.
+in the admin console.  You'll still be able to log in though.
 
 ==== UserFederationProviderFactory versus UserStorageProviderFactory
 

@@ -152,4 +152,4 @@ The DB schema will be automatically updated at startup.
 
 For more details, take a look at the example distribution at example `providers/domain-extension`, which shows the `ExampleJpaEntityProvider` and `example-changelog.xml` described above.
 
-NOTE: Don't forget to always backup your database before doing any changes in the Liquibase changelog and triggering a DB update.
+NOTE: Don't forget to always back up your database before doing any changes in the Liquibase changelog and triggering a DB update.

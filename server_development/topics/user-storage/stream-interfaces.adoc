@@ -24,13 +24,13 @@ ifeval::[{project_community}==true]
 | `org.keycloak.models` | `GroupModel`, `RoleMapperModel`, `UserCredentialManager`, `UserModel`, `UserProvider`
 | `org.keycloak.models.cache` | `CachedUserModel`, `UserCache`
 | `org.keycloak.storage.federated` | All interfaces
-| `org.kecyloak.storage.user` | `UserQueryProvider`(*)
+| `org.keycloak.storage.user` | `UserQueryProvider`(*)
 endif::[]
 ifeval::[{project_product}==true]
 | `org.keycloak.credential` | `CredentialInputUpdater`(*)
 | `org.keycloak.models` | `GroupModel`, `RoleMapperModel`, `UserModel`
 | `org.keycloak.storage.federated` | All interfaces
-| `org.kecyloak.storage.user` | `UserQueryProvider`(*)
+| `org.keycloak.storage.user` | `UserQueryProvider`(*)
 endif::[]
 |===
 (*) indicates the interface is a _<<_provider_capability_interfaces,capability interface>>_

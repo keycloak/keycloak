@@ -1,7 +1,7 @@
 
 === Augmenting external storage
 
-The `PropertyFileUserStorageProvider` example is really limited.  While we will be able to login with users stored
+The `PropertyFileUserStorageProvider` example is really limited.  While we will be able to log in with users stored
 in a property file, we won't be able to do much else.  If users loaded by this provider need special role or group
 mappings to fully access particular applications there is no way for us to add additional role mappings to these users.
 You also can't modify or add additional important attributes like email, first and last name.

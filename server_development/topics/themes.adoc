@@ -97,7 +97,7 @@ import=common/keycloak
 +
 You have now created a theme with support for the login type.
 
-. Log into the Admin Console to checkout your new theme
+. Log into the Admin Console to check out your new theme
 . Select your realm
 . Click *Realm Settings* from the menu.
 . Click on the *Themes* tab.
