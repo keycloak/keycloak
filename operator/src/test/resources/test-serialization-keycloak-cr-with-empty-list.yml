@@ -6,6 +6,5 @@ spec:
   features:
     enabled:
       -
-  hostname: my-hostname
   http:
     tlsSecret: my-tls-secret

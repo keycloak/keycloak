@@ -28,6 +28,7 @@ import org.keycloak.operator.controllers.WatchedSecretsStore;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 
 import java.util.Base64;
 import java.util.HashSet;
@@ -161,12 +162,14 @@ public class WatchedSecretsTest extends BaseOperatorTest {
     public void testSingleSecretMultipleKeycloaks() {
         try {
             var kc1 = getDefaultKeycloakDeployment();
+            var kc1Hostname = new HostnameSpecBuilder().withHostname("kc1.local").build();
             kc1.getMetadata().setName(kc1.getMetadata().getName() + "-1");
-            kc1.getSpec().setHostname("kc1.local");
+            kc1.getSpec().setHostnameSpec(kc1Hostname);
 
             var kc2 = getDefaultKeycloakDeployment();
+            var kc2Hostname = new HostnameSpecBuilder().withHostname("kc2.local").build();
             kc2.getMetadata().setName(kc2.getMetadata().getName() + "-2");
-            kc2.getSpec().setHostname("kc2.local"); // to prevent Ingress conflicts
+            kc2.getSpec().setHostnameSpec(kc2Hostname); // to prevent Ingress conflicts
 
             deployKeycloak(k8sclient, kc1, true);
             deployKeycloak(k8sclient, kc2, true);
