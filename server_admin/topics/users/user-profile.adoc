@@ -233,7 +233,7 @@ image:images/user-profile-validation.png[]
 In order to pass additional information to frontends, attributes can be decorated with
 annotations to dictate how attributes are rendered. This capability is mainly useful when extending {project_name} themes
 to render pages dynamically based on the annotations associated with attributes.
-This mechanism is used for example to link:#_configurin_form_input_field_for_attribute[configure Form input filed for attribute].
+This mechanism is used for example to link:#_configuring_form_input_field_for_attribute[configure Form input filed for attribute].
 
 .Attribute Annotation
 image:images/user-profile-annotation.png[]
@@ -464,7 +464,7 @@ image:images/user-profile-update-profile.png[]
 When attributes are linked to an attribute group, the attribute order is also important to make sure attributes within the same group are close together, within a same group header. Otherwise, if attributes within a group do not have a sequential order you might have the same group header rendered multiple times in the dynamic form.
 ====
 
-[[_configurin_form_input_field_for_attribute]]
+[[_configuring_form_input_field_for_attribute]]
 === Configuring Form input filed for Attributes
 
 {project_name} provides built-in annotations to configure which input type will be used for the attribute in dynamic forms and other aspects of it's visualization.
@@ -500,7 +500,7 @@ Text is NOT html escaped when rendered into the page, so you can use html tags h
 or a short description of the expected format). The short hint is displayed in the input field before the user enters a value.
 
 |inputTypeSize
-|HTML input `size` attribute applied to the field - specifies the width, in characters, of an single line input field. For fields based on HTML `select` type
+|HTML input `size` attribute applied to the field - specifies the width, in characters, of a single line input field. For fields based on HTML `select` type
 it specifies number of rows with options shown. May not work, depending on css in used theme!
 
 |inputTypeCols
@@ -621,8 +621,8 @@ Available `inputType` annotation values:
 Options for select and multiselect fields are taken from validation applied to the attribute to be
 sure validation and field options presented in UI are always consistent. By default, options are taken from built-in `options` validation.
 
-You can use various ways to provide nice human readable labels for select and multiselect options. The simplest
-case is when attribute values are same as UI labels. No any extra configuration is necessary in this case.
+You can use various ways to provide nice human-readable labels for select and multiselect options. The simplest
+case is when attribute values are same as UI labels. No extra configuration is necessary in this case.
 
 .Option values same as UI labels
 image:images/user-profile-select-options-simple.png[]
@@ -726,7 +726,7 @@ When enabled, the `VerifyProfile` action is going to perform the following steps
 By default, the `VerifyProfile` action is disabled. To enabled it, click on the
 `Authentication` link on the left side menu and then click on the `Required Actions` tab. At this tab, select the *Enabled* switch of the `VerifyProfile` action.
 
-.Registring the VerifyProfile Required Action
+.Registering the VerifyProfile Required Action
 image:images/user-profile-register-verify-profile-action.png[]
 
 == Migrating to User Profile

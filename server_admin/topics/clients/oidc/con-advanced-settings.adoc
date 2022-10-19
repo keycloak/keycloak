@@ -107,7 +107,6 @@ An administrator can select one of these options:
 
 See https://datatracker.ietf.org/doc/html/rfc7636[RFC 7636 Proof Key for Code Exchange by OAuth Public Clients] for more details.
 
-
 [[_mapping-acr-to-loa-client]]
 *ACR to Level of Authentication (LoA) Mapping*
 
@@ -121,7 +120,7 @@ a `claims` parameter that has an `acr` claim attached. See https://openid.net/sp
 WARNING: Note that default ACR values are used as the default level, however it cannot be reliably used to enforce login with the particular level.
 For example, assume that you configure the `Default ACR Values` to level 2. Then by default, users will be required to authenticate with level 2.
 However when the user explicitly attaches the parameter into login request such as `acr_values=1`, then the level 1 will be used. As a result, if the client
-really requires level 2, the client is encouraged to check the presence of the `acr` claim inside ID Token and doublecheck that it contains the requested level 2.
+really requires level 2, the client is encouraged to check the presence of the `acr` claim inside ID Token and double-check that it contains the requested level 2.
 
 image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 

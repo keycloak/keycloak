@@ -88,7 +88,7 @@ If you need the client itself as an audience, see the
 When your service relies on realm roles or does not rely on the roles in the token at all, it can be useful to use a hardcoded audience. A hardcoded audience is a protocol mapper, that will add the client ID of the specified service client as an audience to the token.
 You can use any custom value, for example a URL, if you want to use a different audience than the client ID.
 
-You can add the protocol mapper directly to the frontend client. If the protocol mapper is added directly, the audience will be always added as well.
+You can add the protocol mapper directly to the frontend client. If the protocol mapper is added directly, the audience will always be added as well.
 
 For more control over the protocol mapper, you can create the protocol mapper on the dedicated client scope, which will be called for example *good-service*.
 

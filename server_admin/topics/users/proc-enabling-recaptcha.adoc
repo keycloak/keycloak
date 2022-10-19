@@ -27,7 +27,7 @@ NOTE: The localhost works by default. You do not have to specify a domain.
 . Click the *Flows* tab.
 . Select *Registration* from the list.
 . Set the *reCAPTCHA* requirement to *Required*. This enables
-reCAPTCHA.  
+reCAPTCHA.
 . Click the *gear icon* ⚙️ on the *reCAPTCHA* row.
 . Click the *Config* link.
 

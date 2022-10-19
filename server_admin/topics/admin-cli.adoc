@@ -1494,7 +1494,7 @@ $ kcadm.sh create identity-provider/instances -r demorealm -s alias=saml -s prov
 ==== Configuring a Facebook identity provider
 
 . Use `facebook` as the `providerId`.
-. Provide the `config` attributes: `clientId` and `clientSecret`. You can find these attributes in the Facebook Developers application configuration page for your application. See see the <<_facebook, facebook identity broker>> page for more information.
+. Provide the `config` attributes: `clientId` and `clientSecret`. You can find these attributes in the Facebook Developers application configuration page for your application. See the <<_facebook, Facebook identity broker>> page for more information.
 +
 For example:
 +
@@ -1533,7 +1533,7 @@ $ kcadm.sh create identity-provider/instances -r demorealm -s alias=google -s pr
 ==== Configuring a GitHub identity provider
 
 . Use `github` as the `providerId`.
-. Provide the `config` attributes `clientId` and `clientSecret`. You can find these attributes in the GitHub Developer Application Settings page for your application. See the <<_github, Github identity broker>> page for more information.
+. Provide the `config` attributes `clientId` and `clientSecret`. You can find these attributes in the GitHub Developer Application Settings page for your application. See the <<_github, GitHub identity broker>> page for more information.
 +
 For example:
 +

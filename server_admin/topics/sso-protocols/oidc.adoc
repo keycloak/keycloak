@@ -38,16 +38,16 @@ heavy use of browser redirects to obtain an _identity_ and _access_ token.  Here
 . Browser visits application.  The application notices the user is not logged in, so it redirects the browser to {project_name}
   to be authenticated.  The application passes along a callback URL (a redirect URL) as a query parameter in this browser redirect
   that {project_name} will use when it finishes authentication.
-. {project_name} authenticates the user and creates a one-time, very short lived, temporary code.  {project_name}
+. {project_name} authenticates the user and creates a one-time, very short-lived, temporary code.  {project_name}
   redirects back to the application using the callback URL provided earlier and additionally adds the temporary code
   as a query parameter in the callback URL.
 . The application extracts the temporary code and makes a background out of band REST invocation to {project_name}
   to exchange the code for an _identity_, _access_ and _refresh_ token.  Once this temporary code has been used once
   to obtain the tokens, it can never be used again.  This prevents potential replay attacks.
 
-It is important to note that _access_ tokens are usually short lived and often expired after only minutes.  The additional _refresh_
+It is important to note that _access_ tokens are usually short-lived and often expired after only minutes.  The additional _refresh_
 token that was transmitted by the login protocol allows the application to obtain a new access token after it expires.  This
-refresh protocol is important in the situation of a compromised system.  If access tokens are short lived, the whole system is only
+refresh protocol is important in the situation of a compromised system.  If access tokens are short-lived, the whole system is only
 vulnerable to a stolen token for the lifetime of the access token.  Future refresh token requests will fail if an admin
 has revoked access.  This makes things more secure and more scalable.
 
@@ -330,14 +330,14 @@ Again since all of this is described in the OIDC specification we will only give
 ===== Session Management
 
 This is a browser-based logout. The application obtains session status information from {project_name} at a regular basis.
-When the session is terminated at {project_name} the application will notice and trigger it's own logout.
+When the session is terminated at {project_name} the application will notice and trigger its own logout.
 
 ===== Front-Channel Logout
 
 This is also a browser-based logout where the logout starts by redirecting the user to a specific endpoint at {project_name}.
 
 Once the user is redirected to the logout endpoint, {project_name} is going to send logout requests to
-clients to let them to invalidate their local user sessions, and potentially redirect the user to some URL
+clients to let them invalidate their local user sessions, and potentially redirect the user to some URL
 once the logout process is finished.
 
 Depending on the client configuration, logout requests can be sent to clients through the front-channel or through the back-channel.
@@ -360,7 +360,7 @@ using the <<_back-channel-logout-url, Back-Channel Logout URL>>. If not defined,
 
 ===== Backchannel Logout
 
-This is a non browser-based logout that uses direct backchannel communication between {project_name} and clients. 
+This is a non-browser-based logout that uses direct backchannel communication between {project_name} and clients.
 {project_name} sends a HTTP POST request containing a logout token to all clients logged into {project_name}. These
 requests are sent to a registered backchannel logout URLs at {project_name} and are supposed to trigger a logout at client side.
 

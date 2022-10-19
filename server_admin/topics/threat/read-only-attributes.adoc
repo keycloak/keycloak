@@ -37,7 +37,7 @@ kc.[sh|bat] start --spi-user-profile-legacy-user-profile-read-only-attributes=fo
 ----
 
 For this example, users and administrators would not be able to update attribute `foo`. Users would not be able to edit any attributes starting with the `bar`.
-So for example `bar` or `barrier`. Configuration is case insensitive, so attributes like `FOO` or `BarRier` will be denied as well for this example. The wildcard character `\*` is supported
+So for example `bar` or `barrier`. Configuration is case-insensitive, so attributes like `FOO` or `BarRier` will be denied as well for this example. The wildcard character `\*` is supported
 only at the end of the attribute name, so the administrator can effectively deny all the attributes starting with the specified character. The `*` in the middle of the attribute is considered
 as a normal character.
 

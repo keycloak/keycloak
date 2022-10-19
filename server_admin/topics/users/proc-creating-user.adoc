@@ -27,7 +27,7 @@ ifdef::api-management[]
 . Toggle *Email Verified* to *ON*.
 . Click *Save*.
 . In the *Credentials* tab, set the password in both fields.
-.. Toggle *Temporary* to *OFF* to avoid resetting the password during the next log in.
+.. Toggle *Temporary* to *OFF* to avoid resetting the password during the next login.
 .. Click *Reset Password*.
 .. Click *Change Password*.
 .. Click *Save*.

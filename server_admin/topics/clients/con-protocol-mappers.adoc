@@ -20,7 +20,7 @@ image:images/mappers-oidc.png[]
 New clients do not have built-in mappers but they can inherit some mappers from client scopes. See the <<_client_scopes, client scopes section>> for more details. 
 
 Protocol mappers map items (such as an email address, for example) to
-a specific claim in the identity and access token. The function of a mapper should be self explanatory from its name. You  add pre-configured mappers by clicking *Add Builtin*.
+a specific claim in the identity and access token. The function of a mapper should be self-explanatory from its name. You  add pre-configured mappers by clicking *Add Builtin*.
 
 Each mapper has a set of common settings. Additional settings are available, depending on the mapper type. Click *Edit* next to a mapper to access the configuration screen to adjust these settings.
 

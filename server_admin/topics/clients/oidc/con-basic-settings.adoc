@@ -9,7 +9,7 @@ image:images/client-settings-oidc.png[Settings tab]
 
 == General Settings
 
-*Client ID*:: The alpha-numeric ID string that is used in OIDC requests and in the {project_name} database to identify the client.
+*Client ID*:: The alphanumeric ID string that is used in OIDC requests and in the {project_name} database to identify the client.
 
 *Name*:: The name for the client in {project_name} UI screen. To localize
 the name, set up a replacement string value. For example, a string value such as $\{myapp}.  See the link:{developerguide_link}[{developerguide_name}] for more information.
@@ -96,6 +96,6 @@ There will be also one item on the consent screen about this client itself.
 *Backchannel logout URL*:: URL that will cause the client to log itself out when a logout request is sent to this realm (via end_session_endpoint). If omitted, no logout requests are sent to the client.
 
 *Backchannel logout session required*::
-Specifyies whether a session ID Claim is included in the Logout Token when the *Backchannel Logout URL* is used.
+Specifies whether a session ID Claim is included in the Logout Token when the *Backchannel Logout URL* is used.
 
 *Backchannel logout revoke offline sessions*:: Specifies whether a revoke_offline_access event is included in the Logout Token when the Backchannel Logout URL is used. {project_name} will revoke offline sessions when receiving a Logout Token with this event.

@@ -5,7 +5,7 @@ The authentication protocols that are used by {project_name} require cryptograph
 encryption.  {project_name} uses asymmetric key pairs, a private and public key, to accomplish this.
 
 {project_name} has a single active keypair at a time, but can have several passive keys as well. The active keypair
-is used to create new signatures, while the passive keypairs can be used to verify previous signatures. This makes it
+is used to create new signatures, while the passive keypair can be used to verify previous signatures. This makes it
 possible to regularly rotate the keys without any downtime or interruption to users.
 
 When a realm is created a key pair and a self-signed certificate is automatically generated.

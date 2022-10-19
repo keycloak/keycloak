@@ -62,7 +62,7 @@ Describes a name of the execution, which will be shown in the authentication flo
 Error message:::
 Error message which will be shown to the user.
 The error message could be provided as a particular message or as a property in order to use it with localization.
-(i.e "_You do not have the role 'admin'._", _my-property-deny_ in messages properties)
+(i.e. "_You do not have the role 'admin'._", _my-property-deny_ in messages properties)
 Leave blank for the default message defined as property `access-denied`.
 
 Here is an example how to deny access to all users who do not have the role `role1` and show an error message defined by a property `deny-role1`.

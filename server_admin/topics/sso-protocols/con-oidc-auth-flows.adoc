@@ -13,7 +13,7 @@ The Authorization Code Flow is a browser-based protocol and suits authenticating
 . A user connects to an application using a browser. The application detects the user is not logged into the application.
 . The application redirects the browser to {project_name} for authentication.
 . The application passes a callback URL as a query parameter in the browser redirect. {project_name} uses the parameter upon successful authentication.
-. {project_name} authenticates the user and creates a one-time, short lived, temporary code.
+. {project_name} authenticates the user and creates a one-time, short-lived, temporary code.
 . {project_name} redirects to the application using the callback URL and adds the temporary code as a query parameter in the callback URL.
 . The application extracts the temporary code and makes a background REST invocation to {project_name}
 to exchange the code for an _identity_ and _access_ and _refresh_ token.  To prevent replay attacks, the temporary code cannot be used more than once.
@@ -304,7 +304,7 @@ Again since all of this is described in the OIDC specification we will only give
 ===== Session Management
 
 This is a browser-based logout. The application obtains session status information from {project_name} at a regular basis.
-When the session is terminated at {project_name} the application will notice and trigger it's own logout.
+When the session is terminated at {project_name} the application will notice and trigger its own logout.
 
 ===== RP-Initiated Logout
 
@@ -312,7 +312,7 @@ This is also a browser-based logout where the logout starts by redirecting the u
 This redirect usually happens when the user clicks the `Log Out` link on the page of some application, which previously used {project_name} to authenticate the user.
 
 Once the user is redirected to the logout endpoint, {project_name} is going to send logout requests to
-clients to let them to invalidate their local user sessions, and potentially redirect the user to some URL
+clients to let them invalidate their local user sessions, and potentially redirect the user to some URL
 once the logout process is finished. The user might be optionally requested to confirm the logout in case the  `id_token_hint` parameter was not used.
 After logout, the user is automatically redirected to the specified `post_logout_redirect_uri` as long as it is provided as a parameter.
 Note that you need to include either the `client_id` or `id_token_hint` parameter in case the `post_logout_redirect_uri` is included. Also the `post_logout_redirect_uri` parameter
@@ -322,7 +322,7 @@ Depending on the client configuration, logout requests can be sent to clients th
 Session Management described in the previous section, {project_name} does not need to send any logout requests to them; these clients automatically detect that SSO session
 in the browser is logged out.
 
-===== Frontchannel Logout
+===== Front-channel Logout
 
 To configure clients to receive logout requests through the front-channel, look at the <<_front-channel-logout, Front-Channel Logout>> client setting. When using this method, consider the following:
 
@@ -342,7 +342,7 @@ using the <<_back-channel-logout-url, Back-Channel Logout URL>>. If not defined,
 
 ===== Backchannel Logout
 
-This is a non browser-based logout that uses direct backchannel communication between {project_name} and clients. 
+This is a non-browser-based logout that uses direct backchannel communication between {project_name} and clients.
 {project_name} sends a HTTP POST request containing a logout token to all clients logged into {project_name}. These
 requests are sent to a registered backchannel logout URLs at {project_name} and are supposed to trigger a logout at client side.
 

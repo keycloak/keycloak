@@ -28,7 +28,7 @@ image:images/client-settings-saml.png[]
 
 === General settings
 
-*Client ID*:: The alpha-numeric ID string that is used in OIDC requests and in the {project_name} database to identify the client. This value must match the issuer value sent with AuthNRequests. {project_name} pulls the issuer from the Authn SAML request and match it to a client by this value.
+*Client ID*:: The alphanumeric ID string that is used in OIDC requests and in the {project_name} database to identify the client. This value must match the issuer value sent with AuthNRequests. {project_name} pulls the issuer from the Authn SAML request and match it to a client by this value.
 
 *Name*:: The name for the client in a {project_name} UI screen. To localize
 the name, set up a replacement string value. For example, a string value such as $\{myapp}.  See the link:{developerguide_link}[{developerguide_name}] for more information.

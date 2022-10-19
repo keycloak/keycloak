@@ -89,9 +89,9 @@ When {project_name} disables a user, the user cannot log in until an administrat
 .. Increment `count`
 .. Calculate `wait` using _Wait Increment_ * (`count` / _Max Login Failures_). The division is an integer division rounded down to a whole number
 .. If `wait` equals 0 and the time between this failure and the last failure is less than _Quick Login Check Milliseconds_, set `wait` to _Minimum Quick Login Wait_.
-... Temporarily disable the user for the smaller of `wait` and _Max Wait_ seconds
+... Temporarily disable the user for the smallest of `wait` and _Max Wait_ seconds
 
-'count` does not increment when a temporarily disabled account commits a login failure.
+`count` does not increment when a temporarily disabled account commits a login failure.
 ====
 
 The downside of {project_name} brute force detection is that the server becomes vulnerable to denial of service attacks. When implementing a denial of service attack, an attacker can attempt to log in by guessing passwords for any accounts it knows and eventually causing {project_name} to disable the accounts.

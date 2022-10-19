@@ -134,7 +134,7 @@ Make sure to properly test your configuration when you configure the authenticat
 corner cases. For example, consider testing the authentication behavior for a user when you remove various credentials from the user's account before authentication.
 
 As an example, when 2nd-factor authenticators, such as OTP Form or WebAuthn Authenticator, are configured in the flow as REQUIRED and the user does not have credential of particular
-type, the user will be able to setup the particular credential during authentication itself. This situation means that the user does not authenticate with this credential as he setup
+type, the user will be able to set up the particular credential during authentication itself. This situation means that the user does not authenticate with this credential as he set up
 it right during the authentication. So for browser authentication, make sure to configure your authentication flow with some 1st-factor credentials such as Password or WebAuthn
 Passwordless Authenticator.
 ====
@@ -203,7 +203,7 @@ At this stage, the form requires a username but no password. We must enable pass
 
 Finally, change the bindings.
 
-. Click the *Action* menu on the top of the screen.
+. Click the *Action* menu at the top of the screen.
 . Select *Bind flow* from the menu.
 . Click the *Browser Flow* drop-down list.
 . Click *Save*.
@@ -224,7 +224,7 @@ Since the WebAuthn Passwordless execution is set to *Alternative* rather than  *
 . Enabling the *Webauthn Register Passwordless* required action in the realm (see the xref:webauthn_{context}[WebAuthn] documentation).
 . Setting the required action using the *Credential Reset* part of a user's xref:ref-user-credentials_{context}[Credentials] management menu.
 
-Creating an advanced flow such as this can have side effects. For example, if you enable the ability to reset the password for users, this would be accessible from the password form. In the default `Reset Credentials` flow, users must enter their username. Since the user has already entered a username earlier in the `Browser Password-less` flow, this action is unnecessary for {project_name} and sub-optimal for user experience. To correct this problem, you can:
+Creating an advanced flow such as this can have side effects. For example, if you enable the ability to reset the password for users, this would be accessible from the password form. In the default `Reset Credentials` flow, users must enter their username. Since the user has already entered a username earlier in the `Browser Password-less` flow, this action is unnecessary for {project_name} and suboptimal for user experience. To correct this problem, you can:
 
 * Duplicate the `Reset Credentials` flow. Set its name to `Reset Credentials for password-less`, for example.
 * Click *Delete* (trash icon) of the *Choose user* step.
@@ -310,7 +310,7 @@ image:images/authentication-step-up-condition-2.png[Autehtnication step up condi
 
 Finally, change the bindings.
 
-. Click the *Action* menu on the top of the screen.
+. Click the *Action* menu at the top of the screen.
 . Select *Bind flow* from the list.
 . Select *Browser Flow* in the dropdown.
 . Click *Save*.
@@ -359,7 +359,7 @@ The logic for the previous configured authentication flow is as follows: +
 If a client request a high authentication level, meaning Level of Authentication 2 (LoA 2), a user has to perform full 2-factor authentication: Username/Password + OTP.
 However, if a user already has a session in Keycloak, that was logged in with username and password (LoA 1), the user is only asked for the second authentication factor (OTP).
 
-The option *Max Age* in the condition determines how long (how much seconds) the subsequent authentication level is valid. This settings helps to decide
+The option *Max Age* in the condition determines how long (how much seconds) the subsequent authentication level is valid. This setting helps to decide
 whether the user will be asked to present the authentication factor again during a subsequent authentication. If the particular level X is requested
 by the `claims` or `acr_values` parameter and user already authenticated with level X, but it is expired (for example max age is configured to 300 and user authenticated before 310 seconds)
 then the user will be asked to re-authenticate again with the particular level. However if the level is not yet expired, the user will be automatically
@@ -371,7 +371,7 @@ with the specific level.
 
 WARNING: Note that parameters such as `claims` or `acr_values` might be changed by the user in the URL when the login request is sent from the client to the {project_name} via the user's browser.
 This situation can be mitigated if client uses PAR (Pushed authorization request), a request object, or other mechanisms that prevents the user from rewrite the parameters in the URL.
-Hence after the authentication, clients are encouraged to check the ID Token to doublecheck that `acr` in the token corresponds to the expected level.
+Hence after the authentication, clients are encouraged to check the ID Token to double-check that `acr` in the token corresponds to the expected level.
 
 If no explicit level is requested by parameters, the {project_name} will require the authentication with the first LoA
 condition found in the authentication flow, such as the Username/Password in the preceding example. When a user was already authenticated with that level
@@ -425,7 +425,7 @@ If both session limits and client session limits are enabled, it makes sense to 
 
 Note that the user session limits should be added to your bound *Browser flow*, *Direct grant flow*, *Reset credentials* and also to any *Post broker login flow*.
 The authenticator should be added at the point when the user is already known during authentication (usually at the end of the authentication flow) and should be typically REQUIRED. Note that it is not possible to have
-ALTERNATIVE and REQUIRED executions at the same level. For example for the default browser flow, it may be necessary to wrap the existing flow as a REQUIRED level-1 subflow and 
+ALTERNATIVE and REQUIRED executions at the same level. For example for the default browser flow, it may be necessary to wrap the existing flow as a REQUIRED level-1 subflow and
 add `User Session Count Limiter` to the same level as this new subflow. Example of such flow is below.
 
 image:images/authentication-user-session-limits.png[Authentication User Session Limits Flow]

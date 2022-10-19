@@ -8,7 +8,7 @@ You configure realms and perform most administrative tasks in the {project_name}
 
 .Procedure
 
-. Go the the URL for the Admin Console.
+. Go to the URL for the Admin Console.
 +
 For example, for localhost, use this URL: http://localhost:8080{kc_admins_path}/
 +

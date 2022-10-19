@@ -26,7 +26,7 @@ There are some important things to note about fine grain admin permissions:
 * Fine grain admin permissions were implemented on top of link:{authorizationguide_link}[Authorization Services].  It is highly recommended that you read up on those features before diving into fine grain permissions.
 * Fine grain permissions are only available within <<_per_realm_admin_permissions, dedicated admin consoles>> and admins defined within those realms.  You cannot define cross-realm fine grain permissions.
 * Fine grain permissions are used to grant additional permissions.  You cannot override the
-  default behavior of the built in admin roles.
+  default behavior of the built-in admin roles.
 
 ==== Managing one specific client
 

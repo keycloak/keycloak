@@ -83,7 +83,7 @@ image:images/browser-flow.png[Browser Flow]
 
 Set the *Kerberos* requirement from _disabled_ to _alternative_ (Kerberos is optional) or _required_ (browser must have Kerberos enabled). If you have not configured the browser to work with SPNEGO or Kerberos, {project_name} falls back to the regular login screen.
 
-===== Configure Kerberos user storage federation providerxs
+===== Configure Kerberos user storage federation providers
 
 You must now use <<_user-storage-federation,User Storage Federation>> to configure how {project_name} interprets Kerberos tickets. Two different federation providers exist with Kerberos authentication support.
 

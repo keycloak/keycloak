@@ -3,7 +3,7 @@
 
 ==== GitHub
 
-To log in with Github, perform the following procedure.
+To log in with GitHub, perform the following procedure.
 
 .Procedure
 . Click *Identity Providers* in the menu.

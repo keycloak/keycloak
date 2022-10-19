@@ -43,7 +43,7 @@ If you require WebAuthn for all users:
 +
 image:images/webauthn-browser-flow-required.png[Webauthn browser flow required]
 +
-. Click the *Action* menu on the top of the screen.
+. Click the *Action* menu at the top of the screen.
 . Select *Bind flow* from the drop-down list.
 . Select *Browser* from the drop-down list.
 . Click *Save*.
@@ -67,7 +67,7 @@ Users can log in with WebAuthn if they have a WebAuthn credential registered onl
 . Click *Add*.
 . Select *Required* for the *Condition - User Configured* to set its requirement to required.
 . Drag and drop *WebAuthn Authenticator* into the *Conditional 2FA* flow
-. Select *Alternative* for the *WebAuthn Authenticator* to set its requirement to alernative.
+. Select *Alternative* for the *WebAuthn Authenticator* to set its requirement to alternative.
 +
 image:images/webauthn-browser-flow-conditional.png[Webauthn browser flow conditional]
 
@@ -78,7 +78,7 @@ The user can choose between using WebAuthn and OTP for the second factor:
 . Click *Add step*.
 . Select *OTP Form* from the list.
 . Click *Add*.
-. Select *Alternative* for the *OTP Form* to set its requirement to alernative.
+. Select *Alternative* for the *OTP Form* to set its requirement to alternative.
 +
 image:images/webauthn-browser-flow-conditional-with-OTP.png[WebAuthn browser flow conditional with OTP]
 
@@ -266,7 +266,7 @@ To use Windows Hello based credentials to authenticate against {project_name}, c
 [[_webauthn-supported-keys]]
 ====== Supported security keys
 
-The following security keys have been successfuly tested for loginless authentication with {project_name}:
+The following security keys have been successfully tested for loginless authentication with {project_name}:
 
 * Windows Hello (Windows 10 21H1/21H2)
 * Yubico Yubikey 5 NFC

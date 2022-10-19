@@ -44,7 +44,7 @@ image:images/instagram-create-instagram-app-id.png[Create a New Instagram App ID
 +
 .. Enter a value into *Display Name*.
 +
-.Setup the app
+.Set up the app
 image:images/instagram-app-settings.png[Setup the App]
 +
 .. Paste the *Redirect URL* from {project_name} into the *Valid OAuth Redirect URIs* field.

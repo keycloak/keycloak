@@ -91,7 +91,7 @@ To disable user creation:
 This configuration also implies that {project_name} itself won't be able to determine which internal account would correspond to the external identity.
 Therefore, the `Verify Existing Account By Re-authentication` authenticator will ask the user to provide both username and password.
 
-[[_detect_existing_user_first_loging_flow]]
+[[_detect_existing_user_first_login_flow]]
 ==== Detect existing user first login flow
 In order to configure a first login flow in which:
 
@@ -109,6 +109,6 @@ Automatically sets an existing user to the authentication context without any ve
 You have to set the `First Login Flow` of the identity provider configuration to that flow.
 You could set the also set `Sync Mode` to `force` if you want to update the user profile (Last Name, First Name...) with the identity provider attributes.
 
-NOTE: This flow can be used if you want to delegate the identity to other identity providers (such as github, facebook ...) but you want to manage which users that can log in.
+NOTE: This flow can be used if you want to delegate the identity to other identity providers (such as GitHub, Facebook ...) but you want to manage which users that can log in.
 
 With this configuration, {project_name} is unable to determine which internal account corresponds to the external identity. The *Verify Existing Account By Re-authentication* authenticator asks the provider for the username and password.

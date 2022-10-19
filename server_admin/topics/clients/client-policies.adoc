@@ -22,10 +22,10 @@ Setting policies on what configuration a client can have::
 
 Validation of client configurations::
     {project_name} supports validation whether the client follows settings like Proof Key for Code Exchange,
-    Request Object Signing Algorithm, Holder-of-Key Token, and so on on some endpoints like Authorization Endpoint, Token Endpoint, and so on.
-    These can be specified by each setting item (on Admin Console, switch, pulldown menu and so on). To make the client application secure, the administrator needs to set
+    Request Object Signing Algorithm, Holder-of-Key Token, and so on some endpoints like Authorization Endpoint, Token Endpoint, and so on.
+    These can be specified by each setting item (on Admin Console, switch, pull-down menu and so on). To make the client application secure, the administrator needs to set
     many settings in the appropriate way, which makes it difficult for the administrator to secure the client application.
-    Client Policies can do these validation of client configurations mentioned just above and they can also be used to auto-configure some client configuration switches to meet
+    Client Policies can do these validation of client configurations mentioned just above and they can also be used to autoconfigure some client configuration switches to meet
     the advanced security requirements. In the future, individual client configuration settings may be replaced by Client Policies directly performing required validations.
 
 Conformance to a required security standards and profiles such as FAPI::
@@ -107,7 +107,7 @@ on the OIDC authorization request). Events are:
 * Sending a userinfo request
 * Sending a logout request with a refresh token
 
-On each event, an executor can work in multiple phases. For example, on creating/updating a client, the executor can modify the client configuration by auto-configure specific client
+On each event, an executor can work in multiple phases. For example, on creating/updating a client, the executor can modify the client configuration by autoconfigure specific client
 settings. After that, the executor validates this configuration in validation phase.
 
 One of several purposes for this executor is to realize the security requirements of client conformance profiles like FAPI. To do so, the following executors are needed:
