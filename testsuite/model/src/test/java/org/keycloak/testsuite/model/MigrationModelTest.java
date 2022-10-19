@@ -58,7 +58,7 @@ public class MigrationModelTest extends KeycloakModelTest {
     public void test() {
         inComittedTransaction(1, (session , i) -> {
 
-            String currentVersion = new ModelVersion(Version.VERSION_KEYCLOAK).toString();
+            String currentVersion = new ModelVersion(Version.VERSION).toString();
 
             JpaConnectionProvider p = session.getProvider(JpaConnectionProvider.class);
             EntityManager em = p.getEntityManager();

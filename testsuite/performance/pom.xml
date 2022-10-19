@@ -32,7 +32,7 @@
     <packaging>pom</packaging>
     
     <properties>
-        <server.version>${product.version}</server.version>
+        <server.version>${project.version}</server.version>
         <management.user/>
         <management.user.password/>
         <jstat>false</jstat>

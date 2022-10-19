@@ -27,6 +27,7 @@ import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.CryptoConstants;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
@@ -42,6 +43,8 @@ import org.keycloak.crypto.JavaAlgorithm;
  */
 public class DefaultCryptoProvider implements CryptoProvider {
 
+    private static final Logger log = Logger.getLogger(DefaultCryptoProvider.class);
+
     private final Provider bcProvider;
 
     private Map<String, Object> providers = new ConcurrentHashMap<>();
@@ -55,6 +58,13 @@ public class DefaultCryptoProvider implements CryptoProvider {
         providers.put(CryptoConstants.RSA1_5, new DefaultRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/PKCS1Padding"));
         providers.put(CryptoConstants.RSA_OAEP, new DefaultRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding"));
         providers.put(CryptoConstants.RSA_OAEP_256, new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding"));
+
+        if (existingBc == null) {
+            Security.addProvider(this.bcProvider);
+            log.debugv("Loaded {0} security provider", this.bcProvider.getClass().getName());
+        } else {
+            log.debugv("Security provider {0} already loaded", this.bcProvider.getClass().getName());
+        }
     }
 
 

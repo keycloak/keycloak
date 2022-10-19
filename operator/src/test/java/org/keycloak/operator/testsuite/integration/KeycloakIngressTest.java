@@ -24,6 +24,7 @@ import io.restassured.RestAssured;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.controllers.KeycloakIngress;
 
@@ -126,6 +127,8 @@ public class KeycloakIngressTest extends BaseOperatorTest {
     @Test
     public void testMainIngressDurability() {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
+        kc.getSpec().setIngressSpec(new IngressSpec());
+        kc.getSpec().getIngressSpec().setIngressEnabled(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         var ingress = new KeycloakIngress(k8sclient, kc);
@@ -165,7 +168,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 });
 
         // Delete the ingress
-        kc.getSpec().setDisableDefaultIngress(true);
+        kc.getSpec().getIngressSpec().setIngressEnabled(false);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         Awaitility.await()

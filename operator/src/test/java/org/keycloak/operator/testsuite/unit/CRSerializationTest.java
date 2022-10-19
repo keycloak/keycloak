@@ -29,7 +29,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class CRSerializationTest {
 
@@ -40,7 +40,7 @@ public class CRSerializationTest {
         assertEquals("my-hostname", keycloak.getSpec().getHostname());
         assertEquals("my-image", keycloak.getSpec().getImage());
         assertEquals("my-tls-secret", keycloak.getSpec().getHttpSpec().getTlsSecret());
-        assertTrue(keycloak.getSpec().isDisableDefaultIngress());
+        assertFalse(keycloak.getSpec().getIngressSpec().isIngressEnabled());
 
         final TransactionsSpec transactionsSpec = keycloak.getSpec().getTransactionsSpec();
         assertThat(transactionsSpec, notNullValue());

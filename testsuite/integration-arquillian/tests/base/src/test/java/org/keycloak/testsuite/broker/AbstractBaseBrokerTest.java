@@ -417,7 +417,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void waitForAccountManagementTitle() {
-        final String title = getProjectName().toLowerCase() + " account management";
+        final String title = "Keycloak account management";
         waitForPage(driver, title, true);
     }
 

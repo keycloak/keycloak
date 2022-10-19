@@ -73,18 +73,21 @@ public class IdentityProviderBean {
         if (!hideOnLoginPage) {
             orderedSet.add(new IdentityProvider(identityProvider.getAlias(),
                     displayName, identityProvider.getProviderId(), loginUrl,
-                    config != null ? config.get("guiOrder") : null, getLoginIconClasses(identityProvider.getAlias())));
+                    config != null ? config.get("guiOrder") : null, getLoginIconClasses(identityProvider)));
         }
     }
 
     // Get icon classes defined in properties of current theme with key 'kcLogoIdP-{alias}'
+    // OR from IdentityProviderModel.getDisplayIconClasses if not defined in theme (for third-party IDPs like Sign-In-With-Apple)
     // f.e. kcLogoIdP-github = fa fa-github
-    private String getLoginIconClasses(String alias) {
+    private String getLoginIconClasses(IdentityProviderModel identityProvider) {
         final String ICON_THEME_PREFIX = "kcLogoIdP-";
 
         try {
             Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
-            return Optional.ofNullable(theme.getProperties().getProperty(ICON_THEME_PREFIX + alias)).orElse("");
+            Optional<String> classesFromTheme = Optional.ofNullable(theme.getProperties().getProperty(ICON_THEME_PREFIX + identityProvider.getAlias()));
+            Optional<String> classesFromModel = Optional.ofNullable(identityProvider.getDisplayIconClasses());
+            return classesFromTheme.orElse(classesFromModel.orElse(""));
         } catch (IOException e) {
             //NOP
         }
@@ -102,7 +105,7 @@ public class IdentityProviderBean {
     public static class IdentityProvider implements OrderedModel {
 
         private final String alias;
-        private final String providerId; // This refer to providerType (facebook, google, etc.)
+        private final String providerId; // This refers to providerType (facebook, google, etc.)
         private final String loginUrl;
         private final String guiOrder;
         private final String displayName;
