@@ -1904,6 +1904,7 @@
             <properties>
                 <surefire.system.args>
                     --add-opens=java.base/java.lang=ALL-UNNAMED
+                    --add-opens=java.base/java.util=ALL-UNNAMED
                 </surefire.system.args>
             </properties>
         </profile>
