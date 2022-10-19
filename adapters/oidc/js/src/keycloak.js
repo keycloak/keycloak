@@ -1037,8 +1037,19 @@ function Keycloak (config) {
                 throw 'Invalid token';
         }
 
-        str = decodeURIComponent(escape(atob(str)));
-
+        try {
+            str = decodeURIComponent(
+                atob(str).replace(/(.)/g, function(m, p) {
+                    var code = p.charCodeAt(0).toString(16).toUpperCase();
+                    if (code.length < 2) {
+                        code = "0" + code;
+                    }
+                    return "%" + code;
+                });
+            );
+        } catch (err) {
+            str = atob(str);
+        }
         str = JSON.parse(str);
         return str;
     }
