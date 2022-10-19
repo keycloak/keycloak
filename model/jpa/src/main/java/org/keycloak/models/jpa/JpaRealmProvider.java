@@ -252,7 +252,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public RoleModel addClientRole(ClientModel client, String id, String name) {
-        logger.tracef("addClientRole(%s, %s, %s)", client.getId(), id, name);
+        logger.tracef("addClientRole(%s, %s, %s)%s", client, id, name, getShortStackTrace());
         if (getClientRole(client, name) != null) {
             throw new ModelDuplicateException(String.format("Role '%s' already exists on client '%s'.", name, client.getId()));
         }
