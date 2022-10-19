@@ -40,7 +40,7 @@
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <postgresql-jdbc.version>42.5.0</postgresql-jdbc.version>
         <wildfly-common.version>1.5.4.Final-format-001</wildfly-common.version>
-        <wildfly-elytron.version>1.20.0.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>1.20.1.Final</wildfly-elytron.version>
         <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
 
         <!--
