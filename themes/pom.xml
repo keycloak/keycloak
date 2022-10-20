@@ -69,6 +69,9 @@
                     <exclude>**/keycloak.v2/account/src/**</exclude>
                 </excludes>
             </resource>
+            <resource>
+                <directory>src/main/resources-community</directory>
+            </resource>
         </resources>
     </build>
 
@@ -188,43 +191,6 @@
                         </configuration>
                     </plugin>
                 </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources-community</directory>
-                    </resource>
-                </resources>
-            </build>
-        </profile>
-        <profile>
-            <id>product</id>
-            <activation>
-                <property>
-                    <name>product</name>
-                </property>
-            </activation>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources-product</directory>
-                    </resource>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>**/node_modules/rcue/**</include>
-                        </includes>
-                    </resource>
-                </resources>
             </build>
         </profile>
     </profiles>

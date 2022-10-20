@@ -17,6 +17,7 @@
 
 package org.keycloak.forms.account.freemarker.model;
 
+import org.keycloak.authentication.otp.OTPApplicationProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
@@ -46,10 +47,13 @@ public class TotpBean {
     private final String totpSecretEncoded;
     private final String totpSecretQrCode;
     private final boolean enabled;
+    private KeycloakSession session;
     private final UriBuilder uriBuilder;
     private final List<CredentialModel> otpCredentials;
+    private final List<String> supportedApplications;
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, UriBuilder uriBuilder) {
+        this.session = session;
         this.uriBuilder = uriBuilder;
         this.enabled = user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE);
         if (enabled) {
@@ -70,6 +74,12 @@ public class TotpBean {
         this.totpSecret = HmacOTP.generateSecret(20);
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
         this.totpSecretQrCode = TotpUtils.qrCode(totpSecret, realm, user);
+
+        OTPPolicy otpPolicy = realm.getOTPPolicy();
+        this.supportedApplications = session.getAllProviders(OTPApplicationProvider.class).stream()
+                .filter(p -> p.supports(otpPolicy))
+                .map(OTPApplicationProvider::getName)
+                .collect(Collectors.toList());
     }
 
     public boolean isEnabled() {
@@ -98,6 +108,10 @@ public class TotpBean {
 
     public OTPPolicy getPolicy() {
         return realm.getOTPPolicy();
+    }
+
+    public List<String> getSupportedApplications() {
+        return supportedApplications;
     }
 
     public List<CredentialModel> getOtpCredentials() {

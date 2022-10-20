@@ -29,6 +29,7 @@
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
         <wildfly.core.version>15.0.1.Final</wildfly.core.version>
         <org.wildfly.galleon-plugins.version>5.1.3.Final</org.wildfly.galleon-plugins.version>
+        <assemblyFile>assembly.xml</assemblyFile>
     </properties>
 
     <artifactId>keycloak-wildfly-adapter-dist</artifactId>
@@ -89,36 +90,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <properties>
-                <build-tools.version>${wildfly.build-tools.version}</build-tools.version>
-                <assemblyFile>assembly.xml</assemblyFile>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>product</id>
-            <activation>
-                <property>
-                    <name>product</name>
-                </property>
-            </activation>
-            <properties>
-                <assemblyFile>assembly.xml</assemblyFile>
-                <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
-            </properties>
-            <build>
-                <finalName>${product.name}-${product.filename.version}-eap7-adapter</finalName>
-            </build>
-        </profile>
-    </profiles>
-
 </project>

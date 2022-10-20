@@ -730,16 +730,6 @@ public abstract class AbstractKeycloakTest {
     }
 
     /**
-     * Get product/project name
-     *
-     * @return f.e. 'RH-SSO' or 'Keycloak'
-     */
-    protected String getProjectName() {
-        final boolean isProduct = adminClient.serverInfo().getInfo().getProfileInfo().getName().equals("product");
-        return isProduct ? Profile.PRODUCT_NAME : Profile.PROJECT_NAME;
-    }
-
-    /**
      * MapRealmProvider uses session.invalidate() instead of calling e.g. 
      * session.clients().removeClients(realm); for clients (where clients are being removed one by one)
      *

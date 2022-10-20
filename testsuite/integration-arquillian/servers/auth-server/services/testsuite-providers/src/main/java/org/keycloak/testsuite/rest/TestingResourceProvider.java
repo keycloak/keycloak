@@ -966,7 +966,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
      * KEYCLOAK-12958
      */
     private void disableFeatureProperties(Profile.Feature feature) {
-        Profile.Type type = Profile.getName().equals("product") ? feature.getTypeProduct() : feature.getTypeProject();
+        Profile.Type type = feature.getType();
         if (type.equals(Profile.Type.DEFAULT)) {
             System.setProperty("keycloak.profile.feature." + feature.toString().toLowerCase(), "disabled");
         } else {
