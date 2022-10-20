@@ -155,4 +155,5 @@ public interface GeneralConstants {
 
     public static final String  SAML_CHARSET_NAME = System.getProperty("keycloak.saml.saml_message_charset", "UTF-8");
     public static final Charset SAML_CHARSET = Charset.forName(SAML_CHARSET_NAME);
+    String SIMULATE_REDIRECT = "simulate_redirect";
 }

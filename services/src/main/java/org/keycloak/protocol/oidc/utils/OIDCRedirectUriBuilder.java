@@ -30,9 +30,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.services.Urls;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,26 +46,54 @@ public abstract class OIDCRedirectUriBuilder {
 
     protected final KeycloakUriBuilder uriBuilder;
 
-    protected OIDCRedirectUriBuilder(KeycloakUriBuilder uriBuilder) {
+    protected OIDCRedirectUriBuilder(KeycloakUriBuilder uriBuilder, boolean simulateRedirect) {
         this.uriBuilder = uriBuilder;
+        this.simulateRedirect = simulateRedirect;
     }
 
     public abstract OIDCRedirectUriBuilder addParam(String paramName, String paramValue);
 
     public abstract Response build();
 
+    private final boolean simulateRedirect;
 
-    public static OIDCRedirectUriBuilder fromUri(String baseUri, OIDCResponseMode responseMode, KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
+    protected Response buildRedirect(URI redirectUri) {
+        if (!simulateRedirect) {
+            return Response.status(302).location(redirectUri).build();
+        }
+        String jsonValue;
+        try {
+            jsonValue = JsonSerialization.writeValueAsString(redirectUri.toString());
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("<HTML>");
+        builder.append("  <HEAD>");
+        builder.append("    <TITLE>OIDC Redirect</TITLE>");
+        builder.append("  </HEAD>");
+        builder.append("  <BODY ONLOAD=\"");
+        builder.append(HtmlUtils.escapeAttribute("window.location.href = " + jsonValue));
+        builder.append("\">");
+        builder.append("    <P>The document has moved <A HREF=\"");
+        builder.append(HtmlUtils.escapeAttribute(redirectUri.toString()));
+        builder.append("\">here</A>.</P>");
+        builder.append("  </BODY>");
+        builder.append("</HTML>");
+        return Response.ok(builder.toString(), MediaType.TEXT_HTML_TYPE).build();
+    }
+
+    public static OIDCRedirectUriBuilder fromUri(String baseUri, OIDCResponseMode responseMode, KeycloakSession session, AuthenticatedClientSessionModel clientSession, boolean simulateRedirect) {
         KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(baseUri);
 
         switch (responseMode) {
-            case QUERY: return new QueryRedirectUriBuilder(uriBuilder);
-            case FRAGMENT: return new FragmentRedirectUriBuilder(uriBuilder);
-            case FORM_POST: return new FormPostRedirectUriBuilder(uriBuilder);
+            case QUERY: return new QueryRedirectUriBuilder(uriBuilder, simulateRedirect);
+            case FRAGMENT: return new FragmentRedirectUriBuilder(uriBuilder, simulateRedirect);
+            case FORM_POST: return new FormPostRedirectUriBuilder(uriBuilder, simulateRedirect);
             case QUERY_JWT:
             case FRAGMENT_JWT:
             case FORM_POST_JWT:
-                return new JWTRedirectUriBuilder(uriBuilder, responseMode, session, clientSession);
+                return new JWTRedirectUriBuilder(uriBuilder, responseMode, session, clientSession, simulateRedirect);
         }
 
         throw new IllegalStateException("Not possible to end here");
@@ -76,8 +106,8 @@ public abstract class OIDCRedirectUriBuilder {
     // http://openid.net/specs/oauth-v2-multiple-response-types-1_0.html#ResponseModes
     private static class QueryRedirectUriBuilder extends OIDCRedirectUriBuilder {
 
-        protected QueryRedirectUriBuilder(KeycloakUriBuilder uriBuilder) {
-            super(uriBuilder);
+        protected QueryRedirectUriBuilder(KeycloakUriBuilder uriBuilder, boolean simulateRedirect) {
+            super(uriBuilder, simulateRedirect);
         }
 
         @Override
@@ -89,8 +119,7 @@ public abstract class OIDCRedirectUriBuilder {
         @Override
         public Response build() {
             URI redirectUri = uriBuilder.build();
-            Response.ResponseBuilder location = Response.status(302).location(redirectUri);
-            return location.build();
+            return buildRedirect(redirectUri);
         }
     }
 
@@ -100,8 +129,8 @@ public abstract class OIDCRedirectUriBuilder {
 
         private StringBuilder fragment;
 
-        protected FragmentRedirectUriBuilder(KeycloakUriBuilder uriBuilder) {
-            super(uriBuilder);
+        protected FragmentRedirectUriBuilder(KeycloakUriBuilder uriBuilder, boolean simulateRedirect) {
+            super(uriBuilder, simulateRedirect);
 
             String fragment = uriBuilder.getFragment();
             if (fragment != null) {
@@ -127,8 +156,7 @@ public abstract class OIDCRedirectUriBuilder {
             }
             URI redirectUri = uriBuilder.build();
 
-            Response.ResponseBuilder location = Response.status(302).location(redirectUri);
-            return location.build();
+            return buildRedirect(redirectUri);
         }
 
     }
@@ -139,8 +167,8 @@ public abstract class OIDCRedirectUriBuilder {
 
         private Map<String, String> params = new HashMap<>();
 
-        protected FormPostRedirectUriBuilder(KeycloakUriBuilder uriBuilder) {
-            super(uriBuilder);
+        protected FormPostRedirectUriBuilder(KeycloakUriBuilder uriBuilder, boolean simulateRedirect) {
+            super(uriBuilder, simulateRedirect);
         }
 
         @Override
@@ -193,8 +221,8 @@ public abstract class OIDCRedirectUriBuilder {
         private final KeycloakSession session;
         private final AuthenticatedClientSessionModel clientSession;
 
-        public JWTRedirectUriBuilder(KeycloakUriBuilder uriBuilder, OIDCResponseMode responseMode, KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
-            super(uriBuilder);
+        public JWTRedirectUriBuilder(KeycloakUriBuilder uriBuilder, OIDCResponseMode responseMode, KeycloakSession session, AuthenticatedClientSessionModel clientSession, boolean simulateRedirect) {
+            super(uriBuilder, simulateRedirect);
             this.responseMode = responseMode;
             this.session = session;
             this.clientSession = clientSession;
@@ -240,15 +268,13 @@ public abstract class OIDCRedirectUriBuilder {
         private Response buildQueryResponse() {
             uriBuilder.queryParam("response", session.tokens().encodeAndEncrypt(responseJWT));
             URI redirectUri = uriBuilder.build();
-            Response.ResponseBuilder location = Response.status(302).location(redirectUri);
-            return location.build();
+            return buildRedirect(redirectUri);
         }
 
         private Response buildFragmentResponse() {
             uriBuilder.encodedFragment("response=" + Encode.encodeQueryParamAsIs(session.tokens().encodeAndEncrypt(responseJWT)));
             URI redirectUri = uriBuilder.build();
-            Response.ResponseBuilder location = Response.status(302).location(redirectUri);
-            return location.build();
+            return buildRedirect(redirectUri);
         }
 
         private Response buildFormPostResponse() {
