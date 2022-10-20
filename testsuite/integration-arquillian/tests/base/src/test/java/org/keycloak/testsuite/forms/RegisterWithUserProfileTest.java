@@ -18,6 +18,8 @@ package org.keycloak.testsuite.forms;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
@@ -59,7 +61,7 @@ public class RegisterWithUserProfileTest extends RegisterTest {
     private static ClientRepresentation client_scope_optional;
 
     public static String UP_CONFIG_BASIC_ATTRIBUTES = "{\"name\": \"username\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-            + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {}},";
+            + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {\"roles\" : [\"user\"]}},";
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -602,6 +604,64 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         assertEquals(null, user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
 
+    @Test
+    public void testEmailAsOptional() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", "password", "password");
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void testEmailRequired() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", "password", "password");
+        registerPage.assertCurrent();
+        assertThat(registerPage.getInputAccountErrors().getEmailError(), anyOf(
+                containsString("Please specify email"),
+                containsString("Please specify this field")
+        ));
+
+    }
+
+    @Test
+    public void testEmailRequiredForUser() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {\"roles\" : [\"user\"]}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", "password", "password");
+        assertThat(registerPage.getInputAccountErrors().getEmailError(), anyOf(
+                containsString("Please specify email"),
+                containsString("Please specify this field")
+        ));
+    }
 
     private void assertUserRegistered(String userId, String username, String email, String firstName, String lastName) {
         events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();

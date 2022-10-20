@@ -20,7 +20,6 @@
 package org.keycloak.userprofile;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +46,7 @@ public final class AttributeMetadata {
     private final Predicate<AttributeContext> selector;
     private final List<Predicate<AttributeContext>> writeAllowed = new ArrayList<>();
     /** Predicate to decide if attribute is required, it is handled as required if predicate is null */
-    private final Predicate<AttributeContext> required;
+    private Predicate<AttributeContext> required;
     private final List<Predicate<AttributeContext>> readAllowed = new ArrayList<>();
     private List<AttributeValidatorMetadata> validators;
     private Map<String, Object> annotations;
@@ -170,7 +169,7 @@ public final class AttributeMetadata {
         return validators;
     }
 
-    public AttributeMetadata addValidator(List<AttributeValidatorMetadata> validators) {
+    public AttributeMetadata addValidators(List<AttributeValidatorMetadata> validators) {
         if (this.validators == null) {
             this.validators = new ArrayList<>();
         }
@@ -202,7 +201,7 @@ public final class AttributeMetadata {
         // we clone validators list to allow adding or removing validators. Validators
         // itself are not cloned as we do not expect them to be reconfigured.
         if (validators != null) {
-            cloned.addValidator(validators);
+            cloned.addValidators(validators);
         }
         //we clone annotations map to allow adding to or removing from it
         if(annotations != null) {
@@ -246,5 +245,15 @@ public final class AttributeMetadata {
     @Override
     public int hashCode() {
         return attributeName.hashCode();
+    }
+
+    public AttributeMetadata setRequired(Predicate<AttributeContext> required) {
+        this.required = required;
+        return this;
+    }
+
+    public AttributeMetadata setValidators(List<AttributeValidatorMetadata> validators) {
+        this.validators = validators;
+        return this;
     }
 }

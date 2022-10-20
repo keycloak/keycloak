@@ -298,7 +298,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createRegistrationUserCreationProfile() {
         UserProfileMetadata metadata = new UserProfileMetadata(REGISTRATION_USER_CREATION);
 
-        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(RegistrationEmailAsUsernameUsernameValueValidator.ID), new AttributeValidatorMetadata(RegistrationUsernameExistsValidator.ID));
+        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(RegistrationEmailAsUsernameUsernameValueValidator.ID), new AttributeValidatorMetadata(RegistrationUsernameExistsValidator.ID), new AttributeValidatorMetadata(UsernameHasValueValidator.ID));
 
         metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(RegistrationEmailAsUsernameEmailValueValidator.ID));
 
@@ -366,6 +366,11 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createUserResourceValidation(Config.Scope config) {
         Pattern p = getRegexPatternString(config.getArray("admin-read-only-attributes"));
         UserProfileMetadata metadata = new UserProfileMetadata(USER_API);
+
+
+        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(UsernameHasValueValidator.ID));
+        metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()));
+
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
 
         if (p != null) {
