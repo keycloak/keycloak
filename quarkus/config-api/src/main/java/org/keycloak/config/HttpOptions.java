@@ -100,4 +100,11 @@ public class HttpOptions {
             .description("The type of the trust store file. " +
                     "If not given, the type is automatically detected based on the file name.")
             .build();
+
+    public static final Option<Boolean> HTTP_SERVER_ENABLED = new OptionBuilder<>("http-server-enabled", Boolean.class)
+            .category(OptionCategory.HTTP)
+            .hidden()
+            .description("Enables or disables the HTTP/s and Socket serving.")
+            .defaultValue(Boolean.TRUE)
+            .build();
 }
