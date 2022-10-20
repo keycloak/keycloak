@@ -1,6 +1,7 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
     title="Configuring the database"
@@ -30,14 +31,11 @@ only exists for development use-cases. The `dev-file` database is not suitable f
 
 For each supported database, the server provides some opinionated defaults to simplify database configuration. You complete the configuration by providing some key settings such as the database host and credentials.
 
-. Build a server image for your database. For example, for a PostgreSQL database, enter this command:
+. Start the server and set the basic options to configure a database
 +
-<@kc.build parameters="--db postgres"/>
+<@kc.start parameters="--db postgres --db-url-host mypostgres --db-username myuser --db-password change_me"/>
++
 
-. Start the server and set the options for the database host and credentials by entering this command:
-+
-<@kc.start parameters="--db-url-host mypostgres --db-username myuser --db-password change_me"/>
-+
 This command includes the minimum settings needed to connect to the database.
 
 The default schema is `keycloak`, but you can change it by using the `db-schema` configuration option.
@@ -48,7 +46,7 @@ The server uses JDBC as the underlying technology to communicate with the databa
 
 The following is a sample command for a PostgreSQL database.
 
-<@kc.start parameters="--db-url jdbc:postgresql://mypostgres/mydatabase"/>
+<@kc.start parameters="--db postgres --db-url jdbc:postgresql://mypostgres/mydatabase"/>
 
 Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
 
