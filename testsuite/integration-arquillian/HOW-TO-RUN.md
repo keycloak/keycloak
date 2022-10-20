@@ -837,15 +837,33 @@ mvn clean install -f testsuite/integration-arquillian/tests/base \
 
 ### Running tests with JPA Map storage
 
-Run PostgreSQL database:
-```shell
-podman run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=keycloak -e POSTGRES_DB=keycloak -d postgres:13.2
-```
+By default tests with `map-storage-jpa` profile spawns a new Postgres container
+with each test execution. Default image used is "postgres:alpine". To spawn different 
+version, it can be used "keycloak.map.storage.postgres.docker.image" system property.
 
 Execute tests:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
                   -Pmap-storage,map-storage-jpa
+```
+
+It's also possible to configure tests to connect to an external database, it might be useful 
+for debugging purposes as the database is not removed after the testsuite run. On the other hand
+it'll require manual cleaning between two runs.
+
+PostgreSQL database can be started e.g. by following command:
+```shell
+podman run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=keycloak -e POSTGRES_DB=keycloak -d postgres:alpine
+```
+
+To run the tests without spawning the container for you, execute tests with the following command:
+```shell
+mvn clean install -f testsuite/integration-arquillian/tests/base \
+  -Pmap-storage,map-storage-jpa \
+  -Dpostgres.start-container=false \
+  -Dkeycloak.map.storage.connectionsJpa.url=<jdbc_url> \
+  -Dkeycloak.map.storage.connectionsJpa.user=<user> \
+  -Dkeycloak.map.storage.connectionsJpa.password=<password>
 ```
 
 ### Running tests with HotRod Map storage
