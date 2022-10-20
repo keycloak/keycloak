@@ -100,8 +100,8 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             final var dbConf = new ValueOrSecret("db-password", "Ay Caramba!");
 
             kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
-            kc.getSpec().getServerConfiguration().remove(dbConf);
-            kc.getSpec().getServerConfiguration().add(dbConf);
+            kc.getSpec().getAdditionalOptions().remove(dbConf);
+            kc.getSpec().getAdditionalOptions().add(dbConf);
             deployKeycloak(k8sclient, kc, false);
 
             Awaitility.await()
@@ -131,7 +131,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(health.getName()))
                     .withValue(health.getValue())
                     .build();
-            kc.getSpec().getServerConfiguration().add(health);
+            kc.getSpec().getAdditionalOptions().add(health);
             deployKeycloak(k8sclient, kc, false);
 
             assertThat(Constants.DEFAULT_DIST_CONFIG.get(health.getName())).isEqualTo("true"); // just a sanity check default values did not change
@@ -483,7 +483,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     public void testHttpRelativePathWithPlainValue() {
         try {
             var kc = getDefaultKeycloakDeployment();
-            kc.getSpec().getServerConfiguration().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, "/foobar"));
+            kc.getSpec().getAdditionalOptions().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, "/foobar"));
             deployKeycloak(k8sclient, kc, true);
 
             var pods = k8sclient
@@ -515,7 +515,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .build();
             k8sclient.secrets().inNamespace(namespace).createOrReplace(httpRelativePathSecret);
 
-            kc.getSpec().getServerConfiguration().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY,
+            kc.getSpec().getAdditionalOptions().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY,
                     new SecretKeySelectorBuilder()
                         .withName(secretName)
                         .withKey(keyName)
