@@ -195,6 +195,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
         entity.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(entity.getTimestamp()));
+        entity.getNotes().put(AuthenticatedClientSessionEntity.USER_SESSION_STARTED_AT_NOTE, String.valueOf(userSession.getStarted()));
 
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(false);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(false);
