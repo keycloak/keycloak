@@ -184,7 +184,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testAttributeValidation);
     }
 
-    private static void failValidationWhenEmptyAttributes(KeycloakSession session) {
+    private static void failValidationWhenEmptyAttributes(KeycloakSession session) throws IOException {
         Map<String, Object> attributes = new HashMap<>();
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         provider.setConfiguration(null);
@@ -226,6 +226,14 @@ public class UserProfileTest extends AbstractUserProfileTest {
             // we should probably avoid this kind of logic and make the test reset the realm to original state
             realm.setRegistrationEmailAsUsername(false);
         }
+
+        UPConfig config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+
+        UPAttribute email = config.getAttribute("email");
+
+        email.setRequired(null);
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
 
         attributes.clear();
         attributes.put(UserModel.USERNAME, "profile-user");
@@ -438,6 +446,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
 
         attributes.put(UserModel.USERNAME, userName);
+        attributes.put(UserModel.EMAIL, "user@keycloak.org");
         attributes.put(UserModel.FIRST_NAME, "Joe");
         attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put("address", "fixed-address");
@@ -457,6 +466,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, String> attributesUpdatedOldValues = new HashMap<>();
         attributesUpdatedOldValues.put(UserModel.FIRST_NAME, "Joe");
         attributesUpdatedOldValues.put(UserModel.LAST_NAME, "Doe");
+        attributesUpdatedOldValues.put(UserModel.EMAIL, "user@keycloak.org");
         
         profile.update((attributeName, userModel, oldValue) -> {
             assertTrue(attributesUpdated.add(attributeName)); 
@@ -856,6 +866,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         provider.setConfiguration(null);
 
         attributes.put(UserModel.USERNAME, "user");
+        attributes.put(UserModel.EMAIL, "user@keycloak.org");
         attributes.put(UserModel.FIRST_NAME, "Joe");
         attributes.put(UserModel.LAST_NAME, "Doe");
 
