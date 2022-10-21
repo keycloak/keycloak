@@ -88,3 +88,90 @@ The `hostname` and `tlsSecret` fields are now optional to align with the Quarkus
 = OLM channel was changed to fast
 
 The default channel of Keycloak Operator Lifecycle Manager was changed to `fast`.
+
+
+= Deprecated methods from data providers and models were removed
+
+Prior to Keycloak 15, there was a clean-up of provider and model interfaces
+where we deprecated some methods. Javadoc of these methods contained
+a corresponding replacement method (see Javadoc of Keycloak 19 release).
+In this release the methods were removed. The following is a list of all
+changed classes.
+
+The most common patterns for deprecating and removing the methods are
+the following.
+
+* Streamification - interfaces now contain only Stream-based methods.
++
+For example in https://github.com/keycloak/keycloak/blob/19.0.3/server-spi/src/main/java/org/keycloak/models/GroupProvider.java[`GroupProvider`] interface
++
+[source,java]
+----
+@Deprecated
+List<GroupModel> getGroups(RealmModel realm);
+----
+was replaced by
++
+[source,java]
+----
+Stream<GroupModel> getGroupsStream(RealmModel realm);
+----
++
+More details on streamification work can be found in
+https://issues.redhat.com/browse/KEYCLOAK-14011[KEYCLOAK-14011].
+
+* Consistent parameter ordering - methods now have strict parameter
+ordering where `RealmModel` is always the first parameter.
++
+For example in https://github.com/keycloak/keycloak/blob/19.0.3/server-spi/src/main/java/org/keycloak/storage/user/UserLookupProvider.java[`UserLookupProvider`] interface
++
+[source,java]
+----
+@Deprecated
+UserModel getUserById(String id, RealmModel realm);
+----
+was replaced by
++
+[source,java]
+----
+UserModel getUserById(RealmModel realm, String id)
+----
+
+== List of changed interfaces
+
+(`o.k.` stands for `org.keycloak.` package)
+
+* `server-spi` module
+** `o.k.credential.CredentialInputUpdater`
+** `o.k.credential.UserCredentialStore`
+** `o.k.models.ClientProvider`
+** `o.k.models.ClientSessionContext`
+** `o.k.models.GroupModel`
+** `o.k.models.GroupProvider`
+** `o.k.models.KeyManager`
+** `o.k.models.KeycloakSessionFactory`
+** `o.k.models.ProtocolMapperContainerModel`
+** `o.k.models.RealmModel`
+** `o.k.models.RealmProvider`
+** `o.k.models.RoleContainerModel`
+** `o.k.models.RoleMapperModel`
+** `o.k.models.RoleModel`
+** `o.k.models.RoleProvider`
+** `o.k.models.ScopeContainerModel`
+** `o.k.models.UserCredentialManager`
+** `o.k.models.UserModel`
+** `o.k.models.UserProvider`
+** `o.k.models.UserSessionProvider`
+** `o.k.models.utils.RoleUtils`
+** `o.k.sessions.AuthenticationSessionProvider`
+** `o.k.storage.client.ClientLookupProvider`
+** `o.k.storage.group.GroupLookupProvider`
+** `o.k.storage.user.UserLookupProvider`
+** `o.k.storage.user.UserQueryProvider`
+* `server-spi-private` module
+** `o.k.events.EventQuery`
+** `o.k.events.admin.AdminEventQuery`
+** `o.k.keys.KeyProvider`
+
+All changes are linked to the following https://github.com/keycloak/keycloak/issues/14720[issue].
+
