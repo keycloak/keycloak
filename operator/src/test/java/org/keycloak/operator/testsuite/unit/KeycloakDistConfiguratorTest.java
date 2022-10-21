@@ -158,7 +158,7 @@ public class KeycloakDistConfiguratorTest {
                 .map(f -> new ValueOrSecret(f, "foo"))
                 .collect(Collectors.toUnmodifiableList());
 
-        keycloak.getSpec().setServerConfiguration(serverConfig);
+        keycloak.getSpec().setAdditionalOptions(serverConfig);
 
         final var expectedFields = expectedValues.keySet();
 

@@ -55,7 +55,7 @@ public class CRSerializationTest {
         assertThat(transactionsSpec.isXaEnabled(), notNullValue());
         assertThat(transactionsSpec.isXaEnabled(), CoreMatchers.is(false));
 
-        List<ValueOrSecret> serverConfiguration = keycloak.getSpec().getServerConfiguration();
+        List<ValueOrSecret> serverConfiguration = keycloak.getSpec().getAdditionalOptions();
 
         assertNotNull(serverConfiguration);
         assertFalse(serverConfiguration.isEmpty());

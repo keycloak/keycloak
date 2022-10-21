@@ -278,10 +278,10 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         var username = new ValueOrSecret("db-username", "postgres");
         var password = new ValueOrSecret("db-password", "testpassword");
 
-        kc.getSpec().getServerConfiguration().remove(username);
-        kc.getSpec().getServerConfiguration().add(username);
-        kc.getSpec().getServerConfiguration().remove(password);
-        kc.getSpec().getServerConfiguration().add(password);
+        kc.getSpec().getAdditionalOptions().remove(username);
+        kc.getSpec().getAdditionalOptions().add(username);
+        kc.getSpec().getAdditionalOptions().remove(password);
+        kc.getSpec().getAdditionalOptions().add(password);
     }
 
     @AfterEach

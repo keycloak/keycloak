@@ -178,7 +178,7 @@ public class KeycloakDistConfigurator {
     protected void assumeFirstClassCitizens(KeycloakStatusBuilder status) {
         final var serverConfigNames = keycloakCR
                 .getSpec()
-                .getServerConfiguration()
+                .getAdditionalOptions()
                 .stream()
                 .map(ValueOrSecret::getName)
                 .collect(Collectors.toSet());
