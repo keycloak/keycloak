@@ -34,6 +34,7 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
 import java.security.KeyPair;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,19 +87,24 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
     public static class OIDCClientData {
 
-        private KeyPair keyPair;
+        private List<OIDCKeyData> keys = new ArrayList<>();
+
         private String oidcRequest;
         private List<String> sectorIdentifierRedirectUris;
-        private String keyType = KeyType.RSA;
-        private String keyAlgorithm;
-        private KeyUse keyUse = KeyUse.SIG;
 
-        public KeyPair getSigningKeyPair() {
-            return keyPair;
+        public List<OIDCKeyData> getKeys() {
+            return keys;
         }
 
-        public void setSigningKeyPair(KeyPair signingKeyPair) {
-            this.keyPair = signingKeyPair;
+        public OIDCKeyData getFirstKey() {
+            return keys.isEmpty() ? null : keys.get(0);
+        }
+
+        public void addKey(OIDCKeyData key, boolean keepExistingKeys) {
+            if (!keepExistingKeys) {
+                this.keys = new ArrayList<>();
+            }
+            this.keys.add(0, key);
         }
 
         public String getOidcRequest() {
@@ -115,6 +121,27 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
         public void setSectorIdentifierRedirectUris(List<String> sectorIdentifierRedirectUris) {
             this.sectorIdentifierRedirectUris = sectorIdentifierRedirectUris;
+        }
+
+    }
+
+    public static class OIDCKeyData {
+
+        private KeyPair keyPair;
+
+        private String keyType = KeyType.RSA;
+        private String keyAlgorithm;
+        private KeyUse keyUse = KeyUse.SIG;
+
+        // Kid will be randomly generated (based on the key hash) if not provided here
+        private String kid;
+
+        public KeyPair getSigningKeyPair() {
+            return keyPair;
+        }
+
+        public void setSigningKeyPair(KeyPair signingKeyPair) {
+            this.keyPair = signingKeyPair;
         }
 
         public String getSigningKeyType() {
@@ -163,6 +190,14 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
         public void setKeyUse(KeyUse keyUse) {
             this.keyUse = keyUse;
+        }
+
+        public String getKid() {
+            return kid;
+        }
+
+        public void setKid(String kid) {
+            this.kid = kid;
         }
     }
 }
