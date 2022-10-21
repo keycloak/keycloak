@@ -181,7 +181,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             }
         }
         catch(Exception e) {
-            logger.errorf("[X509ClientCertificateAuthenticator:authenticate] Exception: %s", e.getMessage());
+            logger.error("[X509ClientCertificateAuthenticator:authenticate] Exception: %s", e);
             context.attempted();
         }
     }

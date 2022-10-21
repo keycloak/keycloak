@@ -39,7 +39,7 @@ import org.wildfly.security.x500.principal.X500AttributePrincipalDecoder;
  */
 public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractorProvider {
 
-    private static final Logger logger = Logger.getLogger(ElytronUserIdentityExtractorProvider.class.getName());
+    private Logger log = Logger.getLogger(this.getClass());
 
     class X500NameRDNExtractorElytronProvider extends X500NameRDNExtractor {
 
@@ -47,8 +47,13 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
         Function<X509Certificate[],Principal> x500Name;
         
         public X500NameRDNExtractorElytronProvider(String attrName, Function<X509Certificate[], Principal> x500Name) {
-            //this.x500NameStyle = BCStyle.INSTANCE.attrNameToOID(attrName);
+            // The OidsUtil fails to map 'EmailAddress', instead 'E' is mapped to the OID.
+            // TODO: Open an issue with wildfly-elytron to include 'EmailAddress' in the oid mapping
+            if(attrName.equals("EmailAddress")) {
+                attrName = "E";
+            }
             this.x500NameStyle = OidsUtil.attributeNameToOid(OidsUtil.Category.RDN, attrName);
+            log.debug("Attribute Name: " + attrName + " X500NameStyle OID: " + x500NameStyle);
             this.x500Name = x500Name;
         }
 
@@ -59,6 +64,7 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                 throw new IllegalArgumentException();
 
                 Principal name = x500Name.apply(certs);
+                log.debug("Principal Name " + name.getName());
                 X500AttributePrincipalDecoder xDecoder = new X500AttributePrincipalDecoder(x500NameStyle);
                 String cn = xDecoder.apply(name);
             
@@ -95,7 +101,7 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
             }
             String subjectName = null;
 
-            logger.info("SubjPrinc " + certs[0].getSubjectX500Principal());
+            log.debug("SubjPrinc " + certs[0].getSubjectX500Principal());
             Collection<List<?>> subjectAlternativeNames;
             try {
                 subjectAlternativeNames = certs[0].getSubjectAlternativeNames();
@@ -109,9 +115,6 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                     Integer nameType = (Integer) sbjAltName.get(0);
     
                     if (nameType == generalName) {
-                        logger.info("sbjAltName Type " + nameType);
-                        logger.info("sbjAltName[1]: " + sbjAltName.get(1));
-
                         Object sbjObj = sbjAltName.get(1);
 
                         switch (nameType) {
@@ -126,12 +129,12 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                             boolean upnOidFound = false;
                             while (derDecoder.hasNextElement() && !upnOidFound) {
                                 int asn1Type = derDecoder.peekType();
-                                logger.info("ASN.1 Type: " + derDecoder.peekType());
+                                log.debug("ASN.1 Type: " + derDecoder.peekType());
                                 
                                 switch (asn1Type) {
                                     case ASN1.OBJECT_IDENTIFIER_TYPE:
                                         String oid = derDecoder.decodeObjectIdentifier();
-                                        logger.info("OID: " + oid);
+                                        log.info("OID: " + oid);
                                         if(UPN_OID.equals(oid)) {
                                             derDecoder.decodeImplicit(160);
                                             byte[] sb = derDecoder.drainElementValue();
@@ -159,15 +162,14 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                                 
 
                             }
-                            logger.info("Subject Alt Name: " + subjectName);
+                            log.debug("Subject Alt Name: " + subjectName);
                         }
     
                     }
     
                 }
             } catch (CertificateParsingException | UnsupportedEncodingException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error("Failed to parse Subject Name:",e);
             }
 
             return subjectName;
