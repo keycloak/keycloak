@@ -28,11 +28,10 @@ const Permissions = ({ name }: { name: string }) => {
                   const option = "user";
                   const changedValue = value.includes(option)
                     ? value.filter((item: string) => item !== option)
-                    : [option];
+                    : [...value, option];
 
                   onChange(changedValue);
                 }}
-                isDisabled={value.includes("admin")}
               />
             </GridItem>
             <GridItem lg={8} sm={6}>
@@ -46,7 +45,7 @@ const Permissions = ({ name }: { name: string }) => {
                   const option = "admin";
                   const changedValue = value.includes(option)
                     ? value.filter((item: string) => item !== option)
-                    : ["user", option];
+                    : [...value, option];
 
                   onChange(changedValue);
                 }}
