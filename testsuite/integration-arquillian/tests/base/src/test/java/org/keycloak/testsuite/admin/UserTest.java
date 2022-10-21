@@ -262,6 +262,23 @@ public class UserTest extends AbstractAdminTest {
         }
     }
 
+    @Test
+    public void createDuplicatedNameAssociatedWithEmail() {
+        createUser();
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1@localhost");
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User name is already associated with an existing user", error.getErrorMessage());
+        }
+
+    }
+
     //KEYCLOAK-14611
     @Test
     public void createDuplicateEmailWithExistingDuplicates() {

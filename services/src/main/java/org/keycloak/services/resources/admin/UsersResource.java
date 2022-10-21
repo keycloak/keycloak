@@ -134,6 +134,12 @@ public class UsersResource {
         if (session.users().getUserByUsername(realm, username) != null) {
             return ErrorResponse.exists("User exists with same username");
         }
+
+        // Check if username is already used as email by other user
+        if (session.users().getUserByEmail(realm, username) != null){
+            return ErrorResponse.exists("User name is already associated with an existing user");
+        }
+
         if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
             try {
                 if(session.users().getUserByEmail(realm, rep.getEmail()) != null) {
