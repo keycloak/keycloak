@@ -38,12 +38,14 @@ metadata:
 spec:
   instances: 1
   image: quay.io/my-company/my-keycloak:latest
-  hostname: example.com
-  tlsSecret: example-tls-secret
+  http:
+    tlsSecret: example-tls-secret
+  hostname:
+    hostname: test.keycloak.org
 ----
 
 .Note:
 [NOTE]
-Using custom images, every build time configuration passed through the `additionalOptions` key will be ignored.
+Using custom images, every build time option passed either through a dedicated field or the `additionalOptions` key will be ignored.
 
 </@tmpl.guide>
