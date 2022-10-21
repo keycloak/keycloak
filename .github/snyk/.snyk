@@ -27,7 +27,7 @@ ignore:
           according to the Netty team, the fix should be available on Netty 5.
           The expiry date was set as a reminder for us to upgrade, once they
           provide the fix.
-        expires: 2022-05-31T00:00:00.000Z
+        expires: 2023-12-31T00:00:00.000Z
   SNYK-JAVA-ORGWILDFLYSECURITY-1316682:
     - "*":
         reason: >
@@ -58,7 +58,24 @@ ignore:
           Keycloak is no longer vulnerable. The issue was fixed on Keycloak 19.0.2
           More details:
             - https://github.com/keycloak/keycloak/security/advisories/GHSA-wf7g-7h6h-678v   
-            - https://access.redhat.com/security/cve/CVE-2022-2668                           
+            - https://access.redhat.com/security/cve/CVE-2022-2668
+  SNYK-JAVA-COMFASTERXMLJACKSONCORE-3038426:
+    - "*":
+        reason: >
+          On latest releases of jackson-databind (2.14.0-rc1 or higher) CVE-2022-42003 
+          is already fixed. Keycloak is not vulnerable to the CVE mentioned. Until 2.14.0 
+          release is out, we should be able to temporarily ignore those alerts from dependency 
+          scanners.
+          More details:
+            - https://github.com/keycloak/keycloak/issues/14785
+        expires: 2022-11-31T00:00:00.000Z
+  SNYK-JAVA-IOSMALLRYE-2993220:
+    - "*":
+        reason: >
+          Keycloak is not vulnerable. The issue was fixed on Quarkus 2.7.5
+          More details:
+            - https://github.com/keycloak/keycloak/issues/14993         
+
   # License warnings
   snyk:lic:maven:org.eclipse.sisu:org.eclipse.sisu.plexus:EPL-1.0:
     - "*":

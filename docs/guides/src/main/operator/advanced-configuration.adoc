@@ -12,7 +12,7 @@ In this guide, you'll learn how to configure your Keycloak deployment using adva
 
 === Server Configuration details
 
-The `serverConfiguration` field of the Keycloak CR allows to pass to Keycloak any available configuration in the form of key-value pairs.
+The `additionalOptions` field of the Keycloak CR allows to pass to Keycloak any available configuration in the form of key-value pairs.
 For all the available configuration options, refer to <@links.server id="all-config"/>.
 
 The values can be expressed as plain text strings or Kubernetes Secret references.
@@ -26,7 +26,7 @@ metadata:
   name: example-kc
 spec:
   ...
-  serverConfiguration:
+  additionalOptions:
     - name: db
       value: postgres # plain text value
     - name: db-url-host
@@ -43,7 +43,7 @@ spec:
 
 === Secret References
 
-A Secret Reference can be either a value in `serverConfiguration` or the `tlsSecret`.
+A Secret Reference can be either a value in `additionalOptions` or the `tlsSecret`.
 
 When specifying a Secret Reference, you have to make sure that a Secret containing the referenced keys is present in the same namespace as the CR referencing it.
 Along with the Keycloak Server Deployment, the operator adds special labels to the referenced Secrets in order to watch for changes.

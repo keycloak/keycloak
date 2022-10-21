@@ -37,7 +37,6 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.google.common.collect.ImmutableMap;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -77,7 +76,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.ClaimsParameterTokenMapper;
 import org.keycloak.protocol.oidc.mappers.ClaimsParameterWithValueIdTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
@@ -124,11 +122,11 @@ import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFac
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationExecutorFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
@@ -138,11 +136,9 @@ import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseException
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -1385,6 +1381,25 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
+        // check whether client_id exists in both query parameter and request object
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.setClientId(null);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // check whether response_type exists in both query parameter and request object
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.setResponseType(null);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // Check scope required
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.setScope(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
         oauth.scope(null);
         oauth.openid(false);
@@ -2730,6 +2745,252 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(400, tokenResponse.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
         assertEquals("Exception thrown intentionally", tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForDeviceTokenResponse() throws Exception {
+        // Device Authorization Request from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP);
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+
+        Assert.assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getDeviceCode());
+        assertNotNull(response.getUserCode());
+        assertNotNull(response.getVerificationUri());
+        assertNotNull(response.getVerificationUriComplete());
+
+        // Verify user code from verification page using browser
+        openVerificationPage(response.getVerificationUri());
+        verificationPage.assertCurrent();
+        verificationPage.submit(response.getUserCode());
+
+        loginPage.assertCurrent();
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+        grantPage.accept();
+
+        verificationPage.assertApprovedPage();
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.DEVICE_TOKEN_RESPONSE)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Token request from device
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret", response.getDeviceCode());
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals(ClientPolicyEvent.DEVICE_TOKEN_RESPONSE.toString(), tokenResponse.getError());
+        assertEquals("Exception thrown intentionally", tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForTokenResponse() throws Exception {
+        // register a confidential client
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+        });
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.TOKEN_RESPONSE)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Primera Plitica", Boolean.TRUE)
+                        .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
+                                createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.clientId(clientId);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        events.expectLogin().client(clientId).assertEvent();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ClientPolicyEvent.TOKEN_RESPONSE.toString(), response.getError());
+        assertEquals("Exception thrown intentionally", response.getErrorDescription());
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForTokenRefreshResponse() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+        });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        oauth.clientId(clientId);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+
+        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        assertEquals(200, res.getStatusCode());
+        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SuppressRefreshTokenRotationExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String refreshTokenString = res.getRefreshToken();
+        OAuthClient.AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
+        assertEquals(null, accessTokenResponseRefreshed.getRefreshToken());
+
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList("other" + SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
+        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(accessTokenResponseRefreshed.getRefreshToken());
+        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
+        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
+        assertEquals(findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId(), refreshedRefreshToken.getSubject());
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForServiceAccountTokenRequeponse() throws Exception {
+        String clientId = "service-account-app";
+        String clientSecret = "app-secret";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.FALSE);
+            clientRep.setImplicitFlowEnabled(Boolean.FALSE);
+            clientRep.setServiceAccountsEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+        });
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_RESPONSE)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
+                                createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList("offline_access", "microprofile-jwt")))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+
+        String origClientId = oauth.getClientId();
+        oauth.clientId("service-account-app");
+        oauth.scope("offline_access");
+        try {
+            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("app-secret");
+            assertEquals(400, response.getStatusCode());
+            assertEquals(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_RESPONSE.toString(), response.getError());
+            assertEquals("Exception thrown intentionally", response.getErrorDescription());
+        } finally {
+            oauth.clientId(origClientId);
+        }
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForResourceOwnerPasswordCredentialsResponse() throws Exception {
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+        });
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_RESPONSE)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Porisii desu", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.clientId(clientId);
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD, null);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_RESPONSE.toString(), response.getError());
+        assertEquals("Exception thrown intentionally", response.getErrorDescription());
     }
 
     @Test

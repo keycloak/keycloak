@@ -1137,7 +1137,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         final String REQUIRED_URI = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/applications";
         final String REDIRECT_URI = getAccountRedirectUrl() + "?path=applications";
         final String CLIENT_ID = "account";
-        final String ACCOUNT_MANAGEMENT_TITLE = getProjectName() + " Account Management";
+        final String ACCOUNT_MANAGEMENT_TITLE = "Keycloak Account Management";
 
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));

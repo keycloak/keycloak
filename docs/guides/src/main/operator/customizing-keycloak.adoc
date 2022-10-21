@@ -44,6 +44,6 @@ spec:
 
 .Note:
 [NOTE]
-Using custom images, every build time configuration passed through the `serverConfiguration` key will be ignored.
+Using custom images, every build time configuration passed through the `additionalOptions` key will be ignored.
 
 </@tmpl.guide>

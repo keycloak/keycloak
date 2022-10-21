@@ -265,6 +265,11 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         updateAccountInformation();
     }
 
+    protected void logInAsUserInIDPForFirstTimeAndAssertSuccess() {
+        logInAsUserInIDPForFirstTime();
+        assertLoggedInAccountManagement();
+    }
+
     protected void updateAccountInformation() {
         waitForPage(driver, "update account information", false);
 
@@ -412,7 +417,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void waitForAccountManagementTitle() {
-        final String title = getProjectName().toLowerCase() + " account management";
+        final String title = "Keycloak account management";
         waitForPage(driver, title, true);
     }
 

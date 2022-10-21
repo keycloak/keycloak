@@ -44,6 +44,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceTokenRequestContext;
+import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceTokenResponseContext;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.services.CorsErrorResponseException;
@@ -341,6 +342,6 @@ public class DeviceGrantType {
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, deviceCodeModel.getNonce());
 
-        return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, false);
+        return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, false, s -> {return new DeviceTokenResponseContext(deviceCodeModel, formParams, clientSession, s);});
     }
 }

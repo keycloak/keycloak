@@ -36,10 +36,9 @@
             Their names should match the name used by Quarkus BOM and the versions are automatically set when running the 'set-quarkus-version.sh' script.
         -->
         <resteasy.version>4.7.7.Final</resteasy.version>
-        <jackson-bom.version>2.13.3</jackson-bom.version>
-        <hibernate-orm.version>5.6.10.Final</hibernate-orm.version>
+        <hibernate-orm.version>5.6.12.Final</hibernate-orm.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
-        <postgresql-jdbc.version>42.4.2</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.5.0</postgresql-jdbc.version>
         <wildfly-common.version>1.5.4.Final-format-001</wildfly-common.version>
         <wildfly-elytron.version>1.20.0.Final</wildfly-elytron.version>
         <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
@@ -48,8 +47,6 @@
             We need to override certain dependencies from the parent POM.
             TODO: remove these properties after changing the parent POM to use the same property names used by Quarkus BOM.
         -->
-        <jackson.version>${jackson-bom.version}</jackson.version>
-        <jackson.databind.version>${jackson-bom.version}</jackson.databind.version>
         <hibernate.core.version>${hibernate-orm.version}</hibernate.core.version>
         <mysql.driver.version>${mysql-jdbc.version}</mysql.driver.version>
         <postgresql.version>${postgresql-jdbc.version}</postgresql.version>

@@ -36,7 +36,9 @@ import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
+import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.user.MapUserConsentEntity;
 
@@ -52,7 +54,7 @@ import org.keycloak.models.map.user.MapUserConsentEntity;
                 @UniqueConstraint(columnNames = {"clientId"})
         })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUserConsentEntity, JpaChildEntity<JpaUserEntity> {
+public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUserConsentEntity, JpaRootEntity, JpaChildEntity<JpaUserEntity> {
 
     @Id
     @Column
@@ -87,11 +89,13 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
         return metadata != null;
     }
 
+    @Override
     public Integer getEntityVersion() {
         if (isMetadataInitialized()) return this.metadata.getEntityVersion();
         return entityVersion;
     }
 
+    @Override
     public void setEntityVersion(Integer version) {
         this.metadata.setEntityVersion(version);
     }
@@ -103,6 +107,21 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
 
     public void setParent(final JpaUserEntity root) {
         this.root = root;
+    }
+
+    @Override
+    public String getId() {
+        return id == null ? null : id.toString();
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id == null ? null : UUID.fromString(id);
+    }
+
+    @Override
+    public Integer getCurrentSchemaVersion() {
+        return Constants.CURRENT_SCHEMA_VERSION_USER_CONSENT;
     }
 
     @Override

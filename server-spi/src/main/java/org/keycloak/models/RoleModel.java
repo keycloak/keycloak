@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,18 @@ public interface RoleModel {
         public static final SearchableModelField<RoleModel> DESCRIPTION         = new SearchableModelField<>("description", String.class);
         public static final SearchableModelField<RoleModel> IS_CLIENT_ROLE      = new SearchableModelField<>("isClientRole", Boolean.class);
         public static final SearchableModelField<RoleModel> COMPOSITE_ROLE      = new SearchableModelField<>("compositeRoles", Boolean.class);
+    }
+
+    interface RoleNameChangeEvent extends ProviderEvent {
+        RealmModel getRealm();
+        String getNewName();
+        String getPreviousName();
+
+        /**
+         * @return the Client ID of the client, for a client role; {@code null}, for a realm role
+         */
+        String getClientId();
+        KeycloakSession getKeycloakSession();
     }
 
     String getName();

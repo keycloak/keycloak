@@ -1150,7 +1150,7 @@ public class SamlService extends AuthorizationEndpointBase {
             return emptyArtifactResponseMessage(artifactResolveMessage, null);
         }
 
-        AuthenticatedClientSessionModel clientSessionModel = userSessionModel.getAuthenticatedClientSessions().get(sessionMapping.get(SamlProtocol.CLIENT_SESSION_ID));
+        AuthenticatedClientSessionModel clientSessionModel = userSessionModel.getAuthenticatedClientSessionByClient(sessionMapping.get(SamlProtocol.CLIENT_SESSION_ID));
         if (clientSessionModel == null) {
             logger.errorf("ClientSession with id: %s, that corresponds to artifact: %s and UserSession: %s does not exist.",
                     sessionMapping.get(SamlProtocol.CLIENT_SESSION_ID), artifact, sessionMapping.get(SamlProtocol.USER_SESSION_ID));

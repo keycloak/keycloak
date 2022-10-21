@@ -3027,17 +3027,17 @@ module.controller('ClientClientScopesEvaluateCtrl', function($scope, Realm, User
         query: function (query) {
             var data = {results: []};
             if ('' == query.term.trim()) {
-                query.callback(data);
+                query.callback({ results: [] });
                 return;
             }
-            User.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
-                data.results = response;
-                query.callback(data);
+            User.query({ realm: $route.current.params.realm, search: query.term.trim(), max: 20 }, function (response) {
+              query.callback({
+                results: response.map(function (user) {
+                  user.text = user.username;
+                  return user;
+                })
+              });
             });
-        },
-        formatResult: function(object, container, query) {
-            object.text = object.username;
-            return object.username;
         }
     };
 

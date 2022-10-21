@@ -55,4 +55,17 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="client-attributes-string-accomodation-fixed">
+        <addColumn tableName="CLIENT_ATTRIBUTES">
+            <column name="VALUE_NEW" type="NCLOB" />
+        </addColumn>
+
+        <update tableName="CLIENT_ATTRIBUTES">
+            <column name="VALUE_NEW" valueComputed="VALUE"/>
+        </update>
+
+        <dropColumn tableName="CLIENT_ATTRIBUTES" columnName="VALUE"/>
+        <renameColumn tableName="CLIENT_ATTRIBUTES" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
+    </changeSet>
+
 </databaseChangeLog>

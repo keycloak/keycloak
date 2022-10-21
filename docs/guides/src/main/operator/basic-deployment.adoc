@@ -120,7 +120,7 @@ metadata:
   name: example-kc
 spec:
   instances: 1
-  serverConfiguration:
+  additionalOptions:
     - name: db
       value: postgres
     - name: db-url-host
@@ -164,7 +164,7 @@ CONDITION: RollingUpdate
 === Accessing the Keycloak Deployment
 
 The Keycloak deployment is, by default, exposed through a basic nginx ingress and it will be accessible through the provided hostname.
-If the default ingress doesn't fit your use-case you can disable it by setting `disableDefaultIngress: true`:
+If the default ingress doesn't fit your use-case, disable it by setting `ingress` spec with `enabled` property to `false` value:
 
 [source,bash]
 ----
@@ -175,7 +175,8 @@ metadata:
   name: example-kc
 spec:
     ...
-    disableDefaultIngress: true
+    ingress:
+      enabled: false
 EOF
 kubectl apply -f example-kc.yaml
 ----

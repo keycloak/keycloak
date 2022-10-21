@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
@@ -124,6 +125,7 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
 
                 @Override
                 public void setUsername(String innerUsername) {
+                    innerUsername = KeycloakModelUtils.isUsernameCaseSensitive(realm) ? innerUsername : innerUsername.toLowerCase();
                     if (! Objects.equals(innerUsername, username.toLowerCase())) {
                         throw new RuntimeException("Unsupported");
                     }

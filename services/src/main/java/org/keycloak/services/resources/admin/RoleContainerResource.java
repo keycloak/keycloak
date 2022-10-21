@@ -269,7 +269,7 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role");
         }
         try {
-            updateRole(rep, role);
+            updateRole(rep, role, realm, session);
 
             if (role.isClientRole()) {
                 adminEvent.resource(ResourceType.CLIENT_ROLE);

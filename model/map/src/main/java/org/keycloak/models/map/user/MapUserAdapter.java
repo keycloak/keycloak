@@ -36,7 +36,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-
 public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
     public MapUserAdapter(KeycloakSession session, RealmModel realm, MapUserEntity entity) {
         super(session, realm, entity);
@@ -47,9 +46,12 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
         return entity.getId();
     }
 
+    /**
+     * @return username. Letter case is determined by a realm setting.
+     */
     @Override
     public String getUsername() {
-        return entity.getUsername();
+        return KeycloakModelUtils.isUsernameCaseSensitive(realm) ? entity.getUsername() : entity.getUsername().toLowerCase();
     }
 
     @Override

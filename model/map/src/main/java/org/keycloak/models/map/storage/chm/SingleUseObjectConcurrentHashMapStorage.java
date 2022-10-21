@@ -17,7 +17,7 @@
 
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
@@ -32,31 +32,28 @@ import java.util.stream.Stream;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity, M> extends ConcurrentHashMapStorage<K, MapSingleUseObjectEntity, ActionTokenValueModel> {
+public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity, M> extends ConcurrentHashMapStorage<K, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
 
     public SingleUseObjectConcurrentHashMapStorage(StringKeyConverter<K> keyConverter, DeepCloner cloner) {
-        super(ActionTokenValueModel.class, keyConverter, cloner);
+        super(SingleUseObjectValueModel.class, keyConverter, cloner);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public MapKeycloakTransaction<MapSingleUseObjectEntity, ActionTokenValueModel> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction<MapSingleUseObjectEntity, ActionTokenValueModel> actionTokenTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
+    public MapKeycloakTransaction<MapSingleUseObjectEntity, SingleUseObjectValueModel> createTransaction(KeycloakSession session) {
+        MapKeycloakTransaction<MapSingleUseObjectEntity, SingleUseObjectValueModel> singleUseObjectTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
 
-        if (actionTokenTransaction == null) {
-            actionTokenTransaction = new SingleUseObjectKeycloakTransaction(this, keyConverter, cloner, fieldPredicates);
-            session.setAttribute("map-transaction-" + hashCode(), actionTokenTransaction);
+        if (singleUseObjectTransaction == null) {
+            singleUseObjectTransaction = new SingleUseObjectKeycloakTransaction(this, keyConverter, cloner, fieldPredicates);
+            session.setAttribute("map-transaction-" + hashCode(), singleUseObjectTransaction);
         }
 
-        return actionTokenTransaction;
+        return singleUseObjectTransaction;
     }
 
     @Override
     public MapSingleUseObjectEntity create(MapSingleUseObjectEntity value) {
         if (value.getId() == null) {
-            if (value.getUserId() != null && value.getActionId() != null && value.getActionVerificationNonce() != null) {
-                value.setId(value.getUserId() + ":" + value.getActionId() + ":" + value.getActionVerificationNonce());
-            }
             if (value.getObjectKey() != null) {
                 value.setId(value.getObjectKey());
             }
@@ -65,8 +62,8 @@ public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity
     }
 
     @Override
-    public Stream<MapSingleUseObjectEntity> read(QueryParameters<ActionTokenValueModel> queryParameters) {
-        DefaultModelCriteria<ActionTokenValueModel> criteria = queryParameters.getModelCriteriaBuilder();
+    public Stream<MapSingleUseObjectEntity> read(QueryParameters<SingleUseObjectValueModel> queryParameters) {
+        DefaultModelCriteria<SingleUseObjectValueModel> criteria = queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
             return Stream.empty();

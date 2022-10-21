@@ -42,7 +42,8 @@ public final class Constants {
     public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
         "health-enabled","true",
         "cache", "ispn",
-        "cache-stack", "kubernetes"
+        "cache-stack", "kubernetes",
+        "proxy", "passthrough"
     );
 
     public static final Integer KEYCLOAK_HTTP_PORT = 8080;

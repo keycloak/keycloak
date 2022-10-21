@@ -52,6 +52,7 @@ import org.keycloak.models.map.user.MapUserConsentEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 
@@ -64,7 +65,8 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
 @Entity
 @Table(name = "kc_user",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"realmId", "username"}),
+                // if same username it can differ only in usernameWithCase
+                @UniqueConstraint(columnNames = {"realmId", "username", "usernameWithCase"}),
                 @UniqueConstraint(columnNames = {"realmId", "emailConstraint"})
         })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
@@ -98,7 +100,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
-    private String usernameLowerCase;
+    private String usernameWithCase;
 
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
@@ -167,13 +169,15 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
      * It is used to select user without metadata(json) field.
      */
     public JpaUserEntity(final UUID id, final int version, final Integer entityVersion, final String realmId, final String username,
-                         final String firstName, final String lastName, final String email, final String emailConstraint,
-                         final String federationLink, final Boolean enabled, final Boolean emailVerified, final Long timestamp) {
+                         final String usernameWithCase, final String firstName, final String lastName, final String email, 
+                         final String emailConstraint, final String federationLink, final Boolean enabled, final Boolean emailVerified, 
+                         final Long timestamp) {
         this.id = id;
         this.version = version;
         this.entityVersion = entityVersion;
         this.realmId = realmId;
         this.username = username;
+        this.usernameWithCase = usernameWithCase;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -232,16 +236,20 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
         this.metadata.setRealmId(realmId);
     }
 
+    /**
+     * @return User's username with respecting letter case.
+     */
     @Override
     public String getUsername() {
-        if (this.isMetadataInitialized()) return this.metadata.getUsername();
-        return this.username;
+        if (this.isMetadataInitialized()) return this.metadata.getUsernameWithCase();
+        //entities with entityVersion 1 the usernameWithCase might not be filled yet, therefore there is tha fallback to username field
+        return this.usernameWithCase == null ? this.username : this.usernameWithCase;
     }
 
     @Override
     public void setUsername(String username) {
-        this.metadata.setUsername(username);
-        this.metadata.setUsernameLowerCase(username);
+        this.metadata.setUsername(KeycloakModelUtils.toLowerCaseSafe(username));
+        this.metadata.setUsernameWithCase(username);
     }
 
     @Override

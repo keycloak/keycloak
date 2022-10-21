@@ -23,9 +23,7 @@
         -->
         <resteasy.version>4.7.7.Final</resteasy.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <jackson.version>2.13.3</jackson.version>
-        <jackson.databind.version>2.13.3</jackson.databind.version>
-        <kubernetes-client.version>5.12.3</kubernetes-client.version>
+        <kubernetes-client.version>5.12.4</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -34,8 +32,8 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>4.0.1</quarkus.operator.sdk.version>
-        <quarkus.version>2.12.2.Final</quarkus.version>
+        <quarkus.operator.sdk.version>4.0.4</quarkus.operator.sdk.version>
+        <quarkus.version>2.13.3.Final</quarkus.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
         <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi8/openjdk-11-runtime</quarkus.jib.base-jvm-image>
     </properties>

@@ -450,7 +450,7 @@ public class ClientTest extends AbstractAdminTest {
         getCleanup().addClientUuid(id);
         response.close();
         UserRepresentation userRep = realm.clients().get(id).getServiceAccountUser();
-        MatcherAssert.assertThat("service-account-serviceclient", Matchers.equalToIgnoringCase(userRep.getUsername()));
+        MatcherAssert.assertThat("service-account-serviceclient", Matchers.equalTo(userRep.getUsername()));
         // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
         assertNull(userRep.getEmail());
     }

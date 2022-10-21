@@ -28,7 +28,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.controllers.KeycloakService;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecUnsupported;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.util.stream.Collectors;
 
@@ -36,7 +36,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
-import static org.keycloak.operator.controllers.KeycloakDeployment.getEnvVarName;
+import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getDefaultKeycloakDeployment;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
@@ -85,7 +85,7 @@ public class RealmImportTest extends BaseOperatorTest {
                 .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("my-empty-secret").build())
                 .endSpec()
                 .build();
-        kc.getSpec().setUnsupported(new KeycloakSpecUnsupported(podTemplate));
+        kc.getSpec().setUnsupported(new UnsupportedSpec(podTemplate));
         deployKeycloak(k8sclient, kc, false);
 
         // Act
@@ -118,8 +118,8 @@ public class RealmImportTest extends BaseOperatorTest {
         var job = k8sclient.batch().v1().jobs().inNamespace(namespace).withName("example-count0-kc").get();
         assertThat(job.getSpec().getTemplate().getMetadata().getLabels().get("app")).isEqualTo("keycloak-realm-import");
         var envvars = job.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        assertThat(envvars.stream().filter(e -> e.getName().equals(getEnvVarName("cache"))).findAny().get().getValue()).isEqualTo("local");
-        assertThat(envvars.stream().filter(e -> e.getName().equals(getEnvVarName("health-enabled"))).findAny().get().getValue()).isEqualTo("false");
+        assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("cache"))).findAny().get().getValue()).isEqualTo("local");
+        assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("health-enabled"))).findAny().get().getValue()).isEqualTo("false");
         assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().size()).isEqualTo(1);
         assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().get(0).getName()).isEqualTo("my-empty-secret");
 
@@ -146,7 +146,7 @@ public class RealmImportTest extends BaseOperatorTest {
         keycloak.getSpec().setImage(customImage);
         // Removing the Database so that a subsequent build will by default act on h2
         // TODO: uncomment the following line after resolution of: https://github.com/keycloak/keycloak/issues/11767
-        // keycloak.getSpec().getServerConfiguration().removeIf(sc -> sc.getName().equals("db"));
+        // keycloak.getSpec().getAdditionalOptions().removeIf(sc -> sc.getName().equals("db"));
         deployKeycloak(k8sclient, keycloak, false);
 
         // Act

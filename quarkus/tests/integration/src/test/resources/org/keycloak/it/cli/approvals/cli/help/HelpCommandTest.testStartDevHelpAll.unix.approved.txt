@@ -32,9 +32,6 @@ Storage (Experimental):
 
 --storage <type>     Experimental: Sets the default storage mechanism for all areas. Possible
                        values are: jpa, chm, hotrod.
---storage-area-action-token <type>
-                     Experimental: Sets a storage mechanism for action tokens. Possible values are:
-                       jpa, chm, hotrod.
 --storage-area-auth-session <type>
                      Experimental: Sets a storage mechanism for authentication sessions. Possible
                        values are: jpa, chm, hotrod.
@@ -132,14 +129,14 @@ Feature:
                        docker, impersonation, openshift-integration, scripts, token-exchange,
                        web-authn, client-policies, ciba, map-storage, par,
                        declarative-user-profile, dynamic-scopes, client-secret-rotation,
-                       step-up-authentication, recovery-codes, update-email, preview.
+                       step-up-authentication, recovery-codes, update-email, js-adapter, preview.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: authorization,
                        account2, account-api, admin-fine-grained-authz, admin-api, admin, admin2,
                        docker, impersonation, openshift-integration, scripts, token-exchange,
                        web-authn, client-policies, ciba, map-storage, par,
                        declarative-user-profile, dynamic-scopes, client-secret-rotation,
-                       step-up-authentication, recovery-codes, update-email, preview.
+                       step-up-authentication, recovery-codes, update-email, js-adapter, preview.
 
 Hostname:
 

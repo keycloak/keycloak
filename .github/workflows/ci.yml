@@ -83,8 +83,8 @@ jobs:
           fi
 
       - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        uses: runforesight/foresight-test-kit-action@v1.2.1
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -173,8 +173,8 @@ jobs:
           fi
 
       - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        uses: runforesight/foresight-test-kit-action@v1.2.1
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -257,8 +257,79 @@ jobs:
           exit $TEST_RESULT
 
       - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        uses: runforesight/foresight-test-kit-action@v1.2.1
+        if: always() && github.repository == 'keycloak/keycloak'
+        with:
+          api_key: ${{ secrets.FORESIGHT_API_KEY }}
+          test_format: JUNIT
+          test_framework: JUNIT
+          test_path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+
+      - name: Base test reports
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}
+          retention-days: 14
+          path: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip
+          if-no-files-found: ignore
+
+  test-fips:
+    name: Base testsuite (fips)
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        server: ['bcfips-nonapproved-pkcs12']
+        tests: ['group1']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: cache-1-${{ runner.os }}-m2
+
+      - name: Download built keycloak
+        id: download-keycloak
+        uses: actions/download-artifact@v3
+        with:
+          path: ~/.m2/repository/org/keycloak/
+          name: keycloak-artifacts.zip
+
+      # - name: List M2 repo
+      #   run: |
+      #     find ~ -name *dist*.zip
+      #     ls -lR ~/.m2/repository
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+      - name: Update maven settings
+        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+      - name: Prepare quarkus distribution with BCFIPS
+        run: ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
+      - name: Run base tests
+        run: |
+          declare -A PARAMS TESTGROUP
+          PARAMS["bcfips-nonapproved-pkcs12"]="-Pauth-server-quarkus,auth-server-fips140-2"
+          TESTGROUP["group1"]="-Dtest=org.keycloak.testsuite.forms.**"   # Tests in the package "forms"
+          
+          ./mvnw clean install -nsu -B ${PARAMS["${{ matrix.server }}"]} ${TESTGROUP["${{ matrix.tests }}"]} -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+          
+          TEST_RESULT=${PIPESTATUS[0]}
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip -@
+          exit $TEST_RESULT
+
+      - name: Analyze Test and/or Coverage Results
+        uses: runforesight/foresight-test-kit-action@v1.2.1
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -353,8 +424,8 @@ jobs:
           exit $TEST_RESULT
 
       - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        uses: runforesight/foresight-test-kit-action@v1.2.1
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -413,8 +484,8 @@ jobs:
           exit $TEST_RESULT
 
       - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        uses: runforesight/foresight-test-kit-action@v1.2.1
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
@@ -481,8 +552,8 @@ jobs:
           exit $TEST_RESULT
 
       - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1
-        if: ( github.repository == 'keycloak/keycloak' ) && ( github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' ) && ( success() || failure() )
+        uses: runforesight/foresight-test-kit-action@v1.2.1
+        if: always() && github.repository == 'keycloak/keycloak'
         with:
           api_key: ${{ secrets.FORESIGHT_API_KEY }}
           test_format: JUNIT
