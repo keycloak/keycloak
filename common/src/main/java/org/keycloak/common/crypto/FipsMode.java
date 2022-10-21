@@ -1,9 +1,9 @@
 package org.keycloak.common.crypto;
 
 public enum FipsMode {
-    enabled("org.keycloak.crypto.fips.FIPS1402Provider"),
-    strict("org.keycloak.crypto.fips.Fips1402StrictCryptoProvider"),
-    disabled("org.keycloak.crypto.def.DefaultCryptoProvider");
+    enabled("org.keycloak.crypto.elytron.WildFlyElytronProvider"),
+    strict("org.keycloak.crypto.elytron.WildFlyElytronProvider"),
+    disabled("org.keycloak.crypto.elytron.WildFlyElytronProvider");
 
     private String providerClassName;
 
