@@ -4,7 +4,7 @@ metadata:
   name: example-podtemplate
 spec:
   instances: 1
-  serverConfiguration:
+  additionalOptions:
     - name: db
       value: postgres
     - name: db-url-host

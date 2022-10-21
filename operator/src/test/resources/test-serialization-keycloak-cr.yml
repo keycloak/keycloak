@@ -5,7 +5,7 @@ metadata:
 spec:
   instances: 3
   image: my-image
-  serverConfiguration:
+  additionalOptions:
     - name: key1
       value: value1
     - name: features

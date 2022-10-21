@@ -44,7 +44,7 @@ public class KeycloakSpec {
 
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
-    private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
+    private List<ValueOrSecret> additionalOptions; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
     @JsonProperty("http")
     @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
@@ -156,14 +156,14 @@ public class KeycloakSpec {
         this.imagePullSecrets = imagePullSecrets;
     }
 
-    public List<ValueOrSecret> getServerConfiguration() {
-        if (serverConfiguration == null) {
-            serverConfiguration = new ArrayList<>();
+    public List<ValueOrSecret> getAdditionalOptions() {
+        if (this.additionalOptions == null) {
+            this.additionalOptions = new ArrayList<>();
         }
-        return serverConfiguration;
+        return additionalOptions;
     }
 
-    public void setServerConfiguration(List<ValueOrSecret> serverConfiguration) {
-        this.serverConfiguration = serverConfiguration;
+    public void setAdditionalOptions(List<ValueOrSecret> additionalOptions) {
+        this.additionalOptions = additionalOptions;
     }
 }
