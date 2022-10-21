@@ -120,21 +120,19 @@ metadata:
   name: example-kc
 spec:
   instances: 1
-  additionalOptions:
-    - name: db
-      value: postgres
-    - name: db-url-host
-      value: postgres-db
-    - name: db-username
-      secret:
-        name: keycloak-db-secret
-        key: username
-    - name: db-password
-      secret:
-        name: keycloak-db-secret
-        key: password
-  hostname: test.keycloak.org
-  tlsSecret: example-tls-secret
+  db:
+    vendor: postgres
+    host: postgres-db
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  http:
+    tlsSecret: example-tls-secret
+  hostname:
+    hostname: test.keycloak.org
 EOF
 kubectl apply -f example-kc.yaml
 ----
@@ -163,7 +161,7 @@ CONDITION: RollingUpdate
 
 === Accessing the Keycloak Deployment
 
-The Keycloak deployment is, by default, exposed through a basic nginx ingress and it will be accessible through the provided hostname.
+The Keycloak deployment is, by default, exposed through a basic Ingress and it will be accessible through the provided hostname.
 If the default ingress doesn't fit your use-case, disable it by setting `ingress` spec with `enabled` property to `false` value:
 
 [source,bash]
