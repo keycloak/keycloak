@@ -1951,7 +1951,6 @@
         <profile>
             <id>operator</id>
             <activation>
-                <jdk>[11,)</jdk>
                 <property>
                     <name>operator</name>
                 </property>
