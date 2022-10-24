@@ -39,7 +39,7 @@
     "@rollup/plugin-node-resolve": "^15.0.0",
     "@rollup/plugin-typescript": "^9.0.2",
     "es6-promise": "^4.2.8",
-    "rollup": "^3.2.2",
+    "rollup": "^3.2.3",
     "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
