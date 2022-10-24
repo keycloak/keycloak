@@ -81,6 +81,7 @@ public class RealmRepresentation {
     protected Boolean duplicateEmailsAllowed;
     protected Boolean resetPasswordAllowed;
     protected Boolean editUsernameAllowed;
+    protected Boolean emailFormatAsUsernameAllowed;
 
     @Deprecated
     protected Boolean userCacheEnabled;
@@ -643,6 +644,14 @@ public class RealmRepresentation {
 
     public void setEditUsernameAllowed(Boolean editUsernameAllowed) {
         this.editUsernameAllowed = editUsernameAllowed;
+    }
+
+    public Boolean isEmailFormatAsUsernameAllowed() {
+        return emailFormatAsUsernameAllowed;
+    }
+
+    public void setEmailFormatAsUsernameAllowed(Boolean emailFormatAsUsernameAllowed) {
+        this.emailFormatAsUsernameAllowed = emailFormatAsUsernameAllowed;
     }
 
     @Deprecated

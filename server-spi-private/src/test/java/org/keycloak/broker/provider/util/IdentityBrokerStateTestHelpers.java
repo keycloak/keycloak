@@ -639,6 +639,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public boolean isEmailFormatAsUsernameAllowed() {
+            return false;
+        }
+
+        @Override
+        public void setEmailFormatAsUsernameAllowed(boolean emailFormatAsUsernameAllowed) {
+
+        }
+
+        @Override
         public boolean isRememberMe() {
             return false;
         }

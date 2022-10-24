@@ -54,6 +54,7 @@ import org.keycloak.userprofile.validator.ReadOnlyAttributeUnchangedValidator;
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueValidator;
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValidator;
 import org.keycloak.userprofile.validator.RegistrationUsernameExistsValidator;
+import org.keycloak.userprofile.validator.UsernameEmailFormatValidator;
 import org.keycloak.userprofile.validator.UsernameHasValueValidator;
 import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.userprofile.validator.UsernameMutationValidator;
@@ -314,6 +315,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 AbstractUserProfileProvider::editUsernameCondition,
                 AbstractUserProfileProvider::readUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
+                new AttributeValidatorMetadata(UsernameEmailFormatValidator.ID),
                 new AttributeValidatorMetadata(UsernameIDNHomographValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
                 new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");

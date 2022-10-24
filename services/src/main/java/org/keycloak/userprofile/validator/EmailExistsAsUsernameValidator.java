@@ -64,15 +64,20 @@ public class EmailExistsAsUsernameValidator implements SimpleValidator {
         RealmModel realm = session.getContext().getRealm();
 
         if (!realm.isDuplicateEmailsAllowed() && realm.isRegistrationEmailAsUsername()) {
-            UserModel user = UserProfileAttributeValidationContext.from(context).getAttributeContext().getUser();
-            UserModel userByEmail = session.users().getUserByEmail(realm, value);
-            if (userByEmail != null && user != null && !userByEmail.getId().equals(user.getId())) {
-                context.addError(new ValidationError(ID, inputHint, Messages.USERNAME_EXISTS)
-                    .setStatusCode(Response.Status.CONFLICT));
-            }
+            checkUsernameEmailOwner(session, realm, inputHint, value, context);
         }
 
         return context;
+    }
+
+    public static void checkUsernameEmailOwner(KeycloakSession session, RealmModel realm, String inputHint, String value, ValidationContext context) {
+        final UserModel user = UserProfileAttributeValidationContext.from(context).getAttributeContext().getUser();
+        final UserModel userByEmail = session.users().getUserByEmail(realm, value);
+
+        if (userByEmail != null && user != null && !userByEmail.getId().equals(user.getId())) {
+            context.addError(new ValidationError(ID, inputHint, Messages.USERNAME_EXISTS)
+                    .setStatusCode(Response.Status.CONFLICT));
+        }
     }
 
 }

@@ -53,4 +53,6 @@ public interface RealmAttributes {
 
     String ADMIN_EVENTS_EXPIRATION = "adminEventsExpiration";
 
+    String EMAIL_AS_USERNAME_ALLOWED = "emailAsUsernameAllowed";
+
 }

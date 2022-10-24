@@ -109,6 +109,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername);
 
+    boolean isEmailFormatAsUsernameAllowed();
+
+    void setEmailFormatAsUsernameAllowed(boolean emailFormatAsUsernameAllowed);
+
     boolean isRememberMe();
 
     void setRememberMe(boolean rememberMe);

@@ -271,6 +271,9 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
     @ProtoField(number = 77)
     public Set<String> supportedLocales;
 
+    @ProtoField(number = 78)
+    public Boolean emailFormatAsUsernameAllowed;
+
 
     public static abstract class AbstractHotRodRealmEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodRealmEntity> implements MapRealmEntity {
 

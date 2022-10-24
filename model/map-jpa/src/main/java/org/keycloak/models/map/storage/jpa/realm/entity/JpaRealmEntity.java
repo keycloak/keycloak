@@ -245,6 +245,16 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Boolean isEmailFormatAsUsernameAllowed() {
+        return this.metadata.isEmailFormatAsUsernameAllowed();
+    }
+
+    @Override
+    public void setEmailFormatAsUsernameAllowed(Boolean emailFormatAsUsernameAllowed) {
+        this.metadata.setEmailFormatAsUsernameAllowed(emailFormatAsUsernameAllowed);
+    }
+
+    @Override
     public Boolean isVerifyEmail() {
         return this.metadata.isVerifyEmail();
     }

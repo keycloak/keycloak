@@ -236,6 +236,7 @@ public class MapExportImportManager implements ExportImportManager {
         if (rep.isDuplicateEmailsAllowed() != null) newRealm.setDuplicateEmailsAllowed(rep.isDuplicateEmailsAllowed());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) newRealm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
+        if (rep.isEmailFormatAsUsernameAllowed() != null) newRealm.setEmailFormatAsUsernameAllowed(rep.isEmailFormatAsUsernameAllowed());
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
@@ -701,6 +702,7 @@ public class MapExportImportManager implements ExportImportManager {
         if (rep.isDuplicateEmailsAllowed() != null) realm.setDuplicateEmailsAllowed(rep.isDuplicateEmailsAllowed());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) realm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
+        if (rep.isEmailFormatAsUsernameAllowed() != null) realm.setEmailFormatAsUsernameAllowed(rep.isEmailFormatAsUsernameAllowed());
         if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)

@@ -260,6 +260,9 @@ public interface MapRealmEntity extends UpdatableEntity, AbstractEntity, EntityW
     Boolean isRegistrationEmailAsUsername();
     void setRegistrationEmailAsUsername(Boolean registrationEmailAsUsername);
 
+    Boolean isEmailFormatAsUsernameAllowed();
+    void setEmailFormatAsUsernameAllowed(Boolean emailFormatAsUsernameAllowed);
+
     Boolean isVerifyEmail();
     void setVerifyEmail(Boolean verifyEmail);
 

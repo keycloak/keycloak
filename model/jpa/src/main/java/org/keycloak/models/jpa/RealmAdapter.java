@@ -160,6 +160,16 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public boolean isEmailFormatAsUsernameAllowed() {
+        return getAttribute(RealmAttributes.EMAIL_AS_USERNAME_ALLOWED, false);
+    }
+
+    @Override
+    public void setEmailFormatAsUsernameAllowed(boolean emailFormatAsUsernameAllowed) {
+        setAttribute(RealmAttributes.EMAIL_AS_USERNAME_ALLOWED, emailFormatAsUsernameAllowed);
+    }
+
+    @Override
     public boolean isRememberMe() {
         return realm.isRememberMe();
     }

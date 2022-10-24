@@ -196,6 +196,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isEmailFormatAsUsernameAllowed() {
+        if (isUpdated()) return updated.isEmailFormatAsUsernameAllowed();
+        return cached.isEmailFormatAsUsernameAllowed();
+    }
+
+    @Override
+    public void setEmailFormatAsUsernameAllowed(boolean emailFormatAsUsernameAllowed) {
+        getDelegateForUpdate();
+        updated.setEmailFormatAsUsernameAllowed(emailFormatAsUsernameAllowed);
+    }
+
+    @Override
     public boolean isRememberMe() {
         if (isUpdated()) return updated.isRememberMe();
         return cached.isRememberMe();

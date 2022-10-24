@@ -262,6 +262,7 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRegistrationEmailAsUsername() != null)
             newRealm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
+        if (rep.isEmailFormatAsUsernameAllowed() != null) newRealm.setEmailFormatAsUsernameAllowed(rep.isEmailFormatAsUsernameAllowed());
         if (rep.isRememberMe() != null) newRealm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isLoginWithEmailAllowed() != null) newRealm.setLoginWithEmailAllowed(rep.isLoginWithEmailAllowed());
@@ -711,6 +712,7 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRegistrationEmailAsUsername() != null)
             realm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
+        if (rep.isEmailFormatAsUsernameAllowed() != null) realm.setEmailFormatAsUsernameAllowed(rep.isEmailFormatAsUsernameAllowed());
         if (rep.isRememberMe() != null) realm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isLoginWithEmailAllowed() != null) realm.setLoginWithEmailAllowed(rep.isLoginWithEmailAllowed());

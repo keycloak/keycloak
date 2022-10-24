@@ -170,6 +170,17 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
+    public boolean isEmailFormatAsUsernameAllowed() {
+        Boolean is = entity.isEmailFormatAsUsernameAllowed();
+        return Optional.ofNullable(is).orElse(false);
+    }
+
+    @Override
+    public void setEmailFormatAsUsernameAllowed(boolean emailFormatAsUsernameAllowed) {
+        entity.setEmailFormatAsUsernameAllowed(emailFormatAsUsernameAllowed);
+    }
+
+    @Override
     public boolean isRememberMe() {
         Boolean is = entity.isRememberMe();
         return is == null ? false : is;
