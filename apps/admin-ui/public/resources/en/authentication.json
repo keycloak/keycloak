@@ -28,6 +28,10 @@
   "initialCounter": "Initial counter",
   "initialCounterErrorHint": "Value needs to be between 1 and 120",
   "supportedActions": "Supported actions",
+  "otpSupportedApplications": {
+    "totpAppFreeOTPName": "FreeOTP",
+    "totpAppGoogleName": "Google Authenticator"
+  },
   "updateOtpSuccess": "OTP policy successfully updated",
   "updateOtpError": "Could not update OTP policy: {{error}}",
   "webAuthnPolicySignatureAlgorithms": "Signature algorithms",

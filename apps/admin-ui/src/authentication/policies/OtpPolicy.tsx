@@ -1,30 +1,31 @@
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
-  PageSection,
-  FormGroup,
-  Radio,
-  Select,
-  SelectVariant,
-  SelectOption,
-  NumberInput,
   ActionGroup,
+  AlertVariant,
   Button,
   ButtonVariant,
-  AlertVariant,
+  Chip,
+  ChipGroup,
+  FormGroup,
+  NumberInput,
+  PageSection,
+  Radio,
+  Select,
+  SelectOption,
+  SelectVariant,
   Switch,
 } from "@patternfly/react-core";
+import { useEffect } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import useToggle from "../../utils/useToggle";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useAlerts } from "../../components/alert/Alerts";
+import useToggle from "../../utils/useToggle";
 
 import "./otp-policy.css";
 
@@ -41,7 +42,6 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   const { t } = useTranslation("authentication");
   const {
     control,
-    register,
     reset,
     handleSubmit,
     formState: { isDirty, errors },
@@ -58,11 +58,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
     defaultValue: POLICY_TYPES[0],
   });
 
-  const setupForm = (realm: RealmRepresentation) =>
-    reset({
-      ...realm,
-      otpSupportedApplications: realm.otpSupportedApplications?.join(", "),
-    });
+  const setupForm = (realm: RealmRepresentation) => reset(realm);
 
   useEffect(() => setupForm(realm), []);
 
@@ -304,7 +300,6 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
         )}
         <FormGroup
           label={t("supportedActions")}
-          fieldId="supportedActions"
           labelIcon={
             <HelpItem
               helpText="authentication-help:supportedActions"
@@ -312,15 +307,13 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             />
           }
         >
-          <KeycloakTextInput
-            id="supportedActions"
-            name="otpSupportedApplications"
-            ref={register({
-              setValueAs: (value) => value.split(", "),
-            })}
-            data-testid="supportedActions"
-            isReadOnly
-          />
+          <ChipGroup data-testid="supportedActions">
+            {realm.otpSupportedApplications?.map((key) => (
+              <Chip key={key} isReadOnly>
+                {t(`otpSupportedApplications.${key}`)}
+              </Chip>
+            ))}
+          </ChipGroup>
         </FormGroup>
 
         {otpType === POLICY_TYPES[0] && (

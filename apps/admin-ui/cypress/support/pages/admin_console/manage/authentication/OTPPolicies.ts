@@ -14,8 +14,11 @@ export default class OTPPolicies {
     return this;
   }
 
-  checkSupportedActions(supportedActions: string) {
-    cy.findByTestId("supportedActions").should("have.value", supportedActions);
+  checkSupportedActions(...supportedActions: string[]) {
+    cy.findByTestId("supportedActions").should(
+      "have.text",
+      supportedActions.join("")
+    );
     return this;
   }
 

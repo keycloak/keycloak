@@ -20,7 +20,7 @@ describe("Policies", () => {
     });
 
     it("should change to hotp", () => {
-      otpPoliciesPage.checkSupportedActions("FreeOTP, Google Authenticator");
+      otpPoliciesPage.checkSupportedActions("FreeOTP", "Google Authenticator");
       otpPoliciesPage.setPolicyType("hotp").increaseInitialCounter().save();
       masthead.checkNotificationMessage("OTP policy successfully updated");
       otpPoliciesPage.checkSupportedActions("FreeOTP");
