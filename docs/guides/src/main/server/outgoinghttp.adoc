@@ -118,7 +118,7 @@ In this example, the following occurs:
 * The special value NO_PROXY for the proxy-uri is used, which means that no proxy is used for hosts matching the associated hostname pattern.
 * A catch-all pattern ends the proxy-mappings, providing a default proxy for all outgoing requests.
 
-== Outgoing HTTPS request truststore
+== Configuring trusted certificates for TLS connections
 
 Please take a look at the <@links.server id="keycloak-truststore"/> guide about how
 to configure a Keycloak Truststore so that Keycloak is able to perform outgoing requests using TLS.

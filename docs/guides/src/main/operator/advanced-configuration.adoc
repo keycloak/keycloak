@@ -12,7 +12,65 @@ In this guide, you'll learn how to configure your Keycloak deployment using adva
 
 === Server Configuration details
 
+Many server options are exposed as first-class citizen fields in the Keycloak CR. The structure of the CR is inspired
+by the configuration structure of Keycloak itself. E.g. in order to configure `https-port` of the server, simply follow
+similar pattern in the CR and use `httpsPort` field. The following example with a more complex server configuration
+should give you a better picture of the relationship between server options and the Keycloak CR:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  db:
+    vendor: postgres
+    usernameSecret:
+      name: usernameSecret
+      key: usernameSecretKey
+    passwordSecret:
+      name: passwordSecret
+      key: passwordSecretKey
+    host: host
+    database: database
+    port: 123
+    schema: schema
+    poolInitialSize: 1
+    poolMinSize: 2
+    poolMaxSize: 3
+  http:
+    httpEnabled: true
+    httpPort: 8180
+    httpsPort: 8543
+    tlsSecret: my-tls-secret
+  hostname:
+    hostname: my-hostname
+    admin: my-admin-hostname
+    strict: false
+    strictBackchannel: false
+  features:
+    enabled:
+      - docker
+      - authorization
+    disabled:
+      - admin
+      - step-up-authentication
+  transaction:
+    xaEnabled: false
+----
+
+For all available options please see the Keycloak CRD. For a documentation of the individual options, refer to <@links.server id="all-config"/>.
+
+==== Additional options
+
+Some of the expert server options are not available as dedicated fields in the Keycloak CR. Omitted are mostly fields
+that require deeper understanding of underlying Keycloak implementation and/or their usability is limited in a Kubernetes
+environment. Omitted are also options for providers configuration as they are dynamic based on the used provider
+implementation.
+
 The `additionalOptions` field of the Keycloak CR allows to pass to Keycloak any available configuration in the form of key-value pairs.
+This allows you to specify any of the options that are omitted in the Keycloak CR.
 For all the available configuration options, refer to <@links.server id="all-config"/>.
 
 The values can be expressed as plain text strings or Kubernetes Secret references.
@@ -27,23 +85,17 @@ metadata:
 spec:
   ...
   additionalOptions:
-    - name: db
-      value: postgres # plain text value
-    - name: db-url-host
-      value: postgres-db # plain text value
-    - name: db-username
+    - name: spi-connections-http-client-default-connection-pool-size
       secret: # Secret reference
-        name: keycloak-db-secret # name of the Secret
-        key: username # name of the Key in the Secret
-    - name: db-password
-      secret: # secret reference
-        name: keycloak-db-secret # name of the Secret
-        key: password # name of the Key in the Secret
+        name: http-client-secret # name of the Secret
+        key: poolSize # name of the Key in the Secret
+    - name: spi-email-template-mycustomprovider-enabled
+      value: true # plain text value
 ----
 
 === Secret References
 
-A Secret Reference can be either a value in `additionalOptions` or the `tlsSecret`.
+A Secret References are used by some of the dedicated options in the Keycloak CR (e.g. `tlsSecret`) or as a value in `additionalOptions`.
 
 When specifying a Secret Reference, you have to make sure that a Secret containing the referenced keys is present in the same namespace as the CR referencing it.
 Along with the Keycloak Server Deployment, the operator adds special labels to the referenced Secrets in order to watch for changes.
@@ -89,12 +141,12 @@ spec:
               secretName: keycloak-additional-secret
 ----
 
-=== Disabling required CR fields
+=== Disabling required options
 
-By default, the Keycloak operator is designed to provide you with the best production-ready Deployment of Keycloak with security in mind.
+By default, Keycloak and its Operator are designed to provide you with the best production-ready experience with security in mind.
 Although, for development purposes, you can still disable key security features.
 
-Specifically, you can disable the required fields with a special value `INSECURE-DISABLE`:
+Specifically, you can disable the hostname and TLS as shown in the following example:
 
 [source,yaml]
 ----
@@ -104,8 +156,11 @@ metadata:
   name: example-kc
 spec:
   ...
-  hostname: INSECURE-DISABLE
-  tlsSecret: INSECURE-DISABLE
+  http:
+    httpEnabled: true
+  hostname:
+    strict: false
+    strictBackchannel: false
 ----
 
 </@tmpl.guide>

@@ -43,6 +43,7 @@ import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
+import static org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity.TABLE_NAME;
 
 /**
  * Entity represents root authentication session.
@@ -52,9 +53,11 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "kc_auth_root_session")
+@Table(name = TABLE_NAME)
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticationSessionEntity implements JpaRootVersionedEntity {
+
+    public static final String TABLE_NAME = "kc_auth_root_session";
 
     @Id
     @Column
