@@ -13,7 +13,7 @@ type AlertPanelProps = {
 
 export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
   return (
-    <AlertGroup isToast>
+    <AlertGroup data-testid="global-alerts" isToast>
       {alerts.map(({ id, variant, message, description }) => (
         <Alert
           key={id}

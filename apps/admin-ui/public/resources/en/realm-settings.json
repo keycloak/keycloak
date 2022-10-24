@@ -114,8 +114,6 @@
   "loginWithEmailHelpText": "Allow users to log in with their email address.",
   "duplicateEmailsAllowed": "Duplicate emails",
   "duplicateEmailsHelpText": "Allow multiple users to have the same email address. Changing this setting will also clear the user's cache. It is recommended to manually update email constraints of existing users in the database after switching off support for duplicate email addresses.",
-  "provideEmailTitle": "Provide your email address",
-  "provideEmail": "To test connection, you should provide your email address first.",
   "verifyEmail": "Verify email",
   "verifyEmailHelpText": "Require user to verify their email address after initial login or after address changes are submitted.",
   "userInfoSettings": "User info settings",
@@ -123,8 +121,13 @@
   "enableSwitchSuccess": "{{switch}} changed successfully",
   "enableSwitchError": "Could not enable / disable due to {{error}}",
   "testConnection": "Test connection",
+  "testConnectionHint": {
+    "withEmail": "When testing the connection an e-mail will be sent to the current user ({{email}}).",
+    "withoutEmail": "To test the connection you must first configure an e-mail address for the current user ({{userName}}).",
+    "withoutEmailAction": "Configure e-mail address"
+  },
   "testConnectionSuccess": "Success! SMTP connection successful. E-mail was sent!",
-  "testConnectionError": "Error! Failed to send email.",
+  "testConnectionError": "Error! {{error}}",
   "realmId": "Realm ID",
   "displayName": "Display name",
   "htmlDisplayName": "HTML Display name",

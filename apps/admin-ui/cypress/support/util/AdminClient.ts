@@ -98,6 +98,17 @@ class AdminClient {
     return await this.client.users.create(user);
   }
 
+  async updateUser(id: string, payload: UserRepresentation) {
+    await this.login();
+    return this.client.users.update({ id }, payload);
+  }
+
+  async getAdminUser() {
+    await this.login();
+    const [user] = await this.client.users.find({ username: "admin" });
+    return user;
+  }
+
   async addUserToGroup(userId: string, groupId: string) {
     await this.login();
     await this.client.users.addToGroup({ id: userId, groupId });

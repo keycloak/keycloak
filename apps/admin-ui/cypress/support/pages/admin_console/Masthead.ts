@@ -4,11 +4,16 @@ export default class Masthead extends CommonElements {
   private helpBtn = "#help";
   private closeAlertMessageBtn = ".pf-c-alert__action button";
   private closeLastAlertMessageBtn =
-    ".pf-c-alert-group > li:first-child .pf-c-alert__action button";
+    "li:first-child .pf-c-alert__action button";
 
   private alertMessage = ".pf-c-alert__title";
   private userDrpDwn = "#user-dropdown";
   private userDrpDwnKebab = "#user-dropdown-kebab";
+  private globalAlerts = "global-alerts";
+
+  private getAlertsContainer() {
+    return cy.findByTestId(this.globalAlerts);
+  }
 
   checkIsAdminConsole() {
     cy.get(this.logoBtn).should("exist");
@@ -50,10 +55,13 @@ export default class Masthead extends CommonElements {
   }
 
   checkNotificationMessage(message: string, closeNotification = true) {
-    cy.get(this.alertMessage).should("contain.text", message);
+    this.getAlertsContainer()
+      .find(this.alertMessage)
+      .should("contain.text", message);
 
     if (closeNotification) {
-      cy.get(`button[title="` + message.replaceAll('"', '\\"') + `"]`)
+      this.getAlertsContainer()
+        .find(`button[title="` + message.replaceAll('"', '\\"') + `"]`)
         .last()
         .click({ force: true });
     }
@@ -61,14 +69,16 @@ export default class Masthead extends CommonElements {
   }
 
   closeLastAlertMessage() {
-    cy.get(this.closeLastAlertMessageBtn).click();
+    this.getAlertsContainer().find(this.closeLastAlertMessageBtn).click();
     return this;
   }
 
   closeAllAlertMessages() {
-    cy.get(this.closeAlertMessageBtn).each(() => {
-      cy.get(this.closeAlertMessageBtn).click({ force: true, multiple: true });
+    this.getAlertsContainer().find(this.closeAlertMessageBtn).click({
+      force: true,
+      multiple: true,
     });
+
     return this;
   }
 
