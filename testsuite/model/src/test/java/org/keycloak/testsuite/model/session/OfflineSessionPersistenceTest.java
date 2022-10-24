@@ -171,7 +171,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         assertOfflineSessionsExist(realmId, offlineSessionIds);
     }
 
-    @Test(timeout = 90 * 1000)
+    @Test
     @RequireProvider(UserSessionPersisterProvider.class)
     @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceMultipleNodesClientSessionAtSameNode() throws InterruptedException {
@@ -228,7 +228,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         inIndependentFactories(NUM_FACTORIES + 1, 30, () -> assertOfflineSessionsExist(realmId, clientSessionIds));
     }
 
-    @Test(timeout = 90 * 1000)
+    @Test
     @RequireProvider(UserSessionPersisterProvider.class)
     @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceMultipleNodesClientSessionsAtRandomNode() throws InterruptedException {
@@ -366,7 +366,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         });
     }
 
-    @Test(timeout = 90 * 1000)
+    @Test
     @RequireProvider(UserSessionPersisterProvider.class)
     @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceClientSessionsMultipleNodes() throws InterruptedException {

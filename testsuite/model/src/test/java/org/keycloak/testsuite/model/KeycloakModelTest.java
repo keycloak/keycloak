@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.model;
 
 import org.junit.Assert;
+import org.junit.rules.Timeout;
 import org.keycloak.Config.Scope;
 import org.keycloak.authorization.AuthorizationSpi;
 import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
@@ -120,6 +121,9 @@ public abstract class KeycloakModelTest {
     private static final AtomicInteger FACTORY_COUNT = new AtomicInteger();
     protected final Logger log = Logger.getLogger(getClass());
     private static final List<String> MAIN_THREAD_NAMES = Arrays.asList("main", "Time-limited test");
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(90);
 
     @ClassRule
     public static final TestRule GUARANTEE_REQUIRED_FACTORY = new TestRule() {
