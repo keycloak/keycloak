@@ -17,3 +17,9 @@ In this release, we are making important changes to `kc.bat` to give the same ex
 
 In this release, the H2 driver has been upgraded from version 1.x to version 2.x.
 See link:{upgradingguide_link}[{upgradingguide_name}] for details on how to migrate.
+
+= Keycloak Operator upgrade
+
+We are happy to announce that Keycloak Operator is no longer a tech preview feature. We added new functionality as well as the quality of life improvements. Some of them resulted in breaking changes.
+
+It’s important to emphasize that none of these breaking changes will come into effect automatically. Please, read our link:{upgradingguide_link}[{upgradingguide_name}] for more information.

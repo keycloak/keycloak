@@ -28,3 +28,63 @@ See the H2 documentation http://www.h2database.com/html/commands.html#set_non_ke
 H2 database base files created with H2 version 1.x should not be used with version 2.x.
 
 Purge existing H2 database files to start with an empty database, export and import the realms using Keycloak's export and import functionality, or refer to the http://www.h2database.com/html/migration-to-v2.html[migration notes on the H2 database project's website] for details on how to migrate H2 database contents.
+
+= Breaking changes in the new version of Keycloak Operator
+
+NOTE: In order to use the newest version of the Keycloak Operator, the manual reinstallation and upgrade of your CRs are required. There’s no automated migration.
+
+This release contains the following breaking changes in Keycloak CRs:
+
+== serverConfiguration free-form field was renamed
+
+From now on it’s called `additionalOptions`. The idea behind this decision is to align it more with the Keycloak Quarkus distribution and achieve/preserve a naming consistency.
+`serverConfiguration` can be still used for configuring options that haven’t got a declared alternative in Keycloak custom resources (CRs). A good example of such use can be service providers.
+
+== Ingress options were refined
+
+In the past, it used to be defined via the `disableDefaultIngress` property. We decided to clarify it a bit, thus from now on you can use the following structure to control your ingress settings:
+
+```yaml
+spec:
+    ...
+    ingress:
+      enabled: false
+```
+
+== HTTP options were added
+
+Similarly, like with ingress, you can define multiple HTTP options in a better structural manner:
+
+```yaml
+spec:
+    ...
+  http:
+    httpEnabled: true
+    httpPort: 80
+    httpsPort: 443
+    tlsSecret: my-tls-secret
+```
+
+== Hostname options were added
+
+Last but not least, the hostname options were also changed:
+
+```yaml
+spec:
+    ...
+  hostname:
+    hostname: [keycloak-server-hostname]
+    admin: [admin-console-hostname]
+    adminUrl: [admin-console-base-url]
+    strict: [true|false]
+    strictBackchannel: [true|false]
+```
+
+== Some fields are no longer required
+
+The `hostname` and `tlsSecret` fields are now optional to align with the Quarkus distribution configuration. With that we also removed the possibility to set `INSECURE-DISABLE` special value to those fields. In order to disable hostname checks and enable HTTP, please follow the same approach as with the Quarkus distribution, i.e. set `strict: false`, `strictBackchannel: false` and `httpEnabled: true` fields.
+
+
+= OLM channel was changed to fast
+
+The default channel of Keycloak Operator Lifecycle Manager was changed to `fast`.
