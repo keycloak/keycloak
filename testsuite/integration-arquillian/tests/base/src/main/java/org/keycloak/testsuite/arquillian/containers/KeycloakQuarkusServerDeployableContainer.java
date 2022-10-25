@@ -206,6 +206,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         commands.add("start");
         commands.add("--optimized");
         commands.add("--http-enabled=true");
+        commands.add("--log-level=trace");
 
         if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
             commands.add("--debug");
