@@ -18,7 +18,7 @@
 <keycloak-saml-adapter xmlns="urn:keycloak:saml:adapter"
                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                        xsi:schemaLocation="urn:keycloak:saml:adapter http://www.keycloak.org/schema/keycloak_saml_adapter_1_7.xsd">
-    <SP entityID="http://localhost:8080/saml-servlet-filter/"
+    <SP entityID="saml-servlet-filter"
         sslPolicy="EXTERNAL"
         logoutPage="/logout.jsp">
         <Keys>
@@ -36,15 +36,15 @@
             <SingleSignOnService signRequest="true"
                                  validateResponseSignature="true"
                                  requestBinding="POST"
-                                 bindingUrl="http://localhost:8080/realms/saml-demo/protocol/saml"/>
+                                 bindingUrl="http://localhost:8080/realms/master/protocol/saml"/>
             <SingleLogoutService signRequest="true"
                                  signResponse="true"
                                  validateRequestSignature="true"
                                  validateResponseSignature="true"
                                  requestBinding="POST"
                                  responseBinding="POST"
-                                 postBindingUrl="http://localhost:8080/realms/saml-demo/protocol/saml"
-                                 redirectBindingUrl="http://localhost:8080/realms/saml-demo/protocol/saml"/>
+                                 postBindingUrl="http://localhost:8080/realms/master/protocol/saml"
+                                 redirectBindingUrl="http://localhost:8080/realms/master/protocol/saml"/>
         </IDP>
     </SP>
 </keycloak-saml-adapter>

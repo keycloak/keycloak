@@ -31,7 +31,7 @@
         <module name="org.keycloak.keycloak-common" />
         <module name="org.jboss.logging"/>
         <module name="javax.api"/>
-        <module name="javax.activation.api"/>
+        <module name="jakarta.activation.api"/>
         <module name="sun.jdk" optional="true" />
     </dependencies>
 
