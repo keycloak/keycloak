@@ -198,16 +198,6 @@ Example configuration:
     app.use( keycloak.middleware() );
 ----
 
-==== Checking authentication
-
-To check that a user is authenticated before accessing a resource,
-simply use `keycloak.checkSso()`. It will only authenticate if the user is already logged-in. If the user is not logged-in, the browser will be redirected back to the originally-requested URL and remain unauthenticated:
-
-[source,javascript]
-----
-    app.get( '/check-sso', keycloak.checkSso(), checkSsoHandler );
-----
-
 ==== Protecting resources
 
 Simple authentication::
