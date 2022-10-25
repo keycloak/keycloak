@@ -878,18 +878,37 @@ public class ModelToRepresentation {
 
     public static AuthenticationExecutionExportRepresentation toRepresentation(RealmModel realm, AuthenticationExecutionModel model) {
         AuthenticationExecutionExportRepresentation rep = new AuthenticationExecutionExportRepresentation();
+        mapCommonExecutionFields(realm, model, rep);
+
+        if (model.getFlowId() != null) {
+            AuthenticationFlowModel flow = realm.getAuthenticationFlowById(model.getFlowId());
+            rep.setFlowAlias(flow.getAlias());
+        }
+
+        return rep;
+    }
+
+    private static void mapCommonExecutionFields(RealmModel realm, AuthenticationExecutionModel model,
+            AbstractAuthenticationExecutionRepresentation rep) {
         if (model.getAuthenticatorConfig() != null) {
             AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(model.getAuthenticatorConfig());
             rep.setAuthenticatorConfig(config.getAlias());
         }
         rep.setAuthenticator(model.getAuthenticator());
         rep.setAuthenticatorFlow(model.isAuthenticatorFlow());
-        if (model.getFlowId() != null) {
-            AuthenticationFlowModel flow = realm.getAuthenticationFlowById(model.getFlowId());
-            rep.setFlowAlias(flow.getAlias());
-        }
         rep.setPriority(model.getPriority());
         rep.setRequirement(model.getRequirement().name());
+    }
+
+    public static AuthenticationExecutionRepresentation toByIdRepresentation(RealmModel realm,
+            AuthenticationExecutionModel model) {
+        AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
+        mapCommonExecutionFields(realm, model, rep);
+
+        rep.setId(model.getId());
+        rep.setFlowId(model.getFlowId());
+        rep.setParentFlow(model.getParentFlow());
+
         return rep;
     }
 
