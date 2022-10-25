@@ -102,7 +102,7 @@ jobs:
         run: ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers -Pauth-server-quarkus
       - name: Run base tests
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'quarkus-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
-        timeout-minutes: 3
+        timeout-minutes: 6
         run: |
           declare -A PARAMS TESTGROUP
           PARAMS["quarkus"]="-Pauth-server-quarkus"
