@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.integration.web;
 
 import static org.keycloak.services.resources.KeycloakApplication.getSessionFactory;
 
+import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Resteasy;
@@ -31,7 +32,6 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -51,13 +51,15 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
     };
 
     private Predicate<RoutingContext> contextFilter;
+    private ExecutorService executor;
 
     public QuarkusRequestFilter() {
-        this(null);
+        this(null, null);
     }
 
-    public QuarkusRequestFilter(Predicate<RoutingContext> contextFilter) {
+    public QuarkusRequestFilter(Predicate<RoutingContext> contextFilter, ExecutorService executor) {
         this.contextFilter = contextFilter;
+        this.executor = executor;
     }
 
     @Override
@@ -68,15 +70,15 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
         }
         // our code should always be run as blocking until we don't provide a better support for running non-blocking code
         // in the event loop
-        context.vertx().executeBlocking(createBlockingHandler(context), false, EMPTY_RESULT);
+        executor.execute(createBlockingHandler(context));
     }
 
     private boolean ignoreContext(RoutingContext context) {
         return contextFilter != null && contextFilter.test(context);
     }
 
-    private Handler<Promise<Object>> createBlockingHandler(RoutingContext context) {
-        return promise -> {
+    private Runnable createBlockingHandler(RoutingContext context) {
+        return () -> {
             KeycloakSessionFactory sessionFactory = getSessionFactory();
             KeycloakSession session = sessionFactory.create();
 
@@ -88,9 +90,8 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
             try {
                 tx.begin();
                 context.next();
-                promise.tryComplete();
             } catch (Throwable cause) {
-                promise.fail(cause);
+                context.fail(cause);
                 // re-throw so that the any exception is handled from parent
                 throw new RuntimeException(cause);
             } finally {
@@ -98,7 +99,7 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
                     // make sure the session is closed in case the handler is not called
                     // it might happen that, for whatever reason, downstream handlers do not end the response or
                     // no data was written to the response
-                    close(session);
+                    close(session, context);
                 }
             }
         };
@@ -111,7 +112,7 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
     private void configureEndHandler(RoutingContext context, KeycloakSession session) {
         context.addHeadersEndHandler(event -> {
             try {
-                close(session);
+                close(session, context);
             } catch (Throwable cause) {
                 unexpectedErrorResponse(context.response());
             }
@@ -137,7 +138,7 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
         context.put(ClientConnection.class.getName(), connection);
     }
 
-    protected void close(KeycloakSession session) {
+    protected void close(KeycloakSession session, RoutingContext context) {
         KeycloakTransactionManager tx = session.getTransactionManager();
 
         try {
@@ -148,6 +149,8 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
                     tx.commit();
                 }
             }
+        } catch (Throwable cause) {
+            context.fail(cause);
         } finally {
             session.close();
         }
