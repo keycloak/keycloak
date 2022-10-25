@@ -27,7 +27,7 @@
   "otpPolicyCodeReusable": "Reusable token",
   "initialCounter": "Initial counter",
   "initialCounterErrorHint": "Value needs to be between 1 and 120",
-  "supportedActions": "Supported actions",
+  "supportedApplications": "Supported applications",
   "otpSupportedApplications": {
     "totpAppFreeOTPName": "FreeOTP",
     "totpAppGoogleName": "Google Authenticator"

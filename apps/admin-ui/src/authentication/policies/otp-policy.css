@@ -10,6 +10,6 @@
 
 @media (min-width: 768px) {
   .keycloak__otp_policies_authentication__form .pf-c-form__group {
-    --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 10rem;
+    --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 11rem;
   }
 }

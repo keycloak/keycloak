@@ -14,10 +14,10 @@ export default class OTPPolicies {
     return this;
   }
 
-  checkSupportedActions(...supportedActions: string[]) {
-    cy.findByTestId("supportedActions").should(
+  checkSupportedApplications(...supportedApplications: string[]) {
+    cy.findByTestId("supportedApplications").should(
       "have.text",
-      supportedActions.join("")
+      supportedApplications.join("")
     );
     return this;
   }

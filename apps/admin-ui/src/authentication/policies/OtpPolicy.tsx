@@ -15,7 +15,7 @@ import {
   SelectVariant,
   Switch,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -25,6 +25,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import useLocaleSort from "../../utils/useLocaleSort";
 import useToggle from "../../utils/useToggle";
 
 import "./otp-policy.css";
@@ -49,7 +50,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
-
+  const localeSort = useLocaleSort();
   const [open, toggle] = useToggle();
 
   const otpType = useWatch<typeof POLICY_TYPES[number]>({
@@ -61,6 +62,14 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   const setupForm = (realm: RealmRepresentation) => reset(realm);
 
   useEffect(() => setupForm(realm), []);
+
+  const supportedApplications = useMemo(() => {
+    const labels = (realm.otpSupportedApplications ?? []).map((key) =>
+      t(`otpSupportedApplications.${key}`)
+    );
+
+    return localeSort(labels, (label) => label);
+  }, [realm.otpSupportedApplications]);
 
   const save = async (realm: RealmRepresentation) => {
     try {
@@ -299,18 +308,18 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           </FormGroup>
         )}
         <FormGroup
-          label={t("supportedActions")}
+          label={t("supportedApplications")}
           labelIcon={
             <HelpItem
-              helpText="authentication-help:supportedActions"
-              fieldLabelId="authentication:supportedActions"
+              helpText="authentication-help:supportedApplications"
+              fieldLabelId="authentication:supportedApplications"
             />
           }
         >
-          <ChipGroup data-testid="supportedActions">
-            {realm.otpSupportedApplications?.map((key) => (
-              <Chip key={key} isReadOnly>
-                {t(`otpSupportedApplications.${key}`)}
+          <ChipGroup data-testid="supportedApplications">
+            {supportedApplications.map((label) => (
+              <Chip key={label} isReadOnly>
+                {label}
               </Chip>
             ))}
           </ChipGroup>

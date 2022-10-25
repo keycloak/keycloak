@@ -7,7 +7,7 @@
   "otpHashAlgorithm": "OTPを生成するのにどのハッシュ・アルゴリズムを使用するか設定します。",
   "otpPolicyDigits": "OTPの桁数を設定します。",
   "otpPolicyPeriod": "OTPトークンが有効な秒数を設定します。デフォルトは30秒です。",
-  "supportedActions": "現在のOTPポリシーで動作することが分かっているアプリケーション",
+  "supportedApplications": "現在のOTPポリシーで動作することが分かっているアプリケーション",
   "webAuthnPolicyFormHelp": "WebAuthn認証のポリシー。これは、「WebAuthn Register」必須アクションと「WebAuthn Authenticator」オーセンティケーターで使用されます。一般的な用途は、2要素認証にWebAuthnを使用する場合です。",
   "webAuthnPolicyPasswordlessFormHelp": "パスワードレスWebAuthn認証のポリシー。これは、「Webauthn Register Passwordless」必須アクションおよび「WebAuthn Passwordless Authenticator」オーセンティケーターによって使用されます。一般的な使用法は、WebAuthnが一要素認証として使用される場合です。「WebAuthnポリシー」と「WebAuthnパスワードレス・ポリシー」の両方を使用すると、WebAuthnを同じレルムの第1要素オーセンティケーターと第2要素オーセンティケーターの両方として使用できます。",
   "webAuthnPolicySignatureAlgorithms": "認証アサーションに使用する署名アルゴリズム。",
