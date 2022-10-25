@@ -57,6 +57,17 @@ public class UserModelIdentity implements Identity {
     }
 
     @Override
+    public boolean hasOneClientRole(String clientId, String... roleNames) {
+        ClientModel client = realm.getClientByClientId(clientId);
+        for (String roleName : roleNames) {
+            RoleModel role = client.getRole(roleName);
+            if (role == null) continue;
+            if (user.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean hasClientRole(String clientId, String roleName) {
         ClientModel client = realm.getClientByClientId(clientId);
         RoleModel role = client.getRole(roleName);

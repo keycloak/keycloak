@@ -19,6 +19,8 @@ package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -29,7 +31,9 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
@@ -38,6 +42,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -72,6 +77,7 @@ public class KeycloakDistConfigurator {
         configureFeatures();
         configureTransactions();
         configureHttp();
+        configureDatabase();
     }
 
     /**
@@ -86,30 +92,12 @@ public class KeycloakDistConfigurator {
     /* ---------- Configuration of first-class citizen fields ---------- */
 
     public void configureHostname() {
-        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-        var hostname = keycloakCR.getSpec().getHostname();
-        var envVars = kcContainer.getEnv();
-        if (keycloakCR.getSpec().isHostnameDisabled()) {
-            var disableStrictHostname = List.of(
-                    new EnvVarBuilder()
-                            .withName("KC_HOSTNAME_STRICT")
-                            .withValue("false")
-                            .build(),
-                    new EnvVarBuilder()
-                            .withName("KC_HOSTNAME_STRICT_BACKCHANNEL")
-                            .withValue("false")
-                            .build());
-
-            envVars.addAll(disableStrictHostname);
-        } else {
-            var enabledStrictHostname = List.of(
-                    new EnvVarBuilder()
-                            .withName("KC_HOSTNAME")
-                            .withValue(hostname)
-                            .build());
-
-            envVars.addAll(enabledStrictHostname);
-        }
+        optionMapper(keycloakCR.getSpec().getHostnameSpec())
+                .mapOption("hostname", HostnameSpec::getHostname)
+                .mapOption("hostname-admin", HostnameSpec::getAdmin)
+                .mapOption("hostname-admin-url", HostnameSpec::getAdminUrl)
+                .mapOption("hostname-strict", HostnameSpec::isStrict)
+                .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel);
     }
 
     public void configureFeatures() {
@@ -165,6 +153,21 @@ public class KeycloakDistConfigurator {
         kcContainer.getVolumeMounts().add(volumeMount);
     }
 
+    public void configureDatabase() {
+        optionMapper(keycloakCR.getSpec().getDatabaseSpec())
+                .mapOption("db", DatabaseSpec::getVendor)
+                .mapOption("db-username", DatabaseSpec::getUsernameSecret)
+                .mapOption("db-password", DatabaseSpec::getPasswordSecret)
+                .mapOption("db-url-database", DatabaseSpec::getDatabase)
+                .mapOption("db-url-host", DatabaseSpec::getHost)
+                .mapOption("db-url-port", DatabaseSpec::getPort)
+                .mapOption("db-schema", DatabaseSpec::getSchema)
+                .mapOption("db-url", DatabaseSpec::getUrl)
+                .mapOption("db-pool-initial-size", DatabaseSpec::getPoolInitialSize)
+                .mapOption("db-pool-min-size", DatabaseSpec::getPoolMinSize)
+                .mapOption("db-pool-max-size", DatabaseSpec::getPoolMaxSize);
+    }
+
     /* ---------- END of configuration of first-class citizen fields ---------- */
 
     /**
@@ -175,7 +178,7 @@ public class KeycloakDistConfigurator {
     protected void assumeFirstClassCitizens(KeycloakStatusBuilder status) {
         final var serverConfigNames = keycloakCR
                 .getSpec()
-                .getServerConfiguration()
+                .getAdditionalOptions()
                 .stream()
                 .map(ValueOrSecret::getName)
                 .collect(Collectors.toSet());
@@ -194,6 +197,19 @@ public class KeycloakDistConfigurator {
 
     private <T> OptionMapper<T> optionMapper(T optionSpec) {
         return new OptionMapper<>(optionSpec);
+    }
+
+    public Collection<String> getSecretNames() {
+        Set<String> names = new HashSet<>();
+
+        if (isTlsConfigured(keycloakCR)) {
+            names.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
+        }
+
+        Optional.ofNullable(keycloakCR.getSpec().getDatabaseSpec()).map(DatabaseSpec::getUsernameSecret).map(SecretKeySelector::getName).ifPresent(names::add);
+        Optional.ofNullable(keycloakCR.getSpec().getDatabaseSpec()).map(DatabaseSpec::getPasswordSecret).map(SecretKeySelector::getName).ifPresent(names::add);
+
+        return names;
     }
 
     private class OptionMapper<T> {
@@ -221,19 +237,23 @@ public class KeycloakDistConfigurator {
             }
 
             R value = optionValueSupplier.apply(categorySpec);
-            String valueStr = String.valueOf(value);
 
-            if (value == null || valueStr.trim().isEmpty()) {
+            if (value == null || value.toString().trim().isEmpty()) {
                 Log.debugf("No value provided for %s", optionName);
                 return this;
             }
 
-            EnvVar envVar = new EnvVarBuilder()
-                    .withName(getKeycloakOptionEnvVarName(optionName))
-                    .withValue(valueStr)
-                    .build();
+            EnvVarBuilder envVarBuilder = new EnvVarBuilder()
+                    .withName(getKeycloakOptionEnvVarName(optionName));
 
-            envVars.add(envVar);
+            if (value instanceof SecretKeySelector) {
+                envVarBuilder.withValueFrom(new EnvVarSourceBuilder().withSecretKeyRef((SecretKeySelector) value).build());
+            } else {
+                envVarBuilder.withValue(String.valueOf(value));
+            }
+
+
+            envVars.add(envVarBuilder.build());
 
             return this;
         }

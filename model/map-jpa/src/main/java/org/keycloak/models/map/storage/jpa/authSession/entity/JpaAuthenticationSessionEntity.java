@@ -37,6 +37,8 @@ import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
+import static org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionEntity.TABLE_NAME;
+
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
@@ -46,10 +48,11 @@ import org.keycloak.sessions.CommonClientSessionModel;
  * Entity represents individual authentication session. 
  */
 @Entity
-@Table(name = "kc_auth_session")
+@Table(name = TABLE_NAME)
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapAuthenticationSessionEntity, JpaRootVersionedEntity, JpaChildEntity<JpaRootAuthenticationSessionEntity>{
 
+    public static final String TABLE_NAME = "kc_auth_session";
     @Id
     @Column
     @GeneratedValue
