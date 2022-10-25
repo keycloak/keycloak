@@ -24,6 +24,7 @@ describe("Sessions test", () => {
 
   describe("Sessions list view", () => {
     it("check item values", () => {
+      listingPage.searchItem(client, false);
       commonPage
         .tableUtils()
         .checkRowItemExists(admin)
@@ -31,6 +32,7 @@ describe("Sessions test", () => {
     });
 
     it("go to item accessed clients link", () => {
+      listingPage.searchItem(client, false);
       commonPage.tableUtils().clickRowItemLink(client);
     });
   });
