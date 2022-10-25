@@ -19,3 +19,10 @@ image:images/linked-in-add-identity-provider.png[Add Identity Provider]
 . In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
 . Click *Add*.
 
+.Configuration
+* With `Profile Projection` you can configure the `projection` parameter for profile requests.
+* For example, `(id,firstName,lastName,profilePicture(displayImage~:playableStreams))` produces the following profile request URL:
+[source,txt]
+----
+https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))
+----
