@@ -37,6 +37,14 @@
             <maven-resource group="org.keycloak" artifact="keycloak-common"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-core"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-crypto-default">
+            <maven-resource group="org.keycloak" artifact="keycloak-crypto-default"/>
+        </module-def>
+
         <!-- subsystems -->
 
         <module-def name="org.keycloak.keycloak-adapter-spi">
