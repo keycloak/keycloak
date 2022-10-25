@@ -107,7 +107,7 @@ jobs:
           declare -A PARAMS TESTGROUP
           PARAMS["quarkus"]="-Pauth-server-quarkus"
 
-          ./mvnw clean install -nsu -B -Pauth-server-quarkus -Dtest=KcOidcBrokerTest -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -Pauth-server-quarkus -Dtest=KcOidcBrokerTest -f testsuite/integration-arquillian/tests/base/pom.xml -Dkeycloak.logging.level=debug -Dkeycloak.testsuite.logging.level=debug
 
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip -@
