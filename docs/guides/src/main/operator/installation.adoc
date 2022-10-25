@@ -29,7 +29,7 @@ Search for "keycloak" on the search input box:
 
 image::{generatedGuideImages}/select-operator.jpeg["Select the Keycloak Operator in the UI"]
 
-Select the Keycloak Operator from the list of results. After that, follow the instructions on the screen. Make sure you are installing from the `candidate` channel:
+Select the Keycloak Operator from the list of results. After that, follow the instructions on the screen. Make sure you are installing from the `fast` channel:
 
 image::{generatedGuideImages}/configure-operator.jpeg["Configure Keycloak Operator"]
 

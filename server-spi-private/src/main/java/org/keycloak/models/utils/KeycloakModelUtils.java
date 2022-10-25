@@ -39,6 +39,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -59,11 +60,13 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -273,6 +276,83 @@ public final class KeycloakModelUtils {
         }
     }
 
+    /**
+     * Creates a new {@link KeycloakSession} and runs the specified callable in a new transaction. If the transaction fails
+     * with a SQL retriable error, the method re-executes the specified callable until it either succeeds or the maximum number
+     * of attempts is reached, leaving some increasing random delay milliseconds between the invocations. It uses the exponential
+     * backoff + jitter algorithm to compute the delay, which is limited to {@code attemptsCount * retryIntervalMillis}.
+     * More details https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+     *
+     * @param factory a reference to the {@link KeycloakSessionFactory}.
+     * @param callable a reference to the {@link KeycloakSessionTaskWithResult} that will be executed in a retriable way.
+     * @param attemptsCount the maximum number of attempts to execute the callable.
+     * @param retryIntervalMillis the base interval value in millis used to compute the delay.
+     * @param <V> the type returned by the callable.
+     * @return the value computed by the callable.
+     */
+    public static <V> V runJobInRetriableTransaction(final KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable,
+                                                     final int attemptsCount, final int retryIntervalMillis) {
+        int retryCount = 0;
+        Random rand = new Random();
+        V result;
+        while (true) {
+            KeycloakSession session = factory.create();
+            KeycloakTransaction tx = session.getTransactionManager();
+            try {
+                tx.begin();
+                result = callable.run(session);
+                if (tx.isActive()) {
+                    if (tx.getRollbackOnly()) {
+                        tx.rollback();
+                    } else {
+                        tx.commit();
+                    }
+                }
+                break;
+            } catch (RuntimeException re) {
+                if (tx.isActive()) {
+                    tx.rollback();
+                }
+                if (isExceptionRetriable(re) && ++retryCount < attemptsCount) {
+                    int delay = Math.min(retryIntervalMillis * attemptsCount, (1 << retryCount) * retryIntervalMillis)
+                            + rand.nextInt(retryIntervalMillis);
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException ie) {
+                        ie.addSuppressed(re);
+                        throw new RuntimeException(ie);
+                    }
+                } else {
+                    throw re;
+                }
+            } finally {
+                session.close();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Checks if the specified exception is retriable or not. A retriable exception must be an instance of {@code SQLException}
+     * and must have a 40001 SQL retriable state. This is a standard SQL state as defined in SQL standard, and across the
+     * implementations its meaning boils down to "deadlock" (applies to Postgres, MSSQL, Oracle, MySQL, and others).
+     *
+     * @param exception the exception to be checked.
+     * @return {@code true} if the exception is retriable; {@code false} otherwise.
+     */
+    public static boolean isExceptionRetriable(final Exception exception) {
+        Objects.requireNonNull(exception);
+        // first find the root cause and check if it is a SQLException
+        Throwable rootCause = exception;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+        }
+        if (rootCause instanceof SQLException) {
+            // check if the exception state is a recoverable one (40001)
+            return "40001".equals(((SQLException) rootCause).getSQLState());
+        }
+        return false;
+    }
 
     /**
      * Wrap given runnable job into KeycloakTransaction. Set custom timeout for the JTA transaction (in case we're in the environment with JTA enabled)

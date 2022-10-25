@@ -66,4 +66,20 @@ public interface Identity {
     default boolean hasClientRole(String clientId, String roleName) {
         return getAttributes().containsValue("kc.client." + clientId + ".roles", roleName);
     }
+
+    /**
+     * Indicates if this identity is granted with a client role of one of the given <code>roleNames</code>.
+     *
+     * @param clientId the client id
+     * @param roleNames list
+     *
+     * @return true if the identity has any of the given roles. Otherwise, it returns false.
+     */
+    default boolean hasOneClientRole(String clientId, String... roleNames) {
+        for (String adminRole : roleNames) {
+            if (hasClientRole(clientId, adminRole)) return true;
+        }
+        return false;
+    }
+
 }
