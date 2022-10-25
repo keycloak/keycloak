@@ -162,8 +162,8 @@ export default function DetailSettings() {
     []
   );
 
-  const save = async (provider?: IdentityProviderRepresentation) => {
-    const p = provider || getValues();
+  const save = async (savedProvider?: IdentityProviderRepresentation) => {
+    const p = savedProvider || getValues();
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(
         p.config.authnContextClassRefs
@@ -172,10 +172,16 @@ export default function DetailSettings() {
       p.config.authnContextDeclRefs = JSON.stringify(
         p.config.authnContextDeclRefs
       );
+
     try {
       await adminClient.identityProviders.update(
         { alias },
-        { ...p, alias, providerId }
+        {
+          ...p,
+          config: { ...provider?.config, ...p.config },
+          alias,
+          providerId,
+        }
       );
       addAlert(t("updateSuccess"), AlertVariant.success);
     } catch (error) {
