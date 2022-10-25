@@ -61,6 +61,7 @@ export enum RowEditAction {
   Save = "save",
   Cancel = "cancel",
   Edit = "edit",
+  Delete = "delete",
 }
 
 export type BundleForm = {
@@ -332,6 +333,20 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
     }
   };
 
+  const deleteKey = async (key: string) => {
+    try {
+      await adminClient.realms.deleteRealmLocalizationTexts({
+        realm: currentRealm!,
+        selectedLocale: selectMenuLocale,
+        key,
+      });
+      refreshTable();
+      addAlert(t("deleteMessageBundleSuccess"));
+    } catch (error) {
+      addError("realm-settings:deleteMessageBundleError", error);
+    }
+  };
+
   return (
     <>
       {addMessageBundleModalOpen && (
@@ -578,6 +593,15 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                   onRowEdit={(_, type, _b, rowIndex, validation) =>
                     updateEditableRows(type, rowIndex, validation)
                   }
+                  actions={[
+                    {
+                      title: t("common:delete"),
+                      onClick: (_, row) =>
+                        deleteKey(
+                          (tableRows[row].cells?.[0] as IRowCell).props.value
+                        ),
+                    },
+                  ]}
                 >
                   <TableHeader />
                   <TableBody />

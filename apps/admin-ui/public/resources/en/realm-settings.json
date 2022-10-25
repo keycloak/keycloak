@@ -316,6 +316,8 @@
   "searchForMessageBundle": "Search for message bundle",
   "addMessageBundle": "Add message bundle",
   "addMessageBundleSuccess": "Success! The message bundle has been added.",
+  "deleteMessageBundleSuccess": "Successfully removed the message from the bundle",
+  "deleteMessageBundleError": "Error removing the message from the bundle, {{error}}",
   "rowEditBtnAriaLabel": "Edit {{messageBundle}}",
   "rowSaveBtnAriaLabel": "Save edits for {{messageBundle}}",
   "rowCancelBtnAriaLabel": "Cancel edits for {{messageBundle}}",
