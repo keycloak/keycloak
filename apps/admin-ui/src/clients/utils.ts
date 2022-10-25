@@ -1,5 +1,5 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type { TFunction } from "react-i18next";
+import type { TFunction } from "i18next";
 
 /**
  * Checks if a client is intended to be used for authenticating a to a realm.

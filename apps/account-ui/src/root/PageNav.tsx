@@ -5,12 +5,13 @@ import {
   NavList,
   PageSidebar,
 } from "@patternfly/react-core";
+import { TFuncKey } from "i18next";
 import {
   FunctionComponent,
   MouseEvent as ReactMouseEvent,
   useMemo,
 } from "react";
-import { TFuncKey, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import {
   matchPath,
   To,
