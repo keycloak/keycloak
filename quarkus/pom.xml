@@ -36,11 +36,11 @@
             Their names should match the name used by Quarkus BOM and the versions are automatically set when running the 'set-quarkus-version.sh' script.
         -->
         <resteasy.version>4.7.7.Final</resteasy.version>
-        <hibernate-orm.version>5.6.12.Final</hibernate-orm.version>
+        <hibernate-orm.version>5.6.10.Final</hibernate-orm.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
-        <postgresql-jdbc.version>42.5.0</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.4.2</postgresql-jdbc.version>
         <wildfly-common.version>1.5.4.Final-format-001</wildfly-common.version>
-        <wildfly-elytron.version>1.20.1.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>1.20.0.Final</wildfly-elytron.version>
         <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
 
         <!--
