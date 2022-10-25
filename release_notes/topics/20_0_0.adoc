@@ -1,3 +1,9 @@
+= WildFly distribution removed
+
+With this release, we are removing the WildFly distribution which was already deprecated for some time. In case you are still using it, see our https://www.keycloak.org/migration/migrating-to-quarkus[Migration Guide] for switching to Quarkus distribution.
+
+With that, we are also removing the legacy Kubernetes Operator and keeping only the new Quarkus-based Operator (see below for its release notes).
+
 = Allow setting a base URL when configuring the hostname
 
 In this release, we are introducing two additional server options to set a base URL for front end and Admin Console URLs.
@@ -18,8 +24,12 @@ In this release, we are making important changes to `kc.bat` to give the same ex
 In this release, the H2 driver has been upgraded from version 1.x to version 2.x.
 See link:{upgradingguide_link}[{upgradingguide_name}] for details on how to migrate.
 
-= Keycloak Operator upgrade
+= New Keycloak Operator upgrade
 
-We are happy to announce that Keycloak Operator is no longer a tech preview feature. We added new functionality as well as the quality of life improvements. Some of them resulted in breaking changes.
+We are happy to announce that the new Quarkus-based Keycloak Operator is no longer a tech preview feature. We added new functionality as well as the quality of life improvements. Some of them resulted in breaking changes.
 
 It’s important to emphasize that none of these breaking changes will come into effect automatically. Please, read our link:{upgradingguide_link}[{upgradingguide_name}] for more information.
+
+== Realm Operator
+
+As the new Operator currently lacks some of the CRs (e.g. Client and User), we're introducing a temporary workaround in the form of Realm Operator. Please see its https://github.com/keycloak/keycloak-realm-operator[GitHub Repository] for more details. See also https://www.keycloak.org/2022/09/operator-crs["The future of Keycloak Operator CRs" blogpost].
