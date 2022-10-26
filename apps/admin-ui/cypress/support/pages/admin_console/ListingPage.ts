@@ -16,7 +16,7 @@ export enum FilterAssignedType {
 export enum FilterProtocol {
   All = "All",
   SAML = "SAML",
-  OpenID = "openid-connect", //TODO: text to be unified with item text
+  OpenID = "OpenID Connect",
 }
 
 export enum FilterSession {

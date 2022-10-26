@@ -51,7 +51,7 @@
   "protocolTypes": {
     "all": "All",
     "saml": "SAML",
-    "openid-connect": "openid-connect"
+    "openid-connect": "OpenID Connect"
   },
   "headerName": "header name"
 }
