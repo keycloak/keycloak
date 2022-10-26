@@ -763,22 +763,22 @@ describe("Clients test", () => {
 
       advancedTab.clickAdvancedSwitches();
       advancedTab.jumpToAdvanced();
-      advancedTab.SelectKeyForCodeExchangeInput("S256");
+      advancedTab.selectKeyForCodeExchangeInput("S256");
 
       advancedTab.saveAdvanced();
       advancedTab.jumpToAdvanced();
       advancedTab.checkAdvancedSwitchesOn();
-      advancedTab.CheckKeyForCodeExchangeInput("S256");
+      advancedTab.checkKeyForCodeExchangeInput("S256");
 
-      advancedTab.SelectKeyForCodeExchangeInput("plain");
-      advancedTab.CheckKeyForCodeExchangeInput("plain");
+      advancedTab.selectKeyForCodeExchangeInput("plain");
+      advancedTab.checkKeyForCodeExchangeInput("plain");
 
       advancedTab.jumpToAdvanced();
       advancedTab.clickAdvancedSwitches();
 
       advancedTab.revertAdvanced();
       advancedTab.jumpToAdvanced();
-      advancedTab.CheckKeyForCodeExchangeInput("S256");
+      advancedTab.checkKeyForCodeExchangeInput("S256");
       //uncomment when revert button reverts all switches
       //and ACR to LoA Mapping + Default ACR Values
       //advancedTab.checkAdvancedSwitchesOn();
@@ -786,21 +786,21 @@ describe("Clients test", () => {
 
     it("Authentication flow override", () => {
       advancedTab.jumpToAuthFlow();
-      advancedTab.SelectBrowserFlowInput("browser");
-      advancedTab.SelectDirectGrantInput("docker auth");
-      advancedTab.CheckBrowserFlowInput("browser");
-      advancedTab.CheckDirectGrantInput("docker auth");
+      advancedTab.selectBrowserFlowInput("browser");
+      advancedTab.selectDirectGrantInput("docker auth");
+      advancedTab.checkBrowserFlowInput("browser");
+      advancedTab.checkDirectGrantInput("docker auth");
 
       advancedTab.revertAuthFlowOverride();
       advancedTab.jumpToAuthFlow();
-      advancedTab.CheckBrowserFlowInput("");
-      advancedTab.CheckDirectGrantInput("");
-      advancedTab.SelectBrowserFlowInput("browser");
-      advancedTab.SelectDirectGrantInput("docker auth");
+      advancedTab.checkBrowserFlowInput("");
+      advancedTab.checkDirectGrantInput("");
+      advancedTab.selectBrowserFlowInput("browser");
+      advancedTab.selectDirectGrantInput("docker auth");
 
       advancedTab.saveAuthFlowOverride();
-      advancedTab.SelectBrowserFlowInput("first broker login");
-      advancedTab.SelectDirectGrantInput("first broker login");
+      advancedTab.selectBrowserFlowInput("first broker login");
+      advancedTab.selectDirectGrantInput("first broker login");
       advancedTab.revertAuthFlowOverride();
       //revert doesn't work after saving.
       //advancedTab.CheckBrowserFlowInput("browser");

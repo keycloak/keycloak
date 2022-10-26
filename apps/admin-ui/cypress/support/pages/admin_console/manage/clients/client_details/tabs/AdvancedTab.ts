@@ -217,6 +217,7 @@ export default class AdvancedTab extends PageObject {
   }
 
   checkAdvancedSwitchesOn() {
+    cy.get(this.oAuthMutualSwitch).scrollIntoView();
     this.assertSwitchStateOn(cy.get(this.oAuthMutualSwitch));
     this.assertSwitchStateOn(
       cy.get(this.pushedAuthorizationRequestRequiredSwitch)
@@ -232,7 +233,7 @@ export default class AdvancedTab extends PageObject {
     return this;
   }
 
-  SelectKeyForCodeExchangeInput(input: string) {
+  selectKeyForCodeExchangeInput(input: string) {
     cy.get(this.keyForCodeExchangeInput).click();
     cy.get(this.keyForCodeExchangeInput + " + ul")
       .contains(input)
@@ -240,7 +241,7 @@ export default class AdvancedTab extends PageObject {
     return this;
   }
 
-  CheckKeyForCodeExchangeInput(input: string) {
+  checkKeyForCodeExchangeInput(input: string) {
     cy.get(this.keyForCodeExchangeInput).should("have.text", input);
     return this;
   }
@@ -260,7 +261,7 @@ export default class AdvancedTab extends PageObject {
     return this;
   }
 
-  SelectBrowserFlowInput(input: string) {
+  selectBrowserFlowInput(input: string) {
     cy.get(this.browserFlowInput).click();
     cy.get(this.browserFlowInput + " + ul")
       .contains(input)
@@ -268,7 +269,7 @@ export default class AdvancedTab extends PageObject {
     return this;
   }
 
-  SelectDirectGrantInput(input: string) {
+  selectDirectGrantInput(input: string) {
     cy.get(this.directGrantInput).click();
     cy.get(this.directGrantInput + " + ul")
       .contains(input)
@@ -276,12 +277,12 @@ export default class AdvancedTab extends PageObject {
     return this;
   }
 
-  CheckBrowserFlowInput(input: string) {
+  checkBrowserFlowInput(input: string) {
     cy.get(this.browserFlowInput).should("have.text", input);
     return this;
   }
 
-  CheckDirectGrantInput(input: string) {
+  checkDirectGrantInput(input: string) {
     cy.get(this.directGrantInput).should("have.text", input);
     return this;
   }

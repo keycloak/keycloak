@@ -81,6 +81,46 @@ export const AdvancedSettings = ({
             control={control}
           />
 
+          <TokenLifespan
+            id="clientSessionIdle"
+            name={convertAttributeNameToForm(
+              "attributes.client.session.idle.timeout"
+            )}
+            defaultValue=""
+            units={["minute", "day", "hour"]}
+            control={control}
+          />
+
+          <TokenLifespan
+            id="clientSessionMax"
+            name={convertAttributeNameToForm(
+              "attributes.client.session.max.lifespan"
+            )}
+            defaultValue=""
+            units={["minute", "day", "hour"]}
+            control={control}
+          />
+
+          <TokenLifespan
+            id="clientOfflineSessionIdle"
+            name={convertAttributeNameToForm(
+              "attributes.client.offline.session.idle.timeout"
+            )}
+            defaultValue=""
+            units={["minute", "day", "hour"]}
+            control={control}
+          />
+
+          <TokenLifespan
+            id="clientOfflineSessionMax"
+            name={convertAttributeNameToForm(
+              "attributes.client.offline.session.max.lifespan"
+            )}
+            defaultValue=""
+            units={["minute", "day", "hour"]}
+            control={control}
+          />
+
           <FormGroup
             label={t("oAuthMutual")}
             fieldId="oAuthMutual"
