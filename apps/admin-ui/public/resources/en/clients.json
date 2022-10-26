@@ -396,6 +396,10 @@
     "generate": "Generate",
     "import": "Import"
   },
+  "realmCertificateAlias": "Realm certificate alias",
+  "exportSamlKeyTitle": "Export SAML Keys",
+  "samlKeysExportSuccess": "Successfully exported keys",
+  "samlKeysExportError": "Could not export keys due to: {{error}}",
   "confirm": "Confirm",
   "browse": "Browse",
   "importKey": "Import key",

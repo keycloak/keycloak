@@ -128,6 +128,7 @@
   "archiveFormat": "Java keystore or PKCS12 archive format.",
   "keyAlias": "Archive alias for your private key and certificate.",
   "keyPassword": "Password to access the private key in the archive",
+  "realmCertificateAlias": "Realm certificate is stored in archive too. This is the alias to it.",
   "storePassword": "Password to access the archive itself",
   "consentRequired": "If enabled, users have to consent to client access.",
   "displayOnClient": "Applicable only if 'Consent Required' is on for this client. If this switch is off, the consent screen will contain just the consents corresponding to configured client scopes. If on, there will be also one item on the consent screen about this client itself.",

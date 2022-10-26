@@ -28,6 +28,8 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { useAlerts } from "../../components/alert/Alerts";
 import { SamlImportKeyDialog } from "./SamlImportKeyDialog";
 import { convertAttributeNameToForm } from "../../util";
+import useToggle from "../../utils/useToggle";
+import { ExportSamlKeyDialog } from "./ExportSamlKeyDialog";
 
 type SamlKeysProps = {
   clientId: string;
@@ -51,6 +53,7 @@ const KEYS_MAPPING: { [key in KeyTypes]: { [index: string]: string } } = {
 };
 
 type KeySectionProps = {
+  clientId: string;
   keyInfo?: CertificateRepresentation;
   attr: KeyTypes;
   onChanged: (key: KeyTypes) => void;
@@ -59,6 +62,7 @@ type KeySectionProps = {
 };
 
 const KeySection = ({
+  clientId,
   keyInfo,
   attr,
   onChanged,
@@ -71,9 +75,14 @@ const KeySection = ({
   const key = KEYS_MAPPING[attr].key;
   const name = KEYS_MAPPING[attr].name;
 
+  const [showImportDialog, toggleImportDialog] = useToggle();
+
   const section = watch(name);
   return (
     <>
+      {showImportDialog && (
+        <ExportSamlKeyDialog clientId={clientId} close={toggleImportDialog} />
+      )}
       <FormPanel title={t(title)} className="kc-form-panel__panel">
         <TextContent className="pf-u-pb-lg">
           <Text>{t(`${title}Explain`)}</Text>
@@ -132,7 +141,9 @@ const KeySection = ({
                 <Button variant="secondary" onClick={() => onImport(attr)}>
                   {t("importKey")}
                 </Button>
-                <Button variant="tertiary">{t("common:export")}</Button>
+                <Button variant="tertiary" onClick={toggleImportDialog}>
+                  {t("common:export")}
+                </Button>
               </ActionGroup>
             </Form>
           </CardBody>
@@ -244,6 +255,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
             />
           )}
           <KeySection
+            clientId={clientId}
             keyInfo={keyInfo?.[index]}
             attr={attr}
             onChanged={setIsChanged}

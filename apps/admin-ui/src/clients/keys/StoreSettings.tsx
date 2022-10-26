@@ -9,11 +9,13 @@ import { KeycloakTextInput } from "../../components/keycloak-text-input/Keycloak
 
 export const StoreSettings = ({
   hidePassword = false,
+  isSaml = false,
 }: {
   hidePassword?: boolean;
+  isSaml?: boolean;
 }) => {
   const { t } = useTranslation("clients");
-  const { register } = useFormContext<KeyStoreConfig>();
+  const { register, errors } = useFormContext<KeyStoreConfig>();
 
   return (
     <>
@@ -27,6 +29,8 @@ export const StoreSettings = ({
             fieldLabelId="clients:keyAlias"
           />
         }
+        helperTextInvalid={t("common:required")}
+        validated={errors.keyAlias ? "error" : "default"}
       >
         <KeycloakTextInput
           data-testid="keyAlias"
@@ -34,6 +38,7 @@ export const StoreSettings = ({
           id="keyAlias"
           name="keyAlias"
           ref={register({ required: true })}
+          validated={errors.keyAlias ? "error" : "default"}
         />
       </FormGroup>
       {!hidePassword && (
@@ -47,12 +52,35 @@ export const StoreSettings = ({
               fieldLabelId="clients:keyPassword"
             />
           }
+          helperTextInvalid={t("common:required")}
+          validated={errors.keyPassword ? "error" : "default"}
         >
           <PasswordInput
             data-testid="keyPassword"
             id="keyPassword"
             name="keyPassword"
             ref={register({ required: true })}
+            validated={errors.keyPassword ? "error" : "default"}
+          />
+        </FormGroup>
+      )}
+      {isSaml && (
+        <FormGroup
+          label={t("realmCertificateAlias")}
+          fieldId="realmCertificateAlias"
+          labelIcon={
+            <HelpItem
+              helpText="clients-help:realmCertificateAlias"
+              fieldLabelId="clients:realmCertificateAlias"
+            />
+          }
+        >
+          <KeycloakTextInput
+            data-testid="realmCertificateAlias"
+            type="text"
+            id="realmCertificateAlias"
+            name="realmAlias"
+            ref={register()}
           />
         </FormGroup>
       )}
@@ -66,12 +94,15 @@ export const StoreSettings = ({
             fieldLabelId="clients:storePassword"
           />
         }
+        helperTextInvalid={t("common:required")}
+        validated={errors.storePassword ? "error" : "default"}
       >
         <PasswordInput
           data-testid="storePassword"
           id="storePassword"
           name="storePassword"
           ref={register({ required: true })}
+          validated={errors.storePassword ? "error" : "default"}
         />
       </FormGroup>
     </>

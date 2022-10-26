@@ -33,9 +33,10 @@ type GenerateKeyDialogProps = {
 
 type KeyFormProps = {
   useFile?: boolean;
+  isSaml?: boolean;
 };
 
-export const KeyForm = ({ useFile = false }: KeyFormProps) => {
+export const KeyForm = ({ isSaml = false, useFile = false }: KeyFormProps) => {
   const { t } = useTranslation("clients");
 
   const [filename, setFilename] = useState<string>();
@@ -113,7 +114,7 @@ export const KeyForm = ({ useFile = false }: KeyFormProps) => {
           />
         </FormGroup>
       )}
-      <StoreSettings hidePassword={useFile} />
+      <StoreSettings hidePassword={useFile} isSaml={isSaml} />
     </Form>
   );
 };
