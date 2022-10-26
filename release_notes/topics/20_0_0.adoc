@@ -67,11 +67,6 @@ A custom identity provider can now set the icon used on the login pages. Thanks 
 who happens also to maintain
 https://github.com/klausbetz/apple-identity-provider-keycloak[an extension to Keycloak to support log in with AppleID].
 
-= Open Banking UK support
-
-Keycloak is now compliant with Open Banking UK.
-Thanks to https://github.com/tnorimat[Takashi Norimatsu] for this contribution.
-
 = FIPS 140-2 experimental support
 
 There is now experimental support for deploying Keycloak into a FIPS 140-2 enabled environment. There will be a blog post
