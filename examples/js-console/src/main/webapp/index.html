@@ -53,9 +53,9 @@
 
 <script>
     function loadProfile() {
-        keycloak.loadUserProfile().success(function(profile) {
+        keycloak.loadUserProfile().then(function(profile) {
             output(profile);
-        }).error(function() {
+        }).catch(function() {
             output('Failed to load profile');
         });
     }
@@ -82,9 +82,9 @@
     }
 
     function loadUserInfo() {
-        keycloak.loadUserInfo().success(function(userInfo) {
+        keycloak.loadUserInfo().then(function(userInfo) {
             output(userInfo);
-        }).error(function() {
+        }).catch(function() {
             output('Failed to load user info');
         });
     }
@@ -167,7 +167,7 @@
         }
     };
 
-    // Flow can be changed to 'implicit' or 'hybrid', but then client must enable implicit flow in admin console too 
+    // Flow can be changed to 'implicit' or 'hybrid', but then client must enable implicit flow in admin console too
     var initOptions = {
         responseMode: 'fragment',
         flow: 'standard'
