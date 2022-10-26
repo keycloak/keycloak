@@ -64,11 +64,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     private final KeycloakSession session;
     private final EntityManager em;
     private final int maxDetailLength;
+    private final int maxFieldLength;
 
-    public JpaEventStoreProvider(KeycloakSession session, EntityManager em, int maxDetailLength) {
+    public JpaEventStoreProvider(KeycloakSession session, EntityManager em, int maxDetailLength, int maxFieldLength) {
         this.session = session;
         this.em = em;
         this.maxDetailLength = maxDetailLength;
+        this.maxFieldLength = maxFieldLength;
     }
 
     @Override
@@ -171,9 +173,9 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         try {
             if (maxDetailLength > 0 && event.getDetails() != null) {
                 Map<String, String> result = new HashMap<>(event.getDetails());
-                result.entrySet().forEach(t -> t.setValue(trimToMaxLength(t.getValue())));
+                result.entrySet().forEach(t -> t.setValue(trimToMaxDetailLength(t.getValue())));
 
-                eventEntity.setDetailsJson(mapper.writeValueAsString(result));
+                eventEntity.setDetailsJson(trimToMaxFieldLength(mapper.writeValueAsString(result)));
             } else {
                 eventEntity.setDetailsJson(mapper.writeValueAsString(event.getDetails()));
             }
@@ -183,14 +185,23 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         return eventEntity;
     }
 
-    private String trimToMaxLength(String detail) {
+    private String trimToMaxDetailLength(String detail) {
         if (detail != null && detail.length() > maxDetailLength) {
+            logger.warnf("Detail '%s' will be truncated.", detail);
             // (maxDetailLength - 3) takes "..." into account
-            String result = detail.substring(0, maxDetailLength - 3).concat("...");
-            logger.warn("Detail was truncated to " + result);
-            return result;
+            return detail.substring(0, maxDetailLength - 3).concat("...");
         } else {
             return detail;
+        }
+    }
+
+    private String trimToMaxFieldLength(String field) {
+        if (maxFieldLength > 0 && field != null && field.length() > maxFieldLength) {
+            logger.warnf("Field '%s' will be truncated.", field);
+            // (maxFieldLength - 3) takes "..." into account
+            return field.substring(0, maxFieldLength - 3).concat("...");
+        } else {
+            return field;
         }
     }
 
@@ -214,7 +225,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         return event;
     }
     
-    static AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+    private AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
         adminEventEntity.setId(adminEvent.getId() == null ? UUID.randomUUID().toString() : adminEvent.getId());
         adminEventEntity.setTime(adminEvent.getTime());
@@ -230,7 +241,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEventEntity.setError(adminEvent.getError());
         
         if(includeRepresentation) {
-            adminEventEntity.setRepresentation(adminEvent.getRepresentation());
+            adminEventEntity.setRepresentation(trimToMaxFieldLength(adminEvent.getRepresentation()));
         }
         return adminEventEntity;
     }
@@ -276,17 +287,32 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<RealmAttributeEntity> cr = cb.createQuery(RealmAttributeEntity.class);
         Root<RealmAttributeEntity> root = cr.from(RealmAttributeEntity.class);
-        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.greaterThan(root.get("value").as(Long.class),Long.valueOf(0))));
-        Map<Long, List<RealmAttributeEntity>> realms = em.createQuery(cr).getResultStream().collect(Collectors.groupingBy(attribute -> Long.valueOf(attribute.getValue())));
+        // unable to cast the CLOB to a BIGINT in the select for H2 2.x, therefore comparing strings only in the DB, and filtering again in the next statement
+        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.notEqual(root.get("value"), "0")));
+        Map<Long, List<RealmAttributeEntity>> realms = em.createQuery(cr).getResultStream()
+                // filtering again on the attribute as paring the CLOB to BIGINT didn't work in H2 2.x
+                .filter(attribute -> {
+                    try {
+                        return Long.parseLong(attribute.getValue()) > 0;
+                    } catch (NumberFormatException ex) {
+                        logger.warnf("Unable to parse value '%s' for attribute '%s' in realm '%s' (expecting it to be decimal numeric)",
+                                attribute.getValue(),
+                                RealmAttributes.ADMIN_EVENTS_EXPIRATION,
+                                attribute.getRealm().getId(),
+                                ex);
+                        return false;
+                    }
+                })
+                .collect(Collectors.groupingBy(attribute -> Long.valueOf(attribute.getValue())));
 
         long current = Time.currentTimeMillis();
-        realms.entrySet().forEach(entry -> {
-            List<String> realmIds = entry.getValue().stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
+        realms.forEach((key, value) -> {
+            List<String> realmIds = value.stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
             int currentNumDeleted = em.createQuery("delete from AdminEventEntity where realmId in :realmIds and time < :eventTime")
-                .setParameter("realmIds", realmIds)
-                .setParameter("eventTime", current - (Long.valueOf(entry.getKey()) * 1000))
-                .executeUpdate();
-            logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, entry.getKey());
+                    .setParameter("realmIds", realmIds)
+                    .setParameter("eventTime", current - (key * 1000))
+                    .executeUpdate();
+            logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, key);
         });
     }
 }

@@ -38,6 +38,8 @@ public final class PropertyMappers {
         MAPPERS.addAll(LoggingPropertyMappers.getMappers());
         MAPPERS.addAll(TransactionPropertyMappers.getTransactionPropertyMappers());
         MAPPERS.addAll(StoragePropertyMappers.getMappers());
+        MAPPERS.addAll(ClassLoaderPropertyMappers.getMappers());
+        MAPPERS.addAll(SecurityPropertyMappers.getMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {

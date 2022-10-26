@@ -82,9 +82,6 @@ public class QuarkusWelcomeResource {
 
     /**
      * Welcome page of Keycloak
-     *
-     * @return
-     * @throws URISyntaxException
      */
     @GET
     @Produces(MediaType.TEXT_HTML_UTF_8)
@@ -146,9 +143,6 @@ public class QuarkusWelcomeResource {
 
     /**
      * Resources for welcome page
-     *
-     * @param path
-     * @return
      */
     @GET
     @Path("/welcome-content/{path}")
@@ -164,7 +158,7 @@ public class QuarkusWelcomeResource {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
         } catch (IOException e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -176,7 +170,6 @@ public class QuarkusWelcomeResource {
 
             map.put("adminConsoleEnabled", isAdminConsoleEnabled());
             map.put("productName", Version.NAME);
-            map.put("productNameFull", Version.NAME_FULL);
 
             map.put("properties", theme.getProperties());
             map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
@@ -214,7 +207,7 @@ public class QuarkusWelcomeResource {
                     .cacheControl(CacheControlUtil.noCache());
             return rb.build();
         } catch (Exception e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -237,7 +230,7 @@ public class QuarkusWelcomeResource {
         try {
             return session.theme().getTheme(Theme.Type.WELCOME);
         } catch (IOException e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -268,7 +261,7 @@ public class QuarkusWelcomeResource {
             // So consider that welcome page accessed locally just if it was accessed really through "localhost" URL and without loadbalancer (x-forwarded-for header is empty).
             return isLocalAddress(remoteInetAddress) && isLocalAddress(localInetAddress) && xForwardedFor == null;
         } catch (UnknownHostException e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 

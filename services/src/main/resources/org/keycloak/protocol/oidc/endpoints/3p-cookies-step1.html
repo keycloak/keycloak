@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <script>
+      if ("hasStorageAccess" in document) {
+        checkStorageAccess();
+      } else {
+        placeTestCookie();
+      }
+
+      function checkStorageAccess() {
+        document.hasStorageAccess().then(function (hasAccess) {
+          window.parent.postMessage(
+            hasAccess ? "supported" : "unsupported",
+            "*"
+          );
+        });
+      }
+
+      function placeTestCookie() {
+        document.cookie =
+          "KEYCLOAK_3P_COOKIE_SAMESITE=supported; Max-Age=60; SameSite=None; Secure";
+        document.cookie = "KEYCLOAK_3P_COOKIE=supported; Max-Age=60";
+        window.location = "step2.html";
+      }
+    </script>
+  </body>
+</html>

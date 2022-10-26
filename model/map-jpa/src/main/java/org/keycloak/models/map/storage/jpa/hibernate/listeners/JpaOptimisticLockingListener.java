@@ -30,26 +30,27 @@ import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 
 import javax.persistence.LockModeType;
 import java.util.Objects;
+import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 
 /**
- * Listen on changes on child entities and forces an optimistic locking increment on the topmost parent aka root.
+ * Listen on changes on child entities and forces an optimistic locking increment on the closest parent aka root.
+ * The assumption is that any parent of a child entity is root entity. Optimistic locking is enforced on child entity
+ * which is not the child entity at the same time. This prevents {@link javax.persistence.OptimisticLockException}s
+ * when different children in the same parent are being manipulated at the same time by different threads.
  *
- * This support a multiple level parent-child relationship, where only the upmost parent is locked.
+ * This support a multiple level parent-child relationship, where only the closest parent is locked.
  */
 public class JpaOptimisticLockingListener implements PreInsertEventListener, PreDeleteEventListener, PreUpdateEventListener {
 
     public static final JpaOptimisticLockingListener INSTANCE = new JpaOptimisticLockingListener();
 
     /**
-     * Check if the entity is a child with a parent and force optimistic locking increment on the upmost parent aka root.
+     * Check if the entity is a child with a parent and force optimistic locking increment on the parent aka root.
      */
     public void lockRootEntity(Session session, Object entity) throws HibernateException {
-        if(entity instanceof JpaChildEntity) {
-            Object root = entity;
-            while (root instanceof JpaChildEntity) {
-                root = ((JpaChildEntity<?>) entity).getParent();
-                Objects.requireNonNull(root, "children must always return their parent, never null");
-            }
+        if (entity instanceof JpaChildEntity && ! (entity instanceof JpaRootEntity)) {
+            Object root = ((JpaChildEntity<?>) entity).getParent();
+            Objects.requireNonNull(root, "children must always return their parent, never null");
 
             // do not lock if root doesn't implement implicit optimistic locking mechanism 
             if (! (root instanceof JpaRootVersionedEntity)) return;

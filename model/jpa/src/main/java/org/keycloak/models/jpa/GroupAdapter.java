@@ -44,7 +44,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel.Streams , JpaModel<GroupEntity> {
+public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     protected GroupEntity group;
     protected EntityManager em;

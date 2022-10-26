@@ -20,6 +20,7 @@ package org.keycloak.testsuite.client.resources;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
 import javax.ws.rs.Consumes;
@@ -145,4 +146,16 @@ public interface TestOIDCEndpointsApplicationResource {
     @NoCache
     ClientNotificationEndpointRequest getPushedCibaClientNotification(@QueryParam("clientNotificationToken") String clientNotificationToken);
 
+    @GET
+    @Path("/bind-intent-with-client")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    Response bindIntentWithClient(@QueryParam("intentId") String intentId, @QueryParam("clientId") String clientId);
+
+    @POST
+    @Path("/check-intent-client-bound")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    IntentClientBindCheckExecutor.IntentBindCheckResponse checkIntentClientBound(IntentClientBindCheckExecutor.IntentBindCheckRequest request);
 }

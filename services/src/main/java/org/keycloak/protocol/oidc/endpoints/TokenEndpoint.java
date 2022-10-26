@@ -74,11 +74,16 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ResourceOwnerPasswordCredentialsContext;
+import org.keycloak.services.clientpolicy.context.ResourceOwnerPasswordCredentialsResponseContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
+import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
+import org.keycloak.services.clientpolicy.context.TokenRefreshResponseContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
+import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -113,6 +118,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -431,11 +437,11 @@ public class TokenEndpoint {
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
-        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true);
+        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
     }
 
     public Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
-        String scopeParam, boolean code) {
+        String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
         AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
@@ -449,6 +455,15 @@ public class TokenEndpoint {
 
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
+        }
+
+        if (clientPolicyContextGenerator != null) {
+            try {
+                session.clientPolicy().triggerOnEvent(clientPolicyContextGenerator.apply(responseBuilder));
+            } catch (ClientPolicyException cpe) {
+                event.error(cpe.getError());
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            }
         }
 
         AccessTokenResponse res = null;
@@ -506,6 +521,9 @@ public class TokenEndpoint {
         try {
             // KEYCLOAK-6771 Certificate Bound Token
             TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request);
+
+            session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
+
             res = responseBuilder.build();
 
             if (!responseBuilder.isOfflineToken()) {
@@ -525,6 +543,9 @@ public class TokenEndpoint {
                 event.error(Errors.INVALID_TOKEN);
                 throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
             }
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
         event.success();
@@ -640,6 +661,13 @@ public class TokenEndpoint {
 
         checkMtlsHoKToken(responseBuilder, useRefreshToken);
 
+        try {
+            session.clientPolicy().triggerOnEvent(new ResourceOwnerPasswordCredentialsResponseContext(formParams, clientSessionCtx, responseBuilder));
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+        }
+
         // TODO : do the same as codeToToken()
         AccessTokenResponse res = responseBuilder.build();
 
@@ -737,6 +765,13 @@ public class TokenEndpoint {
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
+        }
+
+        try {
+            session.clientPolicy().triggerOnEvent(new ServiceAccountTokenResponseContext(formParams, clientSessionCtx.getClientSession(), responseBuilder));
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
         // TODO : do the same as codeToToken()

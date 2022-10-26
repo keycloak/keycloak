@@ -49,7 +49,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
@@ -57,8 +56,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
-import org.keycloak.models.jpa.JpaUserProvider;
-import static org.keycloak.models.map.user.MapUserProviderFactory.REALM_ATTR_USERNAME_CASE_SENSITIVE;
 
 /**
  *
@@ -135,7 +132,7 @@ public class UserModelTest extends KeycloakModelTest {
         realm1Id = inComittedTransaction((Function<KeycloakSession, String>)  session -> {
             RealmModel realm = session.realms().createRealm("realm1");
             realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
-            realm.setAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, true);
+            realm.setAttribute(Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE, true);
             return realm.getId();
         });
 
@@ -155,7 +152,7 @@ public class UserModelTest extends KeycloakModelTest {
         realm2Id = inComittedTransaction((Function<KeycloakSession, String>)  session -> {
             RealmModel realm = session.realms().createRealm("realm2");
             realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
-            realm.setAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, false);
+            realm.setAttribute(Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE, false);
             return realm.getId();
         });
 

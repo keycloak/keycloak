@@ -17,6 +17,7 @@
 
 package org.keycloak.broker.provider;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
@@ -37,8 +38,12 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
-    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+
+    private static final Logger LOG = Logger.getLogger(HardcodedRoleMapper.class);
+
+    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES =
+            new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     static {
         ProviderConfigProperty property;
@@ -91,10 +96,22 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
     }
 
     private void grantUserRole(RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel) {
+        RoleModel role = getRole(realm, mapperModel);
+        if (role != null) {
+            user.grantRole(role);
+        }
+    }
+
+    private RoleModel getRole(final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-        if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
-        user.grantRole(role);
+
+        if (role == null) {
+            LOG.warnf("Unable to find role '%s' referenced by mapper '%s' on realm '%s'.", roleName,
+                    mapperModel.getName(), realm.getName());
+        }
+
+        return role;
     }
 
     @Override

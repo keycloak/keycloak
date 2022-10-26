@@ -112,7 +112,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         ClientModel client = authenticateClient();
 
         AuthorizationEndpointRequest request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client,
-            httpRequest.getDecodedFormParameters());
+            httpRequest.getDecodedFormParameters(), AuthorizationEndpointRequestParserProcessor.EndpointType.OAUTH2_DEVICE_ENDPOINT);
 
         if (request.getInvalidRequestMessage() != null) {
             event.error(Errors.INVALID_REQUEST);

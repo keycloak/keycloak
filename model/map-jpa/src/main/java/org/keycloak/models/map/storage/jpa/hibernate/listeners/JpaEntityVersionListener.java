@@ -30,22 +30,30 @@ import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 /**
  * Listen on changes on child- and root entities and updates the current entity version of the root.
  *
- * This support a multiple level parent-child relationship, where the upmost parent needs the entity version to be updated.
+ * This support a multiple level parent-child relationship, where all parents needs the entity version to be updated
+ * in case it was effectively changed. The traversing is stopped at that point when it is detected that parent entity
+ * version is the same one. 
+ * 
+ * It is based on an assumption that it may happen that one parent entity could be extracted into "parent A -> parent B -> child"
+ * format. Then the change (insertion, deletion or update) of the child should bump the entity version of both parent B and parent A.
  */
 public class JpaEntityVersionListener implements PreInsertEventListener, PreDeleteEventListener, PreUpdateEventListener {
 
     public static final JpaEntityVersionListener INSTANCE = new JpaEntityVersionListener();
 
     /**
-     * Traverse from current entity up to the upmost parent, then update the entity version if it is a root entity.
+     * Traverse from current entity through its parent tree and update the entity version of it. 
+     * Stop if non-changed parent is found.
      */
     public void updateEntityVersion(Object entity) throws HibernateException {
         Object root = entity;
         while(root instanceof JpaChildEntity) {
             root = ((JpaChildEntity<?>) entity).getParent();
-        }
-        if (root instanceof JpaRootEntity) {
-            ((JpaRootEntity) root).updateEntityVersion();
+            if (root instanceof JpaRootEntity) {
+                if (!((JpaRootEntity) root).updateEntityVersion()) {
+                    return;
+                }
+            }   
         }
     }
 

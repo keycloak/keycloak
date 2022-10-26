@@ -20,26 +20,28 @@ package org.keycloak.testsuite.model.singleUseObject;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
+import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.ActionTokenKeyModel;
-import org.keycloak.models.ActionTokenStoreProvider;
-import org.keycloak.models.ActionTokenValueModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
+import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeFalse;
 
-@RequireProvider(ActionTokenStoreProvider.class)
 @RequireProvider(SingleUseObjectProvider.class)
 public class SingleUseObjectModelTest extends KeycloakModelTest {
 
@@ -64,46 +66,47 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
     @Test
     public void testActionTokens() {
-        ActionTokenKeyModel key = withRealm(realmId, (session, realm) -> {
-            ActionTokenStoreProvider actionTokenStore = session.getProvider(ActionTokenStoreProvider.class);
-            DefaultActionTokenKey actionTokenKey = new DefaultActionTokenKey(userId, UUID.randomUUID().toString(), Time.currentTime() + 60, null);
+        DefaultActionTokenKey key = withRealm(realmId, (session, realm) -> {
+            SingleUseObjectProvider singleUseObjectProvider = session.getProvider(SingleUseObjectProvider.class);
+            int time = Time.currentTime();
+            DefaultActionTokenKey actionTokenKey = new DefaultActionTokenKey(userId, UUID.randomUUID().toString(), time + 60, null);
             Map<String, String> notes = new HashMap<>();
             notes.put("foo", "bar");
-            actionTokenStore.put(actionTokenKey, notes);
+            singleUseObjectProvider.put(actionTokenKey.serializeKey(), actionTokenKey.getExp() - time, notes);
             return actionTokenKey;
         });
 
         inComittedTransaction(session -> {
-            ActionTokenStoreProvider actionTokenStore = session.getProvider(ActionTokenStoreProvider.class);
-            ActionTokenValueModel valueModel = actionTokenStore.get(key);
-            Assert.assertNotNull(valueModel);
-            Assert.assertEquals("bar", valueModel.getNote("foo"));
+            SingleUseObjectProvider singleUseObjectProvider = session.getProvider(SingleUseObjectProvider.class);
+            Map<String, String> notes = singleUseObjectProvider.get(key.serializeKey());
+            Assert.assertNotNull(notes);
+            Assert.assertEquals("bar", notes.get("foo"));
 
-            valueModel = actionTokenStore.remove(key);
-            Assert.assertNotNull(valueModel);
-            Assert.assertEquals("bar", valueModel.getNote("foo"));
+            notes = singleUseObjectProvider.remove(key.serializeKey());
+            Assert.assertNotNull(notes);
+            Assert.assertEquals("bar", notes.get("foo"));
         });
 
         inComittedTransaction(session -> {
-            ActionTokenStoreProvider actionTokenStore = session.getProvider(ActionTokenStoreProvider.class);
-            ActionTokenValueModel valueModel = actionTokenStore.get(key);
-            Assert.assertNull(valueModel);
+            SingleUseObjectProvider singleUseObjectProvider = session.getProvider(SingleUseObjectProvider.class);
+            Map<String, String> notes = singleUseObjectProvider.get(key.serializeKey());
+            Assert.assertNull(notes);
 
-            Map<String, String> notes = new HashMap<>();
+            notes = new HashMap<>();
             notes.put("foo", "bar");
-            actionTokenStore.put(key, notes);
+            singleUseObjectProvider.put(key.serializeKey(), key.getExp() - Time.currentTime(), notes);
         });
 
         inComittedTransaction(session -> {
-            ActionTokenStoreProvider actionTokenStore = session.getProvider(ActionTokenStoreProvider.class);
-            ActionTokenValueModel valueModel = actionTokenStore.get(key);
-            Assert.assertNotNull(valueModel);
-            Assert.assertEquals("bar", valueModel.getNote("foo"));
+            SingleUseObjectProvider singleUseObjectProvider = session.getProvider(SingleUseObjectProvider.class);
+            Map<String, String> notes = singleUseObjectProvider.get(key.serializeKey());
+            Assert.assertNotNull(notes);
+            Assert.assertEquals("bar", notes.get("foo"));
 
             Time.setOffset(70);
 
-            valueModel = actionTokenStore.get(key);
-            Assert.assertNull(valueModel);
+            notes = singleUseObjectProvider.get(key.serializeKey());
+            Assert.assertNull(notes);
         });
     }
 
@@ -155,5 +158,90 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
             Assert.assertNull(singleUseStore.get(key));
         });
+    }
+
+    @Test
+    public void testCluster() throws InterruptedException {
+        // Skip the test if MapUserSessionProvider == CHM
+        String usProvider = CONFIG.getConfig().get("userSessions.provider");
+        String usMapStorageProvider = CONFIG.getConfig().get("userSessions.map.storage.provider");
+        assumeFalse(MapUserSessionProviderFactory.PROVIDER_ID.equals(usProvider) &&
+                (usMapStorageProvider == null || ConcurrentHashMapStorageProviderFactory.PROVIDER_ID.equals(usMapStorageProvider)));
+
+        AtomicInteger index = new AtomicInteger();
+        CountDownLatch afterFirstNodeLatch = new CountDownLatch(1);
+        CountDownLatch afterDeleteLatch = new CountDownLatch(1);
+        CountDownLatch clusterJoined = new CountDownLatch(4);
+        CountDownLatch replicationDone = new CountDownLatch(4);
+
+        String key = UUID.randomUUID().toString();
+        AtomicReference<String> actionTokenKey = new AtomicReference<>();
+        Map<String, String> notes = new HashMap<>();
+        notes.put("foo", "bar");
+
+        inIndependentFactories(4, 60, () -> {
+            log.debug("Joining the cluster");
+            clusterJoined.countDown();
+            awaitLatch(clusterJoined);
+            log.debug("Cluster joined");
+
+            if (index.incrementAndGet() == 1) {
+                actionTokenKey.set(withRealm(realmId, (session, realm) -> {
+                    SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+                    singleUseStore.put(key, 60, notes);
+
+                    int time = Time.currentTime();
+                    DefaultActionTokenKey atk = new DefaultActionTokenKey(userId, UUID.randomUUID().toString(), time + 60, null);
+                    singleUseStore.put(atk.serializeKey(), atk.getExp() - time, notes);
+
+                    return atk.serializeKey();
+                }));
+
+                afterFirstNodeLatch.countDown();
+            }
+            awaitLatch(afterFirstNodeLatch);
+
+            // check if single-use object/action token is available on all nodes
+            inComittedTransaction(session -> {
+                SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+                while (singleUseStore.get(key) == null || singleUseStore.get(actionTokenKey.get()) == null) {
+                    sleep(1000);
+                }
+                replicationDone.countDown();
+            });
+
+            awaitLatch(replicationDone);
+
+            // remove objects on one node
+            if (index.incrementAndGet() == 5) {
+                inComittedTransaction(session -> {
+                    SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+                    singleUseStore.remove(key);
+                    singleUseStore.remove(actionTokenKey.get());
+                });
+
+                afterDeleteLatch.countDown();
+            }
+
+            awaitLatch(afterDeleteLatch);
+
+            // check if single-use object/action token is removed
+            inComittedTransaction(session -> {
+                SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+
+                while (singleUseStore.get(key) != null && singleUseStore.get(actionTokenKey.get()) != null) {
+                   sleep(1000);
+                }
+            });
+        });
+    }
+
+    private void awaitLatch(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 }

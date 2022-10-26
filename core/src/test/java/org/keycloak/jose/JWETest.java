@@ -52,13 +52,13 @@ public abstract class JWETest {
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
-    private static final String PAYLOAD = "Hello world! How are you man? I hope you are fine. This is some quite a long text, which is much longer than just simple 'Hello World'";
+    protected static final String PAYLOAD = "Hello world! How are you man? I hope you are fine. This is some quite a long text, which is much longer than just simple 'Hello World'";
 
-    private static final byte[] HMAC_SHA256_KEY = new byte[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 13, 14, 15, 16 };
-    private static final byte[] AES_128_KEY =  new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+    protected static final byte[] HMAC_SHA256_KEY = new byte[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 13, 14, 15, 16 };
+    protected static final byte[] AES_128_KEY =  new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 
-    private static final byte[] HMAC_SHA512_KEY = new byte[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
-    private static final byte[] AES_256_KEY =  new byte[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+    protected static final byte[] HMAC_SHA512_KEY = new byte[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+    protected static final byte[] AES_256_KEY =  new byte[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 
     @Test
     public void testDirect_Aes128CbcHmacSha256() throws Exception {
@@ -79,7 +79,7 @@ public abstract class JWETest {
     }
 
 
-    private void testDirectEncryptAndDecrypt(Key aesKey, Key hmacKey, String encAlgorithm, String payload, boolean sysout) throws Exception {
+    protected void testDirectEncryptAndDecrypt(Key aesKey, Key hmacKey, String encAlgorithm, String payload, boolean sysout) throws Exception {
         JWEHeader jweHeader = new JWEHeader(JWEConstants.DIRECT, encAlgorithm, null);
         JWE jwe = new JWE()
                 .header(jweHeader)

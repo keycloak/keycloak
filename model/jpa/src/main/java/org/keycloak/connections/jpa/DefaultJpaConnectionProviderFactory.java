@@ -175,8 +175,13 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                                 properties.put(AvailableSettings.JPA_NON_JTA_DATASOURCE, dataSource);
                             }
                         } else {
-                            properties.put(AvailableSettings.JPA_JDBC_URL, config.get("url"));
-                            properties.put(AvailableSettings.JPA_JDBC_DRIVER, config.get("driver"));
+                            String url = config.get("url");
+                            String driver = config.get("driver");
+                            if (driver.equals("org.h2.Driver")) {
+                                url = addH2NonKeywords(url);
+                            }
+                            properties.put(AvailableSettings.JPA_JDBC_URL, url);
+                            properties.put(AvailableSettings.JPA_JDBC_DRIVER, driver);
 
                             String user = config.get("user");
                             if (user != null) {
@@ -319,6 +324,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         return sql2012Dialect;
                     }
                 }
+
                 // For Oracle19c, we may need to set dialect explicitly to workaround https://hibernate.atlassian.net/browse/HHH-13184
                 if (dbProductName.equals("Oracle") && connection.getMetaData().getDatabaseMajorVersion() > 12) {
                     logger.debugf("Manually specify dialect for Oracle to org.hibernate.dialect.Oracle12cDialect");
@@ -413,8 +419,13 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                 DataSource dataSource = (DataSource) new InitialContext().lookup(dataSourceLookup);
                 return dataSource.getConnection();
             } else {
-                Class.forName(config.get("driver"));
-                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(config.get("url"), System.getProperties()), config.get("user"), config.get("password"));
+                String url = config.get("url");
+                String driver = config.get("driver");
+                if (driver.equals("org.h2.Driver")) {
+                    url = addH2NonKeywords(url);
+                }
+                Class.forName(driver);
+                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(url, System.getProperties()), config.get("user"), config.get("password"));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to database", e);
@@ -448,4 +459,23 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     private void migrateModel(KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), MigrationModelManager::migrate);
     }
+
+    /**
+     * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
+     * <p />
+     * Alternatives considered and rejected:
+     * <ul>
+     * <li>customizing H2 Database dialect -&gt; wouldn't work for existing Liquibase scripts.</li>
+     * <li>adding quotes to <code>@Column(name="VALUE")</code> annotations -&gt; would require testing for all DBs, wouldn't work for existing Liquibase scripts.</li>
+     * </ul>
+     * Downsides of this solution: Release notes needed to point out that any H2 JDBC URL parameter with <code>NON_KEYWORDS</code> needs to add the keyword <code>VALUE</code> manually.
+     * @return JDBC URL with <code>NON_KEYWORDS=VALUE</code> appended if the URL doesn't contain <code>NON_KEYWORDS=</code> yet
+     */
+    private String addH2NonKeywords(String jdbcUrl) {
+        if (!jdbcUrl.contains("NON_KEYWORDS=")) {
+            jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
+        }
+        return jdbcUrl;
+    }
+
 }

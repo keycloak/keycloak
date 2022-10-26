@@ -24,6 +24,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
@@ -56,7 +57,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.keycloak.models.map.user.MapUserProviderFactory.REALM_ATTR_USERNAME_CASE_SENSITIVE;
 
 public class UsersTest extends AbstractAdminTest {
 
@@ -79,7 +79,7 @@ public class UsersTest extends AbstractAdminTest {
     public void searchUserCaseSensitiveFirst() throws Exception {
         Assume.assumeFalse(isJpaRealmProvider());
         Map<String, String> attributes = new HashMap<>();
-        attributes.put(REALM_ATTR_USERNAME_CASE_SENSITIVE, "true");
+        attributes.put(Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE, "true");
         try (AutoCloseable c = new RealmAttributeUpdater(adminClient.realm(REALM_NAME))
                 .updateWith(r -> r.setAttributes(attributes))
                 .update()) {
@@ -90,7 +90,7 @@ public class UsersTest extends AbstractAdminTest {
 
             RealmRepresentation realmRep = adminClient.realm(REALM_NAME).toRepresentation();
             RealmBuilder.edit(realmRep)
-                    .attribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, "false");
+                    .attribute(Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE, "false");
             realm.update(realmRep);
 
             assertCaseInsensitiveSearch();
@@ -101,7 +101,7 @@ public class UsersTest extends AbstractAdminTest {
     public void searchUserCaseInSensitiveFirst() throws Exception {
         Assume.assumeFalse(isJpaRealmProvider());
         Map<String, String> attributes = new HashMap<>();
-        attributes.put(REALM_ATTR_USERNAME_CASE_SENSITIVE, "false");
+        attributes.put(Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE, "false");
         try (AutoCloseable c = new RealmAttributeUpdater(adminClient.realm(REALM_NAME))
                 .updateWith(r -> r.setAttributes(attributes))
                 .update()) {
@@ -112,7 +112,7 @@ public class UsersTest extends AbstractAdminTest {
 
             RealmRepresentation realmRep = adminClient.realm(REALM_NAME).toRepresentation();
             RealmBuilder.edit(realmRep)
-                    .attribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, "true");
+                    .attribute(Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE, "true");
             realm.update(realmRep);
 
             assertCaseSensitiveSearch();

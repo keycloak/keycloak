@@ -73,7 +73,7 @@ import org.keycloak.storage.user.UserRegistrationProvider;
  * @version $Revision: 1 $
  */
 public class UserStorageManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel>
-        implements UserProvider.Streams, OnUserCache, OnCreateComponent, OnUpdateComponent {
+        implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 

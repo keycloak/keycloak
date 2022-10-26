@@ -16,24 +16,17 @@ Keycloak server is automatically started by the testsuite on the `BeforeSuite` e
 
 By default the server runs in embedded Undertow.
 
-#### Wildfly/EAP
-
-Testsuite supports running server on Wildfly/EAP. For this it's necessary to:
-- build the project including the `distribution` module
- (artifact `keycloak-server-dist`/`-overlay` needs to be available before running the testsuite),
-- activate profile `auth-server-wildfly` or `auth-server-eap7`.
-
 [More details...](servers/auth-server/README.md)
 
 #### Cluster Setup
 
-The cluster setup for server can be enabled by activating profile `auth-server-cluster`.
+The cluster setup for server can be enabled by activating profile `auth-server-cluster-quarkus`.
 
-The cluster setup is not supported for server on Undertow. Profile `auth-server-wildfly` or `auth-server-eap` needs to be activated.
+The cluster setup is not supported for server on Undertow.
 
 The setup includes:
-- a `mod_cluster` load balancer on Wildfly
-- two clustered nodes of Keycloak server on Wildfly/EAP
+- a `mod_cluster` load balancer on Quarkus
+- two clustered nodes of Keycloak server on Quarkus
 
 Clustering tests require MULTICAST to be enabled on machine's `loopback` network interface.
 This can be done by running the following commands under root privileges:

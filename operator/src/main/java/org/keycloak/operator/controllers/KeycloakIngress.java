@@ -21,11 +21,14 @@ import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 
 import java.util.HashMap;
 import java.util.Optional;
+
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 public class KeycloakIngress extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
@@ -40,7 +43,8 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        if (keycloak.getSpec().isDisableDefaultIngress()) {
+        IngressSpec ingressSpec = keycloak.getSpec().getIngressSpec();
+        if (ingressSpec != null && !ingressSpec.isIngressEnabled()) {
             if (existingIngress != null) {
                 deleteExistingIngress();
             }
@@ -59,8 +63,8 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
     }
 
     private Ingress newIngress() {
-        var port = (keycloak.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
-        var backendProtocol = (keycloak.getSpec().isHttp()) ? "HTTP" : "HTTPS";
+        var port = KeycloakService.getServicePort(keycloak);
+        var backendProtocol = (!isTlsConfigured(keycloak)) ? "HTTP" : "HTTPS";
 
         Ingress ingress = new IngressBuilder()
                 .withNewMetadata()
@@ -97,8 +101,9 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
                 .endSpec()
                 .build();
 
-        if (!keycloak.getSpec().isHostnameDisabled()) {
-            ingress.getSpec().getRules().get(0).setHost(keycloak.getSpec().getHostname());
+        final var hostnameSpec = keycloak.getSpec().getHostnameSpec();
+        if (hostnameSpec != null && hostnameSpec.getHostname() != null) {
+            ingress.getSpec().getRules().get(0).setHost(hostnameSpec.getHostname());
         }
 
         return ingress;
@@ -119,9 +124,13 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
     }
 
     public void updateStatus(KeycloakStatusBuilder status) {
-        if (!keycloak.getSpec().isDisableDefaultIngress() && existingIngress == null) {
+        IngressSpec ingressSpec = keycloak.getSpec().getIngressSpec();
+        if (ingressSpec == null) {
+            ingressSpec = new IngressSpec();
+            ingressSpec.setIngressEnabled(true);
+        }
+        if (ingressSpec.isIngressEnabled() && existingIngress == null) {
             status.addNotReadyMessage("No existing Keycloak Ingress found, waiting for creating a new one");
-            return;
         }
     }
 

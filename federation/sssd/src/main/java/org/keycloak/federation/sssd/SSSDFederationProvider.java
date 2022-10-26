@@ -45,8 +45,8 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class SSSDFederationProvider implements UserStorageProvider,
-        UserLookupProvider.Streams,
-        CredentialInputUpdater.Streams,
+        UserLookupProvider,
+        CredentialInputUpdater,
         CredentialInputValidator,
         ImportedUserValidation {
 

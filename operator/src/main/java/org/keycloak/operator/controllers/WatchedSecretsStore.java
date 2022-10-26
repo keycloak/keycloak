@@ -21,8 +21,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -183,18 +183,14 @@ public class WatchedSecretsStore extends OperatorManagedResource {
     }
 
     public static EventSource getStoreEventSource(KubernetesClient client, String namespace) {
-        SharedIndexInformer<Secret> informer =
-                client.secrets()
-                        .inNamespace(namespace)
-                        .withLabel(Constants.COMPONENT_LABEL, COMPONENT)
-                        .runnableInformer(0);
+        InformerConfiguration<Secret> informerConfiguration = InformerConfiguration
+                .from(Secret.class)
+                .withLabelSelector(Constants.COMPONENT_LABEL + "=" + COMPONENT)
+                .withNamespaces(namespace)
+                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .build();
 
-        return new InformerEventSource<>(informer, Mappers.fromOwnerReference()) {
-            @Override
-            public String name() {
-                return "watchedResourcesStoreEventSource";
-            }
-        };
+        return new InformerEventSource<>(informerConfiguration, client);
     }
 
     private static void cleanObsoleteLabelFromSecret(KubernetesClient client, Secret secret) {
@@ -203,38 +199,34 @@ public class WatchedSecretsStore extends OperatorManagedResource {
     }
 
     public static EventSource getWatchedSecretsEventSource(KubernetesClient client, String namespace) {
-        SharedIndexInformer<Secret> informer =
-                client.secrets()
-                        .inNamespace(namespace)
-                        .withLabel(Constants.KEYCLOAK_COMPONENT_LABEL, WATCHED_SECRETS_LABEL_VALUE)
-                        .runnableInformer(0);
+        InformerConfiguration<Secret> informerConfiguration = InformerConfiguration
+                .from(Secret.class)
+                .withLabelSelector(Constants.KEYCLOAK_COMPONENT_LABEL + "=" + WATCHED_SECRETS_LABEL_VALUE)
+                .withNamespaces(namespace)
+                .withSecondaryToPrimaryMapper(secret -> {
+                    // get all stores
+                    List<Secret> stores = client.secrets().inNamespace(namespace).withLabel(Constants.COMPONENT_LABEL, COMPONENT).list().getItems();
 
-        return new InformerEventSource<>(informer, secret -> {
-            // get all stores
-            List<Secret> stores = client.secrets().inNamespace(namespace).withLabel(Constants.COMPONENT_LABEL, COMPONENT).list().getItems();
+                    // find all CR names that are watching this Secret
+                    var ret = stores.stream()
+                            // check if any of the stores tracks this secret
+                            .filter(store -> store.getData().containsKey(secret.getMetadata().getName()))
+                            .map(store -> {
+                                String crName = store.getMetadata().getName().split(STORE_SUFFIX)[0];
+                                return new ResourceID(crName, namespace);
+                            })
+                            .collect(Collectors.toSet());
 
-            // find all CR names that are watching this Secret
-            var ret = stores.stream()
-                    // check if any of the stores tracks this secret
-                    .filter(store -> store.getData().containsKey(secret.getMetadata().getName()))
-                    .map(store -> {
-                        String crName = store.getMetadata().getName().split(STORE_SUFFIX)[0];
-                        return new ResourceID(crName, namespace);
-                    })
-                    .collect(Collectors.toSet());
+                    if (ret.isEmpty()) {
+                        Log.infof("No CRs watching \"%s\" Secret, cleaning up labels", secret.getMetadata().getName());
+                        cleanObsoleteLabelFromSecret(client, secret);
+                        Log.debug("Labels removed");
+                    }
 
-            if (ret.isEmpty()) {
-                Log.infof("No CRs watching \"%s\" Secret, cleaning up labels", secret.getMetadata().getName());
-                cleanObsoleteLabelFromSecret(client, secret);
-                Log.debug("Labels removed");
-            }
+                    return ret;
+                })
+                .build();
 
-            return ret;
-        }) {
-            @Override
-            public String name() {
-                return "watchedSecretsEventSource";
-            }
-        };
+        return new InformerEventSource<>(informerConfiguration, client);
     }
 }

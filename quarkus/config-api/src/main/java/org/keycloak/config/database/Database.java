@@ -107,11 +107,29 @@ public final class Database {
                     @Override
                     public String apply(String alias) {
                         if ("dev-file".equalsIgnoreCase(alias)) {
-                            return "jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + System.getProperty("user.home") + "}}" + File.separator + "${kc.data.dir:data}"
+                            return addH2NonKeywords("jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + System.getProperty("user.home") + "}}" + File.separator + "${kc.data.dir:data}"
                                     + File.separator + "h2" + File.separator
-                                    + "keycloakdb${kc.db-url-properties:;;AUTO_SERVER=TRUE}";
+                                    + "keycloakdb${kc.db-url-properties:;;AUTO_SERVER=TRUE}");
                         }
-                        return "jdbc:h2:mem:keycloakdb${kc.db-url-properties:}";
+                        return addH2NonKeywords("jdbc:h2:mem:keycloakdb${kc.db-url-properties:}");
+                    }
+
+                    /**
+                     * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
+                     * <p />
+                     * Alternatives considered and rejected:
+                     * <ul>
+                     * <li>customizing H2 Database dialect -&gt; wouldn't work for existing Liquibase scripts.</li>
+                     * <li>adding quotes to <code>@Column(name="VALUE")</code> annotations -&gt; would require testing for all DBs, wouldn't work for existing Liquibase scripts.</li>
+                     * </ul>
+                     * Downsides of this solution: Release notes needed to point out that any H2 JDBC URL parameter with <code>NON_KEYWORDS</code> needs to add the keyword <code>VALUE</code> manually.
+                     * @return JDBC URL with <code>NON_KEYWORDS=VALUE</code> appended if the URL doesn't contain <code>NON_KEYWORDS=</code> yet
+                     */
+                    private String addH2NonKeywords(String jdbcUrl) {
+                        if (!jdbcUrl.contains("NON_KEYWORDS=")) {
+                            jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
+                        }
+                        return jdbcUrl;
                     }
                 },
                 asList("liquibase.database.core.H2Database"),

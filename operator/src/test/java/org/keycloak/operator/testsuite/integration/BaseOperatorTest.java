@@ -46,7 +46,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.time.Duration;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -143,17 +142,14 @@ public abstract class BaseOperatorTest {
     Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]");
 
     for (Reconciler<?> reconciler : reconcilers) {
-      final var config = configuration.getConfigurationFor(reconciler);
-      if (!config.isRegistrationDelayed()) {
-        Log.info("Register and apply : " + reconciler.getClass().getName());
-        OperatorProducer.applyCRDIfNeededAndRegister(operator, reconciler, configuration);
-      }
+      Log.info("Register and apply : " + reconciler.getClass().getName());
+      OperatorProducer.applyCRDAndRegister(operator, reconciler, configuration);
     }
   }
 
   private static void createOperator() {
+    configuration.getClientConfiguration().setNamespace(namespace);
     operator = new Operator(k8sclient, configuration);
-    operator.getConfigurationService().getClientConfiguration().setNamespace(namespace);
   }
 
   private static void createNamespace() {

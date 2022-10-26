@@ -46,7 +46,7 @@ public class JpaRoleProviderFactory implements RoleProviderFactory {
     @Override
     public RoleProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em, null);
+        return new JpaRealmProvider(session, em, null, null);
     }
 
     @Override

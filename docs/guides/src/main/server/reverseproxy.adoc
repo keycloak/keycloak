@@ -6,7 +6,7 @@
 <@tmpl.guide
 title="Using a reverse proxy"
 summary="Learn how to configure Keycloak together with a reverse proxy, api gateway, or load balancer."
-includedOptions="proxy proxy-*">
+includedOptions="proxy proxy-* hostname-path hostname-url http-relative-path">
 
 Distributed environments frequently require the use of a reverse proxy.
 For Keycloak, your choice of proxy modes depends on the TLS termination in your environment.
@@ -42,6 +42,13 @@ To set these headers, consult the documentation for your reverse proxy.
 Take extra precautions to ensure that the X-Forwarded-For header is set by your reverse proxy.
 If this header is incorrectly configured, rogue clients can set this header and trick Keycloak into thinking the client is connected from a different IP address than the actual address.
 This precaution can be more critical if you do any deny or allow listing of IP addresses.
+
+== Different context-path on reverse proxy
+
+Keycloak assumes it is exposed through the reverse proxy under the same context path as Keycloak is configured for. By default Keycloak is exposed through the root (`/`), which means it expects to be exposed through the reverse proxy on `/` as well.
+You can use `hostname-path` or `hostname-url` in these cases, for example using `--hostname-path=/auth` if Keycloak is exposed through the reverse proxy on `/auth`.
+ 
+Alternatively you can also change the context path of Keycloak itself to match the context path for the reverse proxy using the `http-relative-path` option, which will change the context-path of Keycloak itself to match the context path used by the reverse proxy.
 
 == Trust the proxy to set hostname
 

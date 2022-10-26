@@ -34,12 +34,12 @@ And then re-run the LoginTest (or any other test you wish) and the changes shoul
 If you use Intellij Idea, you don't even need to re-build anything with the maven. After doing any
 change in the codebase, the change is immediately effective when running the test with Junit runner. 
 
-### Running tests in the production mode (Keycloak on Wildfly)
+### Running tests in the production mode (Keycloak on Quarkus)
 
-For the "production" testing, it is possible to run the Keycloak server deployed on real Wildfly server.
-This can be achieved by add the `auth-server-wildfly` profile when running the testsuite.
+For the "production" testing, it is possible to run the Keycloak server deployed on real Quarkus server.
+This can be achieved by add the `auth-server-quarkus` profile when running the testsuite.
 
-    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-wildfly clean install
+    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-quarkus clean install
 
 Unlike the "development" setup described above, this requires re-build the whole distribution
 after doing any change in the code.
@@ -424,18 +424,6 @@ The setup includes:
 *  a load balancer on embedded Undertow (SimpleUndertowLoadBalancer)
 *  two clustered nodes of Keycloak server on Wildfly/EAP or on embedded undertow
 *  shared DB
-
-### Cluster tests with Keycloak on Wildfly
-
-After you build the distribution, you run this command to setup servers and run cluster tests using shared Docker database:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-    -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa \
-    -Dsession.cache.owners=2 \
-    -Dbackends.console.output=true \
-    -Dauth.server.log.check=false \
-    -Dfrontend.console.output=true \
-    -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
     
 ### Cluster tests with Keycloak on Quarkus
 
@@ -573,6 +561,8 @@ necessary to download the artifact and install it to local Maven repository. For
 For Data Grid 7 and older use: `-Dfile=jboss-datagrid-${DATAGRID_VERSION}-server.zip`.
 
 ### Run Cross-DC Tests from Maven
+
+Warning: The Cross-DC tests doesn't work with Quarkus distribution
 
 Note: Profile `auth-servers-crossdc-undertow` currently doesn't work (see [KEYCLOAK-18335](https://issues.redhat.com/browse/KEYCLOAK-18335)).
 Use `-Pauth-servers-crossdc-jboss,auth-server-wildfly` instead.
@@ -770,11 +760,11 @@ Then, before running the test, setup Keycloak Server distribution for the tests:
 
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
         clean install \
-        -Pauth-server-wildfly
+        -Pauth-server-quarkus
 
 When running the test, add the following arguments to the command line:
 
-    -Pauth-server-wildfly -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
+    -Pauth-server-quarkus -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
 
 ## Java 11 support
 Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and
@@ -933,3 +923,25 @@ DefaultHostnameTest.java:226)
 when running these tests on your local machine. This happens when something on your machine or network is blocking DNS queries to [nip.io](https://nip.io)
 One possible workaround is to add a commonly used public dns server (e.g. 8.8.8.8 for google dns server) to your local 
 networks dns configuration and run the tests. 
+
+## FIPS 140-2 testing
+
+On the FIPS enabled platform with FIPS enabled OpenJDK 11, you can run this to test against Keycloak server on Quarkus
+with FIPS 140.2 integration enabled
+```
+mvn -B -f testsuite/integration-arquillian/pom.xml \
+  clean install \
+  -Pauth-server-quarkus,auth-server-fips140-2 \
+  -Dcom.redhat.fips=false
+```
+NOTE 1: The property `com.redhat.fips` is needed so that testsuite itself is executed in the JVM with FIPS disabled. However
+most important part is that Keycloak itself is running on the JVM with FIPS enabled. You can check log from server startup and
+there should be messages similar to those:
+```
+2022-10-11 19:34:29,521 DEBUG [org.keycloak.common.crypto.CryptoIntegration] (main) Using the crypto provider: org.keycloak.crypto.fips.FIPS1402Provider
+2022-10-11 19:34:31,072 TRACE [org.keycloak.common.crypto.CryptoIntegration] (main) Java security providers: [ 
+ KC(BCFIPS version 1.000203) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
+ BCFIPS version 1.000203 - class org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider, 
+ BCJSSE version 1.001202 - class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider,
+]
+```

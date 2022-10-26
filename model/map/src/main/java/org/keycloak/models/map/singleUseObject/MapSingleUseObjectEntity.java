@@ -51,17 +51,8 @@ public interface MapSingleUseObjectEntity extends AbstractEntity, UpdatableEntit
         }
     }
 
-    String getUserId();
-    void setUserId(String userId);
-
     String getObjectKey();
     void setObjectKey(String objectKey);
-
-    String getActionId();
-    void setActionId(String actionId);
-
-    String getActionVerificationNonce();
-    void setActionVerificationNonce(String actionVerificationNonce);
 
     Map<String, String> getNotes();
     void setNotes(Map<String, String> notes);

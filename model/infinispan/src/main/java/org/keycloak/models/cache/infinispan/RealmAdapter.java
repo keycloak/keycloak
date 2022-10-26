@@ -667,12 +667,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<RequiredCredentialModel> getRequiredCredentials() {
-        if (isUpdated()) return updated.getRequiredCredentials();
-        return cached.getRequiredCredentials();
-    }
-
-    @Override
     public void addRequiredCredential(String cred) {
         getDelegateForUpdate();
         updated.addRequiredCredential(cred);
@@ -1478,8 +1472,9 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    @Deprecated
     public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return cacheSession.searchForGroupByNameStream(this, search, first, max);
+        return cacheSession.searchForGroupByNameStream( this, search, false, first, max);
     }
 
     @Override

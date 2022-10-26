@@ -6,7 +6,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.rule.CryptoInitRule;
 
 import java.security.GeneralSecurityException;
@@ -34,7 +34,7 @@ public class CertificateValidatorTest {
      */
     @Test
     public void testValidityOfCertificatesSuccess() throws GeneralSecurityException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
+        KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
         kpg.initialize(512);
         KeyPair keyPair = kpg.generateKeyPair();
         X509Certificate certificate = CryptoIntegration.getProvider().getCertificateUtils()
@@ -60,7 +60,7 @@ public class CertificateValidatorTest {
      */
     @Test
     public void testValidityOfCertificatesNotValidYet() throws GeneralSecurityException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
+        KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
         kpg.initialize(512);
         KeyPair keyPair = kpg.generateKeyPair();
         X509Certificate certificate = CryptoIntegration.getProvider().getCertificateUtils()
@@ -87,7 +87,7 @@ public class CertificateValidatorTest {
      */
     @Test
     public void testValidityOfCertificatesHasExpired() throws GeneralSecurityException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
+        KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
         kpg.initialize(512);
         KeyPair keyPair = kpg.generateKeyPair();
         X509Certificate certificate = CryptoIntegration.getProvider().getCertificateUtils()
@@ -330,9 +330,7 @@ public class CertificateValidatorTest {
     private void testCertificatePolicyValidation(String expectedPolicy, String mode, String... certificatePolicyOid)
         throws GeneralSecurityException
     {
-        
-
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
+        KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
         kpg.initialize(512);
         KeyPair keyPair = kpg.generateKeyPair();
         X509Certificate certificate = CryptoIntegration.getProvider().getCertificateUtils()

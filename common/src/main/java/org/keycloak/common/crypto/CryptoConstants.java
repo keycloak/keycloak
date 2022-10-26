@@ -19,4 +19,5 @@ public class CryptoConstants {
 
     /** Name of Java security provider used with fips BouncyCastle. Should be used in FIPS environment */
     public static final String BCFIPS_PROVIDER_ID = "BCFIPS";
+
 }

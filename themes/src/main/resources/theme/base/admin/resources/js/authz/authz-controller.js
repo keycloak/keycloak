@@ -258,9 +258,8 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
         delay: 500,
         allowClear: true,
         query: function (query) {
-            var data = {results: []};
             if ('' == query.term.trim()) {
-                query.callback(data);
+                query.callback({ results: [] });
                 return;
             }
             $scope.query = {
@@ -271,16 +270,14 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                 max : 20,
                 first : 0
             };
-            ResourceServerScope.query($scope.query, function(response) {
-                data.results = response;
-                query.callback(data);
+            ResourceServerScope.query($scope.query, function (response) {
+              query.callback({
+                results: response.map(function (resource) {
+                  resource.text = resource.name;
+                  return resource;
+                })
+              });
             });
-        },
-        formatResult: function(object, container, query) {
-            return object.name;
-        },
-        formatSelection: function(object, container, query) {
-            return object.name;
         }
     };
 
@@ -939,14 +936,11 @@ function ResourceServerPolicyCommonHandler($scope, $route, $location, realm, cli
                                 resourceScope => resourceScope.name.toLowerCase().includes(
                                     query.term.trim().toLowerCase())
                             );
-                            var data = {results: []};
-                            data.results = filteredScopes;
-                            query.callback(data);                
+                            query.callback({ results: filteredScopes });
                         } else {
                             // if no resource is selected, all the scopes are allowed.
-                            var data = {results: []};
                             if ('' == query.term.trim()) {
-                                query.callback(data);
+                                query.callback({results: []});
                                 return;
                             }
                             $scope.query = {
@@ -957,15 +951,15 @@ function ResourceServerPolicyCommonHandler($scope, $route, $location, realm, cli
                                 max : 20,
                                 first : 0
                             };
-                            ResourceServerScope.query($scope.query, function(response) {
-                                data.results = response;
-                                query.callback(data);
+                            ResourceServerScope.query($scope.query, function (response) {
+                              query.callback({
+                                result: response.map(function (scope) {
+                                  scope.text = scope.name;
+                                  return scope;
+                                })
+                              });
                             });
                         }
-                    },
-                    formatResult: function(object, container, query) {
-                        object.text = object.name;
-                        return object.name;
                     }
                 };
             }
@@ -976,9 +970,8 @@ function ResourceServerPolicyCommonHandler($scope, $route, $location, realm, cli
                 allowClear: true,
                 id: function(resource){ return resource._id; },
                 query: function (query) {
-                    var data = {results: []};
                     if ('' == query.term.trim()) {
-                        query.callback(data);
+                        query.callback({results: []});
                         return;
                     }
                     $scope.query = {
@@ -989,14 +982,14 @@ function ResourceServerPolicyCommonHandler($scope, $route, $location, realm, cli
                         max : 20,
                         first : 0
                     };
-                    ResourceServerResource.query($scope.query, function(response) {
-                        data.results = response;
-                        query.callback(data);
+                    ResourceServerResource.query($scope.query, function (response) {
+                      query.callback({
+                        result: response.map(function (resource) {
+                          resource.text = resource.name;
+                          return resource;
+                        })
+                      });
                     });
-                },
-                formatResult: function(object, container, query) {
-                    object.text = object.name;
-                    return object.name;
                 }
             };
 
@@ -1005,9 +998,8 @@ function ResourceServerPolicyCommonHandler($scope, $route, $location, realm, cli
                 delay: 500,
                 allowClear: true,
                 query: function (query) {
-                    var data = {results: []};
                     if ('' == query.term.trim()) {
-                        query.callback(data);
+                        query.callback({ results: [] });
                         return;
                     }
                     $scope.query = {
@@ -1018,14 +1010,14 @@ function ResourceServerPolicyCommonHandler($scope, $route, $location, realm, cli
                         max : 20,
                         first : 0
                     };
-                    ResourceServerPermission.searchPolicies($scope.query, function(response) {
-                        data.results = response;
-                        query.callback(data);
+                    ResourceServerPermission.searchPolicies($scope.query, function (response) {
+                      query.callback({
+                        results: response.map(function (policy) {
+                          policy.text = policy.name;
+                          return policy;
+                        })
+                      });
                     });
-                },
-                formatResult: function(object, container, query) {
-                    object.text = object.name;
-                    return object.name;
                 }
             };
 
@@ -1233,18 +1225,18 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
                 delay: 500,
                 allowClear: true,
                 query: function (query) {
-                    var data = {results: []};
                     if ('' == query.term.trim()) {
-                        query.callback(data);
+                        query.callback({ results: [] });
                         return;
                     }
-                    User.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
-                        data.results = response;
-                        query.callback(data);
+                    User.query({ realm: $route.current.params.realm, search: query.term.trim(), max: 20 }, function (response) {
+                      query.callback({
+                        results: response.map(function (user) {
+                          user.text = user.username;
+                          return user;
+                        })
+                      });
                     });
-                },
-                formatResult: function(object, container, query) {
-                    return object.username;
                 }
             };
 
@@ -1824,9 +1816,8 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
                 delay: 500,
                 allowClear: true,
                 query: function (query) {
-                    var data = {results: []};
                     if ('' == query.term.trim()) {
-                        query.callback(data);
+                        query.callback({ results: [] });
                         return;
                     }
                     $scope.query = {
@@ -1837,14 +1828,14 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
                         max : 20,
                         first : 0
                     };
-                    ResourceServerPolicy.query($scope.query, function(response) {
-                        data.results = response;
-                        query.callback(data);
+                    ResourceServerPolicy.query($scope.query, function (response) {
+                      query.callback({
+                        results: response.map(function (policy) {
+                          policy.text = policy.name;
+                          return policy;
+                        })
+                      });
                     });
-                },
-                formatResult: function(object, container, query) {
-                    object.text = object.name;
-                    return object.name;
                 }
             };
         },
@@ -2623,19 +2614,18 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         delay: 500,
         allowClear: true,
         query: function (query) {
-            var data = {results: []};
             if ('' == query.term.trim()) {
-                query.callback(data);
+                query.callback({ results: [] });
                 return;
             }
-            User.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
-                data.results = response;
-                query.callback(data);
+            User.query({ realm: $route.current.params.realm, search: query.term.trim(), max: 20 }, function (response) {
+              query.callback({
+                results: response.map(function (user) {
+                  user.text = user.username;
+                  return user;
+                })
+              });
             });
-        },
-        formatResult: function(object, container, query) {
-            object.text = object.username;
-            return object.username;
         }
     };
 
@@ -2645,9 +2635,8 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         allowClear: true,
         id: function(resource){ return resource._id; },
         query: function (query) {
-            var data = {results: []};
             if ('' == query.term.trim()) {
-                query.callback(data);
+                query.callback({ results: [] });
                 return;
             }
             $scope.query = {
@@ -2658,14 +2647,14 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
                 max : 20,
                 first : 0
             };
-            ResourceServerResource.query($scope.query, function(response) {
-                data.results = response;
-                query.callback(data);
+            ResourceServerResource.query($scope.query, function (response) {
+              query.callback({
+                results: response.map(function (resource) {
+                  resource.text = resource.name;
+                  return resource;
+                })
+              });
             });
-        },
-        formatResult: function(object, container, query) {
-            object.text = object.name;
-            return object.name;
         }
     };
 
@@ -2674,9 +2663,8 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         delay: 500,
         allowClear: true,
         query: function (query) {
-            var data = {results: []};
             if ('' == query.term.trim()) {
-                query.callback(data);
+                query.callback({ results: [] });
                 return;
             }
             $scope.query = {
@@ -2687,14 +2675,14 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
                 max : 20,
                 first : 0
             };
-            ResourceServerScope.query($scope.query, function(response) {
-                data.results = response;
-                query.callback(data);
+            ResourceServerScope.query($scope.query, function (response) {
+              query.callback({
+                result: response.map(function (scope) {
+                  scope.text = scope.name;
+                  return scope;
+                })
+              });
             });
-        },
-        formatResult: function(object, container, query) {
-            object.text = object.name;
-            return object.name;
         }
     };
 
