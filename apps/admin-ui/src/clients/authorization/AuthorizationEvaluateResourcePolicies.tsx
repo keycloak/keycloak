@@ -64,7 +64,7 @@ export const AuthorizationEvaluateResourcePolicies = ({
         <Td>{t(`${outerPolicy.policy?.decisionStrategy?.toLowerCase()}`)}</Td>
         <Td>
           {outerPolicy.status === DecisionEffect.Permit
-            ? resource.policies?.[rowIndex].scopes?.join(", ")
+            ? resource.policies?.[rowIndex]?.scopes?.join(", ")
             : "-"}
         </Td>
         <Td>
