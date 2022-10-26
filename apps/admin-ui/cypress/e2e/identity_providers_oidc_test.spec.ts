@@ -6,6 +6,11 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import CreateProviderPage from "../support/pages/admin_console/manage/identity_providers/CreateProviderPage";
 import ModalUtils from "../support/util/ModalUtils";
 import AddMapperPage from "../support/pages/admin_console/manage/identity_providers/AddMapperPage";
+import ProviderBaseGeneralSettingsPage from "../support/pages/admin_console/manage/identity_providers/ProviderBaseGeneralSettingsPage";
+import ProviderBaseAdvancedSettingsPage, {
+  ClientAuthentication,
+  PromptSelect,
+} from "../support/pages/admin_console/manage/identity_providers/ProviderBaseAdvancedSettingsPage";
 
 describe("OIDC identity provider test", () => {
   const loginPage = new LoginPage();
@@ -49,6 +54,53 @@ describe("OIDC identity provider test", () => {
         .clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg, true);
       createProviderPage.shouldHaveAuthorizationUrl(authorizationUrl);
+    });
+
+    it("should test all settings", () => {
+      const providerBaseGeneralSettingsPage =
+        new ProviderBaseGeneralSettingsPage();
+      const providerBaseAdvancedSettingsPage =
+        new ProviderBaseAdvancedSettingsPage();
+
+      sidebarPage.goToIdentityProviders();
+      listingPage.goToItemDetails(oidcProviderName);
+      //general settings
+      cy.findByTestId("displayName").click().type("OIDC");
+      cy.findByTestId("jump-link-general-settings").click();
+      providerBaseGeneralSettingsPage.typeDisplayOrder("1");
+      createProviderPage.clickSave();
+      masthead.checkNotificationMessage("Provider successfully updated", true);
+
+      //OIDC Settings and save/revert buttons
+      providerBaseAdvancedSettingsPage.assertOIDCUrl("authorization");
+      providerBaseAdvancedSettingsPage.assertOIDCUrl("token");
+      //OIDC Switches
+      providerBaseAdvancedSettingsPage.assertOIDCSignatureSwitch();
+      providerBaseAdvancedSettingsPage.assertOIDCPKCESwitch();
+      //Client Authentication
+      providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
+        ClientAuthentication.basicAuth
+      );
+      providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
+        ClientAuthentication.jwt
+      );
+      providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
+        ClientAuthentication.jwtPrivKey
+      );
+      providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
+        ClientAuthentication.post
+      );
+      //OIDC Advanced Settings
+      providerBaseAdvancedSettingsPage.assertOIDCSettingsAdvancedSwitches();
+      providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.none);
+      providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.consent);
+      providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.login);
+      providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.select);
+      providerBaseAdvancedSettingsPage.selectPromptOption(
+        PromptSelect.unspecified
+      );
+      //Advanced Settings
+      providerBaseAdvancedSettingsPage.assertAdvancedSettings();
     });
 
     it("should add OIDC mapper of type Attribute Importer", () => {

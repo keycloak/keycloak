@@ -87,6 +87,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         <KeycloakTextInput
           type="text"
           id="tokenUrl"
+          data-testid="tokenUrl"
           name="config.tokenUrl"
           ref={register({ required: true })}
           validated={
@@ -118,6 +119,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           <SwitchField
             field="config.useJwksUrl"
             label="useJwksUrl"
+            data-testid="useJwksUrl"
             isReadOnly={readOnly}
           />
           {useJwks === "true" && (
