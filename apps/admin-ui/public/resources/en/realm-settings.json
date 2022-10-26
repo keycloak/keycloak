@@ -120,7 +120,7 @@
   "editUsernameAllowed": "Edit username",
   "enableSwitchSuccess": "{{switch}} changed successfully",
   "enableSwitchError": "Could not enable / disable due to {{error}}",
-  "testConnection": "Test connection",
+  "testingConnection": "Testing connection",
   "testConnectionHint": {
     "withEmail": "When testing the connection an e-mail will be sent to the current user ({{email}}).",
     "withoutEmail": "To test the connection you must first configure an e-mail address for the current user ({{userName}}).",

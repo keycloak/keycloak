@@ -29,6 +29,7 @@ import { emailRegexPattern } from "../util";
 import { useCurrentUser } from "../utils/useCurrentUser";
 
 import "./realm-settings-section.css";
+import useToggle from "../utils/useToggle";
 
 type RealmSettingsEmailTabProps = {
   realm: RealmRepresentation;
@@ -57,6 +58,7 @@ export const RealmSettingsEmailTab = ({
   const reset = () => resetForm(realm);
   const watchFromValue = watch("smtpServer.from", "");
   const watchHostValue = watch("smtpServer.host", "");
+  const [isTesting, toggleTest] = useToggle();
 
   const authenticationEnabled = useWatch({
     control,
@@ -99,6 +101,7 @@ export const RealmSettingsEmailTab = ({
     if (serverSettings.port === 0) serverSettings.port = null;
 
     try {
+      toggleTest();
       await adminClient.realms.testSMTPConnection(
         { realm: realm.realm! },
         serverSettings
@@ -107,6 +110,7 @@ export const RealmSettingsEmailTab = ({
     } catch (error) {
       addError("realm-settings:testConnectionError", error);
     }
+    toggleTest();
   };
 
   return (
@@ -367,6 +371,8 @@ export const RealmSettingsEmailTab = ({
                   !currentUser?.email
                 }
                 aria-describedby="descriptionTestConnection"
+                isLoading={isTesting}
+                spinnerAriaValueText={t("testingConnection")}
               >
                 {t("common:testConnection")}
               </Button>
