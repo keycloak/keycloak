@@ -1,5 +1,7 @@
 # Keycloak
 
+[![image](https://api-public.service.runforesight.com/api/v1/badge/test?repoId=a2b01877-ab45-49a9-8686-3de3b1df682f)](https://keycloak.app.runforesight.com)
+
 Keycloak is an Open Source Identity and Access Management solution for modern Applications and Services.
 
 This repository contains the source code for the Keycloak Server, Java adapters and the JavaScript adapter.
@@ -31,7 +33,7 @@ To run Keycloak, download the distribution from our [website](https://www.keyclo
 Alternatively, you can use the Docker image by running:
 
     docker run quay.io/keycloak/keycloak start-dev
-    
+
 For more details refer to the [Keycloak Documentation](https://www.keycloak.org/documentation.html).
 
 
