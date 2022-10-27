@@ -45,7 +45,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -86,7 +85,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
             throw new RuntimeException("Attribute 'password' missing in 'truststore':'file' configuration");
         }
 
-        String type = getTruststoreType(storepath, configuredType);
+        String type = KeystoreUtil.getKeystoreType(configuredType, storepath, KeyStore.getDefaultType());
         try {
             truststore = loadStore(storepath, type, pass == null ? null :pass.toCharArray());
         } catch (Exception e) {
@@ -157,25 +156,6 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 .defaultValue(HostnameVerificationPolicy.WILDCARD.name().toLowerCase())
                 .add()
                 .build();
-    }
-
-    private String getTruststoreType(String path, String configuredType) {
-        // Configured type has precedence
-        if (configuredType != null) return configuredType;
-
-        // Fallback to detected tyoe from the file format (EG. my-keystore.pkcs12 will return "pkcs12")
-        int lastDotIndex = path.lastIndexOf('.');
-        if (lastDotIndex > -1) {
-            String ext = path.substring(lastDotIndex).toUpperCase();
-            Optional<String> detectedType = Arrays.stream(KeystoreUtil.KeystoreFormat.values())
-                    .map(KeystoreUtil.KeystoreFormat::toString)
-                    .filter(ksFormat -> ksFormat.equals(ext))
-                    .findFirst();
-            if (detectedType.isPresent()) return detectedType.get();
-        }
-
-        // Fallback to default JVM
-        return KeyStore.getDefaultType();
     }
 
     private static class TruststoreCertificatesLoader {

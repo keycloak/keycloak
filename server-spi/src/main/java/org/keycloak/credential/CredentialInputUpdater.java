@@ -33,19 +33,6 @@ public interface CredentialInputUpdater {
     void disableCredentialType(RealmModel realm, UserModel user, String credentialType);
 
     /**
-     *
-     * Returns a set of credential types that can be disabled by disableCredentialType() method
-     *
-     * @param realm
-     * @param user
-     * @return
-     * @deprecated Use {@link #getDisableableCredentialTypesStream(RealmModel, UserModel) getDisableableCredentialTypesStream}
-     * instead.
-     */
-    @Deprecated
-    Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user);
-
-    /**
      * Obtains the set of credential types that can be disabled via {@link #disableCredentialType(RealmModel, UserModel, String)
      * disableCredentialType}.
      *
@@ -53,25 +40,13 @@ public interface CredentialInputUpdater {
      * @param user the user whose credentials are being searched.
      * @return a non-null {@link Stream} of credential types.
      */
-    default Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
-        Set<String> result = this.getDisableableCredentialTypes(realm, user);
-        return result != null ? result.stream() : Stream.empty();
-    }
+    Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user);
 
     /**
-     * The {@link CredentialInputUpdater.Streams} interface makes all collection-based methods in {@link CredentialInputUpdater}
-     * default by providing implementations that delegate to the {@link Stream}-based variants instead of the other way around.
-     * <p/>
-     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
-     * from the potential memory and performance optimizations of that approach.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
+    @Deprecated
     interface Streams extends CredentialInputUpdater {
-        @Override
-        default Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-            return this.getDisableableCredentialTypesStream(realm, user).collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user);
     }
 }

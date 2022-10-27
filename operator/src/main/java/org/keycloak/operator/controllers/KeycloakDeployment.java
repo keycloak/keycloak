@@ -436,9 +436,9 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .collect(Collectors.toList());
 
         // merge with the CR; the values in CR take precedence
-        if (keycloakCR.getSpec().getServerConfiguration() != null) {
-            serverConfig.removeAll(keycloakCR.getSpec().getServerConfiguration());
-            serverConfig.addAll(keycloakCR.getSpec().getServerConfiguration());
+        if (keycloakCR.getSpec().getAdditionalOptions() != null) {
+            serverConfig.removeAll(keycloakCR.getSpec().getAdditionalOptions());
+            serverConfig.addAll(keycloakCR.getSpec().getAdditionalOptions());
         }
 
         // set env vars
@@ -518,9 +518,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
     public Set<String> getConfigSecretsNames() {
         Set<String> ret = new HashSet<>(serverConfigSecretsNames);
-        if (isTlsConfigured(keycloakCR)) {
-            ret.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
-        }
+        ret.addAll(distConfigurator.getSecretNames());
         return ret;
     }
 
@@ -566,12 +564,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     protected String readConfigurationValue(String key) {
         if (keycloakCR != null &&
                 keycloakCR.getSpec() != null &&
-                keycloakCR.getSpec().getServerConfiguration() != null
+                keycloakCR.getSpec().getAdditionalOptions() != null
         ) {
 
             var serverConfigValue = keycloakCR
                     .getSpec()
-                    .getServerConfiguration()
+                    .getAdditionalOptions()
                     .stream()
                     .filter(sc -> sc.getName().equals(key))
                     .findFirst();

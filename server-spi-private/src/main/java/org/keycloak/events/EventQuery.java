@@ -105,14 +105,6 @@ public interface EventQuery {
     EventQuery orderByAscTime();
 
     /**
-     * @deprecated Use {@link #getResultStream() getResultStream} instead.
-     */
-    @Deprecated
-    default List<Event> getResultList() {
-        return getResultStream().collect(Collectors.toList());
-    }
-
-    /**
      * Returns requested results that match given criteria as a stream.
      * @return Stream of events. Never returns {@code null}.
      */

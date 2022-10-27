@@ -16,19 +16,19 @@
  */
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 
-import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 
 public class KeycloakSpec {
@@ -44,12 +44,7 @@ public class KeycloakSpec {
 
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
-    private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
-
-    @NotNull
-    @JsonPropertyDescription("Hostname for the Keycloak server.\n" +
-            "The special value `" + Constants.INSECURE_DISABLE + "` disables the hostname strict resolution.")
-    private String hostname;
+    private List<ValueOrSecret> additionalOptions; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
     @JsonProperty("http")
     @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
@@ -73,18 +68,13 @@ public class KeycloakSpec {
     @JsonPropertyDescription("In this section you can find all properties related to the settings of transaction behavior.")
     private TransactionsSpec transactionsSpec;
 
-    public String getHostname() {
-        return hostname;
-    }
+    @JsonProperty("db")
+    @JsonPropertyDescription("In this section you can find all properties related to connect to a database.")
+    private DatabaseSpec databaseSpec;
 
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
-
-    @JsonIgnore
-    public boolean isHostnameDisabled() {
-        return this.hostname.equals(Constants.INSECURE_DISABLE);
-    }
+    @JsonProperty("hostname")
+    @JsonPropertyDescription("In this section you can configure Keycloak hostname and related properties.")
+    private HostnameSpec hostnameSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -126,6 +116,22 @@ public class KeycloakSpec {
         this.ingressSpec = ingressSpec;
     }
 
+    public DatabaseSpec getDatabaseSpec() {
+        return databaseSpec;
+    }
+
+    public void setDatabaseSpec(DatabaseSpec databaseSpec) {
+        this.databaseSpec = databaseSpec;
+    }
+
+    public HostnameSpec getHostnameSpec() {
+        return hostnameSpec;
+    }
+
+    public void setHostnameSpec(HostnameSpec hostnameSpec) {
+        this.hostnameSpec = hostnameSpec;
+    }
+
     public int getInstances() {
         return instances;
     }
@@ -150,11 +156,14 @@ public class KeycloakSpec {
         this.imagePullSecrets = imagePullSecrets;
     }
 
-    public List<ValueOrSecret> getServerConfiguration() {
-        return serverConfiguration;
+    public List<ValueOrSecret> getAdditionalOptions() {
+        if (this.additionalOptions == null) {
+            this.additionalOptions = new ArrayList<>();
+        }
+        return additionalOptions;
     }
 
-    public void setServerConfiguration(List<ValueOrSecret> serverConfiguration) {
-        this.serverConfiguration = serverConfiguration;
+    public void setAdditionalOptions(List<ValueOrSecret> additionalOptions) {
+        this.additionalOptions = additionalOptions;
     }
 }

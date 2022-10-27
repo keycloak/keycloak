@@ -23,12 +23,14 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -56,6 +58,12 @@ public class ServerInfoTest extends AbstractKeycloakTest {
 
         assertNotNull(info.getMemoryInfo());
         assertNotNull(info.getSystemInfo());
+        assertNotNull(info.getCryptoInfo());
+        String expectedSupportedKeystoreTypes = System.getProperty("auth.server.supported.keystore.types");
+        if (expectedSupportedKeystoreTypes == null) {
+            fail("Property 'auth.server.supported.keystore.types' not set");
+        }
+        Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), expectedSupportedKeystoreTypes.split(","));
 
         assertEquals(Version.VERSION, info.getSystemInfo().getVersion());
         assertNotNull(info.getSystemInfo().getServerTime());

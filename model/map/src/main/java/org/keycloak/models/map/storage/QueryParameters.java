@@ -107,6 +107,16 @@ public class QueryParameters<M> {
         return orderBy;
     }
 
+    @Override
+    public String toString() {
+        return "QueryParameters{" +
+                "offset=" + offset +
+                ", limit=" + limit +
+                ", orderBy=" + orderBy +
+                ", mcb=" + mcb +
+                '}';
+    }
+
     /**
      * Enum for ascending or descending ordering
      */

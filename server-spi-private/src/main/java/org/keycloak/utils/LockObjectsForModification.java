@@ -18,6 +18,7 @@
 package org.keycloak.utils;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 
 import java.util.HashSet;
@@ -63,6 +64,10 @@ public class LockObjectsForModification {
 
     public static <V> V lockUserSessionsForModification(KeycloakSession session, CallableWithoutThrowingAnException<V> callable) {
         return lockObjectsForModification(session, UserSessionModel.class, callable);
+    }
+
+    public static <V> V lockRealmsForModification(KeycloakSession session, CallableWithoutThrowingAnException<V> callable) {
+        return lockObjectsForModification(session, RealmModel.class, callable);
     }
 
     private static <V> V lockObjectsForModification(KeycloakSession session, Class<?> model, CallableWithoutThrowingAnException<V> callable) {

@@ -174,7 +174,7 @@ public class RealmsAdminResource {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) throw new NotFoundException("Realm not found.");
 
-        if (!auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())
+        if (!RealmManager.isAdministrationRealm(auth.getRealm())
                 && !auth.getRealm().equals(realm)) {
             throw new ForbiddenException();
         }

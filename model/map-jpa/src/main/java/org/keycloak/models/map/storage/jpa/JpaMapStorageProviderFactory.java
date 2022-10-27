@@ -304,6 +304,7 @@ public class JpaMapStorageProviderFactory implements
             synchronized (this) {
                 if (emf == null) {
                     this.emf = createEntityManagerFactory();
+                    JpaMapUtils.addSpecificNamedQueries(emf);
                 }
             }
         }
