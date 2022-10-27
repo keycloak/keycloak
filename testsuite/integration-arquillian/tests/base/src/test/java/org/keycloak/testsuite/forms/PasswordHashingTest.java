@@ -168,6 +168,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         Pbkdf2PasswordHashProvider specificKeySizeHashProvider = new Pbkdf2PasswordHashProvider(Pbkdf2Sha512PasswordHashProviderFactory.ID,
                 Pbkdf2Sha512PasswordHashProviderFactory.PBKDF2_ALGORITHM,
                 Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS,
+                0,
                 256);
         String encodedPassword = specificKeySizeHashProvider.encode(password, -1);
 

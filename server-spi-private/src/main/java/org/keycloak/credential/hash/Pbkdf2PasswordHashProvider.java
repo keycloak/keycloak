@@ -40,18 +40,19 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
 
     private final String pbkdf2Algorithm;
     private final int defaultIterations;
+
+    private final int maxPaddingLength;
     private final int derivedKeySize;
     public static final int DEFAULT_DERIVED_KEY_SIZE = 512;
 
-    private static final int MIN_PBKDF_PASSWORD_LENGTH_FOR_PADDING = 14;
-
-    public Pbkdf2PasswordHashProvider(String providerId, String pbkdf2Algorithm, int defaultIterations) {
-        this(providerId, pbkdf2Algorithm, defaultIterations, DEFAULT_DERIVED_KEY_SIZE);
+    public Pbkdf2PasswordHashProvider(String providerId, String pbkdf2Algorithm, int defaultIterations, int minPbkdf2PasswordLengthForPadding) {
+        this(providerId, pbkdf2Algorithm, defaultIterations, minPbkdf2PasswordLengthForPadding, DEFAULT_DERIVED_KEY_SIZE);
     }
-    public Pbkdf2PasswordHashProvider(String providerId, String pbkdf2Algorithm, int defaultIterations, int derivedKeySize) {
+    public Pbkdf2PasswordHashProvider(String providerId, String pbkdf2Algorithm, int defaultIterations, int maxPaddingLength, int derivedKeySize) {
         this.providerId = providerId;
         this.pbkdf2Algorithm = pbkdf2Algorithm;
         this.defaultIterations = defaultIterations;
+        this.maxPaddingLength = maxPaddingLength;
         this.derivedKeySize = derivedKeySize;
     }
 
@@ -136,12 +137,9 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
         }
     }
 
-    // In fips mode (BCFIPS), the pbkdf function does not allow less than 14 characters. During login, the user provided value needs
-    // to be hashed, and the password hashing fails because of this functionality of the pbkdf fucntion. As a workaround, we pad smaller inputs with nulls
-    // to ensure that a raw value is always at least 14 characters. Padding can be always added (Even for non-fips) as there is no any side-effect of it for short passwords
     private String pbkdf2PasswordPadding(String rawPassword) {
-        if (rawPassword.length() < MIN_PBKDF_PASSWORD_LENGTH_FOR_PADDING) {
-            int nPad = MIN_PBKDF_PASSWORD_LENGTH_FOR_PADDING - rawPassword.length();
+        if (rawPassword.length() < maxPaddingLength) {
+            int nPad = maxPaddingLength - rawPassword.length();
             String result = rawPassword;
             for (int i = 0 ; i < nPad; i++) result += "\0";
             return result;

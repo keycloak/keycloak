@@ -26,6 +26,7 @@ import org.keycloak.provider.Spi;
  */
 public class PasswordHashSpi implements Spi {
 
+    public static final String SPI_NAME = "password-hashing";
     @Override
     public boolean isInternal() {
         return true;
@@ -33,7 +34,7 @@ public class PasswordHashSpi implements Spi {
 
     @Override
     public String getName() {
-        return "password-hashing";
+        return SPI_NAME;
     }
 
     @Override

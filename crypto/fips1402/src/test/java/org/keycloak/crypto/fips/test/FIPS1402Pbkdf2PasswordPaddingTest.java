@@ -1,6 +1,7 @@
 package org.keycloak.crypto.fips.test;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.fips.FipsUnapprovedOperationError;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -9,8 +10,11 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.Config;
 import org.keycloak.common.util.Environment;
+import org.keycloak.credential.hash.AbstractPbkdf2PasswordHashProviderFactory;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.credential.hash.PasswordHashSpi;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.rule.CryptoInitRule;
@@ -26,6 +30,8 @@ public class FIPS1402Pbkdf2PasswordPaddingTest {
     private static final Logger logger = Logger.getLogger(FIPS1402SecureRandomTest.class);
 
     private static final int ITERATIONS = 27500;
+
+    private static final int BC_FIPS_PADDING_LENGTH = 14;
 
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
@@ -49,29 +55,50 @@ public class FIPS1402Pbkdf2PasswordPaddingTest {
 
     @Test
     public void testShortPassword() {
-        testPasswordVerification("short", false);
+        testPasswordVerification("short", false, BC_FIPS_PADDING_LENGTH);
     }
 
     @Test
     public void testLongPassword() {
-        testPasswordVerification("someLongerPasswordThan14Chars", false);
+        testPasswordVerification("someLongerPasswordThan14Chars", false, BC_FIPS_PADDING_LENGTH);
     }
 
     // Simulate the test for backwards compatibility - password created in non-approved mode should still work after server is restarted to approved mode
     @Test
     public void testShortPasswordWithSwitchToApprovedModel() {
-        testPasswordVerification("short", true);
+        testPasswordVerification("short", true, BC_FIPS_PADDING_LENGTH);
     }
 
     // Simulate the test for backwards compatibility - password created in non-approved mode should still work after server is restarted to approved mode
     @Test
     public void testLongPasswordWithSwitchToApprovedModel() {
-        testPasswordVerification("someLongerPasswordThan14Chars", true);
+        testPasswordVerification("someLongerPasswordThan14Chars", true, BC_FIPS_PADDING_LENGTH);
+    }
+
+    @Test
+    public void testShortPasswordWithSwitchToApprovedModelAndWithoutPadding() {
+        try {
+            testPasswordVerification("short", true, 0);
+            Assert.fail("Password hashing should fail without padding in BCFIPS approved mode");
+        } catch (FipsUnapprovedOperationError expectedError) {
+            // Expected
+        }
+    }
+
+    // Simulate the test for backwards compatibility - password created in non-approved mode should still work after server is restarted to approved mode
+    @Test
+    public void testLongPasswordWithSwitchToApprovedModelAndWithoutPadding() {
+        testPasswordVerification("someLongerPasswordThan14Chars", true, 0);
     }
 
 
-    private void testPasswordVerification(String password, boolean shouldEnableApprovedModeForVerification) {
+    private void testPasswordVerification(String password, boolean shouldEnableApprovedModeForVerification, int maxPaddingLength) {
         Pbkdf2Sha256PasswordHashProviderFactory factory = new Pbkdf2Sha256PasswordHashProviderFactory();
+
+        System.setProperty("keycloak." + PasswordHashSpi.SPI_NAME + "." + Pbkdf2Sha256PasswordHashProviderFactory.ID + "." + AbstractPbkdf2PasswordHashProviderFactory.MAX_PADDING_LENGTH_PROPERTY,
+                String.valueOf(maxPaddingLength));
+        factory.init(Config.scope(PasswordHashSpi.SPI_NAME, Pbkdf2Sha256PasswordHashProviderFactory.ID));
+
         PasswordHashProvider pbkdf2HashProvider = factory.create(null);
 
         PasswordCredentialModel passwordCred = pbkdf2HashProvider.encodedCredential(password, ITERATIONS);
