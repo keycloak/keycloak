@@ -10,6 +10,7 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -89,6 +90,9 @@ final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_TYPE)
                         .to("quarkus.http.ssl.certificate.trust-store-file-type")
                         .paramLabel("type")
+                        .build(),
+                fromOption(HttpOptions.HTTP_IO_THREAD_POOL_SIZE)
+                        .to("quarkus.vertx.event-loops-pool-size")
                         .build()
         };
     }

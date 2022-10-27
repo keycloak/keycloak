@@ -100,4 +100,10 @@ public class HttpOptions {
             .description("The type of the trust store file. " +
                     "If not given, the type is automatically detected based on the file name.")
             .build();
+
+    public static final Option HTTP_IO_THREAD_POOL_SIZE = new OptionBuilder<>("http-io-thread-pool-size", Integer.class)
+            .category(OptionCategory.HTTP)
+            .defaultValue(4)
+            .hidden()
+            .build();
 }
