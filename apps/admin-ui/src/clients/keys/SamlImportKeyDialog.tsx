@@ -49,7 +49,7 @@ export const SamlImportKeyDialog = ({
       }}
     >
       <FormProvider {...form}>
-        <KeyForm useFile />
+        <KeyForm useFile hasPem />
       </FormProvider>
     </ConfirmDialogModal>
   );
