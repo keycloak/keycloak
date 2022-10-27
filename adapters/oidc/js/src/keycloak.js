@@ -1045,7 +1045,7 @@ function Keycloak (config) {
                         code = "0" + code;
                     }
                     return "%" + code;
-                });
+                })
             );
         } catch (err) {
             str = atob(str);
