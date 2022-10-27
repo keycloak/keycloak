@@ -21,12 +21,12 @@ const ldapName = "ldap-mappers-testing";
 const ldapVendor = "Active Directory";
 
 // connection and authentication settings
-const connectionUrlValid = "ldap://ldap.forumsys.com:389";
+const connectionUrlValid = "ldap://localhost:3004";
 const bindTypeSimple = "simple";
 const truststoreSpiOnlyLdaps = "Only for ldaps";
 const connectionTimeoutTwoSecs = "2000";
-const bindDnCnDc = "cn=read-only-admin,dc=example,dc=com";
-const bindCredsValid = "password";
+const bindDnCnDc = "cn=user,dc=test";
+const bindCredsValid = "user";
 
 // ldap searching and updating
 const editModeReadOnly = "READ_ONLY";

@@ -21,12 +21,12 @@ const secondLdapVendor = "Other";
 const updatedLdapName = `${firstLdapName}-updated`;
 
 // connection and authentication settings
-const connectionUrlValid = "ldap://www.zflexldap.com";
+const connectionUrlValid = "ldap://localhost:3004";
 const bindTypeSimple = "simple";
 const truststoreSpiOnlyLdaps = "Only for ldaps";
 const connectionTimeoutTwoSecs = "2000";
-const bindDnCnDc = "cn=ro_admin,ou=sysadmins,dc=zflexsoftware,dc=com";
-const bindCredsValid = "zflexpass";
+const bindDnCnDc = "cn=user,dc=test";
+const bindCredsValid = "user";
 
 const connectionUrlInvalid = "ldap://nowhere.com";
 const bindTypeNone = "none";

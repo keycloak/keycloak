@@ -9,6 +9,7 @@
     "cy:open": "cypress open --e2e --browser chrome",
     "cy:run": "cypress run --browser chrome",
     "cy:check-types": "tsc --project cypress/tsconfig.json",
+    "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json",
     "server:start": "./scripts/start-server.mjs",
     "server:import-client": "./scripts/import-client.mjs"
   },
@@ -99,6 +100,7 @@
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
     "jsdom": "^20.0.1",
+    "ldap-server-mock": "^5.0.0",
     "node-fetch": "^3.2.10",
     "progress-promise": "^0.0.6",
     "tar-fs": "^2.1.1",

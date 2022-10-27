@@ -107,6 +107,10 @@ jobs:
         with:
           name: keycloak
 
+      - name: Start LDAP server
+        run: npm run cy:ldap-server &
+        working-directory: apps/admin-ui
+
       - name: Start Keycloak Server
         run: |
           tar xfvz keycloak-999-SNAPSHOT.tar.gz
