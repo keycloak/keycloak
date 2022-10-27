@@ -4,10 +4,10 @@ import {
   AlertActionCloseButton,
   AlertVariant,
 } from "@patternfly/react-core";
-import type { AlertType } from "./Alerts";
+import type { AlertEntry } from "./Alerts";
 
 type AlertPanelProps = {
-  alerts: AlertType[];
+  alerts: AlertEntry[];
   onCloseAlert: (id: number) => void;
 };
 
@@ -27,8 +27,6 @@ export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
               onClose={() => onCloseAlert(id)}
             />
           }
-          timeout
-          onTimeout={() => onCloseAlert(id)}
         >
           {description && <p>{description}</p>}
         </Alert>
