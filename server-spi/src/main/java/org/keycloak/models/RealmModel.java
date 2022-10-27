@@ -268,14 +268,6 @@ public interface RealmModel extends RoleContainerModel {
     void setActionTokenGeneratedByUserLifespan(String actionTokenType, Integer seconds);
 
     /**
-     * @deprecated Use {@link #getRequiredCredentialsStream() getRequiredCredentialsStream} instead.
-     */
-    @Deprecated
-    default List<RequiredCredentialModel> getRequiredCredentials() {
-        return getRequiredCredentialsStream().collect(Collectors.toList());
-    }
-
-    /**
      * Returns required credentials as a stream.
      * @return Stream of {@link RequiredCredentialModel}. Never returns {@code null}.
      */
@@ -317,14 +309,6 @@ public interface RealmModel extends RoleContainerModel {
     RoleModel getRoleById(String id);
 
     /**
-     * @deprecated Use {@link #getDefaultGroupsStream() getDefaultGroupsStream} instead.
-     */
-    @Deprecated
-    default List<GroupModel> getDefaultGroups() {
-        return getDefaultGroupsStream().collect(Collectors.toList());
-    }
-
-    /**
      * Returns default groups as a stream.
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
@@ -335,26 +319,10 @@ public interface RealmModel extends RoleContainerModel {
     void removeDefaultGroup(GroupModel group);
 
     /**
-     * @deprecated Use {@link #getClientsStream() getClientsStream} instead.
-     */
-    @Deprecated
-    default List<ClientModel> getClients() {
-        return getClientsStream(null, null).collect(Collectors.toList());
-    }
-
-    /**
      * Returns clients as a stream.
      * @return Stream of {@link ClientModel}. Never returns {@code null}.
      */
     Stream<ClientModel> getClientsStream();
-
-    /**
-     * @deprecated Use {@link #getClientsStream(Integer, Integer) getClientsStream} instead.
-     */
-    @Deprecated
-    default List<ClientModel> getClients(Integer firstResult, Integer maxResults) {
-        return getClientsStream(firstResult, maxResults).collect(Collectors.toList());
-    }
 
     /**
      * Returns clients as a stream.
@@ -365,14 +333,6 @@ public interface RealmModel extends RoleContainerModel {
     Stream<ClientModel> getClientsStream(Integer firstResult, Integer maxResults);
 
     Long getClientsCount();
-
-    /**
-     * @deprecated Use {@link #getAlwaysDisplayInConsoleClientsStream() getAlwaysDisplayInConsoleClientsStream} instead.
-     */
-    @Deprecated
-    default List<ClientModel> getAlwaysDisplayInConsoleClients() {
-        return getAlwaysDisplayInConsoleClientsStream().collect(Collectors.toList());
-    }
 
     /**
      * Returns clients which are always displayed in the admin console as a stream.
@@ -388,14 +348,6 @@ public interface RealmModel extends RoleContainerModel {
 
     ClientModel getClientById(String id);
     ClientModel getClientByClientId(String clientId);
-
-    /**
-     * @deprecated Use {@link #searchClientByClientIdStream(String, Integer, Integer) searchClientByClientId} instead.
-     */
-    @Deprecated
-    default List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
-        return searchClientByClientIdStream(clientId, firstResult, maxResults).collect(Collectors.toList());
-    }
 
     /**
      * Search for clients by provided client's id.
@@ -436,14 +388,6 @@ public interface RealmModel extends RoleContainerModel {
     void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
 
     /**
-     * @deprecated Use {@link #getAuthenticationFlowsStream() getAuthenticationFlowsStream} instead.
-     */
-    @Deprecated
-    default List<AuthenticationFlowModel> getAuthenticationFlows() {
-        return getAuthenticationFlowsStream().collect(Collectors.toList());
-    }
-
-    /**
      * Returns authentications flows as a stream.
      * @return Stream of {@link AuthenticationFlowModel}. Never returns {@code null}.
      */
@@ -454,14 +398,6 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticationFlowModel getAuthenticationFlowById(String id);
     void removeAuthenticationFlow(AuthenticationFlowModel model);
     void updateAuthenticationFlow(AuthenticationFlowModel model);
-
-    /**
-     * @deprecated Use {@link #getAuthenticationExecutionsStream(String) getAuthenticationExecutionsStream} instead.
-     */
-    @Deprecated
-    default List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
-        return getAuthenticationExecutionsStream(flowId).collect(Collectors.toList());
-    }
 
     /**
      * Returns sorted (according to priority) {@link AuthenticationExecutionModel AuthenticationExecutionModel} as a stream.
@@ -478,14 +414,6 @@ public interface RealmModel extends RoleContainerModel {
     void removeAuthenticatorExecution(AuthenticationExecutionModel model);
 
     /**
-     * @deprecated Use {@link #getAuthenticatorConfigsStream() getAuthenticatorConfigsStream} instead.
-     */
-    @Deprecated
-    default List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
-        return getAuthenticatorConfigsStream().collect(Collectors.toList());
-    }
-
-    /**
      * Returns authentication configs as a stream.
      * @return Stream of {@link AuthenticatorConfigModel}. Never returns {@code null}.
      */
@@ -496,14 +424,6 @@ public interface RealmModel extends RoleContainerModel {
     void removeAuthenticatorConfig(AuthenticatorConfigModel model);
     AuthenticatorConfigModel getAuthenticatorConfigById(String id);
     AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias);
-
-    /**
-     * @deprecated Use {@link #getRequiredActionProvidersStream() getRequiredActionProvidersStream} instead.
-     */
-    @Deprecated
-    default List<RequiredActionProviderModel> getRequiredActionProviders() {
-        return getRequiredActionProvidersStream().collect(Collectors.toList());
-    }
 
     /**
      * Returns sorted {@link RequiredActionProviderModel RequiredActionProviderModel} as a stream.
@@ -519,14 +439,6 @@ public interface RealmModel extends RoleContainerModel {
     RequiredActionProviderModel getRequiredActionProviderByAlias(String alias);
 
     /**
-     * @deprecated Use {@link #getIdentityProvidersStream() getIdentityProvidersStream} instead.
-     */
-    @Deprecated
-    default List<IdentityProviderModel> getIdentityProviders() {
-        return getIdentityProvidersStream().collect(Collectors.toList());
-    }
-
-    /**
      * Returns identity providers as a stream.
      * @return Stream of {@link IdentityProviderModel}. Never returns {@code null}.
      */
@@ -538,26 +450,10 @@ public interface RealmModel extends RoleContainerModel {
     void updateIdentityProvider(IdentityProviderModel identityProvider);
 
     /**
-     * @deprecated Use {@link #getIdentityProviderMappersStream() getIdentityProviderMappersStream} instead.
-     */
-    @Deprecated
-    default Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
-        return getIdentityProviderMappersStream().collect(Collectors.toSet());
-    }
-
-    /**
      * Returns identity provider mappers as a stream.
      * @return Stream of {@link IdentityProviderMapperModel}. Never returns {@code null}.
      */
     Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream();
-
-    /**
-     * @deprecated Use {@link #getIdentityProviderMappersByAliasStream(String) getIdentityProviderMappersByAliasStream} instead.
-     */
-    @Deprecated
-    default Set<IdentityProviderMapperModel> getIdentityProviderMappersByAlias(String brokerAlias) {
-        return getIdentityProviderMappersByAliasStream(brokerAlias).collect(Collectors.toSet());
-    }
 
     /**
      * Returns identity provider mappers by the provided alias as a stream.
@@ -610,14 +506,6 @@ public interface RealmModel extends RoleContainerModel {
     void removeComponents(String parentId);
 
     /**
-     * @deprecated Use {@link #getComponentsStream(String, String) getComponentsStream} instead.
-     */
-    @Deprecated
-    default List<ComponentModel> getComponents(String parentId, String providerType) {
-        return getComponentsStream(parentId, providerType).collect(Collectors.toList());
-    }
-
-    /**
      * Returns stream of ComponentModels for specific parentId and providerType.
      * @param parentId {@code String} id of parent
      * @param providerType {@code String} type of provider
@@ -631,22 +519,6 @@ public interface RealmModel extends RoleContainerModel {
      * @return Stream of {@link ComponentModel}. Never returns {@code null}.
      */
     Stream<ComponentModel> getComponentsStream(String parentId);
-
-    /**
-     * @deprecated Use {@link #getComponentsStream(String) getComponentsStream} instead.
-     */
-    @Deprecated
-    default List<ComponentModel> getComponents(String parentId) {
-        return getComponentsStream(parentId).collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Use {@link #getComponentsStream() getComponentsStream} instead.
-     */
-    @Deprecated
-    default List<ComponentModel> getComponents() {
-        return getComponentsStream().collect(Collectors.toList());
-    }
 
     /**
      * Returns stream of component models.
@@ -704,28 +576,12 @@ public interface RealmModel extends RoleContainerModel {
     void setEventsExpiration(long expiration);
 
     /**
-     * @deprecated Use {@link #getEventsListenersStream() getEventsListenersStream} instead.
-     */
-    @Deprecated
-    default Set<String> getEventsListeners() {
-        return getEventsListenersStream().collect(Collectors.toSet());
-    }
-
-    /**
      * Returns events listeners as a stream.
      * @return Stream of {@code String}. Never returns {@code null}.
      */
     Stream<String> getEventsListenersStream();
 
     void setEventsListeners(Set<String> listeners);
-
-    /**
-     * @deprecated Use {@link #getEnabledEventTypesStream() getEnabledEventTypesStream} instead.
-     */
-    @Deprecated
-    default Set<String> getEnabledEventTypes() {
-        return getEnabledEventTypesStream().collect(Collectors.toSet());
-    }
 
     /**
      * Returns enabled event types as a stream.
@@ -765,14 +621,6 @@ public interface RealmModel extends RoleContainerModel {
     void setInternationalizationEnabled(boolean enabled);
 
     /**
-     * @deprecated Use {@link #getSupportedLocalesStream() getSupportedLocalesStream} instead.
-     */
-    @Deprecated
-    default Set<String> getSupportedLocales() {
-        return getSupportedLocalesStream().collect(Collectors.toSet());
-    }
-
-    /**
      * Returns supported locales as a stream.
      * @return Stream of {@code String}. Never returns {@code null}.
      */
@@ -799,14 +647,6 @@ public interface RealmModel extends RoleContainerModel {
     GroupModel getGroupById(String id);
 
     /**
-     * @deprecated Use {@link #getGroupsStream() getGroupsStream} instead.
-     */
-    @Deprecated
-    default List<GroupModel> getGroups() {
-        return getGroupsStream().collect(Collectors.toList());
-    }
-
-    /**
      * Returns groups as a stream.
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
@@ -816,26 +656,10 @@ public interface RealmModel extends RoleContainerModel {
     Long getGroupsCountByNameContaining(String search);
 
     /**
-     * @deprecated Use {@link #getTopLevelGroups() getTopLevelGroups} instead.
-     */
-    @Deprecated
-    default List<GroupModel> getTopLevelGroups() {
-        return getTopLevelGroupsStream().collect(Collectors.toList());
-    }
-
-    /**
      * Returns top level groups as a stream.
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     Stream<GroupModel> getTopLevelGroupsStream();
-
-    /**
-     * @deprecated Use {@link #getTopLevelGroupsStream(Integer, Integer) getTopLevelGroupsStream} instead.
-     */
-    @Deprecated
-    default List<GroupModel> getTopLevelGroups(Integer first, Integer max) {
-        return getTopLevelGroupsStream(first, max).collect(Collectors.toList());
-    }
 
     /**
      * Returns top level groups as a stream.
@@ -844,14 +668,6 @@ public interface RealmModel extends RoleContainerModel {
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max);
-
-    /**
-     * @deprecated Use {@link GroupProvider#searchForGroupByNameStream(RealmModel, String, Boolean, Integer, Integer)} instead.
-     */
-    @Deprecated
-    default List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
-        return searchForGroupByNameStream(search, first, max).collect(Collectors.toList());
-    }
 
     /**
      * Searches for groups by provided name. Results that match the given filter are returned as a stream.
@@ -866,14 +682,6 @@ public interface RealmModel extends RoleContainerModel {
 
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);
-
-    /**
-     * @deprecated Use {@link #getClientScopesStream() getClientScopesStream} instead.
-     */
-    @Deprecated
-    default List<ClientScopeModel> getClientScopes() {
-        return getClientScopesStream().collect(Collectors.toList());
-    }
 
     /**
      * Returns all client scopes of this realm as a stream.
@@ -937,14 +745,6 @@ public interface RealmModel extends RoleContainerModel {
     boolean removeRealmLocalizationTexts(String locale);
     Map<String, Map<String, String>> getRealmLocalizationTexts();
     Map<String, String> getRealmLocalizationTextsByLocale(String locale);
-
-    /**
-     * @deprecated Use {@link #getDefaultClientScopesStream(boolean) getDefaultClientScopesStream} instead.
-     */
-    @Deprecated
-    default List<ClientScopeModel> getDefaultClientScopes(boolean defaultScope) {
-        return getDefaultClientScopesStream(defaultScope).collect(Collectors.toList());
-    }
 
     /**
      * Returns default client scopes of this realm either default ones or optional ones.

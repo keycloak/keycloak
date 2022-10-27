@@ -138,7 +138,7 @@ public class MapGroupProvider implements GroupProvider {
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        return searchForGroupByNameStream(realm, search, null, null).count();
+        return searchForGroupByNameStream(realm, search, false, null, null).count();
     }
 
     @Override
@@ -166,12 +166,6 @@ public class MapGroupProvider implements GroupProvider {
                 (DefaultModelCriteria<GroupModel> mcb) -> mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS),
                 qp -> qp.offset(firstResult).limit(maxResults)
         );
-    }
-
-    @Override
-    @Deprecated
-    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        return searchForGroupByNameStream(realm, search, false, firstResult, maxResults);
     }
 
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {

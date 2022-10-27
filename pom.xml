@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>2.13.2.Final</quarkus.version>
+        <quarkus.version>2.13.3.Final</quarkus.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -85,6 +85,7 @@
         <infinispan.protostream.processor.version>4.4.1.Final</infinispan.protostream.processor.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <jackson.version>2.13.4</jackson.version>
+        <jackson.databind.version>2.13.4.2</jackson.databind.version>
         <jackson.annotations.version>${jackson.version}</jackson.annotations.version>
         <jakarta.mail.version>1.6.5</jakarta.mail.version>
         <jboss-jaxrs-api_2.1_spec>2.0.1.Final</jboss-jaxrs-api_2.1_spec>
@@ -189,7 +190,7 @@
         <surefire.system.args></surefire.system.args>
 
         <!-- Tomcat versions -->
-        <tomcat8.version>8.5.38</tomcat8.version>
+        <tomcat8.version>8.5.76</tomcat8.version>
         <tomcat9.version>9.0.16</tomcat9.version>
 
         <!-- Spring Boot versions, used for tests -->
@@ -475,7 +476,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson.databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -1904,6 +1905,7 @@
             <properties>
                 <surefire.system.args>
                     --add-opens=java.base/java.lang=ALL-UNNAMED
+                    --add-opens=java.base/java.util=ALL-UNNAMED
                 </surefire.system.args>
             </properties>
         </profile>
@@ -1949,7 +1951,6 @@
         <profile>
             <id>operator</id>
             <activation>
-                <jdk>[11,)</jdk>
                 <property>
                     <name>operator</name>
                 </property>

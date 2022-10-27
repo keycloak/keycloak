@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set outputs
         id: vars
-        run: echo "::set-output name=version::0.0.1-${GITHUB_SHA::6}"
+        run: echo "version_local=0.0.1-${GITHUB_SHA::6}" >> $GITHUB_ENV
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - uses: actions/setup-java@v2
@@ -78,15 +78,15 @@ jobs:
       - name: Build Keycloak Docker images
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ steps.vars.outputs.version }})
-          (cd operator && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
+          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_local }})
+          (cd operator && ./scripts/build-testing-docker-images.sh ${{ env.version_local }} keycloak custom-keycloak)
 
       - name: Test operator running locally
         run: |
           mvn clean install -Poperator -pl :keycloak-operator -am \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
-              -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
-              -Dtest.operator.custom.image=custom-keycloak:${{ steps.vars.outputs.version }} \
+              -Doperator.keycloak.image=keycloak:${{ env.version_local }} \
+              -Dtest.operator.custom.image=custom-keycloak:${{ env.version_local }} \
               -Doperator.keycloak.image-pull-policy=Never \
               -Dtest.operator.kubernetes.ip=$(minikube ip)
 
@@ -98,7 +98,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set outputs
         id: vars
-        run: echo "::set-output name=version::0.0.1-${GITHUB_SHA::6}"
+        run: echo "version_remote=0.0.1-${GITHUB_SHA::6}" >> $GITHUB_ENV
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - uses: actions/setup-java@v2
@@ -123,8 +123,8 @@ jobs:
       - name: Build Keycloak Docker images
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ steps.vars.outputs.version }})
-          (cd operator && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
+          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd operator && ./scripts/build-testing-docker-images.sh ${{ env.version_remote }} keycloak custom-keycloak)
 
       - name: Test operator running in cluster
         run: |
@@ -132,9 +132,9 @@ jobs:
           mvn clean install -Poperator -pl :keycloak-operator -am \
               -Dquarkus.container-image.build=true \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
-              -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
+              -Doperator.keycloak.image=keycloak:${{ env.version_remote }} \
               -Dquarkus.jib.jvm-arguments="-Djava.util.logging.manager=org.jboss.logmanager.LogManager","-Doperator.keycloak.image-pull-policy=Never" \
-              -Dtest.operator.custom.image=custom-keycloak:${{ steps.vars.outputs.version }} \
+              -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
               --no-transfer-progress -Dtest.operator.deployment=remote \
               -Dtest.operator.kubernetes.ip=$(minikube ip)
 

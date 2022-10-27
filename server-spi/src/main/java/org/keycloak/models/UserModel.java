@@ -152,41 +152,21 @@ public interface UserModel extends RoleMapperModel {
     String getFirstAttribute(String name);
 
     /**
-     * @param name
-     * @return list of all attribute values or empty list if there are not any values. Never return null
-     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
-     */
-    @Deprecated
-    List<String> getAttribute(String name);
-
-    /**
      * Obtains all values associated with the specified attribute name.
      *
      * @param name the name of the attribute.
      * @return a non-null {@link Stream} of attribute values.
      */
-    default Stream<String> getAttributeStream(final String name) {
-        List<String> value = this.getAttribute(name);
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<String> getAttributeStream(final String name);
 
     Map<String, List<String>> getAttributes();
-
-    /**
-     * @deprecated Use {@link #getRequiredActionsStream() getRequiredActionsStream} instead.
-     */
-    @Deprecated
-    Set<String> getRequiredActions();
 
     /**
      * Obtains the names of required actions associated with the user.
      *
      * @return a non-null {@link Stream} of required action names.
      */
-    default Stream<String> getRequiredActionsStream() {
-        Set<String> value = this.getRequiredActions();
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<String> getRequiredActionsStream();
 
     void addRequiredAction(String action);
 
@@ -226,37 +206,11 @@ public interface UserModel extends RoleMapperModel {
     void setEmailVerified(boolean verified);
 
     /**
-     * @deprecated Use {@link #getGroupsStream() getGroupsStream} instead.
-     */
-    @Deprecated
-    Set<GroupModel> getGroups();
-
-    /**
      * Obtains the groups associated with the user.
      *
      * @return a non-null {@link Stream} of groups.
      */
-    default Stream<GroupModel> getGroupsStream() {
-        Set<GroupModel> value = this.getGroups();
-        return value != null ? value.stream() : Stream.empty();
-    }
-
-    /**
-     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
-     */
-    @Deprecated
-    default Set<GroupModel> getGroups(int first, int max) {
-        return getGroupsStream(null, first, max).collect(Collectors.toSet());
-    }
-
-    /**
-     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
-     */
-    @Deprecated
-    default Set<GroupModel> getGroups(String search, int first, int max) {
-        return getGroupsStream(search, first, max)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
+    Stream<GroupModel> getGroupsStream();
 
     /**
      * Returns a paginated stream of groups within this realm with search in the name
@@ -323,35 +277,10 @@ public interface UserModel extends RoleMapperModel {
     }
 
     /**
-     * The {@link UserModel.Streams} interface makes all collection-based methods in {@link UserModel} default by providing
-     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
-     * <p/>
-     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
-     * from the potential memory and performance optimizations of that approach.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
-    interface Streams extends UserModel, RoleMapperModel.Streams {
-        @Override
-        default List<String> getAttribute(String name) {
-            return this.getAttributeStream(name).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<String> getAttributeStream(final String name);
-
-        @Override
-        default Set<String> getRequiredActions() {
-            return this.getRequiredActionsStream().collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<String> getRequiredActionsStream();
-
-        @Override
-        default Set<GroupModel> getGroups() {
-            return this.getGroupsStream().collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<GroupModel> getGroupsStream();
+    @Deprecated
+    interface Streams extends UserModel, RoleMapperModel {
     }
 }

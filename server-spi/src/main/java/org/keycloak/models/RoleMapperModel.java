@@ -27,41 +27,19 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public interface RoleMapperModel {
-    /**
-     * Returns set of realm roles that are directly set to this object.
-     * @return see description
-     * @deprecated Use {@link #getRealmRoleMappingsStream() getRealmRoleMappingsStream} instead.
-     */
-    @Deprecated
-    Set<RoleModel> getRealmRoleMappings();
 
     /**
      * Returns stream of realm roles that are directly set to this object.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
-    default Stream<RoleModel> getRealmRoleMappingsStream() {
-        Set<RoleModel> value = this.getRealmRoleMappings();
-        return value != null ? value.stream() : Stream.empty();
-    }
-
-    /**
-     * Returns set of client roles that are directly set to this object for the given client.
-     * @param app Client to get the roles for
-     * @return see description
-     * @deprecated Use {@link #getClientRoleMappingsStream(ClientModel) getClientRoleMappingsStream} instead.
-     */
-    @Deprecated
-    Set<RoleModel> getClientRoleMappings(ClientModel app);
+    Stream<RoleModel> getRealmRoleMappingsStream();
 
     /**
      * Returns stream of client roles that are directly set to this object for the given client.
      * @param app {@link ClientModel} Client to get the roles for.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
-    default Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
-        Set<RoleModel> value = this.getClientRoleMappings(app);
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<RoleModel> getClientRoleMappingsStream(ClientModel app);
 
     /**
      * Returns {@code true}, if this object is directly assigned the given role.
@@ -97,21 +75,10 @@ public interface RoleMapperModel {
     void grantRole(RoleModel role);
 
     /**
-     * Returns set of all role (both realm all client) that are directly set to this object.
-     * @return
-     * @deprecated Use {@link #getRoleMappingsStream() getRoleMappingsStream} instead.
-     */
-    @Deprecated
-    Set<RoleModel> getRoleMappings();
-
-    /**
      * Returns stream of all role (both realm all client) that are directly set to this object.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
-    default Stream<RoleModel> getRoleMappingsStream() {
-        Set<RoleModel> value = this.getRoleMappings();
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<RoleModel> getRoleMappingsStream();
 
     /**
      * Removes the given role mapping from this object.
@@ -120,35 +87,10 @@ public interface RoleMapperModel {
     void deleteRoleMapping(RoleModel role);
 
     /**
-     * The {@link Streams} interface makes all collection-based methods in {@link RoleMapperModel} default by providing
-     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
-     * <p/>
-     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
-     * from the potential memory and performance optimizations of that approach.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
+    @Deprecated
     interface Streams extends RoleMapperModel {
-        @Override
-        default Set<RoleModel> getRealmRoleMappings() {
-            return this.getRealmRoleMappingsStream().collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<RoleModel> getRealmRoleMappingsStream();
-
-        @Override
-        default Set<RoleModel> getClientRoleMappings(ClientModel app) {
-            return this.getClientRoleMappingsStream(app).collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<RoleModel> getClientRoleMappingsStream(ClientModel app);
-
-        @Override
-        default Set<RoleModel> getRoleMappings() {
-            return this.getRoleMappingsStream().collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<RoleModel> getRoleMappingsStream();
     }
 }

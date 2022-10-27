@@ -32,8 +32,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.AdapterUtils;
@@ -85,12 +88,11 @@ import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.KeystoreUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
-
-import com.sun.jna.StringArray;
 
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
@@ -130,6 +132,21 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @ClassRule
+    public static TemporaryFolder folder = new TemporaryFolder();
+
+    private static KeystoreUtils.KeystoreInfo generatedKeystoreClient1;
+    private static KeyPair keyPairClient1;
+
+    @BeforeClass
+    public static void generateClient1KeyPair() throws Exception {
+        generatedKeystoreClient1 = KeystoreUtils.generateKeystore(folder, KeystoreFormat.JKS, "clientkey", "storepass", "keypass");
+        PublicKey publicKey = PemUtils.decodePublicKey(generatedKeystoreClient1.getCertificateInfo().getPublicKey());
+        PrivateKey privateKey = PemUtils.decodePrivateKey(generatedKeystoreClient1.getCertificateInfo().getPrivateKey());
+        keyPairClient1 = new KeyPair(publicKey, privateKey);
+    }
+
     private static String client1SAUserId;
 
     private static RealmRepresentation testRealm;
@@ -151,7 +168,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         app1 = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("client1")
-                .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFPPLDaTzANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE3MjI0N1oXDTI1MDgxNzE3MjQyN1owEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIUjjgv+V3s96O+Za9002Lp/trtGuHBeaeVL9dFKMKzO2MPqdRmHB4PqNlDdd28Rwf5Xn6iWdFpyUKOnI/yXDLhdcuFpR0sMNK/C9Lt+hSpPFLuzDqgtPgDotlMxiHIWDOZ7g9/gPYNXbNvjv8nSiyqoguoCQiiafW90bPHsiVLdP7ZIUwCcfi1qQm7FhxRJ1NiW5dvUkuCnnWEf0XR+Wzc5eC9EgB0taLFiPsSEIlWMm5xlahYyXkPdNOqZjiRnrTWm5Y4uk8ZcsD/KbPTf/7t7cQXipVaswgjdYi1kK2/zRwOhg1QwWFX/qmvdd+fLxV0R6VqRDhn7Qep2cxwMxLsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAKE6OA46sf20bz8LZPoiNsqRwBUDkaMGXfnob7s/hJZIIwDEx0IAQ3uKsG7q9wb+aA6s+v7S340zb2k3IxuhFaHaZpAd4CyR5cn1FHylbzoZ7rI/3ASqHDqpljdJaFqPH+m7nZWtyDvtZf+gkZ8OjsndwsSBK1d/jMZPp29qYbl1+XfO7RCp/jDqro/R3saYFaIFiEZPeKn1hUJn6BO48vxH1xspSu9FmlvDOEAOz4AuM58z4zRMP49GcFdCWr1wkonJUHaSptJaQwmBwLFUkCbE5I1ixGMb7mjEud6Y5jhfzJiZMo2U8RfcjNbrN0diZl3jB6LQIwESnhYSghaTjNQ==")
+                .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, generatedKeystoreClient1.getCertificateInfo().getCertificate())
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
                 .serviceAccountsEnabled(true)
@@ -170,9 +187,6 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                 .build();
 
         realmBuilder.client(app2);
-
-        // This one is for keystore-client2.p12 , which doesn't work on Sun JDK
-//            app2.setAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFPPLGHHjANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE3MjMzMVoXDTI1MDgxNzE3MjUxMVowEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIsatXj38fFD9fHslNrsWrubobudXYwwdZpGYqkHIhuDeSojGvhBSLmKIFmtbHMVcLEbS0dIEsSbNVrwjdFfuRuvd9Vu6Ng0JUC8fRhSeQniC3jcBuP8P4WlXK4+ir3Wlya+T6Hum9b68BiH0KyNZtFGJ6zLHuCcq9Bl0JifvibnUkDeTZPwgJNA9+GxS/x8fAkApcAbJrgBZvr57PwhbgHoZdB8aAY5f5ogbGzKDtSUMvFh+Jah39gWtn7p3VOuuMXA8SugogoH8C5m2itrPBL1UPhAcKUeWiqx4SmZe/lZo7x2WbSecNiFaiqBhIW+QbqCYW6I4u0YvuLuEe3+TC8CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAZzW5DZviCxUQdV5Ab07PZkUfvImHZ73oWWHZqzUQtZtbVdzfp3cnbb2wyXtlOvingO3hgpoTxV8vbKgLbIQfvkGGHBG1F5e0QVdtikfdcwWb7cy4/9F80OD7cgG0ZAzFbQ8ZY7iS3PToBp3+4tbIK2NK0ntt/MYgJnPbHeG4V4qfgUbFm1YgEK7WpbSVU8jGuJ5DWE+mlYgECZKZ5TSlaVGs2XOm6WXrJScucNekwcBWWiHyRsFHZEDzWmzt8TLTLnnb0vVjhx3qCYxah3RbyyMZm6WLZlLAaGEcwNDO8jaA3hAjrxoOA1xEaolQfGVsb/ElelHcR1Zfe0u4Ekd4tw==");
 
         defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -590,12 +604,20 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testClientWithGeneratedKeysJKS() throws Exception {
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.JKS);
         testClientWithGeneratedKeys("JKS");
     }
 
     @Test
     public void testClientWithGeneratedKeysPKCS12() throws Exception {
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.PKCS12);
         testClientWithGeneratedKeys("PKCS12");
+    }
+
+    @Test
+    public void testClientWithGeneratedKeysBCFKS() throws Exception {
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.BCFKS);
+        testClientWithGeneratedKeys(KeystoreFormat.BCFKS.toString());
     }
 
     private void testClientWithGeneratedKeys(String format) throws Exception {
@@ -664,12 +686,22 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testUploadKeystoreJKS() throws Exception {
-        testUploadKeystore("JKS", "client-auth-test/keystore-client1.jks", "clientkey", "storepass");
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.JKS);
+        testUploadKeystore("JKS", generatedKeystoreClient1.getKeystoreFile().getAbsolutePath(), "clientkey", "storepass");
     }
 
     @Test
     public void testUploadKeystorePKCS12() throws Exception {
-        testUploadKeystore("PKCS12", "client-auth-test/keystore-client2.p12", "clientkey", "pwd2");
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.PKCS12);
+        KeystoreUtils.KeystoreInfo ksInfo = KeystoreUtils.generateKeystore(folder, KeystoreFormat.PKCS12, "clientkey", "pwd2", "keypass");
+        testUploadKeystore(KeystoreFormat.PKCS12.toString(), ksInfo.getKeystoreFile().getAbsolutePath(), "clientkey", "pwd2");
+    }
+
+    @Test
+    public void testUploadKeystoreBCFKS() throws Exception {
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.BCFKS);
+        KeystoreUtils.KeystoreInfo ksInfo = KeystoreUtils.generateKeystore(folder, KeystoreFormat.BCFKS, "clientkey", "pwd2", "keypass");
+        testUploadKeystore(KeystoreFormat.BCFKS.toString(), ksInfo.getKeystoreFile().getAbsolutePath(), "clientkey", "pwd2");
     }
 
     @Test
@@ -696,10 +728,10 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
         // Load the keystore file
         URL fileUrl = (getClass().getClassLoader().getResource(filePath));
-        if (fileUrl == null) {
-            throw new IOException("File not found: " + filePath);
+        File keystoreFile = fileUrl != null ? new File(fileUrl.getFile()) : new File(filePath);
+        if (!keystoreFile.exists()) {
+            throw new IOException("File not found: " + keystoreFile.getAbsolutePath());
         }
-        File keystoreFile = new File(fileUrl.getFile());
 
         // Get admin access token, no matter it's master realm's admin
         OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(
@@ -792,7 +824,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testAssertionMissingIssuer() throws Exception {
-        String invalidJwt = getClientSignedJWT(getClient1KeyPair(), null);
+        String invalidJwt = getClientSignedJWT(keyPairClient1, null);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -807,7 +839,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testAssertionUnknownClient() throws Exception {
-        String invalidJwt = getClientSignedJWT(getClient1KeyPair(), "unknown-client");
+        String invalidJwt = getClientSignedJWT(keyPairClient1, "unknown-client");
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -1072,7 +1104,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     private OAuthClient.AccessTokenResponse testMissingClaim(int tokenTimeOffset, String... claims) throws Exception {
         CustomJWTClientCredentialsProvider jwtProvider = new CustomJWTClientCredentialsProvider();
-        jwtProvider.setupKeyPair(getClient1KeyPair());
+        jwtProvider.setupKeyPair(keyPairClient1);
         jwtProvider.setTokenTimeout(10);
 
         for (String claim : claims) {
@@ -1304,17 +1336,12 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         return getClientSignedJWT(getClient2KeyPair(), "client2", algorithm);
     }
 
-    private String getClient1SignedJWT() {
-        return getClientSignedJWT(getClient1KeyPair(), "client1", Algorithm.RS256);
+    private String getClient1SignedJWT() throws Exception {
+        return getClientSignedJWT(keyPairClient1, "client1", Algorithm.RS256);
     }
 
     private String getClient2SignedJWT() {
         return getClientSignedJWT(getClient2KeyPair(), "client2", Algorithm.RS256);
-    }
-
-    private KeyPair getClient1KeyPair() {
-        return KeystoreUtil.loadKeyPairFromKeystore("classpath:client-auth-test/keystore-client1.jks",
-                "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS);
     }
 
     private KeyPair getClient2KeyPair() {

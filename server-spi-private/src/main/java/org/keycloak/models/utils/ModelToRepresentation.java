@@ -458,8 +458,13 @@ public class ModelToRepresentation {
         rep.setOtpPolicyType(otpPolicy.getType());
         rep.setOtpPolicyLookAheadWindow(otpPolicy.getLookAheadWindow());
 
-        rep.setOtpSupportedApplications(session.getAllProviders(OTPApplicationProvider.class).stream().map(OTPApplicationProvider::getName).collect(Collectors.toList()));
         rep.setOtpPolicyCodeReusable(otpPolicy.isCodeReusable());
+
+        rep.setOtpSupportedApplications(session.getAllProviders(OTPApplicationProvider.class)
+                .stream()
+                .filter(p -> p.supports(otpPolicy))
+                .map(OTPApplicationProvider::getName)
+                .collect(Collectors.toList()));
 
         WebAuthnPolicy webAuthnPolicy = realm.getWebAuthnPolicy();
         rep.setWebAuthnPolicyRpEntityName(webAuthnPolicy.getRpEntityName());

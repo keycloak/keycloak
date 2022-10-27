@@ -88,6 +88,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -870,6 +871,35 @@ public class RealmTest extends AbstractAdminTest {
 
             assertEquals(Constants.DEFAULT_SIGNATURE_ALGORITHM, adminClient.realm("master").toRepresentation().getDefaultSignatureAlgorithm());
             assertEquals(Constants.DEFAULT_SIGNATURE_ALGORITHM, adminClient.realm("new-realm").toRepresentation().getDefaultSignatureAlgorithm());
+        } finally {
+            adminClient.realms().realm(rep.getRealm()).remove();
+        }
+    }
+
+    @Test
+    public void testSupportedOTPApplications() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("new-realm");
+
+        try {
+            adminClient.realms().create(rep);
+
+            RealmResource realm = adminClient.realms().realm("new-realm");
+
+            rep = realm.toRepresentation();
+
+            List<String> supportedApplications = rep.getOtpSupportedApplications();
+            assertThat(supportedApplications, hasSize(2));
+            assertThat(supportedApplications, containsInAnyOrder("totpAppGoogleName", "totpAppFreeOTPName"));
+
+            rep.setOtpPolicyDigits(8);
+            realm.update(rep);
+
+            rep = realm.toRepresentation();
+
+            supportedApplications = rep.getOtpSupportedApplications();
+            assertThat(supportedApplications, hasSize(1));
+            assertThat(supportedApplications, containsInAnyOrder("totpAppFreeOTPName"));
         } finally {
             adminClient.realms().realm(rep.getRealm()).remove();
         }
