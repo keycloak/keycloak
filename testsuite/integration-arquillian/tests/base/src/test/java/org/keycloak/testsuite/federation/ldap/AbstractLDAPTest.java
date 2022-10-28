@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.keycloak.common.Profile.Feature;
-import java.util.List;
 import java.util.Map;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -36,6 +35,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.junit.BeforeClass;
 
@@ -50,6 +50,9 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
     @Page
     protected AppPage appPage;

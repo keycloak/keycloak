@@ -30,6 +30,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -70,6 +72,7 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -304,11 +307,12 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertEquals(ctx.getLdapModel().getId(), user.getFederationLink());
         });
 
-        adminClient.realm("test").userStorage().removeImportedUsers(ldapModelId);
+        adminClient.realm(TEST_REALM_NAME).userStorage().removeImportedUsers(ldapModelId);
+        assertAdminEvents.assertEvent(TEST_REALM_NAME,OperationType.ACTION, AdminEventPaths.removeImportedUsersPath(ldapModelId), ResourceType.REALM);
 
         testingClient.server().run(session -> {
             RealmManager manager = new RealmManager(session);
-            RealmModel appRealm = manager.getRealmByName("test");
+            RealmModel appRealm = manager.getRealmByName(TEST_REALM_NAME);
             UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "johnkeycloak");
             Assert.assertNull(user);
         });
@@ -323,7 +327,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertEquals(ctx.getLdapModel().getId(), user.getFederationLink());
         });
 
-        adminClient.realm("test").userStorage().unlink(ldapModelId);
+        adminClient.realm(TEST_REALM_NAME).userStorage().unlink(ldapModelId);
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -1219,9 +1223,9 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
 
         // Assert search without arguments won't blow up with StackOverflowError
-        adminClient.realm("test").users().search(null, 0, 10, false);
+        adminClient.realm(TEST_REALM_NAME).users().search(null, 0, 10, false);
 
-        List<UserRepresentation> users = adminClient.realm("test").users().search("johnkeycloak", 0, 10, false);
+        List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search("johnkeycloak", 0, 10, false);
         Assert.assertTrue(users.stream().anyMatch(userRepresentation -> "johnkeycloak".equals(userRepresentation.getUsername())));
     }
 
@@ -1251,7 +1255,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         setTimeOffset(60 * 5); // 5 minutes in future, user should be cached still
 
         testingClient.server().run(session -> {
-            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            RealmModel appRealm = new RealmManager(session).getRealmByName(TEST_REALM_NAME);
             CachedUserModel user = (CachedUserModel) session.users().getUserByUsername(appRealm, "johndirect");
             String postalCode = user.getFirstAttribute("postal_code");
             String email = user.getEmail();
@@ -1262,7 +1266,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         setTimeOffset(60 * 20); // 20 minutes into future, cache will be invalidated
 
         testingClient.server().run(session -> {
-            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            RealmModel appRealm = new RealmManager(session).getRealmByName(TEST_REALM_NAME);
             UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
             Assert.assertNull(user);
         });

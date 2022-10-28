@@ -180,6 +180,10 @@ public class UserStorageProviderResource {
         }
 
         session.users().removeImportedUsers(realm, id);
+
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("action", "removeImportedUsers");
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
     }
     /**
      * Unlink imported users from a storage provider
