@@ -64,6 +64,14 @@ public class KeycloakRecorder {
     public static final String DEFAULT_HEALTH_ENDPOINT = "/health";
     public static final String DEFAULT_METRICS_ENDPOINT = "/metrics";
 
+    public void initConfig() {
+        Config.init(new MicroProfileConfigProvider());
+    }
+
+    public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
+        Profile.init(profileName, features);
+    }
+
     public void configureLiquibase(Map<String, List<String>> services) {
         ServiceLocator locator = Scope.getCurrentScope().getServiceLocator();
         if (locator instanceof FastServiceLocator)
@@ -75,8 +83,6 @@ public class KeycloakRecorder {
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
             List<ClasspathThemeProviderFactory.ThemesRepresentation> themes, boolean reaugmented) {
-        Config.init(new MicroProfileConfigProvider());
-        Profile.setInstance(new QuarkusProfile());
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
     }
 

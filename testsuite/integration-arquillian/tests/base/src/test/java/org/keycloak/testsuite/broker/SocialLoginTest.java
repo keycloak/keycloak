@@ -604,10 +604,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         String username = users.get(0).getUsername();
         checkFeature(501, username);
 
-        Response tokenResp = testingClient.testing().enableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-        assertEquals(200, tokenResp.getStatus());
+        testingClient.enableFeature(Profile.Feature.TOKEN_EXCHANGE);
 
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
         Client httpClient = AdminClientUtil.createResteasyClient();
 
         try {
@@ -690,8 +688,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
             adminClient.realm(REALM).identityProviders().get(idp.getAlias()).update(idp);
         } finally {
             httpClient.close();
-            tokenResp = testingClient.testing().disableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-            assertEquals(200, tokenResp.getStatus());
+            testingClient.disableFeature(Profile.Feature.TOKEN_EXCHANGE);
             checkFeature(501, username);
         }
     }

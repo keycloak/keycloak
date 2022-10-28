@@ -33,7 +33,7 @@ public class JPAStoreDistTest {
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false" })
     void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertMessage("Experimental feature enabled: map_storage");
+        cliResult.assertMessage("Experimental features enabled: map-storage");
         cliResult.assertMessage("[org.keycloak.models.map.storage.jpa.liquibase.updater.MapJpaLiquibaseUpdaterProvider] (main) Initializing database schema. Using changelog META-INF/jpa-realms-changelog.xml");
         cliResult.assertStarted();
     }

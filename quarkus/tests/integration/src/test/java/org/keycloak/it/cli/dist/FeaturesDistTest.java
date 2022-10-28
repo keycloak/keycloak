@@ -52,10 +52,18 @@ public class FeaturesDistTest {
 
     @Test
     @Launch({StartDev.NAME, "--features=preview", "--features-disabled=token-exchange"})
+    public void testPreviewFeatureDisabledInPreviewMode(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertStartedDevMode();
+        assertFalse(cliResult.getOutput().contains("token-exchange"));
+    }
+
+    @Test
+    @Launch({StartDev.NAME, "--features=token-exchange", "--features-disabled=token-exchange"})
     public void testEnablePrecedenceOverDisable(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
-        assertPreviewFeaturesEnabled((CLIResult) result);
+        assertThat(cliResult.getOutput(), containsString("Preview features enabled: token-exchange"));
     }
 
     @Test
@@ -65,8 +73,7 @@ public class FeaturesDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         assertThat(cliResult.getOutput(), CoreMatchers.allOf(
-                containsString("Preview feature enabled: admin_fine_grained_authz"),
-                containsString("Preview feature enabled: token_exchange")));
+                containsString("Preview features enabled: admin-fine-grained-authz, token-exchange")));
         assertFalse(cliResult.getOutput().contains("declarative-user-profile"));
     }
 
@@ -77,17 +84,12 @@ public class FeaturesDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         assertThat(cliResult.getOutput(), CoreMatchers.allOf(
-                containsString("Preview feature enabled: admin_fine_grained_authz"),
-                containsString("Preview feature enabled: token_exchange")));
+                containsString("Preview features enabled: admin-fine-grained-authz, token-exchange")));
         assertFalse(cliResult.getOutput().contains("declarative-user-profile"));
     }
 
     private void assertPreviewFeaturesEnabled(CLIResult result) {
         assertThat(result.getOutput(), CoreMatchers.allOf(
-                containsString("Preview feature enabled: admin_fine_grained_authz"),
-                containsString("Preview feature enabled: openshift_integration"),
-                containsString("Preview feature enabled: scripts"),
-                containsString("Preview feature enabled: token_exchange"),
-                containsString("Preview feature enabled: declarative_user_profile")));
+                containsString("Preview features enabled: admin-fine-grained-authz, client-secret-rotation, declarative-user-profile, openshift-integration, recovery-codes, scripts, token-exchange, update-email")));
     }
 }
