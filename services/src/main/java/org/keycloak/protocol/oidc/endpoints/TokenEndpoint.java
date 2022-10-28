@@ -30,7 +30,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.Resteasy;
+import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -106,7 +106,6 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -175,26 +174,16 @@ public class TokenEndpoint {
     public Response processGrantRequest() {
         // grant request needs to be run in a retriable transaction as concurrent execution of this action can lead to
         // exceptions on DBs with SERIALIZABLE isolation level.
-        Object result = KeycloakModelUtils.runJobInRetriableTransaction(this.session.getKeycloakSessionFactory(), kcSession -> {
-            try {
-                RealmModel realmModel = kcSession.realms().getRealm(realm.getId());
-                kcSession.getContext().setRealm(realmModel);
-                // create another instance of the endpoint that will be run within the new session.
-                Resteasy.pushContext(KeycloakSession.class, kcSession);
-                TokenEndpoint other = new TokenEndpoint(session, new TokenManager(), new EventBuilder(realmModel, kcSession, clientConnection));
+        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+            @Override
+            public Response runInternal(KeycloakSession session) {
+                // create another instance of the endpoint to isolate each run.
+                TokenEndpoint other = new TokenEndpoint(session, new TokenManager(),
+                        new EventBuilder(session.getContext().getRealm(), session, clientConnection));
+                // process the request in the created instance.
                 return other.processGrantRequestInternal();
-            } catch (WebApplicationException we) {
-                // WebApplicationException needs to be returned and treated (rethrown) by the calling code because the new transaction
-                // still needs to be committed when this exception is thrown. It captures final business states that won't change when
-                // being retried, like an invalid code.
-                return we;
             }
         }, 10, 100);
-        if (WebApplicationException.class.isInstance(result)) {
-            throw (WebApplicationException) result;
-        } else {
-            return (Response) result;
-        }
     }
 
     private Response processGrantRequestInternal() {
