@@ -39,6 +39,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -822,6 +823,13 @@ public class AuthenticationProcessor {
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
             }
 
+        } else if (KeycloakModelUtils.isExceptionRetriable(failure)) {
+            // let calling code decide if whole action should be retried.
+            if (failure instanceof RuntimeException) {
+                throw (RuntimeException) failure;
+            } else {
+                throw new RuntimeException(failure);
+            }
         } else {
             ServicesLogger.LOGGER.failedAuthentication(failure);
             event.error(Errors.INVALID_USER_CREDENTIALS);
