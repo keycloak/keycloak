@@ -1051,6 +1051,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public RoleModel getDefaultRole() {
+        if (isUpdated()) return updated.getDefaultRole();
         return cached.getDefaultRoleId() == null ? null : cacheSession.getRoleById(this, cached.getDefaultRoleId());
     }
 
