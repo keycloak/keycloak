@@ -94,6 +94,8 @@ import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.StorageOptions;
 import org.keycloak.config.TransactionOptions;
@@ -101,7 +103,7 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
-import org.keycloak.quarkus.runtime.QuarkusProfile;
+import org.keycloak.quarkus.runtime.QuarkusProfileConfigResolver;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -205,6 +207,26 @@ class KeycloakProcessor {
     @BuildStep
     FeatureBuildItem getFeature() {
         return new FeatureBuildItem("keycloak");
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    ConfigBuildItem initConfig(KeycloakRecorder recorder) {
+        Config.init(new MicroProfileConfigProvider());
+        recorder.initConfig();
+        return new ConfigBuildItem();
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    ProfileBuildItem configureProfile(KeycloakRecorder recorder) {
+        Profile profile = Profile.configure(
+                new QuarkusProfileConfigResolver(),
+                new PropertiesFileProfileConfigResolver()); // Need profile.properties for now as testsuite relies on it
+        recorder.configureProfile(profile.getName(), profile.getFeatures());
+
+        return new ProfileBuildItem();
     }
 
     /**
@@ -331,8 +353,8 @@ class KeycloakProcessor {
      */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
+    @Consume(ProfileBuildItem.class)
     KeycloakSessionFactoryPreInitBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
-        Profile.setInstance(new QuarkusProfile());
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();

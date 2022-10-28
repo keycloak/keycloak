@@ -60,8 +60,6 @@ public class AccountPageTest extends AbstractI18NTest {
 
     @Test
     public void testLocalizedReferrerLinkContent() {
-        ProfileAssume.assumeCommunity();
-        
         RealmResource testRealm = testRealm();
         List<ClientRepresentation> foundClients = testRealm.clients().findByClientId("var-named-test-app");
         if (foundClients.isEmpty()) {

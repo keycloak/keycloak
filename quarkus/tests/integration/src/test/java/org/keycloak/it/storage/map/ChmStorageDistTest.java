@@ -48,7 +48,7 @@ public class ChmStorageDistTest {
     }
 
     private void assertExpectedMessages(CLIResult cliResult, RawDistRootPath distPath) {
-        cliResult.assertMessage("Experimental feature enabled: map_storage");
+        cliResult.assertMessage("Experimental features enabled: map-storage");
         cliResult.assertMessage("Hibernate ORM is disabled because no JPA entities were found");
         Assert.assertFalse(distPath.getDistRootPath().resolve("data").resolve("h2").toFile().exists());
     }

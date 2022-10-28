@@ -24,6 +24,8 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.cluster.ClusterSpi;
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentFactorySpi;
@@ -60,6 +62,7 @@ import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -290,6 +293,13 @@ public abstract class KeycloakModelTest {
         LOG.debugf("Creating factory %d in %s using the following configuration:\n    %s", factoryIndex, threadName, CONFIG);
 
         DefaultKeycloakSessionFactory res = new DefaultKeycloakSessionFactory() {
+
+            @Override
+            public void init() {
+                Profile.configure(new PropertiesProfileConfigResolver(System.getProperties()));
+                super.init();
+            }
+
             @Override
             protected boolean isEnabled(ProviderFactory factory, Scope scope) {
                 return super.isEnabled(factory, scope) && isFactoryAllowed(factory);
