@@ -22,6 +22,7 @@ import org.keycloak.common.Profile;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -36,10 +37,12 @@ public class ProfileInfoRepresentation {
     public static ProfileInfoRepresentation create() {
         ProfileInfoRepresentation info = new ProfileInfoRepresentation();
 
-        info.name = Profile.getName();
-        info.disabledFeatures = names(Profile.getDisabledFeatures());
-        info.previewFeatures = names(Profile.getPreviewFeatures());
-        info.experimentalFeatures = names(Profile.getExperimentalFeatures());
+        Profile profile = Profile.getInstance();
+
+        info.name = profile.getName().name().toLowerCase();
+        info.disabledFeatures = names(profile.getDisabledFeatures());
+        info.previewFeatures = names(profile.getPreviewFeatures());
+        info.experimentalFeatures = names(profile.getExperimentalFeatures());
 
         return info;
     }

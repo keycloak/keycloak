@@ -43,6 +43,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
@@ -462,6 +463,7 @@ public class AuthServerTestEnricher {
     public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) throws Exception {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
+        ProfileAssume.setTestContext(testContext);
 
         boolean wasUpdated = false;
 

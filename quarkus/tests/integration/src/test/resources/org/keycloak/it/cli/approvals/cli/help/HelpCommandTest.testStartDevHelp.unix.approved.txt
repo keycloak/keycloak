@@ -66,19 +66,19 @@ Transaction:
 
 Feature:
 
---features <feature> Enables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin-api, admin, admin2,
-                       docker, impersonation, openshift-integration, scripts, token-exchange,
-                       web-authn, client-policies, ciba, map-storage, par,
-                       declarative-user-profile, dynamic-scopes, client-secret-rotation,
-                       step-up-authentication, recovery-codes, update-email, js-adapter, preview.
+--features <feature> Enables a set of one or more features. Possible values are: account-api,
+                       account2, admin, admin-api, admin-fine-grained-authz, admin2, authorization,
+                       ciba, client-policies, client-secret-rotation, declarative-user-profile,
+                       docker, dynamic-scopes, impersonation, js-adapter, map-storage,
+                       openshift-integration, par, preview, recovery-codes, scripts,
+                       step-up-authentication, token-exchange, update-email, web-authn.
 --features-disabled <feature>
-                     Disables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin-api, admin, admin2,
-                       docker, impersonation, openshift-integration, scripts, token-exchange,
-                       web-authn, client-policies, ciba, map-storage, par,
-                       declarative-user-profile, dynamic-scopes, client-secret-rotation,
-                       step-up-authentication, recovery-codes, update-email, js-adapter, preview.
+                     Disables a set of one or more features. Possible values are: account-api,
+                       account2, admin, admin-api, admin-fine-grained-authz, admin2, authorization,
+                       ciba, client-policies, client-secret-rotation, declarative-user-profile,
+                       docker, dynamic-scopes, impersonation, js-adapter, map-storage,
+                       openshift-integration, par, preview, recovery-codes, scripts,
+                       step-up-authentication, token-exchange, update-email, web-authn.
 
 Hostname:
 
