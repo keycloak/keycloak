@@ -17,6 +17,7 @@
 package org.keycloak.storage.jpa;
 
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -60,7 +61,7 @@ public class JpaUserFederatedStorageProviderFactory implements UserFederatedStor
 
     @Override
     public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return !Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 
 }

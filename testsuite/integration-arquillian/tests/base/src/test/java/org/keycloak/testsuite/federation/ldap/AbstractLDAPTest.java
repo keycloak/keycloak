@@ -17,8 +17,8 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.keycloak.common.Profile.Feature;
-import java.util.List;
+import org.keycloak.common.Feature;
+
 import java.util.Map;
 
 import org.jboss.arquillian.graphene.page.Page;

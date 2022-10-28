@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.openshift;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
@@ -40,7 +41,7 @@ public class OpenShiftTokenReviewEndpointFactory implements OIDCExtProviderFacto
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION);
+        return Profile.isFeatureEnabled(Feature.OPENSHIFT_INTEGRATION);
     }
 
 }

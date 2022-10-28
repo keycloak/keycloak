@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.util;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -43,7 +44,7 @@ public class AuthorizationContextUtil {
      * @return an {@link AuthorizationRequestContext} with scope entries
      */
     public static AuthorizationRequestContext getAuthorizationRequestContextFromScopes(KeycloakSession session, String scope) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (!Profile.isFeatureEnabled(Feature.DYNAMIC_SCOPES)) {
             throw new RuntimeException("The Dynamic Scopes feature is not enabled and the AuthorizationRequestContext hasn't been generated");
         }
         AuthorizationRequestParserProvider clientScopeParser = session.getProvider(AuthorizationRequestParserProvider.class,

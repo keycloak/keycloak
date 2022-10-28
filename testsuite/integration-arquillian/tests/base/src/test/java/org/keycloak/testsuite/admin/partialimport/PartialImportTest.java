@@ -66,7 +66,7 @@ import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.partialimport.ResourceType;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import static org.keycloak.common.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import org.keycloak.util.JsonSerialization;
 

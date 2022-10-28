@@ -47,6 +47,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
@@ -288,7 +289,7 @@ public class JpaMapStorageProviderFactory implements
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 
     @Override

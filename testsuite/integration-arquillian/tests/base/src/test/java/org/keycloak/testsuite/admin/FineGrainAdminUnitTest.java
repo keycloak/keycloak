@@ -26,7 +26,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.client.admin.cli.util.ConfigUtil;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -80,7 +80,7 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)
+@EnableFeature(Feature.ADMIN_FINE_GRAINED_AUTHZ)
 public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
@@ -945,7 +945,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     @Test
     @UncaughtServerErrorExpected
 
-    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+    @EnableFeature(value = Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void testWithTokenExchange() throws Exception {
         String exchanged = checkTokenExchange(true);
         Assert.assertNotNull(exchanged);

@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.model;
 
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.Feature;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

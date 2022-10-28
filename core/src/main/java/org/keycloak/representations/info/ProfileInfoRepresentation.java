@@ -17,6 +17,7 @@
 
 package org.keycloak.representations.info;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 
 import java.util.LinkedList;
@@ -60,9 +61,9 @@ public class ProfileInfoRepresentation {
         return experimentalFeatures;
     }
 
-    private static List<String> names(Set<Profile.Feature> featureSet) {
+    private static List<String> names(Set<Feature> featureSet) {
         List<String> l = new LinkedList();
-        for (Profile.Feature f : featureSet) {
+        for (Feature f : featureSet) {
             l.add(f.name());
         }
         return l;

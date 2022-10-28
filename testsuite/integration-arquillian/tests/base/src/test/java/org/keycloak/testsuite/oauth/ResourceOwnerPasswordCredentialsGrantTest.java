@@ -31,7 +31,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -186,7 +186,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void grantAccessTokenWithDynamicScope() throws Exception {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("dynamic-scope");
@@ -234,7 +234,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void grantAccessTokenWithUnassignedDynamicScope() throws Exception {
         oauth.scope("unknown-scope:123");
         oauth.clientId("resource-owner-public");
@@ -746,7 +746,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     private int getAuthenticationSessionsCount() {
-        if (ProfileAssume.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+        if (ProfileAssume.isFeatureEnabled(Feature.MAP_STORAGE)) {
             // Currently, no access to the authentication sessions is available for map storage.
             // By return a constant, all tests in this test class can still pass.
             return 0;

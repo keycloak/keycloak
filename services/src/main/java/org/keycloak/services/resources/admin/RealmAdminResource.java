@@ -59,7 +59,7 @@ import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailTemplateProvider;
@@ -1114,7 +1114,7 @@ public class RealmAdminResource {
 
     @Path("client-policies/policies")
     public ClientPoliciesResource getClientPoliciesResource() {
-        ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
+        ProfileHelper.requireFeature(Feature.CLIENT_POLICIES);
         ClientPoliciesResource resource = new ClientPoliciesResource(realm, auth);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
@@ -1122,7 +1122,7 @@ public class RealmAdminResource {
 
     @Path("client-policies/profiles")
     public ClientProfilesResource getClientProfilesResource() {
-        ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
+        ProfileHelper.requireFeature(Feature.CLIENT_POLICIES);
         ClientProfilesResource resource = new ClientProfilesResource(realm, auth);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;

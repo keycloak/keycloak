@@ -19,6 +19,7 @@ package org.keycloak.authentication.authenticators.browser;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -142,6 +143,6 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, En
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+        return Profile.isFeatureEnabled(Feature.SCRIPTS);
     }
 }

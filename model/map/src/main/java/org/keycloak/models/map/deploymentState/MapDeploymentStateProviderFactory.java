@@ -21,12 +21,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.migration.MigrationModel;
-import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.DeploymentStateProvider;
@@ -79,7 +79,7 @@ public class MapDeploymentStateProviderFactory implements DeploymentStateProvide
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 
     private static final DeploymentStateProvider INSTANCE =  new DeploymentStateProvider() {

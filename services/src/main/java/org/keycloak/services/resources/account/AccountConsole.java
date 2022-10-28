@@ -21,6 +21,7 @@ import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.events.EventStoreProvider;
@@ -134,7 +135,7 @@ public class AccountConsole {
 
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             map.put("isEventsEnabled", eventStore != null && realm.isEventsEnabled());
-            map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
+            map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Feature.AUTHORIZATION));
             
             boolean isTotpConfigured = false;
             boolean deleteAccountAllowed = false;
@@ -153,7 +154,7 @@ public class AccountConsole {
 
             map.put("isViewGroupsEnabled", isViewGroupsEnabled);
             
-            map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
+            map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Feature.UPDATE_EMAIL));
             RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
             map.put("updateEmailActionEnabled", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled());
 

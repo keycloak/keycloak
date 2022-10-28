@@ -1,6 +1,7 @@
 package org.keycloak.protocol.saml.mappers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -96,7 +97,7 @@ public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAM
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+        return Profile.isFeatureEnabled(Feature.SCRIPTS);
     }
 
     /**

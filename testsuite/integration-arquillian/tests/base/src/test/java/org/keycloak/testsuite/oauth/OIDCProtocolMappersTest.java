@@ -26,7 +26,7 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
@@ -138,7 +138,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.SCRIPTS) // This requires also SCRIPTS feature, therefore we need to restart container
+    @EnableFeature(value = Feature.SCRIPTS) // This requires also SCRIPTS feature, therefore we need to restart container
     public void testTokenScriptMapping() throws Exception {
         {
             reconnectAdminClient();
@@ -1476,7 +1476,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void executeTokenMappersOnDynamicScopes() {
         ClientResource clientResource = findClientResourceByClientId(adminClient.realm("test"), "test-app");
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();

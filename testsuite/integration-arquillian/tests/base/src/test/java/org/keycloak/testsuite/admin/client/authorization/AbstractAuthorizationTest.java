@@ -36,7 +36,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import static org.keycloak.common.Feature.AUTHORIZATION;
 
 import java.util.List;
 

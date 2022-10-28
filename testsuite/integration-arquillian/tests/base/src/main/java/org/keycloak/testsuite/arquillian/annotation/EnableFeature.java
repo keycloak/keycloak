@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.arquillian.annotation;
 
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
@@ -20,7 +20,7 @@ public @interface EnableFeature {
     /**
      * Feature, which should be enabled.
      */
-    Profile.Feature value();
+    Feature value();
 
     /**
      * The feature will be enabled without restarting of a server.

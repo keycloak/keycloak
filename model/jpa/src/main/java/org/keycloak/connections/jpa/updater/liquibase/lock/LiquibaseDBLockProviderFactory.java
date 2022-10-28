@@ -20,6 +20,7 @@ package org.keycloak.connections.jpa.updater.liquibase.lock;
 import java.util.List;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -92,6 +93,6 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory, En
 
     @Override
     public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return !Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 }

@@ -19,6 +19,7 @@ package org.keycloak.storage.datastore;
 
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
@@ -115,7 +116,7 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
 
     @Override
     public boolean isSupported() {
-        return ! Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return ! Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 
 }

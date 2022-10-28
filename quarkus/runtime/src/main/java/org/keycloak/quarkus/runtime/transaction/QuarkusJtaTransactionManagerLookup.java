@@ -22,6 +22,7 @@ import javax.transaction.TransactionManager;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -70,6 +71,6 @@ public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManager
 
     @Override
     public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return !Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 }

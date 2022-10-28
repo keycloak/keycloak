@@ -28,7 +28,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserProfileResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -36,7 +36,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@EnableFeature(value = Feature.DECLARATIVE_USER_PROFILE)
 public class UserProfileAdminTest extends AbstractAdminTest {
 
     @Override

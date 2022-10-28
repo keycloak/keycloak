@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNotNull;
 
 import org.keycloak.testsuite.ProfileAssume;
 
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import static org.keycloak.common.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**

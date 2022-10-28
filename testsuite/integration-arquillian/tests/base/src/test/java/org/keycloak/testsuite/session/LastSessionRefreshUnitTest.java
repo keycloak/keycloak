@@ -22,7 +22,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -54,7 +54,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
     @BeforeClass
     public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
     @After

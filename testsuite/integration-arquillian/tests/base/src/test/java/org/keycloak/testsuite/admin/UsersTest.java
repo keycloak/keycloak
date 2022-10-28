@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -283,14 +283,14 @@ public class UsersTest extends AbstractAdminTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+    @EnableFeature(value = Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
     public void countUsersWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         assertThat(testRealmResource.users().count(), is(3));
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+    @EnableFeature(value = Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
     public void countUsersBySearchWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         //search all
@@ -313,7 +313,7 @@ public class UsersTest extends AbstractAdminTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+    @EnableFeature(value = Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
     public void countUsersByFiltersWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         //search username
@@ -349,14 +349,14 @@ public class UsersTest extends AbstractAdminTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+    @EnableFeature(value = Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
     public void countUsersWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         assertThat(testRealmResource.users().count(), is(0));
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+    @EnableFeature(value = Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
     public void countUsersBySearchWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         //search all
@@ -379,7 +379,7 @@ public class UsersTest extends AbstractAdminTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+    @EnableFeature(value = Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
     public void countUsersByFiltersWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         //search username

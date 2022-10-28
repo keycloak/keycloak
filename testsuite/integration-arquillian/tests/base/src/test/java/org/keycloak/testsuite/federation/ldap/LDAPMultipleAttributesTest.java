@@ -24,7 +24,7 @@ import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -74,7 +74,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
     @Before
     public void before() {
         // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
     @Override

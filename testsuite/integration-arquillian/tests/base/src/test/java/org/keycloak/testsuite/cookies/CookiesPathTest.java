@@ -19,7 +19,7 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -51,7 +51,7 @@ import org.junit.After;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
+@DisableFeature(value = Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class CookiesPathTest extends AbstractKeycloakTest {
 
     @Page

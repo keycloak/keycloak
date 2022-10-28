@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.storage.legacy.liquibase;
 
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProviderFactory;
@@ -60,6 +61,6 @@ public class QuarkusJpaUpdaterProviderFactory implements JpaUpdaterProviderFacto
 
     @Override
     public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return !Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 }

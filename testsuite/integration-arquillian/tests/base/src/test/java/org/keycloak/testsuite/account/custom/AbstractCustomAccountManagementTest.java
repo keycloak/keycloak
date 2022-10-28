@@ -19,20 +19,19 @@ package org.keycloak.testsuite.account.custom;
 
 import org.junit.Before;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
+@DisableFeature(value = Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public abstract class AbstractCustomAccountManagementTest extends AbstractAccountManagementTest {
 
     private AuthenticationManagementResource authMgmtResource;

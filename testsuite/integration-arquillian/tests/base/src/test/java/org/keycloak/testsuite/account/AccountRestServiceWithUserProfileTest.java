@@ -33,7 +33,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.account.UserProfileAttributeMetadata;
@@ -48,7 +48,7 @@ import org.keycloak.userprofile.UserProfileContext;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@EnableFeature(value = Feature.DECLARATIVE_USER_PROFILE)
 public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTest {
     
     @Override

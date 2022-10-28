@@ -23,6 +23,7 @@ import java.util.List;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -95,7 +96,7 @@ public class ParEndpointRequestParserProcessor {
                 }
             }
 
-            if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            if (Profile.isFeatureEnabled(Feature.DYNAMIC_SCOPES)) {
                 request.setAuthorizationRequestContext(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, request.getScope()));
             }
 

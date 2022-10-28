@@ -1,10 +1,9 @@
 package org.keycloak.credential;
 
-import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 
 public class RecoveryAuthnCodesCredentialProviderFactory
         implements CredentialProviderFactory<RecoveryAuthnCodesCredentialProvider>, EnvironmentDependentProviderFactory {
@@ -23,6 +22,6 @@ public class RecoveryAuthnCodesCredentialProviderFactory
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES);
+        return Profile.isFeatureEnabled(Feature.RECOVERY_CODES);
     }
 }

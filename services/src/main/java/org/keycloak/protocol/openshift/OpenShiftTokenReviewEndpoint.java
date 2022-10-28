@@ -17,6 +17,7 @@
 package org.keycloak.protocol.openshift;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureProvider;
@@ -174,6 +175,6 @@ public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider, Environmen
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION);
+        return Profile.isFeatureEnabled(Feature.OPENSHIFT_INTEGRATION);
     }
 }

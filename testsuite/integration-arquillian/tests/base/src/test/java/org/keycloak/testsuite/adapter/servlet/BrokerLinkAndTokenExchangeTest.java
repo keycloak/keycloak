@@ -29,7 +29,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.jose.jws.JWSInput;
@@ -52,7 +52,6 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -94,8 +93,8 @@ import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWit
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
-@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+@EnableFeature(value = Feature.TOKEN_EXCHANGE, skipRestart = true)
+@EnableFeature(value = Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
 public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
@@ -195,7 +194,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+    @DisableFeature(value = Feature.TOKEN_EXCHANGE, skipRestart = true)
     @UncaughtServerErrorExpected
     public void testFeatureDisabled() throws Exception {
         checkFeature(Response.Status.NOT_IMPLEMENTED.getStatusCode());

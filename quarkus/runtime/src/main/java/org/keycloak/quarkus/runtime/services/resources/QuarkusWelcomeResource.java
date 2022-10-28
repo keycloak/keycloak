@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
@@ -246,7 +247,7 @@ public class QuarkusWelcomeResource {
     }
 
     private static boolean isAdminConsoleEnabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
+        return Profile.isFeatureEnabled(Feature.ADMIN2) || Profile.isFeatureEnabled(Feature.ADMIN);
     }
 
     private boolean isLocal() {

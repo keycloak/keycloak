@@ -20,6 +20,8 @@ package org.keycloak.authentication.requiredactions.util;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -60,7 +62,7 @@ public class UserUpdateProfileContext implements UpdateProfileContext {
 
     @Override
     public boolean isEditEmailAllowed() {
-        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
+        return !Profile.isFeatureEnabled(Feature.UPDATE_EMAIL);
     }
 
     @Override

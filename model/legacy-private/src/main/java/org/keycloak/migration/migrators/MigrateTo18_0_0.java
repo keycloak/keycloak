@@ -19,6 +19,7 @@
 package org.keycloak.migration.migrators;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
@@ -42,7 +43,7 @@ public class MigrateTo18_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+        if (Profile.isFeatureEnabled(Feature.STEP_UP_AUTHENTICATION)) {
             session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
         }
     }
@@ -53,7 +54,7 @@ public class MigrateTo18_0_0 implements Migration {
     }
 
     protected void migrateRealm(KeycloakSession session, RealmModel realm) {
-        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+        if (Profile.isFeatureEnabled(Feature.STEP_UP_AUTHENTICATION)) {
             MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
 
             // create 'acr' default client scope in the realm.

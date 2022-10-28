@@ -19,7 +19,7 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.client.AbstractClientTest;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -37,7 +37,7 @@ public class AuthorizationDisabledInPreviewTest extends AbstractClientTest {
 
     @BeforeClass
     public static void enabled() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.AUTHORIZATION);
+        ProfileAssume.assumeFeatureDisabled(Feature.AUTHORIZATION);
     }
 
     @Test

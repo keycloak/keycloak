@@ -34,7 +34,7 @@ import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
 import static org.junit.Assert.fail;
-import static org.keycloak.common.Profile.Feature.CLIENT_POLICIES;
+import static org.keycloak.common.Feature.CLIENT_POLICIES;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

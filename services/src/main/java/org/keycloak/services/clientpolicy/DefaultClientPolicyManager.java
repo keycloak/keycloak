@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -51,7 +52,7 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
 
     @Override
     public void triggerOnEvent(ClientPolicyContext context) throws ClientPolicyException {
-        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES)) {
+        if (!Profile.isFeatureEnabled(Feature.CLIENT_POLICIES)) {
             return;
         }
 

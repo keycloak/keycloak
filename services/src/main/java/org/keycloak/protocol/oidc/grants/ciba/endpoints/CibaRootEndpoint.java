@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 import javax.ws.rs.Path;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
@@ -96,7 +97,7 @@ public class CibaRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.CIBA);
+        return Profile.isFeatureEnabled(Feature.CIBA);
     }
 
 }

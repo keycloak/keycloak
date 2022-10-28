@@ -16,12 +16,11 @@
 
 package org.keycloak.credential;
 
-import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 
 import com.webauthn4j.converter.util.ObjectConverter;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 public class WebAuthnCredentialProviderFactory implements CredentialProviderFactory<WebAuthnCredentialProvider>, EnvironmentDependentProviderFactory {
@@ -53,6 +52,6 @@ public class WebAuthnCredentialProviderFactory implements CredentialProviderFact
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
+        return Profile.isFeatureEnabled(Feature.WEB_AUTHN);
     }
 }

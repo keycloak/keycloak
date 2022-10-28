@@ -17,7 +17,7 @@
 package org.keycloak.testsuite.script;
 
 import static org.junit.Assert.assertFalse;
-import static org.keycloak.common.Profile.Feature.SCRIPTS;
+import static org.keycloak.common.Feature.SCRIPTS;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 import java.io.IOException;

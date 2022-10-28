@@ -16,12 +16,12 @@
  */
 package org.keycloak.testsuite.actions;
 
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 
-@EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
+@EnableFeature(Feature.DECLARATIVE_USER_PROFILE)
 public class RequiredActionUpdateEmailUserProfileTest extends RequiredActionUpdateEmailTest {
 
     @Override

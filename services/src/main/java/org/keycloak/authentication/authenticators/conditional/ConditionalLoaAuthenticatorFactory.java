@@ -21,6 +21,7 @@ import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowCallbackFactory;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -110,6 +111,6 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION);
+        return Profile.isFeatureEnabled(Feature.STEP_UP_AUTHENTICATION);
     }
 }

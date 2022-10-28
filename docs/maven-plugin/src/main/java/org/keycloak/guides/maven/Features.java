@@ -1,7 +1,5 @@
 package org.keycloak.guides.maven;
 
-import org.keycloak.common.Profile;
-
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -12,34 +10,34 @@ public class Features {
     private List<Feature> features;
 
     public Features() {
-        this.features = Arrays.stream(Profile.Feature.values())
-                .filter(f -> !f.getType().equals(Profile.Type.EXPERIMENTAL))
+        this.features = Arrays.stream(org.keycloak.common.Feature.values())
+                .filter(f -> !f.getType().equals(org.keycloak.common.Feature.Type.EXPERIMENTAL))
                 .map(f -> new Feature(f))
                 .sorted(Comparator.comparing(Feature::getName))
                 .collect(Collectors.toList());
     }
 
     public List<Feature> getSupported() {
-        return features.stream().filter(f -> f.getType().equals(Profile.Type.DEFAULT)).collect(Collectors.toList());
+        return features.stream().filter(f -> f.getType().equals(org.keycloak.common.Feature.Type.DEFAULT)).collect(Collectors.toList());
     }
 
     public List<Feature> getSupportedDisabledByDefault() {
-        return features.stream().filter(f -> f.getType().equals(Profile.Type.DISABLED_BY_DEFAULT)).collect(Collectors.toList());
+        return features.stream().filter(f -> f.getType().equals(org.keycloak.common.Feature.Type.DISABLED_BY_DEFAULT)).collect(Collectors.toList());
     }
 
     public List<Feature> getDeprecated() {
-        return features.stream().filter(f -> f.getType().equals(Profile.Type.DEPRECATED)).collect(Collectors.toList());
+        return features.stream().filter(f -> f.getType().equals(org.keycloak.common.Feature.Type.DEPRECATED)).collect(Collectors.toList());
     }
 
     public List<Feature> getPreview() {
-        return features.stream().filter(f -> f.getType().equals(Profile.Type.PREVIEW)).collect(Collectors.toList());
+        return features.stream().filter(f -> f.getType().equals(org.keycloak.common.Feature.Type.PREVIEW)).collect(Collectors.toList());
     }
 
     public class Feature {
 
-        private Profile.Feature profileFeature;
+        private org.keycloak.common.Feature profileFeature;
 
-        public Feature(Profile.Feature profileFeature) {
+        public Feature(org.keycloak.common.Feature profileFeature) {
             this.profileFeature = profileFeature;
         }
 
@@ -51,7 +49,7 @@ public class Features {
             return profileFeature.getLabel();
         }
 
-        private Profile.Type getType() {
+        private org.keycloak.common.Feature.Type getType() {
             return profileFeature.getType();
         }
 

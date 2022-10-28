@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.keys;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.keys.PublicKeyStorageProviderFactory;
@@ -45,7 +46,7 @@ public class MapPublicKeyStorageProviderFactory extends AbstractMapProviderFacto
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 
     @Override

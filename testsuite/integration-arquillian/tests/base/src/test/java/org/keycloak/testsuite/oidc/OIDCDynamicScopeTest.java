@@ -20,7 +20,7 @@ package org.keycloak.testsuite.oidc;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.events.Details;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -40,10 +40,9 @@ import org.keycloak.testsuite.util.UserBuilder;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
+import static org.keycloak.common.Feature.DYNAMIC_SCOPES;
 
 
 /**
@@ -52,7 +51,7 @@ import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
-@EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+@EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
 public class OIDCDynamicScopeTest extends OIDCScopeTest {
 
     private static String userId = KeycloakModelUtils.generateId();

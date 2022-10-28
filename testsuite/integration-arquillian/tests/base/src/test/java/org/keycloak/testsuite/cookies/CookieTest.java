@@ -26,9 +26,8 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -61,7 +60,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  * @author hmlnarik
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
+@DisableFeature(value = Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class CookieTest extends AbstractKeycloakTest {
 
     @Page

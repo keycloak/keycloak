@@ -1,7 +1,7 @@
 package org.keycloak.protocol.docker;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -43,7 +43,7 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
 
     @GET
     public Response build() {
-        ProfileHelper.requireFeature(Profile.Feature.DOCKER);
+        ProfileHelper.requireFeature(Feature.DOCKER);
 
         final MultivaluedMap<String, String> params = session.getContext().getUri().getQueryParameters();
 

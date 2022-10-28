@@ -58,7 +58,7 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -186,7 +186,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExep
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
+@EnableFeature(value = Feature.CLIENT_SECRET_ROTATION)
 public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
     private static final Logger logger = Logger.getLogger(ClientPoliciesTest.class);

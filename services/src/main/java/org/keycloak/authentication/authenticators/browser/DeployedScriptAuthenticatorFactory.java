@@ -23,6 +23,7 @@ import java.util.Map;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
@@ -79,7 +80,7 @@ public final class DeployedScriptAuthenticatorFactory extends ScriptBasedAuthent
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+        return Profile.isFeatureEnabled(Feature.SCRIPTS);
     }
 
     @Override

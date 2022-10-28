@@ -20,7 +20,7 @@ package org.keycloak.testsuite.rar;
 import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertNotNull;
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
-@EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+@EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
 public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTest {
 
     @Rule

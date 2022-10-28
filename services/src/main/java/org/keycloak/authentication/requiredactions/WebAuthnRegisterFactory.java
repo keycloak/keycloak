@@ -20,6 +20,7 @@ import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTru
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -82,6 +83,6 @@ public class WebAuthnRegisterFactory implements RequiredActionFactory, Environme
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
+        return Profile.isFeatureEnabled(Feature.WEB_AUTHN);
     }
 }

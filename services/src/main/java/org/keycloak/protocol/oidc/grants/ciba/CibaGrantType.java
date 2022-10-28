@@ -25,7 +25,7 @@ import javax.ws.rs.core.UriBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -126,7 +126,7 @@ public class CibaGrantType {
     }
 
     public Response cibaGrant() {
-        ProfileHelper.requireFeature(Profile.Feature.CIBA);
+        ProfileHelper.requireFeature(Feature.CIBA);
 
         if (!realm.getCibaPolicy().isOIDCCIBAGrantEnabled(client)) {
             event.error(Errors.NOT_ALLOWED);

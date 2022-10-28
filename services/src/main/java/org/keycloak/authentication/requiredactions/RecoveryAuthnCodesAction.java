@@ -8,16 +8,15 @@ import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.credential.RecoveryAuthnCodesCredentialProviderFactory;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.events.Details;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
-import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -111,6 +110,6 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES);
+        return Profile.isFeatureEnabled(Feature.RECOVERY_CODES);
     }
 }

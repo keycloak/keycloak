@@ -17,6 +17,7 @@
 
 package org.keycloak.utils;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 
 import javax.ws.rs.WebApplicationException;
@@ -27,7 +28,7 @@ import javax.ws.rs.core.Response;
  */
 public class ProfileHelper {
 
-    public static void requireFeature(Profile.Feature feature) {
+    public static void requireFeature(Feature feature) {
         if (!Profile.isFeatureEnabled(feature)) {
             throw new WebApplicationException("Feature not enabled", Response.Status.NOT_IMPLEMENTED);
         }

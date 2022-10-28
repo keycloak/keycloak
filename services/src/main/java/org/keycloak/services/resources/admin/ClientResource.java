@@ -24,6 +24,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
@@ -69,10 +70,8 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.utils.CredentialHelper;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
-import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
 
 import javax.ws.rs.Consumes;
@@ -639,7 +638,7 @@ public class ClientResource {
 
     @Path("/authz")
     public AuthorizationService authorization() {
-        ProfileHelper.requireFeature(Profile.Feature.AUTHORIZATION);
+        ProfileHelper.requireFeature(Feature.AUTHORIZATION);
 
         AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth, adminEvent);
 
@@ -783,7 +782,7 @@ public class ClientResource {
     }
 
     private void updateAuthorizationSettings(ClientRepresentation rep) {
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+        if (Profile.isFeatureEnabled(Feature.AUTHORIZATION)) {
             if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 authorization().enable(false);
             } else {

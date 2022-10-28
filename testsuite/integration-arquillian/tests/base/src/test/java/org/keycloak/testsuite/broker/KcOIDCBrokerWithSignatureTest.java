@@ -26,7 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.*;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
@@ -97,7 +97,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
     @Test
     public void testSignatureVerificationJwksUrl() throws Exception {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
 
         // Configure OIDC identity provider with JWKS URL
         updateIdentityProviderWithJwksUrl();
@@ -307,7 +307,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
     @Test
     public void testClearKeysCache() throws Exception {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
 
         // Configure OIDC identity provider with JWKS URL
         updateIdentityProviderWithJwksUrl();
@@ -334,7 +334,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
     // Test that when I update identityProvier, then the record in publicKey cache is cleared and it's not possible to authenticate with it anymore
     @Test
     public void testPublicKeyCacheInvalidatedWhenProviderUpdated() throws Exception {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
 
         // Configure OIDC identity provider with JWKS URL
         updateIdentityProviderWithJwksUrl();

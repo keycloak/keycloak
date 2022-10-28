@@ -25,7 +25,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.models.AdminRoles;

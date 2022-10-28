@@ -26,6 +26,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ScopeStore;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -194,7 +195,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             account.setIdTokenHint(session.tokens().encodeAndEncrypt(idToken));
         }
 
-        account.setFeatures(realm.isIdentityFederationEnabled(), eventStore != null && realm.isEventsEnabled(), true, Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
+        account.setFeatures(realm.isIdentityFederationEnabled(), eventStore != null && realm.isEventsEnabled(), true, Profile.isFeatureEnabled(Feature.AUTHORIZATION));
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {

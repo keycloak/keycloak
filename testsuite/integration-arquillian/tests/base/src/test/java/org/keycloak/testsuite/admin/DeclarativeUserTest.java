@@ -23,7 +23,7 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -33,7 +33,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@EnableFeature(value = Feature.DECLARATIVE_USER_PROFILE)
 public class DeclarativeUserTest extends AbstractAdminTest {
 
     @Before

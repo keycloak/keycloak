@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.JsonConfigComponentModel;
@@ -170,7 +171,7 @@ public class ClientPoliciesUtil {
             if (proposedProfileRep.getExecutors() != null) {
                 for (ClientPolicyExecutorRepresentation executorRep : proposedProfileRep.getExecutors()) {
                     // Skip the check if feature is disabled as then the executor implementations are disabled
-                    if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES) && !isValidExecutor(session, executorRep)) {
+                    if (Profile.isFeatureEnabled(Feature.CLIENT_POLICIES) && !isValidExecutor(session, executorRep)) {
                         throw new ClientPolicyException("proposed client profile contains the executor with its invalid configuration.");
                     }
                     profileRep.getExecutors().add(executorRep);

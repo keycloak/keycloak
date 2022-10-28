@@ -36,10 +36,9 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
@@ -51,7 +50,7 @@ import org.keycloak.userprofile.config.UPAttribute;
 import org.keycloak.userprofile.config.UPAttributePermissions;
 import org.keycloak.userprofile.config.UPConfig;
 
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@EnableFeature(value = Feature.DECLARATIVE_USER_PROFILE)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPAdminRestApiWithUserProfileTest extends LDAPAdminRestApiTest {
 

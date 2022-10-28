@@ -26,6 +26,7 @@ import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.spi.TestResult;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
@@ -50,7 +51,7 @@ public class ModelTestExecutor extends LocalTestExecuter {
             super.execute(event);
         } else {
             TestResult result = new TestResult();
-            if (annotation.skipForMapStorage() && Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            if (annotation.skipForMapStorage() && Profile.isFeatureEnabled(Feature.MAP_STORAGE)) {
                 result = TestResult.skipped();
             }
             else {

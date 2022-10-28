@@ -10,6 +10,7 @@ import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.SuiteContext;
@@ -51,13 +52,13 @@ public class KeycloakContainerFeaturesController {
         ENABLE(KeycloakTestingClient::enableFeature),
         DISABLE(KeycloakTestingClient::disableFeature);
 
-        private BiConsumer<KeycloakTestingClient, Profile.Feature> featureConsumer;
+        private BiConsumer<KeycloakTestingClient, Feature> featureConsumer;
 
-        FeatureAction(BiConsumer<KeycloakTestingClient, Profile.Feature> featureConsumer) {
+        FeatureAction(BiConsumer<KeycloakTestingClient, Feature> featureConsumer) {
             this.featureConsumer = featureConsumer;
         }
 
-        public void accept(KeycloakTestingClient testingClient, Profile.Feature feature) {
+        public void accept(KeycloakTestingClient testingClient, Feature feature) {
             featureConsumer.accept(testingClient, feature);
         }
     }
@@ -68,13 +69,13 @@ public class KeycloakContainerFeaturesController {
     }
 
     private class UpdateFeature {
-        private Profile.Feature feature;
+        private Feature feature;
         private boolean skipRestart;
         private FeatureAction action;
         private boolean onlyForProduct;
         private final AnnotatedElement annotatedElement;
 
-        public UpdateFeature(Profile.Feature feature, boolean skipRestart, FeatureAction action, boolean onlyForProduct
+        public UpdateFeature(Feature feature, boolean skipRestart, FeatureAction action, boolean onlyForProduct
                 , AnnotatedElement annotatedElement) {
             this.feature = feature;
             this.skipRestart = skipRestart;
@@ -110,7 +111,7 @@ public class KeycloakContainerFeaturesController {
             }
         }
 
-        public Profile.Feature getFeature() {
+        public Feature getFeature() {
             return feature;
         }
 

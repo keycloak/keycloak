@@ -30,6 +30,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionToken;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
@@ -194,6 +195,6 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
+        return Profile.isFeatureEnabled(Feature.UPDATE_EMAIL);
     }
 }

@@ -4,6 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -77,6 +78,6 @@ public class RecoveryAuthnCodesFormAuthenticatorFactory implements Authenticator
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES);
+        return Profile.isFeatureEnabled(Feature.RECOVERY_CODES);
     }
 }

@@ -18,6 +18,7 @@ package org.keycloak.models.map.common;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.keycloak.Config.Scope;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -147,6 +148,6 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 }

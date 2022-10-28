@@ -16,24 +16,20 @@
  */
 package org.keycloak.testsuite.forms;
 
-import com.google.common.collect.ImmutableMap;
-import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
@@ -46,18 +42,16 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.Map;
 import java.util.UUID;
 
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import static org.keycloak.common.Feature.AUTHORIZATION;
 
 /**
  * Tests for {@link org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticator}
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-@EnableFeature(value = Profile.Feature.SCRIPTS)
+@EnableFeature(value = Feature.SCRIPTS)
 public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
     @Page

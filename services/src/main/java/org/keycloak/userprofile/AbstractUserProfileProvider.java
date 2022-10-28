@@ -38,6 +38,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -106,11 +107,11 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     }
 
     private static boolean editEmailCondition(AttributeContext c) {
-        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || (c.getContext() != UPDATE_PROFILE && c.getContext() != ACCOUNT);
+        return !Profile.isFeatureEnabled(Feature.UPDATE_EMAIL) || (c.getContext() != UPDATE_PROFILE && c.getContext() != ACCOUNT);
     }
 
     private static boolean readEmailCondition(AttributeContext c) {
-        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;
+        return !Profile.isFeatureEnabled(Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;
     }
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {
@@ -188,7 +189,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(ACCOUNT_OLD, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(REGISTRATION_PROFILE, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
-        if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+        if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
             addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
         }
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile()));

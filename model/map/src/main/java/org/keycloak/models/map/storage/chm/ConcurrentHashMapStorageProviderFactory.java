@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.common.Feature;
 import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
@@ -311,6 +312,6 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 }

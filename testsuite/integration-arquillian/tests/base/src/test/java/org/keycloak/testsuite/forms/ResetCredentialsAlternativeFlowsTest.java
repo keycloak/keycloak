@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -344,7 +344,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
+    @DisableFeature(value = Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetCredentialsVerifyCustomOtpLabelSetProperly() {
         try {
             // Make a copy of the default Reset Credentials flow, but:
@@ -406,7 +406,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
     // KEYCLOAK-12168 Verify the 'Device Name' label is optional for the first OTP credential created
     // (either via Account page or by registering new user), but required for each next created OTP credential
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
+    @DisableFeature(value = Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void deviceNameOptionalForFirstOTPCredentialButRequiredForEachNextOne() {
         // Enable 'Default Action' on 'Configure OTP' RA for the 'test' realm
         RequiredActionProviderRepresentation otpRequiredAction = testRealm().flows().getRequiredAction("CONFIGURE_TOTP");

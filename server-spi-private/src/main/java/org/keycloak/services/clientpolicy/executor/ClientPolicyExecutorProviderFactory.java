@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -29,6 +30,6 @@ public interface ClientPolicyExecutorProviderFactory extends ProviderFactory<Cli
 
     @Override
     default boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES);
+        return Profile.isFeatureEnabled(Feature.CLIENT_POLICIES);
     }
 }

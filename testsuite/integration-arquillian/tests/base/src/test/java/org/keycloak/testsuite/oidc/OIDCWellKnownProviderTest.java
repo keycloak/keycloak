@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -386,7 +386,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+    @EnableFeature(value = Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void testGrantTypesSupportedWithTokenExchange() throws IOException {
         Client client = AdminClientUtil.createResteasyClient();
         try {

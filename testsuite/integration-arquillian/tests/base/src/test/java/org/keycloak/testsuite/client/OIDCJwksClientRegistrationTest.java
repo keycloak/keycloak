@@ -40,7 +40,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.client.registration.Auth;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.constants.ServiceUrlConstants;
@@ -177,7 +177,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
     @Test
     public void testTwoClientsWithSameKid() throws Exception {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
 
         // Create client with manually set "kid"
         OIDCClientRepresentation response = createClientWithManuallySetKid("a1");
@@ -218,7 +218,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
     @Test
     public void testPublicKeyCacheInvalidatedWhenUpdatingClient() throws Exception {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
 
         OIDCClientRepresentation response = createClientWithManuallySetKid("a1");
 
@@ -273,7 +273,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
     @Test
     public void createClientWithJWKSURI_rotateClientKeys() throws Exception {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
 
         OIDCClientRepresentation clientRep = createRep();
 

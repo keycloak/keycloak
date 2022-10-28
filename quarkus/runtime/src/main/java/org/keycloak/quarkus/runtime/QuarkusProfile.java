@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
@@ -34,7 +35,7 @@ public class QuarkusProfile extends Profile {
         public String resolve(String key) {
             if (isFeaturePresent(key, getCurrentValue("kc.features"))) {
                 if (isPreviewProfileKey(key)) {
-                    return Profile.Type.PREVIEW.name();
+                    return Feature.Type.PREVIEW.name();
                 }
 
                 return "enabled";
@@ -57,9 +58,9 @@ public class QuarkusProfile extends Profile {
             for (String feature : features.split(",")) {
                 if (isPreviewProfileKey(key)) {
                     try {
-                        Profile.Type profileType = Profile.Type.valueOf(feature);
+                        Feature.Type profileType = Feature.Type.valueOf(feature);
 
-                        if (Profile.Type.PREVIEW.equals(profileType)) {
+                        if (Feature.Type.PREVIEW.equals(profileType)) {
                             return true;
                         }
                     } catch (IllegalArgumentException ignore) {

@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import com.openshift.restclient.ClientBuilder;
 import com.openshift.restclient.IClient;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -128,7 +129,7 @@ public class OpenshiftClientStorageProviderFactory implements ClientStorageProvi
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION);
+        return Profile.isFeatureEnabled(Feature.OPENSHIFT_INTEGRATION);
     }
 
     private IClient getClient(ClientStorageProviderModel providerModel) {

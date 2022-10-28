@@ -26,7 +26,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.challenge.BasicAuthOTPAuthenticatorFactory;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowBindings;
@@ -265,7 +265,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void testWithClientBrowserOverrideWithDynamicScope() throws Exception {
         // Just use existing test with DYNAMIC_SCOPES feature enabled as it was failing with DYNAMIC_SCOPES
         testWithClientBrowserOverride();
@@ -540,7 +540,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void testClientOverrideFlowUsingBrowserHttpChallengeWithDynamicScope() {
         // Just use existing test with DYNAMIC_SCOPES feature enabled as it was failing with DYNAMIC_SCOPES
         testClientOverrideFlowUsingBrowserHttpChallenge();

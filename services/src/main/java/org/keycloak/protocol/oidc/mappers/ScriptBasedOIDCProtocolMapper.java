@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -120,7 +121,7 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
 
   @Override
   public boolean isSupported() {
-    return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+    return Profile.isFeatureEnabled(Feature.SCRIPTS);
   }
 
   @Override

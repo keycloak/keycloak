@@ -37,7 +37,7 @@ import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFa
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.Constants;
@@ -633,7 +633,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
 
     @Test
-    @DisableFeature(value = Profile.Feature.STEP_UP_AUTHENTICATION, skipRestart = true)
+    @DisableFeature(value = Feature.STEP_UP_AUTHENTICATION, skipRestart = true)
     public void testDisableStepupFeatureTest() {
         BrowserFlowTest.revertFlows(testRealm(), "browser -  Level of Authentication FLow");
 
@@ -652,7 +652,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.STEP_UP_AUTHENTICATION, skipRestart = true)
+    @DisableFeature(value = Feature.STEP_UP_AUTHENTICATION, skipRestart = true)
     public void testDisableStepupFeatureInNewRealm() {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm("new-realm");

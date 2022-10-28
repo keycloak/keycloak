@@ -18,6 +18,7 @@
 
 package org.keycloak.models.cache.authorization;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -49,6 +50,6 @@ public class CachedStoreFactorySpi implements Spi {
 
     @Override
     public boolean isEnabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION);
+        return Profile.isFeatureEnabled(Feature.AUTHORIZATION);
     }
 }

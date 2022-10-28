@@ -22,6 +22,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
@@ -102,7 +103,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
                 OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS,
                 OAuth2Constants.DEVICE_CODE_GRANT_TYPE,
                 OAuth2Constants.CIBA_GRANT_TYPE).collect(Collectors.toList());
-        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE)) {
+        if (Profile.isFeatureEnabled(Feature.TOKEN_EXCHANGE)) {
             DEFAULT_GRANT_TYPES_SUPPORTED.add(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
         }
         this.session = session;

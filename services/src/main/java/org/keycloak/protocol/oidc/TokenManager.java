@@ -28,6 +28,7 @@ import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
@@ -553,7 +554,7 @@ public class TokenManager {
         clientSession.setProtocol(authSession.getProtocol());
 
         Set<String> clientScopeIds;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Feature.DYNAMIC_SCOPES)) {
             clientScopeIds = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE))
                     .map(ClientScopeModel::getId)
                     .collect(Collectors.toSet());
@@ -892,7 +893,7 @@ public class TokenManager {
 
         // Backwards compatibility behaviour prior step-up authentication was introduced
         // Protocol mapper is supposed to set this in case "step_up_authentication" feature enabled
-        if (!Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+        if (!Profile.isFeatureEnabled(Feature.STEP_UP_AUTHENTICATION)) {
             String acr = AuthenticationManager.isSSOAuthentication(clientSession) ? "0" : "1";
             token.setAcr(acr);
         }
@@ -1173,7 +1174,7 @@ public class TokenManager {
             idToken.expiration(accessToken.getExpiration());
 
             // Protocol mapper is supposed to set this in case "step_up_authentication" feature enabled
-            if (!Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+            if (!Profile.isFeatureEnabled(Feature.STEP_UP_AUTHENTICATION)) {
                 idToken.setAcr(accessToken.getAcr());
             }
 

@@ -27,6 +27,7 @@ import javax.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -212,7 +213,7 @@ public class AuthorizationEndpointChecker {
 
     public void checkValidScope() throws AuthorizationCheckException {
         boolean validScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Feature.DYNAMIC_SCOPES)) {
             validScopes = TokenManager.isValidScope(request.getScope(), request.getAuthorizationRequestContext(), client);
         } else {
             validScopes = TokenManager.isValidScope(request.getScope(), client);

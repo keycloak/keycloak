@@ -35,7 +35,7 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.keycloak.common.Profile.Feature.RECOVERY_CODES;
+import static org.keycloak.common.Feature.RECOVERY_CODES;
 
 /**
  * Backup Code Authentication test

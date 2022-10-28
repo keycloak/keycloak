@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.endpoints.request;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -105,7 +106,7 @@ public class AuthorizationEndpointRequestParserProcessor {
                 }
             }
 
-            if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            if (Profile.isFeatureEnabled(Feature.DYNAMIC_SCOPES)) {
                 request.authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, request.getScope());
             }
 

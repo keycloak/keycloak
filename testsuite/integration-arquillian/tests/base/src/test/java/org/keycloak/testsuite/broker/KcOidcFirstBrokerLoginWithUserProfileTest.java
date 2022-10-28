@@ -30,7 +30,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
@@ -43,7 +43,7 @@ import org.openqa.selenium.By;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@EnableFeature(value = Feature.DECLARATIVE_USER_PROFILE)
 public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBrokerLoginTest {
 
     @Override

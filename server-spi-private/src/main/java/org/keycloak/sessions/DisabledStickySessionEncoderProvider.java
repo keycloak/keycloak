@@ -18,12 +18,11 @@
 package org.keycloak.sessions;
 
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import org.keycloak.sessions.StickySessionEncoderProvider;
-import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 
 public class DisabledStickySessionEncoderProvider implements StickySessionEncoderProviderFactory, StickySessionEncoderProvider,
         EnvironmentDependentProviderFactory {
@@ -70,7 +69,7 @@ public class DisabledStickySessionEncoderProvider implements StickySessionEncode
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 
 }

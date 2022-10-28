@@ -18,10 +18,9 @@
 package org.keycloak.testsuite.rar;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -42,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
-@EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+@EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
 public class DynamicScopesRARParseTest extends AbstractRARParserTest {
 
     @Test

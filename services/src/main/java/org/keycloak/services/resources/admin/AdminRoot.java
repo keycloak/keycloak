@@ -23,6 +23,7 @@ import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import javax.ws.rs.NotAuthorizedException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -303,10 +304,10 @@ public class AdminRoot {
     }
 
     private static boolean isAdminApiEnabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.ADMIN_API);
+        return Profile.isFeatureEnabled(Feature.ADMIN_API);
     }
 
     private static boolean isAdminConsoleEnabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
+        return Profile.isFeatureEnabled(Feature.ADMIN2) || Profile.isFeatureEnabled(Feature.ADMIN);
     }
 }

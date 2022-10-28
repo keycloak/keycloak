@@ -52,6 +52,7 @@ import javax.ws.rs.core.Response;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.StringPropertyReplacer;
@@ -544,7 +545,7 @@ public class AccountRestService {
     // TODO Logs
     
     private static void checkAccountApiEnabled() {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
+        if (!Profile.isFeatureEnabled(Feature.ACCOUNT_API)) {
             throw new NotFoundException();
 }
     }

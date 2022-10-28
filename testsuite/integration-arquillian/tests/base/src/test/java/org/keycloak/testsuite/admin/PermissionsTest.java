@@ -21,13 +21,12 @@ import org.hamcrest.Matchers;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -911,7 +910,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void clientAuthorization() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+        ProfileAssume.assumeFeatureEnabled(Feature.AUTHORIZATION);
 
         ClientRepresentation newClient = new ClientRepresentation();
         newClient.setClientId("foo-authz");
@@ -1769,7 +1768,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
     @Test
     public void partialExport() {
         // re-enable as part of https://github.com/keycloak/keycloak/issues/14291
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
 
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {

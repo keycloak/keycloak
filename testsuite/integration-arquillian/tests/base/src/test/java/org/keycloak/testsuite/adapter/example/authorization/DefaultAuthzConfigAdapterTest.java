@@ -42,7 +42,7 @@ import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import static org.keycloak.common.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**

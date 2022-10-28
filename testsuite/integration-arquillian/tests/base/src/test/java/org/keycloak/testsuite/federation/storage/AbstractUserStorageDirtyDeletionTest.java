@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;

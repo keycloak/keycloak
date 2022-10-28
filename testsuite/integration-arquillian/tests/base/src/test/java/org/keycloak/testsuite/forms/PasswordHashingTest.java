@@ -18,7 +18,7 @@ package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
@@ -122,7 +122,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-5282
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
+    @DisableFeature(value = Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testPasswordNotRehasedUnchangedIterations() {
         setPasswordPolicy("");
 

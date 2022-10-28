@@ -23,7 +23,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationService;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -31,7 +31,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
@@ -57,7 +56,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Comparator;
-import java.util.Optional;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -273,7 +271,7 @@ public class RealmsResource {
 
     @Path("{realm}/authz")
     public Object getAuthorizationService(@PathParam("realm") String name) {
-        ProfileHelper.requireFeature(Profile.Feature.AUTHORIZATION);
+        ProfileHelper.requireFeature(Feature.AUTHORIZATION);
 
         init(name);
         AuthorizationProvider authorization = this.session.getProvider(AuthorizationProvider.class);

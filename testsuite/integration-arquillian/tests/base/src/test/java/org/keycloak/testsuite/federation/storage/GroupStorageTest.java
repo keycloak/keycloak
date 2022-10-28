@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.federation.storage;
 
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.Feature;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;

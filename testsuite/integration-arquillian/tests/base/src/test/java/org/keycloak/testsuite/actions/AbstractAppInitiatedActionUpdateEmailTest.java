@@ -20,7 +20,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -29,7 +29,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.EmailUpdatePage;
 import org.keycloak.testsuite.util.UserBuilder;
 
-@EnableFeature(Profile.Feature.UPDATE_EMAIL)
+@EnableFeature(Feature.UPDATE_EMAIL)
 public abstract class AbstractAppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActionTest {
 
 	@Page

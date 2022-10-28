@@ -18,7 +18,7 @@ package org.keycloak.testsuite.account;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
+import static org.keycloak.common.Feature.ACCOUNT_API;
 import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
 import java.io.IOException;
@@ -41,8 +41,6 @@ import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
-
-import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.resolvers;
 
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderFactory;
@@ -28,6 +29,6 @@ public interface CIBALoginUserResolverFactory extends ProviderFactory<CIBALoginU
 
     @Override
     default boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.CIBA);
+        return Profile.isFeatureEnabled(Feature.CIBA);
     }
 }

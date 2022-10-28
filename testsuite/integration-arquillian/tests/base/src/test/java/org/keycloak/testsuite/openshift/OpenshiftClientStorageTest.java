@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ComponentResource;
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.Details;
@@ -57,7 +57,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
+import static org.keycloak.common.Feature.OPENSHIFT_INTEGRATION;
 import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 

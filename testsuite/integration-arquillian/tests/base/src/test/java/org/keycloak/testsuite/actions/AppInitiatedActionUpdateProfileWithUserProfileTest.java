@@ -17,7 +17,7 @@
 package org.keycloak.testsuite.actions;
 
 import org.junit.Before;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
@@ -28,7 +28,7 @@ import org.keycloak.testsuite.forms.VerifyProfileTest;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@EnableFeature(value = Feature.DECLARATIVE_USER_PROFILE)
 public class AppInitiatedActionUpdateProfileWithUserProfileTest extends AppInitiatedActionUpdateProfileTest {
     
     @Override

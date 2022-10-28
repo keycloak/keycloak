@@ -21,14 +21,11 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile;
-import org.keycloak.events.EventBuilder;
+import org.keycloak.common.Feature;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -45,7 +42,7 @@ import static org.junit.Assert.fail;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
+@DisableFeature(value = Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class LoginEventsTest extends AbstractEventTest {
 
     @Page

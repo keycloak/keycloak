@@ -18,8 +18,8 @@
 package org.keycloak.policy;
 
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
-import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.PasswordPolicy;
@@ -94,6 +94,6 @@ public class RecoveryCodesWarningThresholdPasswordPolicyProviderFactory implemen
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES);
+        return Profile.isFeatureEnabled(Feature.RECOVERY_CODES);
     }
 }

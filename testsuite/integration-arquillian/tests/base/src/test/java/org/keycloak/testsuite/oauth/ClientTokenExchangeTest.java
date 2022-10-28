@@ -24,7 +24,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
@@ -81,8 +81,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
-@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+@EnableFeature(value = Feature.TOKEN_EXCHANGE, skipRestart = true)
+@EnableFeature(value = Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
 public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     @Rule
@@ -90,7 +90,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     @Test
     @UncaughtServerErrorExpected
-    @DisableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+    @DisableFeature(value = Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void checkFeatureDisabled() {
         // Required feature should return Status code 501 - Feature doesn't work
         testingClient.server().run(ClientTokenExchangeTest::addDirectExchanger);

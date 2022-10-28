@@ -18,6 +18,7 @@
 package org.keycloak.models.map.events;
 
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.events.Event;
@@ -95,6 +96,6 @@ public class MapEventStoreProviderFactory implements AmphibianProviderFactory<Ev
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 }

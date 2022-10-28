@@ -40,6 +40,7 @@ import io.quarkus.arc.Arc;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
@@ -315,6 +316,6 @@ public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionPro
 
     @Override
     public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return !Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 }

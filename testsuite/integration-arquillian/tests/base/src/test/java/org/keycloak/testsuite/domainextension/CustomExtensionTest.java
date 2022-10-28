@@ -19,7 +19,7 @@ package org.keycloak.testsuite.domainextension;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -48,7 +48,7 @@ public class CustomExtensionTest extends AbstractKeycloakTest {
 
     @BeforeClass
     public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
     @Test

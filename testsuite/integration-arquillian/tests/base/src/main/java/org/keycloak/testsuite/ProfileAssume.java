@@ -19,7 +19,7 @@ package org.keycloak.testsuite;
 
 import org.junit.Assume;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.representations.info.ProfileInfoRepresentation;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
@@ -52,12 +52,12 @@ public class ProfileAssume {
         }
     }
 
-    public static void assumeFeatureEnabled(Profile.Feature feature) {
+    public static void assumeFeatureEnabled(Feature feature) {
         updateProfile();
         Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is not enabled", isFeatureEnabled(feature));
     }
 
-    public static void assumeFeatureDisabled(Profile.Feature feature) {
+    public static void assumeFeatureDisabled(Feature feature) {
         Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is enabled", !isFeatureEnabled(feature));
     }
 
@@ -76,7 +76,7 @@ public class ProfileAssume {
         Assume.assumeTrue("Ignoring test as community profile is not enabled", profile.equals("community"));
     }
 
-    public static boolean isFeatureEnabled(Profile.Feature feature) {
+    public static boolean isFeatureEnabled(Feature feature) {
         updateProfile();
         return !disabledFeatures.contains(feature.name());
     }

@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.ClientModel;
@@ -132,7 +132,7 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-12640
     @Test
     public void importAuthorizationSettings() throws Exception {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+        ProfileAssume.assumeFeatureEnabled(Feature.AUTHORIZATION);
 
         RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/model/authz-bug.json"), RealmRepresentation.class);
         adminClient.realms().create(testRealm);
@@ -147,7 +147,7 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
+    @EnableFeature(Feature.DECLARATIVE_USER_PROFILE)
     public void importUserProfile() throws Exception {
         final String realmString = IOUtils.toString(getClass().getResourceAsStream("/model/import-userprofile.json"), StandardCharsets.UTF_8);
 

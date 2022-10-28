@@ -39,7 +39,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.util.List;
 
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import static org.keycloak.common.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**

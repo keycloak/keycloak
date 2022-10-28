@@ -13,7 +13,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -106,8 +106,8 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ADMIN2, skipRestart = true)
-    @EnableFeature(value = Profile.Feature.ADMIN, skipRestart = true)
+    @DisableFeature(value = Feature.ADMIN2, skipRestart = true)
+    @EnableFeature(value = Feature.ADMIN, skipRestart = true)
     public void fixedFrontendUrlOldAdminPage() throws Exception {
         expectedBackendUrl = transformUrlIfQuarkusServer(AUTH_SERVER_ROOT);
 

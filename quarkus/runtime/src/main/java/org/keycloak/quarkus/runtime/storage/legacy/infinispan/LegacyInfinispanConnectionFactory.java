@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -48,6 +49,6 @@ public class LegacyInfinispanConnectionFactory extends DefaultInfinispanConnecti
 
     @Override
     public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return !Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 }

@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.mappers;
 import java.util.List;
 
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -81,7 +82,7 @@ public class DeployedScriptOIDCProtocolMapper extends ScriptBasedOIDCProtocolMap
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+        return Profile.isFeatureEnabled(Feature.SCRIPTS);
     }
 
     public void setMetadata(ScriptProviderMetadata metadata) {

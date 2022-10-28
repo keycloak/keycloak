@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.provider.DefaultProviderLoader;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.KeycloakDeploymentInfo;
@@ -43,13 +43,13 @@ import org.keycloak.services.DefaultKeycloakSession;
  */
 public class FeatureDeployerUtil {
 
-    private final static Map<Profile.Feature, Map<ProviderFactory, Spi>> initializer = new ConcurrentHashMap<>();
+    private final static Map<Feature, Map<ProviderFactory, Spi>> initializer = new ConcurrentHashMap<>();
 
-    private final static Map<Profile.Feature, ProviderManager> deployersCache = new ConcurrentHashMap<>();
+    private final static Map<Feature, ProviderManager> deployersCache = new ConcurrentHashMap<>();
 
     private static final Logger logger = Logger.getLogger(FeatureDeployerUtil.class);
 
-    public static void initBeforeChangeFeature(Profile.Feature feature) {
+    public static void initBeforeChangeFeature(Feature feature) {
         if (deployersCache.containsKey(feature)) return;
 
         // Compute which provider factories are enabled before feature is enabled (disabled)
@@ -57,7 +57,7 @@ public class FeatureDeployerUtil {
         initializer.put(feature, factoriesBefore);
     }
 
-    public static void deployFactoriesAfterFeatureEnabled(Profile.Feature feature) {
+    public static void deployFactoriesAfterFeatureEnabled(Feature feature) {
         ProviderManager manager = deployersCache.get(feature);
         if (manager == null) {
             // Need to figure which provider factories were enabled after feature was enabled. Create deployer based on it and save it to the cache
@@ -75,7 +75,7 @@ public class FeatureDeployerUtil {
         ProviderManagerRegistry.SINGLETON.deploy(manager);
     }
 
-    public static void undeployFactoriesAfterFeatureDisabled(Profile.Feature feature) {
+    public static void undeployFactoriesAfterFeatureDisabled(Feature feature) {
         ProviderManager manager = deployersCache.get(feature);
         if (manager == null) {
             // This is used if some feature is enabled by default and then disabled

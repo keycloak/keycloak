@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -87,7 +88,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
         Stream<ClientScopeModel> requestedClientScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Feature.DYNAMIC_SCOPES)) {
             session.getContext().setClient(clientSession.getClient());
             requestedClientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam);
         } else {
@@ -166,7 +167,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public String getScopeString() {
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Feature.DYNAMIC_SCOPES)) {
             String scopeParam = buildScopesStringFromAuthorizationRequest();
             logger.tracef("Generated scope param with Dynamic Scopes enabled: %1s", scopeParam);
             String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);

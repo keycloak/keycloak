@@ -26,7 +26,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
@@ -37,7 +37,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -65,7 +64,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
+@DisableFeature(value = Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class OAuthGrantTest extends AbstractKeycloakTest {
 
     public static final String THIRD_PARTY_APP = "third-party";
@@ -323,7 +322,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void oauthGrantDynamicScopeParamRequired() {
         RealmResource appRealm = adminClient.realm(REALM_NAME);
         ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);

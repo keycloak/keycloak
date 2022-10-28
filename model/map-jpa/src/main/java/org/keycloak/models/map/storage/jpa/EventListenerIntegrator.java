@@ -23,6 +23,7 @@ import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventType;
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaAutoFlushListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
@@ -40,7 +41,7 @@ public class EventListenerIntegrator implements Integrator {
     @Override
     public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactoryImplementor,
             SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
-        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+        if (Profile.isFeatureEnabled(Feature.MAP_STORAGE)) {
             final EventListenerRegistry eventListenerRegistry =
                     sessionFactoryServiceRegistry.getService(EventListenerRegistry.class);
 

@@ -28,6 +28,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.authorization.AuthorizationTokenService;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -795,7 +796,7 @@ public class TokenEndpoint {
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
         boolean validScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Feature.DYNAMIC_SCOPES)) {
             AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, scope);
             validScopes = TokenManager.isValidScope(scope, authorizationRequestContext, client);
         } else {
@@ -812,7 +813,7 @@ public class TokenEndpoint {
     }
 
     public Response tokenExchange() {
-        ProfileHelper.requireFeature(Profile.Feature.TOKEN_EXCHANGE);
+        ProfileHelper.requireFeature(Feature.TOKEN_EXCHANGE);
 
         event.detail(Details.AUTH_METHOD, "token_exchange");
         event.client(client);

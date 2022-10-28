@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.migration;
 
 import org.junit.Test;
+import org.keycloak.common.Feature;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.utils.io.IOUtil;
@@ -25,7 +26,7 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.keycloak.common.Profile;
+
 import org.keycloak.testsuite.ProfileAssume;
 
 /**
@@ -60,10 +61,10 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
     public void migration2_5_5Test() throws Exception {
         checkRealmsImported();
         testMigrationTo3_x();
-        testMigrationTo4_x(ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION), false);
+        testMigrationTo4_x(ProfileAssume.isFeatureEnabled(Feature.AUTHORIZATION), false);
         testMigrationTo5_x();
         testMigrationTo6_x();
-        testMigrationTo7_x(ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
+        testMigrationTo7_x(ProfileAssume.isFeatureEnabled(Feature.AUTHORIZATION));
         testMigrationTo8_x();
         testMigrationTo9_x();
         testMigrationTo12_x(false);

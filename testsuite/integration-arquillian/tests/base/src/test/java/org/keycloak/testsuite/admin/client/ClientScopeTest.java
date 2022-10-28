@@ -24,7 +24,7 @@ import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -704,7 +704,7 @@ public class ClientScopeTest extends AbstractClientTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void testCreateValidDynamicScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("dynamic-scope-def");
@@ -724,7 +724,7 @@ public class ClientScopeTest extends AbstractClientTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void testCreateNonDynamicScopeWithFeatureEnabled() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("non-dynamic-scope-def");
@@ -744,7 +744,7 @@ public class ClientScopeTest extends AbstractClientTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @DisableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void testCreateDynamicScopeWithFeatureDisabledAndIsDynamicScopeTrue() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("non-dynamic-scope-def2");
@@ -757,7 +757,7 @@ public class ClientScopeTest extends AbstractClientTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @DisableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void testCreateDynamicScopeWithFeatureDisabledAndNonEmptyDynamicScopeRegexp() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("non-dynamic-scope-def3");
@@ -770,7 +770,7 @@ public class ClientScopeTest extends AbstractClientTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void testCreateInvalidRegexpDynamicScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("dynamic-scope-def4");
@@ -783,7 +783,7 @@ public class ClientScopeTest extends AbstractClientTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void updateAssignedDefaultClientScopeToDynamicScope() {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId("dyn-scope-client");
@@ -813,7 +813,7 @@ public class ClientScopeTest extends AbstractClientTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Feature.DYNAMIC_SCOPES, skipRestart = true)
     public void dynamicClientScopeCannotBeAssignedAsDefaultClientScope() {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId("dyn-scope-client");

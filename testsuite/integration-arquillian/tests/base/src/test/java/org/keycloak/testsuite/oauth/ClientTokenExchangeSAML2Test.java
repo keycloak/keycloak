@@ -23,7 +23,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
@@ -82,8 +82,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
  */
-@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
-@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+@EnableFeature(value = Feature.TOKEN_EXCHANGE, skipRestart = true)
+@EnableFeature(value = Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
 public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
     private static final String SAML_SIGNED_TARGET = "http://localhost:8080/saml-signed-assertion/";

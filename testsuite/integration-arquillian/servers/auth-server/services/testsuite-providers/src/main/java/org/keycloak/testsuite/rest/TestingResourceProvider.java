@@ -20,7 +20,7 @@ package org.keycloak.testsuite.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.Config;
-import org.keycloak.authorization.policy.evaluation.Realm;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
@@ -871,7 +871,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return new TestJavascriptResource(session);
     }
 
-    private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
+    private void setFeatureInProfileFile(File file, Feature featureProfile, String newState) {
         Properties properties = new Properties();
         if (file.isFile() && file.exists()) {
             try (FileInputStream fis = new FileInputStream(file)) {
@@ -894,10 +894,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/enable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response enableFeature(@PathParam("feature") String feature) {
-        Profile.Feature featureProfile;
+        Feature featureProfile;
 
         try {
-            featureProfile = Profile.Feature.valueOf(feature);
+            featureProfile = Feature.valueOf(feature);
         } catch (IllegalArgumentException e) {
             System.err.printf("Feature '%s' doesn't exist!!\n", feature);
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -930,10 +930,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/disable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response disableFeature(@PathParam("feature") String feature) {
-        Profile.Feature featureProfile;
+        Feature featureProfile;
 
         try {
-            featureProfile = Profile.Feature.valueOf(feature);
+            featureProfile = Feature.valueOf(feature);
         } catch (IllegalArgumentException e) {
             System.err.printf("Feature '%s' doesn't exist!!\n", feature);
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -965,9 +965,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     /**
      * KEYCLOAK-12958
      */
-    private void disableFeatureProperties(Profile.Feature feature) {
-        Profile.Type type = feature.getType();
-        if (type.equals(Profile.Type.DEFAULT)) {
+    private void disableFeatureProperties(Feature feature) {
+        Feature.Type type = feature.getType();
+        if (type.equals(Feature.Type.DEFAULT)) {
             System.setProperty("keycloak.profile.feature." + feature.toString().toLowerCase(), "disabled");
         } else {
             System.getProperties().remove("keycloak.profile.feature." + feature.toString().toLowerCase());

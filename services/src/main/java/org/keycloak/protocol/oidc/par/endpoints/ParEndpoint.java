@@ -19,7 +19,7 @@ package org.keycloak.protocol.oidc.par.endpoints;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
@@ -79,7 +79,7 @@ public class ParEndpoint extends AbstractParEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Response request() {
 
-        ProfileHelper.requireFeature(Profile.Feature.PAR);
+        ProfileHelper.requireFeature(Feature.PAR);
 
         cors = Cors.add(httpRequest).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 

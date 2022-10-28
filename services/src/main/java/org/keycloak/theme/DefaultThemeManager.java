@@ -18,8 +18,7 @@
 package org.keycloak.theme;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.Version;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.models.KeycloakSession;
@@ -304,7 +303,7 @@ public class DefaultThemeManager implements ThemeManager {
     }
 
     private static boolean isAccount2Enabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
+        return Profile.isFeatureEnabled(Feature.ACCOUNT2);
     }
 
 }

@@ -25,7 +25,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
@@ -76,7 +76,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
     @BeforeClass
     public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+        ProfileAssume.assumeFeatureEnabled(Feature.AUTHORIZATION);
     }
 
     @Override

@@ -18,6 +18,7 @@
 package org.keycloak.models.dblock;
 
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -55,7 +56,7 @@ public class NoLockingDBLockProviderFactory implements DBLockProviderFactory, En
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Feature.MAP_STORAGE);
     }
 
     private static final DBLockProvider INSTANCE = new DBLockProvider() {

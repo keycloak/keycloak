@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.UriUtils;
@@ -212,7 +213,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         model = UserRealmRoleMappingMapper.create(null, GROUPS, GROUPS, true, true, true);
         builtins.put(GROUPS, model);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+        if (Profile.isFeatureEnabled(Feature.STEP_UP_AUTHENTICATION)) {
             model = AcrProtocolMapper.create(ACR, true, true);
             builtins.put(ACR, model);
         }
@@ -367,7 +368,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
 
     public static void addAcrClientScope(RealmModel newRealm) {
-        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+        if (Profile.isFeatureEnabled(Feature.STEP_UP_AUTHENTICATION)) {
             ClientScopeModel acrScope = KeycloakModelUtils.getClientScopeByName(newRealm, ACR_SCOPE);
             if (acrScope == null) {
                 acrScope = newRealm.addClientScope(ACR_SCOPE);

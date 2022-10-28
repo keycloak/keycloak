@@ -35,6 +35,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.AmphibianProviderFactory;
@@ -61,7 +62,6 @@ import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
-import org.keycloak.validate.validators.EmailValidator;
 
 /**
  * {@link UserProfileProvider} loading configuration from the changeable JSON file stored in component config. Parsed
@@ -240,7 +240,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     @Override
     public void init(Config.Scope config) {
         super.init(config);
-        isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
+        isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Feature.DECLARATIVE_USER_PROFILE);
     }
 
     @Override

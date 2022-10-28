@@ -21,6 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.Feature;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.events.EventType;
@@ -198,9 +199,9 @@ public class ServerInfoAdminResource {
         LinkedList<String> filteredNames = new LinkedList<>(themeNames);
         
         boolean filterAccountV2 = (type == Theme.Type.ACCOUNT) && 
-                !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
+                !Profile.isFeatureEnabled(Feature.ACCOUNT2);
         boolean filterAdminV2 = (type == Theme.Type.ADMIN) && 
-                !Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
+                !Profile.isFeatureEnabled(Feature.ADMIN2);
         
         if (filterAccountV2 || filterAdminV2) {
             filteredNames.remove("keycloak.v2");

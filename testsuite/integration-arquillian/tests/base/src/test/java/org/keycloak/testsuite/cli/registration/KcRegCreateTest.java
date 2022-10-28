@@ -11,7 +11,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.config.FileConfigHandler;
-import org.keycloak.common.Profile;
+import org.keycloak.common.Feature;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -239,7 +239,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
     @Test
     public void testCreateWithAuthorizationServices() throws IOException {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+        ProfileAssume.assumeFeatureEnabled(Feature.AUTHORIZATION);
 
         FileConfigHandler handler = initCustomConfigFile();
 

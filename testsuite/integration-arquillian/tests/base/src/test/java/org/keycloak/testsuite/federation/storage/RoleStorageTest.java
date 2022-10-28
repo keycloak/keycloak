@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.federation.storage;
 
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.Feature;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.stream.Collectors;
