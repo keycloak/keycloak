@@ -542,7 +542,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             // Assert both realm and client roles on the new position. Hardcoded role should be here as well
             Map<String, Object> cst1 = (Map<String, Object>) accessToken.getOtherClaims().get("custom");
             List<String> roles = (List<String>) cst1.get("roles");
-            Assert.assertNames(roles, "offline_access", "user", "customer-user", "hardcoded", AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS);
+            Assert.assertNames(roles, "offline_access", "user", "customer-user", "hardcoded", AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.MANAGE_ACCOUNT_BASIC_AUTH, AccountRoles.MANAGE_ACCOUNT_2FA);
 
             // Assert audience
             Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account");

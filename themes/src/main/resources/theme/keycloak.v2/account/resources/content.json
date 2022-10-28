@@ -19,7 +19,8 @@
         "path": "security/signingin",
         "label": "signingInSidebarTitle",
         "modulePath": "/content/signingin-page/SigningInPage.js",
-        "componentName": "SigningInPage"
+        "componentName": "SigningInPage",
+        "hidden": "!(features.manageAccountBasicAuthAllowed || features.manageAccount2faAllowed)"
       },
       {
         "id": "device-activity",
@@ -45,7 +46,8 @@
     "label": "applications",
     "descriptionLabel": "applicationsIntroMessage",
     "modulePath": "/content/applications-page/ApplicationsPage.js",
-    "componentName": "ApplicationsPage"
+    "componentName": "ApplicationsPage",
+    "hidden": "!features.viewApplicationAllowed"
   },
   {
     "id": "groups",

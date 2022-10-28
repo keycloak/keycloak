@@ -191,13 +191,13 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                         : ValidatedOptions.default
                                 }
                             >
-                                {this.isEditUserNameAllowed && <this.UsernameInput />}
-                                {!this.isEditUserNameAllowed && (
+                                {this.isEditUserNameAllowed && features.manageAccountAllowed && <this.UsernameInput />}
+                                {(!this.isEditUserNameAllowed || !features.manageAccountAllowed) && (
                                     <this.RestrictedUsernameInput />
                                 )}
                             </FormGroup>
                         )}
-                        {!this.isUpdateEmailFeatureEnabled && fields.email != undefined && <FormGroup
+                        {!this.isUpdateEmailFeatureEnabled && features.manageAccountAllowed && fields.email != undefined && <FormGroup
                             label={Msg.localize('email')}
                             fieldId="email-address"
                             helperTextInvalid={this.state.errors.email}
@@ -222,7 +222,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 }
                             ></TextInput>
                         </FormGroup> }
-                        {this.isUpdateEmailFeatureEnabled && <FormGroup
+                        {(this.isUpdateEmailFeatureEnabled || !features.manageAccountAllowed) && <FormGroup
                             label={Msg.localize('email')}
                             fieldId="email-address"
                         >
@@ -235,7 +235,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                     value={fields.email}
                                 >
                                 </TextInput>
-                                {this.isUpdateEmailActionEnabled && (!this.isRegistrationEmailAsUsername || this.isEditUserNameAllowed) &&
+                                {this.isUpdateEmailActionEnabled && features.manageAccountAllowed && (!this.isRegistrationEmailAsUsername || this.isEditUserNameAllowed) &&
                                     <KeycloakContext.Consumer>
                                         { (keycloak: KeycloakService) => (
                                             <Button id="update-email-btn"
@@ -260,7 +260,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                         : ValidatedOptions.default
                                 }
                             >
-                                <TextInput
+                               {features.manageAccountAllowed && <TextInput
                                     isRequired
                                     type="text"
                                     id="first-name"
@@ -273,7 +273,15 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                             ? ValidatedOptions.error
                                             : ValidatedOptions.default
                                     }
-                                ></TextInput>
+                                ></TextInput>}
+                        {!features.manageAccountAllowed && <TextInput
+                            isDisabled
+                            type="text"
+                            id="first-name"
+                            name="firstName"
+                            value={fields.firstName}
+                        >
+                        </TextInput>}
                             </FormGroup>
                         }
                         {fields.lastName != undefined && <FormGroup
@@ -286,7 +294,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                         : ValidatedOptions.default
                                 }
                             >
-                                <TextInput
+                               {features.manageAccountAllowed && <TextInput
                                     isRequired
                                     type="text"
                                     id="last-name"
@@ -299,7 +307,15 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                             ? ValidatedOptions.error
                                             : ValidatedOptions.default
                                     }
-                                ></TextInput>
+                                ></TextInput>}
+                        {!features.manageAccountAllowed && <TextInput
+                             isDisabled
+                             type="text"
+                             id="last-name"
+                             name="lastName"
+                             value={fields.lastName}
+                        >
+                        </TextInput>}
                             </FormGroup>
                         }
                         {features.isInternationalizationEnabled && (
@@ -326,6 +342,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 />
                             </FormGroup>
                         )}
+                       {features.manageAccountAllowed &&
                         <ActionGroup>
                             <Button
                                 type="submit"
@@ -345,7 +362,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             >
                                 <Msg msgKey="doCancel" />
                             </Button>
-                        </ActionGroup>
+                        </ActionGroup>}
                     </Form>
 
             {this.isDeleteAccountAllowed && (

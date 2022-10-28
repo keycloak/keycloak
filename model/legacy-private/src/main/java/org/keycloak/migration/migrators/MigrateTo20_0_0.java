@@ -16,12 +16,16 @@ public class MigrateTo20_0_0 implements Migration {
     @Override
     public void migrate(KeycloakSession session) {
 
-        session.realms().getRealmsStream().forEach(this::addViewGroupsRole);
+        session.realms().getRealmsStream().forEach(realm -> {
+           addViewGroupsRole(realm);
+           addAccountRoles(realm);
+        });
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
         addViewGroupsRole(realm);
+        addAccountRoles(realm);
     }
 
     private void addViewGroupsRole(RealmModel realm) {
@@ -32,6 +36,30 @@ public class MigrateTo20_0_0 implements Migration {
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
             accountConsoleClient.addScopeMapping(viewGroupsRole);
         }
+    }
+
+    private void addAccountRoles(RealmModel realm) {
+        ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        RoleModel manageAccount = accountClient.getRole(AccountRoles.MANAGE_ACCOUNT);
+        if (accountClient != null && accountClient.getRole(AccountRoles.MANAGE_ACCOUNT_BASIC_AUTH) == null) {
+            RoleModel manageAccountBasicAuth = accountClient.addRole(AccountRoles.MANAGE_ACCOUNT_BASIC_AUTH);
+            manageAccountBasicAuth.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_BASIC_AUTH + "}");
+            manageAccount.addCompositeRole(manageAccountBasicAuth);
+        }
+        if (accountClient != null && accountClient.getRole(AccountRoles.MANAGE_ACCOUNT_2FA) == null) {
+            RoleModel manageAccount2fa = accountClient.addRole(AccountRoles.MANAGE_ACCOUNT_2FA);
+            manageAccount2fa.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_2FA + "}");
+            manageAccount.addCompositeRole(manageAccount2fa);
+        }
+        ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+        accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.DELETE_ACCOUNT));
+        accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT_2FA));
+        accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT_BASIC_AUTH));
+        accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT_LINKS));
+        accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_CONSENT));
+        accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.VIEW_APPLICATIONS));
+        accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.VIEW_CONSENT));
+        accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.VIEW_PROFILE));
     }
 
     @Override

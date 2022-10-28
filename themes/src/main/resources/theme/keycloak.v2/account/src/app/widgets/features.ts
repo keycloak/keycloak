@@ -24,6 +24,12 @@
     isMyResourcesEnabled: boolean;
     isTotpConfigured: boolean;
     deleteAccountAllowed: boolean;
+    manageAccountAllowed: boolean;
+    manageAccountLinkAllowed: boolean;
+    manageConsentAllowed: boolean;
+    manageAccountBasicAuthAllowed: boolean;
+    manageAccount2faAllowed: boolean;
+    viewApplicationAllowed: boolean;
     updateEmailFeatureEnabled: boolean;
     updateEmailActionEnabled: boolean;
     isViewGroupsEnabled: boolean;

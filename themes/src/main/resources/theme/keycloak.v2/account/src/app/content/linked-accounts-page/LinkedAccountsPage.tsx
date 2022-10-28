@@ -58,6 +58,9 @@ import {AccountServiceContext} from '../../account-service/AccountServiceContext
 import {Msg} from '../../widgets/Msg';
 import {ContentPage} from '../ContentPage';
 import {createRedirect} from '../../util/RedirectUri';
+import { Features } from '../../widgets/features';
+
+declare const features: Features;
 
 interface LinkedAccount {
     connected: boolean;
@@ -141,6 +144,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                                 {this.makeRows(this.state.linkedAccounts, true)}
                             </DataList>
                         </StackItem>
+                       {features.manageAccountLinkAllowed &&
                         <StackItem>
                             <Title headingLevel="h2" className="pf-u-mt-xl pf-u-mb-lg" size='xl'>
                                 <Msg msgKey='unlinkedLoginProviders'/>
@@ -148,7 +152,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                             <DataList id="unlinked-idps" aria-label={Msg.localize('unlinkedLoginProviders')}>
                                 {this.makeRows(this.state.unLinkedAccounts, false)}
                             </DataList>
-                        </StackItem>
+                        </StackItem> }
                     </Stack>
                 </PageSection>
             </ContentPage>
@@ -205,7 +209,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                                     </DataListCell>,
                                 ]}/>
                             <DataListAction aria-labelledby={Msg.localize('link')} aria-label={Msg.localize('unLink')} id='setPasswordAction'>
-                                {isLinked && <Button id={`${account.providerAlias}-idp-unlink`} variant='link' onClick={() => this.unLinkAccount(account)}><UnlinkIcon size='sm'/> <Msg msgKey='unLink'/></Button>}
+                                {isLinked && features.manageAccountLinkAllowed && <Button id={`${account.providerAlias}-idp-unlink`} variant='link' onClick={() => this.unLinkAccount(account)}><UnlinkIcon size='sm'/> <Msg msgKey='unLink'/></Button>}
                                 {!isLinked && <Button id={`${account.providerAlias}-idp-link`} variant='link' onClick={() => this.linkAccount(account)}><LinkIcon size='sm'/> <Msg msgKey='link'/></Button>}
                             </DataListAction>
                         </DataListItemRow>
