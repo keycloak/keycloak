@@ -1,6 +1,6 @@
 # Keycloak
 
-[![image](https://api-public.service.runforesight.com/api/v1/badge/success?repoId=a2b01877-ab45-49a9-8686-3de3b1df682f&branch=main&workflowName=Keycloak%20CI)](https://keycloak.app.runforesight.com)
+[![image](https://api-public.service.runforesight.com/api/v1/badge/success?repoId=a2b01877-ab45-49a9-8686-3de3b1df682f&branch=main&workflowName=Keycloak%20CI)](https://keycloak.app.runforesight.com/repositories/github/keycloak/keycloak/workflow-runs?branch=main&workflowId=1507662)
 
 Keycloak is an Open Source Identity and Access Management solution for modern Applications and Services.
 
