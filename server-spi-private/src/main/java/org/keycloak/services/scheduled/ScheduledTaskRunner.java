@@ -46,32 +46,27 @@ public class ScheduledTaskRunner implements Runnable {
 
     @Override
     public void run() {
-        KeycloakSession session = sessionFactory.create();
         try {
-            if (transactionLimit != 0) {
-                KeycloakModelUtils.setTransactionLimit(sessionFactory, transactionLimit);
-            }
-            runTask(session);
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                try {
+                    if (transactionLimit != 0) {
+                        KeycloakModelUtils.setTransactionLimit(sessionFactory, transactionLimit);
+                    }
+
+                    runTask(session);
+                } finally {
+                    if (transactionLimit != 0) {
+                        KeycloakModelUtils.setTransactionLimit(sessionFactory, 0);
+                    }
+                }
+            });
         } catch (Throwable t) {
             logger.errorf(t, "Failed to run scheduled task %s", task.getClass().getSimpleName());
-
-            session.getTransactionManager().rollback();
-        } finally {
-            if (transactionLimit != 0) {
-                KeycloakModelUtils.setTransactionLimit(sessionFactory, 0);
-            }
-            try {
-                session.close();
-            } catch (Throwable t) {
-                logger.errorf(t, "Failed to close ProviderSession");
-            }
         }
     }
 
     protected void runTask(KeycloakSession session) {
-        session.getTransactionManager().begin();
         task.run(session);
-        session.getTransactionManager().commit();
 
         logger.debug("Executed scheduled task " + task.getClass().getSimpleName());
     }

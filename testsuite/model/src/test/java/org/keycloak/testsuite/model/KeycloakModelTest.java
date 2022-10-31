@@ -529,12 +529,13 @@ public abstract class KeycloakModelTest {
     }
 
     protected <T> void inRolledBackTransaction(T parameter, BiConsumer<KeycloakSession, T> what) {
-        KeycloakSession session = getFactory().create();
-        session.getTransactionManager().begin();
+        try (KeycloakSession session = getFactory().create()) {
+            session.getTransactionManager().begin();
 
-        what.accept(session, parameter);
+            what.accept(session, parameter);
 
-        session.getTransactionManager().rollback();
+            session.getTransactionManager().rollback();
+        }
     }
 
     protected <T, R> R inComittedTransaction(T parameter, BiFunction<KeycloakSession, T, R> what) {
