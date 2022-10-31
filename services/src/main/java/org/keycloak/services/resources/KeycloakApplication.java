@@ -295,9 +295,8 @@ public class KeycloakApplication extends Application {
     }
 
     public void importRealm(RealmRepresentation rep, String from) {
-        KeycloakSession session = sessionFactory.create();
         boolean exists = false;
-        try {
+        try (KeycloakSession session = sessionFactory.create()) {
             session.getTransactionManager().begin();
 
             try {
@@ -316,15 +315,14 @@ public class KeycloakApplication extends Application {
                     RealmModel realm = manager.importRealm(rep);
                     ServicesLogger.LOGGER.importedRealm(realm.getName(), from);
                 }
-                session.getTransactionManager().commit();
             } catch (Throwable t) {
-                session.getTransactionManager().rollback();
-                if (!exists) {
-                    ServicesLogger.LOGGER.unableToImportRealm(t, rep.getRealm(), from);
-                }
+                session.getTransactionManager().setRollbackOnly();
+                throw t;
             }
-        } finally {
-            session.close();
+        } catch (Throwable t) {
+            if (!exists) {
+                ServicesLogger.LOGGER.unableToImportRealm(t, rep.getRealm(), from);
+            }
         }
     }
 
@@ -346,37 +344,30 @@ public class KeycloakApplication extends Application {
 
                 for (RealmRepresentation realmRep : realms) {
                     for (UserRepresentation userRep : realmRep.getUsers()) {
-                        KeycloakSession session = sessionFactory.create();
-
                         try {
-                            session.getTransactionManager().begin();
-                            RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
+                            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                                RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
 
-                            if (realm == null) {
-                                ServicesLogger.LOGGER.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
-                            }
+                                if (realm == null) {
+                                    ServicesLogger.LOGGER.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
+                                }
 
-                            UserProvider users = session.users();
+                                UserProvider users = session.users();
 
-                            if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
-                                ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
-                            } else {
-                                UserModel user = users.addUser(realm, userRep.getUsername());
-                                user.setEnabled(userRep.isEnabled());
-                                RepresentationToModel.createCredentials(userRep, session, realm, user, false);
-                                RepresentationToModel.createRoleMappings(userRep, user, realm);
-                                ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
-                            }
-
-                            session.getTransactionManager().commit();
+                                if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
+                                    ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
+                                } else {
+                                    UserModel user = users.addUser(realm, userRep.getUsername());
+                                    user.setEnabled(userRep.isEnabled());
+                                    RepresentationToModel.createCredentials(userRep, session, realm, user, false);
+                                    RepresentationToModel.createRoleMappings(userRep, user, realm);
+                                    ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
+                                }
+                            });
                         } catch (ModelDuplicateException e) {
-                            session.getTransactionManager().rollback();
                             ServicesLogger.LOGGER.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
                         } catch (Throwable t) {
-                            session.getTransactionManager().rollback();
                             ServicesLogger.LOGGER.addUserFailed(t, userRep.getUsername(), realmRep.getRealm());
-                        } finally {
-                            session.close();
                         }
                     }
                 }

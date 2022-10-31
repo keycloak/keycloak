@@ -109,13 +109,12 @@ public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionPro
     public void postInit(KeycloakSessionFactory factory) {
         super.postInit(factory);
 
-        KeycloakSession session = factory.create();
         String id = null;
         String version = null;
         String schema = getSchema();
         boolean schemaChanged;
 
-        try (Connection connection = getConnection()) {
+        try (Connection connection = getConnection(); KeycloakSession session = factory.create()) {
             try {
                 try (Statement statement = connection.createStatement()) {
                     try (ResultSet rs = statement.executeQuery(String.format(SQL_GET_LATEST_VERSION, getSchema(schema)))) {
@@ -133,8 +132,6 @@ public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionPro
             schemaChanged = createOrUpdateSchema(schema, version, connection, session);
         } catch (SQLException cause) {
             throw new RuntimeException("Failed to update database.", cause);
-        } finally {
-            session.close();
         }
 
         if (schemaChanged || Environment.isImportExportMode()) {
