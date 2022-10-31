@@ -1,5 +1,6 @@
 package org.keycloak.crypto.fips;
 
+import java.net.Socket;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
@@ -22,12 +23,18 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -35,7 +42,9 @@ import org.bouncycastle.crypto.fips.FipsRSA;
 import org.bouncycastle.crypto.fips.FipsSHS;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.bouncycastle.jsse.util.CustomSSLSocketFactory;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.IPAddress;
 import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
@@ -208,5 +217,40 @@ public class FIPS1402Provider implements CryptoProvider {
     public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException {
         return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), BouncyIntegration.PROVIDER);
             
+    }
+
+    @Override
+    public SSLSocketFactory wrapFactoryForTruststore(Supplier<String> hostnameSupplier, SSLSocketFactory delegate) {
+
+        // See https://downloads.bouncycastle.org/fips-java/BC-FJA-(D)TLSUserGuide-1.0.9.pdf - Section 3.5.2 (Endpoint identification)
+        return new CustomSSLSocketFactory(delegate) {
+
+            @Override
+            protected Socket configureSocket(Socket s) {
+                if (s instanceof SSLSocket) {
+                    SSLSocket ssl = (SSLSocket)s;
+                    String hostname = hostnameSupplier.get();
+                    SNIHostName sniHostName = getSNIHostName(hostname);
+                    if (sniHostName != null) {
+                        SSLParameters sslParameters = new SSLParameters();
+                        sslParameters.setServerNames(Collections.singletonList(sniHostName));
+                        ssl.setSSLParameters(sslParameters);
+                    }
+                }
+                return s;
+            }
+
+            private SNIHostName getSNIHostName(String host) {
+                if (host != null && !IPAddress.isValid(host)) {
+                    try {
+                        return new SNIHostName(host);
+                    } catch (RuntimeException e) {
+                        log.warnf(e, "Not possible to create SNIHostName from the host '%s'", host);
+                    }
+                }
+                return null;
+            }
+
+        };
     }
 }

@@ -18,11 +18,16 @@
 package org.keycloak.truststore;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Resteasy;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Comparator;
+import java.util.function.Supplier;
 
 
 /**
@@ -30,9 +35,11 @@ import java.util.Comparator;
  * <p>
  * This SSLSocketFactory can only use truststore configured by TruststoreProvider after the ProviderFactory was
  * initialized using standard Spi load / init mechanism. That will only happen if "truststore" provider is configured
- * in standalone.xml or domain.xml.
+ * by the Keycloak Provider SPI configuration mechanism
  * <p>
- * If TruststoreProvider is not available this SSLSocketFactory will delegate all operations to javax.net.ssl.SSLSocketFactory.getDefault().
+ * If TruststoreProvider is not available this SSLSocketFactory will delegate all operations to the SSLSocketFactory
+ * returned by {@link org.keycloak.common.crypto.CryptoProvider#wrapFactoryForTruststore(Supplier, javax.net.ssl.SSLSocketFactory)},
+ * which will delegate further to the factory returned by javax.net.ssl.SSLSocketFactory.getDefault().
  *
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
@@ -58,7 +65,17 @@ public class SSLSocketFactory extends javax.net.ssl.SSLSocketFactory implements 
             sf = (javax.net.ssl.SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault();
         }
 
-        sslsf = sf;
+        Supplier<String> hostnameProvider = () -> {
+            KeycloakSession session = Resteasy.getProvider().getContextData(KeycloakSession.class);
+            if (session == null) {
+                log.tracef("Not found keycloakSession in the resteasy context when trying to retrieve hostname attribute from it");
+                return null;
+            }
+            String hostname = session.getAttribute(Constants.SSL_SERVER_HOST_ATTR, String.class);
+            log.tracef("Found hostname '%s' to be used by SSLSocketFactory", hostname);
+            return hostname;
+        };
+        sslsf = CryptoIntegration.getProvider().wrapFactoryForTruststore(hostnameProvider, sf);
     }
 
     public static synchronized SSLSocketFactory getDefault() {
