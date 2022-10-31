@@ -126,7 +126,7 @@ public class QuarkusPropertiesDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
         when().get("/metrics").then().statusCode(200)
-                .body(containsString("vendor_hibernate_cache_query_plan_total"));
+                .body(containsString("jvm_gc_"));
     }
 
     public static class UpdateConsoleLogLevelToWarnFromQuarkusProps implements Consumer<KeycloakDistribution> {
