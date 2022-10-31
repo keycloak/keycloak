@@ -20,6 +20,7 @@ package org.keycloak.platform;
 import java.io.File;
 
 import org.keycloak.Config;
+import org.keycloak.common.ProfileConfigResolver;
 
 public interface PlatformProvider {
     
@@ -47,5 +48,7 @@ public interface PlatformProvider {
      * @return classloader or null
      */
     ClassLoader getScriptEngineClassLoader(Config.Scope scriptProviderConfig);
+
+    ProfileConfigResolver getProfileConfigResolver();
 
 }

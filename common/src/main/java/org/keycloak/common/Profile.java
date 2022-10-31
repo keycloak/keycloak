@@ -17,12 +17,8 @@
 
 package org.keycloak.common;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,19 +30,23 @@ public class Profile {
 
     private static Profile CURRENT;
 
-    private final ProfileValue profile;
+    private ProfileValue profile;
 
     private Map<Feature, Boolean> features;
-    private final PropertyResolver propertyResolver;
 
-    public Profile(PropertyResolver resolver) {
-        this.propertyResolver = resolver;
-        Config config = new Config();
+    private Profile(ProfileConfigResolver resolver) {
+        profile = resolver != null ? resolver.getProfile() : null;
+        if (profile == null) {
+            profile = ProfileValue.DEFAULT;
+        }
 
-        profile = ProfileValue.valueOf(config.getProfile().toUpperCase());
-        features = Arrays.stream(Feature.values()).collect(Collectors.toMap(f -> f, f -> config.isEnabled(f)));
+        features = Arrays.stream(Feature.values()).collect(Collectors.toMap(f -> f, f -> isFeatureEnabled(profile, f, resolver)));
 
         checkDependenciesAreEnabled(features);
+    }
+
+    public static void init(ProfileConfigResolver resolver) {
+        CURRENT = new Profile(resolver);
     }
 
     private void checkDependenciesAreEnabled(Map<Feature, Boolean> features) {
@@ -62,24 +62,11 @@ public class Profile {
     }
 
     private static Profile getInstance() {
-        if (CURRENT == null) {
-            CURRENT = new Profile(null);
-        }
         return CURRENT;
     }
 
     public static void setInstance(Profile instance) {
         CURRENT = instance;
-    }
-
-    public static void init() {
-        PropertyResolver resolver = null;
-
-        if (CURRENT != null) {
-            resolver = CURRENT.propertyResolver;
-        }
-
-        CURRENT = new Profile(resolver);
     }
 
     public static String getName() {
@@ -110,99 +97,28 @@ public class Profile {
         return getInstance().features.get(feature);
     }
 
-    private enum ProfileValue {
+    public enum ProfileValue {
         DEFAULT,
         PREVIEW
     }
 
-    public interface PropertyResolver {
-        String resolve(String feature);
-    }
-
-    private class Config {
-
-        private Properties properties;
-
-        public Config() {
-            properties = new Properties();
-
-            try {
-                String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
-                if (jbossServerConfigDir != null) {
-                    File file = new File(jbossServerConfigDir, "profile.properties");
-                    if (file.isFile()) {
-                        try (FileInputStream is = new FileInputStream(file)) {
-                            properties.load(is);
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+    private static Boolean isFeatureEnabled(ProfileValue profile, Feature feature, ProfileConfigResolver resolver) {
+        Boolean config = resolver != null ? resolver.getFeatureConfig(feature) : null;
+        if (config != null) {
+            return config;
+        } else {
+            switch (feature.getType()) {
+                case DEFAULT:
+                    return true;
+                case PREVIEW:
+                    return profile.equals(ProfileValue.PREVIEW) ? true : false;
+                case DEPRECATED:
+                case DISABLED_BY_DEFAULT:
+                case EXPERIMENTAL:
+                    return false;
+                default:
+                    throw new ProfileException("Unknown feature type " + feature.getType());
             }
-        }
-
-        public String getProfile() {
-            String profile = getProperty("keycloak.profile");
-            if (profile != null) {
-                return profile;
-            }
-
-            profile = properties.getProperty("profile");
-            if (profile != null) {
-                if (profile.equals("community")) {
-                    profile = "default";
-                }
-
-                return profile;
-            }
-
-            return ProfileValue.DEFAULT.name();
-        }
-
-        public Boolean isEnabled(Feature feature) {
-            String config = getProperty("keycloak.profile.feature." + feature.name().toLowerCase());
-
-            if (config == null) {
-                config = properties.getProperty("feature." + feature.name().toLowerCase());
-            }
-
-            if (config == null) {
-                switch (feature.getType()) {
-                    case DEFAULT:
-                        return true;
-                    case PREVIEW:
-                        return profile.equals(ProfileValue.PREVIEW) ? true : false;
-                    case DEPRECATED:
-                    case DISABLED_BY_DEFAULT:
-                    case EXPERIMENTAL:
-                        return false;
-                    default:
-                        throw new ProfileException("Unknown feature type " + feature.getType());
-                }
-            } else {
-                switch (config) {
-                    case "enabled":
-                        return true;
-                    case "disabled":
-                        return false;
-                    default:
-                        throw new ProfileException("Invalid config value '" + config + "' for feature " + feature.getKey());
-                }
-            }
-        }
-
-        private String getProperty(String name) {
-            String value = System.getProperty(name);
-
-            if (value != null) {
-                return value;
-            }
-
-            if (propertyResolver != null) {
-                return propertyResolver.resolve(name);
-            }
-
-            return null;
         }
     }
 

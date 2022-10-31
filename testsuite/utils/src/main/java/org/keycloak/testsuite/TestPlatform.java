@@ -23,6 +23,8 @@ import java.nio.file.Files;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.ProfileConfigResolver;
+import org.keycloak.common.PropertiesProfileConfigResolver;
 import org.keycloak.platform.PlatformProvider;
 
 public class TestPlatform implements PlatformProvider {
@@ -76,5 +78,10 @@ public class TestPlatform implements PlatformProvider {
     public ClassLoader getScriptEngineClassLoader(Config.Scope scriptProviderConfig) {
         // It is fine to return null as nashorn should be automatically included on the classpath of testsuite utils
         return null;
+    }
+
+    @Override
+    public ProfileConfigResolver getProfileConfigResolver() {
+        return new PropertiesProfileConfigResolver(System.getProperties());
     }
 }
