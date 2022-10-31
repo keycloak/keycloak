@@ -167,7 +167,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.setManualStop(true);
-            distribution.setQuarkusProperty("quarkus.smallrye-metrics.extensions.enabled","true");
+            distribution.setQuarkusProperty("quarkus.micrometer.enabled","true");
         }
     }
 }
