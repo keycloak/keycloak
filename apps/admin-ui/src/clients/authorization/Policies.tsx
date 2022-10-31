@@ -81,7 +81,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
 
       return await Promise.all([
         adminClient.clients.listPolicyProviders({ id: clientId }),
-        ...policies.map(async (policy) => {
+        ...(policies || []).map(async (policy) => {
           const dependentPolicies =
             await adminClient.clients.listDependentPolicies({
               id: clientId,
