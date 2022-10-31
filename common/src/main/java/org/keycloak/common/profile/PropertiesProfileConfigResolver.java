@@ -1,4 +1,9 @@
-package org.keycloak.common;
+package org.keycloak.common.profile;
+
+import org.keycloak.common.Feature;
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.ProfileConfigResolver;
+import org.keycloak.common.profile.ProfileException;
 
 import java.util.Properties;
 

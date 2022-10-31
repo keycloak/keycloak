@@ -1,4 +1,4 @@
-package org.keycloak.common;
+package org.keycloak.common.profile;
 
 public class ProfileException extends RuntimeException {
 

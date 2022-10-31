@@ -17,6 +17,16 @@
 
 package org.keycloak.quarkus.runtime.integration;
 
+import io.quarkus.runtime.Quarkus;
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.platform.Platform;
+import org.keycloak.platform.PlatformProvider;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.InitializationException;
+import org.keycloak.quarkus.runtime.QuarkusProfileConfigResolver;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,21 +35,13 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.CommaSeparatedListProfileConfigResolver;
-import org.keycloak.common.ProfileConfigResolver;
-import org.keycloak.platform.Platform;
-import org.keycloak.platform.PlatformProvider;
-import org.keycloak.quarkus.runtime.InitializationException;
-import org.keycloak.quarkus.runtime.Environment;
-
-import io.quarkus.runtime.Quarkus;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-
 public class QuarkusPlatform implements PlatformProvider {
 
     private static final Logger log = Logger.getLogger(QuarkusPlatform.class);
+
+    public QuarkusPlatform() {
+        Profile.init(new QuarkusProfileConfigResolver());
+    }
 
     public static void addInitializationException(Throwable throwable) {
         QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
@@ -168,12 +170,5 @@ public class QuarkusPlatform implements PlatformProvider {
     public ClassLoader getScriptEngineClassLoader(Config.Scope scriptProviderConfig) {
         // It is fine to return null assuming that nashorn and it's dependencies are included on the classpath (usually "providers" directory)
         return null;
-    }
-
-    @Override
-    public ProfileConfigResolver getProfileConfigResolver() {
-        String enabledFeatures = Configuration.getRawValue("kc.features");
-        String disabledFeatures = Configuration.getRawValue("kc.features-disabled");
-        return new CommaSeparatedListProfileConfigResolver(enabledFeatures, disabledFeatures);
     }
 }

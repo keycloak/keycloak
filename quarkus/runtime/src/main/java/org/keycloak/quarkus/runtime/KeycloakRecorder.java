@@ -37,6 +37,7 @@ import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 
 import org.keycloak.Config;
+import org.keycloak.common.CommaSeparatedListProfileConfigResolver;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
@@ -75,7 +76,7 @@ public class KeycloakRecorder {
             Map<String, ProviderFactory> preConfiguredProviders,
             List<ClasspathThemeProviderFactory.ThemesRepresentation> themes, boolean reaugmented) {
         Config.init(new MicroProfileConfigProvider());
-        Profile.setInstance(new QuarkusProfile());
+        Profile.init(new QuarkusProfileConfigResolver());
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
     }
 

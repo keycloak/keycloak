@@ -92,8 +92,6 @@ public class KeycloakApplication extends Application {
 
     public KeycloakApplication() {
         try {
-            Profile.init(platform.getProfileConfigResolver());
-
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
             logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
             CryptoIntegration.init(KeycloakApplication.class.getClassLoader());

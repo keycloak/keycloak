@@ -17,6 +17,9 @@
 
 package org.keycloak.common;
 
+import org.keycloak.common.profile.ProfileConfigResolver;
+import org.keycloak.common.profile.ProfileException;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -63,10 +66,6 @@ public class Profile {
 
     private static Profile getInstance() {
         return CURRENT;
-    }
-
-    public static void setInstance(Profile instance) {
-        CURRENT = instance;
     }
 
     public static String getName() {

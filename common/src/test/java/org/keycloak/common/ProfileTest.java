@@ -5,6 +5,8 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 
 import java.util.Arrays;
 import java.util.Comparator;
