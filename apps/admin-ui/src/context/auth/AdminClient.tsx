@@ -71,21 +71,14 @@ export function useFetch<T>(
   }, deps);
 }
 
-function getKeycloakConfig() {
-  if (environment.isRunningAsTheme) {
-    return environment.consoleBaseUrl + "config";
-  }
-
-  return {
+export async function initAdminClient() {
+  const keycloak = new Keycloak({
     url: environment.authServerUrl,
     realm: environment.loginRealm,
-    clientId: "security-admin-console-v2",
-  };
-}
-
-export async function initAdminClient() {
-  const config = getKeycloakConfig();
-  const keycloak = new Keycloak(config);
+    clientId: environment.isRunningAsTheme
+      ? "security-admin-console"
+      : "security-admin-console-v2",
+  });
 
   await keycloak.init({ onLoad: "check-sso", pkceMethod: "S256" });
 
