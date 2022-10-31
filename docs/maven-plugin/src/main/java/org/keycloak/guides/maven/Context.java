@@ -1,5 +1,7 @@
 package org.keycloak.guides.maven;
 
+import org.keycloak.common.Profile;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -19,6 +21,8 @@ public class Context {
 
     public Context(File srcDir) throws IOException {
         this.srcDir = srcDir;
+
+        Profile.init(null);
         this.options = new Options();
         this.features = new Features();
 
