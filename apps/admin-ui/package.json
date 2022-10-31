@@ -105,7 +105,7 @@
     "progress-promise": "^0.0.6",
     "tar-fs": "^2.1.1",
     "ts-node": "^10.9.1",
-    "vite": "^3.1.8",
+    "vite": "^3.2.2",
     "vite-plugin-checker": "^0.5.1",
     "vitest": "^0.24.3",
     "webpack": "^5.74.0"
