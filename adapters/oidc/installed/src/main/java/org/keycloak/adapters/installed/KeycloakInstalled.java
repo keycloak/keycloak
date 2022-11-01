@@ -18,17 +18,17 @@
 package org.keycloak.adapters.installed;
 
 import java.awt.Desktop;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.Deque;
 import java.util.Locale;
@@ -37,16 +37,8 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -77,6 +69,7 @@ import io.undertow.util.StatusCodes;
  */
 public class KeycloakInstalled {
     private static final String KEYCLOAK_JSON = "META-INF/keycloak.json";
+    private static final String LOGGED_OUT = "loggedout";
 
     private KeycloakDeployment deployment;
 
@@ -102,13 +95,19 @@ public class KeycloakInstalled {
     private String refreshToken;
     private Status status;
     private Locale locale;
-    private ResteasyClient resteasyClient;
     Pattern callbackPattern = Pattern.compile("callback\\s*=\\s*\"([^\"]+)\"");
     Pattern paramPattern = Pattern.compile("param=\"([^\"]+)\"\\s+label=\"([^\"]+)\"\\s+mask=(\\S+)");
     Pattern codePattern = Pattern.compile("code=([^&]+)");
     private CallbackListener callback;
     private DesktopProvider desktopProvider = new DesktopProvider();
+    private String messageLoginSuccess = "Login successful. You may close this browser window and go back to your desktop application.";
+    private String messageLogoutSuccess = "Logged out. You may close this browser window.";
+    private String messageError = "There was an error";
+    private boolean isMessageHTML = false;
 
+    private Path loginSuccessPath;
+    private Path logoutSuccessPath;
+    //private Path cssimgResources;
 
     public KeycloakInstalled() {
         InputStream config = Thread.currentThread().getContextClassLoader().getResourceAsStream(KEYCLOAK_JSON);
@@ -123,9 +122,6 @@ public class KeycloakInstalled {
         this.deployment = deployment;
     }
 
-    public void setResteasyClient(ResteasyClient resteasyClient) {
-        this.resteasyClient = resteasyClient;
-    }
 
     public Locale getLocale() {
         return locale;
@@ -137,6 +133,43 @@ public class KeycloakInstalled {
 
     public int getListenPort() {
         return listenPort;
+    }
+
+    /**
+    * Customizes the plain text message displayed to user in browser after successful login. 
+    * @param msg a customized login success message string
+    */
+    public void setMessageLoginSuccess(String msg){
+        this.messageLoginSuccess = msg;
+    }
+
+    /**
+    * Customizes the plain text message displayed to user in browser after successful logout. 
+    * @param msg a customized logout success message string
+    */
+    public void setMessageLogoutSuccess(String msg){
+        this.messageLogoutSuccess = msg;
+    }
+
+    /**
+    * Determines whether the message displayed to user in browser after successful login and logout is HTML. Default is false (text only). 
+    */
+    public void setIsMessageHTML(Boolean isMessageHTML){
+        this.isMessageHTML = isMessageHTML;
+    }
+
+    /**
+    * Optional path to static HTML page to show upon login success. Only shown if message type is HTML. Currently only works with single files (css and img must be embedded). 
+    */
+    public void setLoginSuccessPath(Path path){
+        this.loginSuccessPath = path;
+    }
+    
+    /**
+    * Optional path to static HTML page to show upon logout success. Only shown if message type is HTML. Currently only works with single files (css and img must be embedded).
+    */
+    public void setLogoutSuccessPath(Path path){
+        this.logoutSuccessPath = path;
     }
 
     /**
@@ -264,8 +297,7 @@ public class KeycloakInstalled {
         CallbackListener callback = new CallbackListener();
         callback.start();
 
-        String redirectUri = getRedirectUri(callback);
-
+        String redirectUri = String.format("%s?%s=%s", getRedirectUri(callback),LOGGED_OUT,Boolean.toString(true));
         // pass the id_token_hint so that sessions is invalidated for this particular session
         String logoutUrl = deployment.getLogoutUrl().clone()
                 .queryParam(OAuth2Constants.POST_LOGOUT_REDIRECT_URI, redirectUri)
@@ -445,12 +477,41 @@ public class KeycloakInstalled {
         public void handleRequest(HttpServerExchange exchange) throws Exception {
             gracefulShutdownHandler.shutdown();
 
+            Path page = null;
+            String msg = KeycloakInstalled.this.messageLoginSuccess;
+            if(KeycloakInstalled.this.loginSuccessPath != null){
+                page = KeycloakInstalled.this.loginSuccessPath;
+            }
             if (!exchange.getQueryParameters().isEmpty()) {
                 readQueryParameters(exchange);
             }
+            
+            if (error != null) {
+                msg = KeycloakInstalled.this.messageError;
+                //there is no special HTML error page at this time
+                page = null;
+            }
+            else {
+                //if a special LOGGED_OUT query param was passed to localhost
+                String is_logged_out = getQueryParameterIfPresent(exchange, LOGGED_OUT);
+                if (is_logged_out != null){
+                    msg = KeycloakInstalled.this.messageLogoutSuccess;
+                    page = KeycloakInstalled.this.logoutSuccessPath;
+                }
+            }
 
             exchange.setStatusCode(StatusCodes.FOUND);
-            exchange.getResponseHeaders().add(Headers.LOCATION, getRedirectUrl());
+            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, KeycloakInstalled.this.isMessageHTML ?  "text/html" : "text/plain");
+            
+            //show a local static single file html page
+            if(page != null && KeycloakInstalled.this.isMessageHTML) {
+                //Read file as string. Must be a single html file because css and images are not served
+                msg = Files.readString(page);
+            }
+            
+            //send a response - do not redirect back to the Keycloak server
+            exchange.getResponseSender().send(msg);
+
             exchange.endExchange();
 
             shutdownSignal.countDown();
@@ -470,15 +531,6 @@ public class KeycloakInstalled {
             return queryParameters.containsKey(name) ? queryParameters.get(name).getFirst() : null;
         }
 
-        private String getRedirectUrl() {
-            String redirectUrl = deployment.getTokenUrl().replace("/token", "/delegated");
-
-            if (error != null) {
-                redirectUrl += "?error=true";
-            }
-
-            return redirectUrl;
-        }
     }
 
     public static class Pkce {
