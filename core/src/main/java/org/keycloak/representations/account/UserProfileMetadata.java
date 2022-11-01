@@ -16,7 +16,10 @@
  */
 package org.keycloak.representations.account;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -42,4 +45,13 @@ public class UserProfileMetadata {
         this.attributes = attributes;
     }
 
+    public UserProfileAttributeMetadata getAttributeMetadata(String attributeName) {
+        return Optional.ofNullable(getAttributes()).orElse(Collections.emptyList()).stream().filter(
+                new Predicate<UserProfileAttributeMetadata>() {
+                    @Override
+                    public boolean test(UserProfileAttributeMetadata metadata) {
+                        return metadata.getName().equals(attributeName);
+                    }
+                }).findAny().orElse(null);
+    }
 }

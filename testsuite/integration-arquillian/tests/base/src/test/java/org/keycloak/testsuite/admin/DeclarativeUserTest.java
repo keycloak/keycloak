@@ -2,9 +2,13 @@ package org.keycloak.testsuite.admin;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_READABLE;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
+import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_USER_ONLY;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.enableDynamicUserProfile;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.setUserProfileConfiguration;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -24,6 +28,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
+import org.keycloak.representations.account.UserProfileAttributeMetadata;
+import org.keycloak.representations.account.UserProfileMetadata;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -187,6 +193,71 @@ public class DeclarativeUserTest extends AbstractAdminTest {
             assertThat(DeclarativeUserProfileProvider.class.getName(), is(provider.getClass().getName()));
             assertThat(provider, instanceOf(DeclarativeUserProfileProvider.class));
         });
+    }
+
+    @Test
+    public void testGetAttributeMetadata() {
+        setUserProfileConfiguration(this.realm, "{\"attributes\": ["
+                + "{\"name\": \"firstName\", " + PERMISSIONS_ADMIN_READABLE + ", \"required\": {}},"
+                + "{\"name\": \"lastName\", " + PERMISSIONS_ADMIN_READABLE + "},"
+                + "{\"name\": \"attr1\", " + PERMISSIONS_USER_ONLY + "},"
+                + "{\"name\": \"attr2\", " + PERMISSIONS_ALL + ", \"validations\": {"
+                + "\"length\": { \"max\": 255 },"
+                + "\"person-name-prohibited-characters\": {}"
+                + "}, \"annotations\": {\"anno1\": \"value1\",\"anno2\": \"value2\"}}]}");
+
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        // set an attribute to later remove it from the configuration
+        user1.singleAttribute("attr1", "some-value");
+        String user1Id = createUser(user1);
+        UserResource userResource = realm.users().get(user1Id);
+        user1 = userResource.toRepresentation();
+        UserProfileMetadata attributesMetadata = user1.getAttributesMetadata();
+
+        // do not return attribute metadata
+        assertNull(attributesMetadata);
+
+        user1 = userResource.toRepresentation(true);
+        attributesMetadata = user1.getAttributesMetadata();
+
+        assertNotNull(attributesMetadata);
+
+        UserProfileAttributeMetadata firstName = attributesMetadata.getAttributeMetadata("firstName");
+
+        assertNotNull(firstName);
+        assertTrue(firstName.isRequired());
+        assertTrue(firstName.isReadOnly());
+        assertTrue(firstName.isRequired());
+        assertTrue(firstName.getValidators().isEmpty());
+
+        UserProfileAttributeMetadata lastName = attributesMetadata.getAttributeMetadata("lastName");
+
+        assertNotNull(lastName);
+        assertTrue(lastName.isReadOnly());
+        assertFalse(lastName.isRequired());
+        assertTrue(firstName.getValidators().isEmpty());
+
+        UserProfileAttributeMetadata attr1 = attributesMetadata.getAttributeMetadata("attr1");
+
+        // do not return metadata if attribute is not readable
+        assertNull(attr1);
+
+        UserProfileAttributeMetadata attr2 = attributesMetadata.getAttributeMetadata("attr2");
+
+        assertNotNull(attr2);
+        assertFalse(attr2.isReadOnly());
+        Map<String, Map<String, Object>> validators = attr2.getValidators();
+        assertFalse(validators.isEmpty());
+        assertEquals(2, validators.size());
+        Map<String, Object> validatorConfig = validators.get("length");
+        assertNotNull(validatorConfig);
+        assertEquals(255, validatorConfig.get("max"));
+        Map<String, Object> annotations = attr2.getAnnotations();
+        assertNotNull(annotations);
+        assertEquals(2, annotations.size());
+        assertEquals("value1", annotations.get("anno1"));
+        assertEquals("value2", annotations.get("anno2"));
     }
 
     private String createUser(UserRepresentation userRep) {

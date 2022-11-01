@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.account;
 
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -159,8 +161,9 @@ public class AccountRestService {
 
         addReadableBuiltinAttributes(user, rep, profile.getAttributes().getReadable(true).keySet());
 
-        if(userProfileMetadata == null || userProfileMetadata.booleanValue())
-            rep.setUserProfileMetadata(createUserProfileMetadata(profile));
+        if (userProfileMetadata == null || userProfileMetadata.booleanValue()) {
+            rep.setUserProfileMetadata(toRepresentation(profile, session));
+        }
         
         return rep;
     }
@@ -180,37 +183,6 @@ public class AccountRestService {
         }
     }
 
-    private UserProfileMetadata createUserProfileMetadata(final UserProfile profile) {
-        Map<String, List<String>> am = profile.getAttributes().getReadable();
-        
-        if(am == null)
-            return null;
-        
-        List<UserProfileAttributeMetadata> attributes = am.keySet().stream()
-                                                          .map(name -> profile.getAttributes().getMetadata(name))
-                                                          .filter(Objects::nonNull)
-                                                          .sorted((a,b) -> Integer.compare(a.getGuiOrder(), b.getGuiOrder()))
-                                                          .map(sam -> toRestMetadata(sam, profile))
-                                                          .collect(Collectors.toList());  
-        return new UserProfileMetadata(attributes);
-    }
-
-    private UserProfileAttributeMetadata toRestMetadata(AttributeMetadata am, UserProfile profile) {
-        return new UserProfileAttributeMetadata(am.getName(), 
-                                                am.getAttributeDisplayName(), 
-                                                profile.getAttributes().isRequired(am.getName()), 
-                                                profile.getAttributes().isReadOnly(am.getName()), 
-                                                am.getAnnotations(), 
-                                                toValidatorMetadata(am));
-    }
-    
-    private Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am){
-        // we return only validators which are instance of ConfiguredProvider. Others are expected as internal.
-        return am.getValidators() == null ? null : am.getValidators().stream()
-                .filter(avm -> (Validators.validator(session, avm.getValidatorId()) instanceof ConfiguredProvider))
-                .collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
-    }
-    
     @Path("/")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

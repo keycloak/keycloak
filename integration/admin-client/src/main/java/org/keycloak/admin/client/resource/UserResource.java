@@ -48,6 +48,9 @@ public interface UserResource {
     @GET
     UserRepresentation toRepresentation();
 
+    @GET
+    UserRepresentation toRepresentation(@QueryParam("includeAttributeMetadata") boolean includeAttributeMetadata);
+
     @PUT
     void update(UserRepresentation userRepresentation);
 

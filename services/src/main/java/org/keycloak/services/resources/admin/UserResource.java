@@ -116,6 +116,7 @@ import java.util.stream.Stream;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -280,7 +281,7 @@ public class UserResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public UserRepresentation getUser() {
+    public UserRepresentation getUser(@QueryParam("includeAttributeMetadata") boolean includeAttributeMetadata) {
         auth.users().requireView(user);
 
         UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, user);
@@ -301,6 +302,10 @@ public class UserResource {
 
         if (rep.getAttributes() != null) {
             rep.setAttributes(readableAttributes);
+        }
+
+        if (includeAttributeMetadata) {
+            rep.setAttributesMetadata(toRepresentation(profile, session));
         }
 
         return rep;

@@ -40,17 +40,26 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.models.*;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
+import org.keycloak.representations.account.UserProfileAttributeMetadata;
+import org.keycloak.representations.account.UserProfileMetadata;
 import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
+import org.keycloak.userprofile.Attributes;
+import org.keycloak.userprofile.UserProfile;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
+import org.keycloak.validate.Validators;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -298,6 +307,42 @@ public class ModelToRepresentation {
         rep.setFederationLink(user.getFederationLink());
 
         return rep;
+    }
+
+    public static UserProfileMetadata toRepresentation(UserProfile profile, KeycloakSession session) {
+        Attributes attributes = profile.getAttributes();
+        Map<String, List<String>> readableAttributes = attributes.getReadable();
+
+        if (readableAttributes == null) {
+            return null;
+        }
+
+        List<UserProfileAttributeMetadata> metadata = readableAttributes.keySet().stream()
+                .map(attributes::getMetadata)
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparingInt(AttributeMetadata::getGuiOrder))
+                .map(sam -> toRepresentation(sam, attributes, session))
+                .collect(Collectors.toList());
+
+        return new UserProfileMetadata(metadata);
+    }
+
+    private static UserProfileAttributeMetadata toRepresentation(AttributeMetadata attributeMetadata, Attributes attributes, KeycloakSession session) {
+        Map<String, Map<String, Object>> validators = null;
+
+        if (attributeMetadata.getValidators() != null) {
+            validators = attributeMetadata.getValidators().stream()
+                    .filter(avm -> (Validators.validator(session, avm.getValidatorId()) instanceof ConfiguredProvider))
+                    .collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId,
+                            AttributeValidatorMetadata::getValidatorConfig));
+        }
+
+        return new UserProfileAttributeMetadata(attributeMetadata.getName(),
+                attributeMetadata.getAttributeDisplayName(),
+                attributes.isRequired(attributeMetadata.getName()),
+                attributes.isReadOnly(attributeMetadata.getName()),
+                attributeMetadata.getAnnotations(),
+                validators);
     }
 
     public static EventRepresentation toRepresentation(Event event) {

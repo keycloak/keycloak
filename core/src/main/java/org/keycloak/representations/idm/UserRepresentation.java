@@ -19,6 +19,7 @@ package org.keycloak.representations.idm;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.keycloak.json.StringListMapDeserializer;
+import org.keycloak.representations.account.UserProfileMetadata;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,6 +67,8 @@ public class UserRepresentation {
 
     protected List<String> groups;
     private Map<String, Boolean> access;
+
+    private UserProfileMetadata attributesMetadata;
 
     public String getSelf() {
         return self;
@@ -311,5 +314,13 @@ public class UserRepresentation {
             attrs.put("firstName", Collections.singletonList(getFirstName()));
 
         return attrs;
+    }
+
+    public void setAttributesMetadata(UserProfileMetadata attributesMetadata) {
+        this.attributesMetadata = attributesMetadata;
+    }
+
+    public UserProfileMetadata getAttributesMetadata() {
+        return attributesMetadata;
     }
 }

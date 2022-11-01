@@ -74,6 +74,8 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     public static final String PERMISSIONS_ALL = "\"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}";
     public static final String PERMISSIONS_ADMIN_ONLY = "\"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}";
     public static final String PERMISSIONS_ADMIN_EDITABLE = "\"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}";
+    public static final String PERMISSIONS_USER_ONLY = "\"permissions\": {\"view\": [\"user\"], \"edit\": [\"user\"]}";
+    public static final String PERMISSIONS_ADMIN_READABLE = "\"permissions\": {\"view\": [\"user\",\"admin\"], \"edit\": [\"user\"]}";
 
     public static String VALIDATIONS_LENGTH = "\"validations\": {\"length\": { \"min\": 3, \"max\": 255 }}";
 
