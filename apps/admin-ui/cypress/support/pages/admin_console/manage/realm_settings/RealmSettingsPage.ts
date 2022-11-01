@@ -801,6 +801,13 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get("form").should("not.have.text", "Required field");
   }
 
+  shouldShowErrorWhenDuplicate() {
+    cy.get("form").should(
+      "not.have.text",
+      "The name must be unique within the realm"
+    );
+  }
+
   shouldReloadClientProfileEdits() {
     cy.get(this.clientProfileTwo).click();
     cy.findByTestId(this.newClientProfileNameInput).type("Reloading");

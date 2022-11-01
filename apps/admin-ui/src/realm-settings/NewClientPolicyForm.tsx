@@ -67,12 +67,6 @@ type PolicyDetailAttributes = {
 
 export default function NewClientPolicyForm() {
   const { t } = useTranslation("realm-settings");
-  const {
-    reset: resetForm,
-    formState: { errors },
-  } = useForm<NewClientPolicyForm>({
-    defaultValues,
-  });
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { adminClient } = useAdminClient();
@@ -99,7 +93,10 @@ export default function NewClientPolicyForm() {
   const { policyName } = useParams<EditClientPolicyParams>();
 
   const navigate = useNavigate();
-  const form = useForm<ClientPolicyRepresentation>({ mode: "onChange" });
+  const form = useForm<NewClientPolicyForm>({
+    mode: "onChange",
+    defaultValues,
+  });
   const { handleSubmit } = form;
 
   const formValues = form.getValues();
@@ -206,7 +203,7 @@ export default function NewClientPolicyForm() {
   );
 
   const setupForm = (policy: ClientPolicyRepresentation) => {
-    resetForm();
+    form.reset();
     Object.entries(policy).map(([key, value]) => {
       form.setValue(key, value);
     });
@@ -465,17 +462,30 @@ export default function NewClientPolicyForm() {
             label={t("common:name")}
             fieldId="kc-client-profile-name"
             isRequired
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={form.errors.name?.message}
             validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
+              form.errors.name
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
             }
           >
             <KeycloakTextInput
-              ref={form.register({ required: true })}
+              ref={form.register({
+                required: { value: true, message: t("common:required") },
+                validate: (value) =>
+                  policies?.some((policy) => policy.name === value)
+                    ? t("createClientProfileNameHelperText").toString()
+                    : true,
+              })}
               type="text"
               id="kc-client-profile-name"
               name="name"
               data-testid="client-policy-name"
+              validated={
+                form.errors.name
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
             />
           </FormGroup>
           <FormGroup label={t("common:description")} fieldId="kc-description">
@@ -493,7 +503,7 @@ export default function NewClientPolicyForm() {
               variant="primary"
               type="submit"
               data-testid="saveCreatePolicy"
-              isDisabled={!formValues.name}
+              isDisabled={!form.formState.isValid}
             >
               {t("common:save")}
             </Button>

@@ -147,13 +147,11 @@ describe("Realm settings client policies tab tests", () => {
 
     realmSettingsPage.createNewClientPolicyFromList(
       "Test",
-      "Test Again Description"
+      "Test Again Description",
+      true
     );
-    cy.wait("@save");
 
-    // TODO: UNCOMMENT WHEN THE ISSUE 2050 IS FIXED
-    //realmSettingsPage.checkAlertMessage("Could not create client policy: 'proposed client policy name duplicated.'");
-
+    realmSettingsPage.shouldShowErrorWhenDuplicate();
     sidebarPage.goToRealmSettings();
 
     realmSettingsPage
@@ -174,10 +172,9 @@ describe("Realm settings client policies tab tests", () => {
       "Test again",
       "Test Again Description"
     );
-    masthead.checkNotificationMessage("New policy created", true);
+    masthead.checkNotificationMessage("New policy created");
     sidebarPage.waitForPageLoad();
     cy.wait("@save");
-    masthead.closeAllAlertMessages();
     realmSettingsPage.deleteClientPolicyFromDetails();
     modalUtils.confirmModal();
     masthead.checkNotificationMessage("Client policy deleted");
