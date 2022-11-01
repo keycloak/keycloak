@@ -97,7 +97,7 @@ export const AddRoleMappingModal = ({
         role: { id: e.id, name: e.role, description: e.description },
         id: e.id,
       })),
-      compareRow
+      ({ client: { clientId }, role: { name } }) => `${clientId}${name}`
     );
   };
 
