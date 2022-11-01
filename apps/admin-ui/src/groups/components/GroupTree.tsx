@@ -159,7 +159,7 @@ export const GroupTree = ({ refresh: viewRefresh }: GroupTreeProps) => {
       inputGroupOnEnter={setSearch}
     >
       {data.length > 0 && (
-        <TreeView data={data} allExpanded={search.length > 0} />
+        <TreeView data={data} allExpanded={search.length > 0} hasGuides />
       )}
     </PaginatingTableToolbar>
   ) : (
