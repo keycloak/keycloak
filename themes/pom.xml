@@ -23,7 +23,6 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <excludes>
-                    <exclude>**/node_modules/rcue/**</exclude>
                     <exclude>**/node_modules/**/node_modules/**</exclude>
                     <exclude>**/minimist/**</exclude>
                     <exclude>**/mkdirp/**</exclude>
@@ -32,7 +31,6 @@
                     <exclude>**/component.json</exclude>
                     <exclude>**/composer.json</exclude>
                     <exclude>**/npm-shrinkwrap.json</exclude>
-                    <exclude>**/select2.jquery.json</exclude>
                     <exclude>**/*.markdown</exclude>
                     <exclude>**/*.swf</exclude>
                     <exclude>**/*.sh</exclude>
@@ -49,7 +47,6 @@
                     <exclude>**/sass/**</exclude>
                     <exclude>**/scss/**</exclude>
                     <exclude>**/jquery/src/**</exclude>
-                    <exclude>**/angular-treeview/src/**</exclude>
                     <exclude>**/test/**</exclude>
                     <exclude>**/tests/**</exclude>
                     <exclude>**/_config.yml</exclude>
