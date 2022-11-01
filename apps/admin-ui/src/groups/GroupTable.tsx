@@ -29,8 +29,10 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
 
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
+
+  const [rename, setRename] = useState<GroupRepresentation>();
+  const [isCreateModalOpen, toggleCreateOpen] = useToggle();
   const [showDelete, toggleShowDelete] = useToggle();
   const [move, setMove] = useState<GroupRepresentation>();
 
@@ -99,10 +101,6 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
     );
   };
 
-  const handleModalToggle = () => {
-    setIsCreateModalOpen(!isCreateModalOpen);
-  };
-
   return (
     <>
       <DeleteGroup
@@ -115,6 +113,39 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
           setSelectedRows([]);
         }}
       />
+      {rename && (
+        <GroupsModal
+          id={rename.id}
+          rename={rename.name}
+          refresh={() => {
+            refresh();
+            viewRefresh();
+          }}
+          handleModalToggle={() => setRename(undefined)}
+        />
+      )}
+      {isCreateModalOpen && (
+        <GroupsModal
+          id={selectedRows[0]?.id || id}
+          handleModalToggle={toggleCreateOpen}
+          refresh={() => {
+            setSelectedRows([]);
+            refresh();
+            viewRefresh();
+          }}
+        />
+      )}
+      {move && (
+        <MoveDialog
+          source={move}
+          refresh={() => {
+            setMove(undefined);
+            refresh();
+            viewRefresh();
+          }}
+          onClose={() => setMove(undefined)}
+        />
+      )}
       <KeycloakDataTable
         key={`${id}${key}`}
         onSelect={(rows) => setSelectedRows([...rows])}
@@ -139,7 +170,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
               />
             </ToolbarItem>
             <GroupToolbar
-              toggleCreate={handleModalToggle}
+              toggleCreate={toggleCreateOpen}
               toggleDelete={toggleShowDelete}
               kebabDisabled={selectedRows!.length === 0}
             />
@@ -150,11 +181,29 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
             ? []
             : [
                 {
+                  title: t("rename"),
+                  onRowClick: async (group) => {
+                    setRename(group);
+                    return false;
+                  },
+                },
+                {
                   title: t("moveTo"),
                   onRowClick: async (group) => {
                     setMove(group);
                     return false;
                   },
+                },
+                {
+                  title: t("createChildGroup"),
+                  onRowClick: async (group) => {
+                    setSelectedRows([group]);
+                    toggleCreateOpen();
+                    return false;
+                  },
+                },
+                {
+                  isSeparator: true,
                 },
                 {
                   title: t("common:delete"),
@@ -181,31 +230,10 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
               `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`
             )}
             primaryActionText={t("createGroup")}
-            onPrimaryAction={handleModalToggle}
+            onPrimaryAction={toggleCreateOpen}
           />
         }
       />
-      {isCreateModalOpen && (
-        <GroupsModal
-          id={id}
-          handleModalToggle={handleModalToggle}
-          refresh={() => {
-            refresh();
-            viewRefresh();
-          }}
-        />
-      )}
-      {move && (
-        <MoveDialog
-          source={move}
-          refresh={() => {
-            setMove(undefined);
-            refresh();
-            viewRefresh();
-          }}
-          onClose={() => setMove(undefined)}
-        />
-      )}
     </>
   );
 };

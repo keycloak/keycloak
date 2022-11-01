@@ -5,6 +5,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownPosition,
+  DropdownSeparator,
   KebabToggle,
   TreeView,
   TreeViewDataItem,
@@ -35,12 +36,23 @@ const GroupTreeContextMenu = ({
   const { t } = useTranslation("groups");
 
   const [isOpen, toggleOpen] = useToggle();
+  const [renameOpen, toggleRenameOpen] = useToggle();
   const [createOpen, toggleCreateOpen] = useToggle();
   const [moveOpen, toggleMoveOpen] = useToggle();
   const [deleteOpen, toggleDeleteOpen] = useToggle();
 
   return (
     <>
+      {renameOpen && (
+        <GroupsModal
+          id={group.id}
+          rename={group.name}
+          refresh={() => {
+            refresh();
+          }}
+          handleModalToggle={toggleRenameOpen}
+        />
+      )}
       {createOpen && (
         <GroupsModal
           id={group.id}
@@ -63,12 +75,16 @@ const GroupTreeContextMenu = ({
         isPlain
         position={DropdownPosition.right}
         dropdownItems={[
-          <DropdownItem key="create" onClick={toggleCreateOpen}>
-            {t("createGroup")}
+          <DropdownItem key="rename" onClick={toggleRenameOpen}>
+            {t("rename")}
           </DropdownItem>,
           <DropdownItem key="move" onClick={toggleMoveOpen}>
             {t("moveTo")}
           </DropdownItem>,
+          <DropdownItem key="create" onClick={toggleCreateOpen}>
+            {t("createChildGroup")}
+          </DropdownItem>,
+          <DropdownSeparator key="separator" />,
           <DropdownItem key="delete" onClick={toggleDeleteOpen}>
             {t("common:delete")}
           </DropdownItem>,
