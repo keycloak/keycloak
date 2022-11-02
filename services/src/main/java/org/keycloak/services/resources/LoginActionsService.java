@@ -370,7 +370,8 @@ public class LoginActionsService {
                                         @QueryParam(SESSION_CODE) String code,
                                         @QueryParam(Constants.EXECUTION) String execution,
                                         @QueryParam(Constants.CLIENT_ID) String clientId,
-                                        @QueryParam(Constants.TAB_ID) String tabId) {
+                                        @QueryParam(Constants.TAB_ID) String tabId,
+                                        @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri) {
         ClientModel client = realm.getClientByClientId(clientId);
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
         processLocaleParam(authSession);
@@ -383,7 +384,7 @@ public class LoginActionsService {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
             }
-            authSession = createAuthenticationSessionForClient(clientId);
+            authSession = createAuthenticationSessionForClient(clientId, redirectUri);
             return processResetCredentials(false, null, authSession, null);
         }
 
@@ -393,16 +394,24 @@ public class LoginActionsService {
 
     AuthenticationSessionModel createAuthenticationSessionForClient(String clientID)
             throws UriBuilderException, IllegalArgumentException {
+        return this.createAuthenticationSessionForClient(clientID, null);
+    }
+
+    AuthenticationSessionModel createAuthenticationSessionForClient(String clientID, String redirectUri)
+            throws UriBuilderException, IllegalArgumentException {
         AuthenticationSessionModel authSession;
 
         ClientModel client = session.clients().getClientByClientId(realm, clientID);
-        String redirectUri;
 
         if (client == null) {
             client = SystemClientUtil.getSystemClient(realm);
             redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
         } else {
-            redirectUri = RedirectUtils.getFirstValidRedirectUri(session, client.getRootUrl(), client.getRedirectUris());
+            redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client, true);
+            // No valid redirect url given
+            if (redirectUri == null) {
+                redirectUri = RedirectUtils.getFirstValidRedirectUri(session, client.getRootUrl(), client.getRedirectUris());
+            }
         }
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
