@@ -866,6 +866,22 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     public void testPostLogoutRedirectUriNull() throws Exception {
         OIDCClientRepresentation clientRep = createRep();
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
-        assertNull(response.getPostLogoutRedirectUris());
+        assertEquals("http://redirect", response.getPostLogoutRedirectUris().get(0));
+    }
+
+    @Test
+    public void testPostLogoutRedirectUriEmpty() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setPostLogoutRedirectUris(new ArrayList<String>());
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertEquals("http://redirect", response.getPostLogoutRedirectUris().get(0));
+    }
+
+    @Test
+    public void testPostLogoutRedirectUriMinus() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setPostLogoutRedirectUris(Collections.singletonList("-"));
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertTrue(response.getPostLogoutRedirectUris().isEmpty());
     }
 }
