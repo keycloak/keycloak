@@ -11,7 +11,7 @@
     "@patternfly/react-core": "^4.250.1",
     "@patternfly/react-icons": "^4.92.6",
     "i18next": "^22.0.2",
-    "i18next-http-backend": "^2.0.0",
+    "i18next-http-backend": "^2.0.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-i18next": "^12.0.0",
