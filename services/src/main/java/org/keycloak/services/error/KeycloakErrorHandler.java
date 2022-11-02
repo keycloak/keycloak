@@ -58,8 +58,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     public static Response getResponse(HttpHeaders headers, Throwable throwable) {
         KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
-        KeycloakTransaction tx = session.getTransactionManager();
-        tx.setRollbackOnly();
+        if (session != null) {
+            KeycloakTransaction tx = session.getTransactionManager();
+            tx.setRollbackOnly();
+        }
 
         int statusCode = getStatusCode(throwable);
 
