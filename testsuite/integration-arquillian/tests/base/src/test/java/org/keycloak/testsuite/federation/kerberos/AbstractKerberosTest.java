@@ -69,7 +69,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -91,9 +90,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AccountPasswordPage changePasswordPage;
 
     protected abstract KerberosRule getKerberosRule();
 
@@ -142,7 +138,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         super.beforeAbstractKeycloakTest();
 
         testRealmPage.setAuthRealm(TEST);
-        changePasswordPage.realm(TEST);
 
         getKerberosRule().setKrb5ConfPath(testingClient.testing());
 
