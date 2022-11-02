@@ -67,6 +67,8 @@ import org.keycloak.forms.login.freemarker.model.TotpLoginBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
+import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.locale.LocaleUpdaterProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
@@ -134,6 +136,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         this.realm = session.getContext().getRealm();
         this.client = session.getContext().getClient();
         this.uriInfo = session.getContext().getUri();
+
+        if (session.getContext().getAuthenticationSession() != null) {
+            processLocaleParam(session.getContext().getAuthenticationSession());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -826,6 +832,22 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public LoginFormsProvider setAuthContext(AuthenticationFlowContext context){
         this.context = context;
         return this;
+    }
+
+    protected void processLocaleParam(AuthenticationSessionModel authSession) {
+        if (authSession != null && realm.isInternationalizationEnabled()) {
+            String locale_user = session.getContext().getUri().getQueryParameters().getFirst(LocaleSelectorProvider.KC_LOCALE_PARAM);
+            String locale_client = session.getContext().getUri().getQueryParameters().getFirst(OAuth2Constants.UI_LOCALES_PARAM);
+            if (locale_user != null) {
+                authSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, locale_user);
+
+                LocaleUpdaterProvider localeUpdater = session.getProvider(LocaleUpdaterProvider.class);
+                localeUpdater.updateLocaleCookie(locale_user);
+            }
+            if (locale_client != null) {
+                authSession.setAuthNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, locale_client);
+            }
+        }
     }
 
     @Override
