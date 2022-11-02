@@ -23,6 +23,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -229,9 +230,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         loginWithExistingUser();
 
-        driver.navigate().to(getAccountPasswordUrl(getConsumerRoot(), bc.consumerRealmName()));
-
-        accountPasswordPage.changePassword("password", "password");
+        Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin(), "password"));
 
         logoutFromRealm(getProviderRoot(), bc.providerRealmName());
 
@@ -606,12 +605,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
-            accountPage.password();
-            accountPasswordPage.changePassword("bad", "new-password", "new-password");
-            assertEquals("Invalid existing password.", accountPasswordPage.getError());
-
-            accountPasswordPage.changePassword("secret", "new-password", "new-password");
-            assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
+            Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), "test-user", "new-password"));
 
             logoutFromRealm(getProviderRoot(), bc.providerRealmName());
             logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
@@ -623,9 +617,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
-            accountPage.password();
-            accountPasswordPage.changePassword("new-password", "new-password");
-            assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
+            Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), "test-user-noemail", "new-password"));
         } finally {
             removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "test-user");
             removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "test-user-noemail");
