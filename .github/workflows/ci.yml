@@ -6,7 +6,7 @@ on:
   # as the ci.yml contains actions that are required for PRs to be merged, it will always need to run on all PRs
   pull_request: {}
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 20,22,0,2,4 * * *'
   workflow_dispatch:
 
 env:

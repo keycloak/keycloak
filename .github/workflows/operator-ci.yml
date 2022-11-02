@@ -8,7 +8,7 @@ on:
       - '.github/workflows/**'
       - '!.github/workflows/operator-ci.yml'
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 20,22,0,2,4 * * *'
 
 env:
   JDK_VERSION: 11
