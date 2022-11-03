@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.vault.VaultCharSecret;
 
@@ -66,6 +67,8 @@ public final class LDAPContextManager implements AutoCloseable {
     }
 
     private void createLdapContext() throws NamingException {
+        LDAPUtils.setLDAPHostnameToKeycloakSession(session, ldapConfig);
+
         Hashtable<Object, Object> connProp = getConnectionProperties(ldapConfig);
 
         if (!LDAPConstants.AUTH_TYPE_NONE.equals(ldapConfig.getAuthType())) {

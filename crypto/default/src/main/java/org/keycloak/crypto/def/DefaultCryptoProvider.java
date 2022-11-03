@@ -18,10 +18,12 @@ import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
@@ -176,4 +178,8 @@ public class DefaultCryptoProvider implements CryptoProvider {
             
     }
 
+    @Override
+    public SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate) {
+        return delegate;
+    }
 }

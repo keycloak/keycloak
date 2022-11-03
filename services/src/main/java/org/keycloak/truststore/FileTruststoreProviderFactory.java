@@ -181,33 +181,33 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 enumeration = truststore.aliases();
                 log.trace("Checking " + truststore.size() + " entries from the truststore.");
                 while(enumeration.hasMoreElements()) {
-
                     String alias = (String)enumeration.nextElement();
-                    Certificate certificate = truststore.getCertificate(alias);
-
-                    if (certificate instanceof X509Certificate) {
-                        X509Certificate cax509cert = (X509Certificate) certificate;
-                        if (isSelfSigned(cax509cert)) {
-                            X500Principal principal = cax509cert.getSubjectX500Principal();
-                            trustedRootCerts.put(principal, cax509cert);
-                            log.debug("Trusted root CA found in trustore : alias : "+alias + " | Subject DN : " + principal);
-                        } else {
-                            X500Principal principal = cax509cert.getSubjectX500Principal();
-                            intermediateCerts.put(principal, cax509cert);
-                            log.debug("Intermediate CA found in trustore : alias : "+alias + " | Subject DN : " + principal);
-                        }
-                    } else
-                        log.info("Skipping certificate with alias ["+ alias + "] from truststore, because it's not an X509Certificate");
-
+                    readTruststoreEntry(truststore, alias);
                 }
             } catch (KeyStoreException e) {
                 log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
-            } catch (CertificateException e) {
-                log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
-            } catch (NoSuchAlgorithmException e) {
-                log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
-            } catch (NoSuchProviderException e) {
-                log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
+            }
+        }
+
+        private void readTruststoreEntry(KeyStore truststore, String alias) {
+            try {
+                Certificate certificate = truststore.getCertificate(alias);
+
+                if (certificate instanceof X509Certificate) {
+                    X509Certificate cax509cert = (X509Certificate) certificate;
+                    if (isSelfSigned(cax509cert)) {
+                        X500Principal principal = cax509cert.getSubjectX500Principal();
+                        trustedRootCerts.put(principal, cax509cert);
+                        log.debug("Trusted root CA found in trustore : alias : " + alias + " | Subject DN : " + principal);
+                    } else {
+                        X500Principal principal = cax509cert.getSubjectX500Principal();
+                        intermediateCerts.put(principal, cax509cert);
+                        log.debug("Intermediate CA found in trustore : alias : " + alias + " | Subject DN : " + principal);
+                    }
+                } else
+                    log.info("Skipping certificate with alias [" + alias + "] from truststore, because it's not an X509Certificate");
+            } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | NoSuchProviderException e) {
+                log.warnf("Error while reading Keycloak truststore entry [%s]. Exception message: %s", alias, e.getMessage(), e);
             }
         }
 
