@@ -12,11 +12,6 @@ mvn -version
 EXIT_CODE=0
 mvn clean
 for I in `perl -ne 'print "$1\n" if (m,<id>([^.<]+)</id>,)' pom.xml`; do
-
-    ## skip map-jpa for GHA
-    if [[ $I == 'map-jpa' ]]; then 
-        continue
-    fi
     echo "========"
     echo "======== Start of Profile $I"
     echo "========"
