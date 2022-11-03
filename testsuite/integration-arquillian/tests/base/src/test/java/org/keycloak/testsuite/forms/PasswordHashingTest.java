@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
@@ -46,6 +47,7 @@ import java.security.spec.KeySpec;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -226,15 +228,29 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testPbkdf2Sha256BackwardsCompatibility() throws Exception {
+    public void testPbkdf2Sha256WithPadding() throws Exception {
         setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha256PasswordHashProviderFactory.ID + ")");
-        String username = "testPbkdf2Sha2562";
-        createUser(username);
 
-        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+        int originalPaddingLength = configurePaddingForKeycloak(14);
+        try {
+            // Assert password created with padding enabled can be verified
+            String username1 = "test1-Pbkdf2Sha2562";
+            createUser(username1);
 
-        // Encoded without padding still works and should give same results as originally padded password
-        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 27500);
+            PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username1));
+            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 27500);
+
+            // Now configure padding to bigger than 64. The verification without padding would fail as for longer padding than 64 characters, the hashes of the padded password and unpadded password would be different
+            configurePaddingForKeycloak(65);
+            String username2 = "test2-Pbkdf2Sha2562";
+            createUser(username2);
+
+            credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username2));
+            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 27500, false);
+
+        } finally {
+            configurePaddingForKeycloak(originalPaddingLength);
+        }
     }
 
 
@@ -258,9 +274,26 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void assertEncoded(PasswordCredentialModel credential, String password, byte[] salt, String algorithm, int iterations) throws Exception {
+        assertEncoded(credential, password, salt, algorithm, iterations, true);
+    }
+
+    private void assertEncoded(PasswordCredentialModel credential, String password, byte[] salt, String algorithm, int iterations, boolean expectedSuccess) throws Exception {
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, 512);
         byte[] key = SecretKeyFactory.getInstance(algorithm).generateSecret(spec).getEncoded();
-        assertEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());
+        if (expectedSuccess) {
+            assertEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());
+        } else {
+            assertNotEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());
+        }
+    }
+
+    private int configurePaddingForKeycloak(int paddingLength) {
+        return testingClient.server("test").fetch(session -> {
+            Pbkdf2Sha256PasswordHashProviderFactory factory = (Pbkdf2Sha256PasswordHashProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(PasswordHashProvider.class, Pbkdf2Sha256PasswordHashProviderFactory.ID);
+            int origPaddingLength = factory.getMaxPaddingLength();
+            factory.setMaxPaddingLength(paddingLength);
+            return origPaddingLength;
+        }, Integer.class);
     }
 
 }

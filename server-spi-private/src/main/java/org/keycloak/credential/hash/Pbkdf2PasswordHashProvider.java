@@ -19,6 +19,7 @@ package org.keycloak.credential.hash;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.PaddingUtils;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.credential.PasswordCredentialModel;
 
@@ -108,7 +109,7 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
     }
 
     private String encodedCredential(String rawPassword, int iterations, byte[] salt, int derivedKeySize) {
-        String rawPasswordWithPadding = pbkdf2PasswordPadding(rawPassword);
+        String rawPasswordWithPadding = PaddingUtils.padding(rawPassword, maxPaddingLength);
         KeySpec spec = new PBEKeySpec(rawPasswordWithPadding.toCharArray(), salt, iterations, derivedKeySize);
 
         try {
@@ -135,15 +136,5 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             throw new RuntimeException("PBKDF2 algorithm not found", e);
         }
-    }
-
-    private String pbkdf2PasswordPadding(String rawPassword) {
-        if (rawPassword.length() < maxPaddingLength) {
-            int nPad = maxPaddingLength - rawPassword.length();
-            String result = rawPassword;
-            for (int i = 0 ; i < nPad; i++) result += "\0";
-            return result;
-        } else
-            return rawPassword;
     }
 }

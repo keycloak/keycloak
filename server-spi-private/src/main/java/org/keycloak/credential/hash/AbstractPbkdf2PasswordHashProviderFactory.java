@@ -49,8 +49,11 @@ public abstract class AbstractPbkdf2PasswordHashProviderFactory implements Passw
     public void close() {
     }
 
-    protected int getMaxPaddingLength() {
+    public int getMaxPaddingLength() {
         return maxPaddingLength;
     }
 
+    public void setMaxPaddingLength(int maxPaddingLength) {
+        this.maxPaddingLength = maxPaddingLength;
+    }
 }

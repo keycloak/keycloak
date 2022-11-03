@@ -95,9 +95,9 @@ public class FIPS1402Pbkdf2PasswordPaddingTest {
     private void testPasswordVerification(String password, boolean shouldEnableApprovedModeForVerification, int maxPaddingLength) {
         Pbkdf2Sha256PasswordHashProviderFactory factory = new Pbkdf2Sha256PasswordHashProviderFactory();
 
-        System.setProperty("keycloak." + PasswordHashSpi.SPI_NAME + "." + Pbkdf2Sha256PasswordHashProviderFactory.ID + "." + AbstractPbkdf2PasswordHashProviderFactory.MAX_PADDING_LENGTH_PROPERTY,
+        System.setProperty("keycloak." + PasswordHashSpi.NAME + "." + Pbkdf2Sha256PasswordHashProviderFactory.ID + "." + AbstractPbkdf2PasswordHashProviderFactory.MAX_PADDING_LENGTH_PROPERTY,
                 String.valueOf(maxPaddingLength));
-        factory.init(Config.scope(PasswordHashSpi.SPI_NAME, Pbkdf2Sha256PasswordHashProviderFactory.ID));
+        factory.init(Config.scope(PasswordHashSpi.NAME, Pbkdf2Sha256PasswordHashProviderFactory.ID));
 
         PasswordHashProvider pbkdf2HashProvider = factory.create(null);
 
