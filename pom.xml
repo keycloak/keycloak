@@ -69,7 +69,7 @@
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.fips.version>1.0.2.3</bouncycastle.fips.version>
-        <bouncycastle.pkixfips.version>1.0.6</bouncycastle.pkixfips.version>
+        <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
         <bouncycastle.tlsfips.version>1.0.13</bouncycastle.tlsfips.version>
 
         <cxf.version>3.3.10</cxf.version>
