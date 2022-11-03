@@ -325,7 +325,7 @@ jobs:
           declare -A PARAMS TESTGROUP
           PARAMS["bcfips-nonapproved-pkcs12"]="-Pauth-server-quarkus,auth-server-fips140-2"
           # Tests in the package "forms" and some keystore related tests
-          TESTGROUP["group1"]="-Dtest=org.keycloak.testsuite.forms.**,ClientAuthSignedJWTTest,CredentialsTest,JavaKeystoreKeyProviderTest,ServerInfoTest"
+          TESTGROUP["group1"]="-Dtest=org.keycloak.testsuite.forms.**,ClientAuthSignedJWTTest,CredentialsTest,JavaKeystoreKeyProviderTest,ServerInfoTest,UserFederationLdapConnectionTest,LDAPUserLoginTest"
           
           ./mvnw clean install -nsu -B ${PARAMS["${{ matrix.server }}"]} ${TESTGROUP["${{ matrix.tests }}"]} -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
           
