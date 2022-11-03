@@ -3,6 +3,7 @@ import HttpBackend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
 
 import { environment } from "./environment";
+import { joinPath } from "./utils/joinPath";
 
 const DEFAULT_LOCALE = "en";
 const DEFAULT_NAMESPACE = "translation";
@@ -15,7 +16,7 @@ export const i18n = createInstance({
     escapeValue: false,
   },
   backend: {
-    loadPath: environment.resourceUrl + "/locales/{{lng}}/{{ns}}.json",
+    loadPath: joinPath(environment.resourceUrl, "locales/{{lng}}/{{ns}}.json"),
   },
 });
 

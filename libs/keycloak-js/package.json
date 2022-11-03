@@ -15,8 +15,16 @@
   "wireit": {
     "build": {
       "command": "rollup --config --configPlugin typescript",
-      "files": ["src/**", "rollup.config.ts", "tsconfig.json"],
-      "output": ["dist/**", "!dist/*.d.ts"]
+      "files": [
+        "src/**",
+        "package.json",
+        "rollup.config.ts",
+        "tsconfig.json"
+      ],
+      "output": [
+        "dist/**",
+        "!dist/*.d.ts"
+      ]
     }
   },
   "repository": {

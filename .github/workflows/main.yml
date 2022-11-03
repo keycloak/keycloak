@@ -35,6 +35,7 @@ jobs:
     strategy:
       matrix:
         include:
+          # Admin UI
           - workspace: admin-ui
             command: lint
           - workspace: admin-ui
@@ -42,10 +43,16 @@ jobs:
           - workspace: admin-ui
             command: build
           - workspace: admin-ui
+          # Account UI
             command: cy:check-types
           - workspace: account-ui
             command: lint
           - workspace: account-ui
+            command: build
+          # Keycloak Masthead
+          - workspace: keycloak-masthead
+            command: lint
+          - workspace: keycloak-masthead
             command: build
     steps:
       - name: Restore setup

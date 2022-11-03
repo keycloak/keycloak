@@ -7,6 +7,7 @@ export type Environment = {
   authUrl: string;
   /** The URL to the base of the admin console. */
   consoleBaseUrl: string;
+  /** The URL to resources such as the files in the `public` directory. */
   resourceUrl: string;
   /** The name of the master realm. */
   masterRealm: string;
@@ -18,13 +19,9 @@ export type Environment = {
   isRunningAsTheme: boolean;
 };
 
-// During development the realm can be passed as a query parameter when redirecting back from Keycloak.
-const realm =
-  new URLSearchParams(window.location.search).get("realm") ?? "master";
-
 // The default environment, used during development.
 const defaultEnvironment: Environment = {
-  loginRealm: realm,
+  loginRealm: "master",
   authServerUrl: "http://localhost:8180",
   authUrl: "http://localhost:8180",
   consoleBaseUrl: "/admin/master/console/",

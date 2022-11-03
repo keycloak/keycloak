@@ -5,9 +5,17 @@ import ReactDOM from "react-dom";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { i18n } from "./i18n";
+import { keycloak } from "./keycloak";
 import { routes } from "./routes";
 
-await i18n.init();
+// Initialize required components before rendering app.
+await Promise.all([
+  keycloak.init({
+    onLoad: "check-sso",
+    pkceMethod: "S256",
+  }),
+  i18n.init(),
+]);
 
 const router = createBrowserRouter(routes);
 

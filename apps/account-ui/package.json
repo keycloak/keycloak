@@ -1,19 +1,20 @@
 {
   "name": "account-ui",
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext js,jsx,mjs,ts,tsx"
+    "dev": "wireit",
+    "build": "wireit",
+    "preview": "wireit",
+    "lint": "wireit"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.217.1",
     "@patternfly/react-core": "^4.250.1",
-    "@patternfly/react-icons": "^4.92.6",
     "i18next": "^22.0.2",
     "i18next-http-backend": "^2.0.1",
+    "keycloak-js": "999.0.0-dev",
+    "keycloak-masthead": "999.0.0-dev",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-hook-form": "^7.38.0",
     "react-i18next": "^12.0.0",
     "react-router": "^6.4.1",
     "react-router-dom": "^6.4.1"
@@ -24,5 +25,35 @@
     "@vitejs/plugin-react": "^2.2.0",
     "vite": "^3.2.2",
     "vite-plugin-checker": "^0.5.1"
+  },
+  "wireit": {
+    "dev": {
+      "command": "vite --host",
+      "dependencies": [
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "preview": {
+      "command": "vite preview",
+      "dependencies": [
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "build": {
+      "command": "vite build",
+      "dependencies": [
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "lint": {
+      "command": "eslint . --ext js,jsx,mjs,ts,tsx",
+      "dependencies": [
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build"
+      ]
+    }
   }
 }

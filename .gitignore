@@ -34,3 +34,8 @@ server
 
 # Wireit
 .wireit
+
+# Vite
+dist
+dist-ssr
+*.local

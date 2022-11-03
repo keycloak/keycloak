@@ -1,14 +1,56 @@
 import { Page, Spinner } from "@patternfly/react-core";
-import { Suspense } from "react";
+import {
+  KeycloakMasthead,
+  Translations,
+  TranslationsProvider,
+} from "keycloak-masthead";
+import { Suspense, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 
-import { PageHeader } from "./PageHeader";
+import { environment } from "../environment";
+import { keycloak } from "../keycloak";
+import { joinPath } from "../utils/joinPath";
 import { PageNav } from "./PageNav";
 
-export const Root = () => (
-  <Page header={<PageHeader />} sidebar={<PageNav />} isManagedSidebar>
-    <Suspense fallback={<Spinner />}>
-      <Outlet />
-    </Suspense>
-  </Page>
-);
+import style from "./Root.module.css";
+
+export const Root = () => {
+  const { t } = useTranslation();
+  const translations = useMemo<Translations>(
+    () => ({
+      avatar: t("avatar"),
+      fullName: t("fullName"),
+      manageAccount: t("manageAccount"),
+      signOut: t("signOut"),
+      unknownUser: t("unknownUser"),
+    }),
+    [t]
+  );
+
+  return (
+    <Page
+      header={
+        <TranslationsProvider translations={translations}>
+          <KeycloakMasthead
+            features={{ hasManageAccount: false }}
+            showNavToggle
+            brand={{
+              src: joinPath(environment.resourceUrl, "logo.svg"),
+              alt: t("logo"),
+              className: style.brand,
+            }}
+            dropdownItems={[]}
+            keycloak={keycloak}
+          />
+        </TranslationsProvider>
+      }
+      sidebar={<PageNav />}
+      isManagedSidebar
+    >
+      <Suspense fallback={<Spinner />}>
+        <Outlet />
+      </Suspense>
+    </Page>
+  );
+};
