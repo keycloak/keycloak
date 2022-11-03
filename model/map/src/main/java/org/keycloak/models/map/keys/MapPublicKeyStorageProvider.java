@@ -19,13 +19,14 @@ package org.keycloak.models.map.keys;
 
 import org.jboss.logging.Logger;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -36,16 +37,11 @@ public class MapPublicKeyStorageProvider implements PublicKeyStorageProvider {
 
     private final KeycloakSession session;
 
-    private final Map<String, FutureTask<Map<String, KeyWrapper>>> tasksInProgress;
+    private final Map<String, FutureTask<PublicKeysWrapper>> tasksInProgress;
 
-    public MapPublicKeyStorageProvider(KeycloakSession session, Map<String, FutureTask<Map<String, KeyWrapper>>> tasksInProgress) {
+    public MapPublicKeyStorageProvider(KeycloakSession session, Map<String, FutureTask<PublicKeysWrapper>> tasksInProgress) {
         this.session = session;
         this.tasksInProgress = tasksInProgress;
-    }
-
-    @Override
-    public KeyWrapper getPublicKey(String modelKey, String kid, PublicKeyLoader loader) {
-        return getPublicKey(modelKey, kid, null, loader);
     }
 
     @Override
@@ -53,11 +49,12 @@ public class MapPublicKeyStorageProvider implements PublicKeyStorageProvider {
         return getPublicKey(modelKey, null, algorithm, loader);
     }
 
-    private KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
+    @Override
+    public KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
         WrapperCallable wrapperCallable = new WrapperCallable(modelKey, loader);
-        FutureTask<Map<String, KeyWrapper>> task = new FutureTask<>(wrapperCallable);
-        FutureTask<Map<String, KeyWrapper>> existing = tasksInProgress.putIfAbsent(modelKey, task);
-        Map<String, KeyWrapper> currentKeys;
+        FutureTask<PublicKeysWrapper> task = new FutureTask<>(wrapperCallable);
+        FutureTask<PublicKeysWrapper> existing = tasksInProgress.putIfAbsent(modelKey, task);
+        PublicKeysWrapper currentKeys;
 
         if (existing == null) {
             task.run();
@@ -69,7 +66,7 @@ public class MapPublicKeyStorageProvider implements PublicKeyStorageProvider {
             currentKeys = task.get();
 
             // Computation finished. Let's see if key is available
-            KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(currentKeys, algorithm) : getPublicKey(currentKeys, kid);
+            KeyWrapper publicKey = currentKeys.getKeyByKidAndAlg(kid, algorithm);
             if (publicKey != null) {
                 return publicKey;
             }
@@ -85,29 +82,13 @@ public class MapPublicKeyStorageProvider implements PublicKeyStorageProvider {
             }
         }
 
-        Set<String> availableKids = currentKeys == null ? Collections.emptySet() : currentKeys.keySet();
+        List<String> availableKids = currentKeys == null ? Collections.emptyList() : currentKeys.getKids();
         log.warnf("PublicKey wasn't found in the storage. Requested kid: '%s' . Available kids: '%s'", kid, availableKids);
 
         return null;
     }
 
-    private KeyWrapper getPublicKey(Map<String, KeyWrapper> publicKeys, String kid) {
-        // Backwards compatibility
-        if (kid == null && !publicKeys.isEmpty()) {
-            return publicKeys.values().iterator().next();
-        } else {
-            return publicKeys.get(kid);
-        }
-    }
-
-    private KeyWrapper getPublicKeyByAlg(Map<String, KeyWrapper> publicKeys, String algorithm) {
-        if (algorithm == null) return null;
-        for (KeyWrapper keyWrapper : publicKeys.values())
-            if (algorithm.equals(keyWrapper.getAlgorithmOrDefault())) return keyWrapper;
-        return null;
-    }
-
-    private class WrapperCallable implements Callable<Map<String, KeyWrapper>> {
+    private class WrapperCallable implements Callable<PublicKeysWrapper> {
 
         private final String modelKey;
         private final PublicKeyLoader delegate;
@@ -118,11 +99,11 @@ public class MapPublicKeyStorageProvider implements PublicKeyStorageProvider {
         }
 
         @Override
-        public Map<String, KeyWrapper> call() throws Exception {
-            Map<String, KeyWrapper> publicKeys = delegate.loadKeys();
+        public PublicKeysWrapper call() throws Exception {
+            PublicKeysWrapper publicKeys = delegate.loadKeys();
 
             if (log.isDebugEnabled()) {
-                log.debugf("Public keys retrieved successfully for model %s. New kids: %s", modelKey, publicKeys.keySet().toString());
+                log.debugf("Public keys retrieved successfully for model %s. New kids: %s", modelKey, publicKeys.getKids());
             }
 
             return publicKeys;
