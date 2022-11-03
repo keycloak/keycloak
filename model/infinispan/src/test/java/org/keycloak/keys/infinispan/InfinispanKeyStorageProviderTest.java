@@ -17,7 +17,6 @@
 
 package org.keycloak.keys.infinispan;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 
 /**
@@ -129,7 +128,7 @@ public class InfinispanKeyStorageProviderTest {
         @Override
         public void run() {
             InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(null, keys, tasksInProgress, minTimeBetweenRequests);
-            provider.getPublicKey(modelKey, "kid1", new SampleLoader(modelKey));
+            provider.getPublicKey(modelKey, "kid1", null, new SampleLoader(modelKey));
         }
 
     }
@@ -144,12 +143,12 @@ public class InfinispanKeyStorageProviderTest {
         }
 
         @Override
-        public Map<String, KeyWrapper> loadKeys() throws Exception {
+        public PublicKeysWrapper loadKeys() throws Exception {
             counters.putIfAbsent(modelKey, new AtomicInteger(0));
             AtomicInteger currentCounter = counters.get(modelKey);
 
             currentCounter.incrementAndGet();
-            return Collections.emptyMap();
+            return PublicKeysWrapper.EMPTY;
         }
     }
 
