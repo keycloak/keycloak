@@ -889,8 +889,8 @@ public class RealmTest extends AbstractAdminTest {
             rep = realm.toRepresentation();
 
             List<String> supportedApplications = rep.getOtpSupportedApplications();
-            assertThat(supportedApplications, hasSize(2));
-            assertThat(supportedApplications, containsInAnyOrder("totpAppGoogleName", "totpAppFreeOTPName"));
+            assertThat(supportedApplications, hasSize(3));
+            assertThat(supportedApplications, containsInAnyOrder("totpAppGoogleName", "totpAppFreeOTPName", "totpAppMicrosoftAuthenticatorName"));
 
             rep.setOtpPolicyDigits(8);
             realm.update(rep);
