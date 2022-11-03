@@ -23,7 +23,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { convertToFormValues } from "../../util";
+import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 type ExecutionConfigModalForm = {
   alias: string;
@@ -83,7 +83,8 @@ export const ExecutionConfigModal = ({
     if (config) setupForm(config);
   }, [config]);
 
-  const save = async (changedConfig: ExecutionConfigModalForm) => {
+  const save = async (saved: ExecutionConfigModalForm) => {
+    const changedConfig = convertFormValuesToObject(saved);
     try {
       if (config) {
         const newConfig = {
