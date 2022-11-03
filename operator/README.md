@@ -3,12 +3,7 @@
 The module holds the codebase to build the Keycloak Operator on top of [Quarkus](https://quarkus.io/).
 Using the [Quarkus Operator SDK](https://github.com/quarkiverse/quarkus-operator-sdk).
 
-Also see [documentation](https://www.keycloak.org/guides#operator):
-- [Keycloak Operator Installation](https://www.keycloak.org/operator/installation)
-- [Basic Keycloak Deployment](https://www.keycloak.org/operator/basic-deployment)
-- [Keycloak Realm Import](https://www.keycloak.org/operator/realm-import)
-- [Advanced configuration](https://www.keycloak.org/operator/advanced-configuration)
-- [Using custom Keycloak images](https://www.keycloak.org/operator/customizing-keycloak)
+Also see [Operator guides](https://www.keycloak.org/guides#operator)
 
 ## Activating the Module
 
