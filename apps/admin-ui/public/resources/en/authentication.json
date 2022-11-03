@@ -30,7 +30,8 @@
   "supportedApplications": "Supported applications",
   "otpSupportedApplications": {
     "totpAppFreeOTPName": "FreeOTP",
-    "totpAppGoogleName": "Google Authenticator"
+    "totpAppGoogleName": "Google Authenticator",
+    "totpAppMicrosoftAuthenticatorName": "Microsoft Authenticator"
   },
   "updateOtpSuccess": "OTP policy successfully updated",
   "updateOtpError": "Could not update OTP policy: {{error}}",
