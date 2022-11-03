@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -54,7 +53,10 @@ import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 
 
 /**
@@ -220,7 +222,15 @@ public class FIPS1402Provider implements CryptoProvider {
     }
 
     @Override
-    public SSLSocketFactory wrapFactoryForTruststore(Supplier<String> hostnameSupplier, SSLSocketFactory delegate) {
+    public SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate) {
+        KeycloakSession session = Resteasy.getProvider().getContextData(KeycloakSession.class);
+        if (session == null) {
+            log.tracef("Not found keycloakSession in the resteasy context when trying to retrieve hostname attribute from it");
+            return delegate;
+        }
+        String hostname = session.getAttribute(Constants.SSL_SERVER_HOST_ATTR, String.class);
+        log.tracef("Found hostname '%s' to be used by SSLSocketFactory", hostname);
+        if (hostname == null) return delegate;
 
         // See https://downloads.bouncycastle.org/fips-java/BC-FJA-(D)TLSUserGuide-1.0.9.pdf - Section 3.5.2 (Endpoint identification)
         return new CustomSSLSocketFactory(delegate) {
@@ -229,7 +239,6 @@ public class FIPS1402Provider implements CryptoProvider {
             protected Socket configureSocket(Socket s) {
                 if (s instanceof SSLSocket) {
                     SSLSocket ssl = (SSLSocket)s;
-                    String hostname = hostnameSupplier.get();
                     SNIHostName sniHostName = getSNIHostName(hostname);
                     if (sniHostName != null) {
                         SSLParameters sslParameters = new SSLParameters();
@@ -241,7 +250,7 @@ public class FIPS1402Provider implements CryptoProvider {
             }
 
             private SNIHostName getSNIHostName(String host) {
-                if (host != null && !IPAddress.isValid(host)) {
+                if (!IPAddress.isValid(host)) {
                     try {
                         return new SNIHostName(host);
                     } catch (RuntimeException e) {

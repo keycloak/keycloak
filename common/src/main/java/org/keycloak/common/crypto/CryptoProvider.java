@@ -120,9 +120,8 @@ public interface CryptoProvider {
      *
      * This method is used in the context of truststore (where Keycloak is SSL client)
      *
-     * @param hostnameSupplier Function to return hostname of the SSL host, which we try to connect to. This supplier can return null.
      * @param delegate The original factory to wrap. Usually default java SSLSocketFactory
      * @return decorated factory
      */
-    SSLSocketFactory wrapFactoryForTruststore(Supplier<String> hostnameSupplier, SSLSocketFactory delegate);
+    SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate);
 }

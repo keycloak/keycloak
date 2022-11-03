@@ -179,7 +179,7 @@ public class DefaultCryptoProvider implements CryptoProvider {
     }
 
     @Override
-    public SSLSocketFactory wrapFactoryForTruststore(Supplier<String> hostnameSupplier, SSLSocketFactory delegate) {
+    public SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate) {
         return delegate;
     }
 }
