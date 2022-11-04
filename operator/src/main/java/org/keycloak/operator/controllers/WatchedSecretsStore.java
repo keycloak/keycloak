@@ -111,13 +111,12 @@ public class WatchedSecretsStore extends OperatorManagedResource {
 
                 Log.infof("Adding label to Secret \"%s\"", secret.getMetadata().getName());
 
-                secret = new SecretBuilder(secret)
-                        .editMetadata()
-                        .addToLabels(Constants.KEYCLOAK_COMPONENT_LABEL, WATCHED_SECRETS_LABEL_VALUE)
-                        .endMetadata()
-                        .build();
-
-                client.secrets().inNamespace(secret.getMetadata().getNamespace()).withName(secret.getMetadata().getName()).patch(secret);
+                client.secrets().inNamespace(secret.getMetadata().getNamespace()).withName(secret.getMetadata().getName())
+                        .edit(s -> new SecretBuilder(s)
+                                .editMetadata()
+                                .addToLabels(Constants.KEYCLOAK_COMPONENT_LABEL, WATCHED_SECRETS_LABEL_VALUE)
+                                .endMetadata()
+                                .build());
             }
         }
     }
@@ -194,8 +193,13 @@ public class WatchedSecretsStore extends OperatorManagedResource {
     }
 
     private static void cleanObsoleteLabelFromSecret(KubernetesClient client, Secret secret) {
-        secret.getMetadata().getLabels().remove(Constants.KEYCLOAK_COMPONENT_LABEL);
-        client.secrets().inNamespace(secret.getMetadata().getNamespace()).withName(secret.getMetadata().getName()).patch(secret);
+        client.secrets().inNamespace(secret.getMetadata().getNamespace()).withName(secret.getMetadata().getName())
+                .edit(s -> new SecretBuilder(s)
+                        .editMetadata()
+                        .removeFromLabels(Constants.KEYCLOAK_COMPONENT_LABEL)
+                        .endMetadata()
+                        .build()
+                );
     }
 
     public static EventSource getWatchedSecretsEventSource(KubernetesClient client, String namespace) {
