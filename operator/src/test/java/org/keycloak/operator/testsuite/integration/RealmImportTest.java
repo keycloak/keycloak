@@ -24,6 +24,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.controllers.KeycloakService;
@@ -49,8 +50,8 @@ public class RealmImportTest extends BaseOperatorTest {
 
     @Override
     @BeforeEach
-    public void beforeEach() {
-        super.beforeEach();
+    public void beforeEach(TestInfo testInfo) {
+        super.beforeEach(testInfo);
         // Recreating the database and the realm import CR to keep this test isolated
         k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).delete();
         k8sclient.load(getClass().getResourceAsStream("/incorrect-realm.yaml")).inNamespace(namespace).delete();
