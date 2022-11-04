@@ -69,7 +69,7 @@ import io.undertow.util.StatusCodes;
  */
 public class KeycloakInstalled {
     private static final String KEYCLOAK_JSON = "META-INF/keycloak.json";
-    private static final String LOGGED_OUT = "loggedout";
+    private static final String LOGGED_OUT = "logout";
 
     private KeycloakDeployment deployment;
 
