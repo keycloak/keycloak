@@ -46,7 +46,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-crypto-default</artifactId>
+                <artifactId>keycloak-crypto-elytron</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
