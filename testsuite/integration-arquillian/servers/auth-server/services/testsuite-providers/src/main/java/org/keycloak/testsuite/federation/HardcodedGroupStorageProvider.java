@@ -54,12 +54,6 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
     }
 
     @Override
-    @Deprecated
-    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        return searchForGroupByNameStream(realm, search, false, firstResult, maxResults);
-    }
-
-    @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
         if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedGroupStorageProviderFactory.DELAYED_SEARCH))) try {
             Thread.sleep(5000l);
@@ -93,7 +87,7 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
     }
 
 
-    public class HardcodedGroupAdapter implements GroupModel.Streams {
+    public class HardcodedGroupAdapter implements GroupModel {
 
         private final RealmModel realm;
         private StorageId storageId;

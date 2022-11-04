@@ -27,6 +27,8 @@ import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -35,12 +37,24 @@ import java.security.PublicKey;
 public class KeystoreUtil {
 
     public enum KeystoreFormat {
-        JKS,
-        PKCS12
+        JKS("jks"),
+        PKCS12("p12"),
+        BCFKS("bcfks");
+
+        // Typical file extension for this keystore format
+        private final String fileExtension;
+        KeystoreFormat(String extension) {
+            this.fileExtension = extension;
+        }
+
+        public String getFileExtension() {
+            return fileExtension;
+        }
     }
 
     public static KeyStore loadKeyStore(String filename, String password) throws Exception {
-        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        String keystoreType = getKeystoreType(null, filename, KeyStore.getDefaultType());
+        KeyStore trustStore = KeyStore.getInstance(keystoreType);
         InputStream trustStream = null;
         if (filename.startsWith(GenericConstants.PROTOCOL_CLASSPATH)) {
             String resourcePath = filename.replace(GenericConstants.PROTOCOL_CLASSPATH, "");
@@ -78,5 +92,32 @@ public class KeystoreUtil {
         } catch (Exception e) {
             throw new RuntimeException("Failed to load private key: " + e.getMessage(), e);
         }
+    }
+
+
+    /**
+     * Try to return supported keystore type
+     *
+     * @param preferredType The preferred format - usually the one from the configuration. When present, it should be preferred over anything else
+     * @param path Path of the file. We can try to detect keystore type from that (EG. my-keystore.pkcs12 will return "pkcs12") in case that preferredType is not defined
+     * @param defaultType Default format as last fallback when none of the above can be used. Should be non-null
+     * @return format as specified above
+     */
+    public static String getKeystoreType(String preferredType, String path, String defaultType) {
+        // Configured type has precedence
+        if (preferredType != null) return preferredType;
+
+        // Fallback to path
+        int lastDotIndex = path.lastIndexOf('.');
+        if (lastDotIndex > -1) {
+            String ext = path.substring(lastDotIndex + 1).toLowerCase();
+            Optional<KeystoreFormat> detectedType = Arrays.stream(KeystoreUtil.KeystoreFormat.values())
+                    .filter(ksFormat -> ksFormat.getFileExtension().equals(ext))
+                    .findFirst();
+            if (detectedType.isPresent()) return detectedType.get().toString();
+        }
+
+        // Fallback to default
+        return defaultType;
     }
 }

@@ -2,6 +2,47 @@ name: Bug Report
 description: Report a non-security sensitive bug in Keycloak
 labels: ["kind/bug", "status/triage"]
 body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Affected area
+      options:
+        - account/api
+        - account/ui
+        - adapter/fuse
+        - adapter/java-cli
+        - adapter/javascript
+        - adapter/jee
+        - adapter/jee-saml
+        - adapter/spring
+        - admin/api
+        - admin/cli
+        - admin/fine-grained-permissions
+        - admin/ui
+        - authentication
+        - authentication/webauthn
+        - authorization-services
+        - ci
+        - core
+        - dependencies
+        - dist/quarkus
+        - dist/wildfly
+        - docs
+        - identity-brokering
+        - import-export
+        - infinispan
+        - ldap
+        - oidc
+        - operator
+        - saml
+        - storage
+        - testsuite
+        - token-exchange
+        - translations
+        - user-profile
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Describe the bug
@@ -19,19 +60,19 @@ body:
       label: Expected behavior
       description: Describe the expected behavior clearly and concisely.
     validations:
-      required: false
+      required: true
   - type: textarea
     attributes:
       label: Actual behavior
       description: Describe the actual behavior clearly and concisely.
     validations:
-      required: false
+      required: true
   - type: textarea
     attributes:
       label: How to Reproduce?
       description: Provide clear and concise steps to reproduce the problem.
     validations:
-      required: false
+      required: true
   - type: textarea
     attributes:
       label: Anything else?

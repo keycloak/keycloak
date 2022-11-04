@@ -19,10 +19,13 @@ package org.keycloak.models.map.storage.jpa;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
+import javax.persistence.Parameter;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
@@ -32,9 +35,13 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
+import org.hibernate.Session;
+import org.hibernate.internal.SessionImpl;
+import org.hibernate.query.spi.QueryImplementor;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
@@ -45,6 +52,7 @@ import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.utils.LockObjectsForModification;
 
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 import static org.keycloak.models.map.storage.jpa.PaginationUtils.paginateQuery;
@@ -120,6 +128,8 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         return e != null && isExpirableEntity && isExpired((ExpirableEntity) e, true) ? null : e;
     }
 
+    private final static String JPA_MAP_CACHE = "keycloak.jpamap.cache";
+
     @Override
     @SuppressWarnings("unchecked")
     public Stream<E> read(QueryParameters<M> queryParameters) {
@@ -157,12 +167,60 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         }
         if (predicateFunc != null) query.where(predicateFunc.apply(cb, query::subquery, root));
 
-        TypedQuery<RE> emQuery = em.createQuery(query);
+        TypedQuery<RE> emQuery = paginateQuery(em.createQuery(query), queryParameters.getOffset(), queryParameters.getLimit());
+
+        Map<QueryCacheKey, List<RE>> cache = getQueryCache();
+        QueryCacheKey queryCacheKey = new QueryCacheKey(emQuery, modelType);
+        if (!LockObjectsForModification.isEnabled(this.session, modelType)) {
+            List<RE> previousResult = cache.get(queryCacheKey);
+            //noinspection resource
+            SessionImpl session = (SessionImpl) em.unwrap(Session.class);
+            // only do dirty checking if there is a previously cached result that would match the query
+            if (previousResult != null) {
+                // if the session is dirty, data has been modified, and the cache must not be used
+                // check if there are queued actions already, as this allows us to skip the expensive dirty check
+                if (!session.getActionQueue().areInsertionsOrDeletionsQueued() && session.getActionQueue().numberOfUpdates() == 0 && session.getActionQueue().numberOfCollectionUpdates() == 0 &&
+                        !session.isDirty()) {
+                    logger.tracef("tx %d: cache hit for %s/%s%s", hashCode(), queryParameters, queryCacheKey, getShortStackTrace());
+                    return closing(previousResult.stream()).map(this::mapToEntityDelegateUnique);
+                } else {
+                    logger.tracef("tx %d: cache ignored due to dirty session", hashCode());
+                }
+            }
+        }
+        logger.tracef("tx %d: cache miss for %s/%s%s", hashCode(), queryParameters, queryCacheKey, getShortStackTrace());
+
         if (LockObjectsForModification.isEnabled(session, modelType)) {
             emQuery = emQuery.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         }
-        return closing(paginateQuery(emQuery, queryParameters.getOffset(), queryParameters.getLimit()).getResultStream())
-                .map(this::mapToEntityDelegateUnique);
+
+        // In order to cache the result, the full result needs to be retrieved.
+        // There is also no difference to that in Hibernate, as Hibernate will first retrieve all elements from the ResultSet.
+        List<RE> resultList = emQuery.getResultList();
+        cache.put(queryCacheKey, resultList);
+
+        return closing(resultList.stream()).map(this::mapToEntityDelegateUnique);
+    }
+
+    private Map<QueryCacheKey, List<RE>> getQueryCache() {
+        //noinspection resource,unchecked
+        Map<QueryCacheKey, List<RE>> cache = (Map<QueryCacheKey, List<RE>>) em.unwrap(Session.class).getProperties().get(JPA_MAP_CACHE);
+        if (cache == null) {
+            cache = new HashMap<>();
+            //noinspection resource
+            em.unwrap(Session.class).setProperty(JPA_MAP_CACHE, cache);
+        }
+        return cache;
+    }
+
+    public static void clearQueryCache(Session session) {
+        logger.tracef("query cache cleared");
+        //noinspection unchecked
+        Map<?, ?> queryCache = (HashMap<Class<?>, Map<?, ?>>) session.getProperties().get(JPA_MAP_CACHE);
+        if (queryCache != null) {
+            // Can't set null as a property values as it is not serializable. Clearing each map so that the current query result might be saved.
+            queryCache.clear();
+        }
     }
 
     @Override
@@ -184,15 +242,18 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean delete(String key) {
         if (key == null) return false;
         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return false;
-        cacheWithinSession.remove(key);
+        removeFromCache(key);
         em.remove(em.getReference(entityType, uuid));
         logger.tracef("tx %d: delete entity %s", hashCode(), key);
         return true;
+    }
+
+    protected void removeFromCache(String key) {
+        cacheWithinSession.remove(key);
     }
 
     @Override
@@ -264,5 +325,57 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     private Predicate notExpired(final CriteriaBuilder cb, final JpaSubqueryProvider query, final Root<RE> root) {
         return cb.or(cb.greaterThan(root.get("expiration"), Time.currentTimeMillis()),
                     cb.isNull(root.get("expiration")));
+    }
+
+    private static class QueryCacheKey {
+        private final String queryString;
+        private final Integer queryMaxResults;
+        private final Integer queryFirstResult;
+        private final HashMap<String, Object> queryParameters;
+        private final Class<?> modelType;
+
+        public QueryCacheKey(TypedQuery<?> emQuery, Class<?> modelType) {
+            // copy over all fields from the query that relevant for caching
+            QueryImplementor<?> query = emQuery.unwrap(QueryImplementor.class);
+            this.queryString = query.getQueryString();
+            this.queryParameters = new HashMap<>();
+            for (Parameter<?> parameter : query.getParameters()) {
+                if (parameter.getName() == null) {
+                    throw new ModelException("Can't prepare query for caching as parameter doesn't have a name");
+                }
+                this.queryParameters.put(parameter.getName(), query.getParameterValue(parameter.getName()));
+            }
+            this.queryMaxResults = emQuery.getMaxResults();
+            this.queryFirstResult = emQuery.getFirstResult();
+            this.modelType = modelType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            QueryCacheKey that = (QueryCacheKey) o;
+            return Objects.equals(queryString, that.queryString)
+                    && Objects.equals(queryMaxResults, that.queryMaxResults)
+                    && Objects.equals(queryFirstResult, that.queryFirstResult)
+                    && Objects.equals(queryParameters, that.queryParameters)
+                    && Objects.equals(modelType, that.modelType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(queryString, queryMaxResults, queryFirstResult, queryParameters, modelType);
+        }
+
+        @Override
+        public String toString() {
+            return "QueryCacheKey{" +
+                    "queryString='" + queryString + '\'' +
+                    ", queryMaxResults=" + queryMaxResults +
+                    ", queryFirstResult=" + queryFirstResult +
+                    ", queryParameters=" + queryParameters +
+                    ", modelType=" + modelType.getName() +
+                    '}';
+        }
     }
 }

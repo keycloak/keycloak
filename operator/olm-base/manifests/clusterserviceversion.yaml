@@ -136,7 +136,7 @@ spec:
   maintainers:
     - email: keycloak-dev@lists.jboss.org
       name: Keycloak DEV mailing list
-  maturity: alpha
+  maturity: stable
   provider:
     name: Red Hat
   version: REPLACE_ME_VERSION

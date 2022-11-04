@@ -71,14 +71,6 @@ public interface RoleModel {
     void removeCompositeRole(RoleModel role);
 
     /**
-     * @deprecated Use {@link #getCompositesStream() getCompositesStream} instead.
-     */
-    @Deprecated
-    default Set<RoleModel> getComposites() {
-        return getCompositesStream().collect(Collectors.toSet());
-    }
-
-    /**
      * Returns all composite roles as a stream.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
@@ -112,14 +104,6 @@ public interface RoleModel {
 
     default String getFirstAttribute(String name) {
         return getAttributeStream(name).findFirst().orElse(null);
-    }
-
-    /**
-     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
-     */
-    @Deprecated
-    default List<String> getAttribute(String name) {
-        return getAttributeStream(name).collect(Collectors.toList());
     }
 
     /**

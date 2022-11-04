@@ -32,6 +32,7 @@ import org.keycloak.models.utils.RoleUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -322,7 +323,7 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
     public Stream<RoleModel> getRoleMappingsStream() {
         Set<String> roles = entity.getRolesMembership();
         if (roles == null || roles.isEmpty()) return Stream.empty();
-        return entity.getRolesMembership().stream().map(realm::getRoleById);
+        return entity.getRolesMembership().stream().map(realm::getRoleById).filter(Objects::nonNull);
     }
 
     @Override

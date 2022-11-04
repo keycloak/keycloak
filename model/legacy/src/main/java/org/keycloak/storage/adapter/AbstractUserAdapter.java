@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,9 +61,16 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
         this.storageProviderModel = storageProviderModel;
     }
 
-    @Override
+    /**
+     * @deprecated User {@link #getRequiredActionsStream()}
+     */
     public Set<String> getRequiredActions() {
         return Collections.emptySet();
+    }
+
+    @Override
+    public Stream<String> getRequiredActionsStream() {
+        return getRequiredActions().stream();
     }
 
     @Override
@@ -109,12 +116,19 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
         return true;
     }
 
-    @Override
+    /**
+     * @deprecated Use {@link #getGroupsStream()} instead
+     */
     public Set<GroupModel> getGroups() {
         Set<GroupModel> set = new HashSet<>();
         if (appendDefaultGroups()) set.addAll(realm.getDefaultGroupsStream().collect(Collectors.toSet()));
         set.addAll(getGroupsInternal());
         return set;
+    }
+
+    @Override
+    public Stream<GroupModel> getGroupsStream() {
+        return getGroups().stream();
     }
 
     @Override
@@ -134,14 +148,30 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
         return RoleUtils.isMember(getGroups().stream(), group);
     }
 
-    @Override
+    /**
+     *
+     * @deprecated Use {@link #getRealmRoleMappingsStream()} instead
+     */
     public Set<RoleModel> getRealmRoleMappings() {
         return getRoleMappings().stream().filter(RoleUtils::isRealmRole).collect(Collectors.toSet());
     }
 
     @Override
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return getRealmRoleMappings().stream();
+    }
+
+    /**
+     *
+     * @deprecated Use {@link #getClientRoleMappingsStream(ClientModel)} instead
+     */
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         return getRoleMappings().stream().filter(r -> RoleUtils.isClientRole(r, app)).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return getClientRoleMappings(app).stream();
     }
 
     @Override
@@ -171,7 +201,10 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
         return Collections.emptySet();
     }
 
-    @Override
+    /**
+     *
+     * @deprecated Use {@link #getRoleMappingsStream()} instead
+     */
     public Set<RoleModel> getRoleMappings() {
         Set<RoleModel> set = new HashSet<>();
         if (appendDefaultRolesToRoleMappings()) set.addAll(realm.getDefaultRole().getCompositesStream().collect(Collectors.toSet()));
@@ -179,6 +212,10 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
         return set;
     }
 
+    @Override
+    public Stream<RoleModel> getRoleMappingsStream() {
+        return getRoleMappings().stream();
+    }
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
@@ -304,12 +341,19 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
         return attributes;
     }
 
-    @Override
+    /**
+     * @deprecated Use {@link #getAttributeStream(String)} instead
+     */
     public List<String> getAttribute(String name) {
         if (name.equals(UserModel.USERNAME)) {
             return Collections.singletonList(getUsername());
         }
         return Collections.emptyList();
+    }
+
+    @Override
+    public Stream<String> getAttributeStream(String name) {
+        return getAttribute(name).stream();
     }
 
     @Override
@@ -371,12 +415,13 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     }
 
     /**
-     * The {@link AbstractUserAdapter.Streams} class extends the {@link AbstractUserAdapter} abstract class and implements
-     * the {@link UserModel.Streams} interface, allowing subclasses to focus on the implementation of the {@link Stream}-based
-     * query methods and providing default implementations for the collections-based variants that delegate to their
-     * {@link Stream} counterparts.
+     * The {@link Streams} interface makes all collection-based methods in {@link AbstractUserAdapter} default by providing
+     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
      */
-    public abstract static class Streams extends AbstractUserAdapter implements UserModel.Streams {
+    public abstract static class Streams extends AbstractUserAdapter implements UserModel {
 
         public Streams(final KeycloakSession session, final RealmModel realm, final ComponentModel storageProviderModel) {
             super(session, realm, storageProviderModel);

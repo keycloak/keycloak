@@ -69,7 +69,6 @@ import java.util.stream.Collectors;
  */
 public class DefaultKeycloakSession implements KeycloakSession {
 
-    private final static Logger log = Logger.getLogger(DefaultKeycloakSession.class);
     private final DefaultKeycloakSessionFactory factory;
     private final Map<Integer, Provider> providers = new HashMap<>();
     private final List<Provider> closable = new LinkedList<>();
@@ -88,6 +87,8 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private TokenManager tokenManager;
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
+
+    private boolean closed;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -445,7 +446,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return clientPolicyManager;
     }
 
+    @Override
     public void close() {
+        if (closed) {
+            throw new IllegalStateException("Illegal call to #close() on already closed KeycloakSession");
+        }
         Consumer<? super Provider> safeClose = p -> {
             try {
                 p.close();
@@ -458,6 +463,10 @@ public class DefaultKeycloakSession implements KeycloakSession {
         for (Entry<InvalidableObjectType, Set<Object>> me : invalidationMap.entrySet()) {
             factory.invalidate(this, me.getKey(), me.getValue().toArray());
         }
+        closed = true;
     }
 
+    public boolean isClosed() {
+        return closed;
+    }
 }

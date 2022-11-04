@@ -52,7 +52,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyFileStorage implements UserLookupProvider.Streams, UserStorageProvider, UserQueryProvider.Streams, CredentialInputValidator {
+public class UserPropertyFileStorage implements UserLookupProvider, UserStorageProvider, UserQueryProvider, CredentialInputValidator {
 
     public static final String SEARCH_METHOD = "searchForUserStream(RealmMode, String, Integer, Integer)";
     public static final String COUNT_SEARCH_METHOD = "getUsersCount(RealmModel, String)";
