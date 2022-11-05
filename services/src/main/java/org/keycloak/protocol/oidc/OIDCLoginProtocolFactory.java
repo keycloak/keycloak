@@ -117,6 +117,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         if (providerConfig.suppressLogoutConfirmationScreen()) {
             logger.warnf("Deprecated switch '%s' is enabled. Please try to disable it and update your clients to use OpenID Connect compliant way for RP-initiated logout.", SUPPRESS_LOGOUT_CONFIRMATION_SCREEN);
         }
+        initBuiltin();
     }
 
     @Override
@@ -131,7 +132,8 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
     static Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
-    static {
+    // Visible for testing
+    public void initBuiltin() {
                 ProtocolMapperModel model;
         model = UserPropertyMapper.createClaimMapper(USERNAME,
                 "username",

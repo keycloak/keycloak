@@ -19,11 +19,14 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.Test;
 import org.keycloak.common.Version;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.auth.page.login.Login;
 
 import java.util.List;
 import java.util.Map;
@@ -69,11 +72,39 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getSystemInfo().getServerTime());
         assertNotNull(info.getSystemInfo().getUptime());
 
+        assertNotNull(info.getBuiltinProtocolMappers());
+        assertNotNull(getBuiltinProtocolMapper(info, Login.OIDC, OIDCLoginProtocolFactory.ACR));
+
         if (isJpaRealmProvider()) {
             Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
             ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
             log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
         }
+    }
+
+    /*@Test
+    @DisableFeature(value = Profile.Feature.STEP_UP_AUTHENTICATION, skipRestart = true)
+    public void testDisableStepupAuthenticationFeature() throws Exception {
+        // refresh builtin based on feature changed
+        testingClient.server().fetchString(it -> {
+            ((OIDCLoginProtocolFactory) it.getKeycloakSessionFactory()
+                .getProviderFactory(LoginProtocol.class, Login.OIDC))
+                .initBuiltin();
+            return null;
+        });
+
+        ServerInfoRepresentation info = adminClient.serverInfo().getInfo();
+        assertNotNull(info.getBuiltinProtocolMappers());
+        assertNull(getBuiltinProtocolMapper(info, Login.OIDC, OIDCLoginProtocolFactory.ACR));
+    }*/
+
+    private static ProtocolMapperRepresentation getBuiltinProtocolMapper(ServerInfoRepresentation info, String protocol, String name) {
+        return info.getBuiltinProtocolMappers()
+            .get(protocol)
+            .stream()
+            .filter(it -> name.equals(it.getName()))
+            .findFirst()
+            .orElse(null);
     }
 
     @Override
