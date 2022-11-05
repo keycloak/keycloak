@@ -34,6 +34,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -161,7 +162,7 @@ public class UsersResource {
             RepresentationToModel.createGroups(rep, realm, user);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(StripSecretsUtils.strip(rep)).success();
 
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
