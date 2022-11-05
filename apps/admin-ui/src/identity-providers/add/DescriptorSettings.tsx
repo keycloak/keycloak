@@ -132,6 +132,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="single-logout-service-url"
+        data-testid="single-logout-service-url"
         validated={
           errors.config?.singleLogoutServiceUrl
             ? ValidatedOptions.error
@@ -150,6 +151,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
       <SwitchField
         field="config.backchannelSupported"
         label="backchannelLogout"
+        data-testid="backchannelLogout"
         isReadOnly={readOnly}
       />
       <FormGroup
@@ -299,6 +301,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           <KeycloakTextInput
             type="text"
             id="principalAttribute"
+            data-testid="principalAttribute"
             name="config.principalAttribute"
             ref={register}
             isReadOnly={readOnly}
@@ -441,17 +444,20 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         <TextField
           field="config.signingCertificate"
           label="validatingX509Certs"
+          data-testid="validatingX509Certs"
           isReadOnly={readOnly}
         />
       )}
       <SwitchField
         field="config.signSpMetadata"
         label="signServiceProviderMetadata"
+        data-testid="signServiceProviderMetadata"
         isReadOnly={readOnly}
       />
       <SwitchField
         field="config.loginHint"
         label="passSubject"
+        data-testid="passSubject"
         isReadOnly={readOnly}
       />
 
@@ -471,6 +477,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           min="0"
           max="2147483"
           id="allowedClockSkew"
+          data-testid="allowedClockSkew"
           name="config.allowedClockSkew"
           ref={register}
           isReadOnly={readOnly}
@@ -493,6 +500,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           min="0"
           max="65535"
           id="attributeConsumingServiceIndex"
+          data-testid="attributeConsumingServiceIndex"
           name="config.attributeConsumingServiceIndex"
           ref={register}
           isReadOnly={readOnly}
@@ -513,6 +521,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         <KeycloakTextInput
           type="text"
           id="attributeConsumingServiceName"
+          data-testid="attributeConsumingServiceName"
           name="config.attributeConsumingServiceName"
           ref={register}
           isReadOnly={readOnly}
