@@ -134,24 +134,13 @@ export default function NewAttributeSettings() {
         flatten<any, any>({ permissions, selector, required }, { safe: true })
       ).map(([key, value]) => form.setValue(key, value));
       form.setValue("annotations", convert(annotations));
-      form.setValue("validations", convert(validations));
+      form.setValue("validations", validations);
       form.setValue("isRequired", required !== undefined);
     },
     []
   );
 
   const save = async (profileConfig: UserProfileAttributeType) => {
-    const validations = profileConfig.validations?.reduce(
-      (prevValidations: any, currentValidations: any) => {
-        prevValidations[currentValidations.key] =
-          currentValidations.value?.length === 0
-            ? {}
-            : currentValidations.value;
-        return prevValidations;
-      },
-      {}
-    );
-
     const annotations = (profileConfig.annotations! as KeyValueType[]).reduce(
       (obj, item) => Object.assign(obj, { [item.key]: item.value }),
       {}
@@ -169,7 +158,6 @@ export default function NewAttributeSettings() {
             ...attribute,
             name: attributeName,
             displayName: profileConfig.displayName!,
-            validations,
             selector: profileConfig.selector,
             permissions: profileConfig.permissions!,
             annotations,
@@ -188,7 +176,6 @@ export default function NewAttributeSettings() {
             name: profileConfig.name,
             displayName: profileConfig.displayName!,
             required: profileConfig.isRequired ? profileConfig.required : {},
-            validations,
             selector: profileConfig.selector,
             permissions: profileConfig.permissions!,
             annotations,

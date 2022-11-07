@@ -94,6 +94,10 @@ export const ResourcesPolicySelect = ({
         ])
       )
         .flat()
+        .filter(
+          (r): r is PolicyRepresentation | ResourceRepresentation =>
+            typeof r !== "string"
+        )
         .map(convert)
         .filter(
           ({ id }, index, self) =>

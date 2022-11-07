@@ -150,6 +150,7 @@
   "type": "Type",
   "userLabel": "User label",
   "data": "Data",
+  "providedBy": "Provided by",
   "passwordDataTitle": "Password data",
   "updateCredentialUserLabelSuccess": "The user label has been changed successfully.",
   "updateCredentialUserLabelError": "Error changing user label: {{error}}",
