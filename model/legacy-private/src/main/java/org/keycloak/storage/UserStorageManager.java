@@ -21,6 +21,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -143,14 +144,17 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     public CredentialValidationOutput getUserByCredential(RealmModel realm, CredentialInput input) {
         Stream<CredentialAuthentication> credentialAuthenticationStream = getEnabledStorageProviders(realm, CredentialAuthentication.class);
 
-        credentialAuthenticationStream = Stream.concat(credentialAuthenticationStream,
-                getCredentialProviders(session, CredentialAuthentication.class));
+        List<CredentialAuthentication> credentialAuthenticationList = Stream.concat(credentialAuthenticationStream,
+                        getCredentialProviders(session, CredentialAuthentication.class))
+                .filter(credentialAuthentication -> credentialAuthentication.supportsCredentialAuthenticationFor(input.getType())).collect(Collectors.toList());
 
-        return credentialAuthenticationStream
-                .filter(credentialAuthentication -> credentialAuthentication.supportsCredentialAuthenticationFor(input.getType()))
+        if (credentialAuthenticationList.isEmpty())
+            return null;
+
+        return credentialAuthenticationList.stream()
                 .map(credentialAuthentication -> credentialAuthentication.authenticate(realm, input))
-                .filter(Objects::nonNull)
-                .findFirst().orElse(null);
+                .filter(credentialValidationOutput -> CredentialValidationOutput.Status.AUTHENTICATED.equals(credentialValidationOutput.getAuthStatus()) || CredentialValidationOutput.Status.CONTINUE.equals(credentialValidationOutput.getAuthStatus()))
+                .findFirst().orElse(CredentialValidationOutput.failed());
     }
 
     protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {

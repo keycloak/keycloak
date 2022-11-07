@@ -37,7 +37,7 @@ import jakarta.ws.rs.core.Response;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
+public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosSingleUserStorageTest {
 
     private static final String PROVIDER_CONFIG_LOCATION = "classpath:kerberos/kerberos-ldap-crt-connection.properties";
 

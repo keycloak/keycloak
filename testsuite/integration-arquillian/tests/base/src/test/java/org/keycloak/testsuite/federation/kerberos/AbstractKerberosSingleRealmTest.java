@@ -54,8 +54,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTest {
-
+public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosSingleUserStorageTest {
     @Page
     protected AppPage appPage;
 

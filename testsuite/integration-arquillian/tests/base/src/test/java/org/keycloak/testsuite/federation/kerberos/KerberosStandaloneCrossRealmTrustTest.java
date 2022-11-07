@@ -32,7 +32,7 @@ import org.keycloak.testsuite.KerberosEmbeddedServer;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class KerberosStandaloneCrossRealmTrustTest extends AbstractKerberosTest {
+public class KerberosStandaloneCrossRealmTrustTest extends AbstractKerberosSingleUserStorageTest {
 
     private static final String PROVIDER_CONFIG_LOCATION = "classpath:kerberos/kerberos-standalone-connection.properties";
 

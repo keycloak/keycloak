@@ -98,25 +98,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     protected abstract ComponentRepresentation getUserStorageConfiguration();
 
-
-    protected ComponentRepresentation getUserStorageConfiguration(String providerName, String providerId) {
-        Map<String,String> kerberosConfig = getKerberosRule().getConfig();
-        MultivaluedHashMap<String, String> config = toComponentConfig(kerberosConfig);
-
-        UserStorageProviderModel model = new UserStorageProviderModel();
-        model.setLastSync(0);
-        model.setChangedSyncPeriod(-1);
-        model.setFullSyncPeriod(-1);
-        model.setName(providerName);
-        model.setPriority(0);
-        model.setProviderId(providerId);
-        model.setConfig(config);
-
-        ComponentRepresentation rep = ModelToRepresentation.toRepresentationWithoutConfig(model);
-        return rep;
-    }
-
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRep = loadJson(getClass().getResourceAsStream("/kerberos/kerberosrealm.json"), RealmRepresentation.class);
@@ -152,11 +133,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         removeAllUsers();
 
         oauth.clientId("kerberos-app");
-
-        ComponentRepresentation rep = getUserStorageConfiguration();
-        Response resp = testRealmResource().components().add(rep);
-        getCleanup().addComponentId(ApiUtil.getCreatedId(resp));
-        resp.close();
     }
 
     @After
@@ -178,6 +154,9 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 //        Thread.sleep(10000000);
 //    }
 
+    protected void assertFailedSpnegoLogin(String loginUsername, String password) throws Exception {
+        assertFailedSpnegoLogin("kerberos-app", loginUsername, password);
+    }
 
     protected OAuthClient.AccessTokenResponse assertSuccessfulSpnegoLogin(String loginUsername, String expectedUsername, String password) throws Exception {
         return assertSuccessfulSpnegoLogin("kerberos-app", loginUsername, expectedUsername, password);
@@ -207,28 +186,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         oauth.idTokenHint(tokenResponse.getIdToken());
 
         return tokenResponse;
-    }
-
-
-    protected String invokeLdap(GSSCredential gssCredential, String username) throws NamingException {
-        Hashtable env = new Hashtable(11);
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, "ldap://localhost:10389");
-
-        if (gssCredential != null) {
-            env.put(Context.SECURITY_AUTHENTICATION, "GSSAPI");
-            env.put(Sasl.CREDENTIALS, gssCredential);
-        }
-
-        DirContext ctx = new InitialDirContext(env);
-        try {
-            Attributes attrs = ctx.getAttributes("uid=" + username + ",ou=People,dc=keycloak,dc=org");
-            String cn = (String) attrs.get("cn").get();
-            String sn = (String) attrs.get("sn").get();
-            return cn + " " + sn;
-        } finally {
-            ctx.close();
-        }
     }
 
 
@@ -319,15 +276,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     }
 
 
-    protected void updateProviderEditMode(UserStorageProvider.EditMode editMode) {
-        updateUserStorageProvider(kerberosProvider -> kerberosProvider.getConfig().putSingle(LDAPConstants.EDIT_MODE, editMode.toString()));
-    }
-
-    protected void updateProviderValidatePasswordPolicy(Boolean validatePasswordPolicy) {
-        updateUserStorageProvider(kerberosProvider -> kerberosProvider.getConfig().putSingle(LDAPConstants.VALIDATE_PASSWORD_POLICY, validatePasswordPolicy.toString()));
-    }
-
-
     /**
      * Update UserStorage provider (Kerberos provider or LDAP provider with Kerberos enabled) with specified updater and save it
      *
@@ -371,7 +319,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     }
 
 
-    private static MultivaluedHashMap<String, String> toComponentConfig(Map<String, String> ldapConfig) {
+    protected static MultivaluedHashMap<String, String> toComponentConfig(Map<String, String> ldapConfig) {
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         for (Map.Entry<String, String> entry : ldapConfig.entrySet()) {
             config.add(entry.getKey(), entry.getValue());
