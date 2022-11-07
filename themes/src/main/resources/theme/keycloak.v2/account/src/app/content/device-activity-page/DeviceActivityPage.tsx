@@ -233,7 +233,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                     onClick={this.fetchDevices.bind(this)}
                     icon={<SyncAltIcon />}
                   >
-                    Refresh
+                    <Msg msgKey="refresh"/>
                   </Button>
                 </Tooltip>
               </SplitItem>
