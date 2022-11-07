@@ -208,8 +208,8 @@ export const RealmSettingsLoginTab = ({
               labelOff={t("common:off")}
               isChecked={
                 realm.duplicateEmailsAllowed ||
-                realm.loginWithEmailAllowed ||
-                realm.registrationEmailAsUsername
+                (realm.loginWithEmailAllowed &&
+                  realm.registrationEmailAsUsername)
               }
               onChange={(value) => {
                 updateSwitchValue({
