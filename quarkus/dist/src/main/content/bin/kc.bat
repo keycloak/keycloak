@@ -124,7 +124,7 @@ if "x%JAVA_HOME%" == "x" (
   )
 )
 
-set "CLASSPATH_OPTS=%DIRNAME%..\lib\quarkus-run.jar:%DIRNAME%..\lib\bootstrap\*"
+set "CLASSPATH_OPTS=%DIRNAME%..\lib\quarkus-run.jar;%DIRNAME%..\lib\bootstrap\*"
 
 set "JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp "%CLASSPATH_OPTS%" io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%"
 
