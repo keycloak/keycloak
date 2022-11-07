@@ -13,26 +13,26 @@ public class Features {
 
     public Features() {
         this.features = Arrays.stream(Profile.Feature.values())
-                .filter(f -> !f.getType().equals(Profile.Type.EXPERIMENTAL))
+                .filter(f -> !f.getType().equals(Profile.Feature.Type.EXPERIMENTAL))
                 .map(f -> new Feature(f))
                 .sorted(Comparator.comparing(Feature::getName))
                 .collect(Collectors.toList());
     }
 
     public List<Feature> getSupported() {
-        return features.stream().filter(f -> f.getType().equals(Profile.Type.DEFAULT)).collect(Collectors.toList());
+        return features.stream().filter(f -> f.getType().equals(Profile.Feature.Type.DEFAULT)).collect(Collectors.toList());
     }
 
     public List<Feature> getSupportedDisabledByDefault() {
-        return features.stream().filter(f -> f.getType().equals(Profile.Type.DISABLED_BY_DEFAULT)).collect(Collectors.toList());
+        return features.stream().filter(f -> f.getType().equals(Profile.Feature.Type.DISABLED_BY_DEFAULT)).collect(Collectors.toList());
     }
 
     public List<Feature> getDeprecated() {
-        return features.stream().filter(f -> f.getType().equals(Profile.Type.DEPRECATED)).collect(Collectors.toList());
+        return features.stream().filter(f -> f.getType().equals(Profile.Feature.Type.DEPRECATED)).collect(Collectors.toList());
     }
 
     public List<Feature> getPreview() {
-        return features.stream().filter(f -> f.getType().equals(Profile.Type.PREVIEW)).collect(Collectors.toList());
+        return features.stream().filter(f -> f.getType().equals(Profile.Feature.Type.PREVIEW)).collect(Collectors.toList());
     }
 
     public class Feature {
@@ -44,14 +44,14 @@ public class Features {
         }
 
         public String getName() {
-            return profileFeature.name().toLowerCase().replaceAll("_", "-");
+            return profileFeature.getKey();
         }
 
         public String getDescription() {
             return profileFeature.getLabel();
         }
 
-        private Profile.Type getType() {
+        private Profile.Feature.Type getType() {
             return profileFeature.getType();
         }
 
