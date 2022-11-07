@@ -38,7 +38,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, OIDCAccessTokenResponseMapper {
+public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, OIDCAccessTokenResponseMapper, UserInfoTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -102,6 +102,13 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
                                                         String userSessionNote,
                                                         String tokenClaimName, String jsonType,
                                                         boolean accessToken, boolean idToken) {
+        return createClaimMapper(name, userSessionNote, tokenClaimName, jsonType, accessToken, idToken, false);
+    }
+
+    public static ProtocolMapperModel createClaimMapper(String name,
+                                                        String userSessionNote,
+                                                        String tokenClaimName, String jsonType,
+                                                        boolean accessToken, boolean idToken, boolean userInfo) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -112,6 +119,7 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         config.put(OIDCAttributeMapperHelper.JSON_TYPE, jsonType);
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        if (userInfo) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
         mapper.setConfig(config);
         return mapper;
     }
