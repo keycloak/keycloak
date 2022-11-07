@@ -29,7 +29,7 @@
         <frontend.maven.plugin.version>1.12.1</frontend.maven.plugin.version>
         <frontend.maven.plugin.nodeVersion>v18.9.0</frontend.maven.plugin.nodeVersion>
 
-        <keycloak.version>19.0.3</keycloak.version>
+        <keycloak.version>20.0.0</keycloak.version>
 
         <admin-ui.path>../apps/admin-ui</admin-ui.path>
     </properties>
