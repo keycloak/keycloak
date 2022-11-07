@@ -19,9 +19,12 @@ export type Environment = {
   isRunningAsTheme: boolean;
 };
 
+// During development the realm can be passed as a query parameter when redirecting back from Keycloak.
+const realm = new URLSearchParams(window.location.search).get("realm");
+
 // The default environment, used during development.
 const defaultEnvironment: Environment = {
-  loginRealm: "master",
+  loginRealm: realm ?? "master",
   authServerUrl: "http://localhost:8180",
   authUrl: "http://localhost:8180",
   consoleBaseUrl: "/admin/master/console/",
