@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
+  Checkbox,
   Dropdown,
   DropdownItem,
   DropdownPosition,
   DropdownSeparator,
+  InputGroup,
   KebabToggle,
   TreeView,
   TreeViewDataItem,
@@ -109,6 +111,7 @@ export const GroupTree = ({ refresh: viewRefresh }: GroupTreeProps) => {
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
   const [first, setFirst] = useState(0);
+  const [exact, setExact] = useState(false);
 
   const [key, setKey] = useState(0);
   const refresh = () => {
@@ -151,12 +154,13 @@ export const GroupTree = ({ refresh: viewRefresh }: GroupTreeProps) => {
           {
             first: `${first}`,
             max: `${max + 1}`,
+            exact: `${exact}`,
           },
           search === "" ? null : { search }
         )
       ),
     (groups) => setData(groups.map((g) => mapGroup(g, [], refresh))),
-    [key, first, max, search]
+    [key, first, max, search, exact]
   );
 
   return data ? (
@@ -173,6 +177,18 @@ export const GroupTree = ({ refresh: viewRefresh }: GroupTreeProps) => {
       inputGroupName="searchForGroups"
       inputGroupPlaceholder={t("groups:searchForGroups")}
       inputGroupOnEnter={setSearch}
+      toolbarItem={
+        <InputGroup className="pf-u-pt-sm">
+          <Checkbox
+            id="exact"
+            data-testid="exact-search"
+            name="exact"
+            isChecked={exact}
+            onChange={(value) => setExact(value)}
+          />
+          <span className="pf-u-pl-sm">{t("exactSearch")}</span>
+        </InputGroup>
+      }
     >
       {data.length > 0 && (
         <TreeView data={data} allExpanded={search.length > 0} hasGuides />

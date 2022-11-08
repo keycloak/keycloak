@@ -10,6 +10,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -53,22 +54,23 @@ public class GroupsResource {
             )}
     )
     public final Stream<GroupRepresentation> listGroups(@QueryParam("search") @DefaultValue("") final String search, @QueryParam("first")
-        @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max, @QueryParam("global") @DefaultValue("true") boolean global) {
+    @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max, @QueryParam("global") @DefaultValue("true") boolean global,
+                                                        @QueryParam("exact") @DefaultValue("false") boolean exact) {
         this.auth.groups().requireList();
         final Stream<GroupModel> stream;
         if (!"".equals(search)) {
             if (global) {
-                stream = this.realm.searchForGroupByNameStream(search, first, max);
+                stream = session.groups().searchForGroupByNameStream(realm, search, exact, first, max);
             } else {
                 stream = this.realm.getTopLevelGroupsStream().filter(g -> g.getName().contains(search)).skip(first).limit(max);
             }
         } else {
             stream = this.realm.getTopLevelGroupsStream(first, max);
         }
-        return stream.map(g -> toGroupHierarchy(g, search));
+        return stream.map(g -> toGroupHierarchy(g, search, exact));
     }
 
-    private GroupRepresentation toGroupHierarchy(GroupModel group, final String search) {
+    private GroupRepresentation toGroupHierarchy(GroupModel group, final String search, boolean exact) {
         GroupRepresentation rep = toRepresentation(group, true);
         rep.setAccess(auth.groups().getAccess(group));
         rep.setSubGroups(group.getSubGroupsStream().filter(g ->
@@ -76,9 +78,9 @@ public class GroupsResource {
                         g, search
                 )
         ).map(subGroup ->
-            ModelToRepresentation.toGroupHierarchy(
-                    subGroup, true, search
-            )
+                ModelToRepresentation.toGroupHierarchy(
+                        subGroup, true, search, exact
+                )
         ).collect(Collectors.toList()));
 
         return rep;

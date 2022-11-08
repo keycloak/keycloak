@@ -22,6 +22,7 @@
   "usersAdded_other": "{{count}} users added to the group",
   "usersAddedError": "Could not add users to the group: {{error}}",
   "search": "Search",
+  "exactSearch": "Exact search",
   "members": "Members",
   "searchMembers": "Search members",
   "addMember": "Add member",
