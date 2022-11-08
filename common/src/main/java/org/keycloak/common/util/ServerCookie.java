@@ -28,6 +28,7 @@ import java.util.TimeZone;
 /**
  * Server-side cookie representation.  borrowed from Tomcat.
  */
+@Deprecated
 public class ServerCookie implements Serializable {
     private static final String tspecials = ",; ";
     private static final String tspecials2 = "()<>@,;:\\\"/[]?={} \t";

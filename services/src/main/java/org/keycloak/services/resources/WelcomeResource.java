@@ -23,11 +23,14 @@ import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.CookieBuilder;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
@@ -45,6 +48,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
@@ -265,14 +269,22 @@ public class WelcomeResource {
         String stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
         String cookiePath = session.getContext().getUri().getPath();
         boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
-        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true);
+
+        final NewCookie cookie = new CookieBuilder(KEYCLOAK_STATE_CHECKER, stateChecker)
+                .path(cookiePath)
+                .maxAge(300)
+                .secure(secureOnly)
+                .httpOnly(true)
+                .build();
+        CookieHelper.addCookie(cookie);
+
         return stateChecker;
     }
 
     private void expireCsrfCookie() {
         String cookiePath = session.getContext().getUri().getPath();
         boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
-        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, "", cookiePath, null, null, 0, secureOnly, true);
+        CookieHelper.expireCookie(KEYCLOAK_STATE_CHECKER, cookiePath, secureOnly, true);
     }
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {

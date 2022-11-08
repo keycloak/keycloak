@@ -111,6 +111,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -587,9 +588,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public String getSSOCookieValue() {
         Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
-        Cookie cookie = CookieHelper.getCookie(cookies, AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
-        if (cookie == null) return null;
-        return cookie.getValue();
+        Optional<Cookie> cookie = CookieHelper.getCookie(cookies, AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+        if (!cookie.isPresent()) return null;
+        return cookie.get().getValue();
     }
 
 
