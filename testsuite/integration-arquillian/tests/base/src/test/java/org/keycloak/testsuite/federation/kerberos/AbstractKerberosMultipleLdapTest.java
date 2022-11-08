@@ -33,7 +33,8 @@ import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 
 import javax.ws.rs.core.Response;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
