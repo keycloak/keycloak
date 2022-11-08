@@ -45,7 +45,6 @@ import org.keycloak.storage.SearchableModelField;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterators;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -185,7 +184,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
     public long delete(QueryParameters<M> queryParameters) {
         IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createCriteriaBuilder());
-        String queryString = "SELECT id " + iqmcb.getIckleQuery();
+        String queryString = "DELETE " + iqmcb.getIckleQuery();
 
         if (!queryParameters.getOrderBy().isEmpty()) {
             queryString += " ORDER BY " + queryParameters.getOrderBy().stream().map(HotRodMapStorage::toOrderString)
@@ -201,17 +200,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
 
         query.setParameters(iqmcb.getParameters());
 
-        AtomicLong result = new AtomicLong();
-
-        CloseableIterator<Object[]> iterator = query.iterator();
-        StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false)
-                .peek(e -> result.incrementAndGet())
-                .map(a -> a[0])
-                .map(String.class::cast)
-                .forEach(this::delete);
-        iterator.close();
-
-        return result.get();
+        return query.executeStatement();
     }
 
     public IckleQueryMapModelCriteriaBuilder<E, M> createCriteriaBuilder() {
