@@ -56,5 +56,10 @@ public @interface DistributionTest {
      * If any build option must be unset after the running the build command.
      */
     boolean removeBuildOptionsAfterBuild() default false;
+
+    /**
+     * If any option must be set when starting the server.
+     */
+    String[] defaultOptions() default {};
 }
 

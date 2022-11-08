@@ -109,10 +109,10 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     @Override
     public int getPort(UriInfo originalUriInfo, UrlType urlType) {
         if (ADMIN.equals(urlType)) {
-            return fromBaseUriOrDefault(URI::getPort, adminBaseUri, getRequestPort());
+            return fromBaseUriOrDefault(URI::getPort, adminBaseUri, getRequestPort(originalUriInfo));
         }
 
-        Integer port = forNonStrictBackChannel(originalUriInfo, urlType, this::getPort, this::getPort);
+        Integer port = forNonStrictBackChannel(originalUriInfo, urlType, this::getPort, this::getRequestPort);
 
         if (port != null) {
             return port;
@@ -127,7 +127,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
 
     @Override
     public int getPort(UriInfo originalUriInfo) {
-        return noProxy && strictHttps ? defaultTlsPort : getRequestPort();
+        return noProxy && strictHttps ? defaultTlsPort : getRequestPort(originalUriInfo);
     }
 
     private <T> T forNonStrictBackChannel(UriInfo originalUriInfo, UrlType urlType,
@@ -235,7 +235,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         hostnameEnabled = (frontEndHostName != null || frontEndBaseUri != null);
 
         if (frontEndBaseUri == null) {
-            strictHttps = config.getBoolean("strict-https", false);
+            strictHttps = hostnameEnabled && config.getBoolean("strict-https", false);
         } else {
             frontEndHostName = frontEndBaseUri.getHost();
             strictHttps = "https".equals(frontEndBaseUri.getScheme());
@@ -293,7 +293,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
                 !noProxy);
     }
 
-    private int getRequestPort() {
+    private int getRequestPort(UriInfo uriInfo) {
         KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
         return session.getContext().getContextObject(HttpRequest.class).getUri().getBaseUri().getPort();
     }
