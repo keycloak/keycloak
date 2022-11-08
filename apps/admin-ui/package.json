@@ -8,7 +8,7 @@
     "test": "wireit",
     "cy:open": "cypress open --e2e --browser chrome",
     "cy:run": "cypress run --browser chrome",
-    "cy:check-types": "tsc --project cypress/tsconfig.json",
+    "cy:check-types": "wireit",
     "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json",
     "server:start": "./scripts/start-server.mjs",
     "server:import-client": "./scripts/import-client.mjs"
@@ -17,36 +17,47 @@
     "dev": {
       "command": "vite --host",
       "dependencies": [
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "preview": {
       "command": "vite preview",
       "dependencies": [
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "build": {
       "command": "vite build",
       "dependencies": [
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "lint": {
       "command": "eslint . --ext js,jsx,mjs,ts,tsx",
       "dependencies": [
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "test": {
       "command": "vitest",
       "dependencies": [
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "cy:check-types": {
+      "command": "tsc --project cypress/tsconfig.json",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
       ]
     }
   },
   "dependencies": {
-    "@keycloak/keycloak-admin-client": "^21.0.0-dev.3",
+    "@keycloak/keycloak-admin-client": "999.0.0-dev",
     "@patternfly/patternfly": "^4.219.2",
     "@patternfly/react-code-editor": "^4.82.55",
     "@patternfly/react-core": "^4.258.3",

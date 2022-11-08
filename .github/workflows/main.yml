@@ -49,6 +49,11 @@ jobs:
             command: lint
           - workspace: account-ui
             command: build
+          # Keycloak Admin Client
+          - workspace: "@keycloak/keycloak-admin-client"
+            command: lint
+          - workspace: "@keycloak/keycloak-admin-client"
+            command: build
           # Keycloak Masthead
           - workspace: keycloak-masthead
             command: lint
