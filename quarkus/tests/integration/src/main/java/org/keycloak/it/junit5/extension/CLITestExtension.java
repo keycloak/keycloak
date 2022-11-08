@@ -32,6 +32,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
@@ -102,7 +104,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
 
             if (launch != null) {
-                result = dist.run(List.of(launch.value()));
+                result = dist.run(Stream.concat(List.of(launch.value()).stream(), List.of(distConfig.defaultOptions()).stream()).collect(Collectors.toList()));
             }
         } else {
             configureProfile(context);
