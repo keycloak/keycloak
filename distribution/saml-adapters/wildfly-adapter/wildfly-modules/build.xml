@@ -41,8 +41,8 @@
             <maven-resource group="org.keycloak" artifact="keycloak-core"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-crypto-default">
-            <maven-resource group="org.keycloak" artifact="keycloak-crypto-default"/>
+        <module-def name="org.keycloak.keycloak-crypto-elytron">
+            <maven-resource group="org.keycloak" artifact="keycloak-crypto-elytron"/>
         </module-def>
 
         <!-- subsystems -->

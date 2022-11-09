@@ -20,6 +20,7 @@ package org.keycloak.testsuite.x509;
 
 import com.google.common.base.Charsets;
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,6 +34,7 @@ import javax.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
@@ -44,6 +46,7 @@ import java.nio.file.Paths;
 import java.util.function.Supplier;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.hamcrest.Matchers;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.openqa.selenium.WebDriver;
 
@@ -57,6 +60,8 @@ import org.openqa.selenium.WebDriver;
  */
 
 public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
+
+    Logger log = Logger.getLogger(getClass());
 
     private static final String OCSP_RESPONDER_HOST = "localhost";
 
@@ -90,7 +95,8 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
 
-        Assert.assertThat(response.getErrorDescription(), containsString("Certificate's been revoked."));
+        Assert.assertThat(response.getErrorDescription(), Matchers.stringContainsInOrder("Certificate", "been revoked"));
+
     }
 
     @Test
@@ -197,7 +203,8 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
                         new OcspHandler(OcspHandler.OCSP_RESPONDER_CERT_PATH, OcspHandler.OCSP_RESPONDER_KEYPAIR_PATH))
                 ).build();
 
-        ocspResponder.start();
+                log.warn("STARTING OCSP RESPONDER: " + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT);
+       ocspResponder.start();
     }
 
     @After
