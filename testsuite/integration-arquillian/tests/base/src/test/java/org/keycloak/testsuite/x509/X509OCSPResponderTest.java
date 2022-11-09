@@ -46,6 +46,7 @@ import java.nio.file.Paths;
 import java.util.function.Supplier;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.openqa.selenium.WebDriver;
@@ -95,7 +96,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
 
-        Assert.assertThat(response.getErrorDescription(), Matchers.stringContainsInOrder("Certificate", "been revoked"));
+        MatcherAssert.assertThat(response.getErrorDescription(), Matchers.stringContainsInOrder("Certificate", "been revoked"));
 
     }
 

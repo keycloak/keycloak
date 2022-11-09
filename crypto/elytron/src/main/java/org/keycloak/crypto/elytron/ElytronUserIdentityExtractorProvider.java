@@ -108,6 +108,7 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                 if (subjectAlternativeNames == null) {
                     return null;
                 }
+                log.info(Arrays.toString(subjectAlternativeNames.toArray()));
                 for (List<?> sbjAltName : subjectAlternativeNames) {
                     if (sbjAltName == null)
                         continue;
@@ -121,6 +122,7 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                             case GeneralName.RFC_822_NAME:
                             case GeneralName.DNS_NAME:
                             case GeneralName.DIRECTORY_NAME:
+                            case GeneralName.URI_NAME:
                                subjectName = (String) sbjObj;
                                break;
                             case GeneralName.OTHER_NAME:
@@ -134,7 +136,7 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                                 switch (asn1Type) {
                                     case ASN1.OBJECT_IDENTIFIER_TYPE:
                                         String oid = derDecoder.decodeObjectIdentifier();
-                                        log.info("OID: " + oid);
+                                        log.debug("OID: " + oid);
                                         if(UPN_OID.equals(oid)) {
                                             derDecoder.decodeImplicit(160);
                                             byte[] sb = derDecoder.drainElementValue();
@@ -157,21 +159,28 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                                     case ASN1.OCTET_STRING_TYPE:
                                         subjectName = derDecoder.decodeOctetStringAsString();
                                         break;
+                                    case 0xa0:
+                                        derDecoder.startExplicit(asn1Type);
+                                        break;
+                                    case ASN1.SEQUENCE_TYPE:
+                                        derDecoder.startSequence();
+                                    default:
+                                        derDecoder.skipElement();
 
                                 }
                                 
 
                             }
-                            log.debug("Subject Alt Name: " + subjectName);
                         }
-    
+                        
                     }
-    
+                    
                 }
             } catch (CertificateParsingException | UnsupportedEncodingException e) {
                 log.error("Failed to parse Subject Name:",e);
             }
-
+            
+            log.debug("Subject Alt Name: " + subjectName);
             return subjectName;
         }
     }

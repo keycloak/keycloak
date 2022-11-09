@@ -18,6 +18,8 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.After;
 import org.junit.Assert;
@@ -120,7 +122,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
 
-        Assert.assertThat(response.getErrorDescription(), containsString("Certificate's been revoked."));
+        MatcherAssert.assertThat(response.getErrorDescription(), Matchers.stringContainsInOrder("Certificate", "been revoked"));
     }
 
     @Before
