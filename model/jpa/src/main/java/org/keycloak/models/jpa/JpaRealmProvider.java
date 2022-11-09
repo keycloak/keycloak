@@ -494,10 +494,15 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
         if (search == null || search.isEmpty()) return getGroupsStream(realm, ids, first, max);
 
+        List<String> idsList = ids.collect(Collectors.toList());
+        if (idsList.isEmpty()) {
+            return Stream.empty();
+        }
+
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsByNameContainingFromIdList", String.class)
                 .setParameter("realm", realm.getId())
                 .setParameter("search", search)
-                .setParameter("ids", ids.collect(Collectors.toList()));
+                .setParameter("ids", idsList);
 
         return closing(paginateQuery(query, first, max).getResultStream())
                 .map(g -> session.groups().getGroupById(realm, g));
@@ -509,9 +514,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             return getGroupsStream(realm, ids);
         }
 
+        List<String> idsList = ids.collect(Collectors.toList());
+        if (idsList.isEmpty()) {
+            return Stream.empty();
+        }
+
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsFromIdList", String.class)
                 .setParameter("realm", realm.getId())
-                .setParameter("ids", ids.collect(Collectors.toList()));
+                .setParameter("ids", idsList);
 
 
         return closing(paginateQuery(query, first, max).getResultStream())

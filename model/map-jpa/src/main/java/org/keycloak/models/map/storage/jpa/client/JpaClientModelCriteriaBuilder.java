@@ -71,8 +71,8 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
 
                     return new JpaClientModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(
-                            cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fAlwaysDisplayInConsole")), 
-                            cb.literal(convertToJson(value[0])))
+                            cb.function("->>", JsonbType.class, root.get("metadata"), cb.literal("fAlwaysDisplayInConsole")).as(Boolean.class),
+                            value[0])
                     );
                 } else if (modelField == SearchableFields.ATTRIBUTE) {
                     validateValue(value, modelField, op, String.class, String.class);
