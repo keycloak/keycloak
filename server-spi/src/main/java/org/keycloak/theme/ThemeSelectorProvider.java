@@ -19,13 +19,15 @@ package org.keycloak.theme;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Version;
 import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface ThemeSelectorProvider extends Provider {
+
+    String DEFAULT = "keycloak";
+    String DEFAULT_V2 = "keycloak.v2";
 
     /**
      * Return the theme name to use for the specified type
@@ -36,13 +38,20 @@ public interface ThemeSelectorProvider extends Provider {
     String getThemeName(Theme.Type type);
 
     default String getDefaultThemeName(Theme.Type type) {
-        String name = Config.scope("theme").get("default", Version.NAME.toLowerCase());
-        if ((type == Theme.Type.ACCOUNT) && Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
-            name = name.concat(".v2");
-        } else if ((type == Theme.Type.ADMIN) && Profile.isFeatureEnabled(Profile.Feature.ADMIN2)) {
-            name = name.concat(".v2");
+        String name = Config.scope("theme").get("default");
+        if (name != null && !name.isEmpty()) {
+            return name;
         }
-        return name;
+
+        if ((type == Theme.Type.ACCOUNT) && Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
+            return DEFAULT_V2;
+        }
+
+        if ((type == Theme.Type.ADMIN) && Profile.isFeatureEnabled(Profile.Feature.ADMIN2)) {
+            return DEFAULT_V2;
+        }
+
+        return DEFAULT;
     }
 
 }
