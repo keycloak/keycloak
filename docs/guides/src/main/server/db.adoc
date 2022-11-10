@@ -90,7 +90,10 @@ For details on these properties and any performance implications, see the Oracle
 
 === Unicode support for a Microsoft SQL Server database
 
-Unicode characters are supported only for the special fields for a Microsoft SQL Server database. The JDBC driver and database require no special settings.
+Unicode characters are supported only for the special fields for a Microsoft SQL Server database. The database requires no special settings.
+
+The `sendStringParametersAsUnicode` property of JDBC driver should be set to `false` to significantly improve performance. Without this parameter,
+the Microsoft SQL Server might be unable to use indexes.
 
 === Configuring Unicode support for a MySQL database
 
