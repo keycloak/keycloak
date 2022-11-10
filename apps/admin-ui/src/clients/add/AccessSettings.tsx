@@ -129,6 +129,7 @@ export const AccessSettings = ({
                   type="text"
                   id="idpInitiatedSsoUrlName"
                   name="attributes.saml_idp_initiated_sso_url_name"
+                  data-testid="idpInitiatedSsoUrlName"
                   ref={register}
                 />
               </FormGroup>
@@ -146,6 +147,7 @@ export const AccessSettings = ({
                   type="text"
                   id="idpInitiatedSsoRelayState"
                   name="attributes.saml_idp_initiated_sso_relay_state"
+                  data-testid="idpInitiatedSsoRelayState"
                   ref={register}
                 />
               </FormGroup>
@@ -163,6 +165,7 @@ export const AccessSettings = ({
                   type="text"
                   id="masterSamlProcessingUrl"
                   name="adminUrl"
+                  data-testid="masterSamlProcessingUrl"
                   ref={register}
                 />
               </FormGroup>

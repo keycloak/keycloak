@@ -1023,8 +1023,8 @@ describe("Clients test", () => {
     });
 
     it("Displays the correct tabs", () => {
+      clientDetailsPage.goToSettingsTab();
       clientDetailsPage
-        .goToSettingsTab()
         .tabUtils()
         .checkTabExists(ClientsDetailsTab.Settings, true)
         .checkTabExists(ClientsDetailsTab.Roles, true)
