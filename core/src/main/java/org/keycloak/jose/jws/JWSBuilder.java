@@ -19,6 +19,7 @@ package org.keycloak.jose.jws;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.util.JsonSerialization;
@@ -37,6 +38,7 @@ public class JWSBuilder {
     String kid;
     String contentType;
     byte[] contentBytes;
+    JWK jwk;
 
     public JWSBuilder type(String type) {
         this.type = type;
@@ -50,6 +52,11 @@ public class JWSBuilder {
 
     public JWSBuilder contentType(String type) {
         this.contentType = type;
+        return this;
+    }
+
+    public JWSBuilder jwk(JWK jwk) {
+        this.jwk = jwk;
         return this;
     }
 
@@ -75,6 +82,13 @@ public class JWSBuilder {
         if (type != null) builder.append(",\"typ\" : \"").append(type).append("\"");
         if (kid != null) builder.append(",\"kid\" : \"").append(kid).append("\"");
         if (contentType != null) builder.append(",\"cty\":\"").append(contentType).append("\"");
+        if (jwk != null) {
+            try {
+                builder.append(",\"jwk\":").append(JsonSerialization.writeValueAsString(jwk));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         builder.append("}");
         return Base64Url.encode(builder.toString().getBytes(StandardCharsets.UTF_8));
     }
