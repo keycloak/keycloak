@@ -115,7 +115,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
             throw new NotFoundException("Could not find group");
         }
 
-        return mapping(group::hasDirectRole).collect(Collectors.toList());
+        return mapping(group::hasRole).collect(Collectors.toList());
     }
 
     @GET
@@ -143,7 +143,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
             else throw new ForbiddenException();
         }
 
-        return mapping(user::hasDirectRole).collect(Collectors.toList());
+        return mapping(user::hasRole).collect(Collectors.toList());
     }
 
     @GET
@@ -165,7 +165,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
             )}
     )
     public final List<ClientRole> listCompositeRealmRoleMappings() {
-        return mapping (o -> true ).collect(Collectors.toList());
+        return mapping(o -> true).collect(Collectors.toList());
     }
 
 }

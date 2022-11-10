@@ -905,6 +905,8 @@ describe("Clients test", () => {
 
       commonPage.sidebar().waitForPageLoad();
 
+      serviceAccountTab.hideInheritedRoles();
+
       serviceAccountTab
         .selectRow("offline_access")
         .selectRow("admin")
@@ -922,6 +924,8 @@ describe("Clients test", () => {
       commonPage.modalUtils().confirmModal();
 
       commonPage.sidebar().waitForPageLoad();
+
+      serviceAccountTab.unhideInheritedRoles();
 
       serviceAccountTab
         .checkRoles(["create-realm"], false)
