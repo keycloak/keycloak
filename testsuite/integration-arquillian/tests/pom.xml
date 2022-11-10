@@ -263,7 +263,7 @@
         <keycloak.x509cert.lookup.provider>default</keycloak.x509cert.lookup.provider>
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <auth.server.fips.mode>disabled</auth.server.fips.mode>
-        <auth.server.supported.keystore.types>JKS,PKCS12,BCFKS</auth.server.supported.keystore.types>
+        <auth.server.supported.keystore.types>JKS,PKCS12</auth.server.supported.keystore.types>
     </properties>
 
     <build>
@@ -1589,7 +1589,7 @@
             <properties>
                 <auth.server.fips.mode>enabled</auth.server.fips.mode>
 
-                <auth.server.supported.keystore.types>PKCS12,BCFKS</auth.server.supported.keystore.types>
+                <auth.server.supported.keystore.types>PKCS12</auth.server.supported.keystore.types>
 
                 <auth.server.keystore.type>pkcs12</auth.server.keystore.type>
                 <auth.server.keystore>${auth.server.config.dir}/keycloak-fips.keystore.${auth.server.keystore.type}</auth.server.keystore>
