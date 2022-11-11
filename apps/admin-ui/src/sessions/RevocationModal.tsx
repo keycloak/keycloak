@@ -11,7 +11,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import { useForm } from "react-hook-form-v7";
 
 import { emailRegexPattern } from "../util";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
@@ -201,7 +201,6 @@ export const RevocationModal = ({
         >
           <KeycloakTextInput
             data-testid="not-before-input"
-            ref={register({ required: true, pattern: emailRegexPattern })}
             autoFocus
             isReadOnly
             value={
@@ -211,7 +210,10 @@ export const RevocationModal = ({
             }
             type="text"
             id="not-before"
-            name="notBefore"
+            {...register("notBefore", {
+              required: true,
+              pattern: emailRegexPattern,
+            })}
             validated={
               errors.email ? ValidatedOptions.error : ValidatedOptions.default
             }
