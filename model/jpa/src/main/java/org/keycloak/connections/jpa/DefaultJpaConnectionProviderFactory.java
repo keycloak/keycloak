@@ -179,6 +179,10 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             String driver = config.get("driver");
                             if (driver.equals("org.h2.Driver")) {
                                 url = addH2NonKeywords(url);
+
+                                // Isolation level lower than REPEATABLE_READ is causing intermittent failures for H2 database
+                                //   See: https://github.com/keycloak/keycloak/issues/14917 for more details
+                                properties.put("hibernate.connection.isolation", String.valueOf(Connection.TRANSACTION_REPEATABLE_READ));
                             }
                             properties.put(AvailableSettings.JPA_JDBC_URL, url);
                             properties.put(AvailableSettings.JPA_JDBC_DRIVER, driver);

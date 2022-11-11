@@ -134,7 +134,6 @@ public class ConcurrentAuthzTest extends KeycloakModelTest {
     }
 
     @Test
-    @Ignore // This is ignored due to intermittent failure, see https://github.com/keycloak/keycloak/issues/14917
     public void testStaleCacheConcurrent() {
         String permissionId = withRealm(realmId, (session, realm) -> {
             AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);

@@ -1,5 +1,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import io.agroal.api.configuration.AgroalConnectionFactoryConfiguration;
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -90,6 +91,11 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB_POOL_MAX_SIZE)
                         .to("quarkus.datasource.jdbc.max-size")
                         .paramLabel("size")
+                        .build(),
+                fromOption(DatabaseOptions.DB_TRANSACTION_ISOLATION_LEVEL)
+                        .to("quarkus.datasource.jdbc.transaction-isolation-level")
+                        .transformer(DatabasePropertyMappers::resolveIsolationLevel)
+                        .paramLabel("isolation-level")
                         .build()
         };
     }
@@ -215,5 +221,16 @@ final class DatabasePropertyMappers {
     private static boolean isJpaStore() {
         String storage = getRawValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey()));
         return storage != null && StorageOptions.StorageType.jpa.name().equals(storage);
+    }
+
+    private static Optional<String> resolveIsolationLevel(Optional<String> value, ConfigSourceInterceptorContext context) {
+        // Isolation level lower than REPEATABLE_READ is causing intermittent failures for H2 database
+        //   See: https://github.com/keycloak/keycloak/issues/14917 for more details
+        return value.or(
+                () -> Configuration.getRawPersistedProperty(NS_KEYCLOAK_PREFIX.concat(DatabaseOptions.DB.getKey()))
+                    .flatMap(Database::getDatabaseKind)
+                    .filter(DatabaseKind.H2::equals)
+                    .map(db -> AgroalConnectionFactoryConfiguration.TransactionIsolation.REPEATABLE_READ.name())
+                );
     }
 }
