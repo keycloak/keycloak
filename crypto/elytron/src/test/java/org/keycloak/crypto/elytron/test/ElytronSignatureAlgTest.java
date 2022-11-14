@@ -35,7 +35,7 @@ public class ElytronSignatureAlgTest {
         KeySpec kspec = new PKCS8EncodedKeySpec(keyPair.getPrivate().getEncoded());
         key.setPrivateKey(KeyFactory.getInstance("RSASSA-PSS").generatePrivate(kspec));
             
-        Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault()));
+        Signature signature = Signature.getInstance("RSASSA-PSS");
         MGF1ParameterSpec ps = MGF1ParameterSpec.SHA256;
         AlgorithmParameterSpec params = new PSSParameterSpec(ps.getDigestAlgorithm(), "MGF1", ps, 32, 1);
         
