@@ -422,7 +422,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         // Create authSession with target SAML 2.0 client and authenticated user
         LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
-        SamlService samlService = (SamlService) factory.createProtocolEndpoint(realm, event);
+        SamlService samlService = (SamlService) factory.createProtocolEndpoint(session, event);
         ResteasyProviderFactory.getInstance().injectProperties(samlService);
         AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, realm,
                 targetClient, null);

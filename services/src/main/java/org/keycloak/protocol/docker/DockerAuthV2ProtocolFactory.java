@@ -49,8 +49,8 @@ public class DockerAuthV2ProtocolFactory extends AbstractLoginProtocolFactory im
     }
 
     @Override
-    public Object createProtocolEndpoint(final RealmModel realm, final EventBuilder event) {
-        return new DockerV2LoginProtocolService(realm, event);
+    public Object createProtocolEndpoint(final KeycloakSession session, final EventBuilder event) {
+        return new DockerV2LoginProtocolService(session, event);
     }
 
     @Override

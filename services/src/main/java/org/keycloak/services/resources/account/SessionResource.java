@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
@@ -57,14 +56,12 @@ public class SessionResource {
     private final Auth auth;
     private final RealmModel realm;
     private final UserModel user;
-    private HttpRequest request;
 
-    public SessionResource(KeycloakSession session, Auth auth, HttpRequest request) {
+    public SessionResource(KeycloakSession session, Auth auth) {
         this.session = session;
         this.auth = auth;
         this.realm = auth.getRealm();
         this.user = auth.getUser();
-        this.request = request;
     }
 
     /**

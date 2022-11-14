@@ -395,8 +395,8 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
     @Override
-    public Object createProtocolEndpoint(RealmModel realm, EventBuilder event) {
-        return new OIDCLoginProtocolService(realm, event, providerConfig);
+    public Object createProtocolEndpoint(KeycloakSession session, EventBuilder event) {
+        return new OIDCLoginProtocolService(session, event, providerConfig);
     }
 
     @Override

@@ -31,7 +31,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.admin.OperationType;
@@ -143,39 +142,23 @@ public class ResourceServerService {
 
     @Path("/resource")
     public ResourceSetService getResourceSetResource() {
-        ResourceSetService resource = new ResourceSetService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new ResourceSetService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 
     @Path("/scope")
     public ScopeService getScopeResource() {
-        ScopeService resource = new ScopeService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new ScopeService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 
     @Path("/policy")
     public PolicyService getPolicyResource() {
-        PolicyService resource = new PolicyService(this.resourceServer, this.authorization, this.auth, adminEvent);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new PolicyService(this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 
     @Path("/permission")
     public Object getPermissionTypeResource() {
         this.auth.realm().requireViewAuthorization();
-        PermissionService resource = new PermissionService(this.resourceServer, this.authorization, this.auth, adminEvent);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new PermissionService(this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 
     private void createDefaultPermission(ResourceRepresentation resource, PolicyRepresentation policy) {

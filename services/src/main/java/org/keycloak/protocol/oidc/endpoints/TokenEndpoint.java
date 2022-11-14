@@ -141,8 +141,7 @@ public class TokenEndpoint {
         AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION, OAUTH2_DEVICE_CODE, CIBA
     }
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
     @Context
     private HttpRequest request;
@@ -153,8 +152,7 @@ public class TokenEndpoint {
     @Context
     private HttpHeaders headers;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     private final TokenManager tokenManager;
     private final RealmModel realm;
@@ -166,9 +164,11 @@ public class TokenEndpoint {
 
     private Cors cors;
 
-    public TokenEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
+    public TokenEndpoint(KeycloakSession session, TokenManager tokenManager, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
         this.tokenManager = tokenManager;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
         this.event = event;
     }
 
@@ -183,7 +183,7 @@ public class TokenEndpoint {
                 kcSession.getContext().setRealm(realmModel);
                 // create another instance of the endpoint that will be run within the new session.
                 Resteasy.pushContext(KeycloakSession.class, kcSession);
-                TokenEndpoint other = new TokenEndpoint(new TokenManager(), realmModel, new EventBuilder(realmModel, kcSession, clientConnection));
+                TokenEndpoint other = new TokenEndpoint(session, new TokenManager(), new EventBuilder(realmModel, kcSession, clientConnection));
                 ResteasyProviderFactory.getInstance().injectProperties(other);
                 return other.processGrantRequestInternal();
             } catch (WebApplicationException we) {
@@ -252,7 +252,7 @@ public class TokenEndpoint {
 
     @Path("introspect")
     public Object introspect() {
-        TokenIntrospectionEndpoint tokenIntrospectionEndpoint = new TokenIntrospectionEndpoint(this.realm, this.event);
+        TokenIntrospectionEndpoint tokenIntrospectionEndpoint = new TokenIntrospectionEndpoint(this.session, this.event);
 
         ResteasyProviderFactory.getInstance().injectProperties(tokenIntrospectionEndpoint);
 

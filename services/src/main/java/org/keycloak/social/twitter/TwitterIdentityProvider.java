@@ -80,7 +80,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new Endpoint(realm, callback, event, this);
+        return new Endpoint(session, callback, event, this);
     }
 
     @Override
@@ -162,22 +162,22 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
 
     protected static class Endpoint {
-        protected RealmModel realm;
-        protected AuthenticationCallback callback;
-        protected EventBuilder event;
-        private TwitterIdentityProvider provider;
+        protected final RealmModel realm;
+        protected final AuthenticationCallback callback;
+        protected final EventBuilder event;
+        private final TwitterIdentityProvider provider;
 
-        @Context
-        protected KeycloakSession session;
+        protected final KeycloakSession session;
 
-        @Context
-        protected ClientConnection clientConnection;
+        protected final ClientConnection clientConnection;
 
         @Context
         protected HttpHeaders headers;
 
-        public Endpoint(RealmModel realm, AuthenticationCallback callback, EventBuilder event, TwitterIdentityProvider provider) {
-            this.realm = realm;
+        public Endpoint(KeycloakSession session, AuthenticationCallback callback, EventBuilder event, TwitterIdentityProvider provider) {
+            this.session = session;
+            this.realm = session.getContext().getRealm();
+            this.clientConnection = session.getContext().getConnection();
             this.callback = callback;
             this.event = event;
             this.provider = provider;

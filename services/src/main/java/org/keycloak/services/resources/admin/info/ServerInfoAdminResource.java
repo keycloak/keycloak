@@ -57,7 +57,6 @@ import org.keycloak.theme.Theme;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Arrays;
@@ -78,8 +77,11 @@ public class ServerInfoAdminResource {
 
     private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
+
+    public ServerInfoAdminResource(KeycloakSession session) {
+        this.session = session;
+    }
 
     /**
      * Get themes, social providers, auth providers, and event listeners available on this server

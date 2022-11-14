@@ -56,21 +56,24 @@ public abstract class AbstractSecuredLocalService {
     private static final Logger logger = Logger.getLogger(AbstractSecuredLocalService.class);
 
     protected final ClientModel client;
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
     @Context
     protected HttpHeaders headers;
-    @Context
-    protected ClientConnection clientConnection;
+
+    protected final ClientConnection clientConnection;
     protected String stateChecker;
-    @Context
-    protected KeycloakSession session;
+
+    protected final KeycloakSession session;
+
     @Context
     protected HttpRequest request;
     protected Auth auth;
 
-    public AbstractSecuredLocalService(RealmModel realm, ClientModel client) {
-        this.realm = realm;
+    public AbstractSecuredLocalService(KeycloakSession session, ClientModel client) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
+        this.clientConnection = session.getContext().getConnection();
         this.client = client;
     }
 

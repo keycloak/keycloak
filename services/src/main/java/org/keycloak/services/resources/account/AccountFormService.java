@@ -139,12 +139,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
     public static final String ACCOUNT_MGMT_FORWARDED_ERROR_NOTE = "ACCOUNT_MGMT_FORWARDED_ERROR";
 
     private final AppAuthManager authManager;
-    private EventBuilder event;
+    private final EventBuilder event;
     private AccountProvider account;
     private EventStoreProvider eventStore;
 
-    public AccountFormService(RealmModel realm, ClientModel client, EventBuilder event) {
-        super(realm, client);
+    public AccountFormService(KeycloakSession session, ClientModel client, EventBuilder event) {
+        super(session, client);
         this.event = event;
         this.authManager = new AppAuthManager();
     }

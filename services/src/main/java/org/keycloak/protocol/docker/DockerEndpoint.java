@@ -6,7 +6,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -36,8 +36,8 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
     private ClientModel client;
     private AuthenticationSessionModel authenticationSession;
 
-    public DockerEndpoint(final RealmModel realm, final EventBuilder event, final EventType login) {
-        super(realm, event);
+    public DockerEndpoint(KeycloakSession session, final EventBuilder event, final EventType login) {
+        super(session, event);
         this.login = login;
     }
 

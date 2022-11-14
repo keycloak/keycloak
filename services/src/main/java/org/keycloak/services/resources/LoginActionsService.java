@@ -99,7 +99,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriBuilderException;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.Providers;
 import java.net.URI;
 import java.util.Map;
 
@@ -128,7 +127,7 @@ public class LoginActionsService {
     
     public static final String CANCEL_AIA = "cancel-aia";
 
-    private RealmModel realm;
+    private final RealmModel realm;
 
     @Context
     private HttpRequest request;
@@ -136,14 +135,9 @@ public class LoginActionsService {
     @Context
     protected HttpHeaders headers;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
-    @Context
-    protected Providers providers;
-
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
     private EventBuilder event;
 
@@ -180,8 +174,10 @@ public class LoginActionsService {
         return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getLoginActionsService");
     }
 
-    public LoginActionsService(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    public LoginActionsService(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
         CacheControlUtil.noBackButtonCacheControlHeader();
     }
