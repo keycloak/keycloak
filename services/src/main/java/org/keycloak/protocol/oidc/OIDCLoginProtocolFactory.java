@@ -110,6 +110,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
     @Override
     public void init(Config.Scope config) {
+        initBuiltIns();
         this.providerConfig = new OIDCProviderConfig(config);
         if (providerConfig.isLegacyLogoutRedirectUri()) {
             logger.warnf("Deprecated switch '%s' is enabled. Please try to disable it and update your clients to use OpenID Connect compliant way for RP-initiated logout.", CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
@@ -129,9 +130,9 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         return builtins;
     }
 
-    static Map<String, ProtocolMapperModel> builtins = new HashMap<>();
+    private Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
-    static {
+    void initBuiltIns() {
                 ProtocolMapperModel model;
         model = UserPropertyMapper.createClaimMapper(USERNAME,
                 "username",
@@ -218,7 +219,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
     }
 
-    private static void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
+    private void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
         ProtocolMapperModel model = UserAttributeMapper.createClaimMapper(name,
                 attrName,
                 claimName, type,
@@ -297,7 +298,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
 
-    public static ClientScopeModel addRolesClientScope(RealmModel newRealm) {
+    public ClientScopeModel addRolesClientScope(RealmModel newRealm) {
         ClientScopeModel rolesScope = KeycloakModelUtils.getClientScopeByName(newRealm, ROLES_SCOPE);
         if (rolesScope == null) {
             rolesScope = newRealm.addClientScope(ROLES_SCOPE);
@@ -320,7 +321,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
 
-    public static ClientScopeModel addWebOriginsClientScope(RealmModel newRealm) {
+    public ClientScopeModel addWebOriginsClientScope(RealmModel newRealm) {
         ClientScopeModel originsScope = KeycloakModelUtils.getClientScopeByName(newRealm, WEB_ORIGINS_SCOPE);
         if (originsScope == null) {
             originsScope = newRealm.addClientScope(WEB_ORIGINS_SCOPE);
@@ -347,7 +348,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
      * @param newRealm the realm to which the {@code microprofile-jwt} scope is to be added.
      * @return a reference to the {@code microprofile-jwt} client scope that was either created or already exists in the realm.
      */
-    public static ClientScopeModel addMicroprofileJWTClientScope(RealmModel newRealm) {
+    public ClientScopeModel addMicroprofileJWTClientScope(RealmModel newRealm) {
         ClientScopeModel microprofileScope = KeycloakModelUtils.getClientScopeByName(newRealm, MICROPROFILE_JWT_SCOPE);
         if (microprofileScope == null) {
             microprofileScope = newRealm.addClientScope(MICROPROFILE_JWT_SCOPE);
@@ -366,7 +367,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
 
-    public static void addAcrClientScope(RealmModel newRealm) {
+    public void addAcrClientScope(RealmModel newRealm) {
         if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
             ClientScopeModel acrScope = KeycloakModelUtils.getClientScopeByName(newRealm, ACR_SCOPE);
             if (acrScope == null) {
