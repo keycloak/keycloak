@@ -12,7 +12,7 @@ import javax.ws.rs.core.Response;
  */
 public class CorsPreflightService {
 
-    private HttpRequest request;
+    private final HttpRequest request;
 
     public CorsPreflightService(HttpRequest request) {
         this.request = request;

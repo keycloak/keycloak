@@ -47,14 +47,14 @@ public class ClientProfilesResource {
     @Context
     protected HttpResponse response;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
 
-    public ClientProfilesResource(RealmModel realm, AdminPermissionEvaluator auth) {
-        this.realm = realm;
+    public ClientProfilesResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
     }
 

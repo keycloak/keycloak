@@ -22,7 +22,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
@@ -57,8 +57,8 @@ public class SamlEcpProfileService extends SamlService {
     private static final String NS_PREFIX_SAML_PROTOCOL = "samlp";
     private static final String NS_PREFIX_SAML_ASSERTION = "saml";
 
-    public SamlEcpProfileService(RealmModel realm, EventBuilder event, DestinationValidator destinationValidator) {
-        super(realm, event, destinationValidator);
+    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, DestinationValidator destinationValidator) {
+        super(session, event, destinationValidator);
     }
 
     public Response authenticate(InputStream inputStream) {

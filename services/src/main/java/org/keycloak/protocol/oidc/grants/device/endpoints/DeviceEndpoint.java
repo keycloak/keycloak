@@ -46,7 +46,6 @@ import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceAutho
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.OAuth2DeviceAuthorizationResponse;
 import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -87,8 +86,8 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
 
     private Cors cors;
 
-    public DeviceEndpoint(RealmModel realm, EventBuilder event) {
-        super(realm, event);
+    public DeviceEndpoint(KeycloakSession session, EventBuilder event) {
+        super(session, event);
     }
 
     /**

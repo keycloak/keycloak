@@ -129,25 +129,25 @@ import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForM
 public class UserResource {
     private static final Logger logger = Logger.getLogger(UserResource.class);
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    private AdminPermissionEvaluator auth;
+    private final AdminPermissionEvaluator auth;
 
-    private AdminEventBuilder adminEvent;
-    private UserModel user;
+    private final AdminEventBuilder adminEvent;
+    private final UserModel user;
 
-    @Context
-    protected ClientConnection clientConnection;
+    protected final ClientConnection clientConnection;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
     @Context
     protected HttpHeaders headers;
     
-    public UserResource(RealmModel realm, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public UserResource(KeycloakSession session, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
+        this.clientConnection = session.getContext().getConnection();
         this.user = user;
         this.adminEvent = adminEvent.resource(ResourceType.USER);
     }
@@ -581,7 +581,7 @@ public class UserResource {
     public RoleMapperResource getRoleMappings() {
         AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.users().requireMapRoles(user);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.users().requireView(user);
-        RoleMapperResource resource =  new RoleMapperResource(realm, auth, user, adminEvent, manageCheck, viewCheck);
+        RoleMapperResource resource =  new RoleMapperResource(session, auth, user, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
 
