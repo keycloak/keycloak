@@ -277,8 +277,6 @@ describe("Events tests", () => {
         .save()
         .clearAdminEvents();
 
-      cy.wait(5000);
-
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
       adminEventsTab.assertNoSearchResultsExist(true);
