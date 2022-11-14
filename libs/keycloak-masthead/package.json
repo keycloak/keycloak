@@ -41,7 +41,7 @@
     }
   },
   "dependencies": {
-    "@patternfly/react-core": "^4.258.6",
+    "@patternfly/react-core": "^4.261.0",
     "keycloak-js": "999.0.0-dev",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
