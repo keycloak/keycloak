@@ -105,7 +105,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/tar-fs": "^2.0.1",
     "@vitejs/plugin-react": "^2.2.0",
-    "cypress": "^10.11.0",
+    "cypress": "^11.0.1",
     "decompress": "^4.2.1",
     "del": "^7.0.0",
     "gunzip-maybe": "^1.4.2",
