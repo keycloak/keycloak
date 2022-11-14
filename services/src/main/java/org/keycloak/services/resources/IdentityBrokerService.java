@@ -134,11 +134,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private final RealmModel realmModel;
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     @Context
     private HttpRequest request;
@@ -149,11 +147,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private EventBuilder event;
 
 
-    public IdentityBrokerService(RealmModel realmModel) {
+    public IdentityBrokerService(KeycloakSession session) {
+        this.session = session;
+        this.clientConnection= session.getContext().getConnection();
+        realmModel = session.getContext().getRealm();
         if (realmModel == null) {
             throw new IllegalArgumentException("Realm can not be null.");
         }
-        this.realmModel = realmModel;
     }
 
     public void init() {

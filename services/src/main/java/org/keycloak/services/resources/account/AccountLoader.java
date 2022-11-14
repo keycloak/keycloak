@@ -51,8 +51,8 @@ import java.util.List;
  */
 public class AccountLoader {
 
-    private KeycloakSession session;
-    private EventBuilder event;
+    private final KeycloakSession session;
+    private final EventBuilder event;
 
     @Context
     private HttpRequest request;
@@ -86,13 +86,12 @@ public class AccountLoader {
             return getAccountRestService(client, null);
         } else {
             if (deprecatedAccount) {
-                AccountFormService accountFormService = new AccountFormService(realm, client, event);
+                AccountFormService accountFormService = new AccountFormService(session, client, event);
                 ResteasyProviderFactory.getInstance().injectProperties(accountFormService);
                 accountFormService.init();
                 return accountFormService;
             } else {
-                AccountConsole console = new AccountConsole(realm, client, theme);
-                ResteasyProviderFactory.getInstance().injectProperties(console);
+                AccountConsole console = new AccountConsole(session, client, theme);
                 console.init();
                 return console;
             }
@@ -151,9 +150,8 @@ public class AccountLoader {
             }
         }
 
-        AccountRestService accountRestService = new AccountRestService(session, auth, client, event, version);
+        AccountRestService accountRestService = new AccountRestService(session, auth, event, version);
         ResteasyProviderFactory.getInstance().injectProperties(accountRestService);
-        accountRestService.init();
         return accountRestService;
     }
 

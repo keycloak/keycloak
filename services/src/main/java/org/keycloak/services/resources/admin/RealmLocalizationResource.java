@@ -44,7 +44,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
@@ -53,11 +52,11 @@ public class RealmLocalizationResource {
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public RealmLocalizationResource(RealmModel realm, AdminPermissionEvaluator auth) {
-        this.realm = realm;
+    public RealmLocalizationResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
     }
 
