@@ -111,7 +111,7 @@
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
     "jsdom": "^20.0.2",
-    "ldap-server-mock": "^5.0.0",
+    "ldap-server-mock": "^6.0.1",
     "node-fetch": "^3.2.10",
     "progress-promise": "^0.0.6",
     "tar-fs": "^2.1.1",
