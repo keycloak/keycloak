@@ -1,3 +1,4 @@
+import type FederatedIdentityRepresentation from "@keycloak/keycloak-admin-client/lib/defs/federatedIdentityRepresentation";
 import {
   AlertVariant,
   Button,
@@ -8,28 +9,26 @@ import {
   ModalVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
 import { capitalize } from "lodash-es";
-import { useParams } from "react-router-dom";
-import type FederatedIdentityRepresentation from "@keycloak/keycloak-admin-client/lib/defs/federatedIdentityRepresentation";
-import type { UserParams } from "./routes/User";
+import { useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
+
+import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { useAdminClient } from "../context/auth/AdminClient";
 
 type UserIdpModalProps = {
-  federatedId?: string;
-  handleModalToggle: () => void;
-  refresh: (group?: GroupRepresentation) => void;
+  userId: string;
+  federatedId: string;
+  onClose: () => void;
+  onRefresh: () => void;
 };
 
 export const UserIdpModal = ({
+  userId,
   federatedId,
-  handleModalToggle,
-  refresh,
+  onClose,
+  onRefresh,
 }: UserIdpModalProps) => {
   const { t } = useTranslation("users");
   const { adminClient } = useAdminClient();
@@ -38,22 +37,22 @@ export const UserIdpModal = ({
     register,
     handleSubmit,
     formState: { isValid, errors },
-  } = useForm({
+  } = useForm<FederatedIdentityRepresentation>({
     mode: "onChange",
   });
 
-  const { id } = useParams<UserParams>();
-
-  const submitForm = async (fedIdentity: FederatedIdentityRepresentation) => {
+  const onSubmit = async (
+    federatedIdentity: FederatedIdentityRepresentation
+  ) => {
     try {
       await adminClient.users.addToFederatedIdentity({
-        id: id!,
-        federatedIdentityId: federatedId!,
-        federatedIdentity: fedIdentity,
+        id: userId,
+        federatedIdentityId: federatedId,
+        federatedIdentity,
       });
       addAlert(t("users:idpLinkSuccess"), AlertVariant.success);
-      handleModalToggle();
-      refresh();
+      onClose();
+      onRefresh();
     } catch (error) {
       addError("users:couldNotLinkIdP", error);
     }
@@ -65,12 +64,11 @@ export const UserIdpModal = ({
       title={t("users:linkAccountTitle", {
         provider: capitalize(federatedId),
       })}
-      isOpen={true}
-      onClose={handleModalToggle}
+      onClose={onClose}
       actions={[
         <Button
-          data-testid={t("link")}
           key="confirm"
+          data-testid="confirm"
           variant="primary"
           type="submit"
           form="group-form"
@@ -79,51 +77,31 @@ export const UserIdpModal = ({
           {t("link")}
         </Button>,
         <Button
-          id="modal-cancel"
-          data-testid="cancel"
           key="cancel"
+          data-testid="cancel"
           variant={ButtonVariant.link}
-          onClick={() => {
-            handleModalToggle();
-          }}
+          onClick={onClose}
         >
           {t("common:cancel")}
         </Button>,
       ]}
+      isOpen
     >
-      <Form id="group-form" onSubmit={handleSubmit(submitForm)}>
+      <Form id="group-form" onSubmit={handleSubmit(onSubmit)}>
         <FormGroup
-          name="idp-name-group"
           label={t("users:identityProvider")}
-          fieldId="idp-name"
-          helperTextInvalid={t("common:required")}
-          validated={
-            errors.identityProvider
-              ? ValidatedOptions.error
-              : ValidatedOptions.default
-          }
+          fieldId="identityProvider"
         >
           <KeycloakTextInput
+            id="identityProvider"
             data-testid="idpNameInput"
-            aria-label="Identity provider name input"
-            ref={register({ required: true })}
-            autoFocus
-            isReadOnly
-            type="text"
-            id="link-idp-name"
-            name="identityProvider"
             value={capitalize(federatedId)}
-            validated={
-              errors.identityProvider
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+            isReadOnly
           />
         </FormGroup>
         <FormGroup
-          name="user-id-group"
           label={t("users:userID")}
-          fieldId="user-id"
+          fieldId="userID"
           helperText={t("users-help:userIdHelperText")}
           helperTextInvalid={t("common:required")}
           validated={
@@ -132,40 +110,34 @@ export const UserIdpModal = ({
           isRequired
         >
           <KeycloakTextInput
+            id="userID"
             data-testid="userIdInput"
-            aria-label="user ID input"
-            ref={register({ required: true })}
-            autoFocus
-            type="text"
-            id="link-idp-user-id"
-            name="userId"
             validated={
               errors.userId ? ValidatedOptions.error : ValidatedOptions.default
             }
+            autoFocus
+            {...register("userId", { required: true })}
           />
         </FormGroup>
         <FormGroup
-          name="username-group"
           label={t("users:username")}
           fieldId="username"
           helperText={t("users-help:usernameHelperText")}
           helperTextInvalid={t("common:required")}
           validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            errors.userName ? ValidatedOptions.error : ValidatedOptions.default
           }
           isRequired
         >
           <KeycloakTextInput
+            id="username"
             data-testid="usernameInput"
-            aria-label="username input"
-            ref={register({ required: true })}
-            autoFocus
-            type="text"
-            id="link-idp-username"
-            name="userName"
             validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
+              errors.userName
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
             }
+            {...register("userName", { required: true })}
           />
         </FormGroup>
       </Form>

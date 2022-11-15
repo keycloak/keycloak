@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import type FederatedIdentityRepresentation from "@keycloak/keycloak-admin-client/lib/defs/federatedIdentityRepresentation";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   AlertVariant,
   Button,
@@ -9,39 +9,40 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import { cellWidth } from "@patternfly/react-table";
+import { capitalize } from "lodash-es";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom-v5-compat";
+
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { cellWidth } from "@patternfly/react-table";
-import { useParams } from "react-router-dom";
-import { Link } from "react-router-dom-v5-compat";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { emptyFormatter, upperCaseFormatter } from "../util";
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import type FederatedIdentityRepresentation from "@keycloak/keycloak-admin-client/lib/defs/federatedIdentityRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { capitalize } from "lodash-es";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { useAlerts } from "../components/alert/Alerts";
-import { UserIdpModal } from "./UserIdPModal";
 import { toIdentityProvider } from "../identity-providers/routes/IdentityProvider";
+import { emptyFormatter, upperCaseFormatter } from "../util";
+import { UserIdpModal } from "./UserIdPModal";
 
-export const UserIdentityProviderLinks = () => {
+type UserIdentityProviderLinksProps = {
+  userId: string;
+};
+
+export const UserIdentityProviderLinks = ({
+  userId,
+}: UserIdentityProviderLinksProps) => {
   const [key, setKey] = useState(0);
   const [federatedId, setFederatedId] = useState("");
   const [isLinkIdPModalOpen, setIsLinkIdPModalOpen] = useState(false);
 
   const { adminClient } = useAdminClient();
-  const { id } = useParams<{ id: string }>();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation("users");
 
   const refresh = () => setKey(new Date().getTime());
-
-  const handleModalToggle = () => {
-    setIsLinkIdPModalOpen(!isLinkIdPModalOpen);
-  };
 
   type WithProviderId = FederatedIdentityRepresentation & {
     providerId: string;
@@ -53,7 +54,7 @@ export const UserIdentityProviderLinks = () => {
     const allProviders = await adminClient.identityProviders.find();
 
     const allFedIds = (await adminClient.users.listFederatedIdentities({
-      id,
+      id: userId,
     })) as WithProviderId[];
     for (const element of allFedIds) {
       element.providerId = allProviders.find(
@@ -94,7 +95,7 @@ export const UserIdentityProviderLinks = () => {
     onConfirm: async () => {
       try {
         await adminClient.users.delFromFederatedIdentity({
-          id,
+          id: userId,
           federatedIdentityId: federatedId,
         });
         addAlert(t("users:idpUnlinkSuccess"), AlertVariant.success);
@@ -180,9 +181,10 @@ export const UserIdentityProviderLinks = () => {
     <>
       {isLinkIdPModalOpen && (
         <UserIdpModal
+          userId={userId}
           federatedId={federatedId}
-          handleModalToggle={handleModalToggle}
-          refresh={refresh}
+          onClose={() => setIsLinkIdPModalOpen(false)}
+          onRefresh={refresh}
         />
       )}
       <UnlinkConfirm />

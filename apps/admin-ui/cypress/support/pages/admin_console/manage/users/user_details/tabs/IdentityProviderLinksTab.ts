@@ -11,7 +11,6 @@ export default class IdentityProviderLinksTab {
   private linkAccountModalIdentityProviderInput = "idpNameInput";
   private linkAccountModalUserIdInput = "userIdInput";
   private linkAccountModalUsernameInput = "usernameInput";
-  private linkAccountModalLinkBtn = "Link";
 
   public clickLinkAccount(idpName: string) {
     cy.get(this.availableProvidersSection + " tr")
@@ -47,7 +46,7 @@ export default class IdentityProviderLinksTab {
   }
 
   public clickLinkAccountModalLinkBtn() {
-    cy.findByTestId(this.linkAccountModalLinkBtn).click();
+    modalUtils.confirmModal();
     cy.intercept("/admin/realms/master").as("load");
     cy.wait(["@load"]);
     return this;

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
@@ -7,31 +8,30 @@ import {
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
-
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { BruteForced, UserForm } from "./UserForm";
-import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-import { UserGroups } from "./UserGroups";
-import { UserConsents } from "./UserConsents";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
+
+import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { toUser } from "./routes/User";
-import { toUsers } from "./routes/Users";
-import { UserRoleMapping } from "./UserRoleMapping";
-import { UserAttributes } from "./UserAttributes";
-import { UserCredentials } from "./UserCredentials";
-import { UserSessions } from "./UserSessions";
-import { useAccess } from "../context/access/Access";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAccess } from "../context/access/Access";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { toUser, UserParams } from "./routes/User";
+import { toUsers } from "./routes/Users";
+import { UserAttributes } from "./UserAttributes";
+import { UserConsents } from "./UserConsents";
+import { UserCredentials } from "./UserCredentials";
+import { BruteForced, UserForm } from "./UserForm";
+import { UserGroups } from "./UserGroups";
+import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
+import { UserRoleMapping } from "./UserRoleMapping";
+import { UserSessions } from "./UserSessions";
 
 const UsersTabs = () => {
   const { t } = useTranslation("users");
@@ -42,7 +42,7 @@ const UsersTabs = () => {
 
   const { adminClient } = useAdminClient();
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<UserParams>();
   const [user, setUser] = useState<UserRepresentation>();
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [addedGroups, setAddedGroups] = useState<GroupRepresentation[]>([]);
@@ -247,7 +247,7 @@ const UsersTabs = () => {
                     <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
                   }
                 >
-                  <UserIdentityProviderLinks />
+                  <UserIdentityProviderLinks userId={id} />
                 </Tab>
               )}
               <Tab
