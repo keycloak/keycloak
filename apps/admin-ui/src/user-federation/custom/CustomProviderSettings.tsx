@@ -25,6 +25,7 @@ import { ExtendedHeader } from "../shared/ExtendedHeader";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { SyncSettings } from "./SyncSettings";
 
 import "./custom-provider-settings.css";
 
@@ -33,6 +34,7 @@ export default function CustomProviderSettings() {
   const { id, providerId } = useParams<ProviderRouteParams>();
   const navigate = useNavigate();
   const form = useForm<ComponentRepresentation>({
+    shouldUnregister: false,
     mode: "onChange",
   });
   const {
@@ -146,6 +148,7 @@ export default function CustomProviderSettings() {
           </FormGroup>
           <FormProvider {...form}>
             <DynamicComponents properties={provider?.properties || []} />
+            {provider?.metadata.synchronizable && <SyncSettings />}
           </FormProvider>
           <SettingsCache form={form} unWrap />
           <ActionGroup>
