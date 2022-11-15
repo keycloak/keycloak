@@ -28,7 +28,7 @@ The result is returned in json format and it looks as follows:
 ----
 
 == Enabling the health checks
-Is possible to enable the health checks using the build time option `health-enabled`:
+It is possible to enable the health checks using the build time option `health-enabled`:
 
 <@kc.build parameters="--health-enabled=true"/>
 
