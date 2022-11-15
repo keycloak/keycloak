@@ -5,7 +5,8 @@
     "libs/keycloak-js",
     "libs/keycloak-masthead",
     "apps/account-ui",
-    "apps/admin-ui"
+    "apps/admin-ui",
+    "apps/keycloak-server"
   ],
   "scripts": {
     "prepare": "husky install"

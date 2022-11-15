@@ -1,0 +1,22 @@
+{
+  "name": "keycloak-server",
+  "scripts": {
+    "start": "./scripts/start-server.mjs",
+    "import-client": "wireit"
+  },
+  "wireit": {
+    "import-client": {
+      "command": "./scripts/import-client.mjs",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
+      ]
+    }
+  },
+  "dependencies": {
+    "@octokit/rest": "^19.0.5",
+    "@types/gunzip-maybe": "^1.4.0",
+    "@types/tar-fs": "^2.0.1",
+    "gunzip-maybe": "^1.4.2",
+    "tar-fs": "^2.1.1"
+  }
+}
