@@ -11,7 +11,7 @@
     "cy:check-types": "wireit",
     "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json",
     "server:start": "./scripts/start-server.mjs",
-    "server:import-client": "./scripts/import-client.mjs"
+    "server:import-client": "wireit"
   },
   "wireit": {
     "dev": {
@@ -51,6 +51,12 @@
     },
     "cy:check-types": {
       "command": "tsc --project cypress/tsconfig.json",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "server:import-client": {
+      "command": "./scripts/import-client.mjs",
       "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]
