@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
@@ -30,7 +29,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -42,27 +40,26 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class LdapServerCapabilitiesResource {
-    private static final Logger logger = Logger.getLogger(LdapServerCapabilitiesResource.class);
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    protected AdminPermissionEvaluator auth;
+    protected final AdminPermissionEvaluator auth;
 
-    protected AdminEventBuilder adminEvent;
+    protected final AdminEventBuilder adminEvent;
 
-    @Context
-    protected ClientConnection clientConnection;
+    protected final ClientConnection clientConnection;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
-    public LdapServerCapabilitiesResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public LdapServerCapabilitiesResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
         this.adminEvent = adminEvent;
+        this.clientConnection = session.getContext().getConnection();
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     /**
