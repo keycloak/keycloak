@@ -25,7 +25,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.specimpl.ResteasyHttpHeaders;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
@@ -1075,8 +1074,6 @@ public class SamlService extends AuthorizationEndpointBase {
     public Response soapBinding(InputStream inputStream) {
         SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, destinationValidator);
 
-        ResteasyProviderFactory.getInstance().injectProperties(bindingService);
-
         return bindingService.authenticate(inputStream);
     }
 
@@ -1335,8 +1332,8 @@ public class SamlService extends AuthorizationEndpointBase {
             this.realmId = realm.getId();
             this.httpHeaders = new ResteasyHttpHeaders(headers.getRequestHeaders());
             this.connection = connection;
-            this.response = Resteasy.getContextData(org.jboss.resteasy.spi.HttpResponse.class);
-            this.request = Resteasy.getContextData(HttpRequest.class);
+            this.response = session.getContext().getContextObject(org.jboss.resteasy.spi.HttpResponse.class);
+            this.request = session.getContext().getContextObject(HttpRequest.class);
             this.bindingType = bindingType;
         }
 
@@ -1404,7 +1401,6 @@ public class SamlService extends AuthorizationEndpointBase {
                     }
 
                     SamlService endpoint = (SamlService) factory.createProtocolEndpoint(session, event);
-                    ResteasyProviderFactory.getInstance().injectProperties(endpoint);
                     BindingProtocol protocol;
                     if (SamlProtocol.SAML_POST_BINDING.equals(bindingType)) {
                         protocol = endpoint.newPostBindingProtocol();

@@ -69,7 +69,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -460,11 +459,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         protected final ClientConnection clientConnection;
 
-        @Context
-        protected HttpHeaders headers;
+        protected final HttpHeaders headers;
 
-        @Context
-        protected HttpRequest httpRequest;
+        protected final HttpRequest httpRequest;
 
         public Endpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event, AbstractOAuth2IdentityProvider provider) {
             this.callback = callback;
@@ -473,6 +470,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             this.provider = provider;
             this.session = provider.session;
             this.clientConnection = session.getContext().getConnection();
+            this.httpRequest = session.getContext().getContextObject(HttpRequest.class);
+            this.headers = session.getContext().getRequestHeaders();
         }
 
         @GET
