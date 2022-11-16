@@ -16,7 +16,7 @@ export const IdentityProviderRoute: RouteDef = {
   path: "/:realm/identity-providers/:providerId/:alias/:tab",
   component: lazy(() => import("../add/DetailSettings")),
   breadcrumb: (t) => t("identity-providers:providerDetails"),
-  access: "manage-identity-providers",
+  access: "view-identity-providers",
 };
 
 export const toIdentityProvider = (
