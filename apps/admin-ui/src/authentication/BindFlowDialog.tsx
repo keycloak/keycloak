@@ -1,23 +1,23 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
-  Modal,
+  AlertVariant,
   Button,
   ButtonVariant,
   Form,
   FormGroup,
+  Modal,
   Select,
-  SelectVariant,
   SelectOption,
-  AlertVariant,
+  SelectVariant,
 } from "@patternfly/react-core";
+import { Controller, useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
 import useToggle from "../utils/useToggle";
 import { REALM_FLOWS } from "./AuthenticationSection";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
 
 type BindingForm = {
   bindingType: keyof RealmRepresentation;
@@ -31,13 +31,12 @@ type BindFlowDialogProps = {
 export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
   const { t } = useTranslation("authentication");
   const { control, handleSubmit } = useForm<BindingForm>();
-
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
-  const [open, toggle] = useToggle();
+  const [open, toggleOpen] = useToggle();
 
-  const save = async ({ bindingType }: BindingForm) => {
+  const onSubmit = async ({ bindingType }: BindingForm) => {
     const realmRep = await adminClient.realms.findOne({ realm });
 
     try {
@@ -56,22 +55,14 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
   return (
     <Modal
       title={t("bindFlow")}
-      isOpen
       variant="small"
       onClose={onClose}
       actions={[
-        <Button
-          id="modal-confirm"
-          key="confirm"
-          data-testid="save"
-          type="submit"
-          form="bind-form"
-        >
+        <Button key="confirm" data-testid="save" type="submit" form="bind-form">
           {t("common:save")}
         </Button>,
         <Button
           data-testid="cancel"
-          id="modal-cancel"
           key="cancel"
           variant={ButtonVariant.link}
           onClick={onClose}
@@ -79,24 +70,24 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
           {t("common:cancel")}
         </Button>,
       ]}
+      isOpen
     >
-      <Form id="bind-form" isHorizontal onSubmit={handleSubmit(save)}>
+      <Form id="bind-form" isHorizontal onSubmit={handleSubmit(onSubmit)}>
         <FormGroup label={t("chooseBindingType")} fieldId="chooseBindingType">
           <Controller
             name="bindingType"
-            defaultValue={"browserFlow"}
+            defaultValue="browserFlow"
             control={control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 toggleId="chooseBindingType"
-                onToggle={toggle}
+                onToggle={toggleOpen}
                 onSelect={(_, value) => {
-                  onChange(value.toString());
-                  toggle();
+                  field.onChange(value.toString());
+                  toggleOpen();
                 }}
-                selections={value}
+                selections={field.value}
                 variant={SelectVariant.single}
-                aria-label={t("bindingFlow")}
                 isOpen={open}
                 menuAppendTo="parent"
               >
