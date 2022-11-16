@@ -12,6 +12,7 @@ export interface ServerInfoRepresentation {
   systemInfo?: SystemInfoRepresentation;
   memoryInfo?: MemoryInfoRepresentation;
   profileInfo?: ProfileInfoRepresentation;
+  cryptoInfo?: CryptoInfoRepresentation;
   themes?: { [index: string]: ThemeInfoRepresentation[] };
   socialProviders?: { [index: string]: string }[];
   identityProviders?: { [index: string]: string }[];
@@ -67,4 +68,9 @@ export interface ProtocolMapperTypeRepresentation {
   helpText: string;
   priority: number;
   properties: ConfigPropertyRepresentation[];
+}
+
+export interface CryptoInfoRepresentation {
+  cryptoProvider: string;
+  supportedKeystoreTypes: string[];
 }
