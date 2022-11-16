@@ -14,11 +14,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
@@ -53,12 +51,10 @@ import org.keycloak.utils.StringUtil;
  * Created by st on 29/03/17.
  */
 public class AccountConsole {
-    private static final Logger logger = Logger.getLogger(AccountConsole.class);
-    
+
     private final Pattern bundleParamPattern = Pattern.compile("(\\{\\s*(\\d+)\\s*\\})");
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
     private final AppAuthManager authManager;
     private final RealmModel realm;
@@ -67,8 +63,9 @@ public class AccountConsole {
 
     private Auth auth;
 
-    public AccountConsole(RealmModel realm, ClientModel client, Theme theme) {
-        this.realm = realm;
+    public AccountConsole(KeycloakSession session, ClientModel client, Theme theme) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.client = client;
         this.theme = theme;
         this.authManager = new AppAuthManager();

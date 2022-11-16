@@ -18,9 +18,15 @@
 package org.keycloak.models.map.datastore;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientProvider;
+import org.keycloak.models.ClientScopeProvider;
+import org.keycloak.models.GroupProvider;
+import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
@@ -43,18 +49,29 @@ import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.RoleProvider;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.AbstractMapProviderFactory;
+import org.keycloak.models.map.realm.MapRealmEntity;
+import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -76,12 +93,14 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
-import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.ImportRealmFromRepresentation;
+import org.keycloak.storage.SearchableModelField;
+import org.keycloak.storage.SetDefaultsForNewRealm;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.validation.ValidationUtil;
 
 import java.io.IOException;
@@ -93,10 +112,14 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
 import static org.keycloak.models.utils.RepresentationToModel.createGroups;
@@ -119,8 +142,21 @@ public class MapExportImportManager implements ExportImportManager {
     private final KeycloakSession session;
     private static final Logger logger = Logger.getLogger(MapExportImportManager.class);
 
+    /**
+     * Use the old import via the logical layer vs. the new method importing to CHM first and then copying over
+     * This is a temporary to test the functionality with the old representations until the new file store arrives in main,
+     * and will then be removed.
+     */
+    private final boolean useNewImportMethod;
+
     public MapExportImportManager(KeycloakSession session) {
         this.session = session;
+        useNewImportMethod = Boolean.parseBoolean(System.getProperty(MapExportImportManager.class.getName(), "false"));
+    }
+
+    public MapExportImportManager(KeycloakSession session, boolean useNewImportMethod) {
+        this.session = session;
+        this.useNewImportMethod = useNewImportMethod;
     }
 
     @Override
@@ -403,11 +439,32 @@ public class MapExportImportManager implements ExportImportManager {
             }
         }
 
-        if (newRealm.getComponentsStream(newRealm.getId(), KeyProvider.class.getName()).count() == 0) {
+        if (!useNewImportMethod) {
+            if (newRealm.getComponentsStream(newRealm.getId(), KeyProvider.class.getName()).count() == 0) {
+                if (rep.getPrivateKey() != null) {
+                    DefaultKeyProviders.createProviders(newRealm, rep.getPrivateKey(), rep.getCertificate());
+                } else {
+                    DefaultKeyProviders.createProviders(newRealm);
+                }
+            }
+        } else {
             if (rep.getPrivateKey() != null) {
-                DefaultKeyProviders.createProviders(newRealm, rep.getPrivateKey(), rep.getCertificate());
-            } else {
-                DefaultKeyProviders.createProviders(newRealm);
+
+                ComponentModel rsa = new ComponentModel();
+                rsa.setName("rsa");
+                rsa.setParentId(newRealm.getId());
+                rsa.setProviderId("rsa");
+                rsa.setProviderType(KeyProvider.class.getName());
+
+                MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+                config.putSingle("priority", "100");
+                config.putSingle("privateKey", rep.getPrivateKey());
+                if (rep.getCertificate() != null) {
+                    config.putSingle("certificate", rep.getCertificate());
+                }
+                rsa.setConfig(config);
+
+                newRealm.addComponentModel(rsa);
             }
         }
     }
@@ -437,11 +494,230 @@ public class MapExportImportManager implements ExportImportManager {
         }
         logger.debugv("importRealm: {0}", rep.getRealm());
 
-        /* The import for the JSON representation might be called from the Admin UI, where it will be empty except for
-           the realm name and if the realm is enabled. For that scenario, it would need to create all missing elements,
-           which is done by firing an event to call the existing implementation in the RealmManager. */
+        if (!useNewImportMethod) {
+            /* The import for the JSON representation might be called from the Admin UI, where it will be empty except for
+               the realm name and if the realm is enabled. For that scenario, it would need to create all missing elements,
+               which is done by firing an event to call the existing implementation in the RealmManager. */
+            return ImportRealmFromRepresentation.fire(session, rep);
+        } else {
+            /* This makes use of the representation to mimic the future setup: Some kind of import into a ConcurrentHashMap in-memory and then copying
+               that over to the real store. This is the basis for future file store import. Results are different
+               when importing, for example, an empty list of roles vs a non-existing list of roles, and possibility in other ways.
+               Importing from a classic representation will eventually be removed and replaced when the new file store arrived. */
+            return importToChmAndThenCopyOver(rep);
+        }
+    }
 
-        return ImportRealmFromRepresentation.fire(session, rep);
+    private RealmModel importToChmAndThenCopyOver(RealmRepresentation rep) {
+        String id = rep.getId();
+        if (id == null || id.trim().isEmpty()) {
+            id = KeycloakModelUtils.generateId();
+        } else {
+            ReservedCharValidator.validate(id);
+        }
+
+        ReservedCharValidator.validate(rep.getRealm());
+
+        RealmModel realm;
+        RealmModel currentRealm = session.getContext().getRealm();
+
+        try {
+
+            String _id = id;
+            KeycloakModelUtils.runJobInTransaction(new ImportSessionFactoryWrapper(session.getKeycloakSessionFactory()), chmSession -> {
+                // import the representation
+                fillRealm(chmSession, _id, rep);
+
+                // copy over the realm from in-memory to the real
+                copyRealm(_id, chmSession);
+                copyEntities(_id, chmSession, ClientProvider.class, ClientModel.class, ClientModel.SearchableFields.REALM_ID);
+                copyEntities(_id, chmSession, ClientScopeProvider.class, ClientScopeModel.class, ClientScopeModel.SearchableFields.REALM_ID);
+                copyEntities(_id, chmSession, GroupProvider.class, GroupModel.class, GroupModel.SearchableFields.REALM_ID);
+                copyEntities(_id, chmSession, UserProvider.class, UserModel.class, UserModel.SearchableFields.REALM_ID);
+                copyEntities(_id, chmSession, RoleProvider.class, RoleModel.class, RoleModel.SearchableFields.REALM_ID);
+
+                // clear the CHM store
+                chmSession.getTransactionManager().setRollbackOnly();
+            });
+
+            realm = session.realms().getRealm(id);
+            session.getContext().setRealm(realm);
+            setupMasterAdminManagement(realm);
+            ImpersonationConstants.setupImpersonationService(session, realm);
+            fireRealmPostCreate(realm);
+        } finally {
+            session.getContext().setRealm(currentRealm);
+        }
+
+        return realm;
+    }
+
+    private void copyRealm(String realmId, KeycloakSession sessionChm) {
+        MapRealmEntity realmEntityChm = (MapRealmEntity) getTransaction(sessionChm, RealmProvider.class).read(realmId);
+        getTransaction(session, RealmProvider.class).create(realmEntityChm);
+    }
+
+    private static <P extends Provider, E extends AbstractEntity, M> MapKeycloakTransaction<E, M> getTransaction(KeycloakSession session, Class<P> provider) {
+        ProviderFactory<P> factoryChm = session.getKeycloakSessionFactory().getProviderFactory(provider);
+        return ((AbstractMapProviderFactory<P, E, M>) factoryChm).getStorage(session).createTransaction(session);
+    }
+
+    private <P extends Provider, M> void copyEntities(String realmId, KeycloakSession sessionChm, Class<P> provider, Class<M> model, SearchableModelField<M> field) {
+        MapKeycloakTransaction<AbstractEntity, M> txChm = getTransaction(sessionChm, provider);
+        MapKeycloakTransaction<AbstractEntity, M> txOrig = getTransaction(session, provider);
+
+        DefaultModelCriteria<M> mcb = criteria();
+        mcb = mcb.compare(field, ModelCriteriaBuilder.Operator.EQ, realmId);
+
+        txChm.read(withCriteria(mcb)).forEach(txOrig::create);
+    }
+
+    private static void fillRealm(KeycloakSession session, String id, RealmRepresentation rep) {
+        RealmModel realm = session.realms().createRealm(id, rep.getRealm());
+        session.getContext().setRealm(realm);
+        SetDefaultsForNewRealm.fire(session, realm);
+        MapExportImportManager mapExportImportManager = new MapExportImportManager(session);
+        mapExportImportManager.clearDefaultsThatConflictWithRepresentation(rep, realm);
+        mapExportImportManager.importRealm(rep, realm, false);
+    }
+
+    private void clearDefaultsThatConflictWithRepresentation(RealmRepresentation rep, RealmModel newRealm) {
+        if (rep.getDefaultRole() != null) {
+            if (newRealm.getDefaultRole() != null) {
+                newRealm.removeRole(newRealm.getDefaultRole());
+                // set the new role here already as the legacy code expects it this way
+                newRealm.setDefaultRole(RepresentationToModel.createRole(newRealm, rep.getDefaultRole()));
+            }
+        }
+
+        if (rep.getRequiredActions() != null) {
+            for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
+                RequiredActionProviderModel requiredActionProviderByAlias = newRealm.getRequiredActionProviderByAlias(action.getAlias());
+                if (requiredActionProviderByAlias != null) {
+                    newRealm.removeRequiredActionProvider(requiredActionProviderByAlias);
+                }
+            }
+        }
+
+        if (rep.getRoles() != null) {
+            for (RoleRepresentation representation : rep.getRoles().getRealm()) {
+                RoleModel role = newRealm.getRole(representation.getName());
+                if (role != null && (newRealm.getDefaultRole() == null || newRealm.getDefaultRole() != null && !Objects.equals(role.getId(), newRealm.getDefaultRole().getId()))) {
+                    newRealm.removeRole(role);
+                }
+            }
+        }
+
+        if (rep.getPrivateKey() != null) {
+            newRealm.getComponentsStream(newRealm.getId(), KeyProvider.class.getName())
+                    .filter(component -> Objects.equals(component.getProviderId(), "rsa-generated") || Objects.equals(component.getProviderId(), "rsa-enc-generated"))
+                    .collect(Collectors.toList()).forEach(newRealm::removeComponent);
+            // will later create the "rsa" provider
+        }
+
+        if (rep.getClients() != null) {
+            for (ClientRepresentation resourceRep : rep.getClients()) {
+                ClientModel clientByClientId = newRealm.getClientByClientId(resourceRep.getClientId());
+                if (clientByClientId != null) {
+                    newRealm.removeClient(clientByClientId.getId());
+                }
+            }
+        }
+
+        if (rep.getClientScopes() != null) {
+            for (ClientScopeRepresentation resourceRep : rep.getClientScopes()) {
+                Optional<ClientScopeModel> existingClientScope = newRealm.getClientScopesStream().filter(clientScopeModel -> clientScopeModel.getName().equals(resourceRep.getName())).findFirst();
+                if (existingClientScope.isPresent()) {
+                    newRealm.removeClientScope(existingClientScope.get().getId());
+                }
+            }
+        }
+
+        if (rep.getComponents() != null) {
+            clearExistingComponents(newRealm, rep.getComponents());
+        }
+    }
+
+    protected static void clearExistingComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components) {
+        for (Map.Entry<String, List<ComponentExportRepresentation>> entry : components.entrySet()) {
+            String providerType = entry.getKey();
+            for (ComponentExportRepresentation compRep : entry.getValue()) {
+                newRealm.getComponentsStream(newRealm.getId(), providerType)
+                        .filter(component -> Objects.equals(component.getProviderId(), compRep.getProviderId())).findAny().ifPresent(newRealm::removeComponent);
+                if (compRep.getSubComponents() != null) {
+                    clearExistingComponents(newRealm, compRep.getSubComponents());
+                }
+            }
+        }
+    }
+
+    public void setupMasterAdminManagement(RealmModel realm) {
+        // Need to refresh masterApp for current realm
+        String adminRealmName = Config.getAdminRealm();
+        RealmModel adminRealm = session.realms().getRealmByName(adminRealmName);
+        ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
+        if (masterApp == null) {
+            createMasterAdminManagement(realm);
+            return;
+        }
+        realm.setMasterAdminClient(masterApp);
+    }
+
+    private void createMasterAdminManagement(RealmModel realm) {
+        RealmModel adminRealm;
+        RoleModel adminRole;
+
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            adminRealm = realm;
+
+            adminRole = realm.addRole(AdminRoles.ADMIN);
+
+            RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
+            adminRole.addCompositeRole(createRealmRole);
+            createRealmRole.setDescription("${role_" + AdminRoles.CREATE_REALM + "}");
+        } else {
+            adminRealm = session.realms().getRealmByName(Config.getAdminRealm());
+            adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+        }
+        adminRole.setDescription("${role_" + AdminRoles.ADMIN + "}");
+
+        ClientModel realmAdminApp = KeycloakModelUtils.createManagementClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
+        // No localized name for now
+        realmAdminApp.setName(realm.getName() + " Realm");
+        realm.setMasterAdminClient(realmAdminApp);
+
+        for (String r : AdminRoles.ALL_REALM_ROLES) {
+            RoleModel role = realmAdminApp.addRole(r);
+            role.setDescription("${role_" + r + "}");
+            adminRole.addCompositeRole(role);
+        }
+        addQueryCompositeRoles(realmAdminApp);
+    }
+
+    public void addQueryCompositeRoles(ClientModel realmAccess) {
+        RoleModel queryClients = realmAccess.getRole(AdminRoles.QUERY_CLIENTS);
+        RoleModel queryUsers = realmAccess.getRole(AdminRoles.QUERY_USERS);
+        RoleModel queryGroups = realmAccess.getRole(AdminRoles.QUERY_GROUPS);
+
+        RoleModel viewClients = realmAccess.getRole(AdminRoles.VIEW_CLIENTS);
+        viewClients.addCompositeRole(queryClients);
+        RoleModel viewUsers = realmAccess.getRole(AdminRoles.VIEW_USERS);
+        viewUsers.addCompositeRole(queryUsers);
+        viewUsers.addCompositeRole(queryGroups);
+    }
+
+    private void fireRealmPostCreate(RealmModel realm) {
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmPostCreateEvent() {
+            @Override
+            public RealmModel getCreatedRealm() {
+                return realm;
+            }
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
+
     }
 
     private static void convertDeprecatedDefaultRoles(RealmRepresentation rep, RealmModel newRealm) {
@@ -1005,20 +1281,6 @@ public class MapExportImportManager implements ExportImportManager {
     }
 
 
-    public static ComponentModel convertFedMapperToComponent(RealmModel realm, ComponentModel parent, UserFederationMapperRepresentation rep, String newMapperType) {
-        ComponentModel mapper = new ComponentModel();
-        mapper.setId(rep.getId());
-        mapper.setName(rep.getName());
-        mapper.setProviderId(rep.getFederationMapperType());
-        mapper.setProviderType(newMapperType);
-        mapper.setParentId(parent.getId());
-        if (rep.getConfig() != null) {
-            for (Map.Entry<String, String> entry : rep.getConfig().entrySet()) {
-                mapper.getConfig().putSingle(entry.getKey(), entry.getValue());
-            }
-        }
-        return mapper;
-    }
 
     protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {
         for (Map.Entry<String, List<ComponentExportRepresentation>> entry : components.entrySet()) {

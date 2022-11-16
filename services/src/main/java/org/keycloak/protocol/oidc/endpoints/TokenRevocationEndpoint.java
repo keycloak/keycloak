@@ -62,8 +62,7 @@ import org.keycloak.util.TokenUtil;
 public class TokenRevocationEndpoint {
     private static final String PARAM_TOKEN = "token";
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
     @Context
     private HttpRequest request;
@@ -71,19 +70,20 @@ public class TokenRevocationEndpoint {
     @Context
     private HttpHeaders headers;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
-    private RealmModel realm;
-    private EventBuilder event;
+    private final RealmModel realm;
+    private final EventBuilder event;
     private Cors cors;
     private AccessToken token;
     private UserModel user;
 
-    public TokenRevocationEndpoint(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    public TokenRevocationEndpoint(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
     }
 

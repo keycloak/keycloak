@@ -49,22 +49,22 @@ public class TokenIntrospectionEndpoint {
     private static final String PARAM_TOKEN_TYPE_HINT = "token_type_hint";
     private static final String PARAM_TOKEN = "token";
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
     @Context
     private HttpRequest request;
 
     @Context
     private HttpHeaders headers;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     private final RealmModel realm;
     private final EventBuilder event;
 
-    public TokenIntrospectionEndpoint(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    public TokenIntrospectionEndpoint(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
     }
 

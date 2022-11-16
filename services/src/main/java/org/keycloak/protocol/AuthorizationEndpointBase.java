@@ -57,21 +57,23 @@ public abstract class AuthorizationEndpointBase {
 
     public static final String APP_INITIATED_FLOW = "APP_INITIATED_FLOW";
 
-    protected RealmModel realm;
-    protected EventBuilder event;
+    protected final RealmModel realm;
+    protected final EventBuilder event;
     protected AuthenticationManager authManager;
 
     @Context
     protected HttpHeaders headers;
     @Context
     protected HttpRequest httpRequest;
-    @Context
-    protected KeycloakSession session;
-    @Context
-    protected ClientConnection clientConnection;
 
-    public AuthorizationEndpointBase(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    protected final KeycloakSession session;
+
+    protected final ClientConnection clientConnection;
+
+    public AuthorizationEndpointBase(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
     }
 

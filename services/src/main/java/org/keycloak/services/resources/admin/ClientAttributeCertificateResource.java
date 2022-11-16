@@ -77,15 +77,15 @@ public class ClientAttributeCertificateResource {
     public static final String PUBLIC_KEY_PEM = "Public Key PEM";
     public static final String JSON_WEB_KEY_SET = "JSON Web Key Set";
 
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
-    protected ClientModel client;
-    protected KeycloakSession session;
-    protected AdminEventBuilder adminEvent;
-    protected String attributePrefix;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
+    protected final ClientModel client;
+    protected final KeycloakSession session;
+    protected final AdminEventBuilder adminEvent;
+    protected final String attributePrefix;
 
-    public ClientAttributeCertificateResource(RealmModel realm, AdminPermissionEvaluator auth, ClientModel client, KeycloakSession session, String attributePrefix, AdminEventBuilder adminEvent) {
-        this.realm = realm;
+    public ClientAttributeCertificateResource(AdminPermissionEvaluator auth, ClientModel client, KeycloakSession session, String attributePrefix, AdminEventBuilder adminEvent) {
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.client = client;
         this.session = session;

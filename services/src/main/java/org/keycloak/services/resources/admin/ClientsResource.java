@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
@@ -53,7 +52,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
@@ -71,15 +69,15 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  */
 public class ClientsResource {
     protected static final Logger logger = Logger.getLogger(ClientsResource.class);
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
-    private AdminEventBuilder adminEvent;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public ClientsResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        this.realm = realm;
+    public ClientsResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
 
@@ -236,9 +234,7 @@ public class ClientsResource {
 
         session.getContext().setClient(clientModel);
 
-        ClientResource clientResource = new ClientResource(realm, auth, clientModel, session, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(clientResource);
-        return clientResource;
+        return new ClientResource(realm, auth, clientModel, session, adminEvent);
     }
 
 }

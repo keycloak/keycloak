@@ -95,11 +95,9 @@ public class UserInfoEndpoint {
     @Context
     private HttpResponse response;
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     private final org.keycloak.protocol.oidc.TokenManager tokenManager;
     private final AppAuthManager appAuthManager;
@@ -108,8 +106,10 @@ public class UserInfoEndpoint {
     private Cors cors;
     private String authorization;
 
-    public UserInfoEndpoint(org.keycloak.protocol.oidc.TokenManager tokenManager, RealmModel realm) {
-        this.realm = realm;
+    public UserInfoEndpoint(KeycloakSession session, org.keycloak.protocol.oidc.TokenManager tokenManager) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.tokenManager = tokenManager;
         this.appAuthManager = new AppAuthManager();
         this.error = new OAuth2Error().json(false).realm(realm);

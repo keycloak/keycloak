@@ -451,16 +451,14 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected static class Endpoint {
-        protected AuthenticationCallback callback;
-        protected RealmModel realm;
-        protected EventBuilder event;
-        private AbstractOAuth2IdentityProvider provider;
+        protected final AuthenticationCallback callback;
+        protected final RealmModel realm;
+        protected final EventBuilder event;
+        private final AbstractOAuth2IdentityProvider provider;
 
-        @Context
-        protected KeycloakSession session;
+        protected final KeycloakSession session;
 
-        @Context
-        protected ClientConnection clientConnection;
+        protected final ClientConnection clientConnection;
 
         @Context
         protected HttpHeaders headers;
@@ -473,6 +471,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             this.realm = realm;
             this.event = event;
             this.provider = provider;
+            this.session = provider.session;
+            this.clientConnection = session.getContext().getConnection();
         }
 
         @GET
