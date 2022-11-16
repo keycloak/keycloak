@@ -76,10 +76,7 @@ const isAttributeArray = (value: any) => {
   }
 
   return value.some(
-    (e) =>
-      // TODO: Use Object.hasOwn() when Firefox ESR supports it.
-      Object.prototype.hasOwnProperty.call(e, "key") &&
-      Object.prototype.hasOwnProperty.call(e, "value")
+    (e) => Object.hasOwn(e, "key") && Object.hasOwn(e, "value")
   );
 };
 
