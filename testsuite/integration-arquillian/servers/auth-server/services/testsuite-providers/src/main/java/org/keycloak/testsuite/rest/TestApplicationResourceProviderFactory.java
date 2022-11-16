@@ -17,9 +17,7 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config.Scope;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
@@ -59,12 +57,8 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        TestApplicationResourceProvider provider = new TestApplicationResourceProvider(session, adminLogoutActions,
+        return new TestApplicationResourceProvider(session, adminLogoutActions,
                 backChannelLogoutTokens, frontChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests, cibaClientNotifications, intentClientBindings);
-
-        ResteasyProviderFactory.getInstance().injectProperties(provider);
-
-        return provider;
     }
 
     @Override

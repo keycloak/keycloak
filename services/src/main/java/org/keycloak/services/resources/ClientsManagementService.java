@@ -39,7 +39,6 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -57,11 +56,9 @@ public class ClientsManagementService {
 
     private final EventBuilder event;
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
     private final ClientConnection clientConnection;
 
@@ -72,6 +69,8 @@ public class ClientsManagementService {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     public static UriBuilder clientsManagementBaseUrl(UriBuilder baseUriBuilder) {
