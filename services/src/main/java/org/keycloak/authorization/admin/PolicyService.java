@@ -103,7 +103,7 @@ public class PolicyService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response create(String payload, @Context KeycloakSession session) {
+    public Response create(String payload) {
         if (auth != null) {
             this.auth.realm().requireManageAuthorization();
         }
@@ -113,7 +113,7 @@ public class PolicyService {
 
         representation.setId(policy.getId());
 
-        audit(representation, representation.getId(), OperationType.CREATE, session);
+        audit(representation, representation.getId(), OperationType.CREATE, authorization.getKeycloakSession());
 
         return Response.status(Status.CREATED).entity(representation).build();
     }
