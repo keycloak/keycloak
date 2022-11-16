@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Modal,
+  ModalVariant,
+  Text,
+  TextVariants,
+} from "@patternfly/react-core";
 import {
   TableComposable,
   Tbody,
@@ -10,13 +15,13 @@ import {
   Tr,
 } from "@patternfly/react-table";
 
-import type { KeyValueType } from "../../../components/key-value-form/key-value-convert";
+import type { IndexedValidations } from "../../NewAttributeSettings";
 import { AddValidatorRoleDialog } from "./AddValidatorRoleDialog";
 import { Validator, validators as allValidator } from "./Validators";
 import useToggle from "../../../utils/useToggle";
 
 export type AddValidatorDialogProps = {
-  selectedValidators: KeyValueType[];
+  selectedValidators: IndexedValidations[];
   toggleDialog: () => void;
   onConfirm: (newValidator: Validator) => void;
 };
@@ -56,33 +61,39 @@ export const AddValidatorDialog = ({
         isOpen
         onClose={toggleDialog}
       >
-        <TableComposable aria-label="validators-table">
-          <Thead>
-            <Tr>
-              <Th>{t("validatorDialogColNames.colName")}</Th>
-              <Th>{t("validatorDialogColNames.colDescription")}</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {validators.map((validator) => (
-              <Tr
-                key={validator.name}
-                onRowClick={() => {
-                  setSelectedValidator(validator);
-                  toggleModal();
-                }}
-                isHoverable
-              >
-                <Td dataLabel={t("validatorDialogColNames.colName")}>
-                  {validator.name}
-                </Td>
-                <Td dataLabel={t("validatorDialogColNames.colDescription")}>
-                  {validator.description}
-                </Td>
+        {validators.length !== 0 ? (
+          <TableComposable>
+            <Thead>
+              <Tr>
+                <Th>{t("validatorDialogColNames.colName")}</Th>
+                <Th>{t("validatorDialogColNames.colDescription")}</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </TableComposable>
+            </Thead>
+            <Tbody>
+              {validators.map((validator) => (
+                <Tr
+                  key={validator.name}
+                  onRowClick={() => {
+                    setSelectedValidator(validator);
+                    toggleModal();
+                  }}
+                  isHoverable
+                >
+                  <Td dataLabel={t("validatorDialogColNames.colName")}>
+                    {validator.name}
+                  </Td>
+                  <Td dataLabel={t("validatorDialogColNames.colDescription")}>
+                    {validator.description}
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </TableComposable>
+        ) : (
+          <Text className="kc-emptyValidators" component={TextVariants.h6}>
+            {t("realm-settings:emptyValidators")}
+          </Text>
+        )}
       </Modal>
     </>
   );

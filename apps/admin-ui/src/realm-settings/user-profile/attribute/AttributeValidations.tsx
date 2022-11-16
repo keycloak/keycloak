@@ -7,7 +7,6 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import "../../realm-settings-section.css";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { AddValidatorDialog } from "../attribute/AddValidatorDialog";
 import {
@@ -18,11 +17,11 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+
+import type { IndexedValidations } from "../../NewAttributeSettings";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import useToggle from "../../../utils/useToggle";
 import { useFormContext, useWatch } from "react-hook-form";
-
-import type { KeyValueType } from "../../../components/key-value-form/key-value-convert";
 
 import "../../realm-settings-section.css";
 
@@ -34,7 +33,7 @@ export const AttributeValidations = () => {
   }>();
   const { setValue, control, register } = useFormContext();
 
-  const validators = useWatch<KeyValueType[]>({
+  const validators = useWatch<IndexedValidations[]>({
     name: "validations",
     control,
     defaultValue: [],
@@ -87,47 +86,48 @@ export const AttributeValidations = () => {
           {t("realm-settings:addValidator")}
         </Button>
         <Divider />
-        <TableComposable aria-label="validators-table">
-          <Thead>
-            <Tr>
-              <Th>{t("validatorColNames.colName")}</Th>
-              <Th>{t("validatorColNames.colConfig")}</Th>
-              <Th />
-            </Tr>
-          </Thead>
-          <Tbody>
-            {validators.map((validator) => (
-              <Tr key={validator.key}>
-                <Td dataLabel={t("validatorColNames.colName")}>
-                  {validator.key}
-                </Td>
-                <Td dataLabel={t("validatorColNames.colConfig")}>
-                  {JSON.stringify(validator.value)}
-                </Td>
-                <Td className="kc--attributes-validations--action-cell">
-                  <Button
-                    key="validator"
-                    variant="link"
-                    data-testid="deleteValidator"
-                    onClick={() => {
-                      toggleDeleteDialog();
-                      setValidatorToDelete({
-                        name: validator.key,
-                      });
-                    }}
-                  >
-                    {t("common:delete")}
-                  </Button>
-                </Td>
+        {validators.length !== 0 ? (
+          <TableComposable>
+            <Thead>
+              <Tr>
+                <Th>{t("validatorColNames.colName")}</Th>
+                <Th>{t("validatorColNames.colConfig")}</Th>
+                <Th />
               </Tr>
-            ))}
-            {validators.length === 0 && (
-              <Text className="kc-emptyValidators" component={TextVariants.h6}>
-                {t("realm-settings:emptyValidators")}
-              </Text>
-            )}
-          </Tbody>
-        </TableComposable>
+            </Thead>
+            <Tbody>
+              {validators.map((validator) => (
+                <Tr key={validator.key}>
+                  <Td dataLabel={t("validatorColNames.colName")}>
+                    {validator.key}
+                  </Td>
+                  <Td dataLabel={t("validatorColNames.colConfig")}>
+                    {JSON.stringify(validator.value)}
+                  </Td>
+                  <Td className="kc--attributes-validations--action-cell">
+                    <Button
+                      key="validator"
+                      variant="link"
+                      data-testid="deleteValidator"
+                      onClick={() => {
+                        toggleDeleteDialog();
+                        setValidatorToDelete({
+                          name: validator.key,
+                        });
+                      }}
+                    >
+                      {t("common:delete")}
+                    </Button>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </TableComposable>
+        ) : (
+          <Text className="kc-emptyValidators" component={TextVariants.h6}>
+            {t("realm-settings:emptyValidators")}
+          </Text>
+        )}
       </div>
     </>
   );

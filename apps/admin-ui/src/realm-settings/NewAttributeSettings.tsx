@@ -23,13 +23,30 @@ import { useAlerts } from "../components/alert/Alerts";
 import { UserProfileProvider } from "./user-profile/UserProfileContext";
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import type { AttributeParams } from "./routes/Attribute";
-import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { convertToFormValues } from "../util";
 import { flatten } from "flat";
 
 import "./realm-settings-section.css";
 
-type UserProfileAttributeType = UserProfileAttribute & Attribute & Permission;
+type IndexedAnnotations = {
+  key: string;
+  value: unknown;
+};
+
+export type IndexedValidations = {
+  key: string;
+  value?: Record<string, unknown>[];
+};
+
+type UserProfileAttributeType = Omit<
+  UserProfileAttribute,
+  "validations" | "annotations"
+> &
+  Attribute &
+  Permission & {
+    validations: IndexedValidations[];
+    annotations: IndexedAnnotations[];
+  };
 
 type Attribute = {
   roles: string[];
@@ -55,6 +72,8 @@ type PermissionEdit = [
     userEdit: boolean;
   }
 ];
+
+export const USERNAME_EMAIL = ["username", "email"];
 
 const CreateAttributeFormContent = ({
   save,
@@ -108,12 +127,6 @@ export default function NewAttributeSettings() {
   const [config, setConfig] = useState<UserProfileConfig | null>(null);
   const editMode = attributeName ? true : false;
 
-  const convert = (obj: Record<string, unknown>[] | undefined) =>
-    Object.entries(obj || []).map(([key, value]) => ({
-      key,
-      value,
-    }));
-
   useFetch(
     () => adminClient.users.getProfile(),
     (config) => {
@@ -133,15 +146,38 @@ export default function NewAttributeSettings() {
       Object.entries(
         flatten<any, any>({ permissions, selector, required }, { safe: true })
       ).map(([key, value]) => form.setValue(key, value));
-      form.setValue("annotations", convert(annotations));
-      form.setValue("validations", validations);
+      form.setValue(
+        "annotations",
+        Object.entries(annotations || {}).map(([key, value]) => ({
+          key,
+          value,
+        }))
+      );
+      form.setValue(
+        "validations",
+        Object.entries(validations || {}).map(([key, value]) => ({
+          key,
+          value,
+        }))
+      );
       form.setValue("isRequired", required !== undefined);
     },
     []
   );
 
   const save = async (profileConfig: UserProfileAttributeType) => {
-    const annotations = (profileConfig.annotations! as KeyValueType[]).reduce(
+    const validations = profileConfig.validations.reduce(
+      (prevValidations, currentValidations) => {
+        prevValidations[currentValidations.key] =
+          currentValidations.value?.length === 0
+            ? {}
+            : currentValidations.value;
+        return prevValidations;
+      },
+      {} as Record<string, unknown>
+    );
+
+    const annotations = profileConfig.annotations.reduce(
       (obj, item) => Object.assign(obj, { [item.key]: item.value }),
       {}
     );
@@ -161,6 +197,7 @@ export default function NewAttributeSettings() {
             selector: profileConfig.selector,
             permissions: profileConfig.permissions!,
             annotations,
+            validations,
           },
           profileConfig.isRequired
             ? { required: profileConfig.required }

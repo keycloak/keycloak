@@ -21,6 +21,7 @@ import { useParams } from "react-router-dom";
 import { isEqual } from "lodash-es";
 
 import "../../realm-settings-section.css";
+import { USERNAME_EMAIL } from "../../NewAttributeSettings";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
@@ -151,187 +152,44 @@ export const AttributeGeneralSettings = () => {
           )}
         ></Controller>
       </FormGroup>
-      <Divider />
-      <FormGroup label={t("enabledWhen")} fieldId="enabledWhen" hasNoPaddingTop>
-        <Radio
-          id="always"
-          data-testid="always"
-          isChecked={selectedScopes.length === clientScopes?.length}
-          name="enabledWhen"
-          label={t("always")}
-          onChange={(value) => {
-            if (value) {
-              form.setValue(
-                "selector.scopes",
-                clientScopes?.map((s) => s.name)
-              );
-            } else {
-              form.setValue("selector.scopes", []);
-            }
-          }}
-          className="pf-u-mb-md"
-        />
-        <Radio
-          id="scopesAsRequested"
-          data-testid="scopesAsRequested"
-          isChecked={selectedScopes.length !== clientScopes?.length}
-          name="enabledWhen"
-          label={t("scopesAsRequested")}
-          onChange={(value) => {
-            if (value) {
-              form.setValue("selector.scopes", []);
-            } else {
-              form.setValue(
-                "selector.scopes",
-                clientScopes?.map((s) => s.name)
-              );
-            }
-          }}
-          className="pf-u-mb-md"
-        />
-      </FormGroup>
-      <FormGroup fieldId="kc-scope-enabled-when">
-        <Controller
-          name="selector.scopes"
-          control={form.control}
-          defaultValue={[]}
-          render={({ onChange, value }) => (
-            <Select
-              name="scopes"
-              data-testid="enabled-when-scope-field"
-              variant={SelectVariant.typeaheadMulti}
-              typeAheadAriaLabel="Select"
-              chipGroupProps={{
-                numChips: 3,
-                expandedText: t("common:hide"),
-                collapsedText: t("common:showRemaining"),
-              }}
-              onToggle={(isOpen) => setSelectEnabledWhenOpen(isOpen)}
-              selections={value}
-              onSelect={(_, selectedValue) => {
-                const option = selectedValue.toString();
-                let changedValue = [""];
-                if (value) {
-                  changedValue = value.includes(option)
-                    ? value.filter((item: string) => item !== option)
-                    : [...value, option];
-                } else {
-                  changedValue = [option];
-                }
-
-                onChange(changedValue);
-              }}
-              onClear={(selectedValues) => {
-                selectedValues.stopPropagation();
-                onChange([]);
-              }}
-              isOpen={selectEnabledWhenOpen}
-              isDisabled={selectedScopes.length === clientScopes?.length}
-              aria-labelledby={"scope"}
-            >
-              {clientScopes?.map((option) => (
-                <SelectOption key={option.name} value={option.name} />
-              ))}
-            </Select>
-          )}
-        />
-      </FormGroup>
-      <Divider />
-      <FormGroup
-        label={t("required")}
-        labelIcon={
-          <HelpItem
-            helpText="realm-settings-help:requiredHelp"
-            fieldLabelId="realm-settings:required"
-          />
-        }
-        fieldId="kc-required"
-        hasNoPaddingTop
-      >
-        <Controller
-          name="isRequired"
-          data-testid="required"
-          defaultValue={false}
-          control={form.control}
-          render={({ onChange, value }) => (
-            <Switch
-              id={"kc-required"}
-              onChange={onChange}
-              isChecked={value}
-              label={t("common:on")}
-              labelOff={t("common:off")}
-              aria-label={t("required")}
-            />
-          )}
-        />
-      </FormGroup>
-      {required && (
+      {!USERNAME_EMAIL.includes(attributeName) && (
         <>
+          <Divider />
           <FormGroup
-            label={t("requiredFor")}
-            fieldId="requiredFor"
-            hasNoPaddingTop
-          >
-            <Controller
-              name="required.roles"
-              data-testid="requiredFor"
-              defaultValue={REQUIRED_FOR[0].value}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <div className="kc-requiredFor">
-                  {REQUIRED_FOR.map((option) => (
-                    <Radio
-                      id={option.label}
-                      key={option.label}
-                      data-testid={option.label}
-                      isChecked={isEqual(value, option.value)}
-                      name="roles"
-                      onChange={() => {
-                        onChange(option.value);
-                      }}
-                      label={t(option.label)}
-                      className="kc-requiredFor-option"
-                    />
-                  ))}
-                </div>
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("requiredWhen")}
-            fieldId="requiredWhen"
+            label={t("enabledWhen")}
+            fieldId="enabledWhen"
             hasNoPaddingTop
           >
             <Radio
-              id="requiredAlways"
-              data-testid="requiredAlways"
-              isChecked={requiredScopes.length === clientScopes?.length}
-              name="requiredWhen"
+              id="always"
+              data-testid="always"
+              isChecked={selectedScopes.length === clientScopes?.length}
+              name="enabledWhen"
               label={t("always")}
               onChange={(value) => {
                 if (value) {
                   form.setValue(
-                    "required.scopes",
+                    "selector.scopes",
                     clientScopes?.map((s) => s.name)
                   );
                 } else {
-                  form.setValue("required.scopes", []);
+                  form.setValue("selector.scopes", []);
                 }
               }}
               className="pf-u-mb-md"
             />
             <Radio
-              id="requiredScopesAsRequested"
-              data-testid="requiredScopesAsRequested"
-              isChecked={requiredScopes.length !== clientScopes?.length}
-              name="requiredWhen"
+              id="scopesAsRequested"
+              data-testid="scopesAsRequested"
+              isChecked={selectedScopes.length !== clientScopes?.length}
+              name="enabledWhen"
               label={t("scopesAsRequested")}
               onChange={(value) => {
                 if (value) {
-                  form.setValue("required.scopes", []);
+                  form.setValue("selector.scopes", []);
                 } else {
                   form.setValue(
-                    "required.scopes",
+                    "selector.scopes",
                     clientScopes?.map((s) => s.name)
                   );
                 }
@@ -339,15 +197,15 @@ export const AttributeGeneralSettings = () => {
               className="pf-u-mb-md"
             />
           </FormGroup>
-          <FormGroup fieldId="kc-scope-required-when">
+          <FormGroup fieldId="kc-scope-enabled-when">
             <Controller
-              name="required.scopes"
+              name="selector.scopes"
               control={form.control}
               defaultValue={[]}
               render={({ onChange, value }) => (
                 <Select
-                  name="scopeRequired"
-                  data-testid="required-when-scope-field"
+                  name="scopes"
+                  data-testid="enabled-when-scope-field"
                   variant={SelectVariant.typeaheadMulti}
                   typeAheadAriaLabel="Select"
                   chipGroupProps={{
@@ -355,7 +213,7 @@ export const AttributeGeneralSettings = () => {
                     expandedText: t("common:hide"),
                     collapsedText: t("common:showRemaining"),
                   }}
-                  onToggle={(isOpen) => setSelectRequiredForOpen(isOpen)}
+                  onToggle={(isOpen) => setSelectEnabledWhenOpen(isOpen)}
                   selections={value}
                   onSelect={(_, selectedValue) => {
                     const option = selectedValue.toString();
@@ -367,14 +225,15 @@ export const AttributeGeneralSettings = () => {
                     } else {
                       changedValue = [option];
                     }
+
                     onChange(changedValue);
                   }}
                   onClear={(selectedValues) => {
                     selectedValues.stopPropagation();
                     onChange([]);
                   }}
-                  isOpen={selectRequiredForOpen}
-                  isDisabled={requiredScopes.length === clientScopes?.length}
+                  isOpen={selectEnabledWhenOpen}
+                  isDisabled={selectedScopes.length === clientScopes?.length}
                   aria-labelledby={"scope"}
                 >
                   {clientScopes?.map((option) => (
@@ -384,6 +243,159 @@ export const AttributeGeneralSettings = () => {
               )}
             />
           </FormGroup>
+
+          <Divider />
+          <FormGroup
+            label={t("required")}
+            labelIcon={
+              <HelpItem
+                helpText="realm-settings-help:requiredHelp"
+                fieldLabelId="realm-settings:required"
+              />
+            }
+            fieldId="kc-required"
+            hasNoPaddingTop
+          >
+            <Controller
+              name="isRequired"
+              data-testid="required"
+              defaultValue={false}
+              control={form.control}
+              render={({ onChange, value }) => (
+                <Switch
+                  id={"kc-required"}
+                  onChange={onChange}
+                  isChecked={value}
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  aria-label={t("required")}
+                />
+              )}
+            />
+          </FormGroup>
+          {required && (
+            <>
+              <FormGroup
+                label={t("requiredFor")}
+                fieldId="requiredFor"
+                hasNoPaddingTop
+              >
+                <Controller
+                  name="required.roles"
+                  data-testid="requiredFor"
+                  defaultValue={REQUIRED_FOR[0].value}
+                  control={form.control}
+                  render={({ onChange, value }) => (
+                    <div className="kc-requiredFor">
+                      {REQUIRED_FOR.map((option) => (
+                        <Radio
+                          id={option.label}
+                          key={option.label}
+                          data-testid={option.label}
+                          isChecked={isEqual(value, option.value)}
+                          name="roles"
+                          onChange={() => {
+                            onChange(option.value);
+                          }}
+                          label={t(option.label)}
+                          className="kc-requiredFor-option"
+                        />
+                      ))}
+                    </div>
+                  )}
+                />
+              </FormGroup>
+              <FormGroup
+                label={t("requiredWhen")}
+                fieldId="requiredWhen"
+                hasNoPaddingTop
+              >
+                <Radio
+                  id="requiredAlways"
+                  data-testid="requiredAlways"
+                  isChecked={requiredScopes.length === clientScopes?.length}
+                  name="requiredWhen"
+                  label={t("always")}
+                  onChange={(value) => {
+                    if (value) {
+                      form.setValue(
+                        "required.scopes",
+                        clientScopes?.map((s) => s.name)
+                      );
+                    } else {
+                      form.setValue("required.scopes", []);
+                    }
+                  }}
+                  className="pf-u-mb-md"
+                />
+                <Radio
+                  id="requiredScopesAsRequested"
+                  data-testid="requiredScopesAsRequested"
+                  isChecked={requiredScopes.length !== clientScopes?.length}
+                  name="requiredWhen"
+                  label={t("scopesAsRequested")}
+                  onChange={(value) => {
+                    if (value) {
+                      form.setValue("required.scopes", []);
+                    } else {
+                      form.setValue(
+                        "required.scopes",
+                        clientScopes?.map((s) => s.name)
+                      );
+                    }
+                  }}
+                  className="pf-u-mb-md"
+                />
+              </FormGroup>
+              <FormGroup fieldId="kc-scope-required-when">
+                <Controller
+                  name="required.scopes"
+                  control={form.control}
+                  defaultValue={[]}
+                  render={({ onChange, value }) => (
+                    <Select
+                      name="scopeRequired"
+                      data-testid="required-when-scope-field"
+                      variant={SelectVariant.typeaheadMulti}
+                      typeAheadAriaLabel="Select"
+                      chipGroupProps={{
+                        numChips: 3,
+                        expandedText: t("common:hide"),
+                        collapsedText: t("common:showRemaining"),
+                      }}
+                      onToggle={(isOpen) => setSelectRequiredForOpen(isOpen)}
+                      selections={value}
+                      onSelect={(_, selectedValue) => {
+                        const option = selectedValue.toString();
+                        let changedValue = [""];
+                        if (value) {
+                          changedValue = value.includes(option)
+                            ? value.filter((item: string) => item !== option)
+                            : [...value, option];
+                        } else {
+                          changedValue = [option];
+                        }
+                        onChange(changedValue);
+                      }}
+                      onClear={(selectedValues) => {
+                        selectedValues.stopPropagation();
+                        onChange([]);
+                      }}
+                      isOpen={selectRequiredForOpen}
+                      isDisabled={
+                        requiredScopes.length === clientScopes?.length
+                      }
+                      aria-labelledby={"scope"}
+                    >
+                      {clientScopes?.map((option) => (
+                        <SelectOption key={option.name} value={option.name} />
+                      ))}
+                    </Select>
+                  )}
+                />
+              </FormGroup>
+            </>
+          )}
         </>
       )}
     </FormAccess>

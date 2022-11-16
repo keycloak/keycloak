@@ -92,7 +92,7 @@ describe("User profile tabs", () => {
 
       userProfileTab.cancelRemovingValidator();
       userProfileTab.removeValidator();
-      cy.get('tbody [class="kc-emptyValidators"]').contains("No validators.");
+      cy.get(".kc-emptyValidators").contains("No validators.");
     });
   });
 

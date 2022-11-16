@@ -14,7 +14,7 @@ export default class UserProfile {
   private newAttributeCheckboxes = 'input[type="checkbox"]';
   private newAttributeRequiredFor = 'input[name="roles"]';
   private newAttributeRequiredWhen = 'input[name="requiredWhen"]';
-  private newAttributeEmptyValidators = 'tbody [class="kc-emptyValidators"]';
+  private newAttributeEmptyValidators = ".kc-emptyValidators";
   private newAttributeAnnotationKey = 'input[name="annotations[0].key"]';
   private newAttributeAnnotationValue = 'input[name="annotations[0].value"]';
   private validatorRolesList = 'tbody [data-label="Role name"]';
