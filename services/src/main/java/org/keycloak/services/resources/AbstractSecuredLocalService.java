@@ -37,7 +37,6 @@ import org.keycloak.util.TokenUtil;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
@@ -58,16 +57,14 @@ public abstract class AbstractSecuredLocalService {
     protected final ClientModel client;
     protected final RealmModel realm;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
     protected final ClientConnection clientConnection;
     protected String stateChecker;
 
     protected final KeycloakSession session;
 
-    @Context
-    protected HttpRequest request;
+    protected final HttpRequest request;
     protected Auth auth;
 
     public AbstractSecuredLocalService(KeycloakSession session, ClientModel client) {
@@ -75,6 +72,8 @@ public abstract class AbstractSecuredLocalService {
         this.realm = session.getContext().getRealm();
         this.clientConnection = session.getContext().getConnection();
         this.client = client;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     @Path("login-redirect")
@@ -83,8 +82,7 @@ public abstract class AbstractSecuredLocalService {
                                   @QueryParam("state") String state,
                                   @QueryParam("error") String error,
                                   @QueryParam("path") String path,
-                                  @QueryParam("referrer") String referrer,
-                                  @Context HttpHeaders headers) {
+                                  @QueryParam("referrer") String referrer) {
         try {
             if (error != null) {
                 if (OAuthErrorException.ACCESS_DENIED.equals(error)) {

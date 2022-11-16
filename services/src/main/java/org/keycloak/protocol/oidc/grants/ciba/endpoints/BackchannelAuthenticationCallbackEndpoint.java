@@ -42,7 +42,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -56,11 +55,11 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
 
     private static final Logger logger = Logger.getLogger(BackchannelAuthenticationCallbackEndpoint.class);
 
-    @Context
-    private HttpRequest httpRequest;
+    private final HttpRequest httpRequest;
 
     public BackchannelAuthenticationCallbackEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
+        this.httpRequest = session.getContext().getContextObject(HttpRequest.class);
     }
 
     @Path("/")

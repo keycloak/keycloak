@@ -18,7 +18,6 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationService;
@@ -67,9 +66,6 @@ public class RealmsResource {
     @Context
     protected KeycloakSession session;
 
-    @Context
-    private HttpRequest request;
-
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
         return realmBaseUrl(baseUriBuilder);
@@ -116,10 +112,7 @@ public class RealmsResource {
 
         EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection());
 
-        Object endpoint = factory.createProtocolEndpoint(session, event);
-
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return factory.createProtocolEndpoint(session, event);
     }
 
     /**
@@ -165,9 +158,7 @@ public class RealmsResource {
     public LoginActionsService getLoginActionsService(final @PathParam("realm") String name) {
         resolveRealmAndUpdateSession(name);
         EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection());
-        LoginActionsService service = new LoginActionsService(session, event);
-        ResteasyProviderFactory.getInstance().injectProperties(service);
-        return service;
+        return new LoginActionsService(session, event);
     }
 
     @Path("{realm}/clients-registrations")
@@ -181,9 +172,7 @@ public class RealmsResource {
     public ClientsManagementService getClientsManagementService(final @PathParam("realm") String name) {
         resolveRealmAndUpdateSession(name);
         EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection());
-        ClientsManagementService service = new ClientsManagementService(session, event);
-        ResteasyProviderFactory.getInstance().injectProperties(service);
-        return service;
+        return new ClientsManagementService(session, event);
     }
 
     private void resolveRealmAndUpdateSession(String realmName) {
@@ -199,17 +188,13 @@ public class RealmsResource {
     public Object getAccountService(final @PathParam("realm") String name) {
         resolveRealmAndUpdateSession(name);
         EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection());
-        AccountLoader accountLoader = new AccountLoader(session, event);
-        ResteasyProviderFactory.getInstance().injectProperties(accountLoader);
-        return accountLoader;
+        return new AccountLoader(session, event);
     }
 
     @Path("{realm}")
     public PublicRealmResource getRealmResource(final @PathParam("realm") String name) {
         resolveRealmAndUpdateSession(name);
-        PublicRealmResource realmResource = new PublicRealmResource(session);
-        ResteasyProviderFactory.getInstance().injectProperties(realmResource);
-        return realmResource;
+        return new PublicRealmResource(session);
     }
 
     @Path("{realm}/broker")
@@ -217,7 +202,6 @@ public class RealmsResource {
         resolveRealmAndUpdateSession(name);
 
         IdentityBrokerService brokerService = new IdentityBrokerService(session);
-        ResteasyProviderFactory.getInstance().injectProperties(brokerService);
 
         brokerService.init();
 
@@ -229,7 +213,7 @@ public class RealmsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getVersionPreflight(final @PathParam("realm") String name,
                                         final @PathParam("provider") String providerName) {
-        return Cors.add(request, Response.ok()).allowedMethods("GET").preflight().auth().build();
+        return Cors.add(session.getContext().getContextObject(HttpRequest.class), Response.ok()).allowedMethods("GET").preflight().auth().build();
     }
 
     @GET
@@ -252,7 +236,7 @@ public class RealmsResource {
 
         if (wellKnown != null) {
             ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.noCache());
-            return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
+            return Cors.add(session.getContext().getContextObject(HttpRequest.class), responseBuilder).allowedOrigins("*").auth().build();
         }
 
         throw new NotFoundException();
@@ -290,6 +274,7 @@ public class RealmsResource {
     private void checkSsl(RealmModel realm) {
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https")
                 && realm.getSslRequired().isRequired(session.getContext().getConnection())) {
+            HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
             Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required",
                     Response.Status.FORBIDDEN);

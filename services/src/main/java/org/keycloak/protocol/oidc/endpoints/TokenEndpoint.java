@@ -20,7 +20,6 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -108,7 +107,6 @@ import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -143,14 +141,11 @@ public class TokenEndpoint {
 
     private final KeycloakSession session;
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
-    @Context
-    private HttpResponse httpResponse;
+    private final HttpResponse httpResponse;
 
-    @Context
-    private HttpHeaders headers;
+    private final HttpHeaders headers;
 
     private final ClientConnection clientConnection;
 
@@ -170,6 +165,9 @@ public class TokenEndpoint {
         this.tokenManager = tokenManager;
         this.realm = session.getContext().getRealm();
         this.event = event;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.httpResponse = session.getContext().getContextObject(HttpResponse.class);
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -184,7 +182,6 @@ public class TokenEndpoint {
                 // create another instance of the endpoint that will be run within the new session.
                 Resteasy.pushContext(KeycloakSession.class, kcSession);
                 TokenEndpoint other = new TokenEndpoint(session, new TokenManager(), new EventBuilder(realmModel, kcSession, clientConnection));
-                ResteasyProviderFactory.getInstance().injectProperties(other);
                 return other.processGrantRequestInternal();
             } catch (WebApplicationException we) {
                 // WebApplicationException needs to be returned and treated (rethrown) by the calling code because the new transaction
@@ -252,11 +249,7 @@ public class TokenEndpoint {
 
     @Path("introspect")
     public Object introspect() {
-        TokenIntrospectionEndpoint tokenIntrospectionEndpoint = new TokenIntrospectionEndpoint(this.session, this.event);
-
-        ResteasyProviderFactory.getInstance().injectProperties(tokenIntrospectionEndpoint);
-
-        return tokenIntrospectionEndpoint;
+        return new TokenIntrospectionEndpoint(this.session, this.event);
     }
 
     @OPTIONS

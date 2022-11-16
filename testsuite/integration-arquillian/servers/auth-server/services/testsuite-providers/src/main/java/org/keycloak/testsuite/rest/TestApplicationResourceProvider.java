@@ -42,7 +42,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -69,8 +68,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
     private final ConcurrentMap<String, String> intentClientBindings;
 
-    @Context
-    HttpRequest request;
+    private final HttpRequest request;
 
     public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
             BlockingQueue<LogoutToken> backChannelLogoutTokens,
@@ -91,6 +89,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         this.authenticationChannelRequests = authenticationChannelRequests;
         this.cibaClientNotifications = cibaClientNotifications;
         this.intentClientBindings = intentClientBindings;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
     }
 
     @POST

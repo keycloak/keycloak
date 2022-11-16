@@ -39,7 +39,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -59,8 +58,7 @@ public class ParEndpoint extends AbstractParEndpoint {
     private static final String REQUEST_URI_PREFIX = "urn:ietf:params:oauth:request_uri:";
     public static final int REQUEST_URI_PREFIX_LENGTH = REQUEST_URI_PREFIX.length();
 
-    @Context
-    private HttpRequest httpRequest;
+    private final HttpRequest httpRequest;
 
     private AuthorizationEndpointRequest authorizationRequest;
 
@@ -71,6 +69,7 @@ public class ParEndpoint extends AbstractParEndpoint {
 
     public ParEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
+        this.httpRequest = session.getContext().getContextObject(HttpRequest.class);
     }
 
     @Path("/")

@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.constants.AdapterConstants;
@@ -115,9 +114,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
      */
     @Path("device")
     public Object authorizeDevice() {
-        DeviceEndpoint endpoint = new DeviceEndpoint(session, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return new DeviceEndpoint(session, event);
     }
 
     private Response process(MultivaluedMap<String, String> params) {

@@ -33,8 +33,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
 
 import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -50,11 +48,8 @@ public class TokenIntrospectionEndpoint {
     private static final String PARAM_TOKEN = "token";
 
     private final KeycloakSession session;
-    @Context
-    private HttpRequest request;
 
-    @Context
-    private HttpHeaders headers;
+    private final HttpRequest request;
 
     private final ClientConnection clientConnection;
 
@@ -66,6 +61,7 @@ public class TokenIntrospectionEndpoint {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
     }
 
     @POST
