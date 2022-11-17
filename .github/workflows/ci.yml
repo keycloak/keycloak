@@ -197,7 +197,7 @@ jobs:
     name: Base testsuite
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 100
     strategy:
       matrix:
         server: ['quarkus', 'quarkus-map', 'quarkus-map-hot-rod', 'quarkus-map-jpa']
