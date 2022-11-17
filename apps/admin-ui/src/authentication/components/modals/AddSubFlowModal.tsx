@@ -203,7 +203,7 @@ export const AddSubFlowModal = ({
                     <SelectOption
                       selected={provider.displayName === value}
                       key={provider.id}
-                      value={provider}
+                      value={provider.id}
                     >
                       {provider.displayName}
                     </SelectOption>
