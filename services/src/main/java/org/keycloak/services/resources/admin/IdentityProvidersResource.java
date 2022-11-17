@@ -21,7 +21,6 @@ import com.google.common.collect.Streams;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -215,10 +214,7 @@ public class IdentityProvidersResource {
                 .filter(p -> Objects.equals(p.getAlias(), alias) || Objects.equals(p.getInternalId(), alias))
                 .findFirst().orElse(null);
 
-        IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(identityProviderResource);
-        
-        return identityProviderResource;
+        return new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
     }
 
     private IdentityProviderFactory getProviderFactoryById(String providerId) {

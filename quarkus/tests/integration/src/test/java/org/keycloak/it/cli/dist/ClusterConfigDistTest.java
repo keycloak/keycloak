@@ -17,10 +17,13 @@
 
 package org.keycloak.it.cli.dist;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.util.function.Consumer;
+
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -103,7 +106,7 @@ public class ClusterConfigDistTest {
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-asym-enc.xml" })
     void testCustomCacheStackInConfigFile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("ERROR: server.jks"));
+        assertThat(cliResult.getOutput(), Matchers.containsString("ISPN000078: Starting JGroups channel `ISPN` with stack `encrypt-udp`"));
     }
 
     public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {

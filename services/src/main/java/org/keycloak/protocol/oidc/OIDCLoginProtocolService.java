@@ -21,21 +21,17 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
@@ -47,8 +43,6 @@ import org.keycloak.protocol.oidc.endpoints.TokenRevocationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
@@ -77,15 +71,12 @@ import javax.ws.rs.core.UriInfo;
  */
 public class OIDCLoginProtocolService {
 
-    private static final Logger logger = Logger.getLogger(OIDCLoginProtocolService.class);
-
     private final RealmModel realm;
     private final TokenManager tokenManager;
     private final EventBuilder event;
     private final OIDCProviderConfig providerConfig;
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
     @Context
     private HttpHeaders headers;
@@ -93,11 +84,12 @@ public class OIDCLoginProtocolService {
     @Context
     private HttpRequest request;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
-    public OIDCLoginProtocolService(RealmModel realm, EventBuilder event, OIDCProviderConfig providerConfig) {
-        this.realm = realm;
+    public OIDCLoginProtocolService(KeycloakSession session, EventBuilder event, OIDCProviderConfig providerConfig) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.tokenManager = new TokenManager();
         this.event = event;
         this.providerConfig = providerConfig;
@@ -166,7 +158,7 @@ public class OIDCLoginProtocolService {
      */
     @Path("auth")
     public Object auth() {
-        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
+        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(session, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
@@ -176,7 +168,7 @@ public class OIDCLoginProtocolService {
      */
     @Path("registrations")
     public Object registrations() {
-        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
+        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(session, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.register();
     }
@@ -186,7 +178,7 @@ public class OIDCLoginProtocolService {
      */
     @Path("forgot-credentials")
     public Object forgotCredentialsPage() {
-        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
+        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(session, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.forgotCredentials();
     }
@@ -196,23 +188,19 @@ public class OIDCLoginProtocolService {
      */
     @Path("token")
     public Object token() {
-        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, realm, event);
+        TokenEndpoint endpoint = new TokenEndpoint(session, tokenManager, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
 
     @Path("login-status-iframe.html")
     public Object getLoginStatusIframe() {
-        LoginStatusIframeEndpoint endpoint = new LoginStatusIframeEndpoint();
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return new LoginStatusIframeEndpoint(session);
     }
 
     @Path("3p-cookies")
     public Object thirdPartyCookiesCheck() {
-        ThirdPartyCookiesIframeEndpoint endpoint = new ThirdPartyCookiesIframeEndpoint();
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return new ThirdPartyCookiesIframeEndpoint(session);
     }
 
     @OPTIONS
@@ -255,7 +243,7 @@ public class OIDCLoginProtocolService {
 
     @Path("userinfo")
     public Object issueUserInfo() {
-        UserInfoEndpoint endpoint = new UserInfoEndpoint(tokenManager, realm);
+        UserInfoEndpoint endpoint = new UserInfoEndpoint(session, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
@@ -264,14 +252,14 @@ public class OIDCLoginProtocolService {
     * https://issues.redhat.com/browse/KEYCLOAK-2940 */
     @Path("logout")
     public Object logout() {
-        LogoutEndpoint endpoint = new LogoutEndpoint(tokenManager, realm, event, providerConfig);
+        LogoutEndpoint endpoint = new LogoutEndpoint(session, tokenManager, event, providerConfig);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
 
     @Path("revoke")
     public Object revoke() {
-        TokenRevocationEndpoint endpoint = new TokenRevocationEndpoint(realm, event);
+        TokenRevocationEndpoint endpoint = new TokenRevocationEndpoint(session, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }

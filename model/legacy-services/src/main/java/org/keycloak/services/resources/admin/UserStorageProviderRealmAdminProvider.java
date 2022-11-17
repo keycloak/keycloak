@@ -51,7 +51,7 @@ public class UserStorageProviderRealmAdminProvider implements AdminRealmResource
 
     @Override
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new UserStorageProviderResource(realm, auth, adminEvent);
+        return new UserStorageProviderResource(session, auth, adminEvent);
     }
 
 }

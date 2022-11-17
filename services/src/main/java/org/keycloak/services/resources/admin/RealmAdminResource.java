@@ -89,7 +89,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.partialimport.PartialImportManager;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -125,24 +124,22 @@ import org.keycloak.utils.ReservedCharValidator;
  */
 public class RealmAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
-    protected AdminPermissionEvaluator auth;
-    protected RealmModel realm;
-    private TokenManager tokenManager;
-    private AdminEventBuilder adminEvent;
+    protected final AdminPermissionEvaluator auth;
+    protected final RealmModel realm;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected ClientConnection connection;
+    protected final ClientConnection connection;
 
     @Context
     protected HttpHeaders headers;
 
-    public RealmAdminResource(AdminPermissionEvaluator auth, RealmModel realm, TokenManager tokenManager, AdminEventBuilder adminEvent) {
+    public RealmAdminResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
-        this.tokenManager = tokenManager;
+        this.realm = session.getContext().getRealm();
+        this.connection = session.getContext().getConnection();
         this.adminEvent = adminEvent.resource(ResourceType.REALM);
     }
 
@@ -177,7 +174,7 @@ public class RealmAdminResource {
      */
     @Path("attack-detection")
     public AttackDetectionResource getAttackDetection() {
-        AttackDetectionResource resource = new AttackDetectionResource(auth, realm, adminEvent);
+        AttackDetectionResource resource = new AttackDetectionResource(session, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -189,9 +186,7 @@ public class RealmAdminResource {
      */
     @Path("clients")
     public ClientsResource getClients() {
-        ClientsResource clientsResource = new ClientsResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
-        return clientsResource;
+        return new ClientsResource(session, auth, adminEvent);
     }
 
     /**
@@ -212,9 +207,7 @@ public class RealmAdminResource {
      */
     @Path("client-scopes")
     public ClientScopesResource getClientScopes() {
-        ClientScopesResource clientScopesResource = new ClientScopesResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(clientScopesResource);
-        return clientScopesResource;
+        return new ClientScopesResource(session, auth, adminEvent);
     }
 
     /**
@@ -222,9 +215,7 @@ public class RealmAdminResource {
      */
     @Path("localization")
     public RealmLocalizationResource getLocalization() {
-        RealmLocalizationResource resource = new RealmLocalizationResource(realm, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new RealmLocalizationResource(session, auth);
     }
 
     /**
@@ -323,16 +314,12 @@ public class RealmAdminResource {
      */
     @Path("clients-initial-access")
     public ClientInitialAccessResource getClientInitialAccess() {
-        ClientInitialAccessResource resource = new ClientInitialAccessResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ClientInitialAccessResource(session, auth, adminEvent);
     }
 
     @Path("client-registration-policy")
     public ClientRegistrationPolicyResource getClientRegistrationPolicy() {
-        ClientRegistrationPolicyResource resource = new ClientRegistrationPolicyResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ClientRegistrationPolicyResource(session, auth, adminEvent);
     }
 
     /**
@@ -342,7 +329,7 @@ public class RealmAdminResource {
      */
     @Path("components")
     public ComponentResource getComponents() {
-        ComponentResource resource = new ComponentResource(realm, auth, adminEvent);
+        ComponentResource resource = new ComponentResource(session, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -475,7 +462,7 @@ public class RealmAdminResource {
      */
     @Path("users")
     public UsersResource users() {
-        UsersResource users = new UsersResource(realm, auth, adminEvent);
+        UsersResource users = new UsersResource(session, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(users);
         //resourceContext.initResource(users);
         return users;
@@ -541,10 +528,7 @@ public class RealmAdminResource {
 
     @Path("authentication")
     public AuthenticationManagementResource flows() {
-        AuthenticationManagementResource resource = new AuthenticationManagementResource(realm, session, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        //resourceContext.initResource(resource);
-        return resource;
+        return new AuthenticationManagementResource(session, auth, adminEvent);
 
     }
 
@@ -555,10 +539,7 @@ public class RealmAdminResource {
      */
     @Path("roles-by-id")
     public RoleByIdResource rolesById() {
-         RoleByIdResource resource = new RoleByIdResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        //resourceContext.initResource(resource);
-        return resource;
+         return new RoleByIdResource(session, auth, adminEvent);
     }
 
     /**
@@ -1012,9 +993,7 @@ public class RealmAdminResource {
 
     @Path("groups")
     public GroupsResource getGroups() {
-        GroupsResource resource =  new GroupsResource(realm, session, this.auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return   new GroupsResource(realm, session, this.auth, adminEvent);
     }
 
 
@@ -1095,9 +1074,7 @@ public class RealmAdminResource {
 
     @Path("keys")
     public KeyResource keys() {
-        KeyResource resource =  new KeyResource(realm, session, this.auth);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new KeyResource(realm, session, this.auth);
     }
 
     @GET
@@ -1115,7 +1092,7 @@ public class RealmAdminResource {
     @Path("client-policies/policies")
     public ClientPoliciesResource getClientPoliciesResource() {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
-        ClientPoliciesResource resource = new ClientPoliciesResource(realm, auth);
+        ClientPoliciesResource resource = new ClientPoliciesResource(session, auth);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -1123,7 +1100,7 @@ public class RealmAdminResource {
     @Path("client-policies/profiles")
     public ClientProfilesResource getClientProfilesResource() {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
-        ClientProfilesResource resource = new ClientProfilesResource(realm, auth);
+        ClientProfilesResource resource = new ClientProfilesResource(session, auth);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }

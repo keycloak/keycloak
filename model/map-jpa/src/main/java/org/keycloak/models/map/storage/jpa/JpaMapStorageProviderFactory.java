@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -64,7 +65,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.locking.GlobalLock;
+import org.keycloak.models.locking.GlobalLockProvider;
+import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
@@ -433,13 +436,11 @@ public class JpaMapStorageProviderFactory implements
 
     private void update(Class<?> modelType, Connection connection, KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession lockSession) -> {
-            // TODO locking tables based on modelType: https://github.com/keycloak/keycloak/issues/9388
-            DBLockProvider dbLock = session.getProvider(DBLockProvider.class);
-            dbLock.waitForLock(DBLockProvider.Namespace.DATABASE);
-            try {
+            GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
+            try (GlobalLock l = globalLock.acquireLock(modelType.getName())) {
                 session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
-            } finally {
-                dbLock.releaseLock();
+            } catch (LockAcquiringTimeoutException e) {
+                throw new RuntimeException("Acquiring " + modelType.getName() + " failed.", e);
             }
         });
     }

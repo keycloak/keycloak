@@ -22,7 +22,6 @@ import org.jboss.resteasy.spi.HttpResponse;
 import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import javax.ws.rs.NotAuthorizedException;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -62,9 +61,6 @@ import java.util.Properties;
 @Path("/admin")
 public class AdminRoot {
     protected static final Logger logger = Logger.getLogger(AdminRoot.class);
-
-    @Context
-    protected ClientConnection clientConnection;
 
     @Context
     protected HttpRequest request;
@@ -125,13 +121,13 @@ public class AdminRoot {
         return masterRealmAdminConsoleRedirect();
     }
 
-    protected RealmModel locateRealm(String name, RealmManager realmManager) {
+    protected void resolveRealmAndUpdateSession(String name, KeycloakSession session) {
+        RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) {
             throw new NotFoundException("Realm not found.  Did you type in a bad URL?");
         }
         session.getContext().setRealm(realm);
-        return realm;
     }
 
 
@@ -157,9 +153,8 @@ public class AdminRoot {
             throw new NotFoundException();
         }
 
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = locateRealm(name, realmManager);
-        AdminConsole service = new AdminConsole(realm);
+        resolveRealmAndUpdateSession(name, session);
+        AdminConsole service = new AdminConsole(session);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }
@@ -185,7 +180,7 @@ public class AdminRoot {
 
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .setRealm(realm)
-                .setConnection(clientConnection)
+                .setConnection(session.getContext().getConnection())
                 .setHeaders(headers)
                 .authenticate();
 
@@ -229,9 +224,7 @@ public class AdminRoot {
 
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().build(response);
 
-        RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
-        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
-        return adminResource;
+        return new RealmsAdminResource(session, auth, tokenManager);
     }
 
     /**
@@ -262,9 +255,7 @@ public class AdminRoot {
 
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
 
-        ServerInfoAdminResource adminResource = new ServerInfoAdminResource();
-        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
-        return adminResource;
+        return new ServerInfoAdminResource(session);
     }
 
     public static Theme getTheme(KeycloakSession session, RealmModel realm) throws IOException {

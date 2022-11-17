@@ -51,12 +51,12 @@ public class ClientInitialAccessResource {
     private final RealmModel realm;
     private final AdminEventBuilder adminEvent;
 
-    @Context
     protected KeycloakSession session;
 
-    public ClientInitialAccessResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public ClientInitialAccessResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
     }

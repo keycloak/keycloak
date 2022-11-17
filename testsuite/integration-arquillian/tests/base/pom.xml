@@ -784,7 +784,7 @@
                             <systemPropertyVariables>
                                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
                                 <keycloak.mapStorage.provider>concurrenthashmap</keycloak.mapStorage.provider>
-                                <keycloak.dblock.provider>none</keycloak.dblock.provider>
+                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
                                 <keycloak.realm.provider>map</keycloak.realm.provider>
                                 <keycloak.client.provider>map</keycloak.client.provider>
                                 <keycloak.clientScope.provider>map</keycloak.clientScope.provider>

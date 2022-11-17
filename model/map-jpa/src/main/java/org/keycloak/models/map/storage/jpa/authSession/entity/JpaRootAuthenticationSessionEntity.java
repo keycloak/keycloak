@@ -106,8 +106,9 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
      * Used by hibernate when calling cb.construct from read(QueryParameters) method.
      * It is used to select root auth session without metadata(json) field.
      */
-    public JpaRootAuthenticationSessionEntity(UUID id, Integer entityVersion, String realmId, Long timestamp, Long expiration) {
+    public JpaRootAuthenticationSessionEntity(UUID id, int version, Integer entityVersion, String realmId, Long timestamp, Long expiration) {
         this.id = id;
+        this.version = version;
         this.entityVersion = entityVersion;
         this.realmId = realmId;
         this.timestamp = timestamp;

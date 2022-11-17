@@ -18,6 +18,7 @@
 org.keycloak.models.cache.CacheUserProviderSpi
 org.keycloak.models.cache.CacheRealmProviderSpi
 org.keycloak.models.cache.CachePublicKeyProviderSpi
+org.keycloak.models.dblock.DBLockSpi
 org.keycloak.storage.client.ClientStorageProviderSpi
 org.keycloak.storage.group.GroupStorageProviderSpi
 org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi
