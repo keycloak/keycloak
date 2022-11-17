@@ -88,11 +88,12 @@ export const ExecutionConfigModal = ({
     try {
       if (config) {
         const newConfig = {
-          ...config,
+          id: config.id,
+          alias: config.alias,
           config: changedConfig.config,
         };
         await adminClient.authenticationManagement.updateConfig(newConfig);
-        setConfig({ ...newConfig.config });
+        setConfig({ ...newConfig });
       } else {
         const newConfig = {
           id: execution.id!,
