@@ -1,6 +1,4 @@
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
+import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import {
   AlertVariant,
   Button,
@@ -9,10 +7,12 @@ import {
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
+import { useEffect } from "react";
+import { FormProvider, useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { NameDescription } from "./form/NameDescription";
 
 type EditFlowModalProps = {
@@ -20,29 +20,20 @@ type EditFlowModalProps = {
   toggleDialog: () => void;
 };
 
-type EditForm = {
-  alias: string;
-  description: string;
-};
-
 export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
   const { t } = useTranslation("authentication");
-  const form = useForm<EditForm>({
-    shouldUnregister: false,
-  });
-  const { reset, handleSubmit } = form;
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const form = useForm<AuthenticationFlowRepresentation>({ mode: "onChange" });
+  const { reset, handleSubmit } = form;
 
-  useEffect(() => {
-    reset(flow);
-  }, [flow, reset]);
+  useEffect(() => reset(flow), [flow]);
 
-  const save = async (values: EditForm) => {
+  const onSubmit = async (formValues: AuthenticationFlowRepresentation) => {
     try {
       await adminClient.authenticationManagement.updateFlow(
         { flowId: flow.id! },
-        { ...flow, ...values }
+        { ...flow, ...formValues }
       );
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
@@ -54,33 +45,34 @@ export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
   return (
     <Modal
       title={t("editFlow")}
-      isOpen={true}
       onClose={toggleDialog}
       variant={ModalVariant.small}
       actions={[
         <Button
-          id="modal-confirm"
           key="confirm"
-          onClick={handleSubmit(save)}
           data-testid="confirm"
+          type="submit"
+          form="edit-flow-form"
         >
           {t("edit")}
         </Button>,
         <Button
-          data-testid="cancel"
-          id="modal-cancel"
           key="cancel"
+          data-testid="cancel"
           variant={ButtonVariant.link}
-          onClick={() => {
-            toggleDialog();
-          }}
+          onClick={() => toggleDialog()}
         >
           {t("common:cancel")}
         </Button>,
       ]}
+      isOpen
     >
       <FormProvider {...form}>
-        <Form isHorizontal>
+        <Form
+          id="edit-flow-form"
+          onSubmit={handleSubmit(onSubmit)}
+          isHorizontal
+        >
           <NameDescription />
         </Form>
       </FormProvider>

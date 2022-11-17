@@ -1,17 +1,18 @@
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
+import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const NameDescription = () => {
   const { t } = useTranslation("authentication");
   const {
     register,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<AuthenticationFlowRepresentation>();
 
   return (
     <>
@@ -22,20 +23,18 @@ export const NameDescription = () => {
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
-        isRequired
         labelIcon={
           <HelpItem helpText="authentication-help:name" fieldLabelId="name" />
         }
+        isRequired
       >
         <KeycloakTextInput
-          type="text"
           id="kc-name"
-          name="alias"
           data-testid="name"
-          ref={register({ required: true })}
           validated={
             errors.alias ? ValidatedOptions.error : ValidatedOptions.default
           }
+          {...register("alias", { required: true })}
         />
       </FormGroup>
       <FormGroup
@@ -53,21 +52,19 @@ export const NameDescription = () => {
         helperTextInvalid={errors.description?.message}
       >
         <KeycloakTextArea
-          ref={register({
-            maxLength: {
-              value: 255,
-              message: t("common:maxLength", { length: 255 }),
-            },
-          })}
-          type="text"
           id="kc-description"
-          name="description"
           data-testid="description"
           validated={
             errors.description
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
+          {...register("description", {
+            maxLength: {
+              value: 255,
+              message: t("common:maxLength", { length: 255 }),
+            },
+          })}
         />
       </FormGroup>
     </>
