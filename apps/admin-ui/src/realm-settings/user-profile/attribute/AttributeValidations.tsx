@@ -67,7 +67,7 @@ export const AttributeValidations = () => {
           onConfirm={(newValidator) => {
             setValue("validations", [
               ...validators,
-              { key: newValidator.name, value: newValidator.config },
+              { key: newValidator.id, value: newValidator.properties },
             ]);
           }}
           toggleDialog={toggleModal}

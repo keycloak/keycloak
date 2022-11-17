@@ -19,6 +19,7 @@ import {
   keyValueToArray,
 } from "../components/key-value-form/key-value-convert";
 import { useAdminClient } from "../context/auth/AdminClient";
+import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
 
 type UserAttributesProps = {
   user: UserRepresentation;
@@ -30,9 +31,12 @@ export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
   const { addAlert, addError } = useAlerts();
   const [user, setUser] = useState<UserRepresentation>(defaultUser);
   const form = useForm<AttributeForm>({ mode: "onChange" });
+  const { config } = useUserProfile();
 
-  const convertAttributes = (attr?: Record<string, any>) => {
-    return arrayToKeyValue(attr || user.attributes!);
+  const convertAttributes = () => {
+    return arrayToKeyValue(user.attributes!).filter(
+      (a) => !config?.attributes?.some((attribute) => attribute.name === a.key)
+    );
   };
 
   useEffect(() => {
@@ -41,7 +45,11 @@ export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
 
   const save = async (attributeForm: AttributeForm) => {
     try {
-      const attributes = keyValueToArray(attributeForm.attributes!);
+      const attributes = Object.assign(
+        {},
+        user.attributes || {},
+        keyValueToArray(attributeForm.attributes!)
+      );
       await adminClient.users.update({ id: user.id! }, { ...user, attributes });
 
       setUser({ ...user, attributes });

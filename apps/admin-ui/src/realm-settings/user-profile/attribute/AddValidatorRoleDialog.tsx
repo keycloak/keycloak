@@ -1,14 +1,15 @@
 import { useTranslation } from "react-i18next";
-import { Button, Modal, ModalVariant } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
+import { Button, Form, Modal, ModalVariant } from "@patternfly/react-core";
+
+import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
-import type { Validator } from "./Validators";
 
 export type AddValidatorRoleDialogProps = {
   open: boolean;
   toggleDialog: () => void;
-  onConfirm: (newValidator: Validator) => void;
-  selected: Validator;
+  onConfirm: (newValidator: ComponentTypeRepresentation) => void;
+  selected: ComponentTypeRepresentation;
 };
 
 export const AddValidatorRoleDialog = ({
@@ -22,8 +23,8 @@ export const AddValidatorRoleDialog = ({
   const { handleSubmit } = form;
   const selectedRoleValidator = selected;
 
-  const save = (newValidator: Validator) => {
-    onConfirm({ ...newValidator, name: selected.name });
+  const save = (newValidator: ComponentTypeRepresentation) => {
+    onConfirm({ ...newValidator, id: selected.id });
     toggleDialog();
   };
 
@@ -31,9 +32,9 @@ export const AddValidatorRoleDialog = ({
     <Modal
       variant={ModalVariant.small}
       title={t("addValidatorRole", {
-        validatorName: selectedRoleValidator.name,
+        validatorName: selectedRoleValidator.id,
       })}
-      description={selectedRoleValidator.description}
+      description={selectedRoleValidator.helpText}
       isOpen={open}
       onClose={toggleDialog}
       actions={[
@@ -55,9 +56,11 @@ export const AddValidatorRoleDialog = ({
         </Button>,
       ]}
     >
-      <FormProvider {...form}>
-        <DynamicComponents properties={selectedRoleValidator.config!} />
-      </FormProvider>
+      <Form>
+        <FormProvider {...form}>
+          <DynamicComponents properties={selectedRoleValidator.properties} />
+        </FormProvider>
+      </Form>
     </Modal>
   );
 };

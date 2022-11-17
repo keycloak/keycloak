@@ -32,6 +32,7 @@ import { UserGroups } from "./UserGroups";
 import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
+import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 
 const UsersTabs = () => {
   const { t } = useTranslation("users");
@@ -85,17 +86,25 @@ const UsersTabs = () => {
     setAddedGroups(groups);
   };
 
-  const save = async (user: UserRepresentation) => {
-    user.username = user.username?.trim();
+  const save = async (formUser: UserRepresentation) => {
+    formUser.username = formUser.username?.trim();
 
     try {
       if (id) {
-        await adminClient.users.update({ id }, user);
+        await adminClient.users.update(
+          { id },
+          {
+            ...formUser,
+            attributes: { ...user?.attributes, ...formUser.attributes },
+          }
+        );
         addAlert(t("userSaved"), AlertVariant.success);
         refresh();
       } else {
-        user.groups = addedGroups.map((group) => group.path!);
-        const createdUser = await adminClient.users.create(user);
+        const createdUser = await adminClient.users.create({
+          ...formUser,
+          groups: addedGroups.map((group) => group.path!),
+        });
 
         addAlert(t("userCreated"), AlertVariant.success);
         navigate(toUser({ id: createdUser.id, realm, tab: "settings" }));
@@ -183,88 +192,90 @@ const UsersTabs = () => {
         )}
       />
       <PageSection variant="light" className="pf-u-p-0">
-        <FormProvider {...userForm}>
-          {id && user && (
-            <KeycloakTabs isBox mountOnEnter>
-              <Tab
-                eventKey="settings"
-                data-testid="user-details-tab"
-                title={<TabTitleText>{t("common:details")}</TabTitleText>}
-              >
-                <PageSection variant="light">
-                  {bruteForced && (
-                    <UserForm
-                      onGroupsUpdate={updateGroups}
-                      save={save}
-                      user={user}
-                      bruteForce={bruteForced}
-                    />
-                  )}
-                </PageSection>
-              </Tab>
-              <Tab
-                eventKey="attributes"
-                data-testid="attributes"
-                title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
-              >
-                <UserAttributes user={user} />
-              </Tab>
-              <Tab
-                eventKey="credentials"
-                data-testid="credentials"
-                isHidden={!user.access?.manage}
-                title={<TabTitleText>{t("common:credentials")}</TabTitleText>}
-              >
-                <UserCredentials user={user} />
-              </Tab>
-              <Tab
-                eventKey="role-mapping"
-                data-testid="role-mapping-tab"
-                isHidden={!user.access?.mapRoles}
-                title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
-              >
-                <UserRoleMapping id={id} name={user.username!} />
-              </Tab>
-              <Tab
-                eventKey="groups"
-                data-testid="user-groups-tab"
-                title={<TabTitleText>{t("common:groups")}</TabTitleText>}
-              >
-                <UserGroups user={user} />
-              </Tab>
-              <Tab
-                eventKey="consents"
-                data-testid="user-consents-tab"
-                title={<TabTitleText>{t("consents")}</TabTitleText>}
-              >
-                <UserConsents />
-              </Tab>
-              {hasAccess("view-identity-providers") && (
+        <UserProfileProvider>
+          <FormProvider {...userForm}>
+            {id && user && (
+              <KeycloakTabs isBox mountOnEnter>
                 <Tab
-                  eventKey="identity-provider-links"
-                  data-testid="identity-provider-links-tab"
-                  title={
-                    <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
-                  }
+                  eventKey="settings"
+                  data-testid="user-details-tab"
+                  title={<TabTitleText>{t("common:details")}</TabTitleText>}
                 >
-                  <UserIdentityProviderLinks userId={id} />
+                  <PageSection variant="light">
+                    {bruteForced && (
+                      <UserForm
+                        onGroupsUpdate={updateGroups}
+                        save={save}
+                        user={user}
+                        bruteForce={bruteForced}
+                      />
+                    )}
+                  </PageSection>
                 </Tab>
-              )}
-              <Tab
-                eventKey="sessions"
-                data-testid="user-sessions-tab"
-                title={<TabTitleText>{t("sessions")}</TabTitleText>}
-              >
-                <UserSessions />
-              </Tab>
-            </KeycloakTabs>
-          )}
-          {!id && (
-            <PageSection variant="light">
-              <UserForm onGroupsUpdate={updateGroups} save={save} />
-            </PageSection>
-          )}
-        </FormProvider>
+                <Tab
+                  eventKey="attributes"
+                  data-testid="attributes"
+                  title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
+                >
+                  <UserAttributes user={user} />
+                </Tab>
+                <Tab
+                  eventKey="credentials"
+                  data-testid="credentials"
+                  isHidden={!user.access?.manage}
+                  title={<TabTitleText>{t("common:credentials")}</TabTitleText>}
+                >
+                  <UserCredentials user={user} />
+                </Tab>
+                <Tab
+                  eventKey="role-mapping"
+                  data-testid="role-mapping-tab"
+                  isHidden={!user.access?.mapRoles}
+                  title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
+                >
+                  <UserRoleMapping id={id} name={user.username!} />
+                </Tab>
+                <Tab
+                  eventKey="groups"
+                  data-testid="user-groups-tab"
+                  title={<TabTitleText>{t("common:groups")}</TabTitleText>}
+                >
+                  <UserGroups user={user} />
+                </Tab>
+                <Tab
+                  eventKey="consents"
+                  data-testid="user-consents-tab"
+                  title={<TabTitleText>{t("consents")}</TabTitleText>}
+                >
+                  <UserConsents />
+                </Tab>
+                {hasAccess("view-identity-providers") && (
+                  <Tab
+                    eventKey="identity-provider-links"
+                    data-testid="identity-provider-links-tab"
+                    title={
+                      <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
+                    }
+                  >
+                    <UserIdentityProviderLinks userId={id} />
+                  </Tab>
+                )}
+                <Tab
+                  eventKey="sessions"
+                  data-testid="user-sessions-tab"
+                  title={<TabTitleText>{t("sessions")}</TabTitleText>}
+                >
+                  <UserSessions />
+                </Tab>
+              </KeycloakTabs>
+            )}
+            {!id && (
+              <PageSection variant="light">
+                <UserForm onGroupsUpdate={updateGroups} save={save} />
+              </PageSection>
+            )}
+          </FormProvider>
+        </UserProfileProvider>
       </PageSection>
     </>
   );

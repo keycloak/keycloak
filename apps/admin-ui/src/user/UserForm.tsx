@@ -29,6 +29,8 @@ import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import { useAccess } from "../context/access/Access";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import { UserProfileFields } from "./UserProfileFields";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -54,6 +56,7 @@ export const UserForm = ({
   const { t } = useTranslation("users");
   const { realm: realmName } = useRealm();
   const formatDate = useFormatDate();
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   const [
     isRequiredUserActionsDropdownOpen,
@@ -190,129 +193,6 @@ export const UserForm = ({
           </FormGroup>
         </>
       )}
-      {!realm?.registrationEmailAsUsername && (
-        <FormGroup
-          label={t("username")}
-          fieldId="kc-username"
-          isRequired
-          validated={errors.username ? "error" : "default"}
-          helperTextInvalid={t("common:required")}
-        >
-          <KeycloakTextInput
-            ref={register()}
-            type="text"
-            id="kc-username"
-            aria-label={t("username")}
-            name="username"
-            isReadOnly={
-              !!user?.id &&
-              !realm?.editUsernameAllowed &&
-              realm?.editUsernameAllowed !== undefined
-            }
-          />
-        </FormGroup>
-      )}
-      <FormGroup
-        label={t("email")}
-        fieldId="kc-description"
-        validated={errors.email ? "error" : "default"}
-        helperTextInvalid={t("users:emailInvalid")}
-      >
-        <KeycloakTextInput
-          ref={register({
-            pattern: emailRegexPattern,
-          })}
-          type="email"
-          id="kc-email"
-          name="email"
-          data-testid="email-input"
-          aria-label={t("emailInput")}
-        />
-      </FormGroup>
-      <FormGroup
-        label={t("emailVerified")}
-        fieldId="kc-email-verified"
-        helperTextInvalid={t("common:required")}
-        labelIcon={
-          <HelpItem
-            helpText="users-help:emailVerified"
-            fieldLabelId="users:emailVerified"
-          />
-        }
-      >
-        <Controller
-          name="emailVerified"
-          defaultValue={false}
-          control={control}
-          render={({ onChange, value }) => (
-            <Switch
-              data-testid="email-verified-switch"
-              id={"kc-user-email-verified"}
-              isDisabled={false}
-              onChange={(value) => onChange(value)}
-              isChecked={value}
-              label={t("common:on")}
-              labelOff={t("common:off")}
-              aria-label={t("emailVerified")}
-            />
-          )}
-        />
-      </FormGroup>
-      <FormGroup
-        label={t("firstName")}
-        fieldId="kc-firstname"
-        validated={errors.firstName ? "error" : "default"}
-        helperTextInvalid={t("common:required")}
-      >
-        <KeycloakTextInput
-          ref={register()}
-          data-testid="firstName-input"
-          type="text"
-          id="kc-firstname"
-          aria-label={t("firstName")}
-          name="firstName"
-        />
-      </FormGroup>
-      <FormGroup
-        label={t("lastName")}
-        fieldId="kc-name"
-        validated={errors.lastName ? "error" : "default"}
-      >
-        <KeycloakTextInput
-          ref={register()}
-          data-testid="lastName-input"
-          type="text"
-          id="kc-lastname"
-          name="lastName"
-          aria-label={t("lastName")}
-        />
-      </FormGroup>
-      {isBruteForceProtected && (
-        <FormGroup
-          label={t("temporaryLocked")}
-          fieldId="temporaryLocked"
-          labelIcon={
-            <HelpItem
-              helpText="users-help:temporaryLocked"
-              fieldLabelId="users:temporaryLocked"
-            />
-          }
-        >
-          <Switch
-            data-testid="user-locked-switch"
-            id={"temporaryLocked"}
-            onChange={(value) => {
-              unLockUser();
-              setLocked(value);
-            }}
-            isChecked={locked}
-            isDisabled={!locked}
-            label={t("common:on")}
-            labelOff={t("common:off")}
-            aria-label={t("temporaryLocked")}
-          />
-        </FormGroup>
-      )}
       <FormGroup
         label={t("requiredUserActions")}
         fieldId="kc-required-user-actions"
@@ -362,6 +242,129 @@ export const UserForm = ({
           )}
         />
       </FormGroup>
+      {isFeatureEnabled(Feature.DeclarativeUserProfile) &&
+      realm?.attributes?.userProfileEnabled === "true" ? (
+        <UserProfileFields />
+      ) : (
+        <>
+          {!realm?.registrationEmailAsUsername && (
+            <FormGroup
+              label={t("username")}
+              fieldId="kc-username"
+              isRequired
+              validated={errors.username ? "error" : "default"}
+              helperTextInvalid={t("common:required")}
+            >
+              <KeycloakTextInput
+                ref={register()}
+                id="kc-username"
+                aria-label={t("username")}
+                name="username"
+                isReadOnly={
+                  !!user?.id &&
+                  !realm?.editUsernameAllowed &&
+                  realm?.editUsernameAllowed !== undefined
+                }
+              />
+            </FormGroup>
+          )}
+          <FormGroup
+            label={t("email")}
+            fieldId="kc-description"
+            validated={errors.email ? "error" : "default"}
+            helperTextInvalid={t("users:emailInvalid")}
+          >
+            <KeycloakTextInput
+              ref={register({
+                pattern: emailRegexPattern,
+              })}
+              type="email"
+              id="kc-email"
+              name="email"
+              data-testid="email-input"
+              aria-label={t("emailInput")}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("emailVerified")}
+            fieldId="kc-email-verified"
+            helperTextInvalid={t("common:required")}
+            labelIcon={
+              <HelpItem
+                helpText="users-help:emailVerified"
+                fieldLabelId="users:emailVerified"
+              />
+            }
+          >
+            <Controller
+              name="emailVerified"
+              defaultValue={false}
+              control={control}
+              render={({ onChange, value }) => (
+                <Switch
+                  data-testid="email-verified-switch"
+                  id="kc-user-email-verified"
+                  isDisabled={false}
+                  onChange={(value) => onChange(value)}
+                  isChecked={value}
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                />
+              )}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("firstName")}
+            fieldId="kc-firstname"
+            validated={errors.firstName ? "error" : "default"}
+            helperTextInvalid={t("common:required")}
+          >
+            <KeycloakTextInput
+              ref={register()}
+              data-testid="firstName-input"
+              id="kc-firstname"
+              name="firstName"
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("lastName")}
+            fieldId="kc-name"
+            validated={errors.lastName ? "error" : "default"}
+          >
+            <KeycloakTextInput
+              ref={register()}
+              data-testid="lastName-input"
+              id="kc-lastname"
+              name="lastName"
+            />
+          </FormGroup>
+        </>
+      )}
+      {isBruteForceProtected && (
+        <FormGroup
+          label={t("temporaryLocked")}
+          fieldId="temporaryLocked"
+          labelIcon={
+            <HelpItem
+              helpText="users-help:temporaryLocked"
+              fieldLabelId="users:temporaryLocked"
+            />
+          }
+        >
+          <Switch
+            data-testid="user-locked-switch"
+            id="temporaryLocked"
+            onChange={(value) => {
+              unLockUser();
+              setLocked(value);
+            }}
+            isChecked={locked}
+            isDisabled={!locked}
+            label={t("common:on")}
+            labelOff={t("common:off")}
+          />
+        </FormGroup>
+      )}
       {!user?.id && (
         <FormGroup
           label={t("common:groups")}

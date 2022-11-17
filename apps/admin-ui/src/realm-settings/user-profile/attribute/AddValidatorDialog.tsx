@@ -17,13 +17,14 @@ import {
 
 import type { IndexedValidations } from "../../NewAttributeSettings";
 import { AddValidatorRoleDialog } from "./AddValidatorRoleDialog";
-import { Validator, validators as allValidator } from "./Validators";
 import useToggle from "../../../utils/useToggle";
+import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
+import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 
 export type AddValidatorDialogProps = {
   selectedValidators: IndexedValidations[];
   toggleDialog: () => void;
-  onConfirm: (newValidator: Validator) => void;
+  onConfirm: (newValidator: ComponentTypeRepresentation) => void;
 };
 
 export const AddValidatorDialog = ({
@@ -32,10 +33,13 @@ export const AddValidatorDialog = ({
   onConfirm,
 }: AddValidatorDialogProps) => {
   const { t } = useTranslation("realm-settings");
-  const [selectedValidator, setSelectedValidator] = useState<Validator>();
-  const [validators, setValidators] = useState(() =>
+  const [selectedValidator, setSelectedValidator] =
+    useState<ComponentTypeRepresentation>();
+  const allValidator: ComponentTypeRepresentation[] =
+    useServerInfo().componentTypes?.["org.keycloak.validate.Validator"] || [];
+  const [validators, setValidators] = useState(
     allValidator.filter(
-      ({ name }) => !selectedValidators.map(({ key }) => key).includes(name)
+      ({ id }) => !selectedValidators.map(({ key }) => key).includes(id)
     )
   );
   const [addValidatorRoleModalOpen, toggleModal] = useToggle();
@@ -47,7 +51,7 @@ export const AddValidatorDialog = ({
           onConfirm={(newValidator) => {
             onConfirm(newValidator);
             setValidators(
-              validators.filter(({ name }) => name !== newValidator.name)
+              validators.filter(({ id }) => id !== newValidator.id)
             );
           }}
           open={addValidatorRoleModalOpen}
@@ -70,9 +74,9 @@ export const AddValidatorDialog = ({
               </Tr>
             </Thead>
             <Tbody>
-              {validators.map((validator) => (
+              {allValidator.map((validator) => (
                 <Tr
-                  key={validator.name}
+                  key={validator.id}
                   onRowClick={() => {
                     setSelectedValidator(validator);
                     toggleModal();
@@ -80,10 +84,10 @@ export const AddValidatorDialog = ({
                   isHoverable
                 >
                   <Td dataLabel={t("validatorDialogColNames.colName")}>
-                    {validator.name}
+                    {validator.id}
                   </Td>
                   <Td dataLabel={t("validatorDialogColNames.colDescription")}>
-                    {validator.description}
+                    {validator.helpText}
                   </Td>
                 </Tr>
               ))}
