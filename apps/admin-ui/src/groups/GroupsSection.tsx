@@ -31,6 +31,7 @@ import { GroupRoleMapping } from "./GroupRoleMapping";
 import helpUrls from "../help-urls";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { useAccess } from "../context/access/Access";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { GroupTree } from "./components/GroupTree";
 import { DeleteGroup } from "./components/DeleteGroup";
 import useToggle from "../utils/useToggle";
@@ -41,6 +42,8 @@ import "./GroupsSection.css";
 export default function GroupsSection() {
   const { t } = useTranslation("groups");
   const [activeTab, setActiveTab] = useState(0);
+
+  const { profileInfo } = useServerInfo();
 
   const { adminClient } = useAdminClient();
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
@@ -57,11 +60,9 @@ export default function GroupsSection() {
   const refresh = () => setKey(key + 1);
 
   const { hasAccess } = useAccess();
-  const canViewPermissions = hasAccess(
-    "manage-authorization",
-    "manage-users",
-    "manage-clients"
-  );
+  const canViewPermissions =
+    !profileInfo?.disabledFeatures?.includes("ADMIN_FINE_GRAINED_AUTHZ") &&
+    hasAccess("manage-authorization", "manage-users", "manage-clients");
   const canManageGroup =
     hasAccess("manage-users") || currentGroup()?.access?.manage;
   const canManageRoles = hasAccess("manage-users");

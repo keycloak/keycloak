@@ -34,6 +34,7 @@ import type { IRowData } from "@patternfly/react-table";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -69,6 +70,7 @@ export default function UsersSection() {
   const [realm, setRealm] = useState<RealmRepresentation | undefined>();
   const [kebabOpen, setKebabOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
+  const { profileInfo } = useServerInfo();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -411,14 +413,18 @@ export default function UsersSection() {
               ]}
             />
           </Tab>
-          <Tab
-            id="permissions"
-            data-testid="permissionsTab"
-            title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
-            {...route("permissions")}
-          >
-            <PermissionsTab type="users" />
-          </Tab>
+          {!profileInfo?.disabledFeatures?.includes(
+            "ADMIN_FINE_GRAINED_AUTHZ"
+          ) && (
+            <Tab
+              id="permissions"
+              data-testid="permissionsTab"
+              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+              {...route("permissions")}
+            >
+              <PermissionsTab type="users" />
+            </Tab>
+          )}
         </RoutableTabs>
       </PageSection>
     </>

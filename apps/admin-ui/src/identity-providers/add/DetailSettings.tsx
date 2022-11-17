@@ -28,6 +28,7 @@ import { AdvancedSettings } from "./AdvancedSettings";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { KeycloakTabs } from "../../components/keycloak-tabs/KeycloakTabs";
 import { ExtendedNonDiscoverySettings } from "./ExtendedNonDiscoverySettings";
 import { DiscoverySettings } from "./DiscoverySettings";
@@ -120,6 +121,7 @@ export default function DetailSettings() {
   const navigate = useNavigate();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
+  const { profileInfo } = useServerInfo();
   const refresh = () => setKey(key + 1);
 
   const MapperLink = ({ name, mapperId }: IdPWithMapperAttributes) => (
@@ -444,14 +446,18 @@ export default function DetailSettings() {
               ]}
             />
           </Tab>
-          <Tab
-            id="permissions"
-            data-testid="permissionsTab"
-            eventKey="permissions"
-            title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
-          >
-            <PermissionsTab id={alias} type="identityProviders" />
-          </Tab>
+          {!profileInfo?.disabledFeatures?.includes(
+            "ADMIN_FINE_GRAINED_AUTHZ"
+          ) && (
+            <Tab
+              id="permissions"
+              data-testid="permissionsTab"
+              eventKey="permissions"
+              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+            >
+              <PermissionsTab id={alias} type="identityProviders" />
+            </Tab>
+          )}
         </KeycloakTabs>
       </PageSection>
     </FormProvider>

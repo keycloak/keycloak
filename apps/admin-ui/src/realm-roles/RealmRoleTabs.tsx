@@ -15,6 +15,7 @@ import { omit } from "lodash-es";
 
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   AttributesForm,
@@ -60,6 +61,8 @@ export default function RealmRoleTabs() {
   const { realm: realmName } = useRealm();
 
   const [key, setKey] = useState(0);
+
+  const { profileInfo } = useServerInfo();
 
   const refresh = () => {
     setKey(key + 1);
@@ -415,12 +418,16 @@ export default function RealmRoleTabs() {
                 <UsersInRoleTab data-cy="users-in-role-tab" />
               </Tab>
             )}
-            <Tab
-              eventKey="permissions"
-              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
-            >
-              <PermissionsTab id={role.id} type="roles" />
-            </Tab>
+            {!profileInfo?.disabledFeatures?.includes(
+              "ADMIN_FINE_GRAINED_AUTHZ"
+            ) && (
+              <Tab
+                eventKey="permissions"
+                title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+              >
+                <PermissionsTab id={role.id} type="roles" />
+              </Tab>
+            )}
           </KeycloakTabs>
         )}
       </PageSection>
