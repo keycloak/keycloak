@@ -287,10 +287,9 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<RealmAttributeEntity> cr = cb.createQuery(RealmAttributeEntity.class);
         Root<RealmAttributeEntity> root = cr.from(RealmAttributeEntity.class);
-        // unable to cast the CLOB to a BIGINT in the select for H2 2.x, therefore comparing strings only in the DB, and filtering again in the next statement
-        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.notEqual(root.get("value"), "0")));
+        // unable to compare String fields in a database agnostic way (may be CLOB), therefore filtering in the next statement
+        cr.select(root).where(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION));
         Map<Long, List<RealmAttributeEntity>> realms = em.createQuery(cr).getResultStream()
-                // filtering again on the attribute as paring the CLOB to BIGINT didn't work in H2 2.x
                 .filter(attribute -> {
                     try {
                         return Long.parseLong(attribute.getValue()) > 0;
