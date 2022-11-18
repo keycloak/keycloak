@@ -14,6 +14,7 @@ env:
   JDK_VERSION: 11
   MINIKUBE_VERSION: "v1.24.0"
   KUBERNETES_VERSION: "v1.22.3"
+  MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
