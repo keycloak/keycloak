@@ -12,7 +12,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
-import FileSaver from "file-saver";
+import { saveAs } from "file-saver";
 import { prettyPrintJSON } from "../../util";
 import { useAlerts } from "../../components/alert/Alerts";
 import type { ClientParams } from "../routes/Client";
@@ -47,7 +47,7 @@ export const AuthorizationExport = () => {
 
   const exportAuthDetails = () => {
     try {
-      FileSaver.saveAs(
+      saveAs(
         new Blob([prettyPrintJSON(authorizationDetails)], {
           type: "application/json",
         }),

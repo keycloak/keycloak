@@ -1,5 +1,5 @@
 import LoginPage from "../support/pages/LoginPage";
-import {
+import ListingPage, {
   Filter,
   FilterAssignedType,
 } from "../support/pages/admin_console/ListingPage";
@@ -16,7 +16,6 @@ import ClientDetailsPage, {
   ClientsDetailsTab,
 } from "../support/pages/admin_console/manage/clients/client_details/ClientDetailsPage";
 import CommonPage from "../support/pages/CommonPage";
-import ListingPage from "../support/pages/admin_console/ListingPage";
 import AttributesTab from "../support/pages/admin_console/manage/AttributesTab";
 import DedicatedScopesMappersTab from "../support/pages/admin_console/manage/clients/client_details/DedicatedScopesMappersTab";
 

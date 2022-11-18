@@ -2,7 +2,7 @@ import "@patternfly/patternfly/patternfly-addons.css";
 import "@patternfly/react-core/dist/styles/base.css";
 
 import { StrictMode } from "react";
-import ReactDOM from "react-dom";
+import { render } from "react-dom";
 
 import { App } from "./App";
 import { initAdminClient } from "./context/auth/AdminClient";
@@ -15,7 +15,7 @@ async function initialize() {
 
   await initI18n(adminClient);
 
-  ReactDOM.render(
+  render(
     <StrictMode>
       <App keycloak={keycloak} adminClient={adminClient} />
     </StrictMode>,

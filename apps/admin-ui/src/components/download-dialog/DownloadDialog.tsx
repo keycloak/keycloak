@@ -10,7 +10,7 @@ import {
   Stack,
   StackItem,
 } from "@patternfly/react-core";
-import FileSaver from "file-saver";
+import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
@@ -100,7 +100,7 @@ export const DownloadDialog = ({
       titleKey={t("clients:downloadAdaptorTitle")}
       continueButtonLabel={t("download")}
       onConfirm={() => {
-        FileSaver.saveAs(
+        saveAs(
           new Blob([snippet!], { type: selectedConfig?.mediaType }),
           selectedConfig?.filename
         );

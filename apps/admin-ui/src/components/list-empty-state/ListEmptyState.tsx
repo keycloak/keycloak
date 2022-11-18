@@ -9,8 +9,7 @@ import {
   EmptyStateSecondaryActions,
 } from "@patternfly/react-core";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
-import { PlusCircleIcon } from "@patternfly/react-icons";
-import { SearchIcon } from "@patternfly/react-icons";
+import { PlusCircleIcon, SearchIcon } from "@patternfly/react-icons";
 
 export type Action = {
   text: string;

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import { Button, Modal, Form } from "@patternfly/react-core";
-import FileSaver from "file-saver";
+import { saveAs } from "file-saver";
 
 import KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { KeyForm } from "./GenerateKeyDialog";
@@ -37,7 +37,7 @@ export const ExportSamlKeyDialog = ({
         },
         config
       );
-      FileSaver.saveAs(
+      saveAs(
         new Blob([keyStore], { type: "application/octet-stream" }),
         `keystore.${config.format == "PKCS12" ? "p12" : "jks"}`
       );

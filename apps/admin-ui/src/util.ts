@@ -1,5 +1,5 @@
 import { cloneDeep } from "lodash-es";
-import FileSaver from "file-saver";
+import { saveAs } from "file-saver";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 import { flatten } from "flat";
 
@@ -51,7 +51,7 @@ export const exportClient = (client: ClientRepresentation): void => {
     }
   }
 
-  FileSaver.saveAs(
+  saveAs(
     new Blob([prettyPrintJSON(clientCopy)], {
       type: "application/json",
     }),

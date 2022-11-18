@@ -2,7 +2,7 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import { defineConfig } from "vite";
-import checker from "vite-plugin-checker";
+import { checker } from "vite-plugin-checker";
 import dts from "vite-plugin-dts";
 
 // https://vitejs.dev/config/

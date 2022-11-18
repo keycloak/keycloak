@@ -9,8 +9,10 @@ import {
   Text,
 } from "@patternfly/react-core";
 
-import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import type { UserProfileAttributeRequired } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type {
+  UserProfileAttribute,
+  UserProfileAttributeRequired,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";

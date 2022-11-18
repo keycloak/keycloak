@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom-v5-compat";
-import { useLocation } from "react-router-dom-v5-compat";
+import { Link, useLocation } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 

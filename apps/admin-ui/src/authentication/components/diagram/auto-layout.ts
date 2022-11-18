@@ -1,7 +1,7 @@
 import { Elements, Position, isNode } from "react-flow-renderer";
-import dagre from "dagre";
+import { graphlib, layout } from "dagre";
 
-const dagreGraph = new dagre.graphlib.Graph();
+const dagreGraph = new graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 
 const nodeWidth = 130;
@@ -22,7 +22,7 @@ export const getLayoutedElements = (elements: Elements, direction = "LR") => {
     }
   });
 
-  dagre.layout(dagreGraph);
+  layout(dagreGraph);
 
   return elements.map((element) => {
     if (isNode(element)) {

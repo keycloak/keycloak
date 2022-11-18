@@ -28,9 +28,8 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
-import { parsePolicy, SubmittedValues } from "./util";
+import { parsePolicy, SubmittedValues, serializePolicy } from "./util";
 import { PolicyRow } from "./PolicyRow";
-import { serializePolicy } from "./util";
 
 type PolicySelectProps = {
   onSelect: (row: PasswordPolicyTypeRepresentation) => void;

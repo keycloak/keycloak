@@ -11,7 +11,7 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import FileSaver from "file-saver";
+import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../components/alert/Alerts";
@@ -51,7 +51,7 @@ export const PartialExportDialog = ({
         exportGroupsAndRoles,
       });
 
-      FileSaver.saveAs(
+      saveAs(
         new Blob([prettyPrintJSON(realmExport)], {
           type: "application/json",
         }),

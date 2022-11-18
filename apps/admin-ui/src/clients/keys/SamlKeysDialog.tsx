@@ -1,5 +1,5 @@
 import { useState } from "react";
-import FileSaver from "file-saver";
+import { saveAs } from "file-saver";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -101,7 +101,7 @@ export const SamlKeysDialog = ({
         attr,
       });
       setKeys(key);
-      FileSaver.saveAs(
+      saveAs(
         new Blob([key.privateKey!], {
           type: "application/octet-stream",
         }),

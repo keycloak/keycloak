@@ -1,4 +1,4 @@
-import i18n, { InitOptions, TOptions } from "i18next";
+import { init, use, InitOptions, TOptions } from "i18next";
 import HttpBackend, { LoadPathOption } from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
@@ -11,7 +11,7 @@ export const DEFAULT_LOCALE = "en";
 
 export async function initI18n(adminClient: KeycloakAdminClient) {
   const options = await initOptions(adminClient);
-  await i18n.init(options);
+  await init(options);
 }
 
 const initOptions = async (
@@ -70,21 +70,15 @@ const initOptions = async (
   };
 };
 
-const configuredI18n = i18n
-  .use({
-    type: "postProcessor",
-    name: "overrideProcessor",
-    process: function (
-      value: string,
-      key: string,
-      _: TOptions,
-      translator: any
-    ) {
-      const override: string =
-        translator.resourceStore.data[translator.language].overrides?.[key];
-      return override || value;
-    },
-  })
+const configuredI18n = use({
+  type: "postProcessor",
+  name: "overrideProcessor",
+  process: function (value: string, key: string, _: TOptions, translator: any) {
+    const override: string =
+      translator.resourceStore.data[translator.language].overrides?.[key];
+    return override || value;
+  },
+})
   .use(initReactI18next)
   .use(HttpBackend);
 

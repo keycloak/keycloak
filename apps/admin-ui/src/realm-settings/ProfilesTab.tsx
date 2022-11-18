@@ -9,8 +9,12 @@ import {
   Label,
   PageSection,
   ToolbarItem,
+  Divider,
+  Flex,
+  FlexItem,
+  Radio,
+  Title,
 } from "@patternfly/react-core";
-import { Divider, Flex, FlexItem, Radio, Title } from "@patternfly/react-core";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";

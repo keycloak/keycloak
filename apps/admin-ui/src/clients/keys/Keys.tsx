@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import FileSaver from "file-saver";
+import { saveAs } from "file-saver";
 import {
   ActionGroup,
   AlertVariant,
@@ -78,7 +78,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
         },
         config
       );
-      FileSaver.saveAs(
+      saveAs(
         new Blob([keyStore], { type: "application/octet-stream" }),
         `keystore.${config.format == "PKCS12" ? "p12" : "jks"}`
       );
