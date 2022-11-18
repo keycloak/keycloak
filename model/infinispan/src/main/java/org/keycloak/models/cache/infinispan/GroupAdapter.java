@@ -36,7 +36,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel.Streams {
+public class GroupAdapter implements GroupModel {
 
     protected final CachedGroup cached;
     protected final RealmCacheSession cacheSession;
@@ -138,6 +138,7 @@ public class GroupAdapter implements GroupModel.Streams {
 
     @Override
     public Stream<String> getAttributeStream(String name) {
+        if (isUpdated()) return updated.getAttributeStream(name);
         List<String> values = cached.getAttributes(modelSupplier).get(name);
         if (values == null) return Stream.empty();
         return values.stream();
@@ -145,6 +146,7 @@ public class GroupAdapter implements GroupModel.Streams {
 
     @Override
     public Map<String, List<String>> getAttributes() {
+        if (isUpdated()) return updated.getAttributes();
         return cached.getAttributes(modelSupplier);
     }
 

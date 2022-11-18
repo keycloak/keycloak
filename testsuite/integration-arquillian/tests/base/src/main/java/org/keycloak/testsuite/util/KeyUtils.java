@@ -1,7 +1,8 @@
 package org.keycloak.testsuite.util;
 
-import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 
@@ -22,7 +23,7 @@ public class KeyUtils {
 
     public static PublicKey publicKeyFromString(String key) {
         try {
-            KeyFactory kf = KeyFactory.getInstance("RSA", BouncyIntegration.PROVIDER);
+            KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(KeyType.RSA);
             byte[] encoded = Base64.getDecoder().decode(key);
             return kf.generatePublic(new X509EncodedKeySpec(encoded));
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchProviderException e) {
@@ -32,7 +33,7 @@ public class KeyUtils {
 
     public static PrivateKey privateKeyFromString(String key) {
         try {
-            KeyFactory kf = KeyFactory.getInstance("RSA", BouncyIntegration.PROVIDER);
+            KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(KeyType.RSA);
             byte[] encoded = Base64.getDecoder().decode(key);
             return kf.generatePrivate(new PKCS8EncodedKeySpec(encoded));
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchProviderException e) {

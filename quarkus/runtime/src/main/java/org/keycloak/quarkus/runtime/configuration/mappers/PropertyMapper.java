@@ -16,6 +16,7 @@
  */
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import static java.util.Optional.ofNullable;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
@@ -23,6 +24,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliForm
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -52,14 +54,14 @@ public class PropertyMapper<T> {
 
     private final Option<T> option;
     private final String to;
-    private final BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
+    private final BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper;
     private final String mapFrom;
     private final boolean mask;
     private final String paramLabel;
     private final String envVarFormat;
     private String cliFormat;
 
-    PropertyMapper(Option<T> option, String to, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
+    PropertyMapper(Option<T> option, String to, BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper,
                    String mapFrom, String paramLabel, boolean mask) {
         this.option = option;
         this.to = to == null ? getFrom() : to;
@@ -71,7 +73,7 @@ public class PropertyMapper<T> {
         this.envVarFormat = toEnvVarFormat(getFrom());
     }
 
-    private static String defaultTransformer(String value, ConfigSourceInterceptorContext context) {
+    private static Optional<String> defaultTransformer(Optional<String> value, ConfigSourceInterceptorContext context) {
         return value;
     }
 
@@ -110,20 +112,20 @@ public class PropertyMapper<T> {
                     }
                 }
 
-                if (parentValue != null) {
-                    return transformValue(parentValue.getValue(), context);
-                }
+                return transformValue(ofNullable(parentValue == null ? null : parentValue.getValue()), context);
             }
 
-            if (this.option.getDefaultValue().isPresent()) {
-                return transformValue(this.option.getDefaultValue().get().toString(), context);
+            ConfigValue defaultValue = transformValue(this.option.getDefaultValue().map(Objects::toString), context);
+
+            if (defaultValue != null) {
+                return defaultValue;
             }
 
             // now tries any defaults from quarkus
             ConfigValue current = context.proceed(name);
 
             if (current != null) {
-                return transformValue(current.getValue(), context);
+                return transformValue(ofNullable(current.getValue()), context);
             }
 
             return current;
@@ -133,7 +135,7 @@ public class PropertyMapper<T> {
             return config;
         }
 
-        ConfigValue value = transformValue(config.getValue(), context);
+        ConfigValue value = transformValue(ofNullable(config.getValue()), context);
 
         // we always fallback to the current value from the property we are mapping
         if (value == null) {
@@ -154,18 +156,16 @@ public class PropertyMapper<T> {
     public String getDescription() { return this.option.getDescription(); }
 
     public List<String> getExpectedValues() {
-        return this.option.getExpectedValues().stream().map(v -> v.toString()).collect(Collectors.toList());
+        return this.option.getExpectedValues();
     }
 
-    public Optional<T> getDefaultValue() {return this.option.getDefaultValue(); }
+    public Optional<T> getDefaultValue() { return this.option.getDefaultValue(); }
 
     public OptionCategory getCategory() {
         return this.option.getCategory();
     }
 
-    public boolean isHidden() {
-        return !this.option.getSupportedRuntimes().contains(Option.Runtime.QUARKUS);
-    }
+    public boolean isHidden() { return this.option.isHidden(); }
 
     public boolean isBuildTime() {
         return this.option.isBuildTime();
@@ -195,29 +195,29 @@ public class PropertyMapper<T> {
         return mask;
     }
 
-    private ConfigValue transformValue(String value, ConfigSourceInterceptorContext context) {
+    private ConfigValue transformValue(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (value == null) {
             return null;
         }
 
         if (mapper == null) {
-            return ConfigValue.builder().withName(to).withValue(value).build();
+            return ConfigValue.builder().withName(to).withValue(value.orElse(null)).build();
         }
 
-        String mappedValue = mapper.apply(value, context);
+        Optional<String> mappedValue = mapper.apply(value, context);
 
-        if (mappedValue != null) {
-            return ConfigValue.builder().withName(to).withValue(mappedValue).build();
+        if (mappedValue == null || mappedValue.isEmpty()) {
+            return null;
         }
 
-        return null;
+        return ConfigValue.builder().withName(to).withValue(mappedValue.get()).withRawValue(value.orElse(null)).build();
     }
 
     public static class Builder<T> {
 
         private final Option<T> option;
         private String to;
-        private BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
+        private BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper;
         private String mapFrom = null;
         private boolean isMasked = false;
         private String paramLabel;
@@ -231,7 +231,7 @@ public class PropertyMapper<T> {
             return this;
         }
 
-        public Builder<T> transformer(BiFunction<String, ConfigSourceInterceptorContext, String> mapper) {
+        public Builder<T> transformer(BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper) {
             this.mapper = mapper;
             return this;
         }

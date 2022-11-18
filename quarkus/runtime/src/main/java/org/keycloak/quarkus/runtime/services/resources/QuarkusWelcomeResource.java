@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
@@ -30,8 +31,8 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
@@ -81,9 +82,6 @@ public class QuarkusWelcomeResource {
 
     /**
      * Welcome page of Keycloak
-     *
-     * @return
-     * @throws URISyntaxException
      */
     @GET
     @Produces(MediaType.TEXT_HTML_UTF_8)
@@ -145,9 +143,6 @@ public class QuarkusWelcomeResource {
 
     /**
      * Resources for welcome page
-     *
-     * @param path
-     * @return
      */
     @GET
     @Path("/welcome-content/{path}")
@@ -163,7 +158,7 @@ public class QuarkusWelcomeResource {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
         } catch (IOException e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -173,8 +168,8 @@ public class QuarkusWelcomeResource {
 
             Map<String, Object> map = new HashMap<>();
 
+            map.put("adminConsoleEnabled", isAdminConsoleEnabled());
             map.put("productName", Version.NAME);
-            map.put("productNameFull", Version.NAME_FULL);
 
             map.put("properties", theme.getProperties());
             map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
@@ -204,7 +199,7 @@ public class QuarkusWelcomeResource {
             if (errorMessage != null) {
                 map.put("errorMessage", errorMessage);
             }
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
+            FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
 
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)
@@ -212,7 +207,7 @@ public class QuarkusWelcomeResource {
                     .cacheControl(CacheControlUtil.noCache());
             return rb.build();
         } catch (Exception e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -235,7 +230,7 @@ public class QuarkusWelcomeResource {
         try {
             return session.theme().getTheme(Theme.Type.WELCOME);
         } catch (IOException e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -250,6 +245,10 @@ public class QuarkusWelcomeResource {
         return shouldBootstrap.get();
     }
 
+    private static boolean isAdminConsoleEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
+    }
+
     private boolean isLocal() {
         try {
             ClientConnection clientConnection = session.getContext().getConnection();
@@ -262,7 +261,7 @@ public class QuarkusWelcomeResource {
             // So consider that welcome page accessed locally just if it was accessed really through "localhost" URL and without loadbalancer (x-forwarded-for header is empty).
             return isLocalAddress(remoteInetAddress) && isLocalAddress(localInetAddress) && xForwardedFor == null;
         } catch (UnknownHostException e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 

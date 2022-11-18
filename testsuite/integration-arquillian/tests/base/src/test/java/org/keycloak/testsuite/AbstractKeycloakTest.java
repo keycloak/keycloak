@@ -26,6 +26,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.model.TestTimedOutException;
 import org.keycloak.admin.client.Keycloak;
@@ -39,6 +40,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -59,6 +61,7 @@ import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.util.CryptoInitRule;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
@@ -67,7 +70,6 @@ import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriBuilder;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
@@ -83,20 +85,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
+import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 
 /**
  *
@@ -108,6 +115,9 @@ public abstract class AbstractKeycloakTest {
     protected static final String ENGLISH_LOCALE_NAME = "English";
 
     protected Logger log = Logger.getLogger(this.getClass());
+
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     @ArquillianResource
     protected SuiteContext suiteContext;
@@ -649,6 +659,13 @@ public abstract class AbstractKeycloakTest {
         log.debugv("Reset time offset, response {0}", response);
     }
 
+    public void setOtpTimeOffset(int offsetSeconds, TimeBasedOTP otp) {
+        setTimeOffset(offsetSeconds);
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, offsetSeconds);
+        otp.setCalendar(calendar);
+    }
+
     public int getCurrentTime() {
         return Time.currentTime();
     }
@@ -710,16 +727,6 @@ public abstract class AbstractKeycloakTest {
             }
         }
         return in;
-    }
-
-    /**
-     * Get product/project name
-     *
-     * @return f.e. 'RH-SSO' or 'Keycloak'
-     */
-    protected String getProjectName() {
-        final boolean isProduct = adminClient.serverInfo().getInfo().getProfileInfo().getName().equals("product");
-        return isProduct ? Profile.PRODUCT_NAME : Profile.PROJECT_NAME;
     }
 
     /**

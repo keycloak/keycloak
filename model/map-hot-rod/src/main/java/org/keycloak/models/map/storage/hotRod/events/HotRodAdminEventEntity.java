@@ -17,23 +17,42 @@
 
 package org.keycloak.models.map.storage.hotRod.events;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.events.MapAdminEventEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.events.MapAdminEventEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.events.HotRodAdminEventEntity.AbstractHotRodAdminEventEntityDelegate"
+        inherits = "org.keycloak.models.map.storage.hotRod.events.HotRodAdminEventEntity.AbstractHotRodAdminEventEntityDelegate",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.events.admin.AdminEvent"
 )
 @ProtoDoc("@Indexed")
+@ProtoDoc("schema-version: " + HotRodAdminEventEntity.VERSION)
 public class HotRodAdminEventEntity extends AbstractHotRodEntity {
 
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodAdminEventEntity.class
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE)
+    public interface HotRodAdminEventEntitySchema extends GeneratedSchema {
+        HotRodAdminEventEntitySchema INSTANCE = new HotRodAdminEventEntitySchemaImpl();
+    }
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1)
-    public Integer entityVersion = 1;
+    public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
@@ -48,7 +67,7 @@ public class HotRodAdminEventEntity extends AbstractHotRodEntity {
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 5)
-    public HotRodOperationType operationType;
+    public Integer operationType;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 6)

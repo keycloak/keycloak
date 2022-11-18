@@ -120,6 +120,8 @@ import java.util.Collections;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.crypto.dsig.XMLSignature;
 
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -135,29 +137,29 @@ public class SAMLEndpoint {
     public static final String SAML_LOGIN_RESPONSE = "SAML_LOGIN_RESPONSE";
     public static final String SAML_ASSERTION = "SAML_ASSERTION";
     public static final String SAML_AUTHN_STATEMENT = "SAML_AUTHN_STATEMENT";
-    protected RealmModel realm;
+    protected final RealmModel realm;
     protected EventBuilder event;
-    protected SAMLIdentityProviderConfig config;
-    protected IdentityProvider.AuthenticationCallback callback;
-    protected SAMLIdentityProvider provider;
+    protected final SAMLIdentityProviderConfig config;
+    protected final IdentityProvider.AuthenticationCallback callback;
+    protected final SAMLIdentityProvider provider;
     private final DestinationValidator destinationValidator;
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     @Context
     private HttpHeaders headers;
 
 
-    public SAMLEndpoint(RealmModel realm, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
-        this.realm = realm;
+    public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
+        this.realm = session.getContext().getRealm();
         this.config = config;
         this.callback = callback;
         this.provider = provider;
         this.destinationValidator = destinationValidator;
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
     }
 
     @GET
@@ -329,7 +331,7 @@ public class SAMLEndpoint {
             }  else {
                 for (String sessionIndex : request.getSessionIndex()) {
                     String brokerSessionId = config.getAlias()  + "." + sessionIndex;
-                    UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId);
+                    UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId));
                     if (userSession != null) {
                         if (userSession.getState() == UserSessionModel.State.LOGGING_OUT || userSession.getState() == UserSessionModel.State.LOGGED_OUT) {
                             continue;
@@ -596,7 +598,7 @@ public class SAMLEndpoint {
             }
 
             LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
-            SamlService samlService = (SamlService) factory.createProtocolEndpoint(SAMLEndpoint.this.realm, event);
+            SamlService samlService = (SamlService) factory.createProtocolEndpoint(SAMLEndpoint.this.session, event);
             ResteasyProviderFactory.getInstance().injectProperties(samlService);
             AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, SAMLEndpoint.this.realm, oClient.get(), null);
             if (authSession == null) {
@@ -624,7 +626,7 @@ public class SAMLEndpoint {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.INVALID_SAML_DOCUMENT);
                 event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_INVALID_RESPONSE);
             }
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
@@ -648,7 +650,7 @@ public class SAMLEndpoint {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_INVALID_SIGNATURE);
                 }
             }
             if (statusResponse instanceof ResponseType) {
@@ -669,7 +671,7 @@ public class SAMLEndpoint {
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
-            UserSessionModel userSession = session.sessions().getUserSession(realm, relayState);
+            UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, relayState));
             if (userSession == null) {
                 logger.error("no valid user session");
                 event.event(EventType.LOGOUT);

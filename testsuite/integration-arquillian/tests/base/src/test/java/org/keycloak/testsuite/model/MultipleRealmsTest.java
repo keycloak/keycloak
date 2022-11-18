@@ -29,18 +29,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.concurrent.atomic.AtomicReference;
 import org.keycloak.models.Constants;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
 
     public static void createObjects(KeycloakSession session, RealmModel realm) {
@@ -88,13 +84,13 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             Assert.assertNotEquals(r1user1.getId(), r2user1.getId());
 
             // Test password
-            currentSession.userCredentialManager().updateCredential(realm1, r1user1, UserCredentialModel.password("pass1"));
-            currentSession.userCredentialManager().updateCredential(realm2, r2user1, UserCredentialModel.password("pass2"));
+            r1user1.credentialManager().updateCredential(UserCredentialModel.password("pass1"));
+            r2user1.credentialManager().updateCredential(UserCredentialModel.password("pass2"));
 
-            Assert.assertTrue(currentSession.userCredentialManager().isValid(realm1, r1user1, UserCredentialModel.password("pass1")));
-            Assert.assertFalse(currentSession.userCredentialManager().isValid(realm1, r1user1, UserCredentialModel.password("pass2")));
-            Assert.assertFalse(currentSession.userCredentialManager().isValid(realm2, r2user1, UserCredentialModel.password("pass1")));
-            Assert.assertTrue(currentSession.userCredentialManager().isValid(realm2, r2user1, UserCredentialModel.password("pass2")));
+            Assert.assertTrue(r1user1.credentialManager().isValid(UserCredentialModel.password("pass1")));
+            Assert.assertFalse(r1user1.credentialManager().isValid(UserCredentialModel.password("pass2")));
+            Assert.assertFalse(r2user1.credentialManager().isValid(UserCredentialModel.password("pass1")));
+            Assert.assertTrue(r2user1.credentialManager().isValid(UserCredentialModel.password("pass2")));
 
             // Test searching
             Assert.assertEquals(2, currentSession.users().searchForUserStream(realm1, "user").count());

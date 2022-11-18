@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -63,6 +62,7 @@ public class ClientScopeResource {
     protected ClientScopeModel clientScope;
     protected KeycloakSession session;
     protected static Pattern dynamicScreenPattern = Pattern.compile("[^\\s\\*]*\\*{1}[^\\s\\*]*");
+    protected final static Pattern scopeNamePattern = Pattern.compile("[\\x21\\x23-\\x5B\\x5D-\\x7E]+");
 
     public ClientScopeResource(RealmModel realm, AdminPermissionEvaluator auth, ClientScopeModel clientScope, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
@@ -77,9 +77,7 @@ public class ClientScopeResource {
     public ProtocolMappersResource getProtocolMappers() {
         AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.clients().requireManage(clientScope);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.clients().requireView(clientScope);
-        ProtocolMappersResource mappers = new ProtocolMappersResource(realm, clientScope, auth, adminEvent, manageCheck, viewCheck);
-        ResteasyProviderFactory.getInstance().injectProperties(mappers);
-        return mappers;
+        return new ProtocolMappersResource(session, clientScope, auth, adminEvent, manageCheck, viewCheck);
     }
 
     /**
@@ -187,12 +185,21 @@ public class ClientScopeResource {
         }
     }
 
+    public static void validateClientScopeName(String name) throws ErrorResponseException {
+        if (!scopeNamePattern.matcher(name).matches()) {
+            String message = String.format("Unexpected name \"%s\" for ClientScope", name);
+            throw new ErrorResponseException(ErrorResponse.error(message, Response.Status.BAD_REQUEST));
+        }
+    }
+
     /**
      * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned to a client
      * as a default scope.
      * @param rep the {@link ClientScopeRepresentation} with the changes from the frontend.
      */
     public void validateDynamicScopeUpdate(ClientScopeRepresentation rep) {
+        validateClientScopeName(rep.getName());
+
         // Only check this if the representation has been sent to make it dynamic
         if (rep.getAttributes() != null && rep.getAttributes().getOrDefault(ClientScopeModel.IS_DYNAMIC_SCOPE, "false").equalsIgnoreCase("true")) {
             Optional<String> scopeModelOpt = realm.getClientsStream()

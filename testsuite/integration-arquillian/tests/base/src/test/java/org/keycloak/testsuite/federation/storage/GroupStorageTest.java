@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.storage;
 
+import org.keycloak.common.Profile.Feature;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -28,9 +29,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedGroupStorageProviderFactory;
 
@@ -39,13 +39,13 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.stream.Collectors;
 
+import org.junit.BeforeClass;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
 
     private String providerId;
@@ -60,6 +60,11 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
             getCleanup().addComponentId(id);
             return id;
         }
+    }
+
+    @BeforeClass
+    public static void checkNotMapStorage() {
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
     @Before
@@ -95,8 +100,8 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-                assertThat(session.groupStorageManager()
-                            .searchForGroupByName(realm, "group", null, null).stream()
+                assertThat(session.groups()
+                            .searchForGroupByNameStream(realm, "group", false, null, null)
                             .map(GroupModel::getName)
                             .collect(Collectors.toList()),
                         allOf(
@@ -113,8 +118,8 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
                 // search for groups and check hardcoded-group is not present
-                assertThat(session.groupStorageManager()
-                            .searchForGroupByName(realm, "group", null, null).stream()
+                assertThat(session.groups()
+                            .searchForGroupByNameStream(realm, "group", false, null, null)
                             .map(GroupModel::getName)
                             .collect(Collectors.toList()),
                         allOf(

@@ -39,7 +39,7 @@ public class DeviceEndpointFactory implements RealmResourceProviderFactory {
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
         EventBuilder event = new EventBuilder(realm, session, context.getConnection());
-        DeviceEndpoint provider = new DeviceEndpoint(realm, event);
+        DeviceEndpoint provider = new DeviceEndpoint(session, event);
         ResteasyProviderFactory.getInstance().injectProperties(provider);
         return provider;
     }

@@ -23,8 +23,12 @@ limitations under the License.
     <include file="META-INF/jpa-authz-changelog.xml"/>
     <include file="META-INF/jpa-client-scopes-changelog.xml"/>
     <include file="META-INF/jpa-clients-changelog.xml"/>
+    <include file="META-INF/jpa-events-changelog.xml"/>
     <include file="META-INF/jpa-groups-changelog.xml"/>
     <include file="META-INF/jpa-realms-changelog.xml"/>
     <include file="META-INF/jpa-roles-changelog.xml"/>
+    <include file="META-INF/jpa-single-use-objects-changelog.xml"/>
     <include file="META-INF/jpa-user-login-failures-changelog.xml"/>
+    <include file="META-INF/jpa-user-sessions-changelog.xml"/>
+    <include file="META-INF/jpa-users-changelog.xml"/>
 </databaseChangeLog>

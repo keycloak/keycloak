@@ -32,7 +32,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.storage.managers.UserStorageSyncManager;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -156,7 +157,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
 
             // 2 - Check that role mappings are not in local Keycloak DB (They are in LDAP).
 
-            UserModel johnDb = session.userLocalStorage().getUserByUsername(appRealm, "johnkeycloak");
+            UserModel johnDb = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "johnkeycloak");
             Set<RoleModel> johnDbRoles = johnDb.getRoleMappingsStream().collect(Collectors.toSet());
             Assert.assertFalse(johnDbRoles.contains(realmRole1));
             Assert.assertFalse(johnDbRoles.contains(realmRole2));
@@ -235,7 +236,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             Assert.assertTrue(maryRoles.contains(realmRole3));
 
             // Assert that access through DB will have just DB mapped role
-            UserModel maryDB = session.userLocalStorage().getUserByUsername(appRealm, "marykeycloak");
+            UserModel maryDB = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "marykeycloak");
             Set<RoleModel> maryDBRoles = maryDB.getRealmRoleMappingsStream().collect(Collectors.toSet());
             Assert.assertFalse(maryDBRoles.contains(realmRole1));
             Assert.assertFalse(maryDBRoles.contains(realmRole2));

@@ -18,6 +18,7 @@
 package org.keycloak.authorization.client.resource;
 
 
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.keycloak.authorization.client.AuthorizationDeniedException;
@@ -25,10 +26,13 @@ import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.HttpMethod;
+import org.keycloak.authorization.client.util.HttpMethodResponse;
 import org.keycloak.authorization.client.util.Throwables;
 import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.Permission;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * An entry point for obtaining permissions from the server.
@@ -67,29 +71,60 @@ public class AuthorizationResource {
      * @throws AuthorizationDeniedException in case the request was denied by the server
      */
     public AuthorizationResponse authorize(final AuthorizationRequest request) throws AuthorizationDeniedException {
+        return invoke(request);
+    }
+
+    /**
+     * Query the server for a list of permissions given an {@link AuthorizationRequest}.
+     *
+     * @param request an {@link AuthorizationRequest} (not {@code null})
+     * @return a list of permissions granted by the server
+     * @throws AuthorizationDeniedException in case the request was denied by the server
+     */
+    public List<Permission> getPermissions(final AuthorizationRequest request) throws AuthorizationDeniedException {
+        AuthorizationRequest.Metadata metadata;
+
+        if (request.getMetadata() == null) {
+            metadata = new AuthorizationRequest.Metadata();
+        } else {
+            metadata = request.getMetadata();
+        }
+
+        metadata.setResponseMode("permissions");
+
+        return invoke(request);
+    }
+
+    private <T> T invoke(AuthorizationRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Authorization request must not be null");
         }
 
-        Callable<AuthorizationResponse> callable = new Callable<AuthorizationResponse>() {
+        Callable<T> callable = new Callable<T>() {
             @Override
-            public AuthorizationResponse call() throws Exception {
+            public T call() throws Exception {
                 if (request.getAudience() == null) {
                     request.setAudience(configuration.getResource());
                 }
 
-                HttpMethod<AuthorizationResponse> method = http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint());
+                HttpMethod<T> method = http.post(serverConfiguration.getTokenEndpoint());
 
                 if (token != null) {
                     method = method.authorizationBearer(token.call());
                 }
 
-                return method
+                HttpMethodResponse<T> response = method
                         .authentication()
                         .uma(request)
-                        .response()
-                        .json(AuthorizationResponse.class)
-                        .execute();
+                        .response();
+
+                if (request.getMetadata() != null && "permissions".equals(request.getMetadata().getResponseMode())) {
+                    response = response.json(new TypeReference<T>(){});
+                } else {
+                    response = response.json((Class<T>) AuthorizationResponse.class);
+                }
+
+                return response.execute();
             }
         };
         try {

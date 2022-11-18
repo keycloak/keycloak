@@ -62,7 +62,6 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
         Arrays.stream(createIndexStatement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
                 .forEach(config -> {
                     validationErrors.checkRequiredField("jsonColumn", config.getJsonColumn());
-                    validationErrors.checkRequiredField("jsonProperty", config.getJsonProperty());
                 });
         return validationErrors;
     }
@@ -100,13 +99,16 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
         if (database instanceof CockroachDatabase) {
             builder.append(" USING gin (");
             builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
-                    .map(c -> "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "')")
+                    .map(c -> c.getJsonProperty() == null ? c.getJsonColumn() :
+                            "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "')")
                     .collect(Collectors.joining(", ")))
                     .append(")");
         }
-        else if (database instanceof PostgresDatabase) {            builder.append(" USING gin (");
+        else if (database instanceof PostgresDatabase) {
+            builder.append(" USING gin (");
             builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
-                    .map(c -> "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "') jsonb_path_ops")
+                    .map(c -> c.getJsonProperty() == null ? c.getJsonColumn() :
+                            "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "') jsonb_path_ops")
                     .collect(Collectors.joining(", ")))
                     .append(")");
         }

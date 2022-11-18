@@ -30,7 +30,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.Arrays;
@@ -42,12 +41,9 @@ import static org.hamcrest.Matchers.nullValue;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RoleModel;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
     private static final int LATCH_TIMEOUT_MS = 30000;
@@ -189,14 +185,14 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
             });
         } finally {
-            tearDownRealm(session, "user1", "user2");
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> tearDownRealm(kcSession, "user1", "user2"));
         }
     }
 
 
     // KEYCLOAK-3296 , KEYCLOAK-3494
     @Test
-    @ModelTest
+    @ModelTest(skipForMapStorage = true) // skipped for map storage - to be revisited (GHI #12910)
     public void removeUserAttribute(KeycloakSession session) throws Exception {
 
         try {

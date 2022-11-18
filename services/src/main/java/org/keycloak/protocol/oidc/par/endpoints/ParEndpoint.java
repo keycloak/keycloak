@@ -28,9 +28,9 @@ import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
-import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.par.ParResponse;
 import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
+import org.keycloak.protocol.oidc.par.endpoints.request.ParEndpointRequestParserProcessor;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.utils.ProfileHelper;
@@ -94,7 +94,7 @@ public class ParEndpoint extends AbstractParEndpoint {
         }
 
         try {
-            authorizationRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, httpRequest.getDecodedFormParameters());
+            authorizationRequest = ParEndpointRequestParserProcessor.parseRequest(event, session, client, httpRequest.getDecodedFormParameters());
         } catch (Exception e) {
             throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST_OBJECT, e.getMessage(), Response.Status.BAD_REQUEST);
         }

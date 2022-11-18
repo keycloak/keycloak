@@ -22,6 +22,7 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
@@ -40,7 +41,6 @@ import org.keycloak.util.JsonSerialization;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -66,7 +66,7 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
     }
 
     @Override
-    public Map<String, KeyWrapper> loadKeys() throws Exception {
+    public PublicKeysWrapper loadKeys() throws Exception {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
@@ -80,14 +80,14 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
             try {
                 CertificateRepresentation certInfo = CertificateInfoHelper.getCertificateFromClient(client, JWTClientAuthenticator.ATTR_PREFIX);
                 KeyWrapper publicKey = getSignatureValidationKey(certInfo);
-                return Collections.singletonMap(publicKey.getKid(), publicKey);
+                return new PublicKeysWrapper(Collections.singletonList(publicKey));
             } catch (ModelException me) {
                 logger.warnf(me, "Unable to retrieve publicKey for verify signature of client '%s' . Error details: %s", client.getClientId(), me.getMessage());
-                return Collections.emptyMap();
+                return PublicKeysWrapper.EMPTY;
             }
         } else {
             logger.warnf("Unable to retrieve publicKey of client '%s' for the specified purpose other than verifying signature", client.getClientId());
-            return Collections.emptyMap();
+            return PublicKeysWrapper.EMPTY;
         }
     }
 

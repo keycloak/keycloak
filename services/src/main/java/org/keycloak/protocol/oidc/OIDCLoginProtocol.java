@@ -48,7 +48,11 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
+import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
@@ -265,6 +269,15 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
                 if (state != null && !state.isEmpty())
                     responseBuilder.generateStateHash(state);
+            }
+
+            try {
+                session.clientPolicy().triggerOnEvent(new ImplicitHybridTokenResponse(authSession, clientSessionCtx, responseBuilder));
+            } catch (ClientPolicyException cpe) {
+                event.error(cpe.getError());
+                new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+                redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
+                return redirectUri.build();
             }
 
             AccessTokenResponse res = responseBuilder.build();

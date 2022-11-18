@@ -23,6 +23,7 @@ import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NAME;
 
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +36,7 @@ import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
@@ -88,19 +90,45 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         if (distConfig != null) {
             onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
 
+            if (dist == null) {
+                dist = createDistribution(distConfig);
+            }
+
+            copyTestProvider(context.getRequiredTestClass().getAnnotation(TestProvider.class));
+            copyTestProvider(context.getRequiredTestMethod().getAnnotation(TestProvider.class));
+            onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
+            onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
+
             if (launch != null) {
-                if (dist == null) {
-                    dist = createDistribution(distConfig);
-                }
-
-                onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
-                onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
-
                 result = dist.run(Arrays.asList(launch.value()));
             }
         } else {
             configureProfile(context);
             super.beforeEach(context);
+        }
+    }
+
+    private void copyTestProvider(TestProvider provider) {
+        if (provider == null) {
+            return;
+        }
+
+        if (dist instanceof RawKeycloakDistribution) {
+            try {
+                ((RawKeycloakDistribution) dist).copyProvider(provider.value().getDeclaredConstructor().newInstance());
+            } catch (Exception cause) {
+                throw new RuntimeException("Failed to instantiate test provider: " + provider.getClass(), cause);
+            }
+        }
+    }
+
+    @Override
+    public void interceptTestMethod(Invocation<Void> invocation,
+            ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+        if (dist == null) {
+            super.interceptTestMethod(invocation, invocationContext, extensionContext);
+        } else {
+            invocation.proceed();
         }
     }
 
@@ -226,7 +254,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        return type == LaunchResult.class || type == RawDistRootPath.class || (dist != null && type == KeycloakDistribution.class);
+        return type == LaunchResult.class || type == RawDistRootPath.class || type == KeycloakDistribution.class;
     }
 
     private void configureProfile(ExtensionContext context) {
@@ -255,10 +283,15 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
                 databaseContainer.start();
 
-                dist.setProperty("db", database.alias());
-                dist.setProperty("db-username", databaseContainer.getUsername());
-                dist.setProperty("db-password", databaseContainer.getPassword());
-                dist.setProperty("db-url", databaseContainer.getJdbcUrl());
+                if (database.buildOptions().length == 0) {
+                    dist.setProperty("db", database.alias());
+                } else {
+                    for (String option : database.buildOptions()) {
+                        dist.setProperty(option.substring(0, option.indexOf('=')), option.substring(option.indexOf('=') + 1));
+                    }
+                }
+
+                databaseContainer.configureDistribution(dist);
 
                 dist.run("build");
             }

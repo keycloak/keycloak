@@ -23,7 +23,6 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -66,7 +65,6 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
@@ -97,6 +95,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWit
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
 public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
@@ -105,11 +104,6 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     public static final String PARENT3_USERNAME = "parent3";
     public static final String UNAUTHORIZED_CHILD_CLIENT = "unauthorized-child-client";
     public static final String PARENT_CLIENT = "parent-client";
-
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
-    }
 
     @Deployment(name = ClientApp.DEPLOYMENT_NAME)
     protected static WebArchive accountLink() {
@@ -503,8 +497,6 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     @Test
     @UncaughtServerErrorExpected
     public void testExportImport() throws Exception {
-        ContainerAssume.assumeNotAuthServerRemote();
-
         testExternalExchange();
 
         try {

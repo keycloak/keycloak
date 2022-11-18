@@ -90,6 +90,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public Map<String, String> getPermissions(RoleModel role) {
+        if (authz == null) return null;
         initialize(role);
         Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(RolePermissionManagement.MAP_ROLE_SCOPE, mapRolePermission(role).getId());
@@ -123,9 +124,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public Resource resource(RoleModel role) {
-        ResourceStore resourceStore = authz.getStoreFactory().getResourceStore();
         ResourceServer server = resourceServer(role);
         if (server == null) return null;
+        ResourceStore resourceStore = authz.getStoreFactory().getResourceStore();
         return  resourceStore.findByName(server, getRoleResourceName(role));
     }
 
@@ -546,6 +547,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (server == null) {
             ClientModel client = getRoleClient(role);
             server = root.findOrCreateResourceServer(client);
+            if (server == null ) return;
         }
         Scope mapRoleScope = mapRoleScope(server);
         if (mapRoleScope == null) {
@@ -600,11 +602,6 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     private String getMapCompositePermissionName(RoleModel role) {
         return MAP_ROLE_COMPOSITE_SCOPE + ".permission." + role.getId();
-    }
-
-    private ResourceServer sdfgetResourceServer(RoleModel role) {
-        ClientModel client = getRoleClient(role);
-        return root.findOrCreateResourceServer(client);
     }
 
     private static String getRoleResourceName(RoleModel role) {

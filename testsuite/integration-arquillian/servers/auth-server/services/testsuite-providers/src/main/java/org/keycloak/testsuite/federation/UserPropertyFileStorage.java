@@ -19,10 +19,12 @@ package org.keycloak.testsuite.federation;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -50,7 +52,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyFileStorage implements UserLookupProvider.Streams, UserStorageProvider, UserQueryProvider.Streams, CredentialInputValidator {
+public class UserPropertyFileStorage implements UserLookupProvider, UserStorageProvider, UserQueryProvider, CredentialInputValidator {
 
     public static final String SEARCH_METHOD = "searchForUserStream(RealmMode, String, Integer, Integer)";
     public static final String COUNT_SEARCH_METHOD = "getUsersCount(RealmModel, String)";
@@ -138,6 +140,11 @@ public class UserPropertyFileStorage implements UserLookupProvider.Streams, User
                 @Override
                 public String getUsername() {
                     return username;
+                }
+
+                @Override
+                public SubjectCredentialManager credentialManager() {
+                    return new LegacyUserCredentialManager(session, realm, this);
                 }
             };
         }

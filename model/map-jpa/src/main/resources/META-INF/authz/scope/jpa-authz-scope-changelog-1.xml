@@ -22,7 +22,6 @@ limitations under the License.
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
                     http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    <!-- format of id of changeSet: authz-scope-${org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTHZ_SCOPE} -->
     <changeSet author="keycloak" id="authz-scope-1">
 
         <createTable tableName="kc_authz_scope">
@@ -48,6 +47,11 @@ limitations under the License.
             <column name="resourceserverid"/>
             <column name="name"/>
         </createIndex>
+    </changeSet>
+
+    <!-- unimplemented on CockroachDB: computed column "XXX" cannot reference a foreign key
+         See: https://go.crdb.dev/issue-v/46672/v21.2 -->
+    <changeSet author="keycloak" id="authz-scope-2" dbms="postgresql">
         <addForeignKeyConstraint constraintName="authz_scope_fk_root_fkey"
                                  baseTableName="kc_authz_scope"
                                  baseColumnNames="resourceserverid"
@@ -55,6 +59,13 @@ limitations under the License.
                                  referencedColumnNames="id"
                                  onDelete="CASCADE"/>
 
+    </changeSet>
+
+    <changeSet author="keycloak" id="authz-scope-3" dbms="cockroachdb">
+        <!-- placeholder for foreign key on computed column to allow fast looking by resourceserverid -->
+        <createIndex tableName="kc_authz_scope" indexName="authz_scope_fk_root_fkey">
+            <column name="resourceserverid"/>
+        </createIndex>
     </changeSet>
 
 </databaseChangeLog>

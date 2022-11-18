@@ -12,7 +12,7 @@ import javax.ws.rs.core.Response;
  */
 public class CorsPreflightService {
 
-    private HttpRequest request;
+    private final HttpRequest request;
 
     public CorsPreflightService(HttpRequest request) {
         this.request = request;
@@ -26,7 +26,7 @@ public class CorsPreflightService {
     @Path("{any:.*}")
     @OPTIONS
     public Response preflight() {
-        Cors cors = Cors.add(request, Response.ok()).auth().allowedMethods("GET", "POST", "HEAD", "OPTIONS").preflight();
+        Cors cors = Cors.add(request, Response.ok()).auth().allowedMethods("GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS").preflight();
         return cors.build();
     }
 

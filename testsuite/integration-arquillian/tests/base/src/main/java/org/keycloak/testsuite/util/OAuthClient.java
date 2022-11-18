@@ -17,16 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.LOGIN_HINT_PARAM;
-import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.AUTH_REQ_ID;
-import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.BINDING_MESSAGE;
-import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.oauth2DeviceAuthUrl;
-import static org.keycloak.testsuite.admin.Users.getPasswordOf;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
+import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.Header;
@@ -64,11 +55,11 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
@@ -88,8 +79,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import com.google.common.base.Charsets;
-
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -108,9 +100,15 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.UriBuilder;
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.LOGIN_HINT_PARAM;
+import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.AUTH_REQ_ID;
+import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.BINDING_MESSAGE;
+import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.oauth2DeviceAuthUrl;
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -623,8 +621,10 @@ public class OAuthClient {
             if (clientSessionHost != null) {
                 parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
             }
-            if (scope != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+
+            String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+            if (scopeParam != null && !scopeParam.isEmpty()) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
             }
 
             if (userAgent != null) {
@@ -747,14 +747,15 @@ public class OAuthClient {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getServiceAccountUrl());
 
-            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
             post.setHeader("Authorization", authorization);
 
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
 
-            if (scope != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+            if (scopeParam != null && !scopeParam.isEmpty()) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
             }
 
             UrlEncodedFormEntity formEntity;
@@ -766,7 +767,7 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } 
+        }
     }
 
     public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues) throws Exception {
@@ -1034,8 +1035,9 @@ public class OAuthClient {
                 post.addHeader("Origin", origin);
             }
 
-            if (scope != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+            if (scopeParam != null && !scopeParam.isEmpty()) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
             }
             if (nonce != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, scope));
@@ -1409,10 +1411,10 @@ public class OAuthClient {
     public String getRedirectUri() {
         return redirectUri;
     }
-    
+
     /**
      * Application-initiated action.
-     * 
+     *
      * @return The action name.
      */
     public String getKcAction() {
@@ -1520,7 +1522,7 @@ public class OAuthClient {
                 .param(OAuth2Constants.CLIENT_ID, clientId)
                 .param(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .param(OAuth2Constants.STATE, this.state.getState());
-        
+
         return Entity.form(form);
     }
 
@@ -1635,7 +1637,7 @@ public class OAuthClient {
         this.initiatingIDP = initiatingIDP;
         return this;
     }
-    
+
     public OAuthClient kcAction(String kcAction) {
         this.kcAction = kcAction;
         return this;
@@ -2156,7 +2158,7 @@ public class OAuthClient {
         String id = "social-" + alias;
         return DroneUtils.getCurrentDriver().findElement(By.id(id));
     }
-    
+
     private interface StateParamProvider {
 
         String getState();

@@ -30,13 +30,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.*;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 import java.util.List;
 import org.keycloak.authorization.model.ResourceServer;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UmaRepresentationTest extends AbstractResourceServerTest {
     private ResourceRepresentation resource;
     private PermissionResource permission;
@@ -158,7 +154,7 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
 
         AuthorizationBean authorizationBean  = new AuthorizationBean(session, realm, null, session.getContext().getUri());
         ClientModel client = session.getContext().getRealm().getClientByClientId("resource-server-test");
-        UserModel user = session.userStorageManager().getUserByUsername(session.getContext().getRealm(), "marta");
+        UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), "marta");
         ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
         ResourceBean resourceBean = authorizationBean.new ResourceBean(
             authorization.getStoreFactory().getResourceStore().findByName(

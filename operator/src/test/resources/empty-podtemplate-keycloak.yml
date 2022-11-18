@@ -1,0 +1,19 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-podtemplate
+spec:
+  instances: 1
+  additionalOptions:
+    - name: db
+      value: postgres
+    - name: db-url-host
+      value: postgres-db
+    - name: db-username
+      value: postgres
+    - name: db-password
+      value: testpassword
+  hostname:
+    hostname: example.com
+  unsupported:
+    podTemplate:

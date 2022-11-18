@@ -20,6 +20,8 @@ public class HotRodOTPPolicyEntity extends AbstractHotRodEntity {
     public String otpPolicyAlgorithm;
     @ProtoField(number = 6)
     public String otpPolicyType;
+    @ProtoField(number = 7)
+    public Boolean otpPolicyCodeReusable;
     @Override
     public boolean equals(Object o) {
         return HotRodOTPPolicyEntityDelegate.entityEquals(this, o);

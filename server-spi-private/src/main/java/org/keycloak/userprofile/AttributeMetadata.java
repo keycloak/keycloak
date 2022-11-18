@@ -45,10 +45,10 @@ public final class AttributeMetadata {
     private String attributeDisplayName;
     private AttributeGroupMetadata attributeGroupMetadata;
     private final Predicate<AttributeContext> selector;
-    private final Predicate<AttributeContext> writeAllowed;
+    private final List<Predicate<AttributeContext>> writeAllowed = new ArrayList<>();
     /** Predicate to decide if attribute is required, it is handled as required if predicate is null */
     private final Predicate<AttributeContext> required;
-    private final Predicate<AttributeContext> readAllowed;
+    private final List<Predicate<AttributeContext>> readAllowed = new ArrayList<>();
     private List<AttributeValidatorMetadata> validators;
     private Map<String, Object> annotations;
     private int guiOrder;
@@ -93,11 +93,22 @@ public final class AttributeMetadata {
             Predicate<AttributeContext> required,
             Predicate<AttributeContext> readAllowed) {
         this.attributeName = attributeName;
-        this.selector = selector;
-        this.writeAllowed = writeAllowed;
-        this.required = required;
-        this.readAllowed = readAllowed;
         this.guiOrder = guiOrder;
+        this.selector = selector;
+        addWriteCondition(writeAllowed);
+        this.required = required;
+        addReadCondition(readAllowed);
+    }
+
+    AttributeMetadata(String attributeName, int guiOrder, Predicate<AttributeContext> selector, List<Predicate<AttributeContext>> writeAllowed,
+                      Predicate<AttributeContext> required,
+                      List<Predicate<AttributeContext>> readAllowed) {
+        this.attributeName = attributeName;
+        this.guiOrder = guiOrder;
+        this.selector = selector;
+        this.writeAllowed.addAll(writeAllowed);
+        this.required = required;
+        this.readAllowed.addAll(readAllowed);
     }
 
     public String getName() {
@@ -116,21 +127,34 @@ public final class AttributeMetadata {
     public AttributeGroupMetadata getAttributeGroupMetadata() {
         return attributeGroupMetadata;
     }
-    
+
     public boolean isSelected(AttributeContext context) {
         return selector.test(context);
     }
 
+    private boolean allConditionsMet(List<Predicate<AttributeContext>> predicates, AttributeContext context) {
+        return predicates.stream().allMatch(p -> p.test(context));
+    }
+
+    public AttributeMetadata addReadCondition(Predicate<AttributeContext> readAllowed) {
+        this.readAllowed.add(readAllowed);
+        return this;
+    }
+
+    public AttributeMetadata addWriteCondition(Predicate<AttributeContext> writeAllowed) {
+        this.writeAllowed.add(writeAllowed);
+        return this;
+    }
     public boolean isReadOnly(AttributeContext context) {
-        return !writeAllowed.test(context);
+        return !canEdit(context);
     }
 
     public boolean canView(AttributeContext context) {
-        return readAllowed.test(context);
+        return allConditionsMet(readAllowed, context);
     }
 
     public boolean canEdit(AttributeContext context) {
-        return writeAllowed.test(context);
+        return allConditionsMet(writeAllowed, context);
     }
 
     /**
@@ -151,13 +175,9 @@ public final class AttributeMetadata {
             this.validators = new ArrayList<>();
         }
 
+        this.validators.removeIf(validators::contains);
         this.validators.addAll(validators.stream().filter(Objects::nonNull).collect(Collectors.toList()));
 
-        return this;
-    }
-
-    public AttributeMetadata addValidator(AttributeValidatorMetadata validator) {
-        addValidator(Arrays.asList(validator));
         return this;
     }
 

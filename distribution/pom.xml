@@ -39,10 +39,8 @@
         <module>adapters</module>
         <module>saml-adapters</module>
         <module>feature-packs</module>
-        <module>galleon-feature-packs</module>
         <module>licenses-common</module>
         <module>maven-plugins</module>
-        <module>server-dist</module>
         <!--<module>server-overlay</module>-->
     </modules>
 
@@ -75,14 +73,15 @@
 
     <profiles>
         <profile>
-            <id>legacy-dist</id>
+            <id>wildfly-dist</id>
             <activation>
                 <property>
-                    <name>legacy-dist</name>
+                    <name>includeWildFly</name>
                 </property>
             </activation>
             <modules>
-                <module>server-legacy-dist</module>
+                <module>galleon-feature-packs</module>
+                <module>server-dist</module>
             </modules>
         </profile>
         <profile>

@@ -419,7 +419,7 @@ class SigningInPage extends React.Component<
                                         >
                                             <span className="pf-c-button__icon">
                                                 <i
-                                                    className="fas fa-plus-circle"
+                                                    className="fa fa-plus-circle"
                                                     aria-hidden="true"
                                                 ></i>
                                             </span>
@@ -447,7 +447,7 @@ class SigningInPage extends React.Component<
                                 >
                                     <span className="pf-c-button__icon">
                                         <i
-                                            className="fas fa-plus-circle"
+                                            className="fa fa-plus-circle"
                                             aria-hidden="true"
                                         ></i>
                                     </span>

@@ -21,6 +21,12 @@
         </dependency>
     </dependencies>
 
+    <properties>
+        <!-- define this as a property, so it can still be overwritten on the CLI -->
+        <!-- direct the auto-created files to the target folder, so they are cleaned by "mvn clean" -->
+        <kc.home.dir>${project.build.directory}/kc</kc.home.dir>
+    </properties>
+
     <build>
         <finalName>keycloak</finalName>
         <plugins>
@@ -39,6 +45,9 @@
                 <version>${quarkus.version}</version>
                 <configuration>
                     <finalName>keycloak</finalName>
+                    <systemProperties>
+                        <kc.home.dir>${kc.home.dir}</kc.home.dir>
+                    </systemProperties>
                 </configuration>
                 <executions>
                     <execution>

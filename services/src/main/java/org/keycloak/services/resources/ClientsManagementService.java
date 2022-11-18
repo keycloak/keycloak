@@ -45,7 +45,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.ext.Providers;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -54,9 +53,9 @@ public class ClientsManagementService {
 
     private static final Logger logger = Logger.getLogger(ClientsManagementService.class);
 
-    private RealmModel realm;
+    private final RealmModel realm;
 
-    private EventBuilder event;
+    private final EventBuilder event;
 
     @Context
     private HttpRequest request;
@@ -64,17 +63,14 @@ public class ClientsManagementService {
     @Context
     protected HttpHeaders headers;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
-    @Context
-    protected Providers providers;
+    protected final KeycloakSession session;
 
-    @Context
-    protected KeycloakSession session;
-
-    public ClientsManagementService(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    public ClientsManagementService(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
     }
 

@@ -17,13 +17,11 @@
 
 package org.keycloak.models.map.events;
 
-import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEvent.SearchableFields;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
@@ -37,6 +35,7 @@ import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.GE;
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.IN;
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.LE;
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.LIKE;
+import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.Order.DESCENDING;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
@@ -44,8 +43,8 @@ public class MapAdminEventQuery implements AdminEventQuery {
 
     private Integer firstResult;
     private Integer maxResults;
+    private QueryParameters.Order order = DESCENDING;
     private DefaultModelCriteria<AdminEvent> mcb = criteria();
-    private final DefaultModelCriteria<AdminEvent> criteria = criteria();
     private final Function<QueryParameters<AdminEvent>, Stream<AdminEvent>> resultProducer;
 
     public MapAdminEventQuery(Function<QueryParameters<AdminEvent>, Stream<AdminEvent>> resultProducer) {
@@ -125,11 +124,23 @@ public class MapAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
+    public AdminEventQuery orderByDescTime() {
+        order = DESCENDING;
+        return this;
+    }
+
+    @Override
+    public AdminEventQuery orderByAscTime() {
+        order = ASCENDING;
+        return this;
+    }
+
+    @Override
     public Stream<AdminEvent> getResultStream() {
         return resultProducer.apply(QueryParameters.withCriteria(mcb)
                 .offset(firstResult)
                 .limit(maxResults)
-                .orderBy(SearchableFields.TIMESTAMP, DESCENDING)
+                .orderBy(SearchableFields.TIMESTAMP, order)
         );
     }
 }

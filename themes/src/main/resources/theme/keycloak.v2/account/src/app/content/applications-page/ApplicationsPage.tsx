@@ -131,7 +131,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
     return (
       <ContentPage
         title={Msg.localize('applicationsPageTitle')}
-        introMessage="Manage your application permissions."
+        introMessage={Msg.localize('applicationsPageSubTitle')}
       >
         <PageSection isFilled variant={PageSectionVariants.light}>
 
@@ -224,11 +224,29 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                             {application.consent.grantedScopes.map((scope: GrantedScope, scopeIndex: number) => {
                                 return (
                                   <React.Fragment key={'scope-' + scopeIndex} >
-                                    <DescriptionListDescription><CheckIcon /> {scope.name}</DescriptionListDescription>
+                                      <DescriptionListDescription><CheckIcon />{Msg.localize(scope.name)}</DescriptionListDescription>
                                   </React.Fragment>
                                 )
                               })}
                           </DescriptionListGroup>
+                          {application.tosUri &&
+                              <DescriptionListGroup>
+                                  <DescriptionListTerm>{Msg.localize('termsOfService')}</DescriptionListTerm>
+                                  <DescriptionListDescription>{application.tosUri}</DescriptionListDescription>
+                              </DescriptionListGroup>
+                          }
+                          {application.policyUri  &&
+                             <DescriptionListGroup>
+                                 <DescriptionListTerm>{Msg.localize('policy')}</DescriptionListTerm>
+                                 <DescriptionListDescription>{application.policyUri }</DescriptionListDescription>
+                             </DescriptionListGroup>
+                          }
+                          {application.logoUri &&
+                             <DescriptionListGroup>
+                                 <DescriptionListTerm>{Msg.localize('logo')}</DescriptionListTerm>
+                                 <DescriptionListDescription><img src={application.logoUri} /></DescriptionListDescription>
+                             </DescriptionListGroup>
+                          }
                           <DescriptionListGroup>
                             <DescriptionListTerm>{Msg.localize('accessGrantedOn') + ': '}</DescriptionListTerm>
                             <DescriptionListDescription>

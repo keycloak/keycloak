@@ -29,7 +29,7 @@ import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.ActionTokenHandler;
-import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
+import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.authentication.actiontoken.ExplainedTokenVerificationException;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionTokenHandler;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
@@ -47,9 +47,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
-import org.keycloak.locale.LocaleSelectorProvider;
-import org.keycloak.locale.LocaleUpdaterProvider;
-import org.keycloak.models.ActionTokenKeyModel;
+import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -79,7 +77,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
@@ -102,7 +99,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriBuilderException;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.Providers;
 import java.net.URI;
 import java.util.Map;
 
@@ -131,7 +127,7 @@ public class LoginActionsService {
     
     public static final String CANCEL_AIA = "cancel-aia";
 
-    private RealmModel realm;
+    private final RealmModel realm;
 
     @Context
     private HttpRequest request;
@@ -139,14 +135,9 @@ public class LoginActionsService {
     @Context
     protected HttpHeaders headers;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
-    @Context
-    protected Providers providers;
-
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
     private EventBuilder event;
 
@@ -183,8 +174,10 @@ public class LoginActionsService {
         return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getLoginActionsService");
     }
 
-    public LoginActionsService(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    public LoginActionsService(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
         CacheControlUtil.noBackButtonCacheControlHeader();
     }
@@ -461,7 +454,7 @@ public class LoginActionsService {
         return handleActionToken(key, execution, clientId, tabId);
     }
 
-    protected <T extends JsonWebToken & ActionTokenKeyModel> Response handleActionToken(String tokenString, String execution, String clientId, String tabId) {
+    protected <T extends JsonWebToken & SingleUseObjectKeyModel> Response handleActionToken(String tokenString, String execution, String clientId, String tabId) {
         T token;
         ActionTokenHandler<T> handler;
         ActionTokenContext<T> tokenContext;

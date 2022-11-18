@@ -26,7 +26,6 @@ import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -34,11 +33,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
-import static org.keycloak.testsuite.events.AbstractEventsTest.REALM_NAME_1;
-import static org.keycloak.testsuite.events.AbstractEventsTest.REALM_NAME_2;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -71,7 +65,7 @@ public class EventStoreProviderTest extends AbstractEventsTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // This looks like some database issue, test should get events which are newer or equal to requested time, however it gets only newer events from remote server
+     // This looks like some database issue, test should get events which are newer or equal to requested time, however it gets only newer events from remote server
     public void query() {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;

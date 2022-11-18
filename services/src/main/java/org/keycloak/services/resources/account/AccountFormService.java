@@ -139,12 +139,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
     public static final String ACCOUNT_MGMT_FORWARDED_ERROR_NOTE = "ACCOUNT_MGMT_FORWARDED_ERROR";
 
     private final AppAuthManager authManager;
-    private EventBuilder event;
+    private final EventBuilder event;
     private AccountProvider account;
     private EventStoreProvider eventStore;
 
-    public AccountFormService(RealmModel realm, ClientModel client, EventBuilder event) {
-        super(realm, client);
+    public AccountFormService(KeycloakSession session, ClientModel client, EventBuilder event) {
+        super(session, client);
         this.event = event;
         this.authManager = new AppAuthManager();
     }
@@ -600,7 +600,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             }
 
             UserCredentialModel cred = UserCredentialModel.password(password);
-            if (!session.userCredentialManager().isValid(realm, user, cred)) {
+            if (!user.credentialManager().isValid(cred)) {
                 setReferrerOnPage();
                 errorEvent.error(Errors.INVALID_USER_CREDENTIALS);
                 return account.setError(Status.OK, Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
@@ -620,7 +620,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         try {
-            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(passwordNew, false));
+            user.credentialManager().updateCredential(UserCredentialModel.password(passwordNew, false));
         } catch (ReadOnlyException mre) {
             setReferrerOnPage();
             errorEvent.error(Errors.NOT_ALLOWED);
@@ -1028,7 +1028,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
     }
 
     public static boolean isPasswordSet(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.userCredentialManager().isConfiguredFor(realm, user, PasswordCredentialModel.TYPE);
+        return user.credentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
     }
 
     private String[] getReferrer() {

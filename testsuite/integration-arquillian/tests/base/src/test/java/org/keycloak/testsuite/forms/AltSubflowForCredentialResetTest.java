@@ -33,7 +33,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
@@ -46,14 +45,12 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * Tests setting up alternative reset credentials sub flow to prevent signing in after clicking "forgot password"
  *
  * @author <a href="mailto:drichtar@redhat.com">Denis Richtárik</a>
  */
-@AuthServerContainerExclude(REMOTE)
 public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakTest {
 
     private String userID;

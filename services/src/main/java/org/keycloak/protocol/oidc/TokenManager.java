@@ -27,7 +27,6 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
@@ -46,6 +45,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -53,6 +53,7 @@ import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -99,6 +100,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import static org.keycloak.representations.IDToken.NONCE;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -146,7 +148,7 @@ public class TokenManager {
             }
         } else {
             // Find userSession regularly for online tokens
-            userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
+            userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, oldToken.getSessionState()));
             if (!AuthenticationManager.isSessionValid(realm, userSession)) {
                 AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
@@ -258,6 +260,13 @@ public class TokenManager {
 
             UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
 
+            if (userSession == null) {
+                // also try to resolve sessions created during token exchange when the user is impersonated
+                userSession = session.sessions().getUserSessionWithPredicate(realm,
+                        token.getSessionState(), false,
+                        model -> client.getId().equals(model.getNote(ImpersonationSessionNote.IMPERSONATOR_CLIENT.toString())));
+            }
+
             if (AuthenticationManager.isSessionValid(realm, userSession)) {
                 valid = isUserValid(session, realm, token, userSession.getUser());
             } else {
@@ -300,10 +309,10 @@ public class TokenManager {
     private boolean validateTokenReuseForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token) {
         UserSessionModel userSession = null;
         if (token.getType().equals(TokenUtil.TOKEN_TYPE_REFRESH)) {
-            userSession = session.sessions().getUserSession(realm, token.getSessionState());
+            userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, token.getSessionState()));
         } else {
             UserSessionManager sessionManager = new UserSessionManager(session);
-            userSession = sessionManager.findOfflineUserSession(realm, token.getSessionState());
+            userSession = lockUserSessionsForModification(session, () -> sessionManager.findOfflineUserSession(realm, token.getSessionState()));
         }
 
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
@@ -435,12 +444,12 @@ public class TokenManager {
     // Will throw OAuthErrorException if validation fails
     private void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken,
         AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
-        int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
+        int startupTime = session.getProvider(UserSessionProvider.class).getStartupTime(realm);
 
         if (clientSession.getCurrentRefreshToken() != null
             && !refreshToken.getId().equals(clientSession.getCurrentRefreshToken())
             && refreshToken.getIssuedAt() < clientSession.getTimestamp()
-            && clusterStartupTime <= clientSession.getTimestamp()) {
+            && startupTime <= clientSession.getTimestamp()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
 
@@ -649,9 +658,6 @@ public class TokenManager {
         if (scopes == null) {
             return true;
         }
-        if (authorizationRequestContext.getAuthorizationDetailEntries() == null || authorizationRequestContext.getAuthorizationDetailEntries().isEmpty()) {
-            return false;
-        }
         Collection<String> requestedScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
         Set<String> rarScopes = authorizationRequestContext.getAuthorizationDetailEntries()
                 .stream()
@@ -661,6 +667,10 @@ public class TokenManager {
 
         if (TokenUtil.isOIDCRequest(scopes)) {
             requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
+        }
+
+        if ((authorizationRequestContext.getAuthorizationDetailEntries() == null || authorizationRequestContext.getAuthorizationDetailEntries().isEmpty()) && requestedScopes.size()>0) {
+            return false;
         }
 
         if (logger.isTraceEnabled()) {

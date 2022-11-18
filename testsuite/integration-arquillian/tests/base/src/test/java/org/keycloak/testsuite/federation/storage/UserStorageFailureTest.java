@@ -42,11 +42,12 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.FailableHardcodedStorageProvider;
 import org.keycloak.testsuite.federation.FailableHardcodedStorageProviderFactory;
@@ -54,23 +55,16 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
-import org.junit.Assume;
-import org.keycloak.models.RealmProvider;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.util.ContainerAssume;
-
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     private static boolean initialized = false;
@@ -134,7 +128,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             serviceAccount.grantRole(role);
             serviceAccount.setServiceAccountClientLink(offlineClient.getClientId());
 
-            UserModel localUser = manager.getSession().userLocalStorage().addUser(appRealm, LOCAL_USER);
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(manager.getSession()).addUser(appRealm, LOCAL_USER);
             localUser.setEnabled(true);
         });
 
@@ -158,9 +152,6 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
      */
     @Test
     public void testKeycloak5350() throws Exception {
-
-        ContainerAssume.assumeNotAuthServerRemote();
-
         Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
 
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -223,7 +214,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
             UserModel user = session.users().getUserByUsername(realm, username);
-            session.userCache().evict(realm, user);
+            UserStorageUtil.userCache(session).evict(realm, user);
         });
     }
 
@@ -272,9 +263,9 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            UserModel user = session.userLocalStorage().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+            UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             if (user != null) {
-                session.userLocalStorage().removeUser(realm, user);
+                UserStoragePrivateUtil.userLocalStorage(session).removeUser(realm, user);
             }
         });
 
@@ -343,7 +334,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals(1, result.count());
 
             // we run a terminal operation on the stream to make sure it is consumed.
-            session.users().getUsersStream(realm).count();
+            session.users().searchForUserStream(realm, Collections.emptyMap()).count();
             session.users().getUsersCount(realm);
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);

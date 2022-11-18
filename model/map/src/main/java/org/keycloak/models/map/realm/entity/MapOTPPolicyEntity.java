@@ -34,22 +34,31 @@ public interface MapOTPPolicyEntity extends UpdatableEntity {
         entity.setOtpPolicyLookAheadWindow(model.getLookAheadWindow());
         entity.setOtpPolicyType(model.getType());
         entity.setOtpPolicyPeriod(model.getPeriod());
+        entity.setOtpPolicyCodeReusable(model.isCodeReusable());
         return entity;
     }
 
     static OTPPolicy toModel(MapOTPPolicyEntity entity) {
         if (entity == null) return null;
         OTPPolicy model = new OTPPolicy();
+
         Integer otpPolicyDigits = entity.getOtpPolicyDigits();
         model.setDigits(otpPolicyDigits == null ? 0 : otpPolicyDigits);
         model.setAlgorithm(entity.getOtpPolicyAlgorithm());
+
         Integer otpPolicyInitialCounter = entity.getOtpPolicyInitialCounter();
         model.setInitialCounter(otpPolicyInitialCounter == null ? 0 : otpPolicyInitialCounter);
+
         Integer otpPolicyLookAheadWindow = entity.getOtpPolicyLookAheadWindow();
         model.setLookAheadWindow(otpPolicyLookAheadWindow == null ? 0 : otpPolicyLookAheadWindow);
         model.setType(entity.getOtpPolicyType());
+
         Integer otpPolicyPeriod = entity.getOtpPolicyPeriod();
         model.setPeriod(otpPolicyPeriod == null ? 0 : otpPolicyPeriod);
+
+        Boolean isOtpPolicyReusable = entity.isOtpPolicyCodeReusable();
+        model.setCodeReusable(isOtpPolicyReusable == null ? OTPPolicy.DEFAULT_IS_REUSABLE : isOtpPolicyReusable);
+
         return model;
     }
 
@@ -70,4 +79,7 @@ public interface MapOTPPolicyEntity extends UpdatableEntity {
 
     String getOtpPolicyAlgorithm();
     void setOtpPolicyAlgorithm(String otpPolicyAlgorithm);
+
+    Boolean isOtpPolicyCodeReusable();
+    void setOtpPolicyCodeReusable(Boolean isOtpPolicyCodeReusable);
 }

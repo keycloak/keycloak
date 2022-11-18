@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -36,28 +37,35 @@ import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
-import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+import static org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionEntity.TABLE_NAME;
+
+import org.keycloak.models.map.storage.jpa.JpaChildEntity;
+import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.sessions.CommonClientSessionModel;
 
 /**
  * Entity represents individual authentication session. 
- * 
- * It implements {@link JpaRootEntity} as it contains json field. 
- * 
- * Authentication session is modified from multiple transactions within one request, 
- * via {@code KeycloakModelUtils.runJobInTransaction}. Therefore it doesn't 
- * implement {@code JpaRootVersionedEntity} nor {@code JpaChildEntity}.
  */
 @Entity
-@Table(name = "kc_auth_session")
+@Table(name = TABLE_NAME)
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapAuthenticationSessionEntity, JpaRootEntity {
+public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapAuthenticationSessionEntity, JpaRootVersionedEntity, JpaChildEntity<JpaRootAuthenticationSessionEntity>{
 
+    public static final String TABLE_NAME = "kc_auth_session";
     @Id
     @Column
     @GeneratedValue
     private UUID id;
+
+    //used for implicit optimistic locking
+    @Version
+    @Column
+    private int version;
+
+    @Column(insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
+    private Integer entityVersion;
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
@@ -78,6 +86,15 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
         this.metadata = new JpaAuthenticationSessionMetadata(cloner);
     }
 
+    public boolean isMetadataInitialized() {
+        return metadata != null;
+    }
+
+    @Override
+    public JpaRootAuthenticationSessionEntity getParent() {
+        return root;
+    }
+
     public void setParent(JpaRootAuthenticationSessionEntity root) {
         this.root = root;
     }
@@ -94,7 +111,8 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
 
     @Override
     public Integer getEntityVersion() {
-        return metadata.getEntityVersion();
+        if (isMetadataInitialized()) return metadata.getEntityVersion();
+        return entityVersion;
     }
 
     @Override
@@ -105,6 +123,11 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
     @Override
     public Integer getCurrentSchemaVersion() {
         return CURRENT_SCHEMA_VERSION_AUTH_SESSION;
+    }
+
+    @Override
+    public int getVersion() {
+        return version;
     }
 
     @Override

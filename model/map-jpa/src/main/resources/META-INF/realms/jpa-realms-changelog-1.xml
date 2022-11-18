@@ -101,4 +101,13 @@ limitations under the License.
         <addUniqueConstraint tableName="kc_realm_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
     </changeSet>
 
+    <changeSet author="keycloak" id="realms-14161">
+        <ext:addGeneratedColumn tableName="kc_component">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_component" indexName="component_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

@@ -22,7 +22,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -66,8 +66,7 @@ public class ModelEntityUtil {
 
     private static final Map<Class<?>, String> MODEL_TO_NAME = new HashMap<>();
     static {
-        MODEL_TO_NAME.put(ActionTokenValueModel.class, "single-use-objects");
-        MODEL_TO_NAME.put(AuthenticatedClientSessionModel.class, "client-sessions");
+        MODEL_TO_NAME.put(SingleUseObjectValueModel.class, "single-use-objects");
         MODEL_TO_NAME.put(ClientScopeModel.class, "client-scopes");
         MODEL_TO_NAME.put(ClientModel.class, "clients");
         MODEL_TO_NAME.put(GroupModel.class, "groups");
@@ -93,8 +92,7 @@ public class ModelEntityUtil {
 
     private static final Map<Class<?>, Class<? extends AbstractEntity>> MODEL_TO_ENTITY_TYPE = new HashMap<>();
     static {
-        MODEL_TO_ENTITY_TYPE.put(ActionTokenValueModel.class, MapSingleUseObjectEntity.class);
-        MODEL_TO_ENTITY_TYPE.put(AuthenticatedClientSessionModel.class, MapAuthenticatedClientSessionEntity.class);
+        MODEL_TO_ENTITY_TYPE.put(SingleUseObjectValueModel.class, MapSingleUseObjectEntity.class);
         MODEL_TO_ENTITY_TYPE.put(ClientScopeModel.class, MapClientScopeEntity.class);
         MODEL_TO_ENTITY_TYPE.put(ClientModel.class, MapClientEntity.class);
         MODEL_TO_ENTITY_TYPE.put(GroupModel.class, MapGroupEntity.class);
@@ -104,6 +102,7 @@ public class ModelEntityUtil {
         MODEL_TO_ENTITY_TYPE.put(UserLoginFailureModel.class, MapUserLoginFailureEntity.class);
         MODEL_TO_ENTITY_TYPE.put(UserModel.class, MapUserEntity.class);
         MODEL_TO_ENTITY_TYPE.put(UserSessionModel.class, MapUserSessionEntity.class);
+        MODEL_TO_ENTITY_TYPE.put(AuthenticatedClientSessionModel.class, MapAuthenticatedClientSessionEntity.class);
 
         // authz
         MODEL_TO_ENTITY_TYPE.put(PermissionTicket.class, MapPermissionTicketEntity.class);

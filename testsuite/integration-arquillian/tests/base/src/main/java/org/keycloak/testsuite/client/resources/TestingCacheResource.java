@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.keycloak.testsuite.rest.representation.JGroupsStats;
 import org.keycloak.testsuite.rest.representation.RemoteCacheStats;
 import org.keycloak.utils.MediaType;
 
@@ -74,11 +73,6 @@ public interface TestingCacheResource {
     @Path("/process-expiration")
     @Produces(MediaType.APPLICATION_JSON)
     void processExpiration();
-
-    @GET
-    @Path("/jgroups-stats")
-    @Produces(MediaType.APPLICATION_JSON)
-    JGroupsStats getJgroupsStats();
 
     @GET
     @Path("/remote-cache-stats")

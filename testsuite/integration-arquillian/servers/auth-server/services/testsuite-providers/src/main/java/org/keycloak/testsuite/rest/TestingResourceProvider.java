@@ -64,6 +64,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.datastore.PeriodicEventInvalidation;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
@@ -111,6 +112,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.UUID;
@@ -201,7 +203,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/revert-testing-infinispan-time-service")
     @Produces(MediaType.APPLICATION_JSON)
     public Response revertTestingInfinispanTimeService() {
-        InfinispanTestUtil.revertTimeService();
+        InfinispanTestUtil.revertTimeService(session);
         return Response.noContent().build();
     }
 
@@ -315,8 +317,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearExpiredEvents() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearExpiredEvents();
+        session.invalidate(PeriodicEventInvalidation.JPA_EVENT_STORE);
         return Response.noContent().build();
     }
+
 
     /**
      * Query events
@@ -631,7 +635,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         if (realm == null) return false;
         UserProvider userProvider = session.getProvider(UserProvider.class);
         UserModel user = userProvider.getUserByUsername(realm, userName);
-        return session.userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
+        return user.credentialManager().isValid(UserCredentialModel.password(password));
     }
 
     @GET
@@ -887,89 +891,66 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
     }
 
+    @GET
+    @Path("/list-disabled-features")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<Profile.Feature> listDisabledFeatures() {
+        return Profile.getInstance().getDisabledFeatures();
+    }
+
     @POST
     @Path("/enable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response enableFeature(@PathParam("feature") String feature) {
-        Profile.Feature featureProfile;
-
-        try {
-            featureProfile = Profile.Feature.valueOf(feature);
-        } catch (IllegalArgumentException e) {
-            System.err.printf("Feature '%s' doesn't exist!!\n", feature);
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
-        if (Profile.isFeatureEnabled(featureProfile))
-            return Response.noContent().build();
-
-        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
-
-        System.setProperty("keycloak.profile.feature." + featureProfile.toString().toLowerCase(), "enabled");
-
-        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
-        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
-        if (jbossServerConfigDir != null) {
-            setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), featureProfile, "enabled");
-        }
-
-        Profile.init();
-
-        FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(featureProfile);
-
-        if (Profile.isFeatureEnabled(featureProfile))
-            return Response.noContent().build();
-        else
-            return Response.status(Response.Status.NOT_FOUND).build();
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<Profile.Feature> enableFeature(@PathParam("feature") String feature) {
+        return updateFeature(feature, true);
     }
 
     @POST
     @Path("/disable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response disableFeature(@PathParam("feature") String feature) {
-        Profile.Feature featureProfile;
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<Profile.Feature> disableFeature(@PathParam("feature") String feature) {
+        return updateFeature(feature, false);
+    }
+
+    private Set<Profile.Feature> updateFeature(String featureKey, boolean shouldEnable) {
+        Profile.Feature feature;
 
         try {
-            featureProfile = Profile.Feature.valueOf(feature);
+            feature = Profile.Feature.valueOf(featureKey);
         } catch (IllegalArgumentException e) {
-            System.err.printf("Feature '%s' doesn't exist!!\n", feature);
-            return Response.status(Response.Status.NOT_FOUND).build();
+            System.err.printf("Feature '%s' doesn't exist!!\n", featureKey);
+            throw new BadRequestException();
         }
 
-        if (!Profile.isFeatureEnabled(featureProfile))
-            return Response.noContent().build();
+        if (Profile.getInstance().getFeatures().get(feature) != shouldEnable) {
+            FeatureDeployerUtil.initBeforeChangeFeature(feature);
 
-        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
+            String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+            // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+            if (jbossServerConfigDir != null) {
+                setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), feature, shouldEnable ? "enabled" : "disabled");
+            }
 
-        disableFeatureProperties(featureProfile);
+            Profile current = Profile.getInstance();
 
-        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
-        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
-        if (jbossServerConfigDir != null) {
-            setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), featureProfile, "disabled");
+            Map<Profile.Feature, Boolean> updatedFeatures = new HashMap<>();
+            updatedFeatures.putAll(current.getFeatures());
+            updatedFeatures.put(feature, shouldEnable);
+
+            Profile.init(current.getName(), updatedFeatures);
+
+            if (shouldEnable) {
+                FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(feature);
+            } else {
+                FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(feature);
+            }
         }
 
-        Profile.init();
-
-        FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(featureProfile);
-
-        if (!Profile.isFeatureEnabled(featureProfile))
-            return Response.noContent().build();
-        else
-            return Response.status(Response.Status.NOT_FOUND).build();
+        return Profile.getInstance().getDisabledFeatures();
     }
 
-    /**
-     * KEYCLOAK-12958
-     */
-    private void disableFeatureProperties(Profile.Feature feature) {
-        Profile.Type type = Profile.getName().equals("product") ? feature.getTypeProduct() : feature.getTypeProject();
-        if (type.equals(Profile.Type.DEFAULT)) {
-            System.setProperty("keycloak.profile.feature." + feature.toString().toLowerCase(), "disabled");
-        } else {
-            System.getProperties().remove("keycloak.profile.feature." + feature.toString().toLowerCase());
-        }
-    }
 
     @GET
     @Path("/set-system-property")

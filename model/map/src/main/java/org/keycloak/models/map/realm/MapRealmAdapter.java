@@ -1425,8 +1425,9 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
+    @Deprecated
     public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(this, search, first, max);
+        return session.groups().searchForGroupByNameStream(this, search, false, first, max);
     }
 
     @Override

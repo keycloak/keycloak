@@ -211,23 +211,13 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootVers
     }
 
     @Override
-    public MapProtocolMapperEntity getProtocolMapper(String id) {
-        return metadata.getProtocolMapper(id);
-    }
-
-    @Override
-    public Map<String, MapProtocolMapperEntity> getProtocolMappers() {
+    public Set<MapProtocolMapperEntity> getProtocolMappers() {
         return metadata.getProtocolMappers();
     }
 
     @Override
-    public void removeProtocolMapper(String id) {
-        metadata.removeProtocolMapper(id);
-    }
-
-    @Override
-    public void setProtocolMapper(String id, MapProtocolMapperEntity mapping) {
-        metadata.setProtocolMapper(id, mapping);
+    public void addProtocolMapper(MapProtocolMapperEntity mapping) {
+        metadata.addProtocolMapper(mapping);
     }
 
     @Override

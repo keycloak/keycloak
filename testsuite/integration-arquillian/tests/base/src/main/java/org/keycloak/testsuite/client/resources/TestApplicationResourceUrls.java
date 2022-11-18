@@ -58,4 +58,11 @@ public class TestApplicationResourceUrls {
 
         return builder.build().toString();
     }
+
+    public static String checkIntentClientBoundUri() {
+        UriBuilder builder = oidcClientEndpoints()
+                .path(TestOIDCEndpointsApplicationResource.class, "checkIntentClientBound");
+
+        return builder.build().toString();
+    }
 }

@@ -191,12 +191,16 @@ public class PolicyEnforcer {
 
             if (resource != null) {
                 pathConfig.setId(resource.getId());
-                // if the resource is staticly bound to a resource it means the config can not be invalidated
+                // if the resource is statically bound to a resource it means the config can not be invalidated
                 if (resourceName != null) {
                     pathConfig.setStatic(true);
                 }
             }
-            
+
+            if (PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
+                pathConfig.setStatic(true);
+            }
+
             PathConfig existingPath = null;
 
             for (PathConfig current : paths.values()) {
@@ -282,11 +286,13 @@ public class PolicyEnforcer {
                             PolicyEnforcerConfig.EnforcementMode enforcementMode = PolicyEnforcerConfig.EnforcementMode.ENFORCING;
                             ResourceRepresentation targetResource = matchingResources.get(0);
                             List<PolicyEnforcerConfig.MethodConfig> methodConfig = null;
+                            boolean isStatic = false;
 
                             if (pathConfig != null) {
                                 cipConfig = pathConfig.getClaimInformationPointConfig();
                                 enforcementMode = pathConfig.getEnforcementMode();
                                 methodConfig = pathConfig.getMethods();
+                                isStatic = pathConfig.isStatic();
                             } else {
                                 for (PathConfig existingPath : paths.values()) {
                                     if (targetResource.getId().equals(existingPath.getId())
@@ -306,7 +312,8 @@ public class PolicyEnforcer {
                             if (methodConfig != null) {
                                 pathConfig.setMethods(methodConfig);
                             }
-                            
+
+                            pathConfig.setStatic(isStatic);
                             pathConfig.setEnforcementMode(enforcementMode);
                         }
                     } catch (Exception cause) {

@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
+import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -33,6 +35,7 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -45,15 +48,19 @@ import java.util.List;
  */
 public class AuthorizationEndpointRequestParserProcessor {
 
-    public static AuthorizationEndpointRequest parseRequest(EventBuilder event, KeycloakSession session, ClientModel client, MultivaluedMap<String, String> requestParams) {
+    private static final Logger logger = Logger.getLogger(AuthorizationEndpointRequestParserProcessor.class);
+
+    public static AuthorizationEndpointRequest parseRequest(EventBuilder event, KeycloakSession session, ClientModel client, MultivaluedMap<String, String> requestParams, EndpointType endpointType) {
         try {
             AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
-
-            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(requestParams);
+            boolean isResponseTypeParameterRequired = isResponseTypeParameterRequired(requestParams, endpointType);
+            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(requestParams, isResponseTypeParameterRequired);
             parser.parseRequest(request);
 
             if (parser.getInvalidRequestMessage() != null) {
                 request.invalidRequestMessage = parser.getInvalidRequestMessage();
+            }
+            if (request.getInvalidRequestMessage() != null) {
                 return request;
             }
 
@@ -116,6 +123,7 @@ public class AuthorizationEndpointRequestParserProcessor {
         if (clientParam != null && clientParam.size() == 1) {
             return clientParam.get(0);
         } else {
+            logger.warnf("Parameter 'client_id' not present or present multiple times in the HTTP request parameters");
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
@@ -129,6 +137,31 @@ public class AuthorizationEndpointRequestParserProcessor {
         return requestUri.toLowerCase().startsWith("urn:ietf:params:oauth:request_uri:")
                        ? RequestUriType.PAR
                        : RequestUriType.REQUEST_OBJECT;
+    }
+
+
+    // Parameter 'response_type' is mandatory parameter in the OIDC authentication endpoint request per OIDC Core specification.
+    // The only exception when it is not mandatory is the case when request to authentication endpoint was sent after PAR request
+    private static boolean isResponseTypeParameterRequired(MultivaluedMap<String, String> requestParams, EndpointType endpointType) {
+        if (endpointType != EndpointType.OIDC_AUTH_ENDPOINT) return false;
+
+        String scopeParam = requestParams.getFirst(OAuth2Constants.SCOPE);
+        if (!TokenUtil.isOIDCRequest(scopeParam)) {
+            return false;
+        }
+
+        String requestUriParam = requestParams.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
+        if (requestUriParam != null && getRequestUriType(requestUriParam) == RequestUriType.PAR) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public enum EndpointType {
+        OIDC_AUTH_ENDPOINT,
+        OAUTH2_DEVICE_ENDPOINT,
+        DOCKER_ENDPOINT
     }
 
 }

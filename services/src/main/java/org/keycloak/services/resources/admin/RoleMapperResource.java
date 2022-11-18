@@ -73,33 +73,33 @@ public class RoleMapperResource {
 
     protected static final Logger logger = Logger.getLogger(RoleMapperResource.class);
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    private RoleMapperModel roleMapper;
+    private final RoleMapperModel roleMapper;
 
-    private AdminEventBuilder adminEvent;
+    private final AdminEventBuilder adminEvent;
 
-    protected AdminPermissionEvaluator.RequirePermissionCheck managePermission;
-    protected AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
-    private AdminPermissionEvaluator auth;
+    protected final AdminPermissionEvaluator.RequirePermissionCheck managePermission;
+    protected final AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
+    private final AdminPermissionEvaluator auth;
 
-    @Context
-    protected ClientConnection clientConnection;
+    protected final ClientConnection clientConnection;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
     @Context
     protected HttpHeaders headers;
 
-    public RoleMapperResource(RealmModel realm,
+    public RoleMapperResource(KeycloakSession session,
                               AdminPermissionEvaluator auth,
                               RoleMapperModel roleMapper,
                               AdminEventBuilder adminEvent,
                               AdminPermissionEvaluator.RequirePermissionCheck manageCheck,
                               AdminPermissionEvaluator.RequirePermissionCheck viewCheck) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
+        this.clientConnection = session.getContext().getConnection();
         this.adminEvent = adminEvent.resource(ResourceType.REALM_ROLE_MAPPING);
         this.roleMapper = roleMapper;
         this.managePermission = manageCheck;

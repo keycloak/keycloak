@@ -52,7 +52,7 @@ public class TestCleanup {
     private final String realmName;
     private final ConcurrentLinkedDeque<Runnable> genericCleanups = new ConcurrentLinkedDeque<>();
 
-    // Key is kind of entity (eg. "client", "role", "user" etc), Values are all kind of entities of given type to cleanup
+    // Key is kind of entity (eg. "client", "role", "user" etc), Values are all IDs of entities of given type to cleanup
     private final ConcurrentMultivaluedHashMap<String, String> entities = new ConcurrentMultivaluedHashMap<>();
 
 

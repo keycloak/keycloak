@@ -12,15 +12,11 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.json.Json;
-import javax.json.JsonObjectBuilder;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
@@ -43,10 +39,11 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.MessageFormatterMethod;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.StringUtil;
 
@@ -54,12 +51,10 @@ import org.keycloak.utils.StringUtil;
  * Created by st on 29/03/17.
  */
 public class AccountConsole {
-    private static final Logger logger = Logger.getLogger(AccountConsole.class);
-    
+
     private final Pattern bundleParamPattern = Pattern.compile("(\\{\\s*(\\d+)\\s*\\})");
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
     private final AppAuthManager authManager;
     private final RealmModel realm;
@@ -68,8 +63,9 @@ public class AccountConsole {
 
     private Auth auth;
 
-    public AccountConsole(RealmModel realm, ClientModel client, Theme theme) {
-        this.realm = realm;
+    public AccountConsole(KeycloakSession session, ClientModel client, Theme theme) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.client = client;
         this.theme = theme;
         this.authManager = new AppAuthManager();
@@ -139,20 +135,26 @@ public class AccountConsole {
             
             boolean isTotpConfigured = false;
             boolean deleteAccountAllowed = false;
+            boolean isViewGroupsEnabled= false;
             if (user != null) {
-                isTotpConfigured = session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType());
+                isTotpConfigured = user.credentialManager().isConfiguredFor(realm.getOTPPolicy().getType());
                 RoleModel deleteAccountRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT);
                 deleteAccountAllowed = deleteAccountRole != null && user.hasRole(deleteAccountRole) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
+                RoleModel viewGrouRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.VIEW_GROUPS);
+                isViewGroupsEnabled = viewGrouRole != null && user.hasRole(viewGrouRole);
             }
 
             map.put("isTotpConfigured", isTotpConfigured);
 
             map.put("deleteAccountAllowed", deleteAccountAllowed);
+
+            map.put("isViewGroupsEnabled", isViewGroupsEnabled);
+            
             map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
             RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
             map.put("updateEmailActionEnabled", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled());
 
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
+            FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
             Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
             return builder.build();
@@ -166,13 +168,15 @@ public class AccountConsole {
     
     private String messagesToJsonString(Properties props) {
         if (props == null) return "";
-        
-        JsonObjectBuilder json = Json.createObjectBuilder();
-        for (String prop : props.stringPropertyNames()) {
-            json.add(prop, convertPropValue(props.getProperty(prop)));
+        Properties newProps = new Properties();
+        for (String prop: props.stringPropertyNames()) {
+            newProps.put(prop, convertPropValue(props.getProperty(prop)));
         }
-        
-        return json.build().toString();
+        try {
+            return JsonSerialization.writeValueAsString(newProps);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     private String convertPropValue(String propertyValue) {

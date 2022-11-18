@@ -88,6 +88,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
         Stream<ClientScopeModel> requestedClientScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            session.getContext().setClient(clientSession.getClient());
             requestedClientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam);
         } else {
             requestedClientScopes = TokenManager.getRequestedClientScopes(scopeParam, clientSession.getClient());

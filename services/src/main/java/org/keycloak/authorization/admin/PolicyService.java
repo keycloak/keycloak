@@ -37,7 +37,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -104,7 +103,7 @@ public class PolicyService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response create(String payload, @Context KeycloakSession session) {
+    public Response create(String payload) {
         if (auth != null) {
             this.auth.realm().requireManageAuthorization();
         }
@@ -114,7 +113,7 @@ public class PolicyService {
 
         representation.setId(policy.getId());
 
-        audit(representation, representation.getId(), OperationType.CREATE, session);
+        audit(representation, representation.getId(), OperationType.CREATE, authorization.getKeycloakSession());
 
         return Response.status(Status.CREATED).entity(representation).build();
     }
@@ -300,11 +299,7 @@ public class PolicyService {
             this.auth.realm().requireViewAuthorization();
         }
 
-        PolicyEvaluationService resource = new PolicyEvaluationService(this.resourceServer, this.authorization, this.auth);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new PolicyEvaluationService(this.resourceServer, this.authorization, this.auth);
     }
 
     protected PolicyProviderAdminService getPolicyProviderAdminResource(String policyType) {

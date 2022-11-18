@@ -30,7 +30,7 @@ import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -58,8 +58,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Map;
 
@@ -94,8 +92,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private AuthorizationEndpointRequest request;
     private String redirectUri;
 
-    public AuthorizationEndpoint(RealmModel realm, EventBuilder event) {
-        super(realm, event);
+    public AuthorizationEndpoint(KeycloakSession session, EventBuilder event) {
+        super(session, event);
         event.event(EventType.LOGIN);
     }
 
@@ -117,7 +115,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
      */
     @Path("device")
     public Object authorizeDevice() {
-        DeviceEndpoint endpoint = new DeviceEndpoint(realm, event);
+        DeviceEndpoint endpoint = new DeviceEndpoint(session, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
@@ -129,7 +127,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         checkRealm();
         checkClient(clientId);
 
-        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params);
+        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.OIDC_AUTH_ENDPOINT);
 
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
                 .event(event)
@@ -230,7 +228,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         client = realm.getClientByClientId(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
 
         if (!client.isEnabled()) {

@@ -70,8 +70,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeTrue;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 import org.keycloak.testsuite.util.AdminClientUtil;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.BITBUCKET;
@@ -85,6 +83,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_HOST
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_NON_MATCHING_HOSTED_DOMAIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN_WITH_PROJECTION;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
@@ -99,7 +98,6 @@ import com.google.common.collect.ImmutableMap;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class SocialLoginTest extends AbstractKeycloakTest {
 
@@ -125,6 +123,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         GITHUB_PRIVATE_EMAIL("github", "github-private-email", GitHubLoginPage.class),
         TWITTER("twitter", TwitterLoginPage.class),
         LINKEDIN("linkedin", LinkedInLoginPage.class),
+        LINKEDIN_WITH_PROJECTION("linkedin", LinkedInLoginPage.class),
         MICROSOFT("microsoft", MicrosoftLoginPage.class),
         PAYPAL("paypal", PayPalLoginPage.class),
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
@@ -171,7 +170,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assumeTrue(System.getProperties().containsKey(SOCIAL_CONFIG));
         config.load(new FileInputStream(System.getProperty(SOCIAL_CONFIG)));
     }
-    
+
     @Before
     public void beforeSocialLoginTest() {
         accountPage.setAuthRealm(REALM);
@@ -394,6 +393,16 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void linkedinLoginWithProjection() {
+        setTestProvider(LINKEDIN_WITH_PROJECTION);
+        addAttributeMapper("picture",
+            "profilePicture.displayImage~.elements[0].identifiers[0].identifier");
+        performLogin();
+        assertAccount();
+        assertAttribute("picture", getConfig("profile.picture"));
+    }
+
+    @Test
     public void microsoftLogin() {
         setTestProvider(MICROSOFT);
         performLogin();
@@ -435,8 +444,9 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         if (provider == GOOGLE_NON_MATCHING_HOSTED_DOMAIN) {
             idp.getConfig().put("hostedDomain", "non-matching-hosted-domain");
         }
-
-
+        if (provider == LINKEDIN_WITH_PROJECTION) {
+            idp.getConfig().put("profileProjection", "(id,firstName,lastName,profilePicture(displayImage~:playableStreams))");
+        }
         if (provider == STACKOVERFLOW) {
             idp.getConfig().put("key", getConfig(provider, "clientKey"));
         }
@@ -594,10 +604,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         String username = users.get(0).getUsername();
         checkFeature(501, username);
 
-        Response tokenResp = testingClient.testing().enableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-        assertEquals(200, tokenResp.getStatus());
+        testingClient.enableFeature(Profile.Feature.TOKEN_EXCHANGE);
 
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
         Client httpClient = AdminClientUtil.createResteasyClient();
 
         try {
@@ -680,8 +688,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
             adminClient.realm(REALM).identityProviders().get(idp.getAlias()).update(idp);
         } finally {
             httpClient.close();
-            tokenResp = testingClient.testing().disableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-            assertEquals(200, tokenResp.getStatus());
+            testingClient.disableFeature(Profile.Feature.TOKEN_EXCHANGE);
             checkFeature(501, username);
         }
     }

@@ -81,24 +81,24 @@ public class UsersResource {
     private static final Logger logger = Logger.getLogger(UsersResource.class);
     private static final String SEARCH_ID_PARAMETER = "id:";
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    private AdminPermissionEvaluator auth;
+    private final AdminPermissionEvaluator auth;
 
-    private AdminEventBuilder adminEvent;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    protected ClientConnection clientConnection;
+    protected final ClientConnection clientConnection;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
     @Context
     protected HttpHeaders headers;
 
-    public UsersResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public UsersResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
         this.adminEvent = adminEvent.resource(ResourceType.USER);
     }
 
@@ -226,7 +226,7 @@ public class UsersResource {
             if (auth.users().canQuery()) throw new NotFoundException("User not found");
             else throw new ForbiddenException();
         }
-        UserResource resource = new UserResource(realm, user, auth, adminEvent);
+        UserResource resource = new UserResource(session, user, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         //resourceContext.initResource(users);
         return resource;
@@ -427,13 +427,11 @@ public class UsersResource {
      */
     @Path("profile")
     public UserProfileResource userProfile() {
-        UserProfileResource resource = new UserProfileResource(realm, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new UserProfileResource(session, auth);
     }
 
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
-        session.setAttribute(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts);
+        attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
         if (!auth.users().canView()) {
             Set<String> groupModels = auth.groups().getGroupsWithViewPermission();

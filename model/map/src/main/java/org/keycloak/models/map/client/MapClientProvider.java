@@ -353,9 +353,7 @@ public class MapClientProvider implements ClientProvider {
 
         try (Stream<MapClientEntity> toRemove = tx.read(withCriteria(mcb))) {
             toRemove
-                .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId()))
-                .filter(Objects::nonNull)
-                .forEach(clientModel -> clientModel.deleteScopeMapping(role));
+                    .forEach(clientEntity -> clientEntity.removeScopeMapping(role.getId()));
         }
     }
 

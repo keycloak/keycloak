@@ -57,6 +57,7 @@ import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -741,6 +742,64 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         final int IDLE_LIFESPAN = 600;
         // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
         testOfflineSessionExpiration(IDLE_LIFESPAN, MAX_LIFESPAN, IDLE_LIFESPAN + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS + 60);
+    }
+
+    // Issue 13706
+    @Test
+    public void offlineTokenReauthenticationWhenOfflinClientSessionExpired() throws Exception {
+        // expect that offline session expired by idle timeout
+        final int MAX_LIFESPAN = 360000;
+        final int IDLE_LIFESPAN = 900;
+
+        getTestingClient().testing().setTestingInfinispanTimeService();
+
+        int prev[] = null;
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(adminClient.realm("test")).setSsoSessionIdleTimeout(900).update()) {
+            // Step 1 - offline login with "offline-client"
+            prev = changeOfflineSessionSettings(true, MAX_LIFESPAN, IDLE_LIFESPAN);
+
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.clientId("offline-client");
+            oauth.redirectUri(offlineClientAppUri);
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
+            assertOfflineToken(tokenResponse);
+
+            // Step 2 - set some offset to refresh SSO session and offline user session. But use different client, so that we don't refresh offlineClientSession of client "offline-client"
+            setTimeOffset(800);
+            oauth.clientId("test-app");
+            oauth.redirectUri(APP_ROOT + "/auth");
+            oauth.openLoginForm();
+
+            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            assertOfflineToken(tokenResponse);
+
+            // Step 3 - set bigger time offset and login with the original client "offline-token". Login should be successful and offline client session for "offline-client" should be re-created now
+            setTimeOffset(900 + SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 20);
+            oauth.clientId("offline-client");
+            oauth.redirectUri(offlineClientAppUri);
+            oauth.openLoginForm();
+
+            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
+            assertOfflineToken(tokenResponse);
+
+        } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+            changeOfflineSessionSettings(false, prev[0], prev[1]);
+        }
+    }
+
+    // Asserts that refresh token in the tokenResponse is offlineToken. Return parsed offline token
+    private RefreshToken assertOfflineToken(OAuthClient.AccessTokenResponse tokenResponse) {
+        Assert.assertEquals(200, tokenResponse.getStatusCode());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
+        assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        return offlineToken;
     }
 
     @Test

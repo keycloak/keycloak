@@ -80,7 +80,7 @@ public class RedirectUtils {
     @Deprecated
     private static Set<String> getValidateRedirectUris(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
-        return session.clientStorageManager().getAllRedirectUrisOfEnabledClients(realm).entrySet().stream()
+        return session.clients().getAllRedirectUrisOfEnabledClients(realm).entrySet().stream()
           .filter(me -> me.getKey().isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(me.getKey().getProtocol()) && !me.getKey().isBearerOnly() && (me.getKey().isStandardFlowEnabled() || me.getKey().isImplicitFlowEnabled()))
           .map(me -> resolveValidRedirects(session, me.getKey().getRootUrl(), me.getValue()))
           .flatMap(Collection::stream)

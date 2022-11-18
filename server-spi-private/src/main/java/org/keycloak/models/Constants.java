@@ -73,7 +73,6 @@ public final class Constants {
     public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
 
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
-    public static final String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
     public static final String TAB_ID = "tab_id";
@@ -144,4 +143,12 @@ public final class Constants {
     public static final String DEFAULT_ACR_VALUES = "default.acr.values";
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
+
+    public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
+    public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
+
+    /**
+     * Attribute of KeycloakSession where the hostname of the SSL server can be saved. This can be used by org.keycloak.truststore.SSLSocketFactory
+     */
+    public static final String SSL_SERVER_HOST_ATTR = "sslServerHost";
 }

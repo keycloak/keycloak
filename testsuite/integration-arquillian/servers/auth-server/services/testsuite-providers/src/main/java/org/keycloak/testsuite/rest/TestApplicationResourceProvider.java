@@ -67,6 +67,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
     private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
+    private final ConcurrentMap<String, String> intentClientBindings;
 
     @Context
     HttpRequest request;
@@ -78,7 +79,8 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
             BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction,
             TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
             ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests,
-            ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications) {
+            ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications,
+            ConcurrentMap<String, String> intentClientBindings) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.backChannelLogoutTokens = backChannelLogoutTokens;
@@ -88,6 +90,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         this.oidcClientData = oidcClientData;
         this.authenticationChannelRequests = authenticationChannelRequests;
         this.cibaClientNotifications = cibaClientNotifications;
+        this.intentClientBindings = intentClientBindings;
     }
 
     @POST
@@ -256,7 +259,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     @Path("/oidc-client-endpoints")
     public TestingOIDCEndpointsApplicationResource getTestingOIDCClientEndpoints() {
-        return new TestingOIDCEndpointsApplicationResource(oidcClientData, authenticationChannelRequests, cibaClientNotifications);
+        return new TestingOIDCEndpointsApplicationResource(oidcClientData, authenticationChannelRequests, cibaClientNotifications, intentClientBindings);
     }
 
     @Override

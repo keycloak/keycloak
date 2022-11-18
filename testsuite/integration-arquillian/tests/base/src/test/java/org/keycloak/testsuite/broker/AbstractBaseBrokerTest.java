@@ -32,12 +32,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
@@ -82,7 +79,6 @@ import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 /**
  * No test methods there. Just some useful common functionality
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
@@ -96,9 +92,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
-
-    @Page
-    protected AccountPasswordPage accountPasswordPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -268,6 +261,11 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         updateAccountInformation();
     }
 
+    protected void logInAsUserInIDPForFirstTimeAndAssertSuccess() {
+        logInAsUserInIDPForFirstTime();
+        assertLoggedInAccountManagement();
+    }
+
     protected void updateAccountInformation() {
         waitForPage(driver, "update account information", false);
 
@@ -292,7 +290,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     /**
      * Get the login page for an existing client in provided realm
      *
-     * @param contextRoot
+     * @param contextRoot server base url without /auth
      * @param realmName Name of the realm
      * @param clientId ClientId of a client. Client has to exists in the realm.
      * @return Login URL
@@ -303,6 +301,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         assertThat(clients, Matchers.is(Matchers.not(Matchers.empty())));
 
         String redirectURI = clients.get(0).getBaseUrl();
+        if (redirectURI.startsWith("/")) {
+            redirectURI = contextRoot + "/auth" + redirectURI;
+        }
 
         return contextRoot + "/auth/realms/" + realmName + "/protocol/openid-connect/auth?client_id=" +
                 clientId + "&redirect_uri=" + redirectURI + "&response_type=code&scope=openid";
@@ -412,7 +413,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void waitForAccountManagementTitle() {
-        final String title = getProjectName().toLowerCase() + " account management";
+        final String title = "Keycloak account management";
         waitForPage(driver, title, true);
     }
 

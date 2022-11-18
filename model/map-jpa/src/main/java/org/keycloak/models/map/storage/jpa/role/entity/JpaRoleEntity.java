@@ -204,22 +204,28 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootVersione
 
     @Override
     public Set<String> getCompositeRoles() {
-        return metadata.getCompositeRoles();
+        throw new UnsupportedOperationException("this is implemented in JpaMapRoleEntityDelegate, should never be called");
     }
 
     @Override
     public void setCompositeRoles(Set<String> compositeRoles) {
-        metadata.setCompositeRoles(compositeRoles);
+        if (compositeRoles == null) {
+            // this is called when cloning an entity during creation, can't be avoided with the current implementation
+            return;
+        }
+        throw new UnsupportedOperationException("this is implemented in JpaMapRoleEntityDelegate, should never be called");
+
     }
 
     @Override
     public void addCompositeRole(String roleId) {
-        metadata.addCompositeRole(roleId);
+        throw new UnsupportedOperationException("this is implemented in JpaMapRoleEntityDelegate, should never be called");
+
     }
 
     @Override
     public void removeCompositeRole(String roleId) {
-        metadata.removeCompositeRole(roleId);
+        throw new UnsupportedOperationException("this is implemented in JpaMapRoleEntityDelegate, should never be called");
     }
 
     @Override

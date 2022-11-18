@@ -24,11 +24,12 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.credential.DefaultMapSubjectCredentialManagerEntity;
+import org.keycloak.models.map.credential.MapSubjectCredentialManagerEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -39,7 +40,7 @@ import java.util.Set;
 @DeepCloner.Root
 public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWithAttributes {
 
-    public abstract class AbstractUserEntity extends UpdatableEntity.Impl implements MapUserEntity {
+    abstract class AbstractUserEntity extends Impl implements MapUserEntity {
 
         private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
         private String id;
@@ -246,4 +247,8 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
 
     Long getNotBefore();
     void setNotBefore(Long notBefore);
+
+    default MapSubjectCredentialManagerEntity credentialManager() {
+        return new DefaultMapSubjectCredentialManagerEntity();
+    }
 }

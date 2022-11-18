@@ -56,6 +56,7 @@ import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpoi
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
@@ -91,6 +92,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -103,13 +105,15 @@ public class TestingOIDCEndpointsApplicationResource {
     private final TestApplicationResourceProviderFactory.OIDCClientData clientData;
     private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
     private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
-
+    private final ConcurrentMap<String, String> intentClientBindings;
 
     public TestingOIDCEndpointsApplicationResource(TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
-            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests, ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications) {
+            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests, ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications,
+            ConcurrentMap<String, String> intentClientBindings) {
         this.clientData = oidcClientData;
         this.authenticationChannelRequests = authenticationChannelRequests;
         this.cibaClientNotifications = cibaClientNotifications;
+        this.intentClientBindings = intentClientBindings;
     }
 
     @GET
@@ -117,7 +121,9 @@ public class TestingOIDCEndpointsApplicationResource {
     @Path("/generate-keys")
     @NoCache
     public Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm,
-            @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm) {
+                                            @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm,
+                                            @QueryParam("keepExistingKeys") Boolean keepExistingKeys,
+                                            @QueryParam("kid") String kid) {
         try {
             KeyPair keyPair = null;
             KeyUse keyUse = KeyUse.SIG;
@@ -158,14 +164,17 @@ public class TestingOIDCEndpointsApplicationResource {
                     throw new RuntimeException("Unsupported signature algorithm");
             }
 
-            clientData.setKeyPair(keyPair);
-            clientData.setKeyType(keyType);
+            TestApplicationResourceProviderFactory.OIDCKeyData keyData = new TestApplicationResourceProviderFactory.OIDCKeyData();
+            keyData.setKid(kid); // Can be null. It will be generated in that case
+            keyData.setKeyPair(keyPair);
+            keyData.setKeyType(keyType);
             if (advertiseJWKAlgorithm == null || Boolean.TRUE.equals(advertiseJWKAlgorithm)) {
-                clientData.setKeyAlgorithm(jwaAlgorithm);
+                keyData.setKeyAlgorithm(jwaAlgorithm);
             } else {
-                clientData.setKeyAlgorithm(null);
+                keyData.setKeyAlgorithm(null);
             }
-            clientData.setKeyUse(keyUse);
+            keyData.setKeyUse(keyUse);
+            clientData.addKey(keyData, keepExistingKeys != null && keepExistingKeys);
         } catch (Exception e) {
             throw new BadRequestException("Error generating signing keypair", e);
         }
@@ -185,8 +194,9 @@ public class TestingOIDCEndpointsApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/get-keys-as-pem")
     public Map<String, String> getKeysAsPem() {
-        String privateKeyPem = PemUtils.encodeKey(clientData.getSigningKeyPair().getPrivate());
-        String publicKeyPem = PemUtils.encodeKey(clientData.getSigningKeyPair().getPublic());
+        TestApplicationResourceProviderFactory.OIDCKeyData keyData = clientData.getFirstKey();
+        String privateKeyPem = PemUtils.encodeKey(keyData.getSigningKeyPair().getPrivate());
+        String publicKeyPem = PemUtils.encodeKey(keyData.getSigningKeyPair().getPublic());
 
         Map<String, String> res = new HashMap<>();
         res.put(PRIVATE_KEY, privateKeyPem);
@@ -199,8 +209,9 @@ public class TestingOIDCEndpointsApplicationResource {
     @Path("/get-keys-as-base64")
     public Map<String, String> getKeysAsBase64() {
         // It seems that PemUtils.decodePrivateKey, decodePublicKey can only treat RSA type keys, not EC type keys. Therefore, these are not used.
-        String privateKeyPem = Base64.encodeBytes(clientData.getSigningKeyPair().getPrivate().getEncoded());
-        String publicKeyPem = Base64.encodeBytes(clientData.getSigningKeyPair().getPublic().getEncoded());
+        TestApplicationResourceProviderFactory.OIDCKeyData keyData = clientData.getFirstKey();
+        String privateKeyPem = Base64.encodeBytes(keyData.getSigningKeyPair().getPrivate().getEncoded());
+        String publicKeyPem = Base64.encodeBytes(keyData.getSigningKeyPair().getPublic().getEncoded());
 
         Map<String, String> res = new HashMap<>();
         res.put(PRIVATE_KEY, privateKeyPem);
@@ -213,22 +224,27 @@ public class TestingOIDCEndpointsApplicationResource {
     @Path("/get-jwks")
     @NoCache
     public JSONWebKeySet getJwks() {
+        Stream<JWK> keysStream = clientData.getKeys().stream()
+                .map(keyData -> {
+                    KeyPair keyPair = keyData.getKeyPair();
+                    String keyAlgorithm = keyData.getKeyAlgorithm();
+                    String keyType = keyData.getKeyType();
+                    KeyUse keyUse = keyData.getKeyUse();
+                    String kid = keyData.getKid();
+
+                    JWKBuilder builder = JWKBuilder.create().algorithm(keyAlgorithm).kid(kid);
+
+                    if (KeyType.RSA.equals(keyType)) {
+                        return builder.rsa(keyPair.getPublic(), keyUse);
+                    } else if (KeyType.EC.equals(keyType)) {
+                        return builder.ec(keyPair.getPublic());
+                    } else {
+                        throw new IllegalArgumentException("Unknown keyType: " + keyType);
+                    }
+                });
+
         JSONWebKeySet keySet = new JSONWebKeySet();
-        KeyPair keyPair = clientData.getKeyPair();
-        String keyAlgorithm = clientData.getKeyAlgorithm();
-        String keyType = clientData.getKeyType();
-        KeyUse keyUse = clientData.getKeyUse();
-
-        if (keyPair == null) {
-            keySet.setKeys(new JWK[] {});
-        } else if (KeyType.RSA.equals(keyType)) {
-            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(keyAlgorithm).rsa(keyPair.getPublic(), keyUse) });
-        } else if (KeyType.EC.equals(keyType)) {
-            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(keyAlgorithm).ec(keyPair.getPublic()) });
-        } else {
-            keySet.setKeys(new JWK[] {});
-        }
-
+        keySet.setKeys(keysStream.toArray(JWK[]::new));
         return keySet;
         
     }
@@ -293,17 +309,18 @@ public class TestingOIDCEndpointsApplicationResource {
 
         if ("none".equals(jwaAlgorithm)) {
             clientData.setOidcRequest(new JWSBuilder().jsonContent(oidcRequest).none());
-        } else if (clientData.getSigningKeyPair() == null) {
+        } else if (clientData.getFirstKey() == null) {
             throw new BadRequestException("signing key not set");
         } else {
-            PrivateKey privateKey = clientData.getSigningKeyPair().getPrivate();
-            String kid = KeyUtils.createKeyId(clientData.getSigningKeyPair().getPublic());
+            TestApplicationResourceProviderFactory.OIDCKeyData keyData = clientData.getFirstKey();
+            PrivateKey privateKey = keyData.getSigningKeyPair().getPrivate();
+            String kid = keyData.getKid() != null ? keyData.getKid() : KeyUtils.createKeyId(keyData.getSigningKeyPair().getPublic());
             KeyWrapper keyWrapper = new KeyWrapper();
-            keyWrapper.setAlgorithm(clientData.getSigningKeyAlgorithm());
+            keyWrapper.setAlgorithm(keyData.getSigningKeyAlgorithm());
             keyWrapper.setKid(kid);
             keyWrapper.setPrivateKey(privateKey);
             SignatureSignerContext signer;
-            switch (clientData.getSigningKeyAlgorithm()) {
+            switch (keyData.getSigningKeyAlgorithm()) {
                 case Algorithm.ES256:
                 case Algorithm.ES384:
                 case Algorithm.ES512:
@@ -727,5 +744,28 @@ public class TestingOIDCEndpointsApplicationResource {
             request = new ClientNotificationEndpointRequest();
         }
         return request;
+    }
+
+    @GET
+    @Path("/bind-intent-with-client")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response bindIntentWithClient(@QueryParam("intentId") String intentId, @QueryParam("clientId") String clientId) {
+        intentClientBindings.put(intentId, clientId);
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/check-intent-client-bound")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public IntentClientBindCheckExecutor.IntentBindCheckResponse checkIntentClientBound(IntentClientBindCheckExecutor.IntentBindCheckRequest request) {
+        IntentClientBindCheckExecutor.IntentBindCheckResponse response = new IntentClientBindCheckExecutor.IntentBindCheckResponse();
+        response.setIsBound(Boolean.FALSE);
+        if (intentClientBindings.containsKey(request.getIntentId()) && intentClientBindings.get(request.getIntentId()).equals(request.getClientId())) {
+            response.setIsBound(Boolean.TRUE);
+        }
+        return response;
     }
 }

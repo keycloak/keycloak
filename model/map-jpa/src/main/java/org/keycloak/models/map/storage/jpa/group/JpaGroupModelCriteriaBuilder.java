@@ -19,14 +19,16 @@ package org.keycloak.models.map.storage.jpa.group;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
+import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupAttributeEntity;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.storage.SearchableModelField;
 
@@ -36,12 +38,11 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
         super(JpaGroupModelCriteriaBuilder::new);
     }
 
-    private JpaGroupModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaGroupEntity>, Predicate> predicateFunc) {
+    private JpaGroupModelCriteriaBuilder(JpaPredicateFunction<JpaGroupEntity> predicateFunc) {
         super(JpaGroupModelCriteriaBuilder::new, predicateFunc);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public JpaGroupModelCriteriaBuilder compare(SearchableModelField<? super GroupModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
@@ -49,30 +50,40 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                     modelField == GroupModel.SearchableFields.NAME) {
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                    return new JpaGroupModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else if (modelField == GroupModel.SearchableFields.PARENT_ID) {
                     if (value.length == 1 && Objects.isNull(value[0])) {
-                        return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                        return new JpaGroupModelCriteriaBuilder((cb, query, root) ->
                             cb.isNull(root.get("parentId"))
                         );
                     }
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                    return new JpaGroupModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get("parentId"), value[0])
                     );
                 } else if (modelField == GroupModel.SearchableFields.ASSIGNED_ROLE) {
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                    return new JpaGroupModelCriteriaBuilder((cb, query, root) ->
                         cb.isTrue(cb.function("@>",
                             Boolean.TYPE,
                             cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fGrantedRoles")),
                             cb.literal(convertToJson(value[0]))))
                     );
+                } else if (modelField == GroupModel.SearchableFields.ATTRIBUTE) {
+                    validateValue(value, modelField, op, String.class, String.class);
+
+                    return new JpaGroupModelCriteriaBuilder((cb, query, root) -> {
+                        Join<JpaGroupEntity, JpaGroupAttributeEntity> join = root.join("attributes", JoinType.LEFT);
+                        return cb.and(
+                            cb.equal(join.get("name"), value[0]),
+                            cb.equal(join.get("value"), value[1])
+                        );
+                    });
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }
@@ -81,9 +92,9 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
 
                     Set<UUID> uuids = getUuidsForInOperator(value, modelField);
 
-                    if (uuids.isEmpty()) return new JpaGroupModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (uuids.isEmpty()) return new JpaGroupModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaGroupModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaGroupModelCriteriaBuilder((cb, query, root) ->  {
                         CriteriaBuilder.In<UUID> in = cb.in(root.get("id"));
                         uuids.forEach(uuid -> in.value(uuid));
                         return in;
@@ -96,7 +107,7 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                    return new JpaGroupModelCriteriaBuilder((cb, query, root) ->
                         cb.like(cb.lower(root.get(modelField.getName())), value[0].toString().toLowerCase())
                     );
                 } else {
@@ -105,7 +116,7 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
             case NOT_EXISTS:
                 if (modelField == GroupModel.SearchableFields.PARENT_ID) {
 
-                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                    return new JpaGroupModelCriteriaBuilder((cb, query, root) ->
                         cb.isNull(root.get("parentId"))
                     );
                 } else {

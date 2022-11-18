@@ -24,7 +24,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -88,8 +88,6 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void languageDropdown() {
-        ProfileAssume.assumeCommunity();
-
         loginPage.open();
         Assert.assertEquals("English", loginPage.getLanguageDropdownText());
 
@@ -123,11 +121,9 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void acceptLanguageHeader() throws IOException {
-        ProfileAssume.assumeCommunity();
-        
         try(CloseableHttpClient httpClient = (CloseableHttpClient) new HttpClientBuilder().build()) {
-            ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
-            ResteasyClient client = new ResteasyClientBuilder().httpEngine(engine).build();
+            ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
+            ResteasyClient client = ((ResteasyClientBuilder) ResteasyClientBuilder.newBuilder()).httpEngine(engine).build();
 
             loginPage.open();
 
@@ -156,8 +152,6 @@ public class LoginPageTest extends AbstractI18NTest {
     // KEYCLOAK-3887
     @Test
     public void languageChangeRequiredActions() {
-        ProfileAssume.assumeCommunity();
-
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation userRep = user.toRepresentation();
         userRep.setRequiredActions(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()));
@@ -183,8 +177,6 @@ public class LoginPageTest extends AbstractI18NTest {
     // KEYCLOAK-3887
     @Test
     public void languageChangeConsentScreen() {
-        ProfileAssume.assumeCommunity();
-
         // Set client, which requires consent
         oauth.clientId("third-party");
 
@@ -210,8 +202,6 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void languageUserUpdates() {
-        ProfileAssume.assumeCommunity();
-
         loginPage.open();
         loginPage.openLanguage("Deutsch");
 
@@ -264,12 +254,12 @@ public class LoginPageTest extends AbstractI18NTest {
         final String realmLocalizationMessageValue = "Localization Test";
 
         try(CloseableHttpClient httpClient = (CloseableHttpClient) new HttpClientBuilder().build()) {
-            ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
+            ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
 
             testRealm().localization().saveRealmLocalizationText(locale, realmLocalizationMessageKey,
                     realmLocalizationMessageValue);
 
-            ResteasyClient client = new ResteasyClientBuilder().httpEngine(engine).build();
+            ResteasyClient client = ((ResteasyClientBuilder) ResteasyClientBuilder.newBuilder()).httpEngine(engine).build();
 
             loginPage.open();
 

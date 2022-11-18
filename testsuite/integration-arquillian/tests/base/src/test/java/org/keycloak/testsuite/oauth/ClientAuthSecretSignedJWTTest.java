@@ -47,6 +47,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
@@ -54,6 +55,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
@@ -69,8 +71,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -84,7 +84,6 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
@@ -148,7 +147,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code,
                 jwt);
 
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
         assertEquals("invalid_client", response.getError());
     }
 
@@ -231,24 +230,39 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
      * @throws Exception
      */
     @Test
-    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnable() throws Exception {
-        String cidConfidential= createClientByAdmin("jwt-client","jwt-client","password");
+    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS256() throws Exception {
+        processAuthenticateWithAlgorithm(Algorithm.HS256, SecretGenerator.SECRET_LENGTH_256_BITS);
+    }
+
+    @Test
+    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS384() throws Exception {
+        processAuthenticateWithAlgorithm(Algorithm.HS384, SecretGenerator.SECRET_LENGTH_384_BITS);
+    }
+
+    @Test
+    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS512() throws Exception {
+        processAuthenticateWithAlgorithm(Algorithm.HS512, SecretGenerator.SECRET_LENGTH_512_BITS);
+    }
+
+    private void processAuthenticateWithAlgorithm(String algorithm, Integer secretLength) throws Exception{
+        String cidConfidential= createClientByAdmin("jwt-client","jwt-client","password",algorithm);
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
         configureDefaultProfileAndPolicy();
 
-        String firstSecret = clientResource.getSecret().getValue();
+        String firstSecret = clientResource.generateNewSecret().getValue(); //clientResource.getSecret().getValue();
+        assertThat(firstSecret.length(),is(secretLength));
 
         //generate new secret, rotate the secret
         String newSecret = clientResource.generateNewSecret().getValue();
         assertThat(firstSecret, not(equalTo(newSecret)));
+        assertThat(newSecret.length(),is(secretLength));
 
         oauth.clientId("jwt-client");
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().client("jwt-client").assertEvent();
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(firstSecret, 20, Algorithm.HS256));
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(firstSecret, 20, algorithm));
         assertThat(response.getStatusCode(), is(HttpStatus.SC_OK));
-
     }
 
     // TEST ERRORS
@@ -315,7 +329,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
      */
     @Test
     public void authenticateWithInvalidRotatedClientSecretPolicyIsEnable() throws Exception {
-        String cidConfidential= createClientByAdmin("jwt-client","jwt-client","password");
+        String cidConfidential= createClientByAdmin("jwt-client","jwt-client","password",Algorithm.HS256);
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
         configureDefaultProfileAndPolicy();
         String firstSecret = clientResource.getSecret().getValue();
@@ -455,8 +469,8 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         return profileConfig;
     }
 
-    protected String createClientByAdmin(String clientId, String clientName, String clientSecret) throws ClientPolicyException {
-        ClientRepresentation clientRep = getClientRepresentation(clientId, clientName, clientSecret);
+    protected String createClientByAdmin(String clientId, String clientName, String clientSecret,String signAlg) throws ClientPolicyException {
+        ClientRepresentation clientRep = getClientRepresentation(clientId, clientName, clientSecret,signAlg);
 
         Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
         if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
@@ -479,7 +493,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
     }
 
     @NotNull
-    private ClientRepresentation getClientRepresentation(String clientId, String clientName, String clientSecret) {
+    private ClientRepresentation getClientRepresentation(String clientId, String clientName, String clientSecret, String signAlg) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(clientId);
         clientRep.setName(clientName);
@@ -495,6 +509,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         clientRep.setStandardFlowEnabled(Boolean.TRUE);
         clientRep.setImplicitFlowEnabled(Boolean.TRUE);
         clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
+        clientRep.getAttributes().put(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, signAlg);
 
         clientRep.setRedirectUris(Collections.singletonList(
                 ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));

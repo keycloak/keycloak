@@ -23,6 +23,7 @@ import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.core.ResteasyDeploymentImpl;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
@@ -39,6 +40,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.platform.Platform;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
+import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
 import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
@@ -396,7 +398,7 @@ public class KeycloakServer {
     public void start() throws Throwable {
         long start = System.currentTimeMillis();
 
-        ResteasyDeployment deployment = new ResteasyDeployment();
+        ResteasyDeployment deployment = new ResteasyDeploymentImpl();
 
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
@@ -600,6 +602,9 @@ public class KeycloakServer {
             addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("mappers", Collections.emptyList()),
                     ProtocolMapperSpi.class,
                     DeployedScriptOIDCProtocolMapper::new);
+            addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("saml-mappers", Collections.emptyList()),
+                    ProtocolMapperSpi.class,
+                    DeployedScriptSAMLProtocolMapper::new);
             addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("policies", Collections.emptyList()),
                     PolicySpi.class,
                     DeployedScriptPolicyFactory::new);

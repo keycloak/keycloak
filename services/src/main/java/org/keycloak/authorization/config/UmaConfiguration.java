@@ -18,6 +18,7 @@
 package org.keycloak.authorization.config;
 
 import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.authorization.AuthorizationService;
@@ -27,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 
 /**
@@ -53,13 +55,12 @@ public class UmaConfiguration extends OIDCConfigurationRepresentation {
         configuration.setIntrospectionEndpoint(oidcConfig.getIntrospectionEndpoint());
         configuration.setLogoutEndpoint(oidcConfig.getLogoutEndpoint());
 
-        UriBuilder uriBuilder = session.getContext().getUri().getBaseUriBuilder();
-
+        UriBuilder backendUriBuilder = session.getContext().getUri(UrlType.BACKEND).getBaseUriBuilder();
         RealmModel realm = session.getContext().getRealm();
 
-        configuration.setPermissionEndpoint(uriBuilder.clone().path(RealmsResource.class).path(RealmsResource.class, "getAuthorizationService").path(AuthorizationService.class, "getProtectionService").path(ProtectionService.class, "permission").build(realm.getName()).toString());
-        configuration.setResourceRegistrationEndpoint(uriBuilder.clone().path(RealmsResource.class).path(RealmsResource.class, "getAuthorizationService").path(AuthorizationService.class, "getProtectionService").path(ProtectionService.class, "resource").build(realm.getName()).toString());
-        configuration.setPolicyEndpoint(uriBuilder.clone().path(RealmsResource.class).path(RealmsResource.class, "getAuthorizationService").path(AuthorizationService.class, "getProtectionService").path(ProtectionService.class, "policy").build(realm.getName()).toString());
+        configuration.setPermissionEndpoint(backendUriBuilder.clone().path(RealmsResource.class).path(RealmsResource.class, "getAuthorizationService").path(AuthorizationService.class, "getProtectionService").path(ProtectionService.class, "permission").build(realm.getName()).toString());
+        configuration.setResourceRegistrationEndpoint(backendUriBuilder.clone().path(RealmsResource.class).path(RealmsResource.class, "getAuthorizationService").path(AuthorizationService.class, "getProtectionService").path(ProtectionService.class, "resource").build(realm.getName()).toString());
+        configuration.setPolicyEndpoint(backendUriBuilder.clone().path(RealmsResource.class).path(RealmsResource.class, "getAuthorizationService").path(AuthorizationService.class, "getProtectionService").path(ProtectionService.class, "policy").build(realm.getName()).toString());
 
         return configuration;
     }

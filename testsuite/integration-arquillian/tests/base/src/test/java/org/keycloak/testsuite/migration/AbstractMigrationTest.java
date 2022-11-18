@@ -98,6 +98,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
+import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -315,6 +316,16 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRealmDefaultClientScopes(migrationRealm);
     }
 
+    protected void testMigrationTo19_0_0() {
+        testPostLogoutRedirectUrisSet(migrationRealm);
+    }
+
+   protected void testMigrationTo20_0_0() {
+        testViewGroups(masterRealm);
+        testViewGroups(migrationRealm);
+    }
+
+
     protected void testDeleteAccount(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
         ClientResource accountResource = realm.clients().get(accountClient.getId());
@@ -383,9 +394,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         MappingsRepresentation scopes = clientResource.getScopeMappings().getAll();
         assertNull(scopes.getRealmMappings());
         assertEquals(1, scopes.getClientMappings().size());
-        assertEquals(1, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().size());
-        assertEquals(MANAGE_ACCOUNT, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().get(0).getName());
-
+        assertEquals(2, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().size());
+        Assert.assertNames(scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), MANAGE_ACCOUNT, VIEW_GROUPS);
         List<ProtocolMapperRepresentation> mappers = clientResource.getProtocolMappers().getMappers();
         assertEquals(1, mappers.size());
         assertEquals("oidc-audience-resolve-mapper", mappers.get(0).getProtocolMapper());
@@ -485,6 +495,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             }
             assertNotNull(flow);
         }
+    }
+
+    protected void testViewGroups(RealmResource realm) {
+        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+
+        ClientResource accountResource = realm.clients().get(accountClient.getId());
+        RoleRepresentation viewAppRole = accountResource.roles().get(VIEW_GROUPS).toRepresentation();
+        assertNotNull(viewAppRole);
     }
 
     protected void testRoleManageAccountLinks(RealmResource... realms) {
@@ -728,6 +746,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ExportImportUtil.testClientDefaultClientScopes(realm);
     }
 
+    private void testPostLogoutRedirectUrisSet(RealmResource realm) {
+        log.info("Testing that POST_LOGOUT_REDIRECT_URI is set to '+' for all clients in " + realm.toRepresentation().getRealm());
+        ExportImportUtil.testDefaultPostLogoutRedirectUris(realm);
+    }
+
     private void testOfflineScopeAddedToClient() {
         log.infof("Testing offline_access optional scope present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
 
@@ -939,6 +962,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo18_x() {
         testMigrationTo18_0_0();
+    }
+
+    protected void testMigrationTo19_x() {
+        testMigrationTo19_0_0();
+    }
+
+    protected void testMigrationTo20_x() {
+        testMigrationTo20_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {

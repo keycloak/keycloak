@@ -85,7 +85,7 @@ public class Configuration extends AdapterConfig {
                     throw new RuntimeException("Client secret not provided.");
                 }
 
-                requestHeaders.put("Authorization", BasicAuthHelper.createHeader(getResource(), secret));
+                requestHeaders.put("Authorization", BasicAuthHelper.RFC6749.createHeader(getResource(), secret));
             }
         };
     }

@@ -23,9 +23,10 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.NotFoundException;
 
-import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -62,6 +63,8 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @resource Client Attribute Certificate
@@ -74,15 +77,15 @@ public class ClientAttributeCertificateResource {
     public static final String PUBLIC_KEY_PEM = "Public Key PEM";
     public static final String JSON_WEB_KEY_SET = "JSON Web Key Set";
 
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
-    protected ClientModel client;
-    protected KeycloakSession session;
-    protected AdminEventBuilder adminEvent;
-    protected String attributePrefix;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
+    protected final ClientModel client;
+    protected final KeycloakSession session;
+    protected final AdminEventBuilder adminEvent;
+    protected final String attributePrefix;
 
-    public ClientAttributeCertificateResource(RealmModel realm, AdminPermissionEvaluator auth, ClientModel client, KeycloakSession session, String attributePrefix, AdminEventBuilder adminEvent) {
-        this.realm = realm;
+    public ClientAttributeCertificateResource(AdminPermissionEvaluator auth, ClientModel client, KeycloakSession session, String attributePrefix, AdminEventBuilder adminEvent) {
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.client = client;
         this.session = session;
@@ -228,9 +231,7 @@ public class ClientAttributeCertificateResource {
         PrivateKey privateKey = null;
         X509Certificate certificate = null;
         try {
-            KeyStore keyStore = null;
-            if (keystoreFormat.equals("JKS")) keyStore = KeyStore.getInstance("JKS");
-            else keyStore = KeyStore.getInstance(keystoreFormat, BouncyIntegration.PROVIDER);
+            KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreFormat.valueOf(keystoreFormat));
             keyStore.load(inputParts.get(0).getBody(InputStream.class, null), storePassword);
             try {
                 privateKey = (PrivateKey)keyStore.getKey(keyAlias, keyPassword);
@@ -269,9 +270,7 @@ public class ClientAttributeCertificateResource {
     public byte[] getKeystore(final KeyStoreConfig config) {
         auth.clients().requireView(client);
 
-        if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
-            throw new NotAcceptableException("Only support jks or pkcs12 format.");
-        }
+        checkKeystoreFormat(config);
 
         CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix);
         String privatePem = info.getPrivateKey();
@@ -308,9 +307,7 @@ public class ClientAttributeCertificateResource {
     public byte[] generateAndGetKeystore(final KeyStoreConfig config) {
         auth.clients().requireConfigure(client);
 
-        if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
-            throw new NotAcceptableException("Only support jks or pkcs12 format.");
-        }
+        checkKeystoreFormat(config);
         if (config.getKeyPassword() == null) {
             throw new ErrorResponseException("password-missing", "Need to specify a key password for jks generation and download", Response.Status.BAD_REQUEST);
         }
@@ -332,9 +329,7 @@ public class ClientAttributeCertificateResource {
     private byte[] getKeystore(KeyStoreConfig config, String privatePem, String certPem) {
         try {
             String format = config.getFormat();
-            KeyStore keyStore;
-            if (format.equals("JKS")) keyStore = KeyStore.getInstance("JKS");
-            else keyStore = KeyStore.getInstance(format, BouncyIntegration.PROVIDER);
+            KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreFormat.valueOf(format));
             keyStore.load(null, null);
             String keyAlias = config.getKeyAlias();
             if (keyAlias == null) keyAlias = client.getClientId();
@@ -369,6 +364,21 @@ public class ClientAttributeCertificateResource {
             return rtn;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void checkKeystoreFormat(KeyStoreConfig config) throws NotAcceptableException {
+        if (config.getFormat() != null) {
+            Set<KeystoreFormat> supportedKeystoreFormats = CryptoIntegration.getProvider().getSupportedKeyStoreTypes()
+                    .collect(Collectors.toSet());
+            try {
+                KeystoreFormat format = Enum.valueOf(KeystoreFormat.class, config.getFormat().toUpperCase());
+                if (config.getFormat() != null && !supportedKeystoreFormats.contains(format)) {
+                    throw new NotAcceptableException("Not supported keystore format. Supported keystore formats: " + supportedKeystoreFormats);
+                }
+            } catch (IllegalArgumentException iae) {
+                throw new NotAcceptableException("Not supported keystore format. Supported keystore formats: " + supportedKeystoreFormats);
+            }
         }
     }
 

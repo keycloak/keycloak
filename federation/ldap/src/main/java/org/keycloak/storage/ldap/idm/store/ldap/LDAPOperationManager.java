@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
@@ -496,6 +497,7 @@ public class LDAPOperationManager {
         StartTlsResponse tlsResponse = null;
 
         try {
+            LDAPUtils.setLDAPHostnameToKeycloakSession(session, config);
 
             Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 

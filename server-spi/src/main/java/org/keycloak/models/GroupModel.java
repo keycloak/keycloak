@@ -44,6 +44,12 @@ public interface GroupModel extends RoleMapperModel {
          * A role can be checked for belonging only via EQ operator. Role is referred by their ID
          */
         public static final SearchableModelField<GroupModel> ASSIGNED_ROLE  = new SearchableModelField<>("assignedRole", String.class);
+
+        /**
+         * Search for attribute value. The parameters is a pair {@code (attribute_name, values...)} where {@code attribute_name}
+         * is always checked for equality, and the value is checked per the operator.
+         */
+        public static final SearchableModelField<GroupModel> ATTRIBUTE       = new SearchableModelField<>("attribute", String[].class);
     }
 
     interface GroupRemovedEvent extends ProviderEvent {
@@ -51,7 +57,14 @@ public interface GroupModel extends RoleMapperModel {
         GroupModel getGroup();
         KeycloakSession getKeycloakSession();
     }
-    
+
+    interface GroupPathChangeEvent extends ProviderEvent {
+        RealmModel getRealm();
+        String getNewPath();
+        String getPreviousPath();
+        KeycloakSession getKeycloakSession();
+    }
+
     Comparator<GroupModel> COMPARE_BY_NAME = Comparator.comparing(GroupModel::getName);
 
     String getId();
@@ -78,23 +91,13 @@ public interface GroupModel extends RoleMapperModel {
      */
     String getFirstAttribute(String name);
 
-    /**
-     * @param name
-     * @return list of all attribute values or empty list if there are not any values. Never return null
-     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
-     */
-    @Deprecated
-    List<String> getAttribute(String name);
 
     /**
      * Returns group attributes that match the given name as a stream.
      * @param name {@code String} Name of the attribute to be used as a filter.
      * @return Stream of all attribute values or empty stream if there are not any values. Never return {@code null}.
      */
-    default Stream<String> getAttributeStream(String name) {
-        List<String> value = this.getAttribute(name);
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<String> getAttributeStream(String name);
 
     Map<String, List<String>> getAttributes();
 
@@ -102,19 +105,10 @@ public interface GroupModel extends RoleMapperModel {
     String getParentId();
 
     /**
-     * @deprecated Use {@link #getSubGroupsStream() getSubGroupsStream} instead.
-     */
-    @Deprecated
-    Set<GroupModel> getSubGroups();
-
-    /**
      * Returns all sub groups for the parent group as a stream.
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
-    default Stream<GroupModel> getSubGroupsStream() {
-        Set<GroupModel> value = this.getSubGroups();
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<GroupModel> getSubGroupsStream();
 
     /**
      * You must also call addChild on the parent group, addChild on RealmModel if there is no parent group
@@ -138,27 +132,10 @@ public interface GroupModel extends RoleMapperModel {
     void removeChild(GroupModel subGroup);
 
     /**
-     * The {@link GroupModel.Streams} interface makes all collection-based methods in {@link GroupModel} default by providing
-     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
-     * <p/>
-     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
-     * from the potential memory and performance optimizations of that approach.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
-    interface Streams extends GroupModel, RoleMapperModel.Streams {
-        @Override
-        default List<String> getAttribute(String name) {
-            return this.getAttributeStream(name).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<String> getAttributeStream(String name);
-
-        @Override
-        default Set<GroupModel> getSubGroups() {
-            return this.getSubGroupsStream().collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<GroupModel> getSubGroupsStream();
+    @Deprecated
+    interface Streams extends GroupModel, RoleMapperModel {
     }
 }

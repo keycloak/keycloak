@@ -32,7 +32,5 @@
 
     <modules>
         <module>adapter-feature-pack</module>
-        <module>server-feature-pack-dependencies</module>
-        <module>server-feature-pack</module>
     </modules>
 </project>

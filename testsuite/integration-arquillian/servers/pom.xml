@@ -33,6 +33,7 @@
         <script.suffix>sh</script.suffix>
 
         <!--app container versions-->
+        <eap.version>7.4.0.GA-redhat-00005</eap.version>
         <eap71.version>7.1.5.GA-redhat-00002</eap71.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>
 
@@ -48,7 +49,6 @@
 
         <!-- Tomcat versions needs to be overwritten to newer versions because of https://issues.redhat.com/browse/KEYCLOAK-14103 -->
         <tomcat9.version>9.0.29</tomcat9.version>
-        <tomcat8.version>8.5.49</tomcat8.version>
     </properties>
 
     <modules>
@@ -61,13 +61,6 @@
 
         <profile>
             <id>auth-server-migration</id>
-            <modules>
-                <module>migration</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>auth-server-migration-legacy</id>
             <modules>
                 <module>migration</module>
             </modules>

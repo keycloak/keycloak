@@ -17,24 +17,46 @@
 
 package org.keycloak.models.map.storage.hotRod.authorization;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.authorization.entity.MapResourceServerEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.authorization.HotRodResourceServerEntity.AbstractHotRodResourceServerEntity"
+        inherits = "org.keycloak.models.map.storage.hotRod.authorization.HotRodResourceServerEntity.AbstractHotRodResourceServerEntity",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.authorization.model.ResourceServer",
+        cacheName = "authz"
 )
+@ProtoDoc("schema-version: " + HotRodResourceServerEntity.VERSION)
 @ProtoDoc("@Indexed")
 public class HotRodResourceServerEntity extends AbstractHotRodEntity {
 
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodResourceServerEntity.class,
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE)
+    public interface HotRodResourceServerEntitySchema extends GeneratedSchema {
+        HotRodResourceServerEntitySchema INSTANCE = new HotRodResourceServerEntitySchemaImpl();
+    }
+
+
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 1, required = true)
-    public int entityVersion = 1;
+    @ProtoField(number = 1)
+    public Integer entityVersion = VERSION;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 2)
@@ -52,10 +74,10 @@ public class HotRodResourceServerEntity extends AbstractHotRodEntity {
     public Boolean allowRemoteResourceManagement;
 
     @ProtoField(number = 6)
-    public HotRodPolicyEnforcementMode policyEnforcementMode;
+    public Integer policyEnforcementMode;
 
     @ProtoField(number = 7)
-    public HotRodDecisionStrategy decisionStrategy;
+    public Integer decisionStrategy;
 
     public static abstract class AbstractHotRodResourceServerEntity extends UpdatableHotRodEntityDelegateImpl<HotRodResourceServerEntity> implements MapResourceServerEntity {
 

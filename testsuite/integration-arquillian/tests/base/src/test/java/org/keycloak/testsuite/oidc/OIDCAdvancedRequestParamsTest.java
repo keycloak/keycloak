@@ -75,7 +75,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -111,7 +110,6 @@ import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
@@ -119,7 +117,6 @@ import org.keycloak.testsuite.util.AdminClientUtil;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest {
 
@@ -605,7 +602,83 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
         clientResource.update(clientRep);
     }
-    
+
+    @Test
+    public void requestObjectSupersedesQueryParameter() throws Exception {
+        String stateInRequestObject = "stateInRequestObject";
+        String stateInQueryParameter = "stateInQueryParameter";
+        oauth.stateParamHardcoded(stateInQueryParameter);
+        // Set request object not required for client
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI);
+        clientResource.update(clientRep);
+        
+        // Set up a request object
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", stateInRequestObject, "none");
+        
+        // Send request object in "request" param
+        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+        // Assert that the request is accepted
+        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        Assert.assertNotNull(response1.getCode());
+        Assert.assertEquals(stateInRequestObject, response1.getState());
+        assertTrue(appPage.isCurrent());
+        
+        // Revert requiring request object for client
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
+        clientResource.update(clientRep);
+    }
+
+    @Test
+    public void requestObjectClientIdAndResponseTypeTest() throws Exception {
+        oauth.stateParamHardcoded("some-state");
+
+        // Test that "client_id" mandatory in the query even if set in the "request" object
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "some-state", "none");
+        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+        oauth.clientId(null);
+        oauth.openLoginForm();
+        errorPage.assertCurrent();
+
+        // Test that "response_type" mandatory in the query even if set in the "request" object
+        oauth.clientId("test-app");
+        oauth.responseType(null);
+        oauth.openLoginForm();
+        appPage.assertCurrent();
+        Assert.assertEquals("invalid_request", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        Assert.assertEquals("some-state", oauth.getCurrentQuery().get(OAuth2Constants.STATE));
+
+        // Test that different "client_id" in the query and in the request object is disallowed
+        oauth.clientId("test-app-scope");
+        oauth.responseType(OAuth2Constants.CODE);
+        oauth.openLoginForm();
+        errorPage.assertCurrent();
+
+        // Test that different "response_type" in the query and in the request object is disallowed
+        oauth.clientId("test-app");
+        oauth.responseType(OAuth2Constants.CODE + " " + OAuth2Constants.ID_TOKEN);
+        oauth.openLoginForm();
+        appPage.assertCurrent();
+        Assert.assertEquals("invalid_request", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        Assert.assertEquals("some-state", oauth.getCurrentQuery().get(OAuth2Constants.STATE));
+
+        // Test that "client_id" and "response_type" are not mandatory in the request object
+        Map<String, Object> oidcRequest = new HashMap<>();
+        oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, oauth.getRedirectUri());
+        oidcRequest.put(OIDCLoginProtocol.STATE_PARAM, "request-state");
+        String requestObjectString = new JWSBuilder().jsonContent(oidcRequest).none();
+
+        oauth.request(requestObjectString);
+        oauth.clientId("test-app");
+        oauth.responseType(OAuth2Constants.CODE);
+        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        Assert.assertNotNull(response1.getCode());
+        Assert.assertEquals("request-state", response1.getState());
+    }
+
     @Test
     public void requestObjectRequiredProvidedInRequestUriParam() throws Exception {
         oauth.stateParamHardcoded("mystate2");

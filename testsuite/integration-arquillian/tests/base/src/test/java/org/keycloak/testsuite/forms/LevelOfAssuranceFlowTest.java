@@ -54,7 +54,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -62,22 +61,20 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.PushTheButtonPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * Tests for Level Of Assurance conditions in authentication flow.
  *
  * @author <a href="mailto:sebastian.zoescher@prime-sign.com">Sebastian Zoescher</a>
  */
-@AuthServerContainerExclude(REMOTE)
 public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -100,6 +97,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         try {
+            testRealm.setOtpPolicyCodeReusable(true);
             findTestApp(testRealm).setAttributes(Collections.singletonMap(Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient()));
             UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
             UserBuilder.edit(user)
@@ -121,6 +119,19 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     @Before
     public void setupFlow() {
         configureStepUpFlow(testingClient);
+        canBeOtpCodesReusable(true);
+    }
+
+    @After
+    public void tearDown() {
+        canBeOtpCodesReusable(false);
+    }
+
+    // Fixing this test with not reusable OTP codes would bring additional unwanted workarounds; not scope of this test
+    private void canBeOtpCodesReusable(boolean state) {
+        new RealmAttributeUpdater(testRealm())
+                .setOtpPolicyCodeReusable(state)
+                .update();
     }
 
     public static void configureStepUpFlow(KeycloakTestingClient testingClient) {

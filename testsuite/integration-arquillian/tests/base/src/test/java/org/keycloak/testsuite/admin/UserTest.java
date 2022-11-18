@@ -63,8 +63,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
@@ -120,7 +118,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
@@ -298,7 +295,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void createUserWithHashedCredentials() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user_creds");
@@ -415,7 +411,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void createUserWithRawCredentials() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user_rawpw");
@@ -679,6 +674,16 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByEmailExactMatch() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByEmail("user1@localhost", true);
+        assertEquals(1, users.size());
+
+        users = realm.users().search("@localhost", true);
+        assertEquals(0, users.size());
+    }
+
+    @Test
     public void searchByUsername() {
         createUsers();
 
@@ -750,8 +755,25 @@ public class UserTest extends AbstractAdminTest {
         List<UserRepresentation> users = realm.users().search("username1", true);
         assertEquals(1, users.size());
 
+        users = realm.users().searchByUsername("username1", true);
+        assertEquals(1, users.size());
+
         users = realm.users().search("user", true);
         assertEquals(0, users.size());
+    }
+
+    @Test
+    public void searchByFirstNameExact() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByFirstName("First1", true);
+        assertEquals(1, users.size());
+    }
+
+    @Test
+    public void searchByLastNameExact() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByLastName("Last1", true);
+        assertEquals(1, users.size());
     }
 
     @Test
@@ -1108,6 +1130,88 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchWithExactMatch() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("test_username");
+        user.setFirstName("test_first_name");
+        user.setLastName("test_last_name");
+        user.setEmail("test_email@test.com");
+        user.setEnabled(true);
+        user.setEmailVerified(true);
+        createUser(user);
+
+        UserRepresentation user2 = new UserRepresentation();
+        user2.setUsername("test_username2");
+        user2.setFirstName("test_first_name2");
+        user2.setLastName("test_last_name");
+        user2.setEmail("test_email@test.com2");
+        user2.setEnabled(true);
+        user2.setEmailVerified(true);
+        createUser(user2);
+
+        UserRepresentation user3 = new UserRepresentation();
+        user3.setUsername("test_username3");
+        user3.setFirstName("test_first_name");
+        user3.setLastName("test_last_name3");
+        user3.setEmail("test_email@test.com3");
+        user3.setEnabled(true);
+        user3.setEmailVerified(true);
+        createUser(user3);
+
+        List<UserRepresentation> users = realm.users().search(
+                null, null, null, "test_email@test.co",
+                0, 10, null, null, true
+        );
+        assertEquals(0, users.size());
+        users = realm.users().search(
+                null, null, null, "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(1, users.size());
+        users = realm.users().search(
+                null, null, "test_last", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(0, users.size());
+        users = realm.users().search(
+                null, null, "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(1, users.size());
+        users = realm.users().search(
+                null, "test_first", "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(0, users.size());
+        users = realm.users().search(
+                null, "test_first_name", "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(1, users.size());
+        users = realm.users().search(
+                "test_usernam", "test_first_name", "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(0, users.size());
+        users = realm.users().search(
+                "test_username", "test_first_name", "test_last_name", "test_email@test.com",
+                0, 10, null, null, true
+        );
+        assertEquals(1, users.size());
+
+        users = realm.users().search(
+                null, null, "test_last_name", null,
+                0, 10, null, null, true
+        );
+        assertEquals(2, users.size());
+        users = realm.users().search(
+                null, "test_first_name", null, null,
+                0, 10, null, null, true
+        );
+        assertEquals(2, users.size());
+    }
+
+    @Test
     public void countUsersNotServiceAccount() {
         createUsers();
 
@@ -1321,10 +1425,26 @@ public class UserTest extends AbstractAdminTest {
 
         user1 = realm.users().get(user1Id).toRepresentation();
         assertNull(user1.getAttributes());
+
+        Map<String, List<String>> attributes = new HashMap<>();
+
+        attributes.put("foo", List.of("foo"));
+        attributes.put("bar", List.of("bar"));
+
+        user1.setAttributes(attributes);
+
+        realm.users().get(user1Id).update(user1);
+        user1 = realm.users().get(user1Id).toRepresentation();
+        assertEquals(2, user1.getAttributes().size());
+
+        user1.getAttributes().remove("foo");
+
+        realm.users().get(user1Id).update(user1);
+        user1 = realm.users().get(user1Id).toRepresentation();
+        assertEquals(1, user1.getAttributes().size());
     }
 
     @Test
-    @AuthServerContainerExclude({REMOTE}) // TODO: Enable for remote
     public void updateUserWithReadOnlyAttributes() {
         // Admin is able to update "usercertificate" attribute
         UserRepresentation user1 = new UserRepresentation();
@@ -1445,7 +1565,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailSuccess() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -1493,7 +1612,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testEmailLinkBasedOnRealmFrontEndUrl() throws Exception {
         try {
             updateRealmFrontEndUrl(adminClient.realm("master"), suiteContext.getAuthServerInfo().getContextRoot().toString());
@@ -1538,7 +1656,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailWithCustomLifespan() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -1598,7 +1715,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailSuccessTwoLinks() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -1642,7 +1758,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailSuccessTwoLinksReverse() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -1688,7 +1803,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailSuccessLinkOpenDoesNotExpireWhenOpenedOnly() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -1732,7 +1846,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailSuccessTokenShortLifespan() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -1775,7 +1888,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailSuccessWithRecycledAuthSession() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -1840,7 +1952,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailWithRedirect() throws IOException {
 
         UserRepresentation userRep = new UserRepresentation();
@@ -1909,7 +2020,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailWithRedirectAndCustomLifespan() throws IOException {
 
         UserRepresentation userRep = new UserRepresentation();
@@ -1995,7 +2105,6 @@ public class UserTest extends AbstractAdminTest {
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendVerifyEmail() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setUsername("user1");
@@ -2218,7 +2327,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void updateUserWithRawCredentials() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user_rawpw");
@@ -2929,6 +3037,80 @@ public class UserTest extends AbstractAdminTest {
             assertFalse(realmMappings.stream().map(RoleRepresentation::getName).anyMatch("realm-role"::equals));
         } finally {
             testRealm().roles().get("realm-role").remove();
+        }
+    }
+
+    /**
+     * Test for #9482
+     */
+    @Test
+    public void joinParentGroupAfterSubGroup() {
+        String username = "user-with-sub-and-parent-group";
+        String parentGroupName = "parent-group";
+        String subGroupName = "sub-group";
+
+        UserRepresentation userRepresentation = UserBuilder.create().username(username).build();
+
+        GroupRepresentation subGroupRep = GroupBuilder.create().name(subGroupName).build();
+        GroupRepresentation parentGroupRep = GroupBuilder.create().name(parentGroupName).subGroups(List.of(subGroupRep)).build();
+
+        try (Creator<UserResource> u = Creator.create(realm, userRepresentation);
+             Creator<GroupResource> subgroup = Creator.create(realm, subGroupRep);
+             Creator<GroupResource> parentGroup = Creator.create(realm, parentGroupRep)) {
+
+            UserResource user = u.resource();
+
+            //when
+            user.joinGroup(subgroup.id());
+            List<GroupRepresentation> obtainedGroups = realm.users().get(u.id()).groups();
+
+            //then
+            assertEquals(1, obtainedGroups.size());
+            assertEquals(subGroupName, obtainedGroups.get(0).getName());
+
+            //when
+            user.joinGroup(parentGroup.id());
+            obtainedGroups = realm.users().get(u.id()).groups();
+
+            //then
+            assertEquals(2, obtainedGroups.size());
+            assertEquals(parentGroupName, obtainedGroups.get(0).getName());
+            assertEquals(subGroupName, obtainedGroups.get(1).getName());
+        }
+    }
+
+    @Test
+    public void joinSubGroupAfterParentGroup() {
+        String username = "user-with-sub-and-parent-group";
+        String parentGroupName = "parent-group";
+        String subGroupName = "sub-group";
+
+        UserRepresentation userRepresentation = UserBuilder.create().username(username).build();
+        GroupRepresentation subGroupRep = GroupBuilder.create().name(subGroupName).build();
+        GroupRepresentation parentGroupRep = GroupBuilder.create().name(parentGroupName).subGroups(List.of(subGroupRep)).build();
+
+        try (Creator<UserResource> u = Creator.create(realm, userRepresentation);
+             Creator<GroupResource> subgroup = Creator.create(realm, subGroupRep);
+             Creator<GroupResource> parentGroup = Creator.create(realm, parentGroupRep)) {
+
+            UserResource user = u.resource();
+
+            //when
+            user.joinGroup(parentGroup.id());
+            List<GroupRepresentation> obtainedGroups = realm.users().get(u.id()).groups();
+
+            //then
+            assertEquals(1, obtainedGroups.size());
+            assertEquals(parentGroupName, obtainedGroups.get(0).getName());
+
+            //when
+            user.joinGroup(subgroup.id());
+            obtainedGroups = realm.users().get(u.id()).groups();
+
+            //then
+            assertEquals(2, obtainedGroups.size());
+            assertEquals(parentGroupName, obtainedGroups.get(0).getName());
+            assertEquals(subGroupName, obtainedGroups.get(1).getName());
         }
     }
 }

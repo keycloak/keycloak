@@ -19,10 +19,12 @@ package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -30,8 +32,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.IDToken;
+import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -66,6 +71,11 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         return ldapRule;
     }
 
+    @Before
+    public void before() {
+        // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+    }
 
     @Override
     protected void afterImportTestRealm() {
@@ -108,13 +118,13 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             RealmModel appRealm = ctx.getRealm();
 
             // Test user imported in local storage now
             UserModel user = session.users().getUserByUsername(appRealm, "jbrown");
-            Assert.assertNotNull(session.userLocalStorage().getUserById(appRealm, user.getId()));
-            LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
+            Assert.assertNotNull(UserStoragePrivateUtil.userLocalStorage(session).getUserById(appRealm, user.getId()));
+            LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
         });
     }
 
@@ -124,7 +134,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             RealmModel appRealm = ctx.getRealm();
 
             UserModel user = session.users().getUserByUsername(appRealm, "bwilson");

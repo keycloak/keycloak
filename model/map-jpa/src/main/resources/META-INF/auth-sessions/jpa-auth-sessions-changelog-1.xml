@@ -51,6 +51,9 @@ limitations under the License.
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
             <column name="fk_root" type="UUID">
                 <constraints foreignKeyName="auth_session_fk_root_fkey" references="kc_auth_root_session(id)" deleteCascade="true"/>
             </column>
@@ -62,6 +65,15 @@ limitations under the License.
         <ext:createJsonIndex tableName="kc_auth_session" indexName="auth_session_tabId">
             <ext:column jsonColumn="metadata" jsonProperty="fTabId"/>
         </ext:createJsonIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="auth-sessions-14161">
+        <ext:addGeneratedColumn tableName="kc_auth_session">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_auth_session" indexName="auth_session_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
     </changeSet>
 
 </databaseChangeLog>

@@ -29,18 +29,13 @@ import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
 import io.quarkus.runtime.configuration.ProfileManager;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
         description = {
             "%nCreates a new and optimized server image based on the configuration options passed to this command. Once created, the configuration will be persisted and read during startup without having to pass them over again.",
-            "",
-            "Some configuration options require this command to be executed in order to actually change a configuration. For instance",
-            "",
-            "- Change database vendor%n" +
-            "- Enable/disable features%n" +
-            "- Enable/Disable providers or set a default",
             "",
             "Consider running this command before running the server in production for an optimal runtime."
         },
@@ -56,13 +51,13 @@ import picocli.CommandLine.Command;
                 + "  Enable metrics endpoints:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --metrics-enabled=true%n%n"
                 + "  Change the relative path:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n%n"
-                + "You can also use the \"--auto-build\" option when starting the server to avoid running this command every time you change a configuration:%n%n"
-                + "    $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} start --auto-build <OPTIONS>%n%n"
-                + "By doing that you have an additional overhead when the server is starting.")
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n")
 public final class Build extends AbstractCommand implements Runnable {
 
     public static final String NAME = "build";
+
+    @CommandLine.Mixin
+    HelpAllMixin helpAllMixin;
 
     @Override
     public void run() {
