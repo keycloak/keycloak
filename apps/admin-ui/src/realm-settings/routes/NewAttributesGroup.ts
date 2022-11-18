@@ -10,7 +10,7 @@ export type NewAttributesGroupParams = {
 export const NewAttributesGroupRoute: RouteDef = {
   path: "/:realm/realm-settings/user-profile/attributesGroup/new",
   component: lazy(() => import("../user-profile/AttributesGroupDetails")),
-  breadcrumb: (t) => t("attributes-group:createGroupText"),
+  breadcrumb: (t) => t("realm-settings:createGroupText"),
   access: "view-realm",
 };
 

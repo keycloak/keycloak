@@ -109,23 +109,23 @@ export default function AttributesGroupForm() {
       <ViewHeader
         titleKey={
           matchingGroup
-            ? "attributes-group:editGroupText"
-            : "attributes-group:createGroupText"
+            ? "realm-settings:editGroupText"
+            : "realm-settings:createGroupText"
         }
         divider
       />
       <PageSection variant="light" onSubmit={form.handleSubmit(onSubmit)}>
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
-            label={t("attributes-group:nameField")}
+            label={t("realm-settings:nameField")}
             fieldId="kc-name"
             isRequired
             helperTextInvalid={t("common:required")}
             validated={form.errors.name ? "error" : "default"}
             labelIcon={
               <HelpItem
-                helpText="attributes-group:nameHint"
-                fieldLabelId="attributes-group:nameField"
+                helpText="realm-settings:nameHint"
+                fieldLabelId="realm-settings:nameField"
               />
             }
           >
@@ -141,12 +141,12 @@ export default function AttributesGroupForm() {
             )}
           </FormGroup>
           <FormGroup
-            label={t("attributes-group:displayHeaderField")}
+            label={t("realm-settings:displayHeaderField")}
             fieldId="kc-display-header"
             labelIcon={
               <HelpItem
-                helpText="attributes-group:displayHeaderHint"
-                fieldLabelId="attributes-group:displayHeaderField"
+                helpText="realm-settings:displayHeaderHint"
+                fieldLabelId="realm-settings:displayHeaderField"
               />
             }
           >
@@ -158,12 +158,12 @@ export default function AttributesGroupForm() {
             />
           </FormGroup>
           <FormGroup
-            label={t("attributes-group:displayDescriptionField")}
+            label={t("realm-settings:displayDescriptionField")}
             fieldId="kc-display-description"
             labelIcon={
               <HelpItem
-                helpText="attributes-group:displayDescriptionHint"
-                fieldLabelId="attributes-group:displayDescriptionField"
+                helpText="realm-settings:displayDescriptionHint"
+                fieldLabelId="realm-settings:displayDescriptionField"
               />
             }
           >
@@ -175,10 +175,10 @@ export default function AttributesGroupForm() {
             />
           </FormGroup>
           <TextContent>
-            <Text component="h2">{t("attributes-group:annotationsText")}</Text>
+            <Text component="h2">{t("realm-settings:annotationsText")}</Text>
           </TextContent>
           <FormGroup
-            label={t("attributes-group:annotationsText")}
+            label={t("realm-settings:annotationsText")}
             fieldId="kc-annotations"
           >
             <FormProvider {...form}>

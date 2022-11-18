@@ -34,7 +34,6 @@ const initOptions = async (
     ns: [
       "common",
       "common-help",
-      "attributes-group",
       "dashboard",
       "clients",
       "clients-help",
