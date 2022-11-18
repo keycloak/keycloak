@@ -1,6 +1,3 @@
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
 import {
   Button,
   ButtonVariant,
@@ -12,32 +9,39 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { PencilAltIcon } from "@patternfly/react-icons";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type { ExpandableExecution } from "../execution-model";
-import useToggle from "../../utils/useToggle";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import useToggle from "../../utils/useToggle";
+import type { ExpandableExecution } from "../execution-model";
 
 type EditFlowProps = {
   execution: ExpandableExecution;
   onRowChange: (execution: ExpandableExecution) => void;
 };
 
+type FormFields = Omit<ExpandableExecution, "executionList">;
+
 export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
   const { t } = useTranslation("authentication");
-  const { register, errors, reset, handleSubmit } = useForm();
-
+  const {
+    register,
+    reset,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<FormFields>({ mode: "onChange", defaultValues: execution });
   const [show, toggle] = useToggle();
 
-  const update = (values: ExpandableExecution) => {
-    onRowChange({ ...execution, ...values });
+  useEffect(() => reset(execution), [execution]);
+
+  const onSubmit = (formValues: FormFields) => {
+    onRowChange({ ...execution, ...formValues });
     toggle();
   };
-
-  useEffect(() => {
-    reset(execution);
-  }, [execution, reset]);
 
   return (
     <>
@@ -54,21 +58,20 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
       {show && (
         <Modal
           title={t("editFlow")}
-          isOpen={true}
           onClose={toggle}
           variant={ModalVariant.small}
           actions={[
             <Button
-              id="modal-confirm"
               key="confirm"
-              onClick={handleSubmit(update)}
               data-testid="confirm"
+              type="submit"
+              form="edit-flow-form"
+              isDisabled={!isValid}
             >
               {t("edit")}
             </Button>,
             <Button
               data-testid="cancel"
-              id="modal-cancel"
               key="cancel"
               variant={ButtonVariant.link}
               onClick={toggle}
@@ -76,8 +79,13 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               {t("common:cancel")}
             </Button>,
           ]}
+          isOpen
         >
-          <Form isHorizontal>
+          <Form
+            id="edit-flow-form"
+            onSubmit={handleSubmit(onSubmit)}
+            isHorizontal
+          >
             <FormGroup
               label={t("common:name")}
               fieldId="name"
@@ -87,25 +95,24 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
                   ? ValidatedOptions.error
                   : ValidatedOptions.default
               }
-              isRequired
               labelIcon={
                 <HelpItem
                   helpText="authentication-help:name"
                   fieldLabelId="name"
                 />
               }
+              isRequired
             >
               <KeycloakTextInput
-                type="text"
                 id="name"
-                name="displayName"
                 data-testid="displayName"
-                ref={register({ required: true })}
                 validated={
                   errors.displayName
                     ? ValidatedOptions.error
                     : ValidatedOptions.default
                 }
+                {...register("displayName", { required: true })}
+                isRequired
               />
             </FormGroup>
             <FormGroup
@@ -125,21 +132,19 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               helperTextInvalid={errors.description?.message}
             >
               <KeycloakTextArea
-                ref={register({
-                  maxLength: {
-                    value: 255,
-                    message: t("common:maxLength", { length: 255 }),
-                  },
-                })}
-                type="text"
                 id="kc-description"
-                name="description"
                 data-testid="description"
                 validated={
                   errors.description
                     ? ValidatedOptions.error
                     : ValidatedOptions.default
                 }
+                {...register("description", {
+                  maxLength: {
+                    value: 255,
+                    message: t("common:maxLength", { length: 255 }),
+                  },
+                })}
               />
             </FormGroup>
           </Form>
