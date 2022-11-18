@@ -152,7 +152,7 @@ export const FileUploadForm = ({
                 code={fileUpload.value}
                 language={language}
                 height="128px"
-                onChange={(value) => setFileUpload({ ...fileUpload, value })}
+                onChange={handleTextOrDataChange}
                 isReadOnly={!rest.allowEditingUploadedText}
               />
             )}
