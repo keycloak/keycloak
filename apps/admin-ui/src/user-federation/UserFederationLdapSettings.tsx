@@ -148,12 +148,12 @@ export default function UserFederationLdapSettings() {
     form.reset({ ...component });
     form.setValue(
       "config.periodicChangedUsersSync",
-      component.config?.["changedSyncPeriod"][0] !== "-1"
+      component.config?.["changedSyncPeriod"]?.[0] !== "-1"
     );
 
     form.setValue(
       "config.periodicFullSync",
-      component.config?.["fullSyncPeriod"][0] !== "-1"
+      component.config?.["fullSyncPeriod"]?.[0] !== "-1"
     );
   };
 
