@@ -605,9 +605,9 @@
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>ojdbc7</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>12.1.0</jdbc.mvn.version>
+                <jdbc.mvn.groupId>com.oracle.database.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>ojdbc11</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${oracle.driver.version}</jdbc.mvn.version>
             </properties>
         </profile>
         <profile>
