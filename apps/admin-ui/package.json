@@ -88,7 +88,7 @@
     "@babel/preset-env": "^7.20.2",
     "@cypress/webpack-batteries-included-preprocessor": "^2.2.3",
     "@cypress/webpack-preprocessor": "^5.15.5",
-    "@testing-library/cypress": "^8.0.3",
+    "@testing-library/cypress": "^8.0.7",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^12.1.5",
     "@testing-library/react-hooks": "^8.0.1",
