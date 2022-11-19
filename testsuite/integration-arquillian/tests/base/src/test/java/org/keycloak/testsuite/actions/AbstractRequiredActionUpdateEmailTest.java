@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -72,9 +73,16 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
 		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		setRegistrationEmailAsUsername(testRealm(), false);
 	}
 
-	protected void prepareUser(UserRepresentation user){
+	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {
+		RealmRepresentation realmRepresentation = realmResource.toRepresentation();
+		realmRepresentation.setRegistrationEmailAsUsername(enabled);
+		realmResource.update(realmRepresentation);
+	}
+
+	protected void prepareUser(UserRepresentation user) {
 
 	}
 
@@ -84,7 +92,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 	}
 
 	@Test
-	public void cancelIsNotDisplayed(){
+	public void cancelIsNotDisplayed() {
 		loginPage.open();
 
 		loginPage.login("test-user@localhost", "password");
@@ -152,4 +160,16 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 		events.assertEmpty();
 	}
+
+	@Test
+	public void updateEmailWithEmailAsUsernameEnabled() throws Exception {
+		setRegistrationEmailAsUsername(testRealm(), true);
+
+		changeEmailUsingRequiredAction("new@localhost");
+
+		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new@localhost");
+		Assert.assertNotNull(user);
+	}
+
+	protected abstract void changeEmailUsingRequiredAction(String newEmail) throws Exception;
 }
