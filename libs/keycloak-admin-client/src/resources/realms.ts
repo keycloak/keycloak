@@ -126,8 +126,8 @@ export class Realms extends Resource {
     {
       realm: string;
       client?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
+      dateFrom?: string;
+      dateTo?: string;
       first?: number;
       ipAddress?: string;
       max?: number;
