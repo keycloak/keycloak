@@ -594,13 +594,12 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                 first : 0
             };
             Groups.query($scope.query, function(response) {
-                data.results = filterSearchedGroups(flattenGroups(response), query.term.trim(), $scope.selectedGroups);
+                data.results = filterSearchedGroups(flattenGroups(response), query.term.trim(), $scope.selectedGroups).map(function(group) {
+                    group.text = group.path;
+                    return group;
+                });
                 query.callback(data);
             });
-        },
-        formatResult: function(object, container, query) {
-            object.text = object.path;
-            return object.path;
         }
     };
 

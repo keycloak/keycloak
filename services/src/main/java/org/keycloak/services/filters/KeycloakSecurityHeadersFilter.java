@@ -20,6 +20,7 @@ import org.keycloak.common.util.Resteasy;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
 
+import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
@@ -29,6 +30,7 @@ import javax.ws.rs.container.PreMatching;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @PreMatching
+@Priority(10)
 public class KeycloakSecurityHeadersFilter implements ContainerResponseFilter {
 
     @Override

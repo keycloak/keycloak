@@ -335,6 +335,8 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
         Map<String, Set<String>> clientSessionsKept = new HashMap<>();
         for (UserSessionModel s : sessions) {
+            // session associated with the model was closed, load it by id into a new session
+            s = session.sessions().getUserSession(realm, s.getId());
             Set<String> clientUUIDS = new HashSet<>(s.getAuthenticatedClientSessions().keySet());
             clientUUIDS.remove(thirdPartyClientUUID); // This client will be later removed, hence his clientSessions too
             clientSessionsKept.put(s.getId(), clientUUIDS);

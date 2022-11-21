@@ -32,10 +32,10 @@ import org.keycloak.models.utils.RoleUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-
 
 public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
     public MapUserAdapter(KeycloakSession session, RealmModel realm, MapUserEntity entity) {
@@ -47,9 +47,12 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
         return entity.getId();
     }
 
+    /**
+     * @return username. Letter case is determined by a realm setting.
+     */
     @Override
     public String getUsername() {
-        return entity.getUsername();
+        return KeycloakModelUtils.isUsernameCaseSensitive(realm) ? entity.getUsername() : entity.getUsername().toLowerCase();
     }
 
     @Override
@@ -320,7 +323,7 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
     public Stream<RoleModel> getRoleMappingsStream() {
         Set<String> roles = entity.getRolesMembership();
         if (roles == null || roles.isEmpty()) return Stream.empty();
-        return entity.getRolesMembership().stream().map(realm::getRoleById);
+        return entity.getRolesMembership().stream().map(realm::getRoleById).filter(Objects::nonNull);
     }
 
     @Override

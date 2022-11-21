@@ -59,9 +59,16 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
+                        cb.equal(root.get("username"), value[0].toString().toLowerCase())
+                    );
+
+                } else if (modelField == UserModel.SearchableFields.USERNAME) {
+                    validateValue(value, modelField, op, String.class);
+
+                    return new JpaUserModelCriteriaBuilder((cb, query, root) ->
                         cb.or(
                             cb.and(
-                                cb.equal(root.get("usernameLowerCase"), value[0].toString().toLowerCase()),
+                                cb.equal(root.get("usernameWithCase"), value[0]),
                                 cb.ge(root.get("entityVersion"), 2)
                             ),
                             cb.and(
@@ -69,13 +76,6 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                                 cb.le(root.get("entityVersion"), 1)
                             )
                         )
-                    );
-
-                } else if (modelField == UserModel.SearchableFields.USERNAME) {
-                    validateValue(value, modelField, op, String.class);
-
-                    return new JpaUserModelCriteriaBuilder((cb, query, root) ->
-                            cb.equal(root.get("username"), value[0])
                     );
 
                 } else if (modelField == UserModel.SearchableFields.REALM_ID ||
@@ -188,16 +188,7 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
-                        cb.or(
-                            cb.and(
-                                cb.like(root.get("usernameLowerCase"), value[0].toString().toLowerCase()),
-                                cb.ge(root.get("entityVersion"), 2)
-                            ),
-                            cb.and(
-                                cb.like(root.get("username"), value[0].toString().toLowerCase()),
-                                cb.le(root.get("entityVersion"), 1)
-                            )
-                        )
+                        cb.like(root.get("username"), value[0].toString().toLowerCase())
                     );
 
                 } else {
@@ -209,7 +200,16 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
-                            cb.like(root.get("username"), value[0].toString())
+                        cb.or(
+                            cb.and(
+                                cb.like(root.get("usernameWithCase"), value[0].toString()),
+                                cb.ge(root.get("entityVersion"), 2)
+                            ),
+                            cb.and(
+                                cb.like(root.get("username"), value[0].toString()),
+                                cb.le(root.get("entityVersion"), 1)
+                            )
+                        )
                     );
                     
                 } else {

@@ -24,6 +24,8 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.cluster.ClusterSpi;
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentFactorySpi;
@@ -43,6 +45,7 @@ import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.UserSpi;
+import org.keycloak.models.locking.GlobalLockProviderSpi;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.Provider;
@@ -60,6 +63,7 @@ import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -99,7 +103,6 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.models.DeploymentStateProviderFactory;
-import org.keycloak.models.dblock.DBLockSpi;
 
 /**
  * Base of testcases that operate on session level. The tests derived from this class
@@ -216,7 +219,7 @@ public abstract class KeycloakModelTest {
       .add(ClientSpi.class)
       .add(ComponentFactorySpi.class)
       .add(ClusterSpi.class)
-      .add(DBLockSpi.class)
+      .add(GlobalLockProviderSpi.class)
       .add(EventStoreSpi.class)
       .add(ExecutorsSpi.class)
       .add(GroupSpi.class)
@@ -290,6 +293,13 @@ public abstract class KeycloakModelTest {
         LOG.debugf("Creating factory %d in %s using the following configuration:\n    %s", factoryIndex, threadName, CONFIG);
 
         DefaultKeycloakSessionFactory res = new DefaultKeycloakSessionFactory() {
+
+            @Override
+            public void init() {
+                Profile.configure(new PropertiesProfileConfigResolver(System.getProperties()));
+                super.init();
+            }
+
             @Override
             protected boolean isEnabled(ProviderFactory factory, Scope scope) {
                 return super.isEnabled(factory, scope) && isFactoryAllowed(factory);

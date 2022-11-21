@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,18 @@ public interface RoleModel {
         public static final SearchableModelField<RoleModel> COMPOSITE_ROLE      = new SearchableModelField<>("compositeRoles", Boolean.class);
     }
 
+    interface RoleNameChangeEvent extends ProviderEvent {
+        RealmModel getRealm();
+        String getNewName();
+        String getPreviousName();
+
+        /**
+         * @return the Client ID of the client, for a client role; {@code null}, for a realm role
+         */
+        String getClientId();
+        KeycloakSession getKeycloakSession();
+    }
+
     String getName();
 
     String getDescription();
@@ -56,14 +69,6 @@ public interface RoleModel {
     void addCompositeRole(RoleModel role);
 
     void removeCompositeRole(RoleModel role);
-
-    /**
-     * @deprecated Use {@link #getCompositesStream() getCompositesStream} instead.
-     */
-    @Deprecated
-    default Set<RoleModel> getComposites() {
-        return getCompositesStream().collect(Collectors.toSet());
-    }
 
     /**
      * Returns all composite roles as a stream.
@@ -99,14 +104,6 @@ public interface RoleModel {
 
     default String getFirstAttribute(String name) {
         return getAttributeStream(name).findFirst().orElse(null);
-    }
-
-    /**
-     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
-     */
-    @Deprecated
-    default List<String> getAttribute(String name) {
-        return getAttributeStream(name).collect(Collectors.toList());
     }
 
     /**

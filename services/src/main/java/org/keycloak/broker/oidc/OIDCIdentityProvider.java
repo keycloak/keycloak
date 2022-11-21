@@ -104,7 +104,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new OIDCEndpoint(callback, realm, event);
+        return new OIDCEndpoint(callback, realm, event, this);
     }
 
     /**
@@ -331,9 +331,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
-    protected class OIDCEndpoint extends Endpoint {
-        public OIDCEndpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event) {
-            super(callback, realm, event);
+    protected static class OIDCEndpoint extends Endpoint {
+        public OIDCEndpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event, OIDCIdentityProvider provider) {
+            super(callback, realm, event, provider);
         }
 
         @Override

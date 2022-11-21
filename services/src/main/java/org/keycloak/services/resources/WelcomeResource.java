@@ -179,7 +179,6 @@ public class WelcomeResource {
 
             map.put("adminConsoleEnabled", isAdminConsoleEnabled());
             map.put("productName", Version.NAME);
-            map.put("productNameFull", Version.NAME_FULL);
 
             map.put("properties", theme.getProperties());
             map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());

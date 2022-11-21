@@ -22,14 +22,14 @@ public class DockerV2LoginProtocolService {
     private final TokenManager tokenManager;
     private final EventBuilder event;
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
     @Context
     private HttpHeaders headers;
 
-    public DockerV2LoginProtocolService(final RealmModel realm, final EventBuilder event) {
-        this.realm = realm;
+    public DockerV2LoginProtocolService(final KeycloakSession session, final EventBuilder event) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.tokenManager = new TokenManager();
         this.event = event;
     }
@@ -60,7 +60,7 @@ public class DockerV2LoginProtocolService {
     public Object auth() {
         ProfileHelper.requireFeature(Profile.Feature.DOCKER);
 
-        final DockerEndpoint endpoint = new DockerEndpoint(realm, event, EventType.LOGIN);
+        final DockerEndpoint endpoint = new DockerEndpoint(session, event, EventType.LOGIN);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }

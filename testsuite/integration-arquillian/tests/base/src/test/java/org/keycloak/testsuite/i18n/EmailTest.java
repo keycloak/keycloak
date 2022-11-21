@@ -97,8 +97,6 @@ public class EmailTest extends AbstractI18NTest {
 
     @Test
     public void restPasswordEmailGerman() throws IOException, MessagingException {
-        ProfileAssume.assumeCommunity();
-        
         changeUserLocale("de");
 
         loginPage.open();
@@ -118,8 +116,6 @@ public class EmailTest extends AbstractI18NTest {
     //KEYCLOAK-7478
     @Test
     public void changeLocaleOnInfoPage() throws InterruptedException, IOException, MessagingException {
-        ProfileAssume.assumeCommunity();
-              
         UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "login-test");
         testUser.executeActionsEmail(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()));
         

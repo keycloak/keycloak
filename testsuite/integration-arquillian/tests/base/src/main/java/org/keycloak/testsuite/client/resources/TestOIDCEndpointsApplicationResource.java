@@ -46,11 +46,23 @@ public interface TestOIDCEndpointsApplicationResource {
     @Path("/generate-keys")
     Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm);
 
+    /**
+     * Generate single private/public keyPair
+     *
+     * @param jwaAlgorithm
+     * @param advertiseJWKAlgorithm whether algorithm should be adwertised in JWKS or not (Once the keys are returned by JWKS)
+     * @param keepExistingKeys Should be existing keys kept replaced with newly generated keyPair. If it is not kept, then resulting JWK will contain single key. It is false by default.
+     *                         The value 'true' is useful if we want to test with multiple client keys (For example mulitple keys set in the JWKS and test if correct key is picked)
+     * @param kid Explicitly set specified "kid" for newly generated keypair. If not specified, the kid will be generated
+     * @return
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/generate-keys")
     Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm,
-            @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm);
+                                     @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm,
+                                     @QueryParam("keepExistingKeys") Boolean keepExistingKeys,
+                                     @QueryParam("kid") String kid);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

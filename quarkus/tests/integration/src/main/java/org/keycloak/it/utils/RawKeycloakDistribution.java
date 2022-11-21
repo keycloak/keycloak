@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -343,7 +344,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             Path distRootPath = Paths.get(System.getProperty("java.io.tmpdir")).resolve("kc-tests");
             distRootPath.toFile().mkdirs();
 
-            File distFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION_KEYCLOAK + ".zip");
+            File distFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".zip");
             if (!distFile.exists()) {
                 throw new RuntimeException("Distribution archive " + distFile.getAbsolutePath() +" doesn't exist");
             }
@@ -530,7 +531,14 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     public void copyProvider(TestProvider provider) {
-        Path providerPackagePath = Paths.get(provider.getClass().getResource(".").getPath());
+        URL pathUrl = provider.getClass().getResource(".");
+        File fileUri;
+        try {
+            fileUri = new File(pathUrl.toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Invalid package provider path", e);
+        }
+        Path providerPackagePath = Paths.get(fileUri.getPath());
         JavaArchive providerJar = ShrinkWrap.create(JavaArchive.class, provider.getName() + ".jar")
                 .addClasses(provider.getClasses())
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");

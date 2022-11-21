@@ -53,11 +53,7 @@ public class CibaRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory
      */
     @Path("/auth")
     public BackchannelAuthenticationEndpoint authorize() {
-        BackchannelAuthenticationEndpoint endpoint = new BackchannelAuthenticationEndpoint(session, event);
-
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-
-        return endpoint;
+        return new BackchannelAuthenticationEndpoint(session, event);
     }
 
     /**

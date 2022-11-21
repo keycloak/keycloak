@@ -68,16 +68,16 @@ import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
  */
 public class RealmsAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmsAdminResource.class);
-    protected AdminAuth auth;
-    protected TokenManager tokenManager;
+    protected final AdminAuth auth;
+    protected final TokenManager tokenManager;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected ClientConnection clientConnection;
+    protected final ClientConnection clientConnection;
 
-    public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager) {
+    public RealmsAdminResource(KeycloakSession session, AdminAuth auth, TokenManager tokenManager) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
         this.auth = auth;
         this.tokenManager = tokenManager;
     }
@@ -174,7 +174,7 @@ public class RealmsAdminResource {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) throw new NotFoundException("Realm not found.");
 
-        if (!auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())
+        if (!RealmManager.isAdministrationRealm(auth.getRealm())
                 && !auth.getRealm().equals(realm)) {
             throw new ForbiddenException();
         }
@@ -183,7 +183,7 @@ public class RealmsAdminResource {
         AdminEventBuilder adminEvent = new AdminEventBuilder(realm, auth, session, clientConnection);
         session.getContext().setRealm(realm);
 
-        RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager, adminEvent);
+        RealmAdminResource adminResource = new RealmAdminResource(session, realmAuth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);
         return adminResource;

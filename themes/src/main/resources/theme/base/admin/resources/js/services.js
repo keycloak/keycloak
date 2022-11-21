@@ -959,8 +959,10 @@ function clientSelectControl($scope, realm, Client) {
         query: function (query) {
             Client.query({realm: realm, search: true, clientId: query.term.trim(), max: 20}, function(response) {
                 query.callback({ results: response.map(function (client) {
-                    return { id: client.id, text: client.clientId }
-                })});
+                        client.text = client.clientId;
+                        return client;
+                    })
+                });
             });
         }
     };

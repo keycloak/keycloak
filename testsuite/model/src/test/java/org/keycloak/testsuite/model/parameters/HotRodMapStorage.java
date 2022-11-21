@@ -20,12 +20,10 @@ import com.google.common.collect.ImmutableSet;
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.events.EventStoreSpi;
-import org.keycloak.models.ActionTokenStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
-import org.keycloak.models.dblock.NoLockingDBLockProviderFactory;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderFactory;
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
@@ -81,7 +79,6 @@ public class HotRodMapStorage extends KeycloakModelParameters {
     @Override
     public void updateConfig(Config cf) {
         cf.spi(AuthenticationSessionSpi.PROVIDER_ID).provider(MapRootAuthenticationSessionProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
-          .spi(ActionTokenStoreSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi(SingleUseObjectSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi("publicKeyStorage").provider(MapPublicKeyStorageProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi("client").provider(MapClientProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
@@ -94,7 +91,6 @@ public class HotRodMapStorage extends KeycloakModelParameters {
           .spi("user").provider(MapUserProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).provider(MapUserLoginFailureProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
-          .spi("dblock").provider(NoLockingDBLockProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi(EventStoreSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID).config("storage-admin-events.provider", HotRodMapStorageProviderFactory.PROVIDER_ID)
                                                                                        .config("storage-auth-events.provider", HotRodMapStorageProviderFactory.PROVIDER_ID);
 

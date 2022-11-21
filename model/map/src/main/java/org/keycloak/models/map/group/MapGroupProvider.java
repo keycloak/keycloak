@@ -33,6 +33,7 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.QueryParameters;
 
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Map;
 import java.util.Objects;
@@ -137,7 +138,7 @@ public class MapGroupProvider implements GroupProvider {
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        return searchForGroupByNameStream(realm, search, null, null).count();
+        return searchForGroupByNameStream(realm, search, false, null, null).count();
     }
 
     @Override
@@ -165,12 +166,6 @@ public class MapGroupProvider implements GroupProvider {
                 (DefaultModelCriteria<GroupModel> mcb) -> mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS),
                 qp -> qp.offset(firstResult).limit(maxResults)
         );
-    }
-
-    @Override
-    @Deprecated
-    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        return searchForGroupByNameStream(realm, search, false, firstResult, maxResults);
     }
 
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
@@ -259,6 +254,8 @@ public class MapGroupProvider implements GroupProvider {
     public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
         LOG.tracef("moveGroup(%s, %s, %s)%s", realm, group, toParent, getShortStackTrace());
 
+        GroupModel previousParent = group.getParent();
+
         if (toParent != null && group.getId().equals(toParent.getId())) {
             return;
         }
@@ -282,6 +279,33 @@ public class MapGroupProvider implements GroupProvider {
         }
         group.setParent(toParent);
         if (toParent != null) toParent.addChild(group);
+
+        String newPath = KeycloakModelUtils.buildGroupPath(group);
+        String previousPath = KeycloakModelUtils.buildGroupPath(group, previousParent);
+
+        GroupModel.GroupPathChangeEvent event =
+                new GroupModel.GroupPathChangeEvent() {
+                    @Override
+                    public RealmModel getRealm() {
+                        return realm;
+                    }
+
+                    @Override
+                    public String getNewPath() {
+                        return newPath;
+                    }
+
+                    @Override
+                    public String getPreviousPath() {
+                        return previousPath;
+                    }
+
+                    @Override
+                    public KeycloakSession getKeycloakSession() {
+                        return session;
+                    }
+                };
+        session.getKeycloakSessionFactory().publish(event);
     }
 
     @Override

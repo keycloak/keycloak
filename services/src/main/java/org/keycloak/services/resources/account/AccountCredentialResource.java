@@ -1,7 +1,6 @@
 package org.keycloak.services.resources.account;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -54,10 +53,7 @@ import static org.keycloak.utils.CredentialHelper.createUserStorageCredentialRep
 
 public class AccountCredentialResource {
 
-    private static final Logger logger = Logger.getLogger(AccountCredentialResource.class);
-
     public static final String TYPE = "type";
-    public static final String ENABLED_ONLY = "enabled-only";
     public static final String USER_CREDENTIALS = "user-credentials";
 
 

@@ -444,6 +444,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (group.getParentId() != null) {
             group.getParent().removeChild(group);
         }
+        GroupModel previousParent = group.getParent();
         group.setParent(toParent);
         if (toParent != null) toParent.addChild(group);
         else session.groups().addTopLevelGroup(realm, group);
@@ -452,6 +453,33 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         //  DuplicateModelException {@link PersistenceExceptionConverter} is not called if the
         //  ConstraintViolationException is not thrown in method called directly from EntityManager
         em.flush();
+
+        String newPath = KeycloakModelUtils.buildGroupPath(group);
+        String previousPath = KeycloakModelUtils.buildGroupPath(group, previousParent);
+
+        GroupModel.GroupPathChangeEvent event =
+                new GroupModel.GroupPathChangeEvent() {
+                    @Override
+                    public RealmModel getRealm() {
+                        return realm;
+                    }
+
+                    @Override
+                    public String getNewPath() {
+                        return newPath;
+                    }
+
+                    @Override
+                    public String getPreviousPath() {
+                        return previousPath;
+                    }
+
+                    @Override
+                    public KeycloakSession getKeycloakSession() {
+                        return session;
+                    }
+                };
+        session.getKeycloakSessionFactory().publish(event);
     }
 
     @Override
@@ -466,10 +494,15 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
         if (search == null || search.isEmpty()) return getGroupsStream(realm, ids, first, max);
 
+        List<String> idsList = ids.collect(Collectors.toList());
+        if (idsList.isEmpty()) {
+            return Stream.empty();
+        }
+
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsByNameContainingFromIdList", String.class)
                 .setParameter("realm", realm.getId())
                 .setParameter("search", search)
-                .setParameter("ids", ids.collect(Collectors.toList()));
+                .setParameter("ids", idsList);
 
         return closing(paginateQuery(query, first, max).getResultStream())
                 .map(g -> session.groups().getGroupById(realm, g));
@@ -481,9 +514,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             return getGroupsStream(realm, ids);
         }
 
+        List<String> idsList = ids.collect(Collectors.toList());
+        if (idsList.isEmpty()) {
+            return Stream.empty();
+        }
+
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsFromIdList", String.class)
                 .setParameter("realm", realm.getId())
-                .setParameter("ids", ids.collect(Collectors.toList()));
+                .setParameter("ids", idsList);
 
 
         return closing(paginateQuery(query, first, max).getResultStream())
@@ -534,7 +572,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        return searchForGroupByNameStream(realm, search, null, null).count();
+        return searchForGroupByNameStream(realm, search, false, null, null).count();
     }
 
     @Override
@@ -935,12 +973,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                 .filter(clientScope -> Objects.equals(clientScope.getProtocol(), clientProtocol))
                 .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity()));
     }
-
-    @Override
-    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer first, Integer max) {
-        return searchForGroupByNameStream(realm, search, false, first, max);
-    }
-
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer first, Integer max) {
         TypedQuery<String> query;

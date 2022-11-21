@@ -15,10 +15,13 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 
@@ -89,6 +92,21 @@ public interface CryptoProvider {
 
     KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException;
 
+    /**
+     * @return Keystore types/algorithms supported by this CryptoProvider
+     */
+    default Stream<KeystoreFormat> getSupportedKeyStoreTypes() {
+        return Stream.of(KeystoreFormat.values())
+                .filter(format -> {
+                    try {
+                        getKeyStore(format);
+                        return true;
+                    } catch (KeyStoreException | NoSuchProviderException ex) {
+                        return false;
+                    }
+                });
+    }
+
     CertificateFactory getX509CertFactory() throws CertificateException, NoSuchProviderException;
 
     CertStore getCertStore(CollectionCertStoreParameters collectionCertStoreParameters) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException;
@@ -97,4 +115,13 @@ public interface CryptoProvider {
 
     Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException;
 
+    /**
+     * Wrap given SSLSocketFactory and decorate it with some additional functionality.
+     *
+     * This method is used in the context of truststore (where Keycloak is SSL client)
+     *
+     * @param delegate The original factory to wrap. Usually default java SSLSocketFactory
+     * @return decorated factory
+     */
+    SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate);
 }

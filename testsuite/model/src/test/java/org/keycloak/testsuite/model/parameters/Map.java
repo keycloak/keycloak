@@ -19,14 +19,13 @@ package org.keycloak.testsuite.model.parameters;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.events.EventStoreSpi;
 import org.keycloak.keys.PublicKeyStorageSpi;
-import org.keycloak.models.ActionTokenStoreProviderFactory;
-import org.keycloak.models.ActionTokenStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.SingleUseObjectProviderFactory;
 import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
-import org.keycloak.models.dblock.NoLockingDBLockProviderFactory;
+import org.keycloak.models.locking.GlobalLockProviderSpi;
+import org.keycloak.models.locking.NoneGlobalLockProviderFactory;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderFactory;
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.events.MapEventStoreProviderFactory;
@@ -59,7 +58,6 @@ public class Map extends KeycloakModelParameters {
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .add(AuthenticationSessionSpi.class)
-      .add(ActionTokenStoreSpi.class)
       .add(SingleUseObjectSpi.class)
       .add(PublicKeyStorageSpi.class)
       .add(MapStorageSpi.class)
@@ -78,9 +76,8 @@ public class Map extends KeycloakModelParameters {
       .add(MapUserProviderFactory.class)
       .add(MapUserSessionProviderFactory.class)
       .add(MapUserLoginFailureProviderFactory.class)
-      .add(NoLockingDBLockProviderFactory.class)
+      .add(NoneGlobalLockProviderFactory.class)
       .add(MapEventStoreProviderFactory.class)
-      .add(ActionTokenStoreProviderFactory.class)
       .add(SingleUseObjectProviderFactory.class)
       .add(MapPublicKeyStorageProviderFactory.class)
       .build();
@@ -92,7 +89,6 @@ public class Map extends KeycloakModelParameters {
     @Override
     public void updateConfig(Config cf) {
         cf.spi(AuthenticationSessionSpi.PROVIDER_ID).defaultProvider(MapRootAuthenticationSessionProviderFactory.PROVIDER_ID)
-          .spi(ActionTokenStoreSpi.NAME).defaultProvider(MapSingleUseObjectProviderFactory.PROVIDER_ID)
           .spi(SingleUseObjectSpi.NAME).defaultProvider(MapSingleUseObjectProviderFactory.PROVIDER_ID)
           .spi("client").defaultProvider(MapClientProviderFactory.PROVIDER_ID)
           .spi("clientScope").defaultProvider(MapClientScopeProviderFactory.PROVIDER_ID)
@@ -104,7 +100,7 @@ public class Map extends KeycloakModelParameters {
           .spi("user").defaultProvider(MapUserProviderFactory.PROVIDER_ID)
           .spi(UserSessionSpi.NAME).defaultProvider(MapUserSessionProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).defaultProvider(MapUserLoginFailureProviderFactory.PROVIDER_ID)
-          .spi("dblock").defaultProvider(NoLockingDBLockProviderFactory.PROVIDER_ID)
+          .spi(GlobalLockProviderSpi.GLOBAL_LOCK).defaultProvider(NoneGlobalLockProviderFactory.PROVIDER_ID)
           .spi(EventStoreSpi.NAME).defaultProvider(MapEventStoreProviderFactory.PROVIDER_ID)
           .spi("publicKeyStorage").defaultProvider(MapPublicKeyStorageProviderFactory.PROVIDER_ID)
         ;

@@ -20,12 +20,15 @@ package org.keycloak.testsuite.admin.authentication;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ContainerAssume;
 
@@ -36,6 +39,9 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +52,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.Matchers.body;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
@@ -440,7 +447,8 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
-    public void failWithLongDescription() {
+    public void failWithLongDescription() throws IOException {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
         ContainerAssume.assumeAuthServerQuarkus();
         AuthenticationFlowRepresentation rep = authMgmtResource.getFlows().stream()
                 .filter(new Predicate<AuthenticationFlowRepresentation>() {
@@ -462,11 +470,11 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         try {
             authMgmtResource.updateFlow(rep.getId(), rep);
+            fail("Should fail because the description is too long");
         } catch (InternalServerErrorException isee) {
             try (Response response = isee.getResponse()) {
                 assertEquals(500, response.getStatus());
-                assertEquals(0, response.getLength());
-                assertEquals(0, ByteArrayInputStream.class.cast(response.getEntity()).available());
+                assertFalse(StreamUtil.readString((InputStream) response.getEntity(), Charset.forName("UTF-8")).toLowerCase().contains("exception"));
             }
         } catch (Exception e) {
             fail("Unexpected exception");

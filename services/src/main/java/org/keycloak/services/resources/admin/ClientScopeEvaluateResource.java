@@ -102,7 +102,7 @@ public class ClientScopeEvaluateResource {
             throw new NotFoundException("Role Container not found");
         }
 
-        return new ClientScopeEvaluateScopeMappingsResource(roleContainer, auth, client, scopeParam, session);
+        return new ClientScopeEvaluateScopeMappingsResource(roleContainer, auth, client, scopeParam);
     }
 
 

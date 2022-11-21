@@ -25,13 +25,18 @@ limitations under the License.
     <changeSet author="keycloak" id="users-10245">
 
         <ext:addGeneratedColumn tableName="kc_user">
-            <ext:column name="usernamelowercase" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="usernameLowerCase"/>
+            <ext:column name="usernamewithcase" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="usernameWithCase"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_user" indexName="user_username_lower_case_realmid">
-            <column name="usernamelowercase"/>
+        <createIndex tableName="kc_user" indexName="user_username_with_case_realmid">
+            <column name="usernamewithcase"/>
             <column name="realmid"/>
         </createIndex>
 
+    </changeSet>
+
+    <changeSet author="keycloak" id="users-14797">
+        <addUniqueConstraint tableName="kc_user" columnNames="realmid, username, usernamewithcase"/>
+        <addUniqueConstraint tableName="kc_user" columnNames="realmid, emailconstraint"/>
     </changeSet>
 
 </databaseChangeLog>

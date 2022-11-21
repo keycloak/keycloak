@@ -36,22 +36,15 @@
             <SingleSignOnService signRequest="true"
                                  validateResponseSignature="true"
                                  requestBinding="POST"
-                                 bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>
+                                 bindingUrl="http://localhost:8080/realms/saml-demo/protocol/saml"/>
             <SingleLogoutService signRequest="true"
                                  signResponse="true"
                                  validateRequestSignature="true"
                                  validateResponseSignature="true"
                                  requestBinding="POST"
                                  responseBinding="POST"
-                                 postBindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"
-                                 redirectBindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>
-            <Keys>
-                <Key signing="true">
-                    <CertificatePem>
-                        MIIBnDCCAQUCBgFSo+s8KTANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAlzYW1sLWRlbW8wHhcNMTYwMjAyMjEzNTQ4WhcNMjYwMjAyMjEzNzI4WjAUMRIwEAYDVQQDDAlzYW1sLWRlbW8wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKtWsK5O0CtuBpnMvWG+HTG0vmZzujQ2o9WdheQu+BzCILcGMsbDW0YQaglpcO5JpGWWhubnckGGPHfdQ2/7nP9QwbiTK0FbGF41UqcvoaCqU1psxoV88s8IXyQCAqeyLv00yj6foqdJjxh5SZ5z+na+M7Y2OxIBVxYRAxWEnfUvAgMBAAEwDQYJKoZIhvcNAQELBQADgYEAi8/ltyBrrck7ixXfvNmvl50R0KmdHXoe65KVeH9CQmFPolVWeiv7rRr3QxOLjiz2EWoVRWViKHgzZt+rtVOiTDQGTFWsr84yHuFBonlSrmk21uj7Tupdu2Huv8JdHp8ueqSeIW7uV79RvxW7aB420jYCl9OSuQ0OTZ+ECcpxm8I=
-                    </CertificatePem>
-                </Key>
-            </Keys>
+                                 postBindingUrl="http://localhost:8080/realms/saml-demo/protocol/saml"
+                                 redirectBindingUrl="http://localhost:8080/realms/saml-demo/protocol/saml"/>
         </IDP>
     </SP>
 </keycloak-saml-adapter>

@@ -503,8 +503,10 @@ public class RepresentationToModel {
         }
     }
 
-    public static void updateClient(ClientRepresentation rep, ClientModel resource) {
-        if (rep.getClientId() != null) resource.setClientId(rep.getClientId());
+    public static void updateClient(ClientRepresentation rep, ClientModel resource, KeycloakSession session) {
+        String newClientId = rep.getClientId();
+        String previousClientId = resource.getClientId();
+        if (newClientId != null) resource.setClientId(newClientId);
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
         if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
@@ -543,7 +545,7 @@ public class RepresentationToModel {
         if ("saml".equals(rep.getProtocol())
                 && (rep.getAttributes() == null
                 || !rep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
-            resource.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(rep.getClientId()));
+            resource.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(newClientId));
         }
 
         if (rep.getAuthenticationFlowBindingOverrides() != null) {
@@ -566,12 +568,12 @@ public class RepresentationToModel {
 
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
-            resource.setRedirectUris(new HashSet<String>(redirectUris));
+            resource.setRedirectUris(new HashSet<>(redirectUris));
         }
 
         List<String> webOrigins = rep.getWebOrigins();
         if (webOrigins != null) {
-            resource.setWebOrigins(new HashSet<String>(webOrigins));
+            resource.setWebOrigins(new HashSet<>(webOrigins));
         }
 
         if (rep.getRegisteredNodes() != null) {
@@ -594,6 +596,31 @@ public class RepresentationToModel {
         }
 
         resource.updateClient();
+
+        if (!Objects.equals(newClientId, previousClientId)) {
+            ClientModel.ClientIdChangeEvent event = new ClientModel.ClientIdChangeEvent() {
+                @Override
+                public ClientModel getUpdatedClient() {
+                    return resource;
+                }
+
+                @Override
+                public String getPreviousClientId() {
+                    return previousClientId;
+                }
+
+                @Override
+                public String getNewClientId() {
+                    return newClientId;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            };
+            session.getKeycloakSessionFactory().publish(event);
+        }
     }
 
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {

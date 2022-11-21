@@ -51,8 +51,8 @@
         }
     },
 
-    "dblock": {
-        "provider": "${keycloak.dblock.provider:jpa}"
+    "globalLock": {
+        "provider": "${keycloak.globalLock.provider:dblock}"
     },
 
     "realm": {
@@ -135,15 +135,6 @@
         "map": {
             "storage": {
                 "provider": "${keycloak.loginFailure.map.storage.provider:concurrenthashmap}"
-            }
-        }
-    },
-
-    "actionToken": {
-        "provider": "${keycloak.actionToken.provider:infinispan}",
-        "map": {
-            "storage": {
-                "provider": "${keycloak.actionToken.map.storage.provider:concurrenthashmap}"
             }
         }
     },
@@ -311,6 +302,7 @@
             "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
             "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
+            "type": "${keycloak.truststore.type:}",
             "disabled": "${keycloak.truststore.disabled:false}"
         }
     },

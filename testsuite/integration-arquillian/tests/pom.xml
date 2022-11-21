@@ -73,8 +73,10 @@
         <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</auth.server.adapter.impl.class>
         <auth.server.truststore>${auth.server.config.dir}/keycloak.truststore</auth.server.truststore>
         <auth.server.truststore.password>secret</auth.server.truststore.password>
+        <auth.server.truststore.type>jks</auth.server.truststore.type>
         <auth.server.keystore>${auth.server.config.dir}/keycloak.jks</auth.server.keystore>
         <auth.server.keystore.password>secret</auth.server.keystore.password>
+        <auth.server.keystore.type>jks</auth.server.keystore.type>
         <auth.server.jvm.args.extra/>
 
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
@@ -260,6 +262,8 @@
         <auth.server.ocsp.responder.enabled>false</auth.server.ocsp.responder.enabled>
         <keycloak.x509cert.lookup.provider>default</keycloak.x509cert.lookup.provider>
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
+        <auth.server.fips.mode>disabled</auth.server.fips.mode>
+        <auth.server.supported.keystore.types>JKS,PKCS12,BCFKS</auth.server.supported.keystore.types>
     </properties>
 
     <build>
@@ -522,8 +526,11 @@
                             <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
                             <auth.server.truststore>${auth.server.truststore}</auth.server.truststore>
                             <auth.server.truststore.password>${auth.server.truststore.password}</auth.server.truststore.password>
+                            <auth.server.truststore.type>${auth.server.truststore.type}</auth.server.truststore.type>
                             <auth.server.keystore>${auth.server.keystore}</auth.server.keystore>
                             <auth.server.keystore.password>${auth.server.keystore.password}</auth.server.keystore.password>
+                            <auth.server.keystore.type>${auth.server.keystore.type}</auth.server.keystore.type>
+                            <auth.server.java.security.file>${auth.server.java.security.file}</auth.server.java.security.file>
                             <auth.server.jvm.args.extra>${auth.server.jvm.args.extra}</auth.server.jvm.args.extra>
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
@@ -675,6 +682,11 @@
                             <keycloak.connectionsJpa.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.database>
                             <keycloak.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.user>
                             <keycloak.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.password>
+
+                            <!-- FIPS 140-2 -->
+                            <auth.server.fips.mode>${auth.server.fips.mode}</auth.server.fips.mode>
+                            <auth.server.fips.keystore.type>${auth.server.fips.keystore.type}</auth.server.fips.keystore.type>
+                            <auth.server.supported.keystore.types>${auth.server.supported.keystore.types}</auth.server.supported.keystore.types>
 
                             <!--
                               ~ Used for Wildfly Elytron 1.13.0.CR3+ RESTEasy client SSL truststore configuration.
@@ -1360,7 +1372,6 @@
                                     <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
                                     <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
                                     <keycloak.eventStore.map.storage.provider>hotrod</keycloak.eventStore.map.storage.provider>
-                                    <keycloak.actionToken.map.storage.provider>hotrod</keycloak.actionToken.map.storage.provider>
                                     <keycloak.singleUseObject.map.storage.provider>hotrod</keycloak.singleUseObject.map.storage.provider>
                                     <infinispan.version>${infinispan.version}</infinispan.version>
                                     <keycloak.testsuite.start-hotrod-container>${keycloak.testsuite.start-hotrod-container}</keycloak.testsuite.start-hotrod-container>
@@ -1570,6 +1581,25 @@
             </activation>
             <properties>
                 <migration.import.file>target/test-classes/migration-test/${migration.import.file.name}</migration.import.file>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>auth-server-fips140-2</id>
+            <properties>
+                <auth.server.fips.mode>enabled</auth.server.fips.mode>
+
+                <auth.server.supported.keystore.types>PKCS12,BCFKS</auth.server.supported.keystore.types>
+
+                <auth.server.keystore.type>pkcs12</auth.server.keystore.type>
+                <auth.server.keystore>${auth.server.config.dir}/keycloak-fips.keystore.${auth.server.keystore.type}</auth.server.keystore>
+                <auth.server.keystore.password>passwordpassword</auth.server.keystore.password>
+
+                <auth.server.truststore.type>${auth.server.keystore.type}</auth.server.truststore.type>
+                <auth.server.truststore>${auth.server.config.dir}/keycloak-fips.truststore.${auth.server.truststore.type}</auth.server.truststore>
+                <auth.server.truststore.password>passwordpassword</auth.server.truststore.password>
+
+                <auth.server.java.security.file>${auth.server.config.dir}/kc.java.security</auth.server.java.security.file>
             </properties>
         </profile>
 

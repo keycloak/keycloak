@@ -19,7 +19,7 @@
         <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
         <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
         <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
-        <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
+        <keycloak.connectionsJpa.url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
         <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
@@ -118,6 +118,12 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
@@ -310,7 +316,7 @@
             <id>map</id>
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                <keycloak.model.parameters>LegacyJpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>Map,ConcurrentHashMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
@@ -318,7 +324,7 @@
             <id>hot-rod</id>
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                <keycloak.model.parameters>LegacyJpa,Map,HotRodMapStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>Map,HotRodMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
@@ -326,7 +332,7 @@
             <id>map-ldap</id>
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                <keycloak.model.parameters>Jpa,Map,LdapMapStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>Map,LdapMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 

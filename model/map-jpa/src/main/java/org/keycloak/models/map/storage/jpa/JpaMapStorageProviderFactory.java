@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -53,7 +54,7 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -64,7 +65,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.locking.GlobalLock;
+import org.keycloak.models.locking.GlobalLockProvider;
+import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
@@ -232,7 +235,7 @@ public class JpaMapStorageProviderFactory implements
         //roles
         MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);
         //single-use-objects
-        MODEL_TO_TX.put(ActionTokenValueModel.class,            JpaSingleUseObjectMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(SingleUseObjectValueModel.class,            JpaSingleUseObjectMapKeycloakTransaction::new);
         //user-login-failures
         MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapKeycloakTransaction::new);
         //users
@@ -304,6 +307,7 @@ public class JpaMapStorageProviderFactory implements
             synchronized (this) {
                 if (emf == null) {
                     this.emf = createEntityManagerFactory();
+                    JpaMapUtils.addSpecificNamedQueries(emf);
                 }
             }
         }
@@ -432,13 +436,11 @@ public class JpaMapStorageProviderFactory implements
 
     private void update(Class<?> modelType, Connection connection, KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession lockSession) -> {
-            // TODO locking tables based on modelType: https://github.com/keycloak/keycloak/issues/9388
-            DBLockProvider dbLock = session.getProvider(DBLockProvider.class);
-            dbLock.waitForLock(DBLockProvider.Namespace.DATABASE);
-            try {
+            GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
+            try (GlobalLock l = globalLock.acquireLock(modelType.getName())) {
                 session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
-            } finally {
-                dbLock.releaseLock();
+            } catch (LockAcquiringTimeoutException e) {
+                throw new RuntimeException("Acquiring " + modelType.getName() + " failed.", e);
             }
         });
     }

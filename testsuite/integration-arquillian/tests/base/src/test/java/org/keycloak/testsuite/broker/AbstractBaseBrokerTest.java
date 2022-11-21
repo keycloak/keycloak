@@ -35,7 +35,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
@@ -93,9 +92,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
-
-    @Page
-    protected AccountPasswordPage accountPasswordPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -265,6 +261,11 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         updateAccountInformation();
     }
 
+    protected void logInAsUserInIDPForFirstTimeAndAssertSuccess() {
+        logInAsUserInIDPForFirstTime();
+        assertLoggedInAccountManagement();
+    }
+
     protected void updateAccountInformation() {
         waitForPage(driver, "update account information", false);
 
@@ -412,7 +413,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void waitForAccountManagementTitle() {
-        final String title = getProjectName().toLowerCase() + " account management";
+        final String title = "Keycloak account management";
         waitForPage(driver, title, true);
     }
 

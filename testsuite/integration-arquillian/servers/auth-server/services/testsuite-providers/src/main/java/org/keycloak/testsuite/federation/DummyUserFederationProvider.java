@@ -42,7 +42,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class DummyUserFederationProvider implements UserStorageProvider,
-        UserLookupProvider.Streams,
+        UserLookupProvider,
         UserRegistrationProvider,
         CredentialInputValidator {
 

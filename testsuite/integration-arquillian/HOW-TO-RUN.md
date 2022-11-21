@@ -837,15 +837,33 @@ mvn clean install -f testsuite/integration-arquillian/tests/base \
 
 ### Running tests with JPA Map storage
 
-Run PostgreSQL database:
-```shell
-podman run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=keycloak -e POSTGRES_DB=keycloak -d postgres:13.2
-```
+By default tests with `map-storage-jpa` profile spawns a new Postgres container
+with each test execution. Default image used is "postgres:alpine". To spawn different 
+version, it can be used "keycloak.map.storage.postgres.docker.image" system property.
 
 Execute tests:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
                   -Pmap-storage,map-storage-jpa
+```
+
+It's also possible to configure tests to connect to an external database, it might be useful 
+for debugging purposes as the database is not removed after the testsuite run. On the other hand
+it'll require manual cleaning between two runs.
+
+PostgreSQL database can be started e.g. by following command:
+```shell
+podman run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=keycloak -e POSTGRES_DB=keycloak -d postgres:alpine
+```
+
+To run the tests without spawning the container for you, execute tests with the following command:
+```shell
+mvn clean install -f testsuite/integration-arquillian/tests/base \
+  -Pmap-storage,map-storage-jpa \
+  -Dpostgres.start-container=false \
+  -Dkeycloak.map.storage.connectionsJpa.url=<jdbc_url> \
+  -Dkeycloak.map.storage.connectionsJpa.user=<user> \
+  -Dkeycloak.map.storage.connectionsJpa.password=<password>
 ```
 
 ### Running tests with HotRod Map storage
@@ -923,3 +941,25 @@ DefaultHostnameTest.java:226)
 when running these tests on your local machine. This happens when something on your machine or network is blocking DNS queries to [nip.io](https://nip.io)
 One possible workaround is to add a commonly used public dns server (e.g. 8.8.8.8 for google dns server) to your local 
 networks dns configuration and run the tests. 
+
+## FIPS 140-2 testing
+
+On the FIPS enabled platform with FIPS enabled OpenJDK 11, you can run this to test against Keycloak server on Quarkus
+with FIPS 140.2 integration enabled
+```
+mvn -B -f testsuite/integration-arquillian/pom.xml \
+  clean install \
+  -Pauth-server-quarkus,auth-server-fips140-2 \
+  -Dcom.redhat.fips=false
+```
+NOTE 1: The property `com.redhat.fips` is needed so that testsuite itself is executed in the JVM with FIPS disabled. However
+most important part is that Keycloak itself is running on the JVM with FIPS enabled. You can check log from server startup and
+there should be messages similar to those:
+```
+2022-10-11 19:34:29,521 DEBUG [org.keycloak.common.crypto.CryptoIntegration] (main) Using the crypto provider: org.keycloak.crypto.fips.FIPS1402Provider
+2022-10-11 19:34:31,072 TRACE [org.keycloak.common.crypto.CryptoIntegration] (main) Java security providers: [ 
+ KC(BCFIPS version 1.000203) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
+ BCFIPS version 1.000203 - class org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider, 
+ BCJSSE version 1.001202 - class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider,
+]
+```

@@ -24,17 +24,20 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
-import static org.keycloak.services.util.IframeUtil.returnIframeFromResources;
+import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframeFromResources;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ThirdPartyCookiesIframeEndpoint {
-    @Context
-    private KeycloakSession session;
+
+    private final KeycloakSession session;
+
+    public ThirdPartyCookiesIframeEndpoint(KeycloakSession session) {
+        this.session = session;
+    }
 
     @GET
     @Path("step1.html")

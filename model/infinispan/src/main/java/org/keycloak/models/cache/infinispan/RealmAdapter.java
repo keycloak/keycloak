@@ -667,12 +667,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<RequiredCredentialModel> getRequiredCredentials() {
-        if (isUpdated()) return updated.getRequiredCredentials();
-        return cached.getRequiredCredentials();
-    }
-
-    @Override
     public void addRequiredCredential(String cred) {
         getDelegateForUpdate();
         updated.addRequiredCredential(cred);
@@ -1057,6 +1051,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public RoleModel getDefaultRole() {
+        if (isUpdated()) return updated.getDefaultRole();
         return cached.getDefaultRoleId() == null ? null : cacheSession.getRoleById(this, cached.getDefaultRoleId());
     }
 

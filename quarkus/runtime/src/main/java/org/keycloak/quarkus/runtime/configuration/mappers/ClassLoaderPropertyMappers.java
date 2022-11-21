@@ -3,6 +3,8 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.util.Optional;
+
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.ClassLoaderOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
@@ -30,7 +32,7 @@ final class ClassLoaderPropertyMappers {
             ConfigValue fipsEnabled = Configuration.getConfigValue(
                     MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey());
 
-            if (fipsEnabled != null && SecurityOptions.FipsMode.valueOf(fipsEnabled.getValue()).isFipsEnabled()) {
+            if (fipsEnabled != null && FipsMode.valueOf(fipsEnabled.getValue()).isFipsEnabled()) {
                 return Optional.of(
                         "org.bouncycastle:bcprov-jdk15on,org.bouncycastle:bcpkix-jdk15on,org.keycloak:keycloak-crypto-default");
             }

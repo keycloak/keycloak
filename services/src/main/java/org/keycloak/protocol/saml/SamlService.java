@@ -161,8 +161,8 @@ public class SamlService extends AuthorizationEndpointBase {
 
     private final DestinationValidator destinationValidator;
 
-    public SamlService(RealmModel realm, EventBuilder event, DestinationValidator destinationValidator) {
-        super(realm, event);
+    public SamlService(KeycloakSession session, EventBuilder event, DestinationValidator destinationValidator) {
+        super(session, event);
         this.destinationValidator = destinationValidator;
     }
 
@@ -1073,7 +1073,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @NoCache
     @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
-        SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event, destinationValidator);
+        SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, destinationValidator);
 
         ResteasyProviderFactory.getInstance().injectProperties(bindingService);
 
@@ -1150,7 +1150,7 @@ public class SamlService extends AuthorizationEndpointBase {
             return emptyArtifactResponseMessage(artifactResolveMessage, null);
         }
 
-        AuthenticatedClientSessionModel clientSessionModel = userSessionModel.getAuthenticatedClientSessions().get(sessionMapping.get(SamlProtocol.CLIENT_SESSION_ID));
+        AuthenticatedClientSessionModel clientSessionModel = userSessionModel.getAuthenticatedClientSessionByClient(sessionMapping.get(SamlProtocol.CLIENT_SESSION_ID));
         if (clientSessionModel == null) {
             logger.errorf("ClientSession with id: %s, that corresponds to artifact: %s and UserSession: %s does not exist.",
                     sessionMapping.get(SamlProtocol.CLIENT_SESSION_ID), artifact, sessionMapping.get(SamlProtocol.USER_SESSION_ID));
@@ -1403,7 +1403,7 @@ public class SamlService extends AuthorizationEndpointBase {
                         throw new NotFoundException("Protocol not found");
                     }
 
-                    SamlService endpoint = (SamlService) factory.createProtocolEndpoint(realm, event);
+                    SamlService endpoint = (SamlService) factory.createProtocolEndpoint(session, event);
                     ResteasyProviderFactory.getInstance().injectProperties(endpoint);
                     BindingProtocol protocol;
                     if (SamlProtocol.SAML_POST_BINDING.equals(bindingType)) {

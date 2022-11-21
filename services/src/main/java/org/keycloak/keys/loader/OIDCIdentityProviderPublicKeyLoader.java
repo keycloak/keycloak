@@ -25,6 +25,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
@@ -34,7 +35,6 @@ import org.keycloak.util.JWKSUtils;
 
 import java.security.PublicKey;
 import java.util.Collections;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -52,7 +52,7 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
     }
 
     @Override
-    public Map<String, KeyWrapper> loadKeys() throws Exception {
+    public PublicKeysWrapper loadKeys() throws Exception {
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
@@ -61,12 +61,12 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
             try {
             	KeyWrapper publicKey = getSavedPublicKey();
                 if (publicKey == null) {
-                    return Collections.emptyMap();
+                    return PublicKeysWrapper.EMPTY;
                 }
-                return Collections.singletonMap(publicKey.getKid(), publicKey);
+                return new PublicKeysWrapper(Collections.singletonList(publicKey));
             } catch (Exception e) {
                 logger.warnf(e, "Unable to retrieve publicKey for verify signature of identityProvider '%s' . Error details: %s", config.getAlias(), e.getMessage());
-                return Collections.emptyMap();
+                return PublicKeysWrapper.EMPTY;
             }
         }
     }

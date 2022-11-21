@@ -148,7 +148,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
 
-        RepresentationToModel.updateClient(rep, client);
+        RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
 
         if (rep.getDefaultRoles() != null) {

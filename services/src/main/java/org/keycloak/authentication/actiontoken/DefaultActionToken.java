@@ -22,7 +22,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
+import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
@@ -38,7 +39,7 @@ import java.util.UUID;
  *
  * @author hmlnarik
  */
-public class DefaultActionToken extends DefaultActionTokenKey implements ActionTokenValueModel {
+public class DefaultActionToken extends DefaultActionTokenKey implements SingleUseObjectValueModel {
 
     public static final String JSON_FIELD_AUTHENTICATION_SESSION_ID = "asid";
     public static final String JSON_FIELD_EMAIL = "eml";

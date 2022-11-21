@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
@@ -40,7 +41,7 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.config.SecurityOptions;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
@@ -63,6 +64,14 @@ public class KeycloakRecorder {
     public static final String DEFAULT_HEALTH_ENDPOINT = "/health";
     public static final String DEFAULT_METRICS_ENDPOINT = "/metrics";
 
+    public void initConfig() {
+        Config.init(new MicroProfileConfigProvider());
+    }
+
+    public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
+        Profile.init(profileName, features);
+    }
+
     public void configureLiquibase(Map<String, List<String>> services) {
         ServiceLocator locator = Scope.getCurrentScope().getServiceLocator();
         if (locator instanceof FastServiceLocator)
@@ -74,8 +83,6 @@ public class KeycloakRecorder {
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
             List<ClasspathThemeProviderFactory.ThemesRepresentation> themes, boolean reaugmented) {
-        Config.init(new MicroProfileConfigProvider());
-        Profile.setInstance(new QuarkusProfile());
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
     }
 
@@ -143,8 +150,8 @@ public class KeycloakRecorder {
         };
     }
 
-    public QuarkusRequestFilter createRequestFilter(List<String> ignoredPaths) {
-        return new QuarkusRequestFilter(createIgnoredHttpPathsPredicate(ignoredPaths));
+    public QuarkusRequestFilter createRequestFilter(List<String> ignoredPaths, ExecutorService executor) {
+        return new QuarkusRequestFilter(createIgnoredHttpPathsPredicate(ignoredPaths), executor);
     }
 
     private Predicate<RoutingContext> createIgnoredHttpPathsPredicate(List<String> ignoredPaths) {
@@ -166,7 +173,7 @@ public class KeycloakRecorder {
         };
     }
 
-    public void setCryptoProvider(SecurityOptions.FipsMode fipsMode) {
+    public void setCryptoProvider(FipsMode fipsMode) {
         String cryptoProvider = fipsMode.getProviderClassName();
 
         try {

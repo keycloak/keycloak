@@ -82,6 +82,8 @@ public final class LdapMapContextManager implements AutoCloseable {
     }
 
     private void createLdapContext() throws NamingException {
+        LdapMapUtil.setLDAPHostnameToKeycloakSession(session, ldapMapConfig);
+
         Hashtable<Object, Object> connProp = getConnectionProperties(ldapMapConfig);
 
         if (!LDAPConstants.AUTH_TYPE_NONE.equals(ldapMapConfig.getAuthType())) {

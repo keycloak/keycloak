@@ -51,13 +51,13 @@ public class PublicRealmResource {
     @Context
     protected HttpResponse response;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    public PublicRealmResource(RealmModel realm) {
-        this.realm = realm;
+    public PublicRealmResource(KeycloakSession session) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
     }
 
     /**

@@ -16,85 +16,120 @@
  */
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 
-import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 
 public class KeycloakSpec {
 
     @JsonPropertyDescription("Number of Keycloak instances in HA mode. Default is 1.")
     private int instances = 1;
+
     @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
+
     @JsonPropertyDescription("Secret(s) that might be used when pulling an image from a private container image registry or repository.")
     private List<LocalObjectReference> imagePullSecrets;
+
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
-    private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
+    private List<ValueOrSecret> additionalOptions; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
-    // TODO: switch to this serverConfig when all the options are ported
-    // private ServerConfig serverConfig;
+    @JsonProperty("http")
+    @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
+    private HttpSpec httpSpec;
 
-    @NotNull
-    @JsonPropertyDescription("Hostname for the Keycloak server.\n" +
-            "The special value `" + Constants.INSECURE_DISABLE + "` disables the hostname strict resolution.")
-    private String hostname;
-    @NotNull
-    @JsonPropertyDescription("A secret containing the TLS configuration for HTTPS. Reference: https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets.\n" +
-            "The special value `" + Constants.INSECURE_DISABLE + "` disables https.")
-    private String tlsSecret;
-    @JsonPropertyDescription("Disable the default ingress.")
-    private boolean disableDefaultIngress;
     @JsonPropertyDescription(
-        "In this section you can configure podTemplate advanced features, not production-ready, and not supported settings.\n" +
-        "Use at your own risk and open an issue with your use-case if you don't find an alternative way.")
-    private KeycloakSpecUnsupported unsupported;
+            "In this section you can configure podTemplate advanced features, not production-ready, and not supported settings.\n" +
+                    "Use at your own risk and open an issue with your use-case if you don't find an alternative way.")
+    private UnsupportedSpec unsupported;
 
-    public String getHostname() {
-        return hostname;
+    @JsonProperty("ingress")
+    @JsonPropertyDescription("The deployment is, by default, exposed through a basic ingress.\n" +
+            "You can change this behaviour by setting the enabled property to false.")
+    private IngressSpec ingressSpec;
+
+    @JsonProperty("features")
+    @JsonPropertyDescription("In this section you can configure Keycloak features, which should be enabled/disabled.")
+    private FeatureSpec featureSpec;
+
+    @JsonProperty("transaction")
+    @JsonPropertyDescription("In this section you can find all properties related to the settings of transaction behavior.")
+    private TransactionsSpec transactionsSpec;
+
+    @JsonProperty("db")
+    @JsonPropertyDescription("In this section you can find all properties related to connect to a database.")
+    private DatabaseSpec databaseSpec;
+
+    @JsonProperty("hostname")
+    @JsonPropertyDescription("In this section you can configure Keycloak hostname and related properties.")
+    private HostnameSpec hostnameSpec;
+
+    public HttpSpec getHttpSpec() {
+        return httpSpec;
     }
 
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
+    public void setHttpSpec(HttpSpec httpSpec) {
+        this.httpSpec = httpSpec;
     }
 
-    @JsonIgnore
-    public boolean isHostnameDisabled() {
-        return this.hostname.equals(Constants.INSECURE_DISABLE);
-    }
-
-    public void setDisableDefaultIngress(boolean value) {
-        this.disableDefaultIngress = value;
-    }
-
-    public boolean isDisableDefaultIngress() {
-        return this.disableDefaultIngress;
-    }
-
-    public String getTlsSecret() {
-        return tlsSecret;
-    }
-
-    public void setTlsSecret(String tlsSecret) {
-        this.tlsSecret = tlsSecret;
-    }
-
-    @JsonIgnore
-    public boolean isHttp() {
-        return this.tlsSecret.equals(Constants.INSECURE_DISABLE);
-    }
-
-    public KeycloakSpecUnsupported getUnsupported() {
+    public UnsupportedSpec getUnsupported() {
         return unsupported;
     }
 
-    public void setUnsupported(KeycloakSpecUnsupported unsupported) {
+    public void setUnsupported(UnsupportedSpec unsupported) {
         this.unsupported = unsupported;
+    }
+
+    public FeatureSpec getFeatureSpec() {
+        return featureSpec;
+    }
+
+    public void setFeatureSpec(FeatureSpec featureSpec) {
+        this.featureSpec = featureSpec;
+    }
+
+    public TransactionsSpec getTransactionsSpec() {
+        return transactionsSpec;
+    }
+
+    public void setTransactionsSpec(TransactionsSpec transactionsSpec) {
+        this.transactionsSpec = transactionsSpec;
+    }
+
+    public IngressSpec getIngressSpec() {
+        return ingressSpec;
+    }
+
+    public void setIngressSpec(IngressSpec ingressSpec) {
+        this.ingressSpec = ingressSpec;
+    }
+
+    public DatabaseSpec getDatabaseSpec() {
+        return databaseSpec;
+    }
+
+    public void setDatabaseSpec(DatabaseSpec databaseSpec) {
+        this.databaseSpec = databaseSpec;
+    }
+
+    public HostnameSpec getHostnameSpec() {
+        return hostnameSpec;
+    }
+
+    public void setHostnameSpec(HostnameSpec hostnameSpec) {
+        this.hostnameSpec = hostnameSpec;
     }
 
     public int getInstances() {
@@ -121,11 +156,14 @@ public class KeycloakSpec {
         this.imagePullSecrets = imagePullSecrets;
     }
 
-    public List<ValueOrSecret> getServerConfiguration() {
-        return serverConfiguration;
+    public List<ValueOrSecret> getAdditionalOptions() {
+        if (this.additionalOptions == null) {
+            this.additionalOptions = new ArrayList<>();
+        }
+        return additionalOptions;
     }
 
-    public void setServerConfiguration(List<ValueOrSecret> serverConfiguration) {
-        this.serverConfiguration = serverConfiguration;
+    public void setAdditionalOptions(List<ValueOrSecret> additionalOptions) {
+        this.additionalOptions = additionalOptions;
     }
 }

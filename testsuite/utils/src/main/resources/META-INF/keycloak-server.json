@@ -32,8 +32,8 @@
         }
     },
 
-    "dblock": {
-        "provider": "${keycloak.dblock.provider:jpa}"
+    "globalLock": {
+        "provider": "${keycloak.globalLock.provider:dblock}"
     },
 
     "realm": {
@@ -107,15 +107,6 @@
         "map": {
             "storage": {
                 "provider": "${keycloak.loginFailure.map.storage.provider:concurrenthashmap}"
-            }
-        }
-    },
-
-    "actionToken": {
-        "provider": "${keycloak.actionToken.provider:infinispan}",
-        "map": {
-            "storage": {
-                "provider": "${keycloak.actionToken.map.storage.provider:concurrenthashmap}"
             }
         }
     },

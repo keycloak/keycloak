@@ -17,7 +17,12 @@
 
 package org.keycloak.models.map.storage.ldap.store;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.map.storage.ldap.config.LdapMapConfig;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,6 +34,8 @@ import java.util.TimeZone;
  * @author Pedro Igor
  */
 public class LdapMapUtil {
+
+    private static final Logger logger = Logger.getLogger(LdapMapUtil.class);
 
     /**
      * <p>Formats the given date.</p>
@@ -248,6 +255,12 @@ public class LdapMapUtil {
         } else {
             return Integer.toHexString(value);
         }
+    }
+
+    public static void setLDAPHostnameToKeycloakSession(KeycloakSession session, LdapMapConfig ldapConfig) {
+        String hostname = UriUtils.getHost(ldapConfig.getConnectionUrl());
+        session.setAttribute(Constants.SSL_SERVER_HOST_ATTR, hostname);
+        logger.tracef("Setting LDAP server hostname '%s' as KeycloakSession attribute", hostname);
     }
 
 

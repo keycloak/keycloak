@@ -23,24 +23,23 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
 
 /**
  * Clear user cache.
  */
 public class ClearUserCacheResource {
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    protected AdminPermissionEvaluator auth;
+    protected final AdminPermissionEvaluator auth;
 
-    protected AdminEventBuilder adminEvent;
+    protected final AdminEventBuilder adminEvent;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public ClearUserCacheResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public ClearUserCacheResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
         this.adminEvent = adminEvent;
     }
 

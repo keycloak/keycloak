@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.AttributeContext;
@@ -64,6 +65,8 @@ public class UsernameMutationValidator implements SimpleValidator {
         AttributeContext attributeContext = UserProfileAttributeValidationContext.from(context).getAttributeContext();
         UserModel user = attributeContext.getUser();
         RealmModel realm = context.getSession().getContext().getRealm();
+
+        if (! KeycloakModelUtils.isUsernameCaseSensitive(realm)) value = value.toLowerCase();
 
         if (!realm.isEditUsernameAllowed() && user != null && !value.equals(user.getFirstAttribute(UserModel.USERNAME))) {
             if (realm.isRegistrationEmailAsUsername() && UserProfileContext.UPDATE_PROFILE.equals(attributeContext.getContext())) {

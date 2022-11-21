@@ -18,11 +18,9 @@
 package org.keycloak.models.map.singleUseObject;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.common.TimeAdapter;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -31,28 +29,6 @@ public class MapSingleUseObjectAdapter extends AbstractSingleUseObjectModel<MapS
 
     public MapSingleUseObjectAdapter(KeycloakSession session, MapSingleUseObjectEntity entity) {
         super(session, entity);
-    }
-
-    @Override
-    public String getUserId() {
-        return entity.getUserId();
-    }
-
-    @Override
-    public String getActionId() {
-        return entity.getActionId();
-    }
-
-    @Override
-    public int getExpiration() {
-        Long expiration = entity.getExpiration();
-        return expiration != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(TimeAdapter.fromMilliSecondsToSeconds(expiration)) : 0;
-    }
-
-    @Override
-    public UUID getActionVerificationNonce() {
-        String actionVerificationNonce = entity.getActionVerificationNonce();
-        return actionVerificationNonce != null ? UUID.fromString(actionVerificationNonce) : null;
     }
 
     @Override
