@@ -126,6 +126,7 @@ mvn clean install -f common -DskipTests=true
 mvn clean install -f core -DskipTests=true
 mvn clean install -f server-spi -DskipTests=true
 mvn clean install -f server-spi-private -DskipTests=true
+mvn clean install -f services -DskipTests=true
 mvn clean install -f crypto/fips1402
 ```
 
