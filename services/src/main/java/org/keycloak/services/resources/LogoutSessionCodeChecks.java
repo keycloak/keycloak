@@ -68,8 +68,4 @@ public class LogoutSessionCodeChecks extends SessionCodeChecks {
         return true;
     }
 
-    @Override
-    protected boolean checkClientDisabled(ClientModel client) {
-        return !client.isEnabled() && getClientCode() != null;
-    }
 }

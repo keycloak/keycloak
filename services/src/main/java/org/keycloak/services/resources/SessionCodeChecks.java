@@ -453,6 +453,6 @@ public class SessionCodeChecks {
     }
 
     protected boolean checkClientDisabled(ClientModel client) {
-        return !client.isEnabled();
+        return !client.isEnabled() && getClientCode() != null;
     }
 }
