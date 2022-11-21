@@ -510,7 +510,6 @@ public class RealmAdminResource {
         if (provider != null) {
             Object resource = provider.getResource(session, realm, auth, adminEvent);
             if (resource != null) {
-                ResteasyProviderFactory.getInstance().injectProperties(resource);
                 return resource;
             }
         }
