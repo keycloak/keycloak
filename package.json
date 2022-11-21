@@ -28,7 +28,7 @@
     "lint-staged": "^13.0.3",
     "prettier": "^2.7.1",
     "typescript": "^4.9.3",
-    "wireit": "^0.7.3"
+    "wireit": "^0.8.0"
   },
   "lint-staged": {
     "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
