@@ -417,9 +417,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             throw new NotFoundException(e.getMessage());
         }
 
-        Object callback = identityProvider.callback(realmModel, this, event);
-        ResteasyProviderFactory.getInstance().injectProperties(callback);
-        return callback;
+        return identityProvider.callback(realmModel, this, event);
     }
 
     @Path("{provider_id}/token")
