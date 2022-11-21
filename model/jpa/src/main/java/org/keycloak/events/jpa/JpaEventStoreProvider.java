@@ -35,15 +35,9 @@ import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.InvalidationHandler;
-import org.keycloak.timer.ScheduledTask;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -284,13 +278,10 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     }
 
     protected void clearExpiredAdminEvents() {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<RealmAttributeEntity> cr = cb.createQuery(RealmAttributeEntity.class);
-        Root<RealmAttributeEntity> root = cr.from(RealmAttributeEntity.class);
-        // unable to cast the CLOB to a BIGINT in the select for H2 2.x, therefore comparing strings only in the DB, and filtering again in the next statement
-        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.notEqual(root.get("value"), "0")));
-        Map<Long, List<RealmAttributeEntity>> realms = em.createQuery(cr).getResultStream()
-                // filtering again on the attribute as paring the CLOB to BIGINT didn't work in H2 2.x
+        TypedQuery<RealmAttributeEntity> query = em.createNamedQuery("selectRealmAttributesNotEmptyByName", RealmAttributeEntity.class)
+                .setParameter("name", RealmAttributes.ADMIN_EVENTS_EXPIRATION);
+        Map<Long, List<RealmAttributeEntity>> realms = query.getResultStream()
+                // filtering again on the attribute as parsing the CLOB to BIGINT didn't work in H2 2.x, and it also different on OracleDB
                 .filter(attribute -> {
                     try {
                         return Long.parseLong(attribute.getValue()) > 0;
