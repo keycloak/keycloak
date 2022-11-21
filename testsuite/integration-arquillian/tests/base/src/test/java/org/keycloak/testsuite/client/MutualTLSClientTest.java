@@ -67,12 +67,16 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       exactSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       exactSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       exactSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-      exactSubjectDNConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_SUBJECT_DN, EXACT_CERTIFICATE_SUBJECT_DN));
+      Map<String, String> attrs = new HashMap<>();
+      attrs.put(X509ClientAuthenticator.ATTR_SUBJECT_DN, EXACT_CERTIFICATE_SUBJECT_DN);
+      attrs.put(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "false");
+      exactSubjectDNConfiguration.setAttributes(attrs);
 
       ClientRepresentation obbSubjectDNConfiguration = KeycloakModelUtils.createClient(testRealm, OBB_SUBJECT_DN_CLIENT_ID);
       obbSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       obbSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       obbSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+      obbSubjectDNConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "false"));
       // ATTR_SUBJECT_DN will be set in the individual tests based on the requested Subject DN Format
    }
 
@@ -193,7 +197,6 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       ClientResource client = ApiUtil.findClientByClientId(testRealm(), OBB_SUBJECT_DN_CLIENT_ID);
       ClientRepresentation clientRep = client.toRepresentation();
       OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
-      config.setAllowRegexPatternComparison(false);
       config.setTlsClientAuthSubjectDn(expectedSubjectDN);
       client.update(clientRep);
 

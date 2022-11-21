@@ -81,16 +81,9 @@ Or slightly longer version (that allows you to specify debugging port as well as
 
 and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so this won't help to debug those.
 
-### JBoss auth server debugging
+### Auth server debugging
 
-When tests are run on JBoss based container (WildFly/EAP) there is possibility to attach a debugger, by default on localhost:5005.
-
-The server won't wait to attach the debugger. There are some properties what can change the default behaviour.
-
-    -Dauth.server.debug.port=$PORT
-    -Dauth.server.debug.suspend=y
-
-More info: http://javahowto.blogspot.cz/2010/09/java-agentlibjdwp-for-attaching.html
+See below in the "Quarkus" section.
 
 ### JBoss app server debugging
 
@@ -788,7 +781,14 @@ Run tests using the `auth-server-quarkus` profile:
     
 Right now, the server runs in a separate process. To debug the server set `auth.server.debug` system property to `true`.
 
-To configure the debugger port, set the `auth.server.debug.port` system property with any valid port number. Default is `5005`. 
+To configure the debugger port, set the `auth.server.debug.port` system property with any valid port number. Default is `5005`.
+Note you can also set port for example to `*:5005` or `my-host:5005` to set the bind host.
+
+By default, quarkus server is started in the testsuite and you need to attach remote debugger to it during running. You can
+use `auth.server.debug.suspend=y` to "suspend" server startup when running testsuite, which means that server startup is blocked
+until debugger is attached.
+
+More info: http://javahowto.blogspot.cz/2010/09/java-agentlibjdwp-for-attaching.html
 
 ## Cookies testing
 In order to reproduce some specific cookies behaviour in browsers (like SameSite policies or 3rd party cookie blocking),
