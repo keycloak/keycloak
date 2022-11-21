@@ -44,11 +44,17 @@ public class DefaultModelCriteriaTest {
         DefaultModelCriteria<ClientModel> v = criteria();
         assertThat(v.and(), hasToString("__TRUE__"));
         assertThat(v.and(v.or()), hasToString("__FALSE__"));
+        assertThat(v.and(v.or()).optimize(), hasToString("__FALSE__"));
+        assertThat(v.and(v.or(), v.and()).optimize(), hasToString("__FALSE__"));
 
         assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 3)), hasToString("clientId EQ [3]"));
         assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 3), v.or()), hasToString("__FALSE__"));
         assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5)), hasToString("(clientId EQ [4] && id EQ [5])"));
+        assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 4)), hasToString("clientId EQ [4]"));
         assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 4), v.compare(ID, Operator.EQ, 5)), hasToString("(clientId EQ [4] && id EQ [5])"));
+        assertThat(v.and(v.and(v.compare(CLIENT_ID, Operator.EQ, 4), v.compare(ID, Operator.EQ, 5))), hasToString("(clientId EQ [4] && id EQ [5])"));
+        assertThat(v.and(v.and(v.compare(CLIENT_ID, Operator.EQ, 4), v.compare(ID, Operator.EQ, 5)),
+                         v.or(v.compare(CLIENT_ID, Operator.EQ, 6))), hasToString("(clientId EQ [4] && id EQ [5] && clientId EQ [6])"));
     }
 
     @Test
@@ -56,6 +62,7 @@ public class DefaultModelCriteriaTest {
         DefaultModelCriteria<ClientModel> v = criteria();
         assertThat(v.or(), hasToString("__FALSE__"));
         assertThat(v.or(v.and()), hasToString("__TRUE__"));
+        assertThat(v.or(v.and(), v.or()), hasToString("__TRUE__"));
 
         assertThat(v.or(v.compare(CLIENT_ID, Operator.EQ, 3)), hasToString("clientId EQ [3]"));
         assertThat(v.or(v.compare(CLIENT_ID, Operator.EQ, 3), v.and()), hasToString("__TRUE__"));
@@ -63,6 +70,8 @@ public class DefaultModelCriteriaTest {
         assertThat(v.or(v.compare(CLIENT_ID, Operator.EQ, 4), v.compare(ID, Operator.EQ, 5)), hasToString("(clientId EQ [4] || id EQ [5])"));
         assertThat(v.or(v.or(v.compare(CLIENT_ID, Operator.EQ, 4), v.compare(ID, Operator.EQ, 5))), hasToString("(clientId EQ [4] || id EQ [5])"));
         assertThat(v.and(v.or(v.compare(CLIENT_ID, Operator.EQ, 4), v.compare(ID, Operator.EQ, 5))), hasToString("(clientId EQ [4] || id EQ [5])"));
+        assertThat(v.or(v.or(v.compare(CLIENT_ID, Operator.EQ, 4), v.compare(ID, Operator.EQ, 5)),
+                        v.or(v.compare(CLIENT_ID, Operator.EQ, 6), v.compare(ID, Operator.EQ, 7))), hasToString("(clientId EQ [4] || id EQ [5] || clientId EQ [6] || id EQ [7])"));
     }
 
     @Test
@@ -151,6 +160,10 @@ public class DefaultModelCriteriaTest {
         ),
           hasToString("((clientId EQ [4] && realmId EQ [aa]) || (id EQ [5] && enabled EQ [true]))")
         );
+
+        assertThat(v.not(v.and(v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5))),
+          hasToString("! (clientId EQ [4] && id EQ [5])")
+        );
     }
 
     @Test
@@ -190,16 +203,46 @@ public class DefaultModelCriteriaTest {
               ? true
               : null
           ),
-          hasToString("(__TRUE__ && __TRUE__)"));
+          hasToString("__TRUE__"));
 
-        assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5))
+        assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5),
+                         v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 7))
+          .partiallyEvaluate((field, operator, operatorArguments) ->
+            (field == CLIENT_ID && operator == Operator.EQ && Arrays.asList(operatorArguments).contains(4))
+              ? true
+              : (field == ID && operator == Operator.EQ)
+                ? Arrays.asList(operatorArguments).contains(5)
+                : null
+          ),
+          hasToString("__FALSE__"));
+
+        assertThat(v.or (v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5),
+                         v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 7))
+          .partiallyEvaluate((field, operator, operatorArguments) ->
+            (field == CLIENT_ID && operator == Operator.EQ && Arrays.asList(operatorArguments).contains(4))
+              ? true
+              : (field == ID && operator == Operator.EQ)
+                ? Arrays.asList(operatorArguments).contains(5)
+                : null
+          ),
+          hasToString("__TRUE__"));
+
+        assertThat(v.not(v.and(v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5)))
           .partiallyEvaluate((field, operator, operatorArguments) ->
             (field == CLIENT_ID && operator == Operator.EQ && Arrays.asList(operatorArguments).contains(4))
             || (field == ID && operator == Operator.EQ && Arrays.asList(operatorArguments).contains(5))
               ? true
               : null
           ).optimize(),
-          hasToString("__TRUE__"));
+          hasToString("__FALSE__"));
+
+        assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5))
+          .partiallyEvaluate((field, operator, operatorArguments) ->
+            (field == ID && operator == Operator.EQ && Arrays.asList(operatorArguments).contains(5))
+              ? false
+              : null
+          ).optimize(),
+          hasToString("__FALSE__"));
 
         assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5))
           .partiallyEvaluate((field, operator, operatorArguments) -> field == CLIENT_ID && operator == Operator.EQ && Arrays.asList(operatorArguments).contains(6) ? true : null),
