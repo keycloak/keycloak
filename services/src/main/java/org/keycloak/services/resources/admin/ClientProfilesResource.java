@@ -23,7 +23,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -41,11 +40,9 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 public class ClientProfilesResource {
     protected static final Logger logger = Logger.getLogger(ClientProfilesResource.class);
 
-    @Context
-    protected HttpRequest request;
+    protected final HttpRequest request;
 
-    @Context
-    protected HttpResponse response;
+    protected final HttpResponse response;
 
     protected final KeycloakSession session;
 
@@ -56,6 +53,8 @@ public class ClientProfilesResource {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.auth = auth;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.response = session.getContext().getContextObject(HttpResponse.class);
     }
 
     @GET

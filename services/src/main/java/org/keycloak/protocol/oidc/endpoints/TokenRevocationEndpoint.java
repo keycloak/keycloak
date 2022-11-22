@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -64,11 +62,7 @@ public class TokenRevocationEndpoint {
 
     private final KeycloakSession session;
 
-    @Context
-    private HttpRequest request;
-
-    @Context
-    private HttpHeaders headers;
+    private final HttpRequest request;
 
     private final ClientConnection clientConnection;
 
@@ -85,6 +79,7 @@ public class TokenRevocationEndpoint {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
     }
 
     @POST

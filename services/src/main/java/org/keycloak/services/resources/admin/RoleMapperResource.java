@@ -47,7 +47,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -87,8 +86,7 @@ public class RoleMapperResource {
 
     protected final KeycloakSession session;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
     public RoleMapperResource(KeycloakSession session,
                               AdminPermissionEvaluator auth,
@@ -104,6 +102,7 @@ public class RoleMapperResource {
         this.roleMapper = roleMapper;
         this.managePermission = manageCheck;
         this.viewPermission = viewCheck;
+        this.headers = session.getContext().getRequestHeaders();
 
     }
 

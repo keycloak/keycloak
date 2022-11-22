@@ -20,7 +20,6 @@ package org.keycloak.testsuite.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.Config;
-import org.keycloak.authorization.policy.evaluation.Realm;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
@@ -96,7 +95,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import java.io.File;
@@ -126,8 +124,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     private final KeycloakSession session;
     private final Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks;
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
     @Override
     public Object getResource() {
@@ -137,6 +134,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public TestingResourceProvider(KeycloakSession session, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
         this.session = session;
         this.suspendedTimerTasks = suspendedTimerTasks;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
     }
 
     @POST

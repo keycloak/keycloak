@@ -42,7 +42,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -132,8 +131,7 @@ public class RealmAdminResource {
 
     protected final ClientConnection connection;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
     public RealmAdminResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
@@ -141,6 +139,7 @@ public class RealmAdminResource {
         this.realm = session.getContext().getRealm();
         this.connection = session.getContext().getConnection();
         this.adminEvent = adminEvent.resource(ResourceType.REALM);
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     /**
@@ -174,9 +173,7 @@ public class RealmAdminResource {
      */
     @Path("attack-detection")
     public AttackDetectionResource getAttackDetection() {
-        AttackDetectionResource resource = new AttackDetectionResource(session, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new AttackDetectionResource(session, auth, adminEvent);
     }
 
     /**
@@ -329,9 +326,7 @@ public class RealmAdminResource {
      */
     @Path("components")
     public ComponentResource getComponents() {
-        ComponentResource resource = new ComponentResource(session, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ComponentResource(session, auth, adminEvent);
     }
 
     /**
@@ -462,10 +457,7 @@ public class RealmAdminResource {
      */
     @Path("users")
     public UsersResource users() {
-        UsersResource users = new UsersResource(session, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(users);
-        //resourceContext.initResource(users);
-        return users;
+        return new UsersResource(session, auth, adminEvent);
     }
 
     @NoCache
@@ -1092,16 +1084,12 @@ public class RealmAdminResource {
     @Path("client-policies/policies")
     public ClientPoliciesResource getClientPoliciesResource() {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
-        ClientPoliciesResource resource = new ClientPoliciesResource(session, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ClientPoliciesResource(session, auth);
     }
 
     @Path("client-policies/profiles")
     public ClientProfilesResource getClientProfilesResource() {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
-        ClientProfilesResource resource = new ClientProfilesResource(session, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ClientProfilesResource(session, auth);
     }
 }

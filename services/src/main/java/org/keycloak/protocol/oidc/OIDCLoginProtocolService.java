@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.crypto.KeyType;
@@ -56,7 +55,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -78,11 +76,9 @@ public class OIDCLoginProtocolService {
 
     private final KeycloakSession session;
 
-    @Context
-    private HttpHeaders headers;
+    private final HttpHeaders headers;
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
     private final ClientConnection clientConnection;
 
@@ -93,6 +89,8 @@ public class OIDCLoginProtocolService {
         this.tokenManager = new TokenManager();
         this.event = event;
         this.providerConfig = providerConfig;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
@@ -158,9 +156,7 @@ public class OIDCLoginProtocolService {
      */
     @Path("auth")
     public Object auth() {
-        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(session, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return new AuthorizationEndpoint(session, event);
     }
 
     /**
@@ -169,7 +165,6 @@ public class OIDCLoginProtocolService {
     @Path("registrations")
     public Object registrations() {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(session, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.register();
     }
 
@@ -179,7 +174,6 @@ public class OIDCLoginProtocolService {
     @Path("forgot-credentials")
     public Object forgotCredentialsPage() {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(session, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.forgotCredentials();
     }
 
@@ -188,9 +182,7 @@ public class OIDCLoginProtocolService {
      */
     @Path("token")
     public Object token() {
-        TokenEndpoint endpoint = new TokenEndpoint(session, tokenManager, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return new TokenEndpoint(session, tokenManager, event);
     }
 
     @Path("login-status-iframe.html")
@@ -243,25 +235,19 @@ public class OIDCLoginProtocolService {
 
     @Path("userinfo")
     public Object issueUserInfo() {
-        UserInfoEndpoint endpoint = new UserInfoEndpoint(session, tokenManager);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return new UserInfoEndpoint(session, tokenManager);
     }
 
     /* old deprecated logout endpoint needs to be removed in the future
     * https://issues.redhat.com/browse/KEYCLOAK-2940 */
     @Path("logout")
     public Object logout() {
-        LogoutEndpoint endpoint = new LogoutEndpoint(session, tokenManager, event, providerConfig);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return new LogoutEndpoint(session, tokenManager, event, providerConfig);
     }
 
     @Path("revoke")
     public Object revoke() {
-        TokenRevocationEndpoint endpoint = new TokenRevocationEndpoint(session, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return new TokenRevocationEndpoint(session, event);
     }
 
     @Path("oauth/oob")

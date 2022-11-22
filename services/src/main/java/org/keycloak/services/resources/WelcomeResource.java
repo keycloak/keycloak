@@ -68,9 +68,6 @@ public class WelcomeResource {
     private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
 
     @Context
-    protected HttpHeaders headers;
-
-    @Context
     private KeycloakSession session;
 
     public WelcomeResource() {
@@ -246,7 +243,7 @@ public class WelcomeResource {
             ClientConnection clientConnection = session.getContext().getConnection();
             InetAddress remoteInetAddress = InetAddress.getByName(clientConnection.getRemoteAddr());
             InetAddress localInetAddress = InetAddress.getByName(clientConnection.getLocalAddr());
-            String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
+            String xForwardedFor = session.getContext().getRequestHeaders().getHeaderString("X-Forwarded-For");
             logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s", remoteInetAddress.toString(), localInetAddress.toString(), xForwardedFor);
 
             // Access through AJP protocol (loadbalancer) may cause that remoteAddress is "127.0.0.1".
@@ -277,7 +274,7 @@ public class WelcomeResource {
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {
         String formStateChecker = formData.getFirst("stateChecker");
-        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
+        Cookie cookie = session.getContext().getRequestHeaders().getCookies().get(KEYCLOAK_STATE_CHECKER);
         if (cookie == null) {
             throw new ForbiddenException();
         }
