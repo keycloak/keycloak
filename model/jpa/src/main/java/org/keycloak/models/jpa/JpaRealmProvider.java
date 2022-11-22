@@ -441,10 +441,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (toParent != null && group.getId().equals(toParent.getId())) {
             return;
         }
+
+        GroupModel previousParent = group.getParent();
+
         if (group.getParentId() != null) {
             group.getParent().removeChild(group);
         }
-        GroupModel previousParent = group.getParent();
         group.setParent(toParent);
         if (toParent != null) toParent.addChild(group);
         else session.groups().addTopLevelGroup(realm, group);
