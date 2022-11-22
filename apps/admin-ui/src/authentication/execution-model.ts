@@ -39,32 +39,31 @@ export class ExecutionList {
       executionList: [],
       isCollapsed: false,
     };
-    this.transformToExpandableList(0, exList);
+    this.transformToExpandableList(0, -1, exList);
     this.expandableList = exList.executionList;
   }
 
   private transformToExpandableList(
-    currIndex: number,
+    currentIndex: number,
+    currentLevel: number,
     execution: ExpandableExecution
   ) {
-    for (let index = currIndex; index < this.list.length; index++) {
+    for (let index = currentIndex; index < this.list.length; index++) {
       const ex = this.list[index];
       const level = ex.level || 0;
-      const nextRowLevel = this.list[index + 1]?.level || 0;
-      const isLeaf = level > nextRowLevel;
-      const hasChild = level < nextRowLevel;
-
-      if (isLeaf) {
-        execution.executionList?.push(ex);
-        return index;
+      if (level <= currentLevel) {
+        return index - 1;
       }
 
-      if (ex.level === level && !hasChild) {
-        execution.executionList?.push(ex);
-      } else {
+      const nextRowLevel = this.list[index + 1]?.level || 0;
+      const hasChild = level < nextRowLevel;
+
+      if (hasChild) {
         const subLevel = { ...ex, executionList: [], isCollapsed: false };
-        index = this.transformToExpandableList(index + 1, subLevel);
+        index = this.transformToExpandableList(index + 1, level, subLevel);
         execution.executionList?.push(subLevel);
+      } else {
+        execution.executionList?.push(ex);
       }
     }
     return this.list.length;

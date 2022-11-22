@@ -188,4 +188,41 @@ describe("ExecutionList", () => {
       },
     ]);
   });
+
+  it("When a sub-list has a sub-list all root nodes should not become part of first list", () => {
+    //given
+    const list = [
+      { id: "0", level: 0, index: 0 },
+      { id: "1", level: 1, index: 0 },
+      { id: "2", level: 2, index: 0 },
+      { id: "3", level: 0, index: 1 },
+    ];
+
+    //when
+    const result = new ExecutionList(list);
+
+    //then
+    expect(result.expandableList).toEqual([
+      {
+        executionList: [
+          {
+            id: "1",
+            index: 0,
+            isCollapsed: false,
+            level: 1,
+            executionList: [{ id: "2", level: 2, index: 0 }],
+          },
+        ],
+        id: "0",
+        index: 0,
+        isCollapsed: false,
+        level: 0,
+      },
+      {
+        id: "3",
+        level: 0,
+        index: 1,
+      },
+    ]);
+  });
 });
