@@ -25,6 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          # fetch a greater number of commits for computing diffs between jobs
+          fetch-depth: 50
       - uses: actions/setup-java@v1
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
