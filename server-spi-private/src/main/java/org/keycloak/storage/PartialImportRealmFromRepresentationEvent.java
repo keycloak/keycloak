@@ -19,8 +19,9 @@ package org.keycloak.storage;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.provider.ProviderEvent;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation;
 
 /**
  * Event to trigger that will complete the import for a given realm representation.
@@ -34,37 +35,43 @@ import org.keycloak.representations.idm.RealmRepresentation;
  * @author Alexander Schwartz
  */
 @Deprecated
-public class ImportRealmFromRepresentation implements ProviderEvent {
+public class PartialImportRealmFromRepresentationEvent implements ProviderEvent {
     private final KeycloakSession session;
-    private final RealmRepresentation realmRepresentation;
+    private final PartialImportRepresentation rep;
+    private final RealmModel realm;
 
-    private RealmModel realmModel;
+    private PartialImportResults partialImportResults;
 
-    public ImportRealmFromRepresentation(KeycloakSession session, RealmRepresentation realmRepresentation) {
+    public PartialImportRealmFromRepresentationEvent(KeycloakSession session, PartialImportRepresentation rep, RealmModel realm) {
         this.session = session;
-        this.realmRepresentation = realmRepresentation;
+        this.rep = rep;
+        this.realm = realm;
     }
 
-    public static RealmModel fire(KeycloakSession session, RealmRepresentation rep) {
-        ImportRealmFromRepresentation event = new ImportRealmFromRepresentation(session, rep);
+    public static PartialImportResults fire(KeycloakSession session, PartialImportRepresentation rep, RealmModel realm) {
+        PartialImportRealmFromRepresentationEvent event = new PartialImportRealmFromRepresentationEvent(session, rep, realm);
         session.getKeycloakSessionFactory().publish(event);
-        return event.getRealmModel();
+        return event.getPartialImportResults();
     }
 
     public KeycloakSession getSession() {
         return session;
     }
 
-    public RealmRepresentation getRealmRepresentation() {
-        return realmRepresentation;
+    public PartialImportRepresentation getRep() {
+        return rep;
     }
 
-    public void setRealmModel(RealmModel realmModel) {
-        this.realmModel = realmModel;
+    public void setPartialImportResults(PartialImportResults partialImportResults) {
+        this.partialImportResults = partialImportResults;
     }
 
-    public RealmModel getRealmModel() {
-        return realmModel;
+    public PartialImportResults getPartialImportResults() {
+        return partialImportResults;
+    }
+
+    public RealmModel getRealm() {
+        return realm;
     }
 }
 
