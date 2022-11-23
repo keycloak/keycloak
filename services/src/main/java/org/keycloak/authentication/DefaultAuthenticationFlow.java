@@ -503,6 +503,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             case CHALLENGE:
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.CHALLENGED);
                 return sendChallenge(result, execution);
+            case REPLAY_CHALLENGE:
+                setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.CHALLENGED);
+                return sendReplayChallenge(result, execution);
             case FAILURE_CHALLENGE:
                 logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
                 processor.logFailure();
@@ -524,6 +527,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
     public Response sendChallenge(AuthenticationProcessor.Result result, AuthenticationExecutionModel execution) {
         processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution.getId());
+        return result.getChallenge();
+    }
+
+    public Response sendReplayChallenge(AuthenticationProcessor.Result result, AuthenticationExecutionModel execution) {
         return result.getChallenge();
     }
 

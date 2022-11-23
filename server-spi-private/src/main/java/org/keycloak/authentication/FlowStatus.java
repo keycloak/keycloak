@@ -43,6 +43,12 @@ public enum FlowStatus {
     FORCE_CHALLENGE,
 
     /**
+     * Replay Irregardless of the execution's requirement, this challenge will be sent to the user (SPNEGO)
+     *
+     */
+    REPLAY_CHALLENGE,
+
+    /**
      * Flow will be aborted and a Response provided by the execution will be sent.
      *
      */

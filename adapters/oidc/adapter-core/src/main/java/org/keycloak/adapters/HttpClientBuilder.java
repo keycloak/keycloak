@@ -117,6 +117,7 @@ public class HttpClientBuilder {
     protected String clientPrivateKeyPassword;
     protected boolean disableTrustManager;
     protected boolean disableCookieCache = true;
+    protected CookieStore cookieStore;
     protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.WILDCARD;
     protected SSLContext sslContext;
     protected int connectionPoolSize = 100;
@@ -262,6 +263,10 @@ public class HttpClientBuilder {
         return this;
     }
 
+    public HttpClientBuilder setDefaultCookieStore(CookieStore cookieStore) {
+        this.cookieStore = cookieStore;
+        return this;
+    }
     public HttpClient build() {
         X509HostnameVerifier verifier = null;
         if (this.verifier != null) verifier = new VerifierWrapper(this.verifier);
@@ -395,7 +400,9 @@ public class HttpClientBuilder {
                         //To change body of implemented methods use File | Settings | File Templates.
                     }
                 });
-
+            }
+            if (this.cookieStore != null) {
+                clientBuilder.setDefaultCookieStore(this.cookieStore);
             }
             return clientBuilder.build();
         } catch (Exception e) {

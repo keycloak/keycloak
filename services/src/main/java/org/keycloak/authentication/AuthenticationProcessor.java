@@ -57,10 +57,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 
 import java.io.IOException;
 import java.net.URI;
@@ -374,6 +371,12 @@ public class AuthenticationProcessor {
             status = FlowStatus.FAILED;
             this.error = error;
 
+        }
+
+        @Override
+        public void replayChallenge(Response challenge) {
+            this.status = FlowStatus.REPLAY_CHALLENGE;
+            this.challenge = challenge;
         }
 
         @Override

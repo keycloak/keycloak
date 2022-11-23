@@ -1,12 +1,18 @@
 package org.keycloak.testsuite.pages;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.testsuite.util.DroneUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 
 /**
  * Login page with the list of authentication mechanisms, which are available to the user (Password, OTP, WebAuthn...)
@@ -30,6 +36,10 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
 
     // Corresponds to the WebAuthn authenticators
     public static final String SECURITY_KEY = "Security Key";
+
+    // Corresponds to the WebAuthn authenticators
+    public static final String SPNEGO = "auth-spnego-display-name";
+
 
     public static final String RECOVERY_AUTHN_CODES = "Recovery Authentication Code";
     /**
@@ -77,6 +87,34 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
                 .filter(loginMethodRow -> loginMethodName.equals(getLoginMethodNameFromRow(loginMethodRow)))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Login method '" + loginMethodName + "' not found in the available authentication mechanisms"));
+    }
+
+    public Entity getFormData(String loginMethodName) {
+        MultivaluedMap<String, String> params = new MultivaluedHashMap();
+        driver.findElement(By.id("kc-select-credential-form")).findElements(By.tagName("input")).forEach(webElement -> {
+            switch (webElement.getAttribute("name")) {
+                case "authenticationExecution":
+                    driver.findElement(By.id("kc-select-credential-form")).findElements(By.cssSelector(".select-auth-box-parent")).forEach(authMethod -> {
+                        if (authMethod.findElement(By.cssSelector(".pf-c-title")).getText().equals(loginMethodName)) {
+                            String value = authMethod.getAttribute("onclick").replaceAll(".*'([^']*)'.*","$1");
+                            params.add("authenticationExecution", value);
+                        }
+                    });
+
+                    break;
+                default:
+                    params.add(webElement.getAttribute("name"), webElement.getAttribute("value"));
+                    break;
+            }
+        });
+        return Entity.form(params);
+    }
+
+    public Set<Cookie> getCookies() {
+        return driver.manage().getCookies();
+    }
+    public String getFormActionUrl() {
+        return  driver.findElement(By.id("kc-select-credential-form")).getAttribute("action");
     }
 
     @Override
