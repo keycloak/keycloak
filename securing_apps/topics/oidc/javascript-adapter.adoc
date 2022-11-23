@@ -19,8 +19,9 @@ is selected for `Access Type`.  You achieve this in Capability config by turning
 
 You also need to configure `Valid Redirect URIs` and `Web Origins`. Be as specific as possible as failing to do so may result in a security vulnerability.
 
-Once the client is created click on the `Installation` tab select `Keycloak OIDC JSON` for `Format Option` then click `Download`. The downloaded
-`keycloak.json` file should be hosted on your web server at the same location as your HTML pages.
+Once the client is created click on the `Action` tab in the upper right corner and select `Download adapter config`.
+Select `Keycloak OIDC JSON` for `Format Option` then click `Download`. The downloaded `keycloak.json` file should be
+hosted on your web server at the same location as your HTML pages.
 
 Alternatively, you can skip the configuration file and manually configure the adapter.
 
