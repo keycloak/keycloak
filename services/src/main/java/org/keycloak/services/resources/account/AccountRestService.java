@@ -49,7 +49,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
@@ -124,7 +124,7 @@ public class AccountRestService {
         this.locale = session.getContext().resolveLocale(user);
         this.version = version;
         event.client(auth.getClient()).user(auth.getUser());
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
     

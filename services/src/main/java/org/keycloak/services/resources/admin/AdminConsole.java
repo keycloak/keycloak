@@ -19,8 +19,8 @@ package org.keycloak.services.resources.admin;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import javax.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
@@ -85,8 +85,8 @@ public class AdminConsole {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.clientConnection = session.getContext().getConnection();
-        this.request = session.getContext().getContextObject(HttpRequest.class);
-        this.response = session.getContext().getContextObject(HttpResponse.class);
+        this.request = session.getContext().getHttpRequest();
+        this.response = session.getContext().getHttpResponse();
     }
 
     public static class WhoAmI {

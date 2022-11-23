@@ -201,7 +201,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         updateAuthenticationSession();
 
         // So back button doesn't work
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
         switch (action) {
             case REGISTER:
                 return buildRegister();
@@ -356,7 +356,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response buildRegister() {
-        authManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
+        authManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
 
         AuthenticationFlowModel flow = realm.getRegistrationFlow();
         String flowId = flow.getId();
@@ -368,7 +368,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response buildForgotCredential() {
-        authManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
+        authManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
 
         AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
         String flowId = flow.getId();

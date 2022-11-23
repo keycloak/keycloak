@@ -16,7 +16,6 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticationRequest;
 import com.webauthn4j.data.client.Origin;
 import com.webauthn4j.data.client.challenge.Challenge;

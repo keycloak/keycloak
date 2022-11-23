@@ -19,7 +19,7 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Optional;
 import javax.ws.rs.HttpMethod;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -84,7 +84,7 @@ public class SecureLogoutExecutor implements ClientPolicyExecutorProvider<Secure
 
                 return;
             case LOGOUT_REQUEST:
-                HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
+                HttpRequest request = session.getContext().getHttpRequest();
 
                 if (HttpMethod.GET.equalsIgnoreCase(request.getHttpMethod()) && !configuration.isAllowFrontChannelLogout()) {
                     throwFrontChannelLogoutNotAllowed();

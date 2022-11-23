@@ -27,8 +27,8 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
@@ -52,8 +52,8 @@ public class ClientPoliciesResource {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.auth = auth;
-        this.request = session.getContext().getContextObject(HttpRequest.class);
-        this.response = session.getContext().getContextObject(HttpResponse.class);
+        this.request = session.getContext().getHttpRequest();
+        this.response = session.getContext().getHttpResponse();
     }
 
     @GET

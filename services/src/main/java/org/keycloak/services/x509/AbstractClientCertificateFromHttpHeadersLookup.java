@@ -19,7 +19,7 @@
 package org.keycloak.services.x509;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.PemException;
 
 import java.security.GeneralSecurityException;

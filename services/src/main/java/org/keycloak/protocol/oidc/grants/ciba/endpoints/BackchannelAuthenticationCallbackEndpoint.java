@@ -18,7 +18,7 @@ package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.broker.provider.util.SimpleHttp;
@@ -59,7 +59,7 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
 
     public BackchannelAuthenticationCallbackEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
-        this.httpRequest = session.getContext().getContextObject(HttpRequest.class);
+        this.httpRequest = session.getContext().getHttpRequest();
     }
 
     @Path("/")
