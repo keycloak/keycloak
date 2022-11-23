@@ -248,16 +248,24 @@ public final class KeycloakModelUtils {
 
     /**
      * Wrap given runnable job into KeycloakTransaction.
-     *
-     * @param factory
-     * @param task
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
+        runJobInTransactionWithResult(factory, session -> {
+            task.run(session);
+            return null;
+        });
+    }
+
+    /**
+     * Wrap a given callable job into a KeycloakTransaction.
+     */
+    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
         KeycloakSession session = factory.create();
         KeycloakTransaction tx = session.getTransactionManager();
+        V result;
         try {
             tx.begin();
-            task.run(session);
+            result = callable.run(session);
 
             if (tx.isActive()) {
                 if (tx.getRollbackOnly()) {
@@ -274,6 +282,7 @@ public final class KeycloakModelUtils {
         } finally {
             session.close();
         }
+        return result;
     }
 
     /**

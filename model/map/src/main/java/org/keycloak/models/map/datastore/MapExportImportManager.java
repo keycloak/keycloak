@@ -69,6 +69,7 @@ import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -87,6 +88,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -95,7 +97,8 @@ import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ExportImportManager;
-import org.keycloak.storage.ImportRealmFromRepresentation;
+import org.keycloak.storage.ImportRealmFromRepresentationEvent;
+import org.keycloak.storage.PartialImportRealmFromRepresentationEvent;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.storage.SetDefaultsForNewRealm;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -498,7 +501,7 @@ public class MapExportImportManager implements ExportImportManager {
             /* The import for the JSON representation might be called from the Admin UI, where it will be empty except for
                the realm name and if the realm is enabled. For that scenario, it would need to create all missing elements,
                which is done by firing an event to call the existing implementation in the RealmManager. */
-            return ImportRealmFromRepresentation.fire(session, rep);
+            return ImportRealmFromRepresentationEvent.fire(session, rep);
         } else {
             /* This makes use of the representation to mimic the future setup: Some kind of import into a ConcurrentHashMap in-memory and then copying
                that over to the real store. This is the basis for future file store import. Results are different
@@ -506,6 +509,26 @@ public class MapExportImportManager implements ExportImportManager {
                Importing from a classic representation will eventually be removed and replaced when the new file store arrived. */
             return importToChmAndThenCopyOver(rep);
         }
+    }
+
+
+    @Override
+    public PartialImportResults partialImportRealm(RealmModel realm, InputStream requestBody) {
+        /* A future implementation that would differentiate between the old JSON representations and the new file store
+          might want to add the file name or the media type as a method parameter to switch between different implementations. */
+
+        PartialImportRepresentation rep;
+        try {
+            rep = JsonSerialization.readValue(requestBody, PartialImportRepresentation.class);
+        } catch (IOException e) {
+            throw new ModelException("unable to read contents from stream", e);
+        }
+
+        /* The import for the legacy JSON representation might be called from the Admin UI, and it allows for several options as part
+         * of the representation. Therefore, direct this to the service layer with a (temporary) event so that the logic isn't duplicated
+         * between legacy and map store.
+         */
+        return PartialImportRealmFromRepresentationEvent.fire(session, rep, realm);
     }
 
     private RealmModel importToChmAndThenCopyOver(RealmRepresentation rep) {
