@@ -82,7 +82,7 @@ public class LDAPServerCapabilitiesManager {
             // If AUTHENTICATION action is executed add also dn and credentials to configuration
             // LDAPContextManager is responsible for correct order of addition of credentials to context in case
             // tls is true
-            if (config.getBindDn() == null || config.getBindDn().isEmpty()) {
+            if ((config.getBindDn() == null || config.getBindDn().isEmpty()) && LDAPConstants.AUTH_TYPE_SIMPLE.equals(config.getAuthType())) {
                 logger.error("Unknown bind DN");
                 return false;
             }
