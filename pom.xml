@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>2.13.3.Final</quarkus.version>
+        <quarkus.version>2.14.1.Final</quarkus.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -83,7 +83,6 @@
         <hibernate.c3p0.version>5.6.10.Final</hibernate.c3p0.version>
         <infinispan.version>14.0.2.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.5.0.Final</infinispan.protostream.processor.version>
-        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <jackson.version>2.13.4</jackson.version>
         <jackson.databind.version>2.13.4.2</jackson.databind.version>
         <jackson.annotations.version>${jackson.version}</jackson.annotations.version>
@@ -165,7 +164,7 @@
         <!-- KEYCLOAK-17585 Prevent microprofile-metrics-api upgrades from version "2.3" due to:
              https://issues.redhat.com/browse/KEYCLOAK-17585?focusedCommentId=16002705&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-16002705
         -->
-        <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
+        <microprofile-metrics-api.version>2.3</microprofile-metrics-api.version>
         <testcontainers.version>1.16.3</testcontainers.version>
 
         <!-- Maven Plugins -->
