@@ -20,7 +20,6 @@ package org.keycloak.testsuite.rest;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -37,9 +36,7 @@ public class TestingResourceProviderFactory implements RealmResourceProviderFact
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        TestingResourceProvider testProvider = new TestingResourceProvider(session, suspendedTimerTasks);
-        ResteasyProviderFactory.getInstance().injectProperties(testProvider);
-        return testProvider;
+        return new TestingResourceProvider(session, suspendedTimerTasks);
     }
 
     @Override

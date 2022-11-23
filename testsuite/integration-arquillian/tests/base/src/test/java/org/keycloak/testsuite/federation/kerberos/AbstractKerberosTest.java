@@ -161,7 +161,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         super.afterAbstractKeycloakTest();
     }
 
-    private void cleanupApacheHttpClient() {
+    protected void cleanupApacheHttpClient() {
         client.close();
         client = null;
     }

@@ -134,7 +134,6 @@ public interface AbstractAuthenticationFlowContext {
      */
     String generateAccessCode();
 
-
     AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory);
 
     /**
@@ -169,6 +168,14 @@ public interface AbstractAuthenticationFlowContext {
     void failure(AuthenticationFlowError error, Response response, String eventDetails, String userErrorMessage);
 
     /**
+     * ReSends the challenge back to the HTTP client irregardless of the current execution requirement (SPNEGO)
+     *
+     * @param challenge
+     */
+    void replayChallenge(Response challenge);
+
+
+    /**
      * Sends a challenge response back to the HTTP client.  If the current execution requirement is optional, this response will not be
      * sent.  If the current execution requirement is alternative, then this challenge will be sent if no other alternative
      * execution was successful.
@@ -178,7 +185,7 @@ public interface AbstractAuthenticationFlowContext {
     void challenge(Response challenge);
 
     /**
-     * Sends the challenge back to the HTTP client irregardless of the current executionr requirement
+     * Sends the challenge back to the HTTP client irregardless of the current execution requirement
      *
      * @param challenge
      */

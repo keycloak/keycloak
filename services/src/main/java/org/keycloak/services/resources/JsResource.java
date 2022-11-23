@@ -46,9 +46,6 @@ public class JsResource {
     @Context
     private KeycloakSession session;
 
-    @Context
-    private HttpRequest request;
-
     /**
      * Get keycloak.js file for javascript clients
      *
@@ -127,7 +124,7 @@ public class JsResource {
         }
 
         String contentType = "text/javascript";
-        Cors cors = Cors.add(request).allowAllOrigins();
+        Cors cors = Cors.add(session.getContext().getContextObject(HttpRequest.class)).allowAllOrigins();
 
         ResourceEncodingProvider encodingProvider = ResourceEncodingHelper.getResourceEncodingProvider(session, contentType);
 

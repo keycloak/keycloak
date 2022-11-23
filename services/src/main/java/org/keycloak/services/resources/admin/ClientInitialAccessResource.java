@@ -35,7 +35,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -70,7 +69,7 @@ public class ClientInitialAccessResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation config, @Context final HttpResponse response) {
+    public ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation config) {
         auth.clients().requireManage();
 
         int expiration = config.getExpiration() != null ? config.getExpiration() : 0;
@@ -84,6 +83,8 @@ public class ClientInitialAccessResource {
 
         String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, clientInitialAccessModel);
         rep.setToken(token);
+
+        HttpResponse response = session.getContext().getContextObject(HttpResponse.class);
 
         response.setStatus(Response.Status.CREATED.getStatusCode());
         response.getOutputHeaders().add(HttpHeaders.LOCATION, session.getContext().getUri().getAbsolutePathBuilder().path(clientInitialAccessModel.getId()).build().toString());

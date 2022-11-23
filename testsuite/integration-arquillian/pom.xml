@@ -469,6 +469,7 @@
         <profile>
             <id>db-allocator-db-mysql</id>
             <properties>
+                <keycloak.storage.connections.vendor>mysql</keycloak.storage.connections.vendor>
                 <dballocator.type>mysql80</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
@@ -502,6 +503,7 @@
         <profile>
             <id>db-allocator-db-postgres</id>
             <properties>
+                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
                 <dballocator.type>postgresql132</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
@@ -509,6 +511,7 @@
         <profile>
             <id>db-allocator-db-postgresplus</id>
             <properties>
+                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
                 <dballocator.type>postgresplus131</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
@@ -543,6 +546,7 @@
         <profile>
             <id>db-allocator-db-mariadb</id>
             <properties>
+                <keycloak.storage.connections.vendor>mariadb</keycloak.storage.connections.vendor>
                 <dballocator.type>mariadb_galera_103</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
@@ -577,6 +581,7 @@
         <profile>
             <id>db-allocator-db-mssql2019</id>
             <properties>
+                <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
                 <dballocator.type>mssql2019</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
@@ -605,14 +610,15 @@
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>ojdbc7</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>12.1.0</jdbc.mvn.version>
+                <jdbc.mvn.groupId>com.oracle.database.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>ojdbc11</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${oracle.driver.version}</jdbc.mvn.version>
             </properties>
         </profile>
         <profile>
             <id>db-allocator-db-oracleRAC</id>
             <properties>
+                <keycloak.storage.connections.vendor>oracle</keycloak.storage.connections.vendor>
                 <dballocator.type>oracle19cRAC</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>

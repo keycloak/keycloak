@@ -18,7 +18,6 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
@@ -74,7 +73,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MultivaluedMap;
@@ -89,11 +87,7 @@ import java.util.Map;
  */
 public class UserInfoEndpoint {
 
-    @Context
-    private HttpRequest request;
-
-    @Context
-    private HttpResponse response;
+    private final HttpRequest request;
 
     private final KeycloakSession session;
 
@@ -113,6 +107,7 @@ public class UserInfoEndpoint {
         this.tokenManager = tokenManager;
         this.appAuthManager = new AppAuthManager();
         this.error = new OAuth2Error().json(false).realm(realm);
+        this.request = session.getContext().getContextObject(HttpRequest.class);
     }
 
     @Path("/")
@@ -124,9 +119,9 @@ public class UserInfoEndpoint {
     @Path("/")
     @GET
     @NoCache
-    public Response issueUserInfoGet(@Context final HttpHeaders headers) {
+    public Response issueUserInfoGet() {
         setupCors();
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
         authorization(accessToken);
         return issueUserInfo();
     }

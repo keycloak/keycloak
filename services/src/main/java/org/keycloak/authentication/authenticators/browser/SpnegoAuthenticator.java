@@ -21,15 +21,12 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.CredentialValidationOutput;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -63,7 +60,11 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         String authHeader = request.getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null) {
             Response challenge = challengeNegotiation(context, null);
-            context.forceChallenge(challenge);
+            if (context.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION) != null) {
+                context.replayChallenge(challenge);
+            } else {
+                context.forceChallenge(challenge);
+            }
             return;
         }
 
@@ -104,7 +105,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         } else if (output.getAuthStatus() == CredentialValidationOutput.Status.CONTINUE) {
             String spnegoResponseToken = (String) output.getState().get(KerberosConstants.RESPONSE_TOKEN);
             Response challenge =  challengeNegotiation(context, spnegoResponseToken);
-            context.challenge(challenge);
+            context.replayChallenge(challenge);
         } else {
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             context.failure(AuthenticationFlowError.INVALID_CREDENTIALS);
@@ -117,6 +118,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         if (logger.isTraceEnabled()) {
             logger.trace("Sending back " + HttpHeaders.WWW_AUTHENTICATE + ": " + negotiateHeader);
         }
+
         if (context.getExecution().isRequired()) {
             return context.getSession().getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(context.getAuthenticationSession())
@@ -138,6 +140,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
      * @return
      */
     protected Response optionalChallengeRedirect(AuthenticationFlowContext context, String negotiateHeader) {
+        // #14953 > allow replay code
         String accessCode = context.generateAccessCode();
         URI action = context.getActionUrl(accessCode);
 

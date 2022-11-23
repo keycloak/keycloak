@@ -74,6 +74,8 @@ class CodeGenerateUtil {
 
         String retrieveCode(KeycloakSession session, CS clientSession);
 
+        String setCode(KeycloakSession session, CS clientSession, String code);
+
         void removeExpiredSession(KeycloakSession session, CS clientSession);
 
         boolean verifyCode(KeycloakSession session, String code, CS clientSession);
@@ -104,24 +106,29 @@ class CodeGenerateUtil {
             String nextCode = authSession.getAuthNote(ACTIVE_CODE);
             if (nextCode == null) {
                 String actionId = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
-                authSession.setAuthNote(ACTIVE_CODE, actionId);
 
-                // enlist a transaction that ensures the code is set in the auth session in case the main transaction is rolled back.
-                session.getTransactionManager().enlist(new RollbackDrivenTransaction(session.getKeycloakSessionFactory(), currentSession -> {
-                    final RootAuthenticationSessionModel rootAuthenticationSession = currentSession.authenticationSessions()
-                            .getRootAuthenticationSession(authSession.getRealm(), authSession.getParentSession().getId());
-                    AuthenticationSessionModel authenticationSession = rootAuthenticationSession == null ? null : rootAuthenticationSession
-                            .getAuthenticationSession(authSession.getClient(), authSession.getTabId());
-                    if (authenticationSession != null) {
-                        authenticationSession.setAuthNote(ACTIVE_CODE, actionId);
-                    }
-                }));
-                nextCode = actionId;
+                nextCode = setCode(session, authSession, actionId);
             } else {
                 logger.debug("Code already generated for authentication session, using same code");
             }
 
             return nextCode;
+        }
+        @Override
+        public String setCode(KeycloakSession session, AuthenticationSessionModel authSession, String code) {
+            authSession.setAuthNote(ACTIVE_CODE, code);
+
+            // enlist a transaction that ensures the code is set in the auth session in case the main transaction is rolled back.
+            session.getTransactionManager().enlist(new RollbackDrivenTransaction(session.getKeycloakSessionFactory(), currentSession -> {
+                final RootAuthenticationSessionModel rootAuthenticationSession = currentSession.authenticationSessions()
+                        .getRootAuthenticationSession(authSession.getRealm(), authSession.getParentSession().getId());
+                AuthenticationSessionModel authenticationSession = rootAuthenticationSession == null ? null : rootAuthenticationSession
+                        .getAuthenticationSession(authSession.getClient(), authSession.getTabId());
+                if (authenticationSession != null) {
+                    authenticationSession.setAuthNote(ACTIVE_CODE, code);
+                }
+            }));
+            return code;
         }
 
 

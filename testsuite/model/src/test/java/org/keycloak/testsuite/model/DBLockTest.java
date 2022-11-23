@@ -108,6 +108,7 @@ public class DBLockTest extends KeycloakModelTest {
     }
 
     @Test
+    @Ignore("Ignored as it is unstable. Analysis pending in https://github.com/keycloak/keycloak/issues/15487")
     public void testLockConcurrentlyGeneral() throws Exception {
         inComittedTransaction(1, (session , i) -> {
             testLockConcurrentlyInternal(session, DBLockProvider.Namespace.DATABASE);

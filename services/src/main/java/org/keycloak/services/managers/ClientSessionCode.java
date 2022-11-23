@@ -205,4 +205,8 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         return parser.retrieveCode(session, commonLoginSession);
     }
 
+    public String setCode(String code) {
+        CodeGenerateUtil.ClientSessionParser parser = CodeGenerateUtil.getParser(commonLoginSession.getClass());
+        return parser.setCode(session, commonLoginSession, code);
+    }
 }
