@@ -17,6 +17,9 @@
 
 package org.keycloak.models.map.storage.hotRod.client;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
+import org.infinispan.api.annotations.indexing.Keyword;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -46,7 +49,7 @@ import java.util.stream.Stream;
         topLevelEntity = true,
         modelClass = "org.keycloak.models.ClientModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodClientEntity.VERSION)
 public class HotRodClientEntity extends AbstractHotRodEntity {
 
@@ -66,123 +69,115 @@ public class HotRodClientEntity extends AbstractHotRodEntity {
         HotRodClientEntitySchema INSTANCE = new HotRodClientEntitySchemaImpl();
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true, sortable = true)
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String realmId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Keyword(sortable = true, normalizer = "lowercase")
     @ProtoField(number = 4)
     public String clientId;
 
-    /**
-     * Lowercase interpretation of {@link #clientId} field. Infinispan doesn't support case-insensitive LIKE for non-analyzed fields.
-     * Search on analyzed fields can be case-insensitive (based on used analyzer) but doesn't support ORDER BY analyzed field.
-     */
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 5)
-    public String clientIdLowercase;
-
-    @ProtoField(number = 6)
     public String name;
 
-    @ProtoField(number = 7)
+    @ProtoField(number = 6)
     public String description;
 
-    @ProtoField(number = 8)
+    @ProtoField(number = 7)
     public Set<String> redirectUris;
 
-    @ProtoField(number = 9)
+    @ProtoField(number = 8)
     public Boolean enabled;
 
-    @ProtoField(number = 10)
+    @ProtoField(number = 9)
     public Boolean alwaysDisplayInConsole;
 
-    @ProtoField(number = 11)
+    @ProtoField(number = 10)
     public String clientAuthenticatorType;
 
-    @ProtoField(number = 12)
+    @ProtoField(number = 11)
     public String secret;
 
-    @ProtoField(number = 13)
+    @ProtoField(number = 12)
     public String registrationToken;
 
-    @ProtoField(number = 14)
+    @ProtoField(number = 13)
     public String protocol;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 15)
+    @Basic(sortable = true)
+    @ProtoField(number = 14)
     public Set<HotRodAttributeEntity> attributes;
 
-    @ProtoField(number = 16)
+    @ProtoField(number = 15)
     public Set<HotRodPair<String, String>> authenticationFlowBindingOverrides;
 
-    @ProtoField(number = 17)
+    @ProtoField(number = 16)
     public Boolean publicClient;
 
-    @ProtoField(number = 18)
+    @ProtoField(number = 17)
     public Boolean fullScopeAllowed;
 
-    @ProtoField(number = 19)
+    @ProtoField(number = 18)
     public Boolean frontchannelLogout;
 
-    @ProtoField(number = 20)
+    @ProtoField(number = 19)
     public Long notBefore;
 
-    @ProtoField(number = 21)
+    @ProtoField(number = 20)
     public Set<String> scope;
 
-    @ProtoField(number = 22)
+    @ProtoField(number = 21)
     public Set<String> webOrigins;
 
-    @ProtoField(number = 23)
+    @ProtoField(number = 22)
     public Set<HotRodProtocolMapperEntity> protocolMappers;
 
-    @ProtoField(number = 24)
+    @ProtoField(number = 23)
     public Set<HotRodPair<String, Boolean>> clientScopes;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 25, collectionImplementation = LinkedList.class)
+    @Basic(sortable = true)
+    @ProtoField(number = 24, collectionImplementation = LinkedList.class)
     public Collection<String> scopeMappings;
 
-    @ProtoField(number = 26)
+    @ProtoField(number = 25)
     public Boolean surrogateAuthRequired;
 
-    @ProtoField(number = 27)
+    @ProtoField(number = 26)
     public String managementUrl;
 
-    @ProtoField(number = 28)
+    @ProtoField(number = 27)
     public String baseUrl;
 
-    @ProtoField(number = 29)
+    @ProtoField(number = 28)
     public Boolean bearerOnly;
 
-    @ProtoField(number = 30)
+    @ProtoField(number = 29)
     public Boolean consentRequired;
 
-    @ProtoField(number = 31)
+    @ProtoField(number = 30)
     public String rootUrl;
 
-    @ProtoField(number = 32)
+    @ProtoField(number = 31)
     public Boolean standardFlowEnabled;
 
-    @ProtoField(number = 33)
+    @ProtoField(number = 32)
     public Boolean implicitFlowEnabled;
 
-    @ProtoField(number = 34)
+    @ProtoField(number = 33)
     public Boolean directAccessGrantsEnabled;
 
-    @ProtoField(number = 35)
+    @ProtoField(number = 34)
     public Boolean serviceAccountsEnabled;
 
-    @ProtoField(number = 36)
+    @ProtoField(number = 35)
     public Integer nodeReRegistrationTimeout;
 
     public static abstract class AbstractHotRodClientEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodClientEntity> implements MapClientEntity {
@@ -205,7 +200,6 @@ public class HotRodClientEntity extends AbstractHotRodEntity {
             HotRodClientEntity entity = getHotRodEntity();
             entity.updated |= ! Objects.equals(entity.clientId, clientId);
             entity.clientId = clientId;
-            entity.clientIdLowercase = clientId == null ? null : clientId.toLowerCase();
         }
 
         @Override

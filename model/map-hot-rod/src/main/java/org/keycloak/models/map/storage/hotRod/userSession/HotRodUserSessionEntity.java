@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.userSession;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -24,20 +26,15 @@ import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
 import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
-import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.common.delegate.DelegateProvider;
 import org.keycloak.models.map.storage.hotRod.authorization.HotRodResourceServerEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
-import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.HotRodStringPair;
 import org.keycloak.models.map.storage.hotRod.common.HotRodTypesUtils;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
-import org.keycloak.models.map.userSession.MapUserSessionEntityDelegate;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -50,7 +47,7 @@ import java.util.Set;
         topLevelEntity = true,
         modelClass = "org.keycloak.models.UserSessionModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodResourceServerEntity.VERSION)
 public class HotRodUserSessionEntity extends AbstractHotRodEntity {
 
@@ -70,26 +67,26 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
         HotRodUserSessionEntitySchema INSTANCE = new HotRodUserSessionEntitySchemaImpl();
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String realmId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 4)
     public String userId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 5)
     public String brokerSessionId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 6)
     public String brokerUserId;
 
@@ -108,26 +105,26 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
     @ProtoField(number = 11)
     public Long timestamp;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 12)
     public Long lastSessionRefresh;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 13)
     public Long expiration;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 14)
     public Set<HotRodStringPair> notes;
 
     @ProtoField(number = 15)
     public Integer state;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 16)
     public Set<HotRodAuthenticatedClientSessionEntityReference> authenticatedClientSessions;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 17)
     public Boolean offline;
 
