@@ -27,7 +27,7 @@ public class JpaPolicyMetadata extends MapPolicyEntityImpl implements Serializab
     }
 
     public JpaPolicyMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

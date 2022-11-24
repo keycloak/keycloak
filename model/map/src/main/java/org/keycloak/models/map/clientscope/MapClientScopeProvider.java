@@ -29,6 +29,7 @@ import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -93,7 +94,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
 
         LOG.tracef("addClientScope(%s, %s, %s)%s", realm, id, name, getShortStackTrace());
 
-        MapClientScopeEntity entity = new MapClientScopeEntityImpl();
+        MapClientScopeEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapClientScopeEntity.class);
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setName(KeycloakModelUtils.convertClientScopeName(name));

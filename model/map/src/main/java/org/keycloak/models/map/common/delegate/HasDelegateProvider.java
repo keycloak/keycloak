@@ -14,30 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.role.entity;
+package org.keycloak.models.map.common.delegate;
 
-import java.io.Serializable;
-import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.role.MapRoleEntityImpl;
-
-public class JpaRoleMetadata extends MapRoleEntityImpl implements Serializable {
-
-    public JpaRoleMetadata(DeepCloner cloner) {
-        super(cloner);
-    }
-
-    public JpaRoleMetadata() {
-        super(DeepCloner.DUMB_CLONER);
-    }
-
-    private Integer entityVersion;
-
-    public Integer getEntityVersion() {
-        return entityVersion;
-    }
-
-    public void setEntityVersion(Integer entityVersion) {
-        this.entityVersion = entityVersion;
-    }
-
+public interface HasDelegateProvider<E> {
+    DelegateProvider<E> getDelegateProvider();
 }

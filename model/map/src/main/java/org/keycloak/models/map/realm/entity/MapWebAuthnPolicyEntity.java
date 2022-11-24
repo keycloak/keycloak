@@ -32,7 +32,7 @@ import java.util.List;
 public interface MapWebAuthnPolicyEntity extends UpdatableEntity {
     static MapWebAuthnPolicyEntity fromModel(WebAuthnPolicy model) {
         if (model == null) return null;
-        MapWebAuthnPolicyEntity entity = new MapWebAuthnPolicyEntityImpl();
+        MapWebAuthnPolicyEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapWebAuthnPolicyEntity.class);
         entity.setRpEntityName(model.getRpEntityName());
         entity.setSignatureAlgorithms(model.getSignatureAlgorithm());
         entity.setRpId(model.getRpId());
@@ -64,7 +64,7 @@ public interface MapWebAuthnPolicyEntity extends UpdatableEntity {
     }
 
     static MapWebAuthnPolicyEntity defaultWebAuthnPolicy() {
-        MapWebAuthnPolicyEntity entity = new MapWebAuthnPolicyEntityImpl();
+        MapWebAuthnPolicyEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapWebAuthnPolicyEntity.class);
         entity.setRpEntityName(Constants.DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME);
         entity.setSignatureAlgorithms(Arrays.asList(Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS.split(",")));
         entity.setRpId("");
