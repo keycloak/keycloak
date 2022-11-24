@@ -17,19 +17,12 @@ import {
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { StoreSettings } from "./StoreSettings";
 import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 type ImportKeyDialogProps = {
   toggleDialog: () => void;
   save: (importFile: ImportFile) => void;
 };
-
-const baseFormats = ["JKS", "PKCS12"];
-
-const formats = baseFormats.concat([
-  "Certificate PEM",
-  "Public Key PEM",
-  "JSON Web Key Set",
-]);
 
 export type ImportFile = {
   keystoreFormat: string;
@@ -53,6 +46,15 @@ export const ImportKeyDialog = ({
     name: "keystoreFormat",
     defaultValue: "JKS",
   });
+
+  const baseFormats = useServerInfo().cryptoInfo?.supportedKeystoreTypes ?? [];
+
+  const formats = baseFormats.concat([
+    "Certificate PEM",
+    "Public Key PEM",
+    "JSON Web Key Set",
+  ]);
+
   return (
     <Modal
       variant={ModalVariant.medium}

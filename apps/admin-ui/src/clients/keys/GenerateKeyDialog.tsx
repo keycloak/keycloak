@@ -24,6 +24,7 @@ import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keysto
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { StoreSettings } from "./StoreSettings";
 import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 type GenerateKeyDialogProps = {
   clientId: string;
@@ -39,6 +40,14 @@ type KeyFormProps = {
 
 const CERT_PEM = "Certificate PEM" as const;
 
+const extensions = new Map([
+  ["PKCS12", "p12"],
+  ["JKS", "jks"],
+  ["BCFKS", "bcfks"],
+]);
+
+export const getFileExtension = (format: string) => extensions.get(format);
+
 export const KeyForm = ({
   isSaml = false,
   hasPem = false,
@@ -51,6 +60,8 @@ export const KeyForm = ({
 
   const { control, watch } = useFormContext<KeyStoreConfig>();
   const format = watch("format");
+
+  const { cryptoInfo } = useServerInfo();
 
   return (
     <Form className="pf-u-pt-lg">
@@ -81,7 +92,7 @@ export const KeyForm = ({
               aria-label={t("archiveFormat")}
               isOpen={openArchiveFormat}
             >
-              {["JKS", "PKCS12"]
+              {cryptoInfo?.supportedKeystoreTypes
                 .concat(hasPem ? CERT_PEM : [])
                 .map((option) => (
                   <SelectOption

@@ -4,7 +4,7 @@ import { Button, Modal, Form } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 
 import KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { KeyForm } from "./GenerateKeyDialog";
+import { KeyForm, getFileExtension } from "./GenerateKeyDialog";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -39,7 +39,7 @@ export const ExportSamlKeyDialog = ({
       );
       saveAs(
         new Blob([keyStore], { type: "application/octet-stream" }),
-        `keystore.${config.format == "PKCS12" ? "p12" : "jks"}`
+        `keystore.${getFileExtension(config.format ?? "")}`
       );
       addAlert(t("samlKeysExportSuccess"));
       close();

@@ -23,7 +23,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { GenerateKeyDialog } from "./GenerateKeyDialog";
+import { GenerateKeyDialog, getFileExtension } from "./GenerateKeyDialog";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import useToggle from "../../utils/useToggle";
@@ -80,7 +80,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
       );
       saveAs(
         new Blob([keyStore], { type: "application/octet-stream" }),
-        `keystore.${config.format == "PKCS12" ? "p12" : "jks"}`
+        `keystore.${getFileExtension(config.format ?? "")}`
       );
       addAlert(t("generateSuccess"), AlertVariant.success);
       refresh();
