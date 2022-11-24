@@ -11,7 +11,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -32,16 +31,16 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 @Consumes({"application/json"})
 @Produces({"application/json"})
 public class AuthenticationManagementResource extends RoleMappingResource {
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
     private RealmModel realm;
     private AdminPermissionEvaluator auth;
 
-    public AuthenticationManagementResource(RealmModel realm, AdminPermissionEvaluator auth) {
+    public AuthenticationManagementResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
         super(realm, auth);
         this.realm = realm;
         this.auth = auth;
+        this.session = session;
     }
 
     @GET

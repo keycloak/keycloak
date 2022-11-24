@@ -9,7 +9,6 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -25,15 +24,15 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.utils.StringUtil;
 
 public class GroupsResource {
-    @Context
-    private KeycloakSession session;
-    private RealmModel realm;
-    private AdminPermissionEvaluator auth;
+    private final KeycloakSession session;
+    private final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
 
-    public GroupsResource(RealmModel realm, AdminPermissionEvaluator auth) {
+    public GroupsResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
         super();
         this.realm = realm;
         this.auth = auth;
+        this.session = session;
     }
 
     @GET

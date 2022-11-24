@@ -30,6 +30,6 @@ public final class BruteForceUsersProvider implements AdminRealmResourceProvider
     }
 
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new  BruteForceUsersResource(realm, auth);
+        return new  BruteForceUsersResource(session, realm, auth);
     }
 }

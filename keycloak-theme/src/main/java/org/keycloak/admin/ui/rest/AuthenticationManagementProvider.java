@@ -28,6 +28,6 @@ public final class AuthenticationManagementProvider implements AdminRealmResourc
     }
 
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new AuthenticationManagementResource(realm, auth);
+        return new AuthenticationManagementResource(session, realm, auth);
     }
 }

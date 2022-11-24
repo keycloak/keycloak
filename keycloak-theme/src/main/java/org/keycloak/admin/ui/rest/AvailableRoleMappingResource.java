@@ -12,7 +12,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -30,15 +29,15 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 public class AvailableRoleMappingResource extends RoleMappingResource {
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
 
-    public AvailableRoleMappingResource(RealmModel realm, AdminPermissionEvaluator auth) {
+    public AvailableRoleMappingResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
         super(realm, auth);
         this.realm = realm;
         this.auth = auth;
+        this.session = session;
     }
 
     @GET

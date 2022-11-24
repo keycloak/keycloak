@@ -30,6 +30,6 @@ public final class EffectiveRoleMappingProvider implements AdminRealmResourcePro
     }
 
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new EffectiveRoleMappingResource(realm, auth);
+        return new EffectiveRoleMappingResource(session, realm, auth);
     }
 }

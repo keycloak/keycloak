@@ -30,6 +30,6 @@ public final class GroupsResourceProvider implements AdminRealmResourceProviderF
     }
 
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new GroupsResource(realm, auth);
+        return new GroupsResource(session, realm, auth);
     }
 }

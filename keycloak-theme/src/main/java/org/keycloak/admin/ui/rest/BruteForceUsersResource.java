@@ -2,7 +2,6 @@ package org.keycloak.admin.ui.rest;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -12,7 +11,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -28,7 +26,6 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
@@ -37,14 +34,14 @@ import org.keycloak.utils.SearchQueryUtils;
 public class BruteForceUsersResource {
     private static final Logger logger = Logger.getLogger(BruteForceUsersResource.class);
     private static final String SEARCH_ID_PARAMETER = "id:";
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
 
-    public BruteForceUsersResource(RealmModel realm, AdminPermissionEvaluator auth) {
+    public BruteForceUsersResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
         this.realm = realm;
         this.auth = auth;
+        this.session = session;
     }
 
     @GET
