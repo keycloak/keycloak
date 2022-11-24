@@ -11,6 +11,12 @@
     <name>Keycloak Model Map</name>
     <description/>
 
+    <properties>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
