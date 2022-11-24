@@ -1,16 +1,16 @@
-import { cloneDeep } from "lodash-es";
-import { saveAs } from "file-saver";
-import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
-import { flatten } from "flat";
-
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
+import { saveAs } from "file-saver";
+import { flatten } from "flat";
+import { cloneDeep } from "lodash-es";
 
 import {
-  keyValueToArray,
   arrayToKeyValue,
+  keyValueToArray,
   KeyValueType,
 } from "./components/key-value-form/key-value-convert";
+import { ReplaceString } from "./utils/types";
 
 export const sortProviders = (providers: {
   [index: string]: ProviderRepresentation;
@@ -84,13 +84,14 @@ const isEmpty = (obj: any) => Object.keys(obj).length === 0;
 
 export const convertAttributeNameToForm = (name: string) => {
   const index = name.indexOf(".");
-  return `${name.substring(0, index)}.${convertAttribute(
-    name.substring(index + 1)
-  )}`;
+  return `${name.substring(0, index)}.${beerify(name.substring(index + 1))}`;
 };
 
-const convertAttribute = (name: string) => name.replace(/\./g, "🍺");
-const convertFormNameToAttribute = (name: string) => name.replace(/🍺/g, ".");
+const beerify = <T extends string>(name: T) =>
+  name.replaceAll(".", "🍺") as ReplaceString<T, ".", "🍺">;
+
+const debeerify = <T extends string>(name: T) =>
+  name.replaceAll("🍺", ".") as ReplaceString<T, "🍺", ".">;
 
 export const convertToFormValues = (
   obj: any,
@@ -107,7 +108,7 @@ export const convertToFormValues = (
         );
 
         convertedValues.forEach(([k, v]) =>
-          setValue(`${key}.${convertAttribute(k)}`, v)
+          setValue(`${key}.${beerify(k)}`, v)
         );
       } else {
         setValue(key, undefined);
@@ -128,7 +129,7 @@ export function convertFormValuesToObject<T extends Record<string, any>, G = T>(
     } else if (key === "config" || key === "attributes") {
       result[key] = Object.fromEntries(
         Object.entries(value as Record<string, unknown>).map(([k, v]) => [
-          convertFormNameToAttribute(k),
+          debeerify(k),
           v,
         ])
       );
