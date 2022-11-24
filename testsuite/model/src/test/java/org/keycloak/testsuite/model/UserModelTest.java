@@ -149,6 +149,20 @@ public class UserModelTest extends KeycloakModelTest {
             return null;
         });
 
+        // try to query storage in a separate transaction to make sure that storage can handle case-sensitive usernames
+        withRealm(realm1Id, (session, realm) -> {
+            UserModel user1 = session.users().getUserByUsername(realm, "user");
+            UserModel user2 = session.users().getUserByUsername(realm, "USER");
+
+            assertThat(user1, not(nullValue()));
+            assertThat(user2, not(nullValue()));
+
+            assertThat(user1.getUsername(), equalTo("user"));
+            assertThat(user2.getUsername(), equalTo("USER"));
+
+            return null;
+        });
+
         realm2Id = inComittedTransaction((Function<KeycloakSession, String>)  session -> {
             RealmModel realm = session.realms().createRealm("realm2");
             realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
