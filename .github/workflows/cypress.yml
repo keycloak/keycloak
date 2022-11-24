@@ -124,6 +124,7 @@ jobs:
 
       - name: Run Cypress
         uses: cypress-io/github-action@v4
+        continue-on-error: true
         with:
           install: false
           record: true
