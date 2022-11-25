@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
   Button,
   ButtonVariant,
@@ -13,8 +11,10 @@ import {
   SelectVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
@@ -29,7 +29,7 @@ const types = ["basic-flow", "form-flow"] as const;
 
 export type Flow = {
   name: string;
-  description?: string;
+  description: string;
   type: typeof types[number];
   provider: string;
 };
@@ -43,6 +43,7 @@ export const AddSubFlowModal = ({
   const {
     register,
     control,
+    setValue,
     handleSubmit,
     formState: { errors },
   } = useForm<Flow>();
@@ -54,40 +55,42 @@ export const AddSubFlowModal = ({
 
   useFetch(
     () => adminClient.authenticationManagement.getFormProviders(),
-    (providers) => setFormProviders(providers),
+    setFormProviders,
     []
   );
+
+  useEffect(() => {
+    if (formProviders?.length === 1) {
+      setValue("provider", formProviders[0].id!);
+    }
+  }, [formProviders]);
 
   return (
     <Modal
       variant={ModalVariant.medium}
-      isOpen={true}
       title={t("addStepTo", { name })}
-      onClose={() => onCancel()}
+      onClose={onCancel}
       actions={[
         <Button
-          id="modal-add"
-          data-testid="modal-add"
           key="add"
+          data-testid="modal-add"
           type="submit"
           form="sub-flow-form"
         >
           {t("common:add")}
         </Button>,
         <Button
-          data-testid="cancel"
-          id="modal-cancel"
           key="cancel"
+          data-testid="cancel"
           variant={ButtonVariant.link}
-          onClick={() => {
-            onCancel();
-          }}
+          onClick={onCancel}
         >
           {t("common:cancel")}
         </Button>,
       ]}
+      isOpen
     >
-      <Form id="sub-flow-form" isHorizontal onSubmit={handleSubmit(onConfirm)}>
+      <Form id="sub-flow-form" onSubmit={handleSubmit(onConfirm)} isHorizontal>
         <FormGroup
           label={t("common:name")}
           fieldId="name"
@@ -95,20 +98,18 @@ export const AddSubFlowModal = ({
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
-          isRequired
           labelIcon={
             <HelpItem helpText="authentication-help:name" fieldLabelId="name" />
           }
+          isRequired
         >
           <KeycloakTextInput
-            type="text"
             id="name"
-            name="name"
             data-testid="name"
-            ref={register({ required: true })}
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
+            {...register("name", { required: true })}
           />
         </FormGroup>
         <FormGroup
@@ -122,46 +123,43 @@ export const AddSubFlowModal = ({
           }
         >
           <KeycloakTextInput
-            type="text"
             id="description"
-            name="description"
             data-testid="description"
-            ref={register}
+            {...register("description")}
           />
         </FormGroup>
         <FormGroup
           label={t("flowType")}
+          fieldId="flowType"
           labelIcon={
             <HelpItem
               helpText="authentication-help:flowType"
               fieldLabelId="authentication:flowType"
             />
           }
-          fieldId="flowType"
         >
           <Controller
             name="type"
             defaultValue={types[0]}
             control={control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 menuAppendTo="parent"
                 toggleId="flowType"
                 onToggle={setOpen}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value.toString());
                   setOpen(false);
                 }}
-                selections={t(`flow-type.${value}`)}
+                selections={t(`flow-type.${field.value}`)}
                 variant={SelectVariant.single}
-                aria-label={t("flowType")}
                 isOpen={open}
               >
                 {types.map((type) => (
                   <SelectOption
-                    selected={type === value}
                     key={type}
                     value={type}
+                    selected={type === field.value}
                   >
                     {t(`flow-type.${type}`)}
                   </SelectOption>
@@ -185,25 +183,24 @@ export const AddSubFlowModal = ({
               name="provider"
               defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Select
                   menuAppendTo="parent"
                   toggleId="provider"
                   onToggle={setOpenProvider}
                   onSelect={(_, value) => {
-                    onChange(value.toString());
+                    field.onChange(value.toString());
                     setOpenProvider(false);
                   }}
-                  selections={value.displayName}
+                  selections={field.value}
                   variant={SelectVariant.single}
-                  aria-label={t("flowType")}
                   isOpen={openProvider}
                 >
                   {formProviders.map((provider) => (
                     <SelectOption
-                      selected={provider.displayName === value}
                       key={provider.id}
                       value={provider.id}
+                      selected={provider.displayName === field.value}
                     >
                       {provider.displayName}
                     </SelectOption>
@@ -212,14 +209,6 @@ export const AddSubFlowModal = ({
               )}
             />
           </FormGroup>
-        )}
-        {formProviders?.length === 1 && (
-          <input
-            name="provider"
-            type="hidden"
-            ref={register}
-            value={formProviders[0].id}
-          />
         )}
       </Form>
     </Modal>
