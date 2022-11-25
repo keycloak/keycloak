@@ -17,9 +17,10 @@
 
 package org.keycloak.services.util;
 
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.Config;
-import org.keycloak.common.util.Resteasy;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.core.CacheControl;
 
@@ -28,9 +29,10 @@ import javax.ws.rs.core.CacheControl;
  */
 public class CacheControlUtil {
 
-    public static void noBackButtonCacheControlHeader() {
-        HttpResponse response = Resteasy.getContextData(HttpResponse.class);
-        response.getOutputHeaders().putSingle("Cache-Control", "no-store, must-revalidate, max-age=0");
+    public static void noBackButtonCacheControlHeader(KeycloakSession session) {
+        KeycloakContext context = session.getContext();
+        HttpResponse response = context.getHttpResponse();
+        response.setHeader("Cache-Control", "no-store, must-revalidate, max-age=0");
     }
 
     public static CacheControl getDefaultCacheControl() {

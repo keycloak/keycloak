@@ -17,7 +17,6 @@
 
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.Version;
 import org.keycloak.encoding.ResourceEncodingHelper;
 import org.keycloak.encoding.ResourceEncodingProvider;
@@ -124,7 +123,7 @@ public class JsResource {
         }
 
         String contentType = "text/javascript";
-        Cors cors = Cors.add(session.getContext().getContextObject(HttpRequest.class)).allowAllOrigins();
+        Cors cors = Cors.add(session.getContext().getHttpRequest()).allowAllOrigins();
 
         ResourceEncodingProvider encodingProvider = ResourceEncodingHelper.getResourceEncodingProvider(session, contentType);
 

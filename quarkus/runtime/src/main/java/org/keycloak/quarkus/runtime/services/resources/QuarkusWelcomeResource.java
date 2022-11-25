@@ -17,13 +17,13 @@
 package org.keycloak.quarkus.runtime.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.services.ForbiddenException;
@@ -72,12 +72,6 @@ public class QuarkusWelcomeResource {
     private AtomicBoolean shouldBootstrap;
 
     @Context
-    HttpHeaders headers;
-
-    @Context
-    HttpRequest request;
-
-    @Context
     KeycloakSession session;
 
     /**
@@ -98,6 +92,7 @@ public class QuarkusWelcomeResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response createUser() {
+        HttpRequest request = session.getContext().getHttpRequest();
         MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
 
         if (!shouldBootstrap()) {
@@ -254,6 +249,8 @@ public class QuarkusWelcomeResource {
             ClientConnection clientConnection = session.getContext().getConnection();
             InetAddress remoteInetAddress = InetAddress.getByName(clientConnection.getRemoteAddr());
             InetAddress localInetAddress = InetAddress.getByName(clientConnection.getLocalAddr());
+            HttpRequest request = session.getContext().getHttpRequest();
+            HttpHeaders headers = request.getHttpHeaders();
             String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
             logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s", remoteInetAddress.toString(), localInetAddress.toString(), xForwardedFor);
 
@@ -273,18 +270,20 @@ public class QuarkusWelcomeResource {
         String stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
         String cookiePath = session.getContext().getUri().getPath();
         boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
-        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true);
+        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true, session);
         return stateChecker;
     }
 
     private void expireCsrfCookie() {
         String cookiePath = session.getContext().getUri().getPath();
         boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
-        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, "", cookiePath, null, null, 0, secureOnly, true);
+        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, "", cookiePath, null, null, 0, secureOnly, true, session);
     }
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {
         String formStateChecker = formData.getFirst("stateChecker");
+        HttpRequest request = session.getContext().getHttpRequest();
+        HttpHeaders headers = request.getHttpHeaders();
         Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
         if (cookie == null) {
             throw new ForbiddenException();

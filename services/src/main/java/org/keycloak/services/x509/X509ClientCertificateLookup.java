@@ -18,7 +18,7 @@
 
 package org.keycloak.services.x509;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.provider.Provider;
 
 import java.security.GeneralSecurityException;
