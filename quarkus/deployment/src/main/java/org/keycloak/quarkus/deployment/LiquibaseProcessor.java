@@ -32,6 +32,7 @@ import liquibase.sqlgenerator.SqlGenerator;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 
 import static org.keycloak.config.StorageOptions.STORAGE;
+import static org.keycloak.quarkus.deployment.KeycloakProcessor.getDefaultDataSource;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
@@ -43,7 +44,7 @@ class LiquibaseProcessor {
         DotName liquibaseServiceName = DotName.createSimple(LiquibaseService.class.getName());
         Map<String, List<String>> services = new HashMap<>();
         IndexView index = indexBuildItem.getIndex();
-        JdbcDataSourceBuildItem dataSourceBuildItem = jdbcDataSources.get(0);
+        JdbcDataSourceBuildItem dataSourceBuildItem = getDefaultDataSource(jdbcDataSources);
         String dbKind = dataSourceBuildItem.getDbKind();
 
         for (Class<?> c : Arrays.asList(liquibase.diff.compare.DatabaseObjectComparator.class,
