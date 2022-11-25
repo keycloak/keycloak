@@ -14,24 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.clientScope.entity;
+package org.keycloak.models.map.storage.jpa;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import javax.persistence.Column;
+import javax.persistence.MappedSuperclass;
 
-import org.keycloak.models.map.storage.jpa.JpaAttributeEntityWithHashValue;
+/**
+ * Enhances {@link JpaAttributeEntity} with value_hash column.
+ */
+@MappedSuperclass
+public abstract class JpaAttributeEntityWithHashValue<E> extends JpaAttributeEntity<E> {
 
-@Entity
-@Table(name = "kc_client_scope_attribute", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"fk_root", "name", "value_hash"})
-})
-public class JpaClientScopeAttributeEntity extends JpaAttributeEntityWithHashValue<JpaClientScopeEntity> {
+    @Column(insertable = false, updatable = false)
+    private byte[] value_hash;
 
-    public JpaClientScopeAttributeEntity() {
+    public JpaAttributeEntityWithHashValue() {
     }
 
-    public JpaClientScopeAttributeEntity(JpaClientScopeEntity root, String name, String value) {
+    public JpaAttributeEntityWithHashValue(E root, String name, String value) {
         super(root, name, value);
     }
 }

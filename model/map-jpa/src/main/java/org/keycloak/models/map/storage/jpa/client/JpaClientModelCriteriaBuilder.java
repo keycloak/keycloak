@@ -80,7 +80,8 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
                     return new JpaClientModelCriteriaBuilder((cb, query, root) -> {
                         Join<JpaClientEntity, JpaClientAttributeEntity> join = root.join("attributes", JoinType.LEFT);
                         return cb.and(
-                            cb.equal(join.get("name"), value[0]), 
+                            cb.equal(join.get("name"), value[0]),
+                            hashExpression(cb, join, "value_hash", value[1]),
                             cb.equal(join.get("value"), value[1])
                         );
                     });
