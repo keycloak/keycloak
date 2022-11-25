@@ -32,7 +32,8 @@ import liquibase.statement.core.AddColumnStatement;
 
 /**
  * A {@link SqlGenerator} implementation that supports {@link GeneratedColumnStatement}s. It generates the SQL required
- * to add a column whose values are generated from a property of a JSON file stored in one of the table columns.
+ * to add a column whose values are generated from a property of a JSON file stored in one of the table columns 
+ * or a function which is used to create a generated column.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
@@ -90,10 +91,25 @@ public class GeneratedColumnSqlGenerator extends AddColumnGenerator {
 
     protected void handleGeneratedColumn(final GeneratedColumnStatement statement, final Database database, final StringBuilder sqlBuilder) {
         if (database instanceof PostgresDatabase) {
-            // assemble the GENERATED ALWAYS AS section of the query using the json property selection function.
-            DatabaseDataType columnType = DataTypeFactory.getInstance().fromDescription(statement.getColumnType(), database).toDatabaseDataType(database);
-            sqlBuilder.append(" GENERATED ALWAYS AS ((").append(statement.getJsonColumn()).append("->>'").append(statement.getJsonProperty())
-                    .append("')::").append(columnType).append(") stored");
+            if (statement.getHashOf() != null) {
+                sqlBuilder.append(" GENERATED ALWAYS AS (").append(getHashFunction(database, statement.getHashOf())).append(") STORED");
+            } else if (statement.getJsonColumn() != null && statement.getJsonProperty() != null) {
+                // assemble the GENERATED ALWAYS AS section of the query using the json property selection function.
+                DatabaseDataType columnType = DataTypeFactory.getInstance().fromDescription(statement.getColumnType(), database).toDatabaseDataType(database);
+                sqlBuilder.append(" GENERATED ALWAYS AS ((").append(statement.getJsonColumn()).append("->>'").append(statement.getJsonProperty())
+                        .append("')::").append(columnType).append(") stored");
+            }
+        }
+    }
+
+    private String getHashFunction(Database database, String columnName) {
+        switch (database.getShortName()) {
+            case "postgresql":
+                return String.format("sha256(%s::bytea)", columnName);
+            case "cockroachdb":
+                return String.format("sha256(%s)", columnName);
+            default:
+                throw new IllegalStateException("Unknown database.");
         }
     }
 }
