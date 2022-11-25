@@ -23,7 +23,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -146,6 +148,15 @@ public class ClassLoaderTheme implements Theme {
             }
         }
         return m;
+    }
+
+    @Override
+    public Map<Locale, Properties> getGroupedMessages(Locale locale) throws IOException {
+        if (locale == null){
+            return null;
+        }
+
+        return Collections.singletonMap(locale, getMessages(locale));
     }
 
     @Override

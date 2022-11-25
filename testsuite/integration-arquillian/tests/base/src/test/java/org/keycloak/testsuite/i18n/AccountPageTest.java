@@ -25,9 +25,13 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.ProfileAssume;
 
 import java.util.List;
+import java.util.Locale;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
@@ -56,6 +60,33 @@ public class AccountPageTest extends AbstractI18NTest {
         accountUpdateProfilePage.openLanguage("English");
         Assert.assertEquals("English", accountUpdateProfilePage.getLanguageDropdownText());
         accountUpdateProfilePage.logout();
+    }
+
+    @Test
+    public void realmLocalizationMessagesAreApplied() {
+        String messageKey = "editAccountHtmlTitle";
+
+        String messageEn = "Edit Account EN";
+        testRealm().localization().saveRealmLocalizationText(Locale.ENGLISH.toLanguageTag(), messageKey, messageEn);
+        getCleanup().addLocalization(Locale.ENGLISH.toLanguageTag());
+        String messageDe = "Edit Account DE";
+        testRealm().localization().saveRealmLocalizationText(Locale.GERMAN.toLanguageTag(), messageKey, messageDe);
+        getCleanup().addLocalization(Locale.GERMAN.toLanguageTag());
+
+        accountUpdateProfilePage.open();
+        loginPage.login("login@test.com", "password");
+        Assert.assertTrue(accountUpdateProfilePage.isCurrent());
+
+        // Check default language: en
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, containsString(messageEn));
+        assertThat(pageSource, not(containsString(messageDe)));
+
+        // Switch language to de
+        accountUpdateProfilePage.openLanguage("Deutsch");
+        pageSource = driver.getPageSource();
+        assertThat(pageSource, not(containsString(messageEn)));
+        assertThat(pageSource, containsString(messageDe));
     }
 
     @Test

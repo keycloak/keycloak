@@ -41,13 +41,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LinkExpirationFormatterMethod;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
-import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -212,20 +212,19 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             Theme theme = getTheme();
             Locale locale = session.getContext().resolveLocale(user);
             attributes.put("locale", locale);
-            KeycloakUriInfo uriInfo = session.getContext().getUri();
-            Properties rb = new Properties();
-            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
-            {
-                rb.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            rb.putAll(theme.getMessages(locale));
-            rb.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
-            attributes.put("msg", new MessageFormatterMethod(locale, rb));
+
+            Map<Locale, Properties> themeMessages = theme.getGroupedMessages(locale);
+            Properties messages =
+                    LocaleUtil.enhancePropertiesWithRealmLocalizationTexts(realm, locale, themeMessages);
+            attributes.put("msg", new MessageFormatterMethod(locale, messages));
+
             attributes.put("properties", theme.getProperties());
             attributes.put("realmName", getRealmName());
             attributes.put("user", new ProfileBean(user));
+            KeycloakUriInfo uriInfo = session.getContext().getUri();
             attributes.put("url", new UrlBean(realm, theme, uriInfo.getBaseUri(), null));
-            String subject = new MessageFormat(rb.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
+
+            String subject = new MessageFormat(messages.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
             String textTemplate = String.format("text/%s", template);
             String textBody;
             try {

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -62,6 +63,19 @@ public interface Theme {
      * @throws IOException If bundle can not be read.
      */
     Properties getMessages(String baseBundlename, Locale locale) throws IOException;
+
+    /**
+     * Retrieve localized messages from a message bundle named "messages".
+     * <p>
+     * Returns messages for all relevant locales grouped by locale. This is different from
+     * {@link #getMessages(Locale)}, which returns already merged messages.
+     * </p>
+     * 
+     * @param locale The locale of the desired message bundle.
+     * @return The localized messages from the bundle, grouped by locale.
+     * @throws IOException If bundle can not be read.
+     */
+    Map<Locale, Properties> getGroupedMessages(Locale locale) throws IOException;
 
     Properties getProperties() throws IOException;
 

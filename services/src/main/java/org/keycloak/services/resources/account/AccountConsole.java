@@ -36,6 +36,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.FreeMarkerException;
@@ -45,7 +46,6 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
-import org.keycloak.utils.StringUtil;
 
 /**
  * Created by st on 29/03/17.
@@ -111,12 +111,9 @@ public class AccountConsole {
             if (auth != null) user = auth.getUser();
             Locale locale = session.getContext().resolveLocale(user);
             map.put("locale", locale.toLanguageTag());
-            Properties messages = new Properties();
-            messages.putAll(theme.getMessages(locale));
-            if(StringUtil.isNotBlank(realm.getDefaultLocale())) {
-                messages.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messages.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            Map<Locale, Properties> themeMessages = theme.getGroupedMessages(locale);
+            Properties messages =
+                    LocaleUtil.enhancePropertiesWithRealmLocalizationTexts(realm, locale, themeMessages);
             map.put("msg", new MessageFormatterMethod(locale, messages));
             map.put("msgJSON", messagesToJsonString(messages));
             map.put("supportedLocales", supportedLocales(messages));

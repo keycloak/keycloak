@@ -38,6 +38,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
@@ -48,7 +49,6 @@ import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.utils.MediaType;
-import org.keycloak.utils.StringUtil;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -217,14 +217,11 @@ public class FreeMarkerAccountProvider implements AccountProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale, Map<String, Object> attributes) {
-        Properties messagesBundle = new Properties();
+        Properties messagesBundle;
         try {
-            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
-            {
-                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messagesBundle.putAll(theme.getMessages(locale));
-            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            Map<Locale, Properties> themeMessages = theme.getGroupedMessages(locale);
+            messagesBundle =
+                    LocaleUtil.enhancePropertiesWithRealmLocalizationTexts(realm, locale, themeMessages);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);

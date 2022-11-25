@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.admin;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -15,7 +16,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -39,6 +44,8 @@ public class DeclarativeUserTest extends AbstractAdminTest {
     @Before
     public void onBefore() {
         RealmRepresentation realmRep = this.realm.toRepresentation();
+        realmRep.setInternationalizationEnabled(true);
+        realmRep.setSupportedLocales(new HashSet<>(Arrays.asList("en", "de")));
         enableDynamicUserProfile(realmRep);
         this.realm.update(realmRep);
         setUserProfileConfiguration(this.realm, "{\"attributes\": ["
@@ -166,13 +173,64 @@ public class DeclarativeUserTest extends AbstractAdminTest {
         user1 = userResource.toRepresentation();
         assertEquals("changed", user1.getFirstName());
 
-        try {
-            user1.setAttributes(Collections.emptyMap());
-            userResource.update(user1);
-            fail("Should fail because the attribute attr1 is required");
-        } catch (BadRequestException ignore) {
+        user1.setAttributes(Collections.emptyMap());
+        verifyUserUpdateFails(user1Id, user1, "Please specify attribute attr1.");
+    }
 
+    private void verifyUserUpdateFails(String userId, UserRepresentation user, String expectedErrorMessage) {
+        UserResource userResource = realm.users().get(userId);
+        try {
+            userResource.update(user);
+            fail("Should fail with errorMessage: " + expectedErrorMessage);
+        } catch (BadRequestException badRequest) {
+            try (Response response = badRequest.getResponse()) {
+                assertThat(response.getStatus(), equalTo(400));
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertThat(error.getErrorMessage(), equalTo(expectedErrorMessage));
+            }
         }
+    }
+
+    /**
+     * TODO:
+     * This test shows an unexpected behavior in the Admin UI. The locale used for user validation error messages
+     * is the locale of the validated user, but probably it should be the locale of the authenticated user.
+     */
+    @Test
+    public void validationErrorMessagesCanBeConfiguredWithRealmLocalization() {
+        String requiredAttrName = "required-attr";
+        setUserProfileConfiguration(this.realm, "{\"attributes\": ["
+                + "{\"name\": \"username\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"email\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"locale\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"" + requiredAttrName + "\", \"required\": {}, " + PERMISSIONS_ALL + "}]}");
+
+        realm.localization().saveRealmLocalizationText("en", "error-user-attribute-required",
+                "required-error en: {0}");
+        getCleanup().addLocalization("en");
+        realm.localization().saveRealmLocalizationText("de", "error-user-attribute-required",
+                "required-error de: {0}");
+        getCleanup().addLocalization("de");
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user-realm-localization");
+        // start with locale en
+        user.singleAttribute("locale", "en");
+        user.singleAttribute(requiredAttrName, "some-value");
+        String userId = createUser(user);
+
+        user.setAttributes(new HashMap<>());
+        verifyUserUpdateFails(userId, user, "required-error en: " + requiredAttrName);
+
+        // switch to locale de
+        user.singleAttribute("locale", "de");
+        user.singleAttribute(requiredAttrName, "some-value");
+        realm.users().get(userId).update(user);
+
+        user.setAttributes(new HashMap<>());
+        verifyUserUpdateFails(userId, user, "required-error de: " + requiredAttrName);
     }
 
     @Test
