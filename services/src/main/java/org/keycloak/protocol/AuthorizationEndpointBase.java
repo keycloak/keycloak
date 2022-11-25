@@ -18,7 +18,7 @@
 package org.keycloak.protocol;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
@@ -73,7 +73,7 @@ public abstract class AuthorizationEndpointBase {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
-        this.httpRequest = session.getContext().getContextObject(HttpRequest.class);
+        this.httpRequest = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
 

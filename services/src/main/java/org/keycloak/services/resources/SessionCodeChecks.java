@@ -25,7 +25,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
@@ -257,7 +257,7 @@ public class SessionCodeChecks {
                 // Allow refresh, but rewrite browser history
                 if (execution == null && lastExecFromSession != null) {
                     logger.debugf("Parameter 'execution' is not in the request, but flow wasn't changed. Will update browser history");
-                    request.setAttribute(BrowserHistoryHelper.SHOULD_UPDATE_BROWSER_HISTORY, true);
+                    session.setAttribute(BrowserHistoryHelper.SHOULD_UPDATE_BROWSER_HISTORY, true);
                 }
 
                 return true;

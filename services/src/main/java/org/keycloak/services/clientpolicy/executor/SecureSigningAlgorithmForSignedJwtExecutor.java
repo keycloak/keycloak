@@ -20,11 +20,10 @@ package org.keycloak.services.clientpolicy.executor;
 import java.util.Optional;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -83,7 +82,7 @@ public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyE
             case TOKEN_INTROSPECT:
             case LOGOUT_REQUEST:
                 boolean isRequireClientAssertion = Optional.ofNullable(configuration.isRequireClientAssertion()).orElse(Boolean.FALSE).booleanValue();
-                HttpRequest req = session.getContext().getContextObject(HttpRequest.class);
+                HttpRequest req = session.getContext().getHttpRequest();
                 String clientAssertion = req.getDecodedFormParameters().getFirst(OAuth2Constants.CLIENT_ASSERTION);
                 if (!isRequireClientAssertion && ObjectUtil.isBlank(clientAssertion)) {
                     break;

@@ -149,7 +149,7 @@ public class AuthenticationSessionManager {
         StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
         String encodedAuthSessionId = encoder.encodeSessionId(authSessionId);
 
-        CookieHelper.addCookie(AUTH_SESSION_ID, encodedAuthSessionId, cookiePath, null, null, -1, sslRequired, true, SameSiteAttributeValue.NONE);
+        CookieHelper.addCookie(AUTH_SESSION_ID, encodedAuthSessionId, cookiePath, null, null, -1, sslRequired, true, SameSiteAttributeValue.NONE, session);
 
         log.debugf("Set AUTH_SESSION_ID cookie with value %s", encodedAuthSessionId);
     }
@@ -184,10 +184,10 @@ public class AuthenticationSessionManager {
      * @return list of the values of AUTH_SESSION_ID cookies. It is assumed that values could be encoded with route added (EG. "5e161e00-d426-4ea6-98e9-52eb9844e2d7.node1" )
      */
     List<String> getAuthSessionCookies(RealmModel realm) {
-        Set<String> cookiesVal = CookieHelper.getCookieValue(AUTH_SESSION_ID);
+        Set<String> cookiesVal = CookieHelper.getCookieValue(session, AUTH_SESSION_ID);
 
         if (cookiesVal.size() > 1) {
-            AuthenticationManager.expireOldAuthSessionCookie(realm, session.getContext().getUri(), session.getContext().getConnection());
+            AuthenticationManager.expireOldAuthSessionCookie(realm, session.getContext().getUri(), session);
         }
 
         List<String> authSessionIds = cookiesVal.stream().limit(AUTH_SESSION_COOKIE_LIMIT).collect(Collectors.toList());
@@ -208,9 +208,8 @@ public class AuthenticationSessionManager {
 
         // expire restart cookie
         if (expireRestartCookie) {
-            ClientConnection clientConnection = session.getContext().getConnection();
             UriInfo uriInfo = session.getContext().getUri();
-            RestartLoginCookie.expireRestartCookie(realm, clientConnection, uriInfo);
+            RestartLoginCookie.expireRestartCookie(realm, uriInfo, session);
         }
     }
 

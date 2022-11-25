@@ -17,7 +17,7 @@
 
 package org.keycloak.protocol.oidc.par.endpoints;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
@@ -69,7 +69,7 @@ public class ParEndpoint extends AbstractParEndpoint {
 
     public ParEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
-        this.httpRequest = session.getContext().getContextObject(HttpRequest.class);
+    this.httpRequest = session.getContext().getHttpRequest();
     }
 
     @Path("/")

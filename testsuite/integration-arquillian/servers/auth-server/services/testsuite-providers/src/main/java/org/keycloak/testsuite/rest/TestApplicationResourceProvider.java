@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.jose.jws.JWSInput;
@@ -89,7 +89,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         this.authenticationChannelRequests = authenticationChannelRequests;
         this.cibaClientNotifications = cibaClientNotifications;
         this.intentClientBindings = intentClientBindings;
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.request = session.getContext().getHttpRequest();
     }
 
     @POST

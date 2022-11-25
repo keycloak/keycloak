@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.crypto.KeyType;
@@ -89,7 +89,7 @@ public class OIDCLoginProtocolService {
         this.tokenManager = new TokenManager();
         this.event = event;
         this.providerConfig = providerConfig;
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
 

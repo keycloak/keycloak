@@ -17,7 +17,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -61,7 +61,7 @@ public class TokenIntrospectionEndpoint {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.request = session.getContext().getHttpRequest();
     }
 
     @POST
