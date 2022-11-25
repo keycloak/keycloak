@@ -82,9 +82,11 @@ const isAttributeArray = (value: any) => {
 
 const isEmpty = (obj: any) => Object.keys(obj).length === 0;
 
-export const convertAttributeNameToForm = (name: string) => {
+export const convertAttributeNameToForm = <T extends string>(name: T) => {
   const index = name.indexOf(".");
-  return `${name.substring(0, index)}.${beerify(name.substring(index + 1))}`;
+  return `${name.substring(0, index)}.${beerify(
+    name.substring(index + 1)
+  )}` as ReplaceString<T, ".", "🍺", { skipFirst: true }>;
 };
 
 const beerify = <T extends string>(name: T) =>
