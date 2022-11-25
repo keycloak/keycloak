@@ -1729,7 +1729,7 @@
                 <dependency>
                     <groupId>org.apache.ant</groupId>
                     <artifactId>ant</artifactId>
-                    <version>1.9.15</version>
+                    <version>1.10.11</version>
                     <type>jar</type>
                 </dependency>
 
