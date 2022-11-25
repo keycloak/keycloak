@@ -17,8 +17,8 @@
 package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -60,8 +60,8 @@ public class AccountLoader {
     public AccountLoader(KeycloakSession session, EventBuilder event) {
         this.session = session;
         this.event = event;
-        this.request = session.getContext().getContextObject(HttpRequest.class);
-        this.response = session.getContext().getContextObject(HttpResponse.class);
+        this.request = session.getContext().getHttpRequest();
+        this.response = session.getContext().getHttpResponse();
     }
 
     @Path("/")
@@ -69,7 +69,7 @@ public class AccountLoader {
         RealmModel realm = session.getContext().getRealm();
         ClientModel client = getAccountManagementClient(realm);
 
-        HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
+        HttpRequest request = session.getContext().getHttpRequest();
         HttpHeaders headers = session.getContext().getRequestHeaders();
         MediaType content = headers.getMediaType();
         List<MediaType> accepts = headers.getAcceptableMediaTypes();

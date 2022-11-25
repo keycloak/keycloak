@@ -19,9 +19,9 @@
 package org.keycloak.authentication.authenticators.x509;
 
 import java.security.cert.X509Certificate;
-import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.core.MultivaluedHashMap;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -232,10 +232,9 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
     private void dumpContainerAttributes(AuthenticationFlowContext context) {
 
-        Enumeration<String> attributeNames = context.getHttpRequest().getAttributeNames();
-        while(attributeNames.hasMoreElements()) {
-            String a = attributeNames.nextElement();
-            logger.tracef("[X509ClientCertificateAuthenticator:dumpContainerAttributes] \"%s\"", a);
+        Map<String, Object> attributeNames = context.getSession().getAttributes();
+        for (String name : attributeNames.keySet()) {
+            logger.tracef("[X509ClientCertificateAuthenticator:dumpContainerAttributes] \"%s\"", name);
         }
     }
 

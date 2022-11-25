@@ -17,7 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientInitialAccessModel;
@@ -84,10 +84,10 @@ public class ClientInitialAccessResource {
         String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, clientInitialAccessModel);
         rep.setToken(token);
 
-        HttpResponse response = session.getContext().getContextObject(HttpResponse.class);
+        HttpResponse response = session.getContext().getHttpResponse();
 
         response.setStatus(Response.Status.CREATED.getStatusCode());
-        response.getOutputHeaders().add(HttpHeaders.LOCATION, session.getContext().getUri().getAbsolutePathBuilder().path(clientInitialAccessModel.getId()).build().toString());
+        response.addHeader(HttpHeaders.LOCATION, session.getContext().getUri().getAbsolutePathBuilder().path(clientInitialAccessModel.getId()).build().toString());
 
         return rep;
     }

@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.HtmlUtils;
@@ -134,7 +134,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public TestingResourceProvider(KeycloakSession session, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
         this.session = session;
         this.suspendedTimerTasks = suspendedTimerTasks;
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.request = session.getContext().getHttpRequest();
     }
 
     @POST

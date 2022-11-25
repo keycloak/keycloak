@@ -18,7 +18,7 @@
 package org.keycloak.protocol.oidc.grants.device.endpoints;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
@@ -86,7 +86,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
 
     public DeviceEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.request = session.getContext().getHttpRequest();
     }
 
     /**
@@ -123,7 +123,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         }
 
         // So back button doesn't work
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
 
         if (!realm.getOAuth2DeviceConfig().isOAuth2DeviceAuthorizationGrantEnabled(client)) {
             event.error(Errors.NOT_ALLOWED);
@@ -207,7 +207,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         checkRealm();
 
         // So back button doesn't work
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
 
         // code is not known, we can infer the client neither. ask the user to provide the code.
         if (StringUtil.isNullOrEmpty(userCode)) {

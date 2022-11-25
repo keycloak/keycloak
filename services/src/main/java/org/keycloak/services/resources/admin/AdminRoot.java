@@ -17,8 +17,8 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.NotAuthorizedException;
 import org.keycloak.common.Profile;
@@ -258,11 +258,11 @@ public class AdminRoot {
     }
 
     private HttpResponse getHttpResponse() {
-        return session.getContext().getContextObject(HttpResponse.class);
+        return session.getContext().getHttpResponse();
     }
 
     private HttpRequest getHttpRequest() {
-        return session.getContext().getContextObject(HttpRequest.class);
+        return session.getContext().getHttpRequest();
     }
 
     public static Theme getTheme(KeycloakSession session, RealmModel realm) throws IOException {

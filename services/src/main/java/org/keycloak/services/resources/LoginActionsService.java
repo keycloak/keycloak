@@ -17,7 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -29,7 +29,6 @@ import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.ActionTokenHandler;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.authentication.actiontoken.ExplainedTokenVerificationException;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionTokenHandler;
@@ -177,8 +176,8 @@ public class LoginActionsService {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
-        CacheControlUtil.noBackButtonCacheControlHeader();
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
+        this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
 
@@ -702,7 +701,7 @@ public class LoginActionsService {
 
         processLocaleParam(authSession);
 
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
+        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
 
         return processRegistration(checks.isActionRequest(), execution, authSession, null);
     }
