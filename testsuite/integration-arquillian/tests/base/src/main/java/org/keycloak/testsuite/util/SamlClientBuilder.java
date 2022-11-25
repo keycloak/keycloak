@@ -171,9 +171,14 @@ public class SamlClientBuilder {
         return addStepBuilder(new CreateAuthnRequestStepBuilder(authServerSamlUrl, authnRequestDocument, requestBinding, this));
     }
 
-    /** Issues the given AuthnRequest to the SAML endpoint */
-    public CreateLogoutRequestStepBuilder logoutRequest(URI authServerSamlUrl, String issuer, Binding requestBinding) {
-        return addStepBuilder(new CreateLogoutRequestStepBuilder(authServerSamlUrl, issuer, requestBinding, this));
+    /** Issues the given LogoutRequest to the SAML endpoint */
+    public CreateLogoutRequestStepBuilder logoutRequest(URI logoutServerSamlUrl, String issuer, Binding requestBinding) {
+        return addStepBuilder(new CreateLogoutRequestStepBuilder(logoutServerSamlUrl, issuer, requestBinding, this));
+    }
+
+    /** Issues the given LogoutRequest to the SAML endpoint */
+    public CreateLogoutRequestStepBuilder logoutRequest(URI logoutServerSamlUrl, String issuer, Binding requestBinding, boolean skipSignature) {
+        return addStepBuilder(new CreateLogoutRequestStepBuilder(logoutServerSamlUrl, issuer, requestBinding, this, skipSignature));
     }
 
     /** Issues the given SAML document to the SAML endpoint */

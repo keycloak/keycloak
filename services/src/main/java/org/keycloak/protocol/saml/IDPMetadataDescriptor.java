@@ -75,6 +75,7 @@ public class IDPMetadataDescriptor {
         spIDPDescriptor.addSingleLogoutService(new EndpointType(SAML_HTTP_POST_BINDING.getUri(), logoutEndpoint));
         spIDPDescriptor.addSingleLogoutService(new EndpointType(SAML_HTTP_REDIRECT_BINDING.getUri(), logoutEndpoint));
         spIDPDescriptor.addSingleLogoutService(new EndpointType(SAML_HTTP_ARTIFACT_BINDING.getUri(), logoutEndpoint));
+        spIDPDescriptor.addSingleLogoutService(new EndpointType(SAML_SOAP_BINDING.getUri(), logoutEndpoint));
         spIDPDescriptor.addSingleSignOnService(new EndpointType(SAML_HTTP_POST_BINDING.getUri(), loginPostEndpoint));
         spIDPDescriptor.addSingleSignOnService(new EndpointType(SAML_HTTP_REDIRECT_BINDING.getUri(), loginRedirectEndpoint));
         spIDPDescriptor.addSingleSignOnService(new EndpointType(SAML_SOAP_BINDING.getUri(), loginPostEndpoint));
