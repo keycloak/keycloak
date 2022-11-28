@@ -13,7 +13,7 @@
     <name>Tests for logical storage layer</name>
     <description>Tests for storage layer functionality targetting logical layer, i.e. models</description>
     <packaging>jar</packaging>
-    
+
     <properties>
         <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
         <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
@@ -28,7 +28,7 @@
         <keycloak.profile.feature.map_storage>disabled</keycloak.profile.feature.map_storage>
         <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>false</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
     </properties>
-    
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
@@ -132,6 +132,17 @@
     <build>
         <plugins>
             <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-jar-plugin</artifactId>
+               <executions>
+                   <execution>
+                       <goals>
+                           <goal>test-jar</goal>
+                       </goals>
+                   </execution>
+               </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.7</version>
@@ -162,7 +173,7 @@
                 <configuration>
                     <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
-                        <!-- keycloak.model.parameters lists parameter classes from 
+                        <!-- keycloak.model.parameters lists parameter classes from
                              org.keycloak.model.parameters package and determine enabled providers -->
                         <keycloak.model.parameters>${keycloak.model.parameters}</keycloak.model.parameters>
                         <keycloak.connectionsJpa.default.driver>${keycloak.connectionsJpa.driver}</keycloak.connectionsJpa.default.driver>
@@ -207,10 +218,10 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>                        
+            </plugin>
         </plugins>
     </build>
-    
+
     <profiles>
         <profile>
             <id>legacy-jpa</id>
@@ -357,5 +368,5 @@
         </profile>
 
     </profiles>
-    
+
 </project>
