@@ -646,6 +646,9 @@ public interface RealmModel extends RoleContainerModel {
 
     GroupModel getGroupById(String id);
 
+    GroupModel getGroupByName(String name, GroupModel parent);
+
+
     /**
      * Returns groups as a stream.
      * @return Stream of {@link GroupModel}. Never returns {@code null}.

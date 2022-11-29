@@ -1448,6 +1448,11 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public GroupModel getGroupByName(String name, GroupModel parent) {
+        return cacheSession.getGroupByName(this, name, parent);
+    }
+
+    @Override
     public Stream<GroupModel> getGroupsStream() {
         return cacheSession.getGroupsStream(this);
     }

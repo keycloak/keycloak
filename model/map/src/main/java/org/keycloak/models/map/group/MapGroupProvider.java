@@ -86,6 +86,27 @@ public class MapGroupProvider implements GroupProvider {
     }
 
     @Override
+    public GroupModel getGroupByName(RealmModel realm, String name, GroupModel parent) {
+        if (name == null) {
+            return null;
+        }
+
+        LOG.tracef("getGroupByName(%s, %s)%s", realm, name, getShortStackTrace());
+
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.NAME, Operator.EQ, name)
+                .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        if (parent != null) {
+            mcb = mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, parent.getId());
+
+        }
+        QueryParameters<GroupModel> queryParameters = withCriteria(mcb);
+        String groupId = tx.read(queryParameters).findFirst().map(MapGroupEntity::getId)
+                .orElse(null);
+        return groupId == null ? null : session.groups().getGroupById(realm, groupId);
+    }
+
+    @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm) {
         return getGroupsStreamInternal(realm, null, null);
     }

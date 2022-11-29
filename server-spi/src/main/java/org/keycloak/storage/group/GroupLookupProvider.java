@@ -36,6 +36,16 @@ public interface GroupLookupProvider {
     GroupModel getGroupById(RealmModel realm, String id);
 
     /**
+     * Returns a group from the given realm with the corresponding name
+     *
+     * @param realm Realm.
+     * @param name name.
+     * @param parent parent Group if not top level
+     * @return GroupModel with the correesponding name.
+     */
+    GroupModel getGroupByName(RealmModel realm, String name, GroupModel parent);
+
+    /**
      * Returns the group hierarchy with the given string in name for the given realm.
      *
      * For a matching group node the parent group is fetched by id (with all children) and added to the result stream.

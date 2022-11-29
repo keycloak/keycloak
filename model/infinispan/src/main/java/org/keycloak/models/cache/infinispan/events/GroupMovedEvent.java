@@ -62,6 +62,7 @@ public class GroupMovedEvent extends InvalidationEvent implements RealmCacheInva
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
         realmCache.groupQueriesInvalidations(realmId, invalidations);
+        realmCache.groupNameInvalidations(groupId, invalidations);
         if (newParentId != null) {
             invalidations.add(newParentId);
         }

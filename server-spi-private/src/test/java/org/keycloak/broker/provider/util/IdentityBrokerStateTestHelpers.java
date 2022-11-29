@@ -1659,6 +1659,11 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public GroupModel getGroupByName(String name, GroupModel parent) {
+            return null;
+        }
+
+        @Override
         public Stream<GroupModel> getGroupsStream() {
             return null;
         }

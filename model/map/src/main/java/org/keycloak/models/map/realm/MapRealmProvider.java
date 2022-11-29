@@ -333,6 +333,12 @@ public class MapRealmProvider implements RealmProvider {
 
     @Override
     @Deprecated
+    public GroupModel getGroupByName(RealmModel realm, String name, GroupModel parent) {
+        return session.groups().getGroupByName(realm, name, parent);
+    }
+
+    @Override
+    @Deprecated
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
         return session.groups().getGroupsCount(realm, onlyTopGroups);
     }
