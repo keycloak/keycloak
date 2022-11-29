@@ -460,6 +460,7 @@ export const FineGrainOpenIdConnect = ({
           name={convertAttributeNameToForm("attributes.request.uris")}
           aria-label={t("validRequestURIs")}
           addButtonLabel="clients:addRequestUri"
+          stringify
         />
       </FormGroup>
       <FormGroup

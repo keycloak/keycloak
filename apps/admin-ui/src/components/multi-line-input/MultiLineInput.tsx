@@ -1,20 +1,36 @@
-import { Fragment, useEffect } from "react";
-import { useFormContext } from "react-hook-form";
 import {
-  TextInput,
   Button,
   ButtonVariant,
-  TextInputProps,
   InputGroup,
+  TextInput,
+  TextInputProps,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
+import { Fragment, useEffect, useState } from "react";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+
+function stringToMultiline(value?: string): string[] {
+  return value ? value.split("##") : [];
+}
+
+function toStringValue(formValue: string[]): string {
+  return formValue.join("##");
+}
+
+type IdValue = {
+  id: number;
+  value: string;
+};
+
+const generateId = () => Math.floor(Math.random() * 1000);
 
 export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   name: string;
   addButtonLabel?: string;
   isDisabled?: boolean;
   defaultValue?: string[];
+  stringify?: boolean;
 };
 
 export const MultiLineInput = ({
@@ -22,39 +38,59 @@ export const MultiLineInput = ({
   addButtonLabel,
   isDisabled = false,
   defaultValue,
+  stringify = false,
   ...rest
 }: MultiLineInputProps) => {
   const { t } = useTranslation();
-  const { register, watch, setValue } = useFormContext();
+  const { register, setValue, getValues } = useFormContext();
 
-  const value = watch(name, defaultValue);
-  const fields = Array.isArray(value) && value.length !== 0 ? value : [""];
+  const [fields, setFields] = useState<IdValue[]>([]);
 
   const remove = (index: number) => {
-    setValue(name, [...fields.slice(0, index), ...fields.slice(index + 1)]);
+    update([...fields.slice(0, index), ...fields.slice(index + 1)]);
   };
 
   const append = () => {
-    setValue(name, [...fields, ""]);
+    update([...fields, { id: generateId(), value: "" }]);
   };
 
-  useEffect(() => register(name), [register]);
+  const updateValue = (index: number, value: string) => {
+    update([
+      ...fields.slice(0, index),
+      { ...fields[index], value },
+      ...fields.slice(index + 1),
+    ]);
+  };
+
+  const update = (values: IdValue[]) => {
+    setFields(values);
+    const fieldValue = values.flatMap((field) => field.value);
+    setValue(name, stringify ? toStringValue(fieldValue) : fieldValue);
+  };
+
+  useEffect(() => {
+    register(name);
+    let values = stringify
+      ? stringToMultiline(getValues(name))
+      : getValues(name);
+
+    values =
+      Array.isArray(values) && values.length !== 0
+        ? values
+        : defaultValue || [""];
+
+    setFields(values.map((value: string) => ({ value, id: generateId() })));
+  }, [register, getValues]);
 
   return (
     <>
-      {fields.map((value: string, index: number) => (
-        <Fragment key={index}>
+      {fields.map(({ id, value }, index) => (
+        <Fragment key={id}>
           <InputGroup>
             <TextInput
-              id={name + index}
-              onChange={(value) => {
-                setValue(name, [
-                  ...fields.slice(0, index),
-                  value,
-                  ...fields.slice(index + 1),
-                ]);
-              }}
-              name={`${name}[${index}]`}
+              data-testid={name + index}
+              onChange={(value) => updateValue(index, value)}
+              name={`${name}[${index}].value`}
               value={value}
               isDisabled={isDisabled}
               {...rest}

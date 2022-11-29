@@ -240,6 +240,7 @@ export const AdvancedSettings = ({
           >
             <MultiLineInput
               name={convertAttributeNameToForm("attributes.default.acr.values")}
+              stringify
             />
           </FormGroup>
         </>

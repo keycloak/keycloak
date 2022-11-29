@@ -105,6 +105,7 @@ export const AccessSettings = ({
               )}
               aria-label={t("validPostLogoutRedirectUri")}
               addButtonLabel="clients:addPostLogoutRedirectUri"
+              stringify
             />
           </FormGroup>
           {protocol === "saml" && (

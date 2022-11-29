@@ -7,7 +7,7 @@ export default class CreateResourcePage extends CommonPage {
       if (Array.isArray(value)) {
         for (let index = 0; index < value.length; index++) {
           const v = value[index];
-          cy.get(`input[name="${key}[${index}]"]`).type(v);
+          cy.findByTestId(`${key}${index}`).type(v);
           cy.findByTestId("addValue").click();
         }
       } else {

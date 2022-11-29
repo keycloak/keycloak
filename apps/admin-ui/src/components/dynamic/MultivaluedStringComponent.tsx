@@ -31,6 +31,7 @@ export const MultiValuedStringComponent = ({
         addButtonLabel={t("addMultivaluedLabel", {
           fieldLabel: t(label!).toLowerCase(),
         })}
+        stringify
       />
     </FormGroup>
   );

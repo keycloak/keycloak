@@ -33,7 +33,7 @@ export default class SettingsTab extends PageObject {
   private saveBtn = "settingsSave";
   private revertBtn = "settingsRevert";
 
-  private redirectUris = "#redirectUris";
+  private redirectUris = "redirectUris";
   private postLogoutRedirectUris = "attributes.post.logout.redirect.uris";
 
   private idpInitiatedSsoUrlName = "idpInitiatedSsoUrlName";
@@ -213,7 +213,7 @@ export default class SettingsTab extends PageObject {
   }
 
   public selectRedirectUriTextField(number: number, text: string) {
-    cy.get(this.redirectUris + number)
+    cy.findByTestId(this.redirectUris + number)
       .click()
       .clear()
       .type(text);

@@ -24,10 +24,6 @@ import {
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import {
-  stringToMultiline,
-  toStringValue,
-} from "../components/multi-line-input/multi-line-convert";
-import {
   ViewHeader,
   ViewHeaderBadge,
 } from "../components/view-header/ViewHeader";
@@ -238,28 +234,12 @@ export default function ClientDetails() {
   const setupForm = (client: ClientRepresentation) => {
     form.reset({ ...client });
     convertToFormValues(client, form.setValue);
-    form.setValue(
-      convertAttributeNameToForm("attributes.request.uris"),
-      stringToMultiline(client.attributes?.["request.uris"])
-    );
     if (client.attributes?.["acr.loa.map"]) {
       form.setValue(
         convertAttributeNameToForm("attributes.acr.loa.map"),
         Object.entries(JSON.parse(client.attributes["acr.loa.map"])).flatMap(
           ([key, value]) => ({ key, value })
         )
-      );
-    }
-    if (client.attributes?.["default.acr.values"]) {
-      form.setValue(
-        convertAttributeNameToForm("attributes.default.acr.values"),
-        stringToMultiline(client.attributes["default.acr.values"])
-      );
-    }
-    if (client.attributes?.["post.logout.redirect.uris"]) {
-      form.setValue(
-        convertAttributeNameToForm("attributes.post.logout.redirect.uris"),
-        stringToMultiline(client.attributes["post.logout.redirect.uris"])
       );
     }
   };
@@ -293,24 +273,6 @@ export default function ClientDetails() {
       }
 
       const values = convertFormValuesToObject(form.getValues());
-
-      if (values.attributes?.["request.uris"]) {
-        values.attributes["request.uris"] = toStringValue(
-          values.attributes["request.uris"]
-        );
-      }
-
-      if (values.attributes?.["default.acr.values"]) {
-        values.attributes["default.acr.values"] = toStringValue(
-          values.attributes["default.acr.values"]
-        );
-      }
-
-      if (values.attributes?.["post.logout.redirect.uris"]) {
-        values.attributes["post.logout.redirect.uris"] = toStringValue(
-          values.attributes["post.logout.redirect.uris"]
-        );
-      }
 
       const submittedClient =
         convertFormValuesToObject<ClientRepresentation>(values);
