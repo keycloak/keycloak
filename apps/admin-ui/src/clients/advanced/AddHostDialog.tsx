@@ -1,5 +1,3 @@
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   Button,
@@ -8,11 +6,14 @@ import {
   FormGroup,
   Modal,
 } from "@patternfly/react-core";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
+
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { useAdminClient } from "../../context/auth/AdminClient";
 
-type Host = {
+type FormFields = {
   node: string;
 };
 
@@ -30,9 +31,28 @@ export const AddHostDialog = ({
   onClose,
 }: AddHostDialogProps) => {
   const { t } = useTranslation("clients");
-  const { register, getValues } = useForm<Host>();
+  const {
+    register,
+    handleSubmit,
+    formState: { isDirty, isValid },
+  } = useForm<FormFields>();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
+
+  async function onSubmit({ node }: FormFields) {
+    try {
+      await adminClient.clients.addClusterNode({
+        id,
+        node,
+      });
+      onAdded(node);
+      addAlert(t("addedNodeSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("clients:addedNodeFail", error);
+    }
+
+    onClose();
+  }
 
   return (
     <Modal
@@ -42,39 +62,31 @@ export const AddHostDialog = ({
       variant="small"
       actions={[
         <Button
-          id="add-node-confirm"
           key="confirm"
-          onClick={async () => {
-            try {
-              const node = getValues("node");
-              await adminClient.clients.addClusterNode({
-                id,
-                node,
-              });
-              onAdded(node);
-              addAlert(t("addedNodeSuccess"), AlertVariant.success);
-            } catch (error) {
-              addError("clients:addedNodeFail", error);
-            }
-
-            onClose();
-          }}
+          id="add-node-confirm"
+          type="submit"
+          form="add-host-form"
+          isDisabled={!isDirty || !isValid}
         >
           {t("common:save")}
         </Button>,
         <Button
-          id="add-node-cancel"
           key="cancel"
+          id="add-node-cancel"
           variant={ButtonVariant.link}
-          onClick={() => onClose()}
+          onClick={onClose}
         >
           {t("common:cancel")}
         </Button>,
       ]}
     >
-      <Form isHorizontal>
-        <FormGroup label={t("nodeHost")} fieldId="nodeHost">
-          <KeycloakTextInput id="nodeHost" ref={register} name="node" />
+      <Form id="add-host-form" onSubmit={handleSubmit(onSubmit)} isHorizontal>
+        <FormGroup label={t("nodeHost")} fieldId="nodeHost" isRequired>
+          <KeycloakTextInput
+            id="nodeHost"
+            {...register("node", { required: true })}
+            isRequired
+          />
         </FormGroup>
       </Form>
     </Modal>
