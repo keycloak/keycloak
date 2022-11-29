@@ -173,12 +173,12 @@ public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakT
     @Test
     public void testCodeGrantFlowWithServiceAccountUsingOAuthRedirectReference() {
         String clientId = "system:serviceaccount:default:sa-oauth-redirect-reference";
-        testCodeGrantFlow(clientId, "https://myapp.org/callback", () -> assertSuccessfulResponseWithoutConsent(clientId));
+        testCodeGrantFlow(clientId, "http://127.0.0.1:8180/callback", () -> assertSuccessfulResponseWithoutConsent(clientId));
     }
 
     @Test
     public void failCodeGrantFlowWithServiceAccountUsingOAuthRedirectReference() throws Exception {
-        testCodeGrantFlow("system:serviceaccount:default:sa-oauth-redirect-reference", "http://myapp.org/callback", () -> assertEquals(OAuthErrorException.INVALID_REDIRECT_URI, events.poll().getError()));
+        testCodeGrantFlow("system:serviceaccount:default:sa-oauth-redirect-reference", "http://invalid/callback", () -> assertEquals(OAuthErrorException.INVALID_REDIRECT_URI, events.poll().getError()));
     }
 
     @Test
@@ -214,7 +214,7 @@ public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakT
 
     @Test
     public void failCodeGrantFlowWithServiceAccountUsingOAuthRedirectUri() throws Exception {
-        testCodeGrantFlow("system:serviceaccount:default:sa-oauth-redirect-uri", "http://myapp.org/callback", () -> assertEquals(OAuthErrorException.INVALID_REDIRECT_URI, events.poll().getError()));
+        testCodeGrantFlow("system:serviceaccount:default:sa-oauth-redirect-uri", "http://invalid/callback", () -> assertEquals(OAuthErrorException.INVALID_REDIRECT_URI, events.poll().getError()));
     }
 
     private void testCodeGrantFlow(String clientId, String expectedRedirectUri, Runnable assertThat) {
