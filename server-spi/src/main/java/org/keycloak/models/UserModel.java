@@ -21,11 +21,8 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
