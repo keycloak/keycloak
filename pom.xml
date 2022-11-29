@@ -79,8 +79,8 @@
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>2.1.214</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
-        <hibernate.core.version>5.6.10.Final</hibernate.core.version>
-        <hibernate.c3p0.version>5.6.10.Final</hibernate.c3p0.version>
+        <hibernate-orm.version>5.6.14.Final</hibernate-orm.version>
+        <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
         <infinispan.version>14.0.2.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.5.0.Final</infinispan.protostream.processor.version>
         <jackson.version>2.13.4</jackson.version>
@@ -107,7 +107,7 @@
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.2.19.Final</undertow.version>
-        <elytron.version>1.18.3.Final</elytron.version>
+        <wildfly-elytron.version>1.20.1.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
@@ -142,15 +142,15 @@
 
         <!-- Databases -->
         <mysql.version>8.0.23</mysql.version>
-        <mysql.driver.version>8.0.28</mysql.driver.version>
+        <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <postgresql.version>13.2</postgresql.version>
-        <postgresql.driver.version>42.3.3</postgresql.driver.version>
+        <postgresql-jdbc.version>42.5.0</postgresql-jdbc.version>
         <mariadb.version>10.3.27</mariadb.version>
-        <mariadb.driver.version>2.7.2</mariadb.driver.version>
+        <mariadb-jdbc.version>2.7.2</mariadb-jdbc.version>
         <mssql.version>2019-CU10-ubuntu-20.04</mssql.version>
-        <mssql.driver.version>9.2.0.jre8</mssql.driver.version>
+        <mssql-jdbc.version>9.2.0.jre8</mssql-jdbc.version>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
-        <oracle.driver.version>21.5.0.0</oracle.driver.version>
+        <oracle-jdbc.version>21.5.0.0</oracle-jdbc.version>
 
         <!-- Test -->
         <greenmail.version>1.3.1b</greenmail.version>
@@ -159,6 +159,8 @@
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <selenium.version>2.35.0</selenium.version>
+        <!-- Needs to be aligned with Quarkus, see e.g. https://github.com/quarkusio/quarkus-quickstarts/blob/2.13.5.Final/getting-started-async/pom.xml#L14 -->
+        <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
         <awaitility.version>4.1.1</awaitility.version>
@@ -166,7 +168,7 @@
         <!-- KEYCLOAK-17585 Prevent microprofile-metrics-api upgrades from version "2.3" due to:
              https://issues.redhat.com/browse/KEYCLOAK-17585?focusedCommentId=16002705&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-16002705
         -->
-        <microprofile-metrics-api.version>2.3</microprofile-metrics-api.version>
+        <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
         <testcontainers.version>1.17.5</testcontainers.version>
 
         <!-- Maven Plugins -->
@@ -572,7 +574,7 @@
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>${hibernate.core.version}</version>
+                <version>${hibernate-orm.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
@@ -732,7 +734,7 @@
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql.driver.version}</version>
+                <version>${mysql-jdbc.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -903,7 +905,7 @@
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron</artifactId>
-                <version>${elytron.version}</version>
+                <version>${wildfly-elytron.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.common</groupId>
@@ -1768,7 +1770,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M7</version>
+                    <version>${surefire-plugin.version}</version>
                     <configuration>
                         <forkMode>once</forkMode>
                         <argLine>-Djava.awt.headless=true ${surefire.memory.settings} ${surefire.system.args} -Duser.language=en -Duser.region=US</argLine>
@@ -1978,7 +1980,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <configuration>
-                            <additionalparam>-Xdoclint:none</additionalparam>
+                            <doclint>none</doclint>
                             <failOnError>false</failOnError>
                             <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
                         </configuration>
