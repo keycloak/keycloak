@@ -13,22 +13,18 @@
     }
   },
   "spec": {
-    "host": "myapp.org",
+    "host": "127.0.0.1",
     "to": {
       "kind": "Service",
       "name": "proxy",
       "weight": 100
-    },
-    "tls": {
-      "termination": "reencrypt",
-      "destinationCACertificate": "-----BEGIN COMMENT-----\nThis is an empty PEM file created to provide backwards compatibility\nfor reencrypt routes that have no destinationCACertificate. This \ncontent will only appear for routes accessed via /oapi/v1/routes.\n-----END COMMENT-----\n"
     },
     "wildcardPolicy": "None"
   },
   "status": {
     "ingress": [
       {
-        "host": "myapp.org",
+        "host": "127.0.0.1",
         "routerName": "router",
         "conditions": [
           {
