@@ -80,6 +80,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 RepresentationToModel.createResourceServer(clientModel, session, true);
             }
 
+            session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new DynamicClientRegisteredContext(context, clientModel, auth.getJwt(), realm));
             ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
 
@@ -147,7 +148,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
 
-        RepresentationToModel.updateClient(rep, client);
+        RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
 
         if (rep.getDefaultRoles() != null) {
@@ -155,6 +156,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         rep = ModelToRepresentation.toRepresentation(client, session);
+
+        rep.setSecret(client.getSecret());
 
         Stream<String> defaultRolesNames = client.getDefaultRolesStream();
         if (defaultRolesNames != null) {
@@ -167,6 +170,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         try {
+            session.getContext().setClient(client);
             session.clientPolicy().triggerOnEvent(new DynamicClientUpdatedContext(session, client, auth.getJwt(), client.getRealm()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);

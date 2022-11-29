@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
@@ -28,8 +29,8 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
@@ -65,9 +66,6 @@ public class WelcomeResource {
     protected static final Logger logger = Logger.getLogger(WelcomeResource.class);
 
     private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
-
-    @Context
-    protected HttpHeaders headers;
 
     @Context
     private KeycloakSession session;
@@ -176,12 +174,11 @@ public class WelcomeResource {
 
             Map<String, Object> map = new HashMap<>();
 
+            map.put("adminConsoleEnabled", isAdminConsoleEnabled());
             map.put("productName", Version.NAME);
-            map.put("productNameFull", Version.NAME_FULL);
 
             map.put("properties", theme.getProperties());
             map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
-
             map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
             map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/common/keycloak");
 
@@ -190,6 +187,8 @@ public class WelcomeResource {
             if (bootstrap) {
                 boolean isLocal = isLocal();
                 map.put("localUser", isLocal);
+                map.put("localAdminUrl", "http://localhost:8080/auth");
+                map.put("adminUserCreationMessage","or use the add-user-keycloak script");
 
                 if (isLocal) {
                     String stateChecker = setCsrfCookie();
@@ -202,7 +201,7 @@ public class WelcomeResource {
             if (errorMessage != null) {
                 map.put("errorMessage", errorMessage);
             }
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
+            FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
 
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)
@@ -212,6 +211,10 @@ public class WelcomeResource {
         } catch (Exception e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private static boolean isAdminConsoleEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
     }
 
     private Theme getTheme() {
@@ -240,7 +243,7 @@ public class WelcomeResource {
             ClientConnection clientConnection = session.getContext().getConnection();
             InetAddress remoteInetAddress = InetAddress.getByName(clientConnection.getRemoteAddr());
             InetAddress localInetAddress = InetAddress.getByName(clientConnection.getLocalAddr());
-            String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
+            String xForwardedFor = session.getContext().getRequestHeaders().getHeaderString("X-Forwarded-For");
             logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s", remoteInetAddress.toString(), localInetAddress.toString(), xForwardedFor);
 
             // Access through AJP protocol (loadbalancer) may cause that remoteAddress is "127.0.0.1".
@@ -271,7 +274,7 @@ public class WelcomeResource {
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {
         String formStateChecker = formData.getFirst("stateChecker");
-        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
+        Cookie cookie = session.getContext().getRequestHeaders().getCookies().get(KEYCLOAK_STATE_CHECKER);
         if (cookie == null) {
             throw new ForbiddenException();
         }

@@ -1,0 +1,11 @@
+<div class="form-group">
+    <label class="col-md-2 control-label" for="profileProjection">{{:: 'profileProjection' | translate}}</label>
+    <div class="col-md-6">
+        <input
+                ng-model="identityProvider.config.profileProjection"
+                placeholder="e.g.: (id,firstName,lastName,profilePicture(displayImage~:playableStreams))"
+                id="profileProjection"
+                class="form-control" />
+    </div>
+    <kc-tooltip>{{:: 'identity-provider.linkedin-profileProjection.tooltip' | translate}}</kc-tooltip>
+</div>

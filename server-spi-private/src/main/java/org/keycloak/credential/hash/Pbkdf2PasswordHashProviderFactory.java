@@ -17,14 +17,12 @@
 
 package org.keycloak.credential.hash;
 
-import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
  */
-public class Pbkdf2PasswordHashProviderFactory implements PasswordHashProviderFactory {
+public class Pbkdf2PasswordHashProviderFactory extends AbstractPbkdf2PasswordHashProviderFactory implements PasswordHashProviderFactory {
 
     public static final String ID = "pbkdf2";
 
@@ -34,23 +32,11 @@ public class Pbkdf2PasswordHashProviderFactory implements PasswordHashProviderFa
 
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
-        return new Pbkdf2PasswordHashProvider(ID, PBKDF2_ALGORITHM, DEFAULT_ITERATIONS);
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
+        return new Pbkdf2PasswordHashProvider(ID, PBKDF2_ALGORITHM, DEFAULT_ITERATIONS, getMaxPaddingLength());
     }
 
     @Override
     public String getId() {
         return ID;
-    }
-
-    @Override
-    public void close() {
     }
 }

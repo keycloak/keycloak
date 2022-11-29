@@ -39,11 +39,9 @@ import org.keycloak.events.EventType;
 import org.keycloak.representations.account.UserProfileAttributeMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 
 /**
  * 
@@ -51,7 +49,6 @@ import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
  *
  */
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTest {
     
     @Override
@@ -67,7 +64,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         return true;
     }
 
-    private static String UP_CONFIG_FOR_METADATA = "{\"attributes\": ["
+    private final static String UP_CONFIG_FOR_METADATA = "{\"attributes\": ["
             + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {\"scopes\":[\"profile\"]}, \"displayName\": \"${profile.firstName}\", \"validations\": {\"length\": { \"max\": 255 }}},"
             + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}, \"displayName\": \"Last name\", \"annotations\": {\"formHintKey\" : \"userEmailFormFieldHint\", \"anotherKey\" : 10, \"yetAnotherKey\" : \"some value\"}},"
             + "{\"name\": \"attr_with_scope_selector\"," + PERMISSIONS_ALL + ", \"selector\": {\"scopes\": [\"profile\"]}},"
@@ -77,8 +74,29 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
             + "{\"name\": \"attr_not_required_due_to_role\"," + PERMISSIONS_ALL + ", \"required\": {\"roles\" : [\"admin\"]}},"
             + "{\"name\": \"attr_readonly\"," + PERMISSIONS_ADMIN_EDITABLE + "},"
             + "{\"name\": \"attr_no_permission\"," + PERMISSIONS_ADMIN_ONLY + "}"
-            + "]}"; 
-    
+            + "]}";
+
+    private final static String UP_CONFIG_NO_ACCESS_TO_NAME_FIELDS = "{\"attributes\": ["
+            + "{\"name\": \"firstName\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\": {}, \"displayName\": \"${profile.firstName}\", \"validations\": {\"length\": { \"max\": 255 }}},"
+            + "{\"name\": \"lastName\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\": {}, \"displayName\": \"Last name\", \"annotations\": {\"formHintKey\" : \"userEmailFormFieldHint\", \"anotherKey\" : 10, \"yetAnotherKey\" : \"some value\"}},"
+            + "{\"name\": \"attr_readonly\"," + PERMISSIONS_ADMIN_EDITABLE + "},"
+            + "{\"name\": \"attr_no_permission\"," + PERMISSIONS_ADMIN_ONLY + "}"
+            + "]}";
+
+    private final static String UP_CONFIG_RO_ACCESS_TO_NAME_FIELDS = "{\"attributes\": ["
+            + "{\"name\": \"firstName\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {}, \"displayName\": \"${profile.firstName}\", \"validations\": {\"length\": { \"max\": 255 }}},"
+            + "{\"name\": \"lastName\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {}, \"displayName\": \"Last name\", \"annotations\": {\"formHintKey\" : \"userEmailFormFieldHint\", \"anotherKey\" : 10, \"yetAnotherKey\" : \"some value\"}},"
+            + "{\"name\": \"attr_readonly\"," + PERMISSIONS_ADMIN_EDITABLE + "},"
+            + "{\"name\": \"attr_no_permission\"," + PERMISSIONS_ADMIN_ONLY + "}"
+            + "]}";
+
+    private final static String UP_CONFIG_RO_USERNAME_AND_EMAIL = "{\"attributes\": ["
+            + "{\"name\": \"email\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {}, \"displayName\": \"${email}\", \"annotations\": {\"formHintKey\" : \"userEmailFormFieldHint\", \"anotherKey\" : 10, \"yetAnotherKey\" : \"some value\"}},"
+            + "{\"name\": \"attr_readonly\"," + PERMISSIONS_ADMIN_EDITABLE + "},"
+            + "{\"name\": \"attr_no_permission\"," + PERMISSIONS_ADMIN_ONLY + "}"
+            + "]}";
+
+
     @Test
     @Override
     public void testGetUserProfileMetadata_EditUsernameAllowed() throws IOException {
@@ -114,7 +132,91 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         
         assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
     }
-    
+
+    @Test
+    public void testGetUserProfileMetadata_NoAccessToNameFields() throws IOException {
+
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(false);
+            adminClient.realm("test").update(realmRep);
+
+            setUserProfileConfiguration(UP_CONFIG_NO_ACCESS_TO_NAME_FIELDS);
+
+            UserRepresentation user = getUser();
+            assertNotNull(user.getUserProfileMetadata());
+
+            assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+            assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+
+            assertNull(getUserProfileAttributeMetadata(user, "firstName"));
+            assertNull(getUserProfileAttributeMetadata(user, "lastName"));
+            assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
+
+            assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
+
+        } finally {
+            RealmRepresentation realmRep = testRealm().toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            testRealm().update(realmRep);
+        }
+    }
+
+    @Test
+    public void testGetUserProfileMetadata_RoAccessToNameFields() throws IOException {
+
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(false);
+            adminClient.realm("test").update(realmRep);
+
+            setUserProfileConfiguration(UP_CONFIG_RO_ACCESS_TO_NAME_FIELDS);
+
+            UserRepresentation user = getUser();
+            assertNotNull(user.getUserProfileMetadata());
+
+            assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+            assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+
+            assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, true);
+            assertUserProfileAttributeMetadata(user, "lastName", "Last name", true, true);
+            assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
+
+            assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
+
+        } finally {
+            RealmRepresentation realmRep = testRealm().toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            testRealm().update(realmRep);
+        }
+    }
+
+    @Test
+    public void testGetUserProfileMetadata_RoAccessToUsernameAndEmail() throws IOException {
+
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(false);
+            adminClient.realm("test").update(realmRep);
+
+            setUserProfileConfiguration(UP_CONFIG_RO_USERNAME_AND_EMAIL);
+
+            UserRepresentation user = getUser();
+            assertNotNull(user.getUserProfileMetadata());
+
+            assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+            assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+
+            assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
+            assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
+        } finally {
+            RealmRepresentation realmRep = testRealm().toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            testRealm().update(realmRep);
+        }
+    }
+
+
     @Test
     @Override
     public void testGetUserProfileMetadata_EditUsernameDisallowed() throws IOException {

@@ -1,13 +1,19 @@
 package org.keycloak.it.utils;
 
-import java.util.ArrayList;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.quarkus.runtime.Environment;
+import java.nio.file.Path;
 import java.util.List;
-
-import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
 
 public interface KeycloakDistribution {
 
-    void start(List<String> arguments);
+    String SCRIPT_CMD = Environment.isWindows() ? "kc.bat" : "kc.sh";
+    String SCRIPT_CMD_INVOKABLE = Environment.isWindows() ? SCRIPT_CMD : "./"+SCRIPT_CMD;
+
+    CLIResult run(List<String> arguments);
+    default CLIResult run(String... arguments) {
+        return run(List.of(arguments));
+    }
 
     void stop();
 
@@ -22,20 +28,38 @@ public interface KeycloakDistribution {
     boolean isManualStop();
 
     default String[] getCliArgs(List<String> arguments) {
-        List<String> commands = new ArrayList<>();
+        throw new RuntimeException("Not implemented");
+    }
 
-        commands.add("./kc.sh");
+    default void setManualStop(boolean manualStop) {
+        throw new RuntimeException("Not implemented");
+    }
 
-        if (this.isDebug()) {
-            commands.add("--debug");
-        }
+    default void setQuarkusProperty(String key, String value) {
+        throw new RuntimeException("Not implemented");
+    }
 
-        if (!this.isManualStop()) {
-            commands.add("-D" + LAUNCH_MODE + "=test");
-        }
+    default void setProperty(String key, String value) {
+        throw new RuntimeException("Not implemented");
+    }
 
-        commands.addAll(arguments);
+    default void deleteQuarkusProperties() {
+        throw new RuntimeException("Not implemented");
+    }
 
-        return commands.toArray(new String[0]);
+    default void copyOrReplaceFileFromClasspath(String file, Path distDir) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    default void removeProperty(String name) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    default void setEnvVar(String kc_db_username, String bad) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    default void copyOrReplaceFile(Path file, Path targetFile) {
+        throw new RuntimeException("Not implemented");
     }
 }

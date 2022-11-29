@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import liquibase.database.Database;
+import liquibase.database.core.CockroachDatabase;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.exception.ValidationErrors;
 import liquibase.sql.Sql;
@@ -31,7 +32,7 @@ import liquibase.sqlgenerator.core.AbstractSqlGenerator;
 import liquibase.statement.core.CreateIndexStatement;
 import liquibase.structure.core.Index;
 import liquibase.structure.core.Table;
-import liquibase.util.StringUtils;
+import liquibase.util.StringUtil;
 
 /**
  * A {@link SqlGenerator} implementation that supports {@link CreateJsonIndexStatement}s. It generates the SQL required
@@ -61,7 +62,6 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
         Arrays.stream(createIndexStatement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
                 .forEach(config -> {
                     validationErrors.checkRequiredField("jsonColumn", config.getJsonColumn());
-                    validationErrors.checkRequiredField("jsonProperty", config.getJsonProperty());
                 });
         return validationErrors;
     }
@@ -88,7 +88,7 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
         builder.append("ON ").append(database.escapeTableName(statement.getTableCatalogName(), statement.getTableSchemaName(),
                 statement.getTableName()));
         this.handleJsonIndex(statement, database, builder);
-        if (StringUtils.trimToNull(statement.getTablespace()) != null && database.supportsTablespaces()) {
+        if (StringUtil.trimToNull(statement.getTablespace()) != null && database.supportsTablespaces()) {
             builder.append(" TABLESPACE ").append(statement.getTablespace());
         }
 
@@ -96,10 +96,19 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
     }
 
     protected void handleJsonIndex(final CreateJsonIndexStatement statement, final Database database, final StringBuilder builder) {
-        if (database instanceof PostgresDatabase) {
+        if (database instanceof CockroachDatabase) {
             builder.append(" USING gin (");
             builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
-                    .map(c -> "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "') jsonb_path_ops")
+                    .map(c -> c.getJsonProperty() == null ? c.getJsonColumn() :
+                            "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "')")
+                    .collect(Collectors.joining(", ")))
+                    .append(")");
+        }
+        else if (database instanceof PostgresDatabase) {
+            builder.append(" USING gin (");
+            builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
+                    .map(c -> c.getJsonProperty() == null ? c.getJsonColumn() :
+                            "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "') jsonb_path_ops")
                     .collect(Collectors.joining(", ")))
                     .append(")");
         }

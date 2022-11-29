@@ -16,146 +16,53 @@
  */
 package org.keycloak.models.map.storage.jpa.client;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
-import org.keycloak.connections.jpa.JpaKeycloakTransaction;
+import javax.persistence.criteria.Selection;
 import org.keycloak.models.ClientModel;
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.client.MapClientEntityDelegate;
-import org.keycloak.models.map.common.StringKeyConvertor.UUIDKey;
-import org.keycloak.models.map.storage.jpa.client.delegate.JpaClientDelegateProvider;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
-import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.QueryParameters;
-import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_CLIENT;
-import static org.keycloak.utils.StreamsUtil.closing;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
+import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+import org.keycloak.models.map.storage.jpa.client.delegate.JpaClientDelegateProvider;
 
-public class JpaClientMapKeycloakTransaction extends JpaKeycloakTransaction implements MapKeycloakTransaction<MapClientEntity, ClientModel> {
+public class JpaClientMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaClientEntity, MapClientEntity, ClientModel> {
 
-    public JpaClientMapKeycloakTransaction(EntityManager em) {
-        super(em);
+    @SuppressWarnings("unchecked")
+    public JpaClientMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+        super(session, JpaClientEntity.class, ClientModel.class, em);
     }
 
     @Override
-    public MapClientEntity create(MapClientEntity mapEntity) {
-        JpaClientEntity jpaEntity = (JpaClientEntity) CLONER.from(mapEntity);
-        if (mapEntity.getId() == null) {
-            jpaEntity.setId(UUIDKey.INSTANCE.yieldNewUniqueKey().toString());
-        }
-        jpaEntity.setEntityVersion(SUPPORTED_VERSION_CLIENT);
-        em.persist(jpaEntity);
-        return jpaEntity;
+    public Selection<JpaClientEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaClientEntity> root) {
+        return cb.construct(JpaClientEntity.class, 
+            root.get("id"), 
+            root.get("version"),
+            root.get("entityVersion"), 
+            root.get("realmId"), 
+            root.get("clientId"), 
+            root.get("protocol"), 
+            root.get("enabled")
+        );
     }
 
     @Override
-    public MapClientEntity read(String key) {
-        if (key == null) return null;
-        UUID uuid = UUIDKey.INSTANCE.fromStringSafe(key);
-        if (uuid == null) return null;
-
-        return em.find(JpaClientEntity.class, uuid);
+    public void setEntityVersion(JpaRootEntity entity) {
+        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_CLIENT);
     }
 
     @Override
-    public Stream<MapClientEntity> read(QueryParameters<ClientModel> queryParameters) {
-        JpaClientModelCriteriaBuilder mcb = queryParameters.getModelCriteriaBuilder()
-                .flashToModelCriteriaBuilder(new JpaClientModelCriteriaBuilder());
-
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<JpaClientEntity> query = cb.createQuery(JpaClientEntity.class);
-        Root<JpaClientEntity> root = query.from(JpaClientEntity.class);
-        query.select(cb.construct(JpaClientEntity.class, 
-                root.get("id"), 
-                root.get("entityVersion"), 
-                root.get("realmId"), 
-                root.get("clientId"), 
-                root.get("protocol"), 
-                root.get("enabled")
-        ));
-
-        //ordering
-        if (!queryParameters.getOrderBy().isEmpty()) {
-            List<Order> orderByList = new LinkedList<>();
-            for (QueryParameters.OrderBy<ClientModel> order : queryParameters.getOrderBy()) {
-                switch (order.getOrder()) {
-                    case ASCENDING:
-                        orderByList.add(cb.asc(root.get(order.getModelField().getName())));
-                        break;
-                    case DESCENDING:
-                        orderByList.add(cb.desc(root.get(order.getModelField().getName())));
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("Unknown ordering.");
-                }
-            }
-            query.orderBy(orderByList);
-        }
-
-        if (mcb.getPredicateFunc() != null) query.where(mcb.getPredicateFunc().apply(cb, root));
-
-        return closing(
-                paginateQuery(em.createQuery(query), queryParameters.getOffset(), queryParameters.getLimit())
-                        .getResultStream())
-                .map(c -> new MapClientEntityDelegate(new JpaClientDelegateProvider(c, em)));
+    public JpaModelCriteriaBuilder createJpaModelCriteriaBuilder() {
+        return new JpaClientModelCriteriaBuilder();
     }
 
     @Override
-    public long getCount(QueryParameters<ClientModel> queryParameters) {
-        JpaClientModelCriteriaBuilder mcb = queryParameters.getModelCriteriaBuilder()
-                .flashToModelCriteriaBuilder(new JpaClientModelCriteriaBuilder());
-
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-
-        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-        Root<JpaClientEntity> root = countQuery.from(JpaClientEntity.class);
-        countQuery.select(cb.count(root));
-
-        if (mcb.getPredicateFunc() != null) countQuery.where(mcb.getPredicateFunc().apply(cb, root));
-
-        return em.createQuery(countQuery).getSingleResult();
+    protected MapClientEntity mapToEntityDelegate(JpaClientEntity original) {
+        return new MapClientEntityDelegate(new JpaClientDelegateProvider(original, em));
     }
-
-    @Override
-    public boolean delete(String key) {
-        if (key == null) return false;
-        UUID uuid = UUIDKey.INSTANCE.fromStringSafe(key);
-        if (uuid == null) return false;
-        em.remove(em.getReference(JpaClientEntity.class, uuid));
-        return true;
-    }
-
-    @Override
-    public long delete(QueryParameters<ClientModel> queryParameters) {
-        JpaClientModelCriteriaBuilder mcb = queryParameters.getModelCriteriaBuilder()
-                .flashToModelCriteriaBuilder(new JpaClientModelCriteriaBuilder());
-
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-
-        CriteriaDelete<JpaClientEntity> deleteQuery = cb.createCriteriaDelete(JpaClientEntity.class);
-
-        Root<JpaClientEntity> root = deleteQuery.from(JpaClientEntity.class);
-
-        if (mcb.getPredicateFunc() != null) deleteQuery.where(mcb.getPredicateFunc().apply(cb, root));
-
-// TODO find out if the flush and clear are needed here or not, since delete(QueryParameters) 
-// is not used yet from the code it's difficult to investigate its potential purpose here
-// according to https://thorben-janssen.com/5-common-hibernate-mistakes-that-cause-dozens-of-unexpected-queries/#Remove_Child_Entities_With_a_Bulk_Operation
-// it seems it is necessary unless it is sure that any of removed entities wasn't fetched
-// Once KEYCLOAK-19697 is done we could test our scenarios and see if we need the flush and clear
-//        em.flush();
-//        em.clear();
-
-        return em.createQuery(deleteQuery).executeUpdate();
-    }
-
 }

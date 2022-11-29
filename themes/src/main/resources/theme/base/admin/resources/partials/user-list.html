@@ -37,7 +37,7 @@
         </thead>
         <tfoot data-ng-show="users && (users.length >= query.max || query.first > 0)">
         <tr>
-            <td colspan="7">
+            <td colspan="{{access.impersonation == true ? '8' : '7'}}">
                 <div class="table-nav">
                     <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
                     <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>

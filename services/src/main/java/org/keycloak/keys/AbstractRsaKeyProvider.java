@@ -20,6 +20,7 @@ package org.keycloak.keys;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.*;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
@@ -44,7 +45,9 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
     public AbstractRsaKeyProvider(RealmModel realm, ComponentModel model) {
         this.model = model;
         this.status = KeyStatus.from(model.get(Attributes.ACTIVE_KEY, true), model.get(Attributes.ENABLED_KEY, true));
-        this.algorithm = model.get(Attributes.ALGORITHM_KEY, Algorithm.RS256);
+
+        String defaultAlgorithmKey = KeyUse.ENC.name().equals(model.get(Attributes.KEY_USE)) ? JWEConstants.RSA_OAEP : Algorithm.RS256;
+        this.algorithm = model.get(Attributes.ALGORITHM_KEY, defaultAlgorithmKey);
 
         if (model.hasNote(KeyWrapper.class.getName())) {
             key = model.getNote(KeyWrapper.class.getName());
@@ -72,7 +75,7 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
         key.setProviderId(model.getId());
         key.setProviderPriority(model.get("priority", 0l));
 
-        key.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
+        key.setKid(model.get(Attributes.KID_KEY) != null ? model.get(Attributes.KID_KEY) : KeyUtils.createKeyId(keyPair.getPublic()));
         key.setUse(keyUse == null ? KeyUse.SIG : keyUse);
         key.setType(KeyType.RSA);
         key.setAlgorithm(algorithm);

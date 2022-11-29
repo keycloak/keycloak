@@ -31,12 +31,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -86,7 +84,7 @@ public class ResourceServerService {
         if (this.resourceServer == null) {
             this.resourceServer = RepresentationToModel.createResourceServer(client, session, true);
             createDefaultPermission(createDefaultResource(), createDefaultPolicy());
-            audit(OperationType.CREATE, session.getContext().getUri(), newClient);
+            audit(ModelToRepresentation.toRepresentation(resourceServer, client), OperationType.CREATE, session.getContext().getUri(), newClient);
         }
 
         return resourceServer;
@@ -100,14 +98,16 @@ public class ResourceServerService {
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
         this.resourceServer.setPolicyEnforcementMode(server.getPolicyEnforcementMode());
         this.resourceServer.setDecisionStrategy(server.getDecisionStrategy());
-        audit(OperationType.UPDATE, session.getContext().getUri(), false);
+        audit(ModelToRepresentation.toRepresentation(resourceServer, client), OperationType.UPDATE, session.getContext().getUri(), false);
         return Response.noContent().build();
     }
 
     public void delete() {
         this.auth.realm().requireManageAuthorization();
-        authorization.getStoreFactory().getResourceServerStore().delete(resourceServer.getId());
-        audit(OperationType.DELETE, session.getContext().getUri(), false);
+        //need to create representation before the object is deleted to be able to get lazy loaded fields
+        ResourceServerRepresentation rep = ModelToRepresentation.toRepresentation(resourceServer, client);
+        authorization.getStoreFactory().getResourceServerStore().delete(client);
+        audit(rep, OperationType.DELETE, session.getContext().getUri(), false);
     }
 
     @GET
@@ -122,7 +122,7 @@ public class ResourceServerService {
     @Produces("application/json")
     public Response exportSettings() {
         this.auth.realm().requireManageAuthorization();
-        return Response.ok(ExportUtils.exportAuthorizationSettings(session, client)).build();
+        return Response.ok(ModelToRepresentation.toResourceServerRepresentation(session, client)).build();
     }
 
     @Path("/import")
@@ -133,48 +133,32 @@ public class ResourceServerService {
 
         rep.setClientId(client.getId());
 
-        RepresentationToModel.toModel(rep, authorization);
+        resourceServer = RepresentationToModel.toModel(rep, authorization, client);
 
-        audit(OperationType.UPDATE, session.getContext().getUri(), false);
+        audit(ModelToRepresentation.toRepresentation(resourceServer, client), OperationType.UPDATE, session.getContext().getUri(), false);
 
         return Response.noContent().build();
     }
 
     @Path("/resource")
     public ResourceSetService getResourceSetResource() {
-        ResourceSetService resource = new ResourceSetService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new ResourceSetService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 
     @Path("/scope")
     public ScopeService getScopeResource() {
-        ScopeService resource = new ScopeService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new ScopeService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 
     @Path("/policy")
     public PolicyService getPolicyResource() {
-        PolicyService resource = new PolicyService(this.resourceServer, this.authorization, this.auth, adminEvent);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new PolicyService(this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 
     @Path("/permission")
     public Object getPermissionTypeResource() {
         this.auth.realm().requireViewAuthorization();
-        PermissionService resource = new PermissionService(this.resourceServer, this.authorization, this.auth, adminEvent);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new PermissionService(this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 
     private void createDefaultPermission(ResourceRepresentation resource, PolicyRepresentation policy) {
@@ -224,13 +208,13 @@ public class ResourceServerService {
         return defaultResource;
     }
 
-    private void audit(OperationType operation, UriInfo uriInfo, boolean newClient) {
+    private void audit(ResourceServerRepresentation rep, OperationType operation, UriInfo uriInfo, boolean newClient) {
         if (newClient) {
             adminEvent.resource(ResourceType.AUTHORIZATION_RESOURCE_SERVER).operation(operation).resourcePath(uriInfo, client.getId())
-                    .representation(ModelToRepresentation.toRepresentation(resourceServer, client)).success();
+                    .representation(rep).success();
         } else {
             adminEvent.resource(ResourceType.AUTHORIZATION_RESOURCE_SERVER).operation(operation).resourcePath(uriInfo)
-                    .representation(ModelToRepresentation.toRepresentation(resourceServer, client)).success();
+                    .representation(rep).success();
         }
     }
 }

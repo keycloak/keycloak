@@ -26,12 +26,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assume.assumeTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class DockerClientTest extends AbstractKeycloakTest {
     public static final String REALM_ID = "docker-test-realm";
     public static final String CLIENT_ID = "docker-test-client";

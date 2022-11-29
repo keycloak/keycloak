@@ -96,7 +96,7 @@ public interface ModelCriteriaBuilder<M, Self extends ModelCriteriaBuilder<M, Se
         ILIKE,
         /**
          * Operator for belonging into a collection of values. Operand in {@code value}
-         * can be an array (via an implicit conversion of the vararg), a {@link Collection} or a {@link Stream}.
+         * can be an array (via an implicit conversion of the vararg), a {@link java.util.Collection} or a {@link java.util.stream.Stream}.
          */
         IN,
         /** Is not null and, in addition, in case of collection not empty */
@@ -115,7 +115,7 @@ public interface ModelCriteriaBuilder<M, Self extends ModelCriteriaBuilder<M, Se
      * @param op Operator
      * @param value Additional operands of the operator.
      * @return
-     * @throws CriterionNotSupported If the operator is not supported for the given field.
+     * @throws CriterionNotSupportedException If the operator is not supported for the given field.
      */
     Self compare(SearchableModelField<? super M> modelField, Operator op, Object... value);
 
@@ -134,8 +134,9 @@ public interface ModelCriteriaBuilder<M, Self extends ModelCriteriaBuilder<M, Se
      *   );
      * </pre>
      *
-     * @throws CriterionNotSupported If the operator is not supported for the given field.
+     * @throws CriterionNotSupportedException If the operator is not supported for the given field.
      */
+    @SuppressWarnings("unchecked")
     Self and(Self... builders);
 
     /**
@@ -153,8 +154,9 @@ public interface ModelCriteriaBuilder<M, Self extends ModelCriteriaBuilder<M, Se
      *   );
      * </pre>
      *
-     * @throws CriterionNotSupported If the operator is not supported for the given field.
+     * @throws CriterionNotSupportedException If the operator is not supported for the given field.
      */
+    @SuppressWarnings("unchecked")
     Self or(Self... builders);
 
     /**
@@ -166,7 +168,7 @@ public interface ModelCriteriaBuilder<M, Self extends ModelCriteriaBuilder<M, Se
      *
      * @param builder
      * @return
-     * @throws CriterionNotSupported If the operator is not supported for the given field.
+     * @throws CriterionNotSupportedException If the operator is not supported for the given field.
      */
     Self not(Self builder);
 

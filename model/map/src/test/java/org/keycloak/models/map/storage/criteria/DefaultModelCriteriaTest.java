@@ -205,4 +205,5 @@ public class DefaultModelCriteriaTest {
           .partiallyEvaluate((field, operator, operatorArguments) -> field == CLIENT_ID && operator == Operator.EQ && Arrays.asList(operatorArguments).contains(6) ? true : null),
           hasToString("(clientId EQ [4] && id EQ [5])"));
     }
+
 }

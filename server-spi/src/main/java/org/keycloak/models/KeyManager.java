@@ -42,35 +42,10 @@ public interface KeyManager {
 
     /**
      * Returns all {@code KeyWrapper} for the given realm.
-     *
-     * @param realm {@code RealmModel}.
-     * @return List of all {@code KeyWrapper} in the realm.
-     * @deprecated Use {@link #getKeysStream(RealmModel) getKeysStream} instead.
-     */
-    @Deprecated
-    default List<KeyWrapper> getKeys(RealmModel realm) {
-        return getKeysStream(realm).collect(Collectors.toList());
-    }
-
-    /**
-     * Returns all {@code KeyWrapper} for the given realm.
      * @param realm {@code RealmModel}.
      * @return Stream of all {@code KeyWrapper} in the realm. Never returns {@code null}.
      */
     Stream<KeyWrapper> getKeysStream(RealmModel realm);
-
-    /**
-     * Returns all {@code KeyWrapper} for the given realm that match given criteria.
-     * @param realm {@code RealmModel}.
-     * @param use {@code KeyUse}.
-     * @param algorithm {@code String}.
-     * @return List of all {@code KeyWrapper} in the realm.
-     * @deprecated Use {@link #getKeysStream(RealmModel, KeyUse, String) getKeysStream} instead.
-     */
-    @Deprecated
-    default List<KeyWrapper> getKeys(RealmModel realm, KeyUse use, String algorithm) {
-        return getKeysStream(realm, use, algorithm).collect(Collectors.toList());
-    }
 
     /**
      * Returns all {@code KeyWrapper} for the given realm that match given criteria.

@@ -39,6 +39,11 @@ public enum DefaultVirtualAuthOptions {
     DEFAULT_NFC(() -> DEFAULT.getOptions().setTransport(NFC)),
     DEFAULT_USB(() -> DEFAULT.getOptions().setTransport(USB)),
     DEFAULT_INTERNAL(() -> DEFAULT.getOptions().setTransport(INTERNAL)),
+    DEFAULT_RESIDENT_KEY(() -> DEFAULT.getOptions()
+            .setHasResidentKey(true)
+            .setHasUserVerification(true)
+            .setIsUserVerified(true)
+            .setIsUserConsenting(true)),
 
     YUBIKEY_4(DefaultVirtualAuthOptions::getYubiKeyGeneralOptions),
     YUBIKEY_5_USB(DefaultVirtualAuthOptions::getYubiKeyGeneralOptions),

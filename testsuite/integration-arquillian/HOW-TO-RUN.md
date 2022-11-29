@@ -34,12 +34,12 @@ And then re-run the LoginTest (or any other test you wish) and the changes shoul
 If you use Intellij Idea, you don't even need to re-build anything with the maven. After doing any
 change in the codebase, the change is immediately effective when running the test with Junit runner. 
 
-### Running tests in the production mode (Keycloak on Wildfly)
+### Running tests in the production mode (Keycloak on Quarkus)
 
-For the "production" testing, it is possible to run the Keycloak server deployed on real Wildfly server.
-This can be achieved by add the `auth-server-wildfly` profile when running the testsuite.
+For the "production" testing, it is possible to run the Keycloak server deployed on real Quarkus server.
+This can be achieved by add the `auth-server-quarkus` profile when running the testsuite.
 
-    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-wildfly clean install
+    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-quarkus clean install
 
 Unlike the "development" setup described above, this requires re-build the whole distribution
 after doing any change in the code.
@@ -81,16 +81,9 @@ Or slightly longer version (that allows you to specify debugging port as well as
 
 and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so this won't help to debug those.
 
-### JBoss auth server debugging
+### Auth server debugging
 
-When tests are run on JBoss based container (WildFly/EAP) there is possibility to attach a debugger, by default on localhost:5005.
-
-The server won't wait to attach the debugger. There are some properties what can change the default behaviour.
-
-    -Dauth.server.debug.port=$PORT
-    -Dauth.server.debug.suspend=y
-
-More info: http://javahowto.blogspot.cz/2010/09/java-agentlibjdwp-for-attaching.html
+See below in the "Quarkus" section.
 
 ### JBoss app server debugging
 
@@ -126,97 +119,6 @@ You can use value `TRACE` if you want to enable even TRACE logging.
 There is no support for more packages ATM, you need to edit the file `testsuite/integration-arquillian/servers/auth-server/jboss/common/jboss-cli/add-log-level.cli`
 and add packages manually.
 
-## Run tests against remote container
-
-### remote server tests
-
-note: if there is a need to run server on http only testsuite providers has to be re-builded with `-Dauth.server.ssl.required=false`
-
-    mvn -f testsuite/integration-arquillian/pom.xml clean install -Pauth-server-wildfly -Dauth.server.ssl.required=false -DskipTests
-
-unzip prepared server:
-
-    unzip -q testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
-
-create admin user:
-
-    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
-
-start the server:
-
-    sh auth-server-wildfly/bin/standalone.sh \
-        -Dauth.server.ssl.required=false \
-        -Djboss.socket.binding.port-offset=100 \
-        -Dauth.server.http.port=8180 \
-        -Dauth.server.https.port=8543
-
-run base testsuite:
-
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install -Pauth-server-remote -Dauth.server.ssl.required=false
-
-note: it is also possible to run tests against server running on different host and port using `-Dauth.server.host=${server.host}` and `-Dauth.server.http.port=${server.port}`. The testsuite currently doesn't work with port 80.
-
-### remote adapter tests
-
-note: if there is a need to run server on http only testsuite providers has to be re-builded with `-Dauth.server.ssl.required=false`
-
-    mvn -f keycloak/testsuite/integration-arquillian/pom.xml clean install -Pauth-server-wildfly -Papp-server-wildfly -Dauth.server.ssl.required=false -DskipTests ${MVN_DEFAULT_ARGS}
-
-unzip prepared servers:
-
-    unzip -q keycloak/testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
-    unzip -q keycloak/testsuite/integration-arquillian/servers/app-server/jboss/wildfly/target/integration-arquillian-servers-app-server-wildfly-*.zip
-
-create admin user:
-
-    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
-
-start both servers:
-
-    sh auth-server-wildfly/bin/standalone.sh \
-        -Dauth.server.ssl.required=false \
-        -Djboss.socket.binding.port-offset=100 \
-        -Dauth.server.http.port=8180 \
-        -Dauth.server.https.port=8543
-
-    sh app-server-wildfly/bin/standalone.sh \
-        -Djboss.socket.binding.port-offset=200 \
-        -Dapp.server.ssl.required=false
-
-run other/adapters/jboss/remote tests:
-
-    mvn -f keycloak/testsuite/integration-arquillian/tests/other/adapters/jboss/remote/pom.xml clean install \
-        -Pauth-server-remote,app-server-remote \
-        -Dauth.server.ssl.required=false \
-        -Dapp.server.ssl.required=false
-
-### Running tests against container not produced by the testsuite
-
-For running the testsuite, it is necessary to install/deploy so-called testsuite-providers. The testsuite rely on 
-testsuite-providers in many test scenarios for example for checking fired events, moving in time etc. When using
-keycloak from `integration-arquillian-servers-auth-server-wildfly-*.zip`, it should not be necessary to do any steps 
-because testsuite-providers are already included in this archive. However, when a clean keycloak is used, e.g. 
-openshift image, testsuite-providers jar file is deployed to the container in the beginning of test run. 
-To be able to deploy the jar to the container, arquillian has to have an access to the management port. 
-
-For example, to run testsuite against image in openshift, we need to first forward 9990 port from the running pod.
-```shell script
-oc port-forward "${POD}" 9990:9990
-```
-where ${POD} is a name of the pod
-
-Now just run testsuite against the image in openshift:
-```shell script
-mvn clean install -f testsuite/integration-arquillian/tests/base/pom.xml \
-    -Pauth-server-remote \
-    -Dauth.server.ssl.required=false \
-    -Dauth.server.host="${HOST}" \
-    -Dauth.server.http.port=80 \
-    -Dauth.server.management.host=127.0.0.1 \
-    -Dauth.server.management.port=9990
-```
-where ${HOST} is url of keycloak, for example: `keycloak-keycloak.192.168.42.91.nip.io`.
-
 ## Run adapter tests
 
 ### Undertow
@@ -225,10 +127,9 @@ where ${HOST} is url of keycloak, for example: `keycloak-keycloak.192.168.42.91.
 
 ### Jetty
 
-At the moment we can run the testsuite with Jetty `9.2` and `9.4`.
+At the moment we can run the testsuite with Jetty `9.4`.
 Each version has its corresponding profile:
 
-* Jetty `9.2`: `app-server-jetty92`
 * Jetty `9.4`: `app-server-jetty94`
 
 Here's how to run the tests with Jetty `9.4`:
@@ -258,174 +159,37 @@ mvn -f testsuite/integration-arquillian/pom.xml \
        -Dtest=org.keycloak.testsuite.adapter.**
 ````
 
-### Wildfly with legacy non-elytron adapter
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-       clean install \
-       -Dskip.elytron.adapter.installation=true \
-       -Dskip.adapter.offline.installation=false \
-       -Papp-server-wildfly \
-       -Dtest=org.keycloak.testsuite.adapter.**
-
-
-### Wildfly deprecated
-
-This is usually previous version of WildFly application server right before current version.
-See the property `wildfly.deprecated.version` in the file [pom.xml](pom.xml) ) .
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-       clean install \
-       -Pauth-server-wildfly \
-       -Papp-server-wildfly-deprecated \
-       -Dtest=org.keycloak.testsuite.adapter.**
-
-
-### JBoss Fuse 6.3
-
-1) Download JBoss Fuse 6.3 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/jboss-fuse-karaf
-Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
-
-2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
-
-    mvn install:install-file \
-      -DgroupId=org.jboss.fuse \
-      -DartifactId=jboss-fuse-karaf \
-      -Dversion=6.3.0.redhat-229 \
-      -Dpackaging=zip \
-      -Dfile=/mydownloads/jboss-fuse-karaf-6.3.0.redhat-229.zip
-
-
-3) Prepare Fuse and run the tests (change props according to your environment, versions etc):
-
-
-    # Prepare Fuse server
-    mvn -f testsuite/integration-arquillian/servers/pom.xml \
-      clean install \
-      -Papp-server-fuse63 \
-      -Dfuse63.version=6.3.0.redhat-229
-
-    # Run the Fuse adapter tests
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-      clean install \
-      -Pauth-server-wildfly \
-      -Papp-server-fuse63 \
-      -Dauth.server.ssl.required=false \
-      -Dadditional.fuse.repos=,$REPO \
-      -Dtest=*.fuse.*
-
-
-### JBoss Fuse 7.X
-
-1) Download JBoss Fuse 7 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf  (Fuse 7.3 or higher is required)
-Assumed you downloaded `fuse-karaf-7.3.0.fuse-730065-redhat-00002.zip`
-
-2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
-
-
-    mvn install:install-file \
-      -DgroupId=org.jboss.fuse \
-      -DartifactId=fuse-karaf \
-      -Dversion=7.3.0.fuse-730065-redhat-00002 \
-      -Dpackaging=zip \
-      -Dfile=/mydownloads/fuse-karaf-7.3.0.fuse-730065-redhat-00002.zip
-
-
-3) Prepare Fuse and run the tests (change props according to your environment, versions etc):
-
-
-    # Prepare Fuse server
-    mvn -f testsuite/integration-arquillian/servers/pom.xml \
-      clean install \
-      -Papp-server-fuse7x \
-      -Dfuse7x.version=7.3.0.fuse-730065-redhat-00002
-
-    # Run the Fuse adapter tests
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-      clean test \
-      -Papp-server-fuse7x \
-      -Dauth.server.ssl.required=false \
-      -Dadditional.fuse.repos=,$REPO \
-      -Dtest=*.fuse.*
-
-
-### EAP6 with Hawtio
-
-1) Download JBoss EAP 6.4.0.GA zip
-
-2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to EAP repo):
-
-
-    mvn install:install-file \
-      -DgroupId=org.jboss.as \
-      -DartifactId=jboss-as-dist \
-      -Dversion=7.5.21.Final-redhat-1 \
-      -Dpackaging=zip \
-      -Dfile=/mydownloads/jboss-eap-6.4.0.zip
-
-
-3) Download Fuse EAP installer (for example from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/com/redhat/fuse/eap/fuse-eap-installer/6.3.0.redhat-220/ )
-
-4) Install previously downloaded file manually
-
-
-    mvn install:install-file \
-      -DgroupId=com.redhat.fuse.eap \
-      -DartifactId=fuse-eap-installer \
-      -Dversion=6.3.0.redhat-347 \
-      -Dpackaging=jar \
-      -Dfile=/fuse-eap-installer-6.3.0.redhat-347.jar
-
-
-5) Prepare EAP6 with Hawtio and run the test
-
-
-    # Prepare EAP6 and deploy hawtio
-    mvn -f testsuite/integration-arquillian/servers \
-      clean install \
-      -Pauth-server-wildfly \
-      -Papp-server-eap6 \
-      -Dapp.server.jboss.version=7.5.21.Final-redhat-1 \
-      -Dfuse63.version=6.3.0.redhat-347
-
-    # Run the test
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-      clean install \
-      -Pauth-server-wildfly \
-      -Papp-server-eap6 \
-      -Dtest=EAP6Fuse6HawtioAdapterTest
-
-
 ## Migration test
 
 ### DB migration test
 
 This test will:
- - start MySQL DB on docker container. Docker on your laptop is a requirement for this test.
- - start Keycloak 4.8.3.Final (replace with the other version if needed)
- - import realm and add some data to MySQL DB
- - stop Keycloak 4.8.3.Final
- - start latest Keycloak, which automatically updates DB from 4.8.3.Final
- - Perform couple of tests to verify data after the update are correct
- - Stop MySQL DB docker container. In case of a test failure, the MySQL container is not stopped, so you can manually inspect the database.
+- start MariaDB on docker container. Docker/Podman on your laptop is a requirement for this test.
+- start Keycloak 17.0.0 (replace with the other version if needed)
+- import realm and add some data to MariaDB
+- stop Keycloak 17.0.0
+- start latest Keycloak, which automatically updates DB from 17.0.0
+- Perform a couple of tests to verify data after the update are correct
+- Stop MariaDB docker container. In case of a test failure, the MariaDB container is not stopped, so you can manually inspect the database.
 
+The first version of Keycloak on Quarkus is version `17.0.0`.
+Therefore, it is not possible to define the older version.
+You can execute those tests as follows:
+```
+export OLD_KEYCLOAK_VERSION=17.0.0
 
-Run the test (Update according to your DB connection, versions etc):
-
-
-    export OLD_KEYCLOAK_VERSION=4.8.3.Final
-
-    mvn -B -f testsuite/integration-arquillian/pom.xml \
-      clean install \
-      -Pjpa,auth-server-wildfly,db-mariadb,auth-server-migration \
-      -Dauth.server.jboss.startup.timeout=900 \
-      -Dtest=MigrationTest \
-      -Dmigration.mode=auto \
-      -Dmigrated.auth.server.version=$OLD_KEYCLOAK_VERSION \
-      -Dprevious.product.unpacked.folder.name=keycloak-$OLD_KEYCLOAK_VERSION \
-      -Dmigration.import.file.name=migration-realm-$OLD_KEYCLOAK_VERSION.json \
-      -Dauth.server.ssl.required=false \
-      -Djdbc.mvn.version=2.2.4
-
+mvn -B -f testsuite/integration-arquillian/pom.xml \
+  clean install \
+  -Pjpa,auth-server-quarkus,db-mariadb,auth-server-migration \
+  -Dtest=MigrationTest \
+  -Dmigration.mode=auto \
+  -Dmigrated.auth.server.version=$OLD_KEYCLOAK_VERSION \
+  -Dprevious.product.unpacked.folder.name=keycloak-$OLD_KEYCLOAK_VERSION \
+  -Dmigration.import.file.name=migration-realm-$OLD_KEYCLOAK_VERSION.json \
+  -Dauth.server.ssl.required=false \
+  -Djdbc.mvn.version=2.2.4 \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
 
 For the available versions of old keycloak server, you can take a look to [this directory](tests/base/src/test/resources/migration-test) .
 
@@ -441,22 +205,10 @@ that you need to use property `migration.mode` with the value `manual` .
 
     -Dmigration.mode=manual
 
+## Old Admin Console UI tests
+The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox and Google Chrome. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
 
-## Server configuration migration test
-This will compare if Wildfly configuration files (standalone.xml, standalone-ha.xml, domain.xml)
-are correctly migrated from previous version
-
-    mvn -f testsuite/integration-arquillian/tests/other/server-config-migration/pom.xml \
-      clean install \
-      -Dmigrated.version=1.9.8.Final-redhat-1
-
-For the available versions, take a look at the directory [tests/other/server-config-migration/src/test/resources/standalone](tests/other/server-config-migration/src/test/resources/standalone)
-
-
-## Admin Console UI tests
-The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox, Google Chrome and Internet Explorer. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
-
-The UI tests are focused on the Admin Console. They are placed in the `console` module and are disabled by default.
+The UI tests are focused on the Admin Console. They are placed in the `old-admin-console` module and are disabled by default.
 
 The tests also use some constants placed in [test-constants.properties](tests/base/src/test/resources/test-constants.properties). A different file can be specified by `-Dtestsuite.constants=path/to/different-test-constants.properties`
 
@@ -464,7 +216,7 @@ In case a custom `settings.xml` is used for Maven, you need to specify it also i
 
 #### Execution example
 ```
-mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
+mvn -f testsuite/integration-arquillian/tests/other/old-admin-console/pom.xml \
     clean test \
     -Dbrowser=firefox \
     -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox
@@ -472,18 +224,16 @@ mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
 
 ## Spring Boot adapter tests
 
-Currently we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty [9.2, 9.3, 9.4]`. We are testing two versions of Spring Boot 1.5.x and 2.1.x. All versions are specified in [root pom.xml](../../pom.xml) (see properties `spring-boot15.version` and `spring-boot21.version`).
-
-To run tests execute following command. Default version of Spring Boot is 1.5.x, to run tests with version 2.1.x add profile `-Pspringboot21`
+Currently, we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty 9.4`. 
+We are testing various versions of Spring Boot 2.x. All versions are specified in [root pom.xml](../../pom.xml) (i.e. see properties `spring-boot24.version` and `spring-boot26.version`).
+To run tests execute following command. Default version of Spring Boot is 2.4.x, to run tests with version 2.6.x add profile `-Pspringboot26`.
 
 ```
 mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
     clean test \
-    -Dadapter.container=[tomcat|undertow|jetty92|jetty93|jetty94] \
-    [-Pspringboot21]
+    -Dadapter.container=[tomcat|undertow|jetty94] \
+    [-Pspringboot26]
 ```
-
-Note: Spring Boot 21 doesn't work with jetty92 and jetty93, only jetty94 is tested.
 
 ## Base UI tests
 Similarly to Admin Console tests, these tests are focused on UI, specifically on the parts of the server that are accessed by an end user (like Login page, or Account Console).
@@ -598,13 +348,6 @@ Although technically they can be run with almost every test in the testsuite, th
 * **Driver download required:** [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) that corresponds with your version of the browser
 * **Run with:** `-Dbrowser=chrome -Dwebdriver.chrome.driver=path/to/chromedriver`
 
-#### Internet Explorer
-* **Supported test modules:** `console`, `base-ui`
-* **Supported version:** 11
-* **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
-* **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe -Dauth.server.ssl.required=false`
-Note: We currently do not support SSL in IE.
-
 #### Apple Safari
 * **Supported test modules:** `base-ui`
 * **Supported version:** latest stable
@@ -619,7 +362,7 @@ Note: We currently do not support SSL in IE.
 
 #### Automatic driver downloads
 You can rely on automatic driver downloads which is provided by [Arquillian Drone](http://arquillian.org/arquillian-extension-drone/#_automatic_download). To do so just omit the `-Dwebdriver.{browser}.driver` CLI argument when running the tests.
-By default latest driver version is always downloaded. To download a specific version, add `-DfirefoxDriverVersion`, `-DchromeDriverVersion` or `-DieDriverVersion` CLI argument.
+By default latest driver version is always downloaded. To download a specific version, add `-DfirefoxDriverVersion` or `-DchromeDriverVersion` CLI argument.
 
 #### Mobile browsers
 The support for testing with the mobile browsers is implemented using the [Appium](http://appium.io/) project.
@@ -674,18 +417,6 @@ The setup includes:
 *  a load balancer on embedded Undertow (SimpleUndertowLoadBalancer)
 *  two clustered nodes of Keycloak server on Wildfly/EAP or on embedded undertow
 *  shared DB
-
-### Cluster tests with Keycloak on Wildfly
-
-After you build the distribution, you run this command to setup servers and run cluster tests using shared Docker database:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-    -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa \
-    -Dsession.cache.owners=2 \
-    -Dbackends.console.output=true \
-    -Dauth.server.log.check=false \
-    -Dfrontend.console.output=true \
-    -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
     
 ### Cluster tests with Keycloak on Quarkus
 
@@ -713,7 +444,7 @@ Alternatively, you can perform both steps using the following command:
 
 Right now, tests are using a H2 database.
 
-To run tests using a different database such as PostgreSQL, add the following properties into the `testsuite/integration-arquillian/servers/auth-server/quarkus/src/main/content/conf/keycloak.properties` configuration file:
+To run tests using a different database such as PostgreSQL, add the following properties into the `testsuite/integration-arquillian/servers/auth-server/quarkus/src/main/content/conf/keycloak.conf` configuration file:
 
 ```
 # HA using PostgreSQL
@@ -823,6 +554,8 @@ necessary to download the artifact and install it to local Maven repository. For
 For Data Grid 7 and older use: `-Dfile=jboss-datagrid-${DATAGRID_VERSION}-server.zip`.
 
 ### Run Cross-DC Tests from Maven
+
+Warning: The Cross-DC tests doesn't work with Quarkus distribution
 
 Note: Profile `auth-servers-crossdc-undertow` currently doesn't work (see [KEYCLOAK-18335](https://issues.redhat.com/browse/KEYCLOAK-18335)).
 Use `-Pauth-servers-crossdc-jboss,auth-server-wildfly` instead.
@@ -1020,11 +753,11 @@ Then, before running the test, setup Keycloak Server distribution for the tests:
 
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
         clean install \
-        -Pauth-server-wildfly
+        -Pauth-server-quarkus
 
 When running the test, add the following arguments to the command line:
 
-    -Pauth-server-wildfly -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
+    -Pauth-server-quarkus -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
 
 ## Java 11 support
 Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and
@@ -1048,7 +781,14 @@ Run tests using the `auth-server-quarkus` profile:
     
 Right now, the server runs in a separate process. To debug the server set `auth.server.debug` system property to `true`.
 
-To configure the debugger port, set the `auth.server.debug.port` system property with any valid port number. Default is `5005`. 
+To configure the debugger port, set the `auth.server.debug.port` system property with any valid port number. Default is `5005`.
+Note you can also set port for example to `*:5005` or `my-host:5005` to set the bind host.
+
+By default, quarkus server is started in the testsuite and you need to attach remote debugger to it during running. You can
+use `auth.server.debug.suspend=y` to "suspend" server startup when running testsuite, which means that server startup is blocked
+until debugger is attached.
+
+More info: http://javahowto.blogspot.cz/2010/09/java-agentlibjdwp-for-attaching.html
 
 ## Cookies testing
 In order to reproduce some specific cookies behaviour in browsers (like SameSite policies or 3rd party cookie blocking),
@@ -1087,6 +827,108 @@ because this is not UI testing). For debugging purposes you can override the hea
 For changing the hostname in the hostname tests (e.g. [DefaultHostnameTest](https://github.com/keycloak/keycloak/blob/main/testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/url/DefaultHostnameTest.java)),
 we rely on [nip.io](https://nip.io) for DNS switching, so tests will work everywhere without fiddling with `etc/hosts` locally. 
 
+## Running base testsuite with Map storage
+
+To run base testsuite with new storage run the following command (this will execute testsuite with ConcurrentHashMap storage):
+```shell
+mvn clean install -f testsuite/integration-arquillian/tests/base \
+                  -Pauth-server-quarkus -Pmap-storage
+```
+
+### Running tests with JPA Map storage
+
+By default tests with `map-storage-jpa` profile spawns a new Postgres container
+with each test execution. Default image used is "postgres:alpine". To spawn different 
+version, it can be used "keycloak.map.storage.postgres.docker.image" system property.
+
+Execute tests:
+```shell
+mvn clean install -f testsuite/integration-arquillian/tests/base \
+                  -Pmap-storage,map-storage-jpa
+```
+
+It's also possible to configure tests to connect to an external database, it might be useful 
+for debugging purposes as the database is not removed after the testsuite run. On the other hand
+it'll require manual cleaning between two runs.
+
+PostgreSQL database can be started e.g. by following command:
+```shell
+podman run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=keycloak -e POSTGRES_DB=keycloak -d postgres:alpine
+```
+
+To run the tests without spawning the container for you, execute tests with the following command:
+```shell
+mvn clean install -f testsuite/integration-arquillian/tests/base \
+  -Pmap-storage,map-storage-jpa \
+  -Dpostgres.start-container=false \
+  -Dkeycloak.map.storage.connectionsJpa.url=<jdbc_url> \
+  -Dkeycloak.map.storage.connectionsJpa.user=<user> \
+  -Dkeycloak.map.storage.connectionsJpa.password=<password>
+```
+
+### Running tests with HotRod Map storage
+
+By default, Base testsuite with `map-storage-hotrod` profile spawn a new Infinispan container
+with each test execution. To run the tests execute:
+```shell
+mvn clean install -f testsuite/integration-arquillian/tests/base \
+                  -Pmap-storage,map-storage-hotrod
+```
+Note: For running Infinispan server we are using Testcontainer, see section 
+_Usage of Testcontainers_ for details on how to set up your container engine.
+
+It is also possible, to configure Base testsuite to
+connect to an external instance of Infinispan. To do so, execute tests with
+the following command:
+```shell
+mvn clean install -f testsuite/integration-arquillian/tests/base \
+                  -Pmap-storage,map-storage-hotrod
+                  -Dkeycloak.testsuite.start-hotrod-container=false \
+                  -Dkeycloak.connectionsHotRod.host=<host> \
+                  -Dkeycloak.connectionsHotRod.port=<port> \
+                  -Dkeycloak.connectionsHotRod.username=<username> \
+                  -Dkeycloak.connectionsHotRod.password=<password>
+```
+
+### Usage of Testcontainers
+
+Some profiles within model tests require running 3rd party software, for
+example, database or Infinispan. For running these we are using
+[Testcontainers](https://www.testcontainers.org/). This may require some
+additional configuration of your container engine.
+
+#### Podman settings
+
+For more details see the following [Podman guide from Quarkus webpage](https://quarkus.io/guides/podman).
+
+Specifically, these steps are required:
+```shell
+# Enable the podman socket with Docker REST API (only needs to be done once)
+systemctl --user enable podman.socket --now
+
+# Set the required environment variables (need to be run everytime or added to profile)
+export DOCKER_HOST=unix:///run/user/${UID}/podman/podman.sock
+```
+
+Testcontainers are using [ryuk](https://hub.docker.com/r/testcontainers/ryuk)
+to cleanup containers after tests. To make this work with Podman add the
+following line to `~/.testcontainers.properties`
+```shell
+ryuk.container.privileged=true
+```
+Alternatively, disable usage of ryuk (using this may result in stale containers
+still running after tests finish. This is not recommended especially if you are
+executing tests from Intellij IDE as it [may not stop](https://youtrack.jetbrains.com/issue/IDEA-190385)
+the containers created during test run).
+```shell
+export TESTCONTAINERS_RYUK_DISABLED=true #not recommended - see above!
+```
+
+#### Docker settings
+
+To use Testcontainers with Docker it is necessary to
+[make Docker available for non-root users](https://docs.docker.com/engine/install/linux-postinstall/).
+
 ### Tips & Tricks:
 Although it _should_ work in general, you may experience an exception like this:
 ```
@@ -1099,3 +941,25 @@ DefaultHostnameTest.java:226)
 when running these tests on your local machine. This happens when something on your machine or network is blocking DNS queries to [nip.io](https://nip.io)
 One possible workaround is to add a commonly used public dns server (e.g. 8.8.8.8 for google dns server) to your local 
 networks dns configuration and run the tests. 
+
+## FIPS 140-2 testing
+
+On the FIPS enabled platform with FIPS enabled OpenJDK 11, you can run this to test against Keycloak server on Quarkus
+with FIPS 140.2 integration enabled
+```
+mvn -B -f testsuite/integration-arquillian/pom.xml \
+  clean install \
+  -Pauth-server-quarkus,auth-server-fips140-2 \
+  -Dcom.redhat.fips=false
+```
+NOTE 1: The property `com.redhat.fips` is needed so that testsuite itself is executed in the JVM with FIPS disabled. However
+most important part is that Keycloak itself is running on the JVM with FIPS enabled. You can check log from server startup and
+there should be messages similar to those:
+```
+2022-10-11 19:34:29,521 DEBUG [org.keycloak.common.crypto.CryptoIntegration] (main) Using the crypto provider: org.keycloak.crypto.fips.FIPS1402Provider
+2022-10-11 19:34:31,072 TRACE [org.keycloak.common.crypto.CryptoIntegration] (main) Java security providers: [ 
+ KC(BCFIPS version 1.000203) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
+ BCFIPS version 1.000203 - class org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider, 
+ BCJSSE version 1.001202 - class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider,
+]
+```

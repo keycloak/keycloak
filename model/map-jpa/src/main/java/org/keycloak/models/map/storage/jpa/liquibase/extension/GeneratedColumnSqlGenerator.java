@@ -22,6 +22,8 @@ import java.util.List;
 
 import liquibase.database.Database;
 import liquibase.database.core.PostgresDatabase;
+import liquibase.datatype.DataTypeFactory;
+import liquibase.datatype.DatabaseDataType;
 import liquibase.sql.Sql;
 import liquibase.sql.UnparsedSql;
 import liquibase.sqlgenerator.SqlGenerator;
@@ -80,7 +82,7 @@ public class GeneratedColumnSqlGenerator extends AddColumnGenerator {
         List<Sql> returnSql = new ArrayList<>();
         returnSql.add(new UnparsedSql(sqlBuilder.toString(), super.getAffectedColumn(statement)));
 
-        super.addUniqueConstrantStatements(statement, database, returnSql);
+        super.addUniqueConstraintStatements(statement, database, returnSql);
         super.addForeignKeyStatements(statement, database, returnSql);
 
         return returnSql.toArray(new Sql[0]);
@@ -89,8 +91,9 @@ public class GeneratedColumnSqlGenerator extends AddColumnGenerator {
     protected void handleGeneratedColumn(final GeneratedColumnStatement statement, final Database database, final StringBuilder sqlBuilder) {
         if (database instanceof PostgresDatabase) {
             // assemble the GENERATED ALWAYS AS section of the query using the json property selection function.
+            DatabaseDataType columnType = DataTypeFactory.getInstance().fromDescription(statement.getColumnType(), database).toDatabaseDataType(database);
             sqlBuilder.append(" GENERATED ALWAYS AS ((").append(statement.getJsonColumn()).append("->>'").append(statement.getJsonProperty())
-                    .append("')::").append(statement.getColumnType()).append(") stored");
+                    .append("')::").append(columnType).append(") stored");
         }
     }
 }

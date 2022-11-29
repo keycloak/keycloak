@@ -19,10 +19,12 @@ package org.keycloak.testsuite.util.cli;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LegacyRealmModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.UserStorageProviderModel;
+
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -35,7 +37,7 @@ public class SyncDummyFederationProviderCommand extends AbstractCommand {
         int changedSyncPeriod = getIntArg(1);
 
         RealmModel realm = session.realms().getRealmByName("master");
-        UserStorageProviderModel fedProviderModel = KeycloakModelUtils.findUserStorageProviderByName("cluster-dummy", realm);
+        UserStorageProviderModel fedProviderModel = findUserStorageProviderByName(session, "cluster-dummy", realm);
         if (fedProviderModel == null) {
             MultivaluedHashMap<String, String> cfg = fedProviderModel.getConfig();
             updateConfig(cfg, waitTime);
@@ -64,6 +66,16 @@ public class SyncDummyFederationProviderCommand extends AbstractCommand {
         cfg.putSingle("wait-time", String.valueOf(waitTime));
     }
 
+    public static UserStorageProviderModel findUserStorageProviderByName(KeycloakSession session, String displayName, RealmModel realm) {
+        if (displayName == null) {
+            return null;
+        }
+
+        return ((LegacyRealmModel) realm).getUserStorageProvidersStream()
+                .filter(fedProvider -> Objects.equals(fedProvider.getName(), displayName))
+                .findFirst()
+                .orElse(null);
+    }
 
     @Override
     public String getName() {

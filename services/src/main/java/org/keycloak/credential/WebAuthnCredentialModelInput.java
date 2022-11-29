@@ -16,24 +16,34 @@
 
 package org.keycloak.credential;
 
+import com.webauthn4j.authenticator.Authenticator;
+import com.webauthn4j.server.ServerProperty;
 import org.keycloak.common.util.Base64;
 
 import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticationRequest;
+import com.webauthn4j.data.AuthenticatorTransport;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
+import org.keycloak.common.util.CollectionUtil;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class WebAuthnCredentialModelInput implements CredentialInput {
 
     private AttestedCredentialData attestedCredentialData;
     private AttestationStatement attestationStatement;
-    private AuthenticationParameters authenticationParameters; // not persisted because it can only be used on authentication operation.
+    private KeycloakWebAuthnAuthenticationParameters authenticationParameters; // not persisted because it can only be used on authentication operation.
     private AuthenticationRequest authenticationRequest; // not persisted because it can only be used on authentication operation.
     private long count;
     private String credentialDBId;
     private final String credentialType;
     private String attestationStatementFormat;
+    private Set<AuthenticatorTransport> transports;
 
     public WebAuthnCredentialModelInput(String credentialType) {
         this.credentialType = credentialType;
@@ -67,11 +77,11 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
         return count;
     }
 
-    public AuthenticationParameters getAuthenticationParameters() {
+    public KeycloakWebAuthnAuthenticationParameters getAuthenticationParameters() {
         return authenticationParameters;
     }
 
-    public void setAuthenticationParameters(AuthenticationParameters authenticationParameters) {
+    public void setAuthenticationParameters(KeycloakWebAuthnAuthenticationParameters authenticationParameters) {
         this.authenticationParameters = authenticationParameters;
     }
 
@@ -115,6 +125,14 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
         this.attestationStatementFormat = attestationStatementFormat;
     }
 
+    public Set<AuthenticatorTransport> getTransports() {
+        return transports != null ? transports : Collections.emptySet();
+    }
+
+    public void setTransports(Set<AuthenticatorTransport> transports) {
+        this.transports = transports;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder("Credential Type = " + credentialType + ",");
         if (credentialDBId != null)
@@ -156,8 +174,36 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
               .append(Base64.encodeBytes(authenticationRequest.getCredentialId()))
               .append(",");
         }
+        if (CollectionUtil.isNotEmpty(getTransports())) {
+            final String transportsString = getTransports().stream()
+                    .map(AuthenticatorTransport::getValue)
+                    .collect(Collectors.joining(","));
+
+            sb.append("Transports = [")
+              .append(transportsString)
+              .append("],");
+        }
         if (sb.length() > 0)
             sb.deleteCharAt(sb.lastIndexOf(","));
         return sb.toString();
+    }
+
+    public static class KeycloakWebAuthnAuthenticationParameters{
+
+        private final ServerProperty serverProperty;
+        private final boolean userVerificationRequired;
+
+        public KeycloakWebAuthnAuthenticationParameters(ServerProperty serverProperty, boolean userVerificationRequired) {
+            this.serverProperty = serverProperty;
+            this.userVerificationRequired = userVerificationRequired;
+        }
+
+        public ServerProperty getServerProperty() {
+            return serverProperty;
+        }
+
+        public boolean isUserVerificationRequired() {
+            return userVerificationRequired;
+        }
     }
 }

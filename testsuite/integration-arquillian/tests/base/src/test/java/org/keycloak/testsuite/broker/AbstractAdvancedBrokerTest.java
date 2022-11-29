@@ -4,9 +4,12 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
@@ -17,8 +20,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -225,9 +230,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         loginWithExistingUser();
 
-        driver.navigate().to(getAccountPasswordUrl(getConsumerRoot(), bc.consumerRealmName()));
-
-        accountPasswordPage.changePassword("password", "password");
+        Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin(), "password"));
 
         logoutFromRealm(getProviderRoot(), bc.providerRealmName());
 
@@ -471,6 +474,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+
         logInWithBroker(bc);
 
         loginTotpPage.assertCurrent();
@@ -510,6 +515,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
             logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
+            setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+
             logInWithBroker(bc);
 
             loginTotpPage.assertCurrent();
@@ -528,6 +535,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             // Clear login failures
             String userId = ApiUtil.findUserByUsername(realm, bc.getUserLogin()).getId();
             realm.attackDetection().clearBruteForceForUser(userId);
+
+            setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
             loginTotpPage.login(totp.generateTOTP(totpSecret));
             waitForAccountManagementTitle();
@@ -576,12 +585,13 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
      */
     @Test
     public void testWithLinkedFederationProvider() {
+        // don't run this test when map storage is enabled, as map storage doesn't support the legacy style federation
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+
         try {
             updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
             ComponentRepresentation component = new ComponentRepresentation();
-
-            component.setId(DummyUserFederationProviderFactory.PROVIDER_NAME);
             component.setName(DummyUserFederationProviderFactory.PROVIDER_NAME);
             component.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
             component.setProviderType(UserStorageProvider.class.getName());
@@ -595,12 +605,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
-            accountPage.password();
-            accountPasswordPage.changePassword("bad", "new-password", "new-password");
-            assertEquals("Invalid existing password.", accountPasswordPage.getError());
-
-            accountPasswordPage.changePassword("secret", "new-password", "new-password");
-            assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
+            Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), "test-user", "new-password"));
 
             logoutFromRealm(getProviderRoot(), bc.providerRealmName());
             logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
@@ -612,9 +617,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
-            accountPage.password();
-            accountPasswordPage.changePassword("new-password", "new-password");
-            assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
+            Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), "test-user-noemail", "new-password"));
         } finally {
             removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "test-user");
             removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "test-user-noemail");

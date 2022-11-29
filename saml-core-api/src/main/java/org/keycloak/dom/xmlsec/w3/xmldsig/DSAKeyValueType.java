@@ -17,9 +17,9 @@
 
 package org.keycloak.dom.xmlsec.w3.xmldsig;
 
+import org.keycloak.common.util.Base64;
 import org.keycloak.saml.common.constants.WSTrustConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.Base64;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
@@ -201,14 +201,13 @@ public class DSAKeyValueType implements KeyValueType {
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
     public DSAPublicKey convertToPublicKey() throws ProcessingException {
-        BigInteger BigY, BigP, BigQ, BigG;
-
-        BigY = new BigInteger(1, massage(Base64.decode(new String(y))));
-        BigP = new BigInteger(1, massage(Base64.decode(new String(p))));
-        BigQ = new BigInteger(1, massage(Base64.decode(new String(q))));
-        BigG = new BigInteger(1, massage(Base64.decode(new String(g))));
 
         try {
+            BigInteger BigY = new BigInteger(1, massage(Base64.decode(new String(y))));
+            BigInteger BigP = new BigInteger(1, massage(Base64.decode(new String(p))));
+            BigInteger BigQ = new BigInteger(1, massage(Base64.decode(new String(q))));
+            BigInteger BigG = new BigInteger(1, massage(Base64.decode(new String(g))));
+
             KeyFactory dsaKeyFactory = KeyFactory.getInstance("dsa");
             DSAPublicKeySpec kspec = new DSAPublicKeySpec(BigY, BigP, BigQ, BigG);
             return (DSAPublicKey) dsaKeyFactory.generatePublic(kspec);
@@ -225,14 +224,13 @@ public class DSAKeyValueType implements KeyValueType {
      * @throws ProcessingException
      */
     public DSAPrivateKey convertToPrivateKey() throws ProcessingException {
-        BigInteger BigY, BigP, BigQ, BigG;
-
-        BigY = new BigInteger(1, massage(Base64.decode(new String(y))));
-        BigP = new BigInteger(1, massage(Base64.decode(new String(p))));
-        BigQ = new BigInteger(1, massage(Base64.decode(new String(q))));
-        BigG = new BigInteger(1, massage(Base64.decode(new String(g))));
 
         try {
+            BigInteger BigY = new BigInteger(1, massage(Base64.decode(new String(y))));
+            BigInteger BigP = new BigInteger(1, massage(Base64.decode(new String(p))));
+            BigInteger BigQ = new BigInteger(1, massage(Base64.decode(new String(q))));
+            BigInteger BigG = new BigInteger(1, massage(Base64.decode(new String(g))));
+
             KeyFactory dsaKeyFactory = KeyFactory.getInstance("dsa");
             DSAPrivateKeySpec kspec = new DSAPrivateKeySpec(BigY, BigP, BigQ, BigG);
             return (DSAPrivateKey) dsaKeyFactory.generatePrivate(kspec);

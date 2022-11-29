@@ -19,6 +19,7 @@ package org.keycloak.models.delegate;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -83,7 +84,7 @@ public class ClientModelLazyDelegate implements ClientModel {
         }
         ClientModel ref = delegate.getReference();
         if (ref == null) {
-            throw new IllegalStateException("Invalid delegate obtained");
+            throw new ModelIllegalStateException("Invalid delegate obtained");
         }
         return ref;
     }
@@ -509,18 +510,23 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public Set<RoleModel> getScopeMappings() {
-        return getDelegate().getScopeMappings();
+    public boolean isDynamicScope() {
+        return getDelegate().isDynamicScope();
+    }
+
+    @Override
+    public void setIsDynamicScope(boolean isDynamicScope) {
+        getDelegate().setIsDynamicScope(isDynamicScope);
+    }
+
+    @Override
+    public String getDynamicScopeRegexp() {
+        return getDelegate().getDynamicScopeRegexp();
     }
 
     @Override
     public Stream<RoleModel> getScopeMappingsStream() {
         return getDelegate().getScopeMappingsStream();
-    }
-
-    @Override
-    public Set<RoleModel> getRealmScopeMappings() {
-        return getDelegate().getRealmScopeMappings();
     }
 
     @Override
@@ -569,18 +575,8 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public Set<RoleModel> getRoles() {
-        return getDelegate().getRoles();
-    }
-
-    @Override
     public Stream<RoleModel> getRolesStream() {
         return getDelegate().getRolesStream();
-    }
-
-    @Override
-    public Set<RoleModel> getRoles(Integer firstResult, Integer maxResults) {
-        return getDelegate().getRoles(firstResult, maxResults);
     }
 
     @Override
@@ -589,18 +585,8 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
-        return getDelegate().searchForRoles(search, first, max);
-    }
-
-    @Override
     public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
         return getDelegate().searchForRolesStream(search, first, max);
-    }
-
-    @Override
-    public List<String> getDefaultRoles() {
-        return getDelegate().getDefaultRoles();
     }
 
     @Override
@@ -621,11 +607,6 @@ public class ClientModelLazyDelegate implements ClientModel {
     @Override
     public void removeDefaultRoles(String... defaultRoles) {
         getDelegate().removeDefaultRoles(defaultRoles);
-    }
-
-    @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return getDelegate().getProtocolMappers();
     }
 
     @Override

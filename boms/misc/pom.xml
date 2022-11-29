@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak.bom</groupId>
         <artifactId>keycloak-bom-parent</artifactId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <groupId>org.keycloak.bom</groupId>

@@ -17,20 +17,36 @@
 
 package org.keycloak.it.junit5.extension;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.*;
 
 import java.util.List;
+import java.util.regex.Pattern;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.approvaltests.namer.NamedEnvironment;
+import org.keycloak.it.junit5.extension.approvalTests.KcNamerFactory;
 
 public interface CLIResult extends LaunchResult {
 
-    static Object create(List<String> outputStream, List<String> errStream, int exitCode) {
+    static CLIResult create(List<String> outputStream, List<String> errStream, int exitCode) {
         return new CLIResult() {
             @Override
             public List<String> getOutputStream() {
                 return outputStream;
+            }
+
+            @Override
+            public String getErrorOutput() {
+                return String.join("\n", errStream).replace("\r","");
             }
 
             @Override
@@ -52,12 +68,12 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertNotDevMode() {
-        assertFalse(getOutput().contains("Running the server in dev mode."),
+        assertFalse(getOutput().contains("Running the server in development mode."),
                 () -> "The standard output:\n" + getOutput() + "\ndoes include the Start Dev output");
     }
 
     default void assertStartedDevMode() {
-        assertTrue(getOutput().contains("Running the server in dev mode."),
+        assertTrue(getOutput().contains("Running the server in development mode."),
                 () -> "The standard output:\n" + getOutput() + "\ndoesn't include the Start Dev output");
     }
 
@@ -67,7 +83,7 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertHelp() {
-        try {
+        try (NamedEnvironment env = KcNamerFactory.asWindowsOsSpecificTest()) {
             Approvals.verify(getOutput());
         } catch (Exception cause) {
             throw new RuntimeException("Failed to assert help", cause);
@@ -75,10 +91,69 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertMessage(String message) {
-        assertTrue(getOutput().contains(message));
+        assertThat(getOutput(), containsString(message));
+    }
+
+    default void assertNoMessage(String message) {
+        assertThat(getOutput(), not(containsString(message)));
+    }
+
+    default void assertMessageWasShownExactlyNumberOfTimes(String message, long numberOfShownTimes) {
+        long msgCount = getOutput().lines().filter(oneMessage -> oneMessage.contains(message)).count();
+        assertThat(msgCount, equalTo(numberOfShownTimes));
     }
 
     default void assertBuild() {
         assertMessage("Server configuration updated and persisted");
+    }
+
+    default void assertNoBuild() {
+        assertFalse(getOutput().contains("Server configuration updated and persisted"));
+    }
+
+    default void assertBuildRuntimeMismatchWarning(String quarkusBuildtimePropKey) {
+        assertTrue(getOutput().contains(" - " + quarkusBuildtimePropKey + " is set to 'true' but it is build time fixed to 'false'. Did you change the property " + quarkusBuildtimePropKey + " after building the application?"));
+    }
+
+    default boolean isClustered() {
+        return getOutput().contains("Starting JGroups channel `ISPN`");
+    }
+
+    default void assertLocalCache() {
+        assertFalse(isClustered());
+    }
+
+    default void assertClusteredCache() {
+        assertTrue(isClustered());
+    }
+
+    default void assertJsonLogDefaultsApplied() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String[] splittedOutput = getOutput().split("\n");
+
+        int counter = 0;
+
+        for (String line: splittedOutput) {
+            if (!line.trim().startsWith("{")) {
+                counter++;
+                //we ignore non-json output for now. Problem: the build done by start-dev does not know about the runtime configuration,
+                // so when invoking start-dev and a build is done, the output is not json but unstructured console output
+                continue;
+            }
+            JsonNode json = objectMapper.readTree(line);
+            assertTrue(json.has("timestamp"));
+            assertTrue(json.has("message"));
+            assertTrue(json.has("level"));
+        }
+
+        if (counter == splittedOutput.length) {
+            fail("No JSON found in output.");
+        }
+    }
+
+    default void assertStringCount(String msg, int count) {
+        Pattern pattern = Pattern.compile(msg);
+        assertEquals(count, pattern.matcher(getOutput()).results().count());
     }
 }

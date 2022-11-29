@@ -55,7 +55,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.jboss.shrinkwrap.api.Archive;
-import org.keycloak.testsuite.util.ContainerAssume;
 
 /**
  * Changes behaviour of original ContainerEventController to stop manual containers 
@@ -97,10 +96,6 @@ public class KeycloakContainerEventsController extends ContainerEventController 
     @Override
     public void execute(BeforeClass event) {
         if (event.getTestClass().isAnnotationPresent(RestartContainer.class)) {
-
-            // stop executing the test - remote container cannot be restarted
-            ContainerAssume.assumeNotAuthServerRemote();
-
             RestartContainer restartContainer = event.getTestClass().getAnnotation(RestartContainer.class);
 
             beforeOriginalContainerStop(restartContainer);

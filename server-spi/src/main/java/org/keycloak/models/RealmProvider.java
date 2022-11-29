@@ -40,7 +40,9 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
 
     /**
      * Created new realm with given ID and name.
-     * @param id Internal ID of the realm or {@code null} if one is to be created by the underlying store
+     * @param id Internal ID of the realm or {@code null} if one is to be created by the underlying store. If the store
+     *           expects the ID to have a certain format (for example {@code UUID}) and the supplied ID doesn't follow
+     *           the expected format, the store may replace the {@code id} with a new one at its own discretion.
      * @param name String name of the realm
      * @return Model of the created realm.
      */
@@ -125,30 +127,6 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     // including the "default" body to be able to add a note on deprecation
 
     /**
-     * @deprecated Use {@link #getRealmsStream() getRealmsStream} instead.
-     */
-    @Deprecated
-    default List<RealmModel> getRealms() {
-        return getRealmsStream().collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Use {@link #getRealmsWithProviderTypeStream(Class) getRealmsWithProviderTypeStream} instead.
-     */
-    @Deprecated
-    default List<RealmModel> getRealmsWithProviderType(Class<?> type) {
-        return getRealmsWithProviderTypeStream(type).collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Use {@link #listClientInitialAccessStream(RealmModel) listClientInitialAccessStream} instead.
-     */
-    @Deprecated
-    default List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
-        return listClientInitialAccessStream(realm).collect(Collectors.toList());
-    }
-
-    /**
      * @deprecated Use the corresponding method from {@link ClientProvider}. */
     @Override
     public ClientModel addClient(RealmModel realm, String id, String clientId);
@@ -158,49 +136,6 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     @Override
     default ClientModel addClient(RealmModel realm, String clientId) {
         return addClient(realm, null, clientId);
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
-    default List<ClientModel> getClients(RealmModel realm) {
-        return this.getClients(realm, null, null);
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
-    default List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return getClientsStream(realm, firstResult, maxResults).collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
-    default List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
-        return searchClientsByClientIdStream(realm, clientId, firstResult, maxResults).collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
-    default ClientModel getClientByClientId(String clientId, RealmModel realm) { return getClientByClientId(realm, clientId); }
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
-    default ClientModel getClientById(String id, RealmModel realm) { return getClientById(realm, id); }
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
-    default boolean removeClient(String id, RealmModel realm) { return this.removeClient(realm, id); }
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
-    default  List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm) {
-        return getAlwaysDisplayInConsoleClientsStream(realm).collect(Collectors.toList());
     }
 
     /**
@@ -239,13 +174,6 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
      * @deprecated Use the corresponding method from {@link RoleProvider}. */
     default RoleModel getRoleById(String id, RealmModel realm) {
         return getRoleById(realm, id);
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link RoleProvider}. */
-    @Override
-    default Set<RoleModel> getRealmRoles(RealmModel realm) {
-        return getRealmRoles(realm, null, null);
     }
 
     /**
@@ -317,54 +245,12 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */
     @Override
-    default GroupModel getGroupById(String id, RealmModel realm) {
-        return getGroupById(realm, id);
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link GroupProvider}. */
-    @Override
-    default List<GroupModel> getGroups(RealmModel realm) {
-        return getGroupsStream(realm).collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link GroupProvider}. */
-    @Override
     Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
 
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */
     @Override
     Long getGroupsCountByNameContaining(RealmModel realm, String search);
-
-    /**
-     * @deprecated Use the corresponding method from {@link GroupProvider}. */
-    @Override
-    default List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
-        return getGroupsByRoleStream(realm, role, firstResult, maxResults).collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link GroupProvider}. */
-    @Override
-    default List<GroupModel> getTopLevelGroups(RealmModel realm) {
-        return getTopLevelGroupsStream(realm).collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link GroupProvider}. */
-    @Override
-    default List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max) {
-        return getTopLevelGroupsStream(realm, first, max).collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Use the corresponding method from {@link GroupProvider}. */
-    @Override
-    default List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max) {
-        return searchForGroupByNameStream(realm, search, first, max).collect(Collectors.toList());
-    }
 
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */

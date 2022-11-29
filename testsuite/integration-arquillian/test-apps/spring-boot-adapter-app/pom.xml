@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-test-apps</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -17,7 +17,7 @@
         <java.version>1.8</java.version>
         <jetty.version>${jetty94.version}</jetty.version>
 
-        <springboot-version>2.3</springboot-version>
+        <springboot-version>2.4</springboot-version>
 
         <spring-boot-adapter-jetty>false</spring-boot-adapter-jetty>
         <spring.boot.tomcat.adapter.artifactId>keycloak-tomcat-adapter</spring.boot.tomcat.adapter.artifactId>
@@ -44,431 +44,43 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-spring-boot-2-adapter</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>
         <profile>
-            <id>spring.boot.1.5</id>
+            <id>spring.boot.2.4</id>
 
             <activation>
                 <activeByDefault>true</activeByDefault>
-
                 <property>
                     <name>springboot-version</name>
-                    <value>1.5</value>
+                    <value>2.4</value>
                 </property>
             </activation>
 
             <properties>
-                <spring-boot.version>${spring-boot15.version}</spring-boot.version>
+                <spring-boot.version>${spring-boot24.version}</spring-boot.version>
             </properties>
-
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>apache-jsp</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>apache-jstl</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-alpn-client</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-alpn-java-client</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-alpn-java-server</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-alpn-server</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-annotations</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-ant</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-client</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-continuation</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-deploy</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-hazelcast</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-http</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-http-spi</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-infinispan</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-io</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-jaas</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-jaspi</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-jmx</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-jndi</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-nosql</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-plus</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-proxy</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-quickstart</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-rewrite</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-runner</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-security</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-server</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-servlet</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-servlets</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-spring</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-start</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-unixsocket</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-util</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-util-ajax</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-webapp</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-xml</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.cdi</groupId>
-                        <artifactId>cdi-core</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.cdi</groupId>
-                        <artifactId>cdi-servlet</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.fcgi</groupId>
-                        <artifactId>fcgi-client</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.fcgi</groupId>
-                        <artifactId>fcgi-server</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.gcloud</groupId>
-                        <artifactId>jetty-gcloud-session-manager</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.http2</groupId>
-                        <artifactId>http2-client</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.http2</groupId>
-                        <artifactId>http2-common</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.http2</groupId>
-                        <artifactId>http2-hpack</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.http2</groupId>
-                        <artifactId>http2-http-client-transport</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.http2</groupId>
-                        <artifactId>http2-server</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.memcached</groupId>
-                        <artifactId>jetty-memcached-sessions</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.osgi</groupId>
-                        <artifactId>jetty-osgi-boot</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.osgi</groupId>
-                        <artifactId>jetty-osgi-boot-jsp</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.osgi</groupId>
-                        <artifactId>jetty-osgi-boot-warurl</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.osgi</groupId>
-                        <artifactId>jetty-httpservice</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.websocket</groupId>
-                        <artifactId>javax-websocket-client-impl</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.websocket</groupId>
-                        <artifactId>javax-websocket-server-impl</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.websocket</groupId>
-                        <artifactId>websocket-api</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.websocket</groupId>
-                        <artifactId>websocket-client</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.websocket</groupId>
-                        <artifactId>websocket-common</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.websocket</groupId>
-                        <artifactId>websocket-server</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.eclipse.jetty.websocket</groupId>
-                        <artifactId>websocket-servlet</artifactId>
-                        <version>${jetty.version}</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-spring-boot-adapter</artifactId>
-                </dependency>
-            </dependencies>
-
         </profile>
 
         <profile>
-            <id>spring.boot.2.1</id>
+            <id>spring.boot.2.6</id>
 
             <activation>
                 <property>
                     <name>springboot-version</name>
-                    <value>2.1</value>
+                    <value>2.6</value>
                 </property>
             </activation>
 
             <properties>
-                <spring-boot.version>${spring-boot21.version}</spring-boot.version>
+                <spring-boot.version>${spring-boot26.version}</spring-boot.version>
             </properties>
-
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-bom</artifactId>
-                        <version>${jetty.version}</version>
-                        <type>pom</type>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-spring-boot-2-adapter</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>spring.boot.2.2</id>
-
-            <activation>
-                <property>
-                    <name>springboot-version</name>
-                    <value>2.2</value>
-                </property>
-            </activation>
-
-            <properties>
-                <spring-boot.version>${spring-boot22.version}</spring-boot.version>
-            </properties>
-
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-bom</artifactId>
-                        <version>${jetty.version}</version>
-                        <type>pom</type>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-spring-boot-2-adapter</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>spring.boot.2.3</id>
-
-            <activation>
-                <property>
-                    <name>springboot-version</name>
-                    <value>2.3</value>
-                </property>
-            </activation>
-
-            <properties>
-                <spring-boot.version>${spring-boot23.version}</spring-boot.version>
-            </properties>
-
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-bom</artifactId>
-                        <version>${jetty.version}</version>
-                        <type>pom</type>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-spring-boot-2-adapter</artifactId>
-                </dependency>
-            </dependencies>
         </profile>
 
         <profile>
@@ -508,69 +120,6 @@
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-undertow-adapter</artifactId>
                     <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>spring-boot-adapter-jetty92</id>
-
-            <properties>
-                <jetty.version>${jetty92.version}</jetty.version>
-            </properties>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-web</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.springframework.boot</groupId>
-                            <artifactId>spring-boot-starter-tomcat</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-jetty92-adapter</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-jetty</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>spring-boot-adapter-jetty93</id>
-
-            <properties>
-                <jetty.version>${jetty93.version}</jetty.version>
-            </properties>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-web</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.springframework.boot</groupId>
-                            <artifactId>spring-boot-starter-tomcat</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-jetty93-adapter</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-jetty</artifactId>
-                    <version>${spring-boot.version}</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -630,6 +179,12 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-bom</artifactId>
+                <version>${jetty.version}</version>
+                <type>pom</type>
             </dependency>
         </dependencies>
     </dependencyManagement>

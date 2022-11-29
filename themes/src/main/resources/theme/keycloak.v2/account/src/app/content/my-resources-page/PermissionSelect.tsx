@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { Select, SelectOption, SelectVariant, SelectOptionObject } from '@patternfly/react-core';
 import { Scope } from './resource-model';
+import { Msg } from '../../widgets/Msg';
 
 interface PermissionSelectState {
   selected: ScopeValue[];
@@ -86,19 +87,19 @@ export class PermissionSelect extends React.Component<PermissionSelectProps, Per
     return (
       <div>
         <span id={titleId} hidden>
-          Select the permissions
+          <Msg msgKey='selectPermissions' />
         </span>
         <Select
           direction={this.props.direction || 'down'}
           variant={SelectVariant.typeaheadMulti}
-          ariaLabelTypeAhead="Select the permissions"
+          typeAheadAriaLabel={Msg.localize("selectPermissions")}
           onToggle={this.onToggle}
           onSelect={this.onSelect}
           onClear={this.clearSelection}
           selections={selected}
-          isExpanded={isExpanded}
-          ariaLabelledBy={titleId}
-          placeholderText="Select the permissions"
+          isOpen={isExpanded}
+          aria-labelledby={titleId}
+          placeholderText={Msg.localize("selectPermissions")}
         >
           {this.state.scopes}
         </Select>

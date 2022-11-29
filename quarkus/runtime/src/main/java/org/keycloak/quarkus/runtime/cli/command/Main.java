@@ -76,11 +76,6 @@ public final class Main {
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
-    @Option(names = "-D<key>=<value>",
-            description = "Set a Java system property",
-            order = 0)
-    Boolean sysProps;
-
     @Option(names = { "-h", "--help" },
             description = "This help message.",
             usageHelp = true)
@@ -100,6 +95,7 @@ public final class Main {
     }
 
     @Option(names = { PROFILE_SHORT_NAME, PROFILE_LONG_NAME },
+            hidden = true,
             description = "Set the profile. Use 'dev' profile to enable development mode.")
     public void setProfile(String profile) {
         Environment.setProfile(profile);
@@ -107,7 +103,7 @@ public final class Main {
 
     @Option(names = { CONFIG_FILE_SHORT_NAME, CONFIG_FILE_LONG_NAME },
             arity = "1",
-            description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.properties\" file in the \"conf\" directory.",
+            description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.conf\" file in the \"conf\" directory.",
             paramLabel = "file")
     public void setConfigFile(String path) {
         System.setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, path);

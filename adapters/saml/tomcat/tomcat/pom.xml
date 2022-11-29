@@ -21,17 +21,13 @@
     <parent>
         <artifactId>keycloak-saml-tomcat-integration-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-saml-tomcat-adapter</artifactId>
     <name>Keycloak Tomcat SAML Integration</name>
-    <properties>
-        <maven.compiler.target>1.7</maven.compiler.target>
-        <maven.compiler.source>1.7</maven.compiler.source>
-    </properties>
     <description />
 
     <dependencies>

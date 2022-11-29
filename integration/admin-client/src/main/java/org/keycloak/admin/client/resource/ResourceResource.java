@@ -18,7 +18,6 @@ package org.keycloak.admin.client.resource;
 
 import java.util.List;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 
@@ -37,7 +36,6 @@ public interface ResourceResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
     ResourceRepresentation toRepresentation();
 
     @PUT
@@ -49,7 +47,6 @@ public interface ResourceResource {
 
     @Path("permissions")
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     List<PolicyRepresentation> permissions();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,7 +64,7 @@ public class PolicyEvaluationResponseBuilder {
         authorizationData.setPermissions(decision.results());
         accessToken.setAuthorization(authorizationData);
 
-        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
+        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getClientId());
 
         if (!accessToken.hasAudience(clientModel.getClientId())) {
             accessToken.audience(clientModel.getClientId());
@@ -182,6 +182,7 @@ public class PolicyEvaluationResponseBuilder {
 
         PolicyRepresentation representation = new PolicyRepresentation();
         Policy policy = result.getPolicy();
+        ResourceServer resourceServer = policy.getResourceServer();
 
         representation.setId(policy.getId());
         representation.setName(policy.getName());
@@ -194,7 +195,7 @@ public class PolicyEvaluationResponseBuilder {
 
             filters.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
 
-            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, policy.getResourceServer().getId(), -1, 1);
+            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer.getRealm(), resourceServer, filters, -1, 1);
 
             if (!tickets.isEmpty()) {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();

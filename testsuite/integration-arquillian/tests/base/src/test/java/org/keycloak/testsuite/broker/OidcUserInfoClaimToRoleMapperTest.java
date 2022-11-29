@@ -1,9 +1,6 @@
 package org.keycloak.testsuite.broker;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.mappers.ClaimToRoleMapper;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -14,18 +11,28 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
-import java.util.Arrays;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @author <a href="mailto:dashaylan@gmail.com">Dashaylan Naidoo</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
+ */
 public class OidcUserInfoClaimToRoleMapperTest extends AbstractRoleMapperTest {
 
     protected static final String ATTRIBUTE_TO_MAP_USER_INFO = "user-attribute-info";
     private static final String USER_INFO_CLAIM = ATTRIBUTE_TO_MAP_USER_INFO;
     private static final String USER_INFO_CLAIM_VALUE = "value 1";
-    private String claimOnSecondLogin = "";
+    private static final String CLAIM_ON_SECOND_LOGIN = "";
 
 
     @Override
@@ -35,69 +42,63 @@ public class OidcUserInfoClaimToRoleMapperTest extends AbstractRoleMapperTest {
 
     @Test
     public void singleClaimValueInUserInfoMatches() {
-        createClaimToRoleMapper(USER_INFO_CLAIM_VALUE);
-        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
-                .put(USER_INFO_CLAIM, ImmutableList.<String>builder().add(USER_INFO_CLAIM_VALUE).build())
-                .build());
+        createClaimToRoleMapper();
+        createUserInProviderRealm(createUserConfig());
 
         logInAsUserInIDPForFirstTime();
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void noRoleAddedIfUserInfoDisabledAndOnlyClaimIsInUserInfo() {
-        createClaimToRoleMapperWithUserInfoDisabledInIdP(USER_INFO_CLAIM_VALUE);
-        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
-                .put(USER_INFO_CLAIM, ImmutableList.<String>builder().add(USER_INFO_CLAIM_VALUE).build())
-                .build());
+        createClaimToRoleMapperWithUserInfoDisabledInIdP();
+        createUserInProviderRealm(createUserConfig());
 
         logInAsUserInIDPForFirstTime();
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
-    private void createClaimToRoleMapper(String claimValue) {
-        IdentityProviderRepresentation idp = setupIdentityProvider();
-        createClaimToRoleMapper(idp, claimValue, IdentityProviderMapperSyncMode.IMPORT);
+    private void createClaimToRoleMapper() {
+        setupIdentityProvider();
+        createClaimToRoleMapper(OidcUserInfoClaimToRoleMapperTest.USER_INFO_CLAIM_VALUE,
+                IdentityProviderMapperSyncMode.IMPORT, CLIENT_ROLE_MAPPER_REPRESENTATION);
     }
 
-    private void createClaimToRoleMapperWithUserInfoDisabledInIdP(String claimValue) {
-        IdentityProviderRepresentation idp = setupIdentityProviderDisableUserInfo();
-        createClaimToRoleMapper(idp, claimValue, IdentityProviderMapperSyncMode.IMPORT);
+    private void createClaimToRoleMapperWithUserInfoDisabledInIdP() {
+        setupIdentityProviderDisableUserInfo();
+        createClaimToRoleMapper(OidcUserInfoClaimToRoleMapperTest.USER_INFO_CLAIM_VALUE,
+                IdentityProviderMapperSyncMode.IMPORT, CLIENT_ROLE_MAPPER_REPRESENTATION);
     }
 
     @Override
-    protected void createMapperInIdp(IdentityProviderRepresentation idp, IdentityProviderMapperSyncMode syncMode) {
-        createClaimToRoleMapper(idp, USER_INFO_CLAIM_VALUE, syncMode);
+    protected void createMapperInIdp(IdentityProviderMapperSyncMode syncMode, String roleValue) {
+        createClaimToRoleMapper(USER_INFO_CLAIM_VALUE, syncMode, roleValue);
     }
 
     @Override
     protected void updateUser() {
         UserRepresentation user = findUser(bc.providerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        ImmutableMap<String, List<String>> mismatchingAttributes = ImmutableMap.<String, List<String>>builder()
-            .put(USER_INFO_CLAIM, ImmutableList.<String>builder().add(claimOnSecondLogin).build())
-            .build();
+        ImmutableMap<String, List<String>> mismatchingAttributes = ImmutableMap.<String, List<String>> builder()
+                .put(USER_INFO_CLAIM, ImmutableList.<String> builder().add(CLAIM_ON_SECOND_LOGIN).build())
+                .build();
         user.setAttributes(mismatchingAttributes);
         adminClient.realm(bc.providerRealmName()).users().get(user.getId()).update(user);
     }
 
-    private void createClaimToRoleMapper(IdentityProviderRepresentation idp, String claimValue, IdentityProviderMapperSyncMode syncMode) {
+    private void createClaimToRoleMapper(String claimValue, IdentityProviderMapperSyncMode syncMode, String roleValue) {
         IdentityProviderMapperRepresentation claimToRoleMapper = new IdentityProviderMapperRepresentation();
         claimToRoleMapper.setName("userinfo-claim-to-role-mapper");
         claimToRoleMapper.setIdentityProviderMapper(ClaimToRoleMapper.PROVIDER_ID);
-        claimToRoleMapper.setConfig(ImmutableMap.<String, String>builder()
-            .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
-            .put(ClaimToRoleMapper.CLAIM, OidcUserInfoClaimToRoleMapperTest.USER_INFO_CLAIM)
-            .put(ClaimToRoleMapper.CLAIM_VALUE, claimValue)
-            .put(ConfigConstants.ROLE, CLIENT_ROLE_MAPPER_REPRESENTATION)
-            .build());
+        claimToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+                .put(ClaimToRoleMapper.CLAIM, OidcUserInfoClaimToRoleMapperTest.USER_INFO_CLAIM)
+                .put(ClaimToRoleMapper.CLAIM_VALUE, claimValue)
+                .put(ConfigConstants.ROLE, roleValue)
+                .build());
 
-        IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
-        claimToRoleMapper.setIdentityProviderAlias(bc.getIDPAlias());
-        idpResource.addMapper(claimToRoleMapper).close();
+        persistMapper(claimToRoleMapper);
     }
 
     private class KcOidcBrokerConfigurationUserInfoOnlyMappers extends KcOidcBrokerConfiguration {
@@ -120,8 +121,8 @@ public class OidcUserInfoClaimToRoleMapperTest extends AbstractRoleMapperTest {
             userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "false");
             userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
 
-            for (ClientRepresentation client: clientsRepList) {
-                client.setProtocolMappers(Arrays.asList(userAttrMapper));
+            for (ClientRepresentation client : clientsRepList) {
+                client.setProtocolMappers(Collections.singletonList(userAttrMapper));
             }
 
             return clientsRepList;
@@ -135,4 +136,14 @@ public class OidcUserInfoClaimToRoleMapperTest extends AbstractRoleMapperTest {
         }
     }
 
+    @Override
+    protected Map<String, List<String>> createUserConfigForRole(String roleValue) {
+        return createUserConfig();
+    }
+
+    private static Map<String, List<String>> createUserConfig() {
+        return ImmutableMap.<String, List<String>> builder()
+                .put(USER_INFO_CLAIM, ImmutableList.<String> builder().add(USER_INFO_CLAIM_VALUE).build())
+                .build();
+    }
 }

@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SpiProvidersSwitchingUtils {
 
-    private static final String SUBSYSTEM_KEYCLOAK_SERVER_SPI = "/subsystem=keycloak-server/spi=";
     private static final String KEYCLOAKX_ARG_SPI_PREFIX = "--spi-";
     private static final Map<String, String> originalSettingsBackup = new ConcurrentHashMap<>();
     protected static final Logger log = Logger.getLogger(SpiProvidersSwitchingUtils.class);
@@ -47,50 +46,7 @@ public class SpiProvidersSwitchingUtils {
                 return "keycloak." + spiName + ".provider";
             }
         },
-        WILDFLY {
-            
-            @Override
-            public Optional<String> getCurrentDefaultProvider(Container container, String spiName,
-                    SetDefaultProvider annotation) {
-                String cliCmd = SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + ":read-attribute(name=default-provider)";
-                return runInCli(cliCmd).filter(ModelNodeResult::isSuccess)
-                        .map(n -> n.get("result").asString());
-            }
-
-            @Override
-            public void setDefaultProvider(Container container, String spiName, String providerId) {
-                runInCli(SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + "/:add(default-provider=\"" + providerId + "\")");
-            }
-
-            @Override
-            public void updateDefaultProvider(Container container, String spiName, String providerId) {
-                runInCli(SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + ":write-attribute(name=default-provider, value="
-                        + providerId + ")");
-            }
-
-            @Override
-            public void unsetDefaultProvider(Container container, String spiName) {
-                runInCli(SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + ":/:undefine-attribute(name=default-provider)");
-            }
-
-            @Override
-            public void removeProviderConfig(Container container, String spiName) {
-                runInCli(SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + "/:remove");
-            }
-
-            public Optional<ModelNodeResult> runInCli(String cliCmd) {
-                try (
-                        OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
-                ) {
-                    return Optional.ofNullable(client.execute(cliCmd));
-                } catch (CliException | IOException e) {
-                    // return empty optional, see below
-                }
-                return Optional.empty();
-            }
-        },
         QUARKUS {
-
             @Override
             public void setDefaultProvider(Container container, String spiName, String providerId) {
                 getQuarkusContainer(container).setAdditionalBuildArgs(Collections
@@ -156,10 +112,8 @@ public class SpiProvidersSwitchingUtils {
         public static SpiSwitcher getSpiSwitcherFor(ContainerInfo containerInfo) {
             if (containerInfo.isUndertow()) {
                 return SpiSwitcher.UNDERTOW;
-            } else if (containerInfo.isQuarkus()) {
-                return SpiSwitcher.QUARKUS;
             }
-            return SpiSwitcher.WILDFLY;
+            return SpiSwitcher.QUARKUS;
         }
     }
 

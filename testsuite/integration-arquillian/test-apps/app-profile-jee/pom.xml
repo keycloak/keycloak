@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-test-apps</artifactId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     
     <artifactId>keycloak-test-app-profile-jee</artifactId>

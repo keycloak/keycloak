@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.Map;
 
 public class FreeMarker {
@@ -37,8 +38,11 @@ public class FreeMarker {
             parent.mkdir();
         }
 
+        HashMap<String, Object> attrs = new HashMap<>(attributes);
+        attrs.put("id", template.split("/")[1].replace(".adoc", ""));
+
         Writer w = new FileWriter(out);
-        t.process(attributes, w);
+        t.process(attrs, w);
     }
 
 }

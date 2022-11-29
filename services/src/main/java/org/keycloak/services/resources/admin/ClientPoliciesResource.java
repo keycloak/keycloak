@@ -22,7 +22,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -40,21 +39,21 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 public class ClientPoliciesResource {
     protected static final Logger logger = Logger.getLogger(ClientPoliciesResource.class);
 
-    @Context
-    protected HttpRequest request;
+    protected final HttpRequest request;
 
-    @Context
-    protected HttpResponse response;
+    protected final HttpResponse response;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
 
-    public ClientPoliciesResource(RealmModel realm, AdminPermissionEvaluator auth) {
-        this.realm = realm;
+    public ClientPoliciesResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.response = session.getContext().getContextObject(HttpResponse.class);
     }
 
     @GET

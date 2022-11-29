@@ -106,7 +106,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginConfirmationPage.open();
 
         Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed.\n" +
-                "Key Usage bit 'dataEncipherment' is not set."));
+                "Certificate revoked or incorrect."));
     }
 
     @Test
@@ -516,8 +516,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     // KEYCLOAK-6866
     @Test
     public void changeLocaleOnX509InfoPage() {
-        ProfileAssume.assumeCommunity();
-
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);

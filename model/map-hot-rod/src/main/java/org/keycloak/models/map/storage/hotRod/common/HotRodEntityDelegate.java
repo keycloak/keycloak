@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,6 @@ package org.keycloak.models.map.storage.hotRod.common;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public interface HotRodEntityDelegate<E> extends AbstractEntity, UpdatableEntity {
+public interface HotRodEntityDelegate<E> extends UpdatableEntity {
     E getHotRodEntity();
 }

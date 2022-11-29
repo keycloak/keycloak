@@ -54,8 +54,6 @@ public class PolicyTypeService extends PolicyService {
             return null;
         }
 
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
         return resource;
     }
 
@@ -81,7 +79,9 @@ public class PolicyTypeService extends PolicyService {
             throw new RuntimeException("Failed to deserialize JSON using policy provider for type [" + type + "].", e);
         }
 
-        representation.setType(type);
+        if (!"js".equals(type) || representation.getType() == null) {
+            representation.setType(type);
+        }
 
         return representation;
     }

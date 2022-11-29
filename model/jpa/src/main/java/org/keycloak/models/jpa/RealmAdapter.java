@@ -43,7 +43,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
+public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     protected static final Logger logger = Logger.getLogger(RealmAdapter.class);
     protected RealmEntity realm;
     protected EntityManager em;
@@ -894,6 +894,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             otpPolicy.setLookAheadWindow(realm.getOtpPolicyLookAheadWindow());
             otpPolicy.setType(realm.getOtpPolicyType());
             otpPolicy.setPeriod(realm.getOtpPolicyPeriod());
+            otpPolicy.setCodeReusable(getAttribute(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE, OTPPolicy.DEFAULT_IS_REUSABLE));
         }
         return otpPolicy;
     }
@@ -906,6 +907,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         realm.setOtpPolicyLookAheadWindow(policy.getLookAheadWindow());
         realm.setOtpPolicyType(policy.getType());
         realm.setOtpPolicyPeriod(policy.getPeriod());
+        setAttribute(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE, policy.isCodeReusable());
         em.flush();
     }
 
@@ -1165,7 +1167,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
         RealmModel masterRealm = getName().equals(Config.getAdminRealm())
           ? this
-          : session.realms().getRealm(Config.getAdminRealm());
+          : session.realms().getRealmByName(Config.getAdminRealm());
         return session.clients().getClientById(masterRealm, masterAdminClientId);
     }
 
@@ -1797,6 +1799,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
+        if (getRequiredActionProviderByAlias(model.getAlias()) != null) {
+            throw new ModelDuplicateException("A Required Action Provider with given alias already exists.");
+        }
         RequiredActionProviderEntity auth = new RequiredActionProviderEntity();
         String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
         auth.setId(id);
@@ -1933,8 +1938,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    @Deprecated
     public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(this, search, first, max);
+        return session.groups().searchForGroupByNameStream(this, search, false, first, max);
     }
 
     @Override

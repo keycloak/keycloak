@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import com.google.common.collect.ImmutableMap;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.saml.mappers.AdvancedAttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
@@ -25,7 +23,8 @@ import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Runs the same tests as {@link AttributeToRoleMapperTest} but using multiple SAML mappers that map different IDP attributes
@@ -45,7 +44,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
  * mapper actually succeeds in applying the mapping, the other two do nothing as the test user doesn't have the necessary
  * role/attribute(s). The test then verifies that the user still contains the mapped role after all mappers run.
  *
- * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
+ * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public class KcSamlMultipleAttributeToRoleMappersTest extends AttributeToRoleMapperTest {
 
@@ -57,49 +57,48 @@ public class KcSamlMultipleAttributeToRoleMappersTest extends AttributeToRoleMap
             "]";
 
     @Override
-    protected void createMapperInIdp(IdentityProviderRepresentation idp, IdentityProviderMapperSyncMode syncMode) {
+    protected void createMapperInIdp(IdentityProviderMapperSyncMode syncMode, String roleValue) {
         // first mapper that maps a role the test user has - it should perform the mapping.
-        IdentityProviderMapperRepresentation firstSamlAttributeToRoleMapper = new IdentityProviderMapperRepresentation();
+        IdentityProviderMapperRepresentation firstSamlAttributeToRoleMapper =
+                new IdentityProviderMapperRepresentation();
         firstSamlAttributeToRoleMapper.setName("first-role-mapper");
         firstSamlAttributeToRoleMapper.setIdentityProviderMapper(AttributeToRoleMapper.PROVIDER_ID);
-        firstSamlAttributeToRoleMapper.setConfig(ImmutableMap.<String,String>builder()
+        firstSamlAttributeToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put(UserAttributeMapper.ATTRIBUTE_NAME, "Role")
                 .put(ATTRIBUTE_VALUE, ROLE_USER)
-                .put(ConfigConstants.ROLE, CLIENT_ROLE_MAPPER_REPRESENTATION)
+                .put(ConfigConstants.ROLE, roleValue)
                 .build());
 
-        IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
-        firstSamlAttributeToRoleMapper.setIdentityProviderAlias(bc.getIDPAlias());
-        idpResource.addMapper(firstSamlAttributeToRoleMapper).close();
+        persistMapper(firstSamlAttributeToRoleMapper);
 
-        // second mapper that maps a role the test user doesn't have - it would normally end up removing the mapped role but
-        // it should now check if a previous mapper has already granted the same mapped role.
-        IdentityProviderMapperRepresentation secondSamlAttributeToRoleMapper = new IdentityProviderMapperRepresentation();
+        // second mapper that maps a role the test user doesn't have - it would normally end up removing the mapped
+        // role, but it should now check if a previous mapper has already granted the same mapped role.
+        IdentityProviderMapperRepresentation secondSamlAttributeToRoleMapper =
+                new IdentityProviderMapperRepresentation();
         secondSamlAttributeToRoleMapper.setName("second-role-mapper");
         secondSamlAttributeToRoleMapper.setIdentityProviderMapper(AttributeToRoleMapper.PROVIDER_ID);
-        secondSamlAttributeToRoleMapper.setConfig(ImmutableMap.<String,String>builder()
+        secondSamlAttributeToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put(UserAttributeMapper.ATTRIBUTE_NAME, "Role")
                 .put(ATTRIBUTE_VALUE, "missing-role")
-                .put(ConfigConstants.ROLE, CLIENT_ROLE_MAPPER_REPRESENTATION)
+                .put(ConfigConstants.ROLE, roleValue)
                 .build());
 
-        secondSamlAttributeToRoleMapper.setIdentityProviderAlias(bc.getIDPAlias());
-        idpResource.addMapper(secondSamlAttributeToRoleMapper).close();
+        persistMapper(secondSamlAttributeToRoleMapper);
 
-        // third mapper (advanced) that maps an attribute the test user doesn't have - it would normally end up removing the
-        // mapped role but it should now check if a previous mapper has already granted the same role.
+        // third mapper (advanced) that maps an attribute the test user doesn't have - it would normally end up removing
+        // the mapped role, but it should now check if a previous mapper has already granted the same role.
         IdentityProviderMapperRepresentation thirdSamlAttributeToRoleMapper = new IdentityProviderMapperRepresentation();
         thirdSamlAttributeToRoleMapper.setName("advanced-role-mapper");
         thirdSamlAttributeToRoleMapper.setIdentityProviderMapper(AdvancedAttributeToRoleMapper.PROVIDER_ID);
-        thirdSamlAttributeToRoleMapper.setConfig(ImmutableMap.<String, String>builder()
+        thirdSamlAttributeToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put(AdvancedAttributeToRoleMapper.ATTRIBUTE_PROPERTY_NAME, ATTRIBUTES_TO_MATCH)
                 .put(AdvancedAttributeToRoleMapper.ARE_ATTRIBUTE_VALUES_REGEX_PROPERTY_NAME, Boolean.FALSE.toString())
-                .put(ConfigConstants.ROLE, CLIENT_ROLE_MAPPER_REPRESENTATION)
+                .put(ConfigConstants.ROLE, roleValue)
                 .build());
-        thirdSamlAttributeToRoleMapper.setIdentityProviderAlias(bc.getIDPAlias());
-        idpResource.addMapper(thirdSamlAttributeToRoleMapper).close();
+
+        persistMapper(thirdSamlAttributeToRoleMapper);
     }
 }

@@ -43,8 +43,6 @@ import org.keycloak.testsuite.util.AdminEventPaths;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.util.List;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -85,7 +83,6 @@ public class UserStorageRestTest extends AbstractAdminTest {
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testKerberosAuthenticatorEnabledAutomatically() {
         // Assert kerberos authenticator DISABLED
         AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();

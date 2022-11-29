@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Keycloak OIDC Client Adapter Modules</name>
@@ -33,33 +33,17 @@
     <modules>
         <module>adapter-core</module>
         <module>installed</module>
-        <module>fuse7</module>
         <module>jaxrs-oauth-client</module>
         <module>jetty</module>
         <module>js</module>
-        <module>osgi-adapter</module>
         <module>servlet-filter</module>
-        <module>spring-boot</module>
         <module>spring-boot2</module>
         <module>spring-boot-adapter-core</module>
         <module>spring-boot-container-bundle</module>
-        <module>spring-boot-legacy-container-bundle</module>
         <module>spring-security</module>
         <module>tomcat</module>
         <module>undertow</module>
         <module>wildfly</module>
         <module>wildfly-elytron</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>AS7</id>
-            <activation>
-                <jdk>[,9)</jdk>
-            </activation>
-            <modules>
-                <module>as7-eap6</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

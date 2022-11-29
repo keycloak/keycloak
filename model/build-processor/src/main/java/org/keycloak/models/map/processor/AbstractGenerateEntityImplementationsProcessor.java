@@ -51,6 +51,7 @@ import javax.lang.model.SourceVersion;
 import static org.keycloak.models.map.processor.FieldAccessorType.GETTER;
 import static org.keycloak.models.map.processor.Util.getGenericsDeclaration;
 import static org.keycloak.models.map.processor.Util.isMapType;
+import static org.keycloak.models.map.processor.Util.isSetType;
 import static org.keycloak.models.map.processor.Util.singularToPlural;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -165,7 +166,10 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
     }
 
     protected boolean isImmutableFinalType(TypeMirror fieldType) {
-        return isPrimitiveType(fieldType) || isBoxedPrimitiveType(fieldType) || Objects.equals("java.lang.String", fieldType.toString());
+        return isPrimitiveType(fieldType)
+                || isBoxedPrimitiveType(fieldType)
+                || isEnumType(fieldType)
+                || Objects.equals("java.lang.String", fieldType.toString());
     }
 
     protected boolean isKnownCollectionOfImmutableFinalTypes(TypeMirror fieldType) {
@@ -204,8 +208,26 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
                             ", (o1, o2) -> o1" +
                             ", java.util.HashMap::new" +
                     "))";
+        } else if (isCollection(typeElement.asType())) {
+            TypeMirror collectionType = getGenericsDeclaration(fieldType).get(0);
+            return parameterName + " == null ? null : " + parameterName + ".stream().map(entry -> " + deepClone(collectionType, "entry") + ").collect(java.util.stream.Collectors.toCollection(" + (isSetType(typeElement) ? "java.util.HashSet::new" : "java.util.LinkedList::new") + "))";
         }
         return "deepClone(" + parameterName + ")";
+    }
+
+    protected String removeUndefined(TypeMirror fieldType, String parameterName) {
+        TypeElement typeElement = elements.getTypeElement(types.erasure(fieldType).toString());
+        boolean isMapType = isMapType(typeElement);
+
+        return parameterName + (isMapType ? ".values()" : "") + ".removeIf(org.keycloak.models.map.common.UndefinedValuesUtils::isUndefined)";
+    }
+
+    protected String isUndefined(String parameterName) {
+        return "org.keycloak.models.map.common.UndefinedValuesUtils.isUndefined(" + parameterName + ")";
+    }
+
+    protected boolean isEnumType(TypeMirror fieldType) {
+        return types.asElement(fieldType).getKind() == ElementKind.ENUM;
     }
 
     protected boolean isPrimitiveType(TypeMirror fieldType) {

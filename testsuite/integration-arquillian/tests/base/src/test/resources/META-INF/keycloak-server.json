@@ -25,6 +25,14 @@
         "provider": "${keycloak.eventsStore.provider:jpa}",
         "jpa": {
             "max-detail-length": "${keycloak.eventsStore.maxDetailLength:1000}"
+        },
+        "map": {
+            "storage-admin-events": {
+                "provider": "${keycloak.adminEventsStore.map.storage.provider:concurrenthashmap}"
+            },
+            "storage-auth-events": {
+                "provider": "${keycloak.authEventsStore.map.storage.provider:concurrenthashmap}"
+            }
         }
     },
 
@@ -43,8 +51,8 @@
         }
     },
 
-    "dblock": {
-        "provider": "${keycloak.dblock.provider:jpa}"
+    "globalLock": {
+        "provider": "${keycloak.globalLock.provider:dblock}"
     },
 
     "realm": {
@@ -116,10 +124,7 @@
     "userSessions": {
         "provider": "${keycloak.userSession.provider:infinispan}",
         "map": {
-            "storage-user-sessions": {
-                "provider": "${keycloak.userSession.map.storage.provider:concurrenthashmap}"
-            },
-            "storage-client-sessions": {
+            "storage": {
                 "provider": "${keycloak.userSession.map.storage.provider:concurrenthashmap}"
             }
         }
@@ -134,13 +139,32 @@
         }
     },
 
+    "singleUseObject": {
+        "provider": "${keycloak.singleUseObject.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.singleUseObject.map.storage.provider:concurrenthashmap}"
+            }
+        }
+    },
+
+    "publicKeyStorage": {
+        "provider": "${keycloak.publicKeyStorage.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.publicKeyStorage.map.storage.provider:concurrenthashmap}"
+            }
+        }
+    },
+
     "mapStorage": {
         "concurrenthashmap": {
             "dir": "${project.build.directory:target}",
+            "keyType.single-use-objects": "string",
             "keyType.realms": "string",
             "keyType.authz-resource-servers": "string"
         },
-        "jpa-map-storage": {
+        "jpa": {
             "url": "${keycloak.map.storage.connectionsJpa.url:}",
             "user": "${keycloak.map.storage.connectionsJpa.user:}",
             "password": "${keycloak.map.storage.connectionsJpa.password:}",
@@ -167,13 +191,24 @@
         }
     },
 
+    "authorizationCache": {
+        "default": {
+            "enabled": "${keycloak.authorizationCache.enabled:true}"
+        }
+    },
+
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:default}",
         "default" : {
-            "enabled": true
+            "enabled": "${keycloak.userCache.enabled:true}"
         },
         "mem": {
             "maxSize": 20000
+        }
+    },
+
+    "publicKeyCache": {
+        "default" : {
+            "enabled": "${keycloak.publicKeyCache.enabled:true}"
         }
     },
 
@@ -229,9 +264,8 @@
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:default}",
         "default" : {
-            "enabled": true
+            "enabled": "${keycloak.realmCache.enabled:true}"
         }
     },
 
@@ -254,11 +288,11 @@
 
     "connectionsHotRod": {
         "default": {
-            "embedded": "${keycloak.connectionsHotRod.embedded:false}",
-            "port": "${keycloak.connectionsHotRod.port:14232}",
+            "port": "${keycloak.connectionsHotRod.port:11222}",
+            "host": "${keycloak.connectionsHotRod.host:127.0.0.1}",
             "configureRemoteCaches": "${keycloak.connectionsHotRod.configureRemoteCaches:true}",
-            "username": "${keycloak.connectionsHotRod.username:myuser}",
-            "password": "${keycloak.connectionsHotRod.password:qwer1234!}",
+            "username": "${keycloak.connectionsHotRod.username:admin}",
+            "password": "${keycloak.connectionsHotRod.password:admin}",
             "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:true}"
         }
     },
@@ -268,6 +302,7 @@
             "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
             "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
+            "type": "${keycloak.truststore.type:}",
             "disabled": "${keycloak.truststore.disabled:false}"
         }
     },

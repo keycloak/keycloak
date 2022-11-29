@@ -24,13 +24,13 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PushedAuthzRequestStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
-import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.par.ParResponse;
 import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
+import org.keycloak.protocol.oidc.par.endpoints.request.ParEndpointRequestParserProcessor;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.utils.ProfileHelper;
@@ -39,7 +39,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -59,8 +58,7 @@ public class ParEndpoint extends AbstractParEndpoint {
     private static final String REQUEST_URI_PREFIX = "urn:ietf:params:oauth:request_uri:";
     public static final int REQUEST_URI_PREFIX_LENGTH = REQUEST_URI_PREFIX.length();
 
-    @Context
-    private HttpRequest httpRequest;
+    private final HttpRequest httpRequest;
 
     private AuthorizationEndpointRequest authorizationRequest;
 
@@ -71,6 +69,7 @@ public class ParEndpoint extends AbstractParEndpoint {
 
     public ParEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
+        this.httpRequest = session.getContext().getContextObject(HttpRequest.class);
     }
 
     @Path("/")
@@ -94,7 +93,7 @@ public class ParEndpoint extends AbstractParEndpoint {
         }
 
         try {
-            authorizationRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, httpRequest.getDecodedFormParameters());
+            authorizationRequest = ParEndpointRequestParserProcessor.parseRequest(event, session, client, httpRequest.getDecodedFormParameters());
         } catch (Exception e) {
             throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST_OBJECT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -146,8 +145,8 @@ public class ParEndpoint extends AbstractParEndpoint {
 
         Map<String, String> params = new HashMap<>();
 
-        UUID key = UUID.randomUUID();
-        String requestUri = REQUEST_URI_PREFIX + key.toString();
+        String key = UUID.randomUUID().toString();
+        String requestUri = REQUEST_URI_PREFIX + key;
 
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
 
@@ -158,8 +157,8 @@ public class ParEndpoint extends AbstractParEndpoint {
             });
         params.put(PAR_CREATED_TIME, String.valueOf(System.currentTimeMillis()));
 
-        PushedAuthzRequestStoreProvider parStore = session.getProvider(PushedAuthzRequestStoreProvider.class);
-        parStore.put(key, expiresIn, params);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        singleUseStore.put(key, expiresIn, params);
 
         ParResponse parResponse = new ParResponse(requestUri, expiresIn);
 

@@ -96,7 +96,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 String errorMessage = "Certificate validation's failed.";
                 // TODO is calling form().setErrors enough to show errors on login screen?
                 context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
-                        errorMessage, e.getMessage()));
+                        errorMessage, "Certificate revoked or incorrect."));
                 context.attempted();
                 return;
             }
@@ -139,7 +139,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 return;
             }
 
-            String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+            String bruteForceError = getDisabledByBruteForceEventError(context, user);
             if (bruteForceError != null) {
                 context.getEvent().user(user);
                 context.getEvent().error(bruteForceError);
@@ -165,13 +165,11 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
             // Check whether to display the identity confirmation
             if (!config.getConfirmationPageDisallowed()) {
-                // FIXME calling forceChallenge was the only way to display
+                // Calling forceChallenge was the only way to display
                 // a form to let users either choose the user identity from certificate
                 // or to ignore it and proceed to a normal login screen. Attempting
                 // to call the method "challenge" results in a wrong/unexpected behavior.
-                // The question is whether calling "forceChallenge" here is ok from
-                // the design viewpoint?
-                context.forceChallenge(createSuccessResponse(context, certs[0].getSubjectDN().getName()));
+                context.forceChallenge(createSuccessResponse(context, certs[0].getSubjectDN().toString()));
                 // Do not set the flow status yet, we want to display a form to let users
                 // choose whether to accept the identity from certificate or to specify username/password explicitly
             }

@@ -33,6 +33,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.auth.page.login.DeleteAccountActionConfirmPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
@@ -49,6 +50,9 @@ public class DeleteAccountTest extends BaseAccountPageTest {
 
   @Page
   private DeleteAccountActionConfirmPage deleteAccountActionConfirmPage;
+
+  @Page
+  private PasswordPage passwordPage;
 
   @Rule
   public AssertEvents events = new AssertEvents(this);
@@ -90,7 +94,9 @@ public class DeleteAccountTest extends BaseAccountPageTest {
     personalInfoPage.assertDeleteAccountSectionVisible(true);
     personalInfoPage.clickOpenDeleteExapandable();
     personalInfoPage.clickDeleteAccountButton();
-    loginPage.form().login(testUser);
+
+    reauthenticateUser();
+
     Assert.assertTrue(deleteAccountActionConfirmPage.isCurrent());
     deleteAccountActionConfirmPage.clickCancelAIA();
     Assert.assertTrue(personalInfoPage.isCurrent());
@@ -102,7 +108,9 @@ public class DeleteAccountTest extends BaseAccountPageTest {
     personalInfoPage.assertDeleteAccountSectionVisible(true);
     personalInfoPage.clickOpenDeleteExapandable();
     personalInfoPage.clickDeleteAccountButton();
-    loginPage.form().login(testUser);
+
+    reauthenticateUser();
+
     Assert.assertTrue(deleteAccountActionConfirmPage.isCurrent());
     removeDeleteAccountRoleFromUserClientRoles();
     deleteAccountActionConfirmPage.clickConfirmAction();
@@ -116,11 +124,18 @@ public class DeleteAccountTest extends BaseAccountPageTest {
     personalInfoPage.assertDeleteAccountSectionVisible(true);
     personalInfoPage.clickOpenDeleteExapandable();
     personalInfoPage.clickDeleteAccountButton();
-    loginPage.form().login(testUser);
+
+    reauthenticateUser();
+
     deleteAccountActionConfirmPage.isCurrent();
     deleteAccountActionConfirmPage.clickConfirmAction();
     events.expectAccount(EventType.DELETE_ACCOUNT);
     Assert.assertTrue(testRealmResource().users().search(testUser.getUsername()).isEmpty());
+  }
+
+  private void reauthenticateUser() {
+    passwordPage.assertCurrent();
+    passwordPage.login("password");
   }
 
   private void addDeleteAccountRoleToUserClientRoles() {

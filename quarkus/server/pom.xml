@@ -7,7 +7,7 @@
     <parent>
         <artifactId>keycloak-quarkus-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -19,11 +19,13 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-quarkus-server-deployment</artifactId>
-        </dependency>
     </dependencies>
+
+    <properties>
+        <!-- define this as a property, so it can still be overwritten on the CLI -->
+        <!-- direct the auto-created files to the target folder, so they are cleaned by "mvn clean" -->
+        <kc.home.dir>${project.build.directory}/kc</kc.home.dir>
+    </properties>
 
     <build>
         <finalName>keycloak</finalName>
@@ -43,6 +45,9 @@
                 <version>${quarkus.version}</version>
                 <configuration>
                     <finalName>keycloak</finalName>
+                    <systemProperties>
+                        <kc.home.dir>${kc.home.dir}</kc.home.dir>
+                    </systemProperties>
                 </configuration>
                 <executions>
                     <execution>
@@ -54,4 +59,15 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>snyk-quarkus</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-quarkus-server-deployment</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

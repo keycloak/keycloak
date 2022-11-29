@@ -125,6 +125,10 @@ public class HttpMethodAuthenticator<R> {
             if (metadata.getLimit() != null) {
                 method.param("response_permissions_limit", metadata.getLimit().toString());
             }
+
+            if (metadata.getResponseMode() != null) {
+                method.param("response_mode", metadata.getResponseMode());
+            }
         }
 
         return method;

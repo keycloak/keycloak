@@ -34,7 +34,7 @@
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/licenses</directory>
-            <outputDirectory>docs/licenses-${product.slot}</outputDirectory>
+            <outputDirectory>docs/licenses-keycloak</outputDirectory>
         </fileSet>
     </fileSets>
     <files>

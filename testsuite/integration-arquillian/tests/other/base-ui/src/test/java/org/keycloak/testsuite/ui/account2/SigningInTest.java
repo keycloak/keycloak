@@ -50,7 +50,7 @@ import static org.keycloak.testsuite.util.WaitUtils.pause;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class SigningInTest extends BaseAccountPageTest {
-    public static final String PASSWORD_LABEL = "My Password";
+    public static final String PASSWORD_LABEL = "My password";
 
     @Page
     private SigningInPage signingInPage;
@@ -91,8 +91,8 @@ public class SigningInTest extends BaseAccountPageTest {
         testContext.setTestRealmReps(emptyList()); // reimport realm after this test
 
         assertThat(signingInPage.getCategoriesCount(), is(2));
-        assertThat(signingInPage.getCategoryTitle("basic-authentication"), is("Basic Authentication"));
-        assertThat(signingInPage.getCategoryTitle("two-factor"), is("Two-Factor Authentication"));
+        assertThat(signingInPage.getCategoryTitle("basic-authentication"), is("Basic authentication"));
+        assertThat(signingInPage.getCategoryTitle("two-factor"), is("Two-factor authentication"));
     }
 
     @Test
@@ -160,7 +160,7 @@ public class SigningInTest extends BaseAccountPageTest {
 
         signingInPage.assertCurrent();
         assertThat(otpCredentialType.isSetUp(), is(false));
-        assertThat(otpCredentialType.getTitle(), is("Authenticator Application"));
+        assertThat(otpCredentialType.getTitle(), is("authenticator application"));
 
         final String label1 = "OTP is secure";
         final String label2 = "OTP is inconvenient";

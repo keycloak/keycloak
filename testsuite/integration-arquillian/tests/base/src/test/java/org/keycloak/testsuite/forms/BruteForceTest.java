@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -35,8 +36,6 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -52,6 +51,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.mail.internet.MimeMessage;
 import java.net.MalformedURLException;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Map;
 
@@ -60,13 +60,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
     private static String userId;
@@ -111,6 +109,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         testRealm.setMaxDeltaTimeSeconds(20);
         testRealm.setMaxFailureWaitSeconds(100);
         testRealm.setWaitIncrementSeconds(5);
+        testRealm.setOtpPolicyCodeReusable(true);
         //testRealm.setQuickLoginCheckMilliSeconds(0L);
 
         userId = user.getId();
@@ -129,6 +128,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             realm.setMaxDeltaTimeSeconds(20);
             realm.setMaxFailureWaitSeconds(100);
             realm.setWaitIncrementSeconds(5);
+            realm.setOtpPolicyCodeReusable(true);
             adminClient.realm("test").update(realm);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -564,7 +564,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(REMOTE) // GreenMailRule is not working atm
     public void testResetPassword() throws Exception {
         String userId = adminClient.realm("test").users().search("user2", null, null, null, 0, 1).get(0).getId();
 
@@ -602,7 +601,9 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        appPage.logout();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        appPage.logout(idTokenHint);
 
         events.clear();
     }
@@ -682,7 +683,9 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().assertEvent();
 
-        appPage.logout();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        appPage.logout(idTokenHint);
         events.clear();
 
 
@@ -709,7 +712,9 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
-        appPage.logout();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        appPage.logout(idTokenHint);
         events.clear();
     }
 

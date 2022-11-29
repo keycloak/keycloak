@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -120,12 +120,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.resteasy</groupId>
-                                            <artifactId>resteasy-jaxrs</artifactId>
-                                            <version>${tomcat.resteasy.version}</version>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.jboss.resteasy</groupId>
-                                            <artifactId>resteasy-servlet-initializer</artifactId>
+                                            <artifactId>resteasy-core</artifactId>
                                             <version>${tomcat.resteasy.version}</version>
                                         </artifactItem>
                                         <artifactItem>
@@ -295,14 +290,7 @@
                 </plugins>
             </build>
         </profile>
-        
-        <profile>
-            <id>app-server-tomcat7</id>
-            <modules>
-                <module>tomcat7</module>
-                <module>common</module>
-            </modules>
-        </profile>
+
         <profile>
             <id>app-server-tomcat8</id>
             <modules>

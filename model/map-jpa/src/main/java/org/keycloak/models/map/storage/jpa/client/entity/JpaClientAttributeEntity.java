@@ -16,88 +16,22 @@
  */
 package org.keycloak.models.map.storage.jpa.client.entity;
 
-import java.io.Serializable;
-import java.util.Objects;
-import java.util.UUID;
-import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import org.hibernate.annotations.Nationalized;
+import javax.persistence.UniqueConstraint;
+
+import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
 
 @Entity
-@Table(name = "client_attribute")
-public class JpaClientAttributeEntity implements Serializable {
-
-    @Id
-    @Column
-    @GeneratedValue
-    private UUID id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="fk_client")
-    private JpaClientEntity client;
-
-    @Column
-    private String name;
-
-    @Nationalized
-    @Column
-    private String value;
+@Table(name = "kc_client_attribute", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"fk_root", "name", "value"})
+})
+public class JpaClientAttributeEntity extends JpaAttributeEntity<JpaClientEntity> {
 
     public JpaClientAttributeEntity() {
     }
 
-    public JpaClientAttributeEntity(JpaClientEntity client, String name, String value) {
-        this.client = client;
-        this.name = name;
-        this.value = value;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public JpaClientEntity getClient() {
-        return client;
-    }
-
-    public void setClient(JpaClientEntity client) {
-        this.client = client;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
- 
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof JpaClientAttributeEntity)) return false;
-        JpaClientAttributeEntity that = (JpaClientAttributeEntity) obj;
-        return Objects.equals(getClient(), that.getClient()) &&
-               Objects.equals(getName(), that.getName()) &&
-               Objects.equals(getValue(), that.getValue());
+    public JpaClientAttributeEntity(JpaClientEntity root, String name, String value) {
+        super(root, name, value);
     }
 }

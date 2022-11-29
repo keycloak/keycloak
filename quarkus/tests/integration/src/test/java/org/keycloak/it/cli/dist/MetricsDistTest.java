@@ -20,13 +20,26 @@ package org.keycloak.it.cli.dist;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 
 @DistributionTest(keepAlive =true)
 public class MetricsDistTest {
+
+    @Test
+    @Launch({ "start-dev" })
+    void testMetricsEndpointNotEnabled() {
+        when().get("/metrics").then()
+                .statusCode(404);
+        when().get("/q/metrics").then()
+                .statusCode(404);
+    }
 
     @Test
     @Launch({ "start-dev", "--metrics-enabled=true" })
@@ -42,5 +55,47 @@ public class MetricsDistTest {
         when().get("/auth/metrics").then()
                 .statusCode(200)
                 .body(containsString("base_gc_total"));
+    }
+
+    @Test
+    @Launch({ "start-dev", "--metrics-enabled=true" })
+    void testMetricsEndpointDoesNotEnableHealth() {
+        when().get("/health").then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testUsingRelativePath(KeycloakDistribution distribution) {
+        for (String relativePath : List.of("/auth", "/auth/")) {
+            distribution.run("start-dev", "--metrics-enabled=true", "--http-relative-path=" + relativePath);
+            if (!relativePath.endsWith("/")) {
+                relativePath = relativePath + "/";
+            }
+            when().get(relativePath + "metrics").then().statusCode(200);
+            distribution.stop();
+        }
+    }
+
+    @Test
+    void testMultipleRequests(KeycloakDistribution distribution) throws Exception {
+        for (String relativePath : List.of("/", "/auth/")) {
+            distribution.run("start-dev", "--metrics-enabled=true", "--http-relative-path=" + relativePath);
+            CompletableFuture future = CompletableFuture.completedFuture(null);
+
+            for (int i = 0; i < 3; i++) {
+                future = CompletableFuture.allOf(CompletableFuture.runAsync(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (int i = 0; i < 200; i++) {
+                            when().get(relativePath + "metrics").then().statusCode(200);
+                        }
+                    }
+                }), future);
+            }
+
+            future.get(5, TimeUnit.MINUTES);
+
+            distribution.stop();
+        }
     }
 }

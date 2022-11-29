@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,75 +17,46 @@
 
 package org.keycloak.models.map.authorization.entity;
 
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
-
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
-import java.util.Objects;
 
-public class MapScopeEntity extends UpdatableEntity.Impl implements AbstractEntity {
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.authorization.entity.MapScopeEntity.AbstractMapScopeEntity"
+)
+@DeepCloner.Root
+public interface MapScopeEntity extends UpdatableEntity, AbstractEntity {
 
-    private String id;
-    private String name;
-    private String displayName;
-    private String iconUri;
-    private String resourceServerId;
+    public abstract class AbstractMapScopeEntity extends UpdatableEntity.Impl implements MapScopeEntity {
 
-    public MapScopeEntity(String id) {
-        this.id = id;
+        private String id;
+
+        @Override
+        public String getId() {
+            return this.id;
+        }
+
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
     }
 
-    public MapScopeEntity() {}
+    String getRealmId();
+    void setRealmId(String realmId);
 
-    @Override
-    public String getId() {
-        return id;
-    }
+    String getName();
+    void setName(String name);
 
-    @Override
-    public void setId(String id) {
-        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
-        this.id = id;
-        this.updated |= id != null;
-    }
+    String getDisplayName();
+    void setDisplayName(String displayName);
 
-    public String getName() {
-        return name;
-    }
+    String getIconUri();
+    void setIconUri(String iconUri);
 
-    public void setName(String name) {
-        this.updated |= !Objects.equals(this.name, name);
-        this.name = name;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.updated |= !Objects.equals(this.displayName, displayName);
-        this.displayName = displayName;
-    }
-
-    public String getIconUri() {
-        return iconUri;
-    }
-
-    public void setIconUri(String iconUri) {
-        this.updated |= !Objects.equals(this.iconUri, iconUri);
-        this.iconUri = iconUri;
-    }
-
-    public String getResourceServerId() {
-        return resourceServerId;
-    }
-
-    public void setResourceServerId(String resourceServerId) {
-        this.updated |= !Objects.equals(this.resourceServerId, resourceServerId);
-        this.resourceServerId = resourceServerId;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s@%08x", getId(), System.identityHashCode(this));
-    }
+    String getResourceServerId();
+    void setResourceServerId(String resourceServerId);
 }

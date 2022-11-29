@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -129,6 +130,10 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             updatePairwiseSubMappers(clientModel, SubjectType.parse(clientOIDC.getSubjectType()), clientOIDC.getSectorIdentifierUri());
             updateClientRepWithProtocolMappers(clientModel, client);
 
+            client.setSecret(clientModel.getSecret());
+            client.getAttributes().put(ClientSecretConstants.CLIENT_SECRET_EXPIRATION,clientModel.getAttribute(ClientSecretConstants.CLIENT_SECRET_EXPIRATION));
+            client.getAttributes().put(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME,clientModel.getAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME));
+
             validateClient(clientModel, clientOIDC, false);
 
             URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
@@ -159,7 +164,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
                 } else {
                     return false;
                 }
-            }).forEach((ProtocolMapperModel mapping) -> {
+            }).collect(Collectors.toList()).forEach((ProtocolMapperModel mapping) -> {
                 PairwiseSubMapperHelper.setSectorIdentifierUri(mapping, sectorIdentifierUri);
                 clientModel.updateProtocolMapper(mapping);
             });

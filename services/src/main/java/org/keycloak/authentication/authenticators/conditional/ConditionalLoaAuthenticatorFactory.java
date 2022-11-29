@@ -20,15 +20,18 @@ package org.keycloak.authentication.authenticators.conditional;
 import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowCallbackFactory;
+import org.keycloak.authentication.Authenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
-public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthenticatorFactory, AuthenticationFlowCallbackFactory {
+public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthenticatorFactory, AuthenticationFlowCallbackFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "conditional-level-of-authentication";
-    private static final ConditionalLoaAuthenticator SINGLETON = new ConditionalLoaAuthenticator();
     private static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = new AuthenticationExecutionModel.Requirement[]{
             AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.DISABLED
@@ -42,13 +45,18 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
             .type(ProviderConfigProperty.STRING_TYPE)
             .add()
             .property()
-            .name(ConditionalLoaAuthenticator.STORE_IN_USER_SESSION)
-            .label(ConditionalLoaAuthenticator.STORE_IN_USER_SESSION)
-            .helpText(ConditionalLoaAuthenticator.STORE_IN_USER_SESSION + ".tooltip")
-            .type(ProviderConfigProperty.BOOLEAN_TYPE)
-            .defaultValue("true")
+            .name(ConditionalLoaAuthenticator.MAX_AGE)
+            .label(ConditionalLoaAuthenticator.MAX_AGE)
+            .helpText(ConditionalLoaAuthenticator.MAX_AGE + ".tooltip")
+            .type(ProviderConfigProperty.STRING_TYPE)
+            .defaultValue(ConditionalLoaAuthenticator.DEFAULT_MAX_AGE) // 10 hours
             .add()
             .build();
+
+    @Override
+    public Authenticator create(KeycloakSession session) {
+        return new ConditionalLoaAuthenticator(session);
+    }
 
     @Override
     public void init(Config.Scope config) { }
@@ -67,11 +75,6 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
     @Override
     public String getDisplayType() {
         return "Condition - Level of Authentication";
-    }
-
-    @Override
-    public String getReferenceCategory() {
-        return "condition";
     }
 
     @Override
@@ -101,6 +104,12 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
 
     @Override
     public ConditionalAuthenticator getSingleton() {
-        return SINGLETON;
+        // NOP - instance created in create() method
+        return null;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION);
     }
 }

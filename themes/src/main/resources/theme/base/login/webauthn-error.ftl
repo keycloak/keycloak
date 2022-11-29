@@ -18,25 +18,6 @@
             <input type="hidden" id="isSetRetry" name="isSetRetry"/>
         </form>
 
-        <#if authenticators??>
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>${kcSanitize(msg("webauthn-available-authenticators"))?no_esc}</th>
-                </tr>
-                </thead>
-                <tbody>
-                <#list authenticators.authenticators as authenticator>
-                    <tr>
-                        <th>
-                            <span id="kc-webauthn-authenticator">${kcSanitize(authenticator.label)?no_esc}</span>
-                        </th>
-                    </tr>
-                </#list>
-                </tbody>
-            </table>
-        </#if>
-
         <input tabindex="4" onclick="refreshPage()" type="button"
                class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
                name="try-again" id="kc-try-again" value="${kcSanitize(msg("doTryAgain"))?no_esc}"
@@ -46,7 +27,7 @@
             <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form" method="post">
                 <button type="submit"
                         class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                        id="cancelWebAuthnAIA" name="cancel-aia" value="true"/>${msg("doCancel")}
+                        id="cancelWebAuthnAIA" name="cancel-aia" value="true">${msg("doCancel")}
                 </button>
             </form>
         </#if>

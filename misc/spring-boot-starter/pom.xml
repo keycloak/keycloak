@@ -5,7 +5,7 @@
     <parent>
         <artifactId>keycloak-misc-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-spring-boot-starter-parent</artifactId>

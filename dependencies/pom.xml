@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -34,4 +34,19 @@
         <module>server-min</module>
         <module>server-all</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>skip-admin2</id>
+            <activation>
+                <property>
+                    <name>!skipAdmin2</name>
+                </property>
+            </activation>
+            <modules>
+                <module>admin-ui</module>
+            </modules>
+        </profile>
+    </profiles>
+
 </project>

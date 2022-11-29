@@ -62,12 +62,20 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getRealm(), context.getHttpRequest().getHttpHeaders());
 
-        if (loginHint != null || rememberMeUsername != null) {
-            if (loginHint != null) {
-                formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
-            } else {
-                formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
-                formData.add("rememberMe", "on");
+        if (context.getUser() != null) {
+            LoginFormsProvider form = context.form();
+            form.setAttribute(LoginFormsProvider.USERNAME_HIDDEN, true);
+            form.setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true);
+            context.getAuthenticationSession().setAuthNote(USER_SET_BEFORE_USERNAME_PASSWORD_AUTH, "true");
+        } else {
+            context.getAuthenticationSession().removeAuthNote(USER_SET_BEFORE_USERNAME_PASSWORD_AUTH);
+            if (loginHint != null || rememberMeUsername != null) {
+                if (loginHint != null) {
+                    formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
+                } else {
+                    formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
+                    formData.add("rememberMe", "on");
+                }
             }
         }
         Response challengeResponse = challenge(context, formData);

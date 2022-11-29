@@ -18,7 +18,12 @@
 package org.keycloak.common.util;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:jeroen.rosenberg@gmail.com">Jeroen Rosenberg</a>
@@ -43,16 +48,45 @@ public class CollectionUtil {
 
     // Return true if all items from col1 are in col2 and viceversa. Order is not taken into account
     public static <T> boolean collectionEquals(Collection<T> col1, Collection<T> col2) {
-        if (col1.size() != col2.size()) {
+        if (col1.size()!=col2.size()) {
             return false;
         }
-
-        for (T item : col1) {
-            if (!col2.contains(item)) {
+        Map<T, Integer> countMap = new HashMap<>();
+        for(T o : col1) {
+            Integer v = countMap.get(o);
+            countMap.put(o, v==null ? 1 : v+1);
+        }
+        for(T o : col2) {
+            Integer v = countMap.get(o);
+            if (v==null) {
+                return false;
+            }
+            countMap.put(o, v-1);
+        }
+        for(Integer count : countMap.values()) {
+            if (count!=0) {
                 return false;
             }
         }
-
         return true;
+    }
+
+    public static boolean isEmpty(Collection<?> collection) {
+        return collection == null || collection.isEmpty();
+    }
+
+    public static boolean isNotEmpty(Collection<?> collection) {
+        return !isEmpty(collection);
+    }
+
+    public static <T> Set<T> intersection(Collection<T> col1, Collection<T> col2) {
+        if (isEmpty(col1) || isEmpty(col2)) return Collections.emptySet();
+
+        final Collection<T> iteratorCollection = col1.size() <= col2.size() ? col1 : col2;
+        final Collection<T> searchCollection = iteratorCollection.equals(col1) ? col2 : col1;
+
+        return iteratorCollection.stream()
+                .filter(searchCollection::contains)
+                .collect(Collectors.toSet());
     }
 }

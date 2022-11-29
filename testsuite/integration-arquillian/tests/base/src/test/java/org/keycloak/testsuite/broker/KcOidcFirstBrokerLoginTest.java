@@ -7,6 +7,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.openqa.selenium.NoSuchElementException;
 
 import static org.junit.Assert.assertEquals;
@@ -22,6 +23,9 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
     @Page
     protected LoginUpdateProfilePage loginUpdateProfilePage;
+
+    @Page
+    protected RegisterPage registerPage;
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -276,5 +280,43 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         Assert.assertEquals("no-first-name@localhost.com", accountUpdateProfilePage.getEmail());
         Assert.assertEquals("new-username", accountUpdateProfilePage.getUsername());
 
+    }
+
+    @Test
+    public void shouldOfferOidcOptionOnLoginPageAfterUserTriedToLogInButDecidedNotTo() {
+        updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
+
+        final var realmRepresentation = adminClient.realm(bc.consumerRealmName()).toRepresentation();
+        realmRepresentation.setRegistrationAllowed(true);
+        adminClient.realm(bc.consumerRealmName()).update(realmRepresentation);
+
+        createUser(bc.providerRealmName(), "idp-cancel-test", "password", "IDP", "Cancel", "idp-cancel@localhost.com");
+
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+
+        loginPage.clickRegister();
+        registerPage.clickBackToLogin();
+
+        String urlWhenBackFromRegistrationPage = driver.getCurrentUrl();
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+            driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        log.debug("Logging in");
+        loginPage.login("idp-cancel-test", "password");
+
+        waitForPage(driver, "update account information", false);
+        driver.navigate().back();
+        driver.navigate().back();
+        log.debug("Went back to the login screen.");
+        String urlWhenWentBackFromIdpLogin = driver.getCurrentUrl();
+
+        assertEquals(urlWhenBackFromRegistrationPage, urlWhenWentBackFromIdpLogin);
+
+        log.debug("Should not fail here... We're still not logged in, so the IDP should be shown on the login page.");
+        assertTrue("We should be on the login page.", driver.getPageSource().contains("Sign in to your account"));
+        final var socialButton = this.loginPage.findSocialButton(bc.getIDPAlias());
     }
 }

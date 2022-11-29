@@ -52,5 +52,8 @@ end-if
 if (outcome != success) of /subsystem=undertow/application-security-domain=other:read-resource
     /subsystem=undertow/application-security-domain=other:add(http-authentication-factory=keycloak-http-authentication)
 else
-    echo Undertow already configured with Keycloak
+    batch
+    /subsystem=undertow/application-security-domain=other:undefine-attribute(name=security-domain)
+    /subsystem=undertow/application-security-domain=other:write-attribute(name=http-authentication-factory,value=keycloak-http-authentication)
+    run-batch
 end-if

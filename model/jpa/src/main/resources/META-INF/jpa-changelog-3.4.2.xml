@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="3.4.2">
+        <validCheckSum>7:b40376581f12d70f3c89ba8ddf5b7dea</validCheckSum>
         <!-- KEYCLOAK-5868 REFRESH_TOKEN_MAX_REUSE added in 3.4.0.CR1, but value for existing realms is null -->
         <update tableName="REALM">
             <column name="REFRESH_TOKEN_MAX_REUSE" type="INT" valueNumeric="0"/>
@@ -26,6 +27,7 @@
     </changeSet>
 
     <changeSet author="mkanis@redhat.com" id="3.4.2-KEYCLOAK-5172">
+        <validCheckSum>7:a1132cc395f7b95b3646146c2e38f168</validCheckSum>
         <update tableName="CLIENT">
             <column name="PROTOCOL" type="VARCHAR(255)" value="openid-connect"/>
             <where>PROTOCOL IS NULL</where>

@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
@@ -44,7 +44,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     protected boolean rollback;
     protected final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
     protected final ConcurrentHashMapCrudOperations<V, M> map;
-    protected final StringKeyConvertor<K> keyConvertor;
+    protected final StringKeyConverter<K> keyConverter;
     protected final DeepCloner cloner;
     protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
 
@@ -52,9 +52,9 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapCrudOperations<V, M> map, StringKeyConvertor<K> keyConvertor, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
+    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapCrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
         this.map = map;
-        this.keyConvertor = keyConvertor;
+        this.keyConverter = keyConverter;
         this.cloner = cloner;
         this.fieldPredicates = fieldPredicates;
     }
@@ -99,7 +99,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     }
 
     private MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
-        return new MapModelCriteriaBuilder<K, V, M>(keyConvertor, fieldPredicates);
+        return new MapModelCriteriaBuilder<K, V, M>(keyConverter, fieldPredicates);
     }
 
     /**
@@ -220,8 +220,8 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     public V create(V value) {
         String key = value.getId();
         if (key == null) {
-            K newKey = keyConvertor.yieldNewUniqueKey();
-            key = keyConvertor.keyToString(newKey);
+            K newKey = keyConverter.yieldNewUniqueKey();
+            key = keyConverter.keyToString(newKey);
             value = cloner.from(key, value);
         } else {
             value = cloner.from(value);
@@ -249,7 +249,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
 
     @Override
     public boolean delete(String key) {
-        addTask(key, new DeleteOperation(key));
+        tasks.merge(key, new DeleteOperation(key), this::merge);
         return true;
     }
 
@@ -257,7 +257,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     public long delete(QueryParameters<M> queryParameters) {
         log.tracef("Adding operation DELETE_BULK");
 
-        K artificialKey = keyConvertor.yieldNewUniqueKey();
+        K artificialKey = keyConverter.yieldNewUniqueKey();
 
         // Remove all tasks that create / update / delete objects deleted by the bulk removal.
         final BulkDeleteOperation bdo = new BulkDeleteOperation(queryParameters);
@@ -272,14 +272,14 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
             }
         }
 
-        tasks.put(keyConvertor.keyToString(artificialKey), bdo);
+        tasks.put(keyConverter.keyToString(artificialKey), bdo);
 
         return res + bdo.getCount();
     }
 
     private Stream<V> createdValuesStream(Predicate<? super K> keyFilter, Predicate<? super V> entityFilter) {
         return this.tasks.entrySet().stream()
-          .filter(me -> keyFilter.test(keyConvertor.fromStringSafe(me.getKey())))
+          .filter(me -> keyFilter.test(keyConverter.fromStringSafe(me.getKey())))
           .map(Map.Entry::getValue)
           .filter(v -> v.containsCreate() && ! v.isReplace())
           .map(MapTaskWithValue::getValue)
@@ -411,7 +411,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
             
             Predicate<? super V> entityFilter = mmcb.getEntityFilter();
             Predicate<? super K> keyFilter = mmcb.getKeyFilter();
-            return v -> v == null || ! (keyFilter.test(keyConvertor.fromStringSafe(v.getId())) && entityFilter.test(v));
+            return v -> v == null || ! (keyFilter.test(keyConverter.fromStringSafe(v.getId())) && entityFilter.test(v));
         }
 
         @Override

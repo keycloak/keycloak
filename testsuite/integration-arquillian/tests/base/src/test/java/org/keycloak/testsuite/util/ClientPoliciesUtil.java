@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
@@ -40,6 +41,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCond
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
@@ -47,7 +49,8 @@ import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutor;
-import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionCondition;
+import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionCondition;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutor;
 import org.keycloak.util.JsonSerialization;
 
 import java.util.ArrayList;
@@ -218,6 +221,13 @@ public final class ClientPoliciesUtil {
         return config;
     }
 
+    public static IntentClientBindCheckExecutor.Configuration createIntentClientBindCheckExecutorConfig(String intentName, String endpoint) {
+        IntentClientBindCheckExecutor.Configuration config = new IntentClientBindCheckExecutor.Configuration();
+        config.setIntentName(intentName);
+        config.setIntentClientBindCheckEndpoint(endpoint);
+        return config;
+    }
+
     public static class ClientPoliciesBuilder {
         private final ClientPoliciesRepresentation policiesRep;
 
@@ -302,8 +312,14 @@ public final class ClientPoliciesUtil {
 
     // Client Policies - Condition CRUD Operations
 
-    public static TestRaiseExeptionCondition.Configuration createTestRaiseExeptionConditionConfig() {
-        return new TestRaiseExeptionCondition.Configuration();
+    public static TestRaiseExceptionCondition.Configuration createTestRaiseExeptionConditionConfig() {
+        return new TestRaiseExceptionCondition.Configuration();
+    }
+
+    public static TestRaiseExceptionExecutor.Configuration createTestRaiseExeptionExecutorConfig(List<ClientPolicyEvent> events) {
+        TestRaiseExceptionExecutor.Configuration conf = new TestRaiseExceptionExecutor.Configuration();
+        conf.setEvents(events);
+        return conf;
     }
 
     public static ClientPolicyConditionConfigurationRepresentation createAnyClientConditionConfig() {
@@ -331,7 +347,7 @@ public final class ClientPoliciesUtil {
     public static ClientScopesCondition.Configuration createClientScopesConditionConfig(String type, List<String> scopes) {
         ClientScopesCondition.Configuration config = new ClientScopesCondition.Configuration();
         config.setType(type);
-        config.setScope(scopes);
+        config.setScopes(scopes);
         return config;
     }
 

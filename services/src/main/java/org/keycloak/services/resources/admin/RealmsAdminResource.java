@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -34,6 +33,8 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.ExportImportManager;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -45,10 +46,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Objects;
@@ -65,16 +65,16 @@ import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
  */
 public class RealmsAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmsAdminResource.class);
-    protected AdminAuth auth;
-    protected TokenManager tokenManager;
+    protected final AdminAuth auth;
+    protected final TokenManager tokenManager;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected ClientConnection clientConnection;
+    protected final ClientConnection clientConnection;
 
-    public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager) {
+    public RealmsAdminResource(KeycloakSession session, AdminAuth auth, TokenManager tokenManager) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
         this.auth = auth;
         this.tokenManager = tokenManager;
     }
@@ -114,23 +114,21 @@ public class RealmsAdminResource {
     }
 
     /**
-     * Import a realm
-     *
+     * Import a realm.
+     * <p>
      * Imports a realm from a full representation of that realm.  Realm name must be unique.
      *
-     * @param rep JSON representation of the realm
-     * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response importRealm(final RealmRepresentation rep) {
-        RealmManager realmManager = new RealmManager(session);
+    public Response importRealm(InputStream requestBody) {
         AdminPermissions.realms(session, auth).requireCreateRealm();
 
-        logger.debugv("importRealm: {0}", rep.getRealm());
+        ExportImportManager exportImportManager = session.getProvider(DatastoreProvider.class).getExportImportManager();
 
         try {
-            RealmModel realm = realmManager.importRealm(rep);
+            RealmModel realm = exportImportManager.importRealm(requestBody);
+
             grantPermissionsToRealmCreator(realm);
 
             URI location = AdminRoot.realmsUrl(session.getContext().getUri()).path(realm.getName()).build();
@@ -139,6 +137,7 @@ public class RealmsAdminResource {
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
             logger.error("Conflict detected", e);
+            if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.exists("Conflict detected. See logs for details");
         } catch (PasswordPolicyNotMetException e) {
             logger.error("Password policy not met for user " + e.getUsername(), e);
@@ -166,13 +165,12 @@ public class RealmsAdminResource {
      * @return
      */
     @Path("{realm}")
-    public RealmAdminResource getRealmAdmin(@Context final HttpHeaders headers,
-                                            @PathParam("realm") final String name) {
+    public RealmAdminResource getRealmAdmin(@PathParam("realm") final String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) throw new NotFoundException("Realm not found.");
 
-        if (!auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())
+        if (!RealmManager.isAdministrationRealm(auth.getRealm())
                 && !auth.getRealm().equals(realm)) {
             throw new ForbiddenException();
         }
@@ -181,10 +179,7 @@ public class RealmsAdminResource {
         AdminEventBuilder adminEvent = new AdminEventBuilder(realm, auth, session, clientConnection);
         session.getContext().setRealm(realm);
 
-        RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
-        //resourceContext.initResource(adminResource);
-        return adminResource;
+        return new RealmAdminResource(session, realmAuth, adminEvent);
     }
 
 }

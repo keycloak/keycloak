@@ -29,9 +29,6 @@ public class WebAuthnErrorPage extends LanguageComboboxAwarePage {
     @FindBy(className = "alert-error")
     private WebElement errorMessage;
 
-    @FindBy(id = "kc-webauthn-authenticator")
-    private List<WebElement> authenticators;
-
     public void clickTryAgain() {
         WaitUtils.waitUntilElement(tryAgainButton).is().clickable();
         tryAgainButton.click();
@@ -51,25 +48,6 @@ public class WebAuthnErrorPage extends LanguageComboboxAwarePage {
             return UIUtils.getTextFromElement(errorMessage);
         } catch (NoSuchElementException e) {
             return null;
-        }
-    }
-
-    public int getAuthenticatorsCount() {
-        try {
-            return authenticators.size();
-        } catch (NoSuchElementException e) {
-            return 0;
-        }
-    }
-
-    public List<String> getAuthenticators() {
-        try {
-            return authenticators.stream()
-                    .filter(Objects::nonNull)
-                    .map(UIUtils::getTextFromElement)
-                    .collect(Collectors.toList());
-        } catch (NoSuchElementException e) {
-            return Collections.emptyList();
         }
     }
 

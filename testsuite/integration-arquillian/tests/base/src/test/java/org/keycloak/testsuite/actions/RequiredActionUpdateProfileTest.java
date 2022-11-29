@@ -16,6 +16,10 @@
  */
 package org.keycloak.testsuite.actions;
 
+import static org.junit.Assert.assertFalse;
+
+import java.util.Arrays;
+import java.util.HashMap;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -29,8 +33,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -39,11 +43,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
-
-import static org.junit.Assert.assertFalse;
-
-import java.util.Arrays;
-import java.util.HashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -107,8 +106,8 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         updateProfilePage.assertCurrent();
         assertFalse(updateProfilePage.isCancelDisplayed());
 
-        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
-        
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
+
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
                 .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
                 .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
@@ -137,7 +136,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "john-doh@localhost", "new");
+        updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last").email("john-doh@localhost").submit();
 
         events.expectLogin().event(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
                 .detail(Details.UPDATED_LAST_NAME, "New last").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
@@ -167,7 +166,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("", "New last", "new@email.com", "new");
+        updateProfilePage.prepareUpdate().username("new").firstName("").lastName("New last").email("new@email.com").submit();
 
         updateProfilePage.assertCurrent();
 
@@ -192,7 +191,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "", "new@email.com", "new");
+        updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("").email("new@email.com").submit();
 
         updateProfilePage.assertCurrent();
 
@@ -217,7 +216,8 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "", "new");
+        updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last")
+                .email("").submit();
 
         updateProfilePage.assertCurrent();
 
@@ -239,7 +239,8 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "invalidemail", "invalid");
+        updateProfilePage.prepareUpdate().username("invalid").firstName("New first").lastName("New last")
+                        .email("invalidemail").submit();
 
         updateProfilePage.assertCurrent();
 
@@ -261,7 +262,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "new@email.com", "");
+        updateProfilePage.prepareUpdate().username("").firstName("New first").lastName("New last").email("new@email.com").submit();
 
         updateProfilePage.assertCurrent();
 
@@ -284,7 +285,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
         updateProfilePage.assertCurrent();
 
@@ -307,7 +308,8 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "keycloak-user@localhost", "test-user@localhost");
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last")
+                .email("keycloak-user@localhost").submit();
 
         updateProfilePage.assertCurrent();
 
@@ -331,7 +333,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         // Expire cookies and assert the page with "back to application" link present
         driver.manage().deleteAllCookies();
 
-        updateProfilePage.update("New first", "New last", "keycloak-user@localhost", "test-user@localhost");
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("keycloak-user@localhost").submit();
         errorPage.assertCurrent();
 
         String backToAppLink = errorPage.getBackToApplicationLink();
@@ -357,7 +359,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         updateProfilePage.assertCurrent();
         assertFalse(updateProfilePage.isCancelDisplayed());
 
-        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
 

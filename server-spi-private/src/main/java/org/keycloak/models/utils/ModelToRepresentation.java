@@ -17,17 +17,23 @@
 
 package org.keycloak.models.utils;
 
+import org.jboss.logging.Logger;
+import org.keycloak.authentication.otp.OTPApplicationProvider;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
@@ -35,19 +41,25 @@ import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.models.*;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -101,20 +113,15 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
     }
 
-
-    public static void buildGroupPath(StringBuilder sb, GroupModel group) {
-        if (group.getParent() != null) {
-            buildGroupPath(sb, group.getParent());
-        }
-        sb.append('/').append(group.getName());
-    }
+    private static final Logger LOG = Logger.getLogger(ModelToRepresentation.class);
 
     public static String buildGroupPath(GroupModel group) {
-        StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group);
-        return sb.toString();
+        return KeycloakModelUtils.buildGroupPath(group);
     }
 
+    public static GroupRepresentation groupToBriefRepresentation(GroupModel g) {
+        return toRepresentation(g, false);
+    }
 
     public static GroupRepresentation toRepresentation(GroupModel group, boolean full) {
         GroupRepresentation rep = new GroupRepresentation();
@@ -143,9 +150,33 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static Stream<GroupRepresentation> searchGroupsByAttributes(KeycloakSession session, RealmModel realm, boolean full, Map<String,String> attributes, Integer first, Integer max) {
+        return session.groups().searchGroupsByAttributes(realm, attributes, first, max)
+                // We need to return whole group hierarchy when any child group fulfills the attribute search,
+                // therefore for each group from the result, we need to find root group
+                .map(group -> {
+                    while (Objects.nonNull(group.getParentId())) {
+                        group = group.getParent();
+                    }
+                    return group;
+                })
+
+                // More child groups of one root can fulfill the search, so we need to filter duplicates
+                .filter(StreamsUtil.distinctByKey(GroupModel::getId))
+
+                // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
+                .map(g -> toGroupHierarchy(g, full, attributes));
+    }
+
+    @Deprecated
     public static Stream<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max) {
         return realm.searchForGroupByNameStream(search, first, max)
-                .map(g -> toGroupHierarchy(g, full, search));
+            .map(g -> toGroupHierarchy(g, full, search));
+    }
+
+    public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
+        return session.groups().searchForGroupByNameStream(realm, search, exact, first, max)
+                .map(g -> toGroupHierarchy(g, full, search, exact));
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
@@ -174,27 +205,48 @@ public class ModelToRepresentation {
     }
 
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
-        return toGroupHierarchy(group, full, null);
+        return toGroupHierarchy(group, full, (String) null);
     }
 
+    @Deprecated
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search) {
+        return toGroupHierarchy(group, full, search, false);
+    }
+
+    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search, Boolean exact) {
         GroupRepresentation rep = toRepresentation(group, full);
         List<GroupRepresentation> subGroups = group.getSubGroupsStream()
-                .filter(g -> groupMatchesSearchOrIsPathElement(g, search))
-                .map(subGroup -> toGroupHierarchy(subGroup, full, search)).collect(Collectors.toList());
+                .filter(g -> groupMatchesSearchOrIsPathElement(g, search, exact))
+                .map(subGroup -> toGroupHierarchy(subGroup, full, search, exact)).collect(Collectors.toList());
         rep.setSubGroups(subGroups);
         return rep;
     }
 
-    private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search) {
+    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, Map<String,String> attributes) {
+        GroupRepresentation rep = toRepresentation(group, full);
+        List<GroupRepresentation> subGroups = group.getSubGroupsStream()
+                .map(subGroup -> toGroupHierarchy(subGroup, full, attributes)).collect(Collectors.toList());
+        rep.setSubGroups(subGroups);
+        return rep;
+    }
+
+    private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search, Boolean exact) {
         if (StringUtil.isBlank(search)) {
             return true;
         }
-        if (group.getName().contains(search)) {
-            return true;
+        if(exact !=null && exact.equals(true)){
+            if (group.getName().equals(search)){
+                return true;
+            }
+        } else {
+            if (group.getName().contains(search)) {
+                return true;
+            }
         }
+
         return group.getSubGroupsStream().findAny().isPresent();
     }
+
 
     public static UserRepresentation toRepresentation(KeycloakSession session, RealmModel realm, UserModel user) {
         UserRepresentation rep = new UserRepresentation();
@@ -208,9 +260,9 @@ public class ModelToRepresentation {
         rep.setEmail(user.getEmail());
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE));
-        rep.setDisableableCredentialTypes(session.userCredentialManager()
-                .getDisableableCredentialTypesStream(realm, user).collect(Collectors.toSet()));
+        rep.setTotp(user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE));
+        rep.setDisableableCredentialTypes(user.credentialManager()
+                .getDisableableCredentialTypesStream().collect(Collectors.toSet()));
         rep.setFederationLink(user.getFederationLink());
         rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
         rep.setRequiredActions(user.getRequiredActionsStream().collect(Collectors.toList()));
@@ -405,7 +457,14 @@ public class ModelToRepresentation {
         rep.setOtpPolicyInitialCounter(otpPolicy.getInitialCounter());
         rep.setOtpPolicyType(otpPolicy.getType());
         rep.setOtpPolicyLookAheadWindow(otpPolicy.getLookAheadWindow());
-        rep.setOtpSupportedApplications(otpPolicy.getSupportedApplications());
+
+        rep.setOtpPolicyCodeReusable(otpPolicy.isCodeReusable());
+
+        rep.setOtpSupportedApplications(session.getAllProviders(OTPApplicationProvider.class)
+                .stream()
+                .filter(p -> p.supports(otpPolicy))
+                .map(OTPApplicationProvider::getName)
+                .collect(Collectors.toList()));
 
         WebAuthnPolicy webAuthnPolicy = realm.getWebAuthnPolicy();
         rep.setWebAuthnPolicyRpEntityName(webAuthnPolicy.getRpEntityName());
@@ -554,6 +613,25 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    /**
+     * Handles exceptions that occur when transforming the model to a representation and will remove
+     * all null objects from the stream.
+     *
+     * Entities that have been removed from the store or where a lazy loading exception occurs will not show up
+     * in the output stream.
+     */
+    public static <M, R> Stream<R> filterValidRepresentations(Stream<M> models, Function<M, R> transformer) {
+        return models.map(m -> {
+                    try {
+                        return transformer.apply(m);
+                    } catch (ModelIllegalStateException e) {
+                        LOG.warn("unable to retrieve model information, skipping entity", e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull);
+    }
+
     public static CredentialRepresentation toRepresentation(UserCredentialModel cred) {
         CredentialRepresentation rep = new CredentialRepresentation();
         rep.setType(CredentialRepresentation.SECRET);
@@ -569,6 +647,28 @@ public class ModelToRepresentation {
         rep.setCreatedDate(cred.getCreatedDate());
         rep.setSecretData(cred.getSecretData());
         rep.setCredentialData(cred.getCredentialData());
+        return rep;
+    }
+
+    public static CredentialMetadataRepresentation toRepresentation(CredentialMetadata credentialMetadata) {
+        CredentialMetadataRepresentation rep = new CredentialMetadataRepresentation();
+
+        rep.setCredential(ModelToRepresentation.toRepresentation(credentialMetadata.getCredentialModel()));
+        try {
+            rep.setInfoMessage(credentialMetadata.getInfoMessage() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getInfoMessage()));
+        } catch (IOException e) {
+            LOG.warn("unable to serialize model information, skipping info message", e);
+        }
+        try {
+            rep.setWarningMessageDescription(credentialMetadata.getWarningMessageDescription() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getWarningMessageDescription()));
+        } catch (IOException e) {
+            LOG.warn("unable to serialize model information, skipping warning message desc", e);
+        }
+        try {
+            rep.setWarningMessageTitle(credentialMetadata.getWarningMessageTitle() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getWarningMessageTitle()));
+        } catch (IOException e) {
+            LOG.warn("unable to serialize model information, skipping warning message title", e);
+        }
         return rep;
     }
 
@@ -588,6 +688,7 @@ public class ModelToRepresentation {
         rep.setUsername(session.getUser().getUsername());
         rep.setUserId(session.getUser().getId());
         rep.setIpAddress(session.getIpAddress());
+        rep.setRememberMe(session.isRememberMe());
         for (AuthenticatedClientSessionModel clientSession : session.getAuthenticatedClientSessions().values()) {
             ClientModel client = clientSession.getClient();
             rep.getClients().put(client.getId(), client.getClientId());
@@ -642,6 +743,13 @@ public class ModelToRepresentation {
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
 
+        // adding the secret if non public or bearer only
+        if (clientModel.isBearerOnly() || clientModel.isPublicClient()) {
+            rep.setSecret(null);
+        } else {
+            rep.setSecret(clientModel.getSecret());
+        }
+
         rep.setDefaultClientScopes(new LinkedList<>(clientModel.getClientScopes(true).keySet()));
         rep.setOptionalClientScopes(new LinkedList<>(clientModel.getClientScopes(false).keySet()));
 
@@ -666,7 +774,7 @@ public class ModelToRepresentation {
 
         if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(clientModel.getId());
+            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(clientModel);
 
             if (resourceServer != null) {
                 rep.setAuthorizationServicesEnabled(true);
@@ -861,7 +969,7 @@ public class ModelToRepresentation {
         ResourceServerRepresentation server = new ResourceServerRepresentation();
 
         server.setId(model.getId());
-        server.setClientId(model.getId());
+        server.setClientId(model.getClientId());
         server.setName(client.getClientId());
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
@@ -877,7 +985,7 @@ public class ModelToRepresentation {
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export) {
         return toRepresentation(policy, authorization, genericRepresentation, export, false);
     }
-    
+
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export, boolean allFields) {
         PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
         R representation;
@@ -902,10 +1010,11 @@ public class ModelToRepresentation {
         representation.setType(policy.getType());
         representation.setDecisionStrategy(policy.getDecisionStrategy());
         representation.setLogic(policy.getLogic());
-        
+
         if (allFields) {
-            representation.setResourcesData(policy.getResources().stream().map(
-                    resource -> toRepresentation(resource, resource.getResourceServer(), authorization, true)).collect(Collectors.toSet()));
+            representation.setResourcesData(policy.getResources().stream()
+                    .map(resource -> toRepresentation(resource, policy.getResourceServer(), authorization, true))
+                    .collect(Collectors.toSet()));
             representation.setScopesData(policy.getScopes().stream().map(
                     resource -> toRepresentation(resource)).collect(Collectors.toSet()));
         }
@@ -913,11 +1022,11 @@ public class ModelToRepresentation {
         return representation;
     }
 
-    public static ResourceRepresentation toRepresentation(Resource model, String resourceServer, AuthorizationProvider authorization) {
+    public static ResourceRepresentation toRepresentation(Resource model, ResourceServer resourceServer, AuthorizationProvider authorization) {
         return toRepresentation(model, resourceServer, authorization, true);
     }
 
-    public static ResourceRepresentation toRepresentation(Resource model, String resourceServer, AuthorizationProvider authorization, Boolean deep) {
+    public static ResourceRepresentation toRepresentation(Resource model, ResourceServer resourceServer, AuthorizationProvider authorization, Boolean deep) {
         ResourceRepresentation resource = new ResourceRepresentation();
 
         resource.setId(model.getId());
@@ -935,8 +1044,8 @@ public class ModelToRepresentation {
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
 
-        if (owner.getId().equals(resourceServer)) {
-            ClientModel clientModel = realm.getClientById(resourceServer);
+        if (owner.getId().equals(resourceServer.getClientId())) {
+            ClientModel clientModel = realm.getClientById(resourceServer.getClientId());
             owner.setName(clientModel.getClientId());
         } else {
             UserModel userModel = keycloakSession.users().getUserById(realm, owner.getId());
@@ -1010,4 +1119,100 @@ public class ModelToRepresentation {
 
         return representation;
     }
+
+    public static ResourceServerRepresentation toResourceServerRepresentation(KeycloakSession session, ClientModel client) {
+        AuthorizationProviderFactory providerFactory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
+        AuthorizationProvider authorization = providerFactory.create(session, client.getRealm());
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer settingsModel = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
+
+        if (settingsModel == null) {
+            return null;
+        }
+
+        ResourceServerRepresentation representation = toRepresentation(settingsModel, client);
+
+        representation.setId(null);
+        representation.setName(null);
+        representation.setClientId(null);
+
+        List<ResourceRepresentation> resources = storeFactory.getResourceStore().findByResourceServer(settingsModel)
+                .stream().map(resource -> {
+                    ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
+
+                    if (rep.getOwner().getId().equals(settingsModel.getClientId())) {
+                        rep.setOwner((ResourceOwnerRepresentation) null);
+                    } else {
+                        rep.getOwner().setId(null);
+                    }
+                    rep.getScopes().forEach(scopeRepresentation -> {
+                        scopeRepresentation.setId(null);
+                        scopeRepresentation.setIconUri(null);
+                    });
+
+                    return rep;
+                }).collect(Collectors.toList());
+
+        representation.setResources(resources);
+
+        List<PolicyRepresentation> policies = new ArrayList<>();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
+                .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope") && policy.getOwner() == null)
+                .map(policy -> toRepresentation(authorization, policy)).collect(Collectors.toList()));
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
+                .stream().filter(policy -> (policy.getType().equals("resource") || policy.getType().equals("scope") && policy.getOwner() == null))
+                .map(policy -> toRepresentation(authorization, policy)).collect(Collectors.toList()));
+
+        representation.setPolicies(policies);
+
+        List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel).stream().map(scope -> {
+            ScopeRepresentation rep = toRepresentation(scope);
+
+            rep.setPolicies(null);
+            rep.setResources(null);
+
+            return rep;
+        }).collect(Collectors.toList());
+
+        representation.setScopes(scopes);
+
+        return representation;
+    }
+
+    private static PolicyRepresentation toRepresentation(AuthorizationProvider authorizationProvider, Policy policy) {
+        try {
+            PolicyRepresentation rep = toRepresentation(policy, authorizationProvider, true, true);
+
+            Map<String, String> config = new HashMap<>(rep.getConfig());
+
+            rep.setConfig(config);
+
+            Set<Scope> scopes = policy.getScopes();
+
+            if (!scopes.isEmpty()) {
+                List<String> scopeNames = scopes.stream().map(Scope::getName).collect(Collectors.toList());
+                config.put("scopes", JsonSerialization.writeValueAsString(scopeNames));
+            }
+
+            Set<Resource> policyResources = policy.getResources();
+
+            if (!policyResources.isEmpty()) {
+                List<String> resourceNames = policyResources.stream().map(Resource::getName).collect(Collectors.toList());
+                config.put("resources", JsonSerialization.writeValueAsString(resourceNames));
+            }
+
+            Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+
+            if (!associatedPolicies.isEmpty()) {
+                config.put("applyPolicies", JsonSerialization.writeValueAsString(associatedPolicies.stream().map(associated -> associated.getName()).collect(Collectors.toList())));
+            }
+
+            return rep;
+        } catch (Exception e) {
+            throw new RuntimeException("Error while exporting policy [" + policy.getName() + "].", e);
+        }
+    }
+
 }

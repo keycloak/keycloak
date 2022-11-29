@@ -20,8 +20,11 @@ package org.keycloak.testsuite.webauthn.registration;
 import com.webauthn4j.data.UserVerificationRequirement;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import java.io.Closeable;
@@ -35,7 +38,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public class UserVerificationRegisterTest extends AbstractWebAuthnRegisterTest {
+@IgnoreBrowserDriver(FirefoxDriver.class)
+public class UserVerificationRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void discouragedAny() {
@@ -45,7 +49,7 @@ public class UserVerificationRegisterTest extends AbstractWebAuthnRegisterTest {
 
     @Test
     public void discouraged() {
-        assertUserVerification(true, UserVerificationRequirement.DISCOURAGED,
+        assertUserVerification(false, UserVerificationRequirement.DISCOURAGED,
                 auth -> auth.setHasUserVerification(true).setIsUserVerified(false));
     }
 
@@ -63,7 +67,7 @@ public class UserVerificationRegisterTest extends AbstractWebAuthnRegisterTest {
 
     @Test
     public void preferredVerificationWrong() {
-        assertUserVerification(true, UserVerificationRequirement.PREFERRED,
+        assertUserVerification(false, UserVerificationRequirement.PREFERRED,
                 auth -> auth.setHasUserVerification(true).setIsUserVerified(false));
     }
 
@@ -85,7 +89,6 @@ public class UserVerificationRegisterTest extends AbstractWebAuthnRegisterTest {
                 auth -> auth.setHasUserVerification(false));
     }
 
-    @Ignore("Not working")
     @Test
     public void required() {
         assertUserVerification(true, UserVerificationRequirement.REQUIRED,
@@ -107,7 +110,7 @@ public class UserVerificationRegisterTest extends AbstractWebAuthnRegisterTest {
             WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
             assertThat(realmData.getUserVerificationRequirement(), containsString(requirement.getValue()));
 
-            registerDefaultWebAuthnUser(shouldSuccess);
+            registerDefaultUser(shouldSuccess);
 
             displayErrorMessageIfPresent();
 

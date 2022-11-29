@@ -15,6 +15,7 @@ List of organization names below is based on information collected using Keycloa
 * Bluestem Brands, Inc
 * Bundesversicherungsamt
 * Capgemini
+* CERN (European Organisation for Nuclear Research)
 * Chassi
 * CloudNative Inc.
 * Conciso GmbH
@@ -54,4 +55,5 @@ List of organization names below is based on information collected using Keycloa
 * TrackingSport
 * TRT9 - Brasil
 * UnitedHealthcare
+* Wayfair LLC
 * ...More individuals

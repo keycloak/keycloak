@@ -16,12 +16,14 @@
  */
 package org.keycloak.storage.user;
 
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
  * This is an optional capability interface that is intended to be implemented by any
- * {@link org.keycloak.storage.UserStorageProvider UserStorageProvider} that supports basic user querying. You must
+ * <code>UserStorageProvider</code> that supports basic user querying. You must
  * implement this interface if you want to be able to log in to keycloak using users from your storage.
  * <p/>
  * Note that all methods in this interface should limit search only to data available within the storage that is
@@ -40,73 +42,41 @@ public interface UserLookupProvider {
      * @param realm the realm model
      * @return found user model, or {@code null} if no such user exists
      */
-    default UserModel getUserById(RealmModel realm, String id) {
-        return getUserById(id, realm);
-    }
-    /**
-     * @deprecated Use {@link #getUserById(RealmModel, String) getUserById} instead.
-     */
-    @Deprecated
-    UserModel getUserById(String id, RealmModel realm);
+    UserModel getUserById(RealmModel realm, String id);
 
     /**
+     * Exact search for a user by its username.
      * Returns a user with the given username belonging to the realm
      *
-     * @param username case insensitive username (case-sensitivity is controlled by storage)
+     * @param username (case-sensitivity is controlled by storage)
      * @param realm the realm model
      * @return found user model, or {@code null} if no such user exists
+     * @throws org.keycloak.models.ModelDuplicateException when searched with case 
+     * insensitive mode and there are more users with username which differs only 
+     * by case 
      */
-    default UserModel getUserByUsername(RealmModel realm, String username) {
-        return getUserByUsername(username, realm);
+    UserModel getUserByUsername(RealmModel realm, String username);
+
+    default CredentialValidationOutput getUserByCredential(RealmModel realm, CredentialInput input) {
+        return null;
     }
-    /**
-     * @deprecated Use {@link #getUserByUsername(RealmModel, String) getUserByUsername} instead.
-     */
-    @Deprecated
-    UserModel getUserByUsername(String username, RealmModel realm);
 
     /**
      * Returns a user with the given email belonging to the realm
      *
-     * @param email case insensitive email address (case-sensitivity is controlled by storage)
+     * @param email email address
      * @param realm the realm model
      * @return found user model, or {@code null} if no such user exists
      *
      * @throws org.keycloak.models.ModelDuplicateException when there are more users with same email
      */
-    default UserModel getUserByEmail(RealmModel realm, String email) {
-        return getUserByEmail(email, realm);
-    }
+    UserModel getUserByEmail(RealmModel realm, String email);
+
     /**
-     * @deprecated Use {@link #getUserByEmail(RealmModel, String) getUserByEmail} instead.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
     @Deprecated
-    UserModel getUserByEmail(String email, RealmModel realm);
-    
     interface Streams extends UserLookupProvider {
-        @Override
-        UserModel getUserById(RealmModel realm, String id);
-        
-        @Override
-        default UserModel getUserById(String id, RealmModel realm) {
-            return getUserById(realm, id);
-        }
-
-        @Override
-        UserModel getUserByUsername(RealmModel realm, String username);
-
-        @Override
-        default UserModel getUserByUsername(String username, RealmModel realm) {
-            return getUserByUsername(realm, username);
-        }
-
-        @Override
-        UserModel getUserByEmail(RealmModel realm, String email);
-
-        @Override
-        default UserModel getUserByEmail(String email, RealmModel realm) {
-            return getUserByEmail(realm, email);
-        }
-
     }
 }

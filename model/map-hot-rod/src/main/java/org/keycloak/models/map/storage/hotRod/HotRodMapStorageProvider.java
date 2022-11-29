@@ -17,39 +17,25 @@
 
 package org.keycloak.models.map.storage.hotRod;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
-import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
-import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
-import org.keycloak.models.map.common.StringKeyConvertor;
-import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 
 public class HotRodMapStorageProvider implements MapStorageProvider {
 
+    private final KeycloakSession session;
     private final HotRodMapStorageProviderFactory factory;
-    private final HotRodConnectionProvider connectionProvider;
-    private final DeepCloner cloner;
 
-    public HotRodMapStorageProvider(HotRodMapStorageProviderFactory factory, HotRodConnectionProvider connectionProvider, DeepCloner cloner) {
+    public HotRodMapStorageProvider(KeycloakSession session, HotRodMapStorageProviderFactory factory) {
+        this.session = session;
         this.factory = factory;
-        this.connectionProvider = connectionProvider;
-        this.cloner = cloner;
     }
 
     @Override
     public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
-        HotRodMapStorage storage = getHotRodStorage(modelType, flags);
-        return storage;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E>, M> HotRodMapStorage<String, E, V, M> getHotRodStorage(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
-        HotRodEntityDescriptor<E, V> entityDescriptor = (HotRodEntityDescriptor<E, V>) factory.getEntityDescriptor(modelType);
-        return new HotRodMapStorage<>(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConvertor.StringKey.INSTANCE, entityDescriptor, cloner);
+        return (MapStorage<V, M>) factory.getHotRodStorage(session, modelType, flags);
     }
 
     @Override

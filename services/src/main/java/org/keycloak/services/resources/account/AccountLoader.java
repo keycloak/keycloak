@@ -19,7 +19,6 @@ package org.keycloak.services.resources.account;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -39,7 +38,6 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
@@ -51,19 +49,19 @@ import java.util.List;
  */
 public class AccountLoader {
 
-    private KeycloakSession session;
-    private EventBuilder event;
+    private final KeycloakSession session;
+    private final EventBuilder event;
 
-    @Context
-    private HttpRequest request;
-    @Context
-    private HttpResponse response;
+    private final HttpRequest request;
+    private final HttpResponse response;
 
     private static final Logger logger = Logger.getLogger(AccountLoader.class);
 
     public AccountLoader(KeycloakSession session, EventBuilder event) {
         this.session = session;
         this.event = event;
+        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.response = session.getContext().getContextObject(HttpResponse.class);
     }
 
     @Path("/")
@@ -86,13 +84,11 @@ public class AccountLoader {
             return getAccountRestService(client, null);
         } else {
             if (deprecatedAccount) {
-                AccountFormService accountFormService = new AccountFormService(realm, client, event);
-                ResteasyProviderFactory.getInstance().injectProperties(accountFormService);
+                AccountFormService accountFormService = new AccountFormService(session, client, event);
                 accountFormService.init();
                 return accountFormService;
             } else {
-                AccountConsole console = new AccountConsole(realm, client, theme);
-                ResteasyProviderFactory.getInstance().injectProperties(console);
+                AccountConsole console = new AccountConsole(session, client, theme);
                 console.init();
                 return console;
             }
@@ -151,10 +147,7 @@ public class AccountLoader {
             }
         }
 
-        AccountRestService accountRestService = new AccountRestService(session, auth, client, event, version);
-        ResteasyProviderFactory.getInstance().injectProperties(accountRestService);
-        accountRestService.init();
-        return accountRestService;
+        return new AccountRestService(session, auth, event, version);
     }
 
     private ClientModel getAccountManagementClient(RealmModel realm) {

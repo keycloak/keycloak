@@ -31,7 +31,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -45,19 +44,19 @@ import javax.ws.rs.core.UriInfo;
 public class PublicRealmResource {
     protected static final Logger logger = Logger.getLogger(PublicRealmResource.class);
 
-    @Context
-    protected HttpRequest request;
+    protected final HttpRequest request;
 
-    @Context
-    protected HttpResponse response;
+    protected final HttpResponse response;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    public PublicRealmResource(RealmModel realm) {
-        this.realm = realm;
+    public PublicRealmResource(KeycloakSession session) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
+        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.response = session.getContext().getContextObject(HttpResponse.class);
     }
 
     /**

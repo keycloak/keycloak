@@ -17,9 +17,10 @@
 
 package org.keycloak.it.cli.dist;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
@@ -31,6 +32,18 @@ public class OptionValidationDistTest {
     @Test
     @Launch({"build", "--db=invalid"})
     public void failInvalidOptionValue(LaunchResult result) {
-        Assertions.assertTrue(result.getErrorOutput().contains("Invalid value for option '--db': invalid. Expected values are: h2-file, h2-mem, mariadb, mssql, mssql-2012, mysql, oracle, postgres, postgres-95"));
+        Assertions.assertTrue(result.getErrorOutput().contains("Invalid value for option '--db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
+    }
+
+    @Test
+    @Launch({"start-dev", "--test=invalid"})
+    public void testServerDoesNotStartIfValidationFailDuringReAugStartDev(LaunchResult result) {
+        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Unknown option: '--test'")).count());
+    }
+
+    @Test
+    @Launch({"start", "--test=invalid"})
+    public void testServerDoesNotStartIfValidationFailDuringReAugStart(LaunchResult result) {
+        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Unknown option: '--test'")).count());
     }
 }

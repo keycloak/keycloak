@@ -25,6 +25,7 @@ import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.*;
@@ -666,12 +667,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<RequiredCredentialModel> getRequiredCredentials() {
-        if (isUpdated()) return updated.getRequiredCredentials();
-        return cached.getRequiredCredentials();
-    }
-
-    @Override
     public void addRequiredCredential(String cred) {
         getDelegateForUpdate();
         updated.addRequiredCredential(cred);
@@ -1039,7 +1034,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public ClientModel getMasterAdminClient() {
-        return cached.getMasterAdminClient()==null ? null : cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
+        return cached.getMasterAdminClient()==null ? null : cacheSession.getRealmByName(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
     }
 
     @Override
@@ -1056,6 +1051,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public RoleModel getDefaultRole() {
+        if (isUpdated()) return updated.getDefaultRole();
         return cached.getDefaultRoleId() == null ? null : cacheSession.getRoleById(this, cached.getDefaultRoleId());
     }
 
@@ -1477,8 +1473,9 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    @Deprecated
     public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return cacheSession.searchForGroupByNameStream(this, search, first, max);
+        return cacheSession.searchForGroupByNameStream( this, search, false, first, max);
     }
 
     @Override
@@ -1566,7 +1563,7 @@ public class RealmAdapter implements CachedRealmModel {
         if (model == null) return;
         
         // if user cache is disabled this is null
-        UserCache userCache = session.userCache(); 
+        UserCache userCache = UserStorageUtil.userCache(session);
         if (userCache != null) {        
           // If not realm component, check to see if it is a user storage provider child component (i.e. LDAP mapper)
           if (model.getParentId() != null && !model.getParentId().equals(getId())) {

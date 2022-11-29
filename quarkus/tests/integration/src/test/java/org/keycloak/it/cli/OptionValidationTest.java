@@ -17,14 +17,17 @@
 
 package org.keycloak.it.cli;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
-import io.quarkus.test.junit.main.QuarkusMainLauncher;
+import org.keycloak.it.utils.KeycloakDistribution;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @CLITest
 public class OptionValidationTest {
@@ -32,12 +35,49 @@ public class OptionValidationTest {
     @Test
     @Launch({"build", "--db"})
     public void failMissingOptionValue(LaunchResult result) {
-        Assertions.assertTrue(result.getErrorOutput().contains("Missing required value for option '--db' (vendor). Expected values are: h2-file, h2-mem, mariadb, mssql, mssql-2012, mysql, oracle, postgres, postgres-95"));
+        CLIResult cliResult = (CLIResult) result;
+        assertThat(cliResult.getErrorOutput(), containsString("Missing required value for option '--db' (vendor). Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
     }
 
     @Test
     @Launch({"build", "--db", "foo", "bar"})
     public void failMultipleOptionValue(LaunchResult result) {
-        Assertions.assertTrue(result.getErrorOutput().contains("Option '--db' expects a single value (vendor) Expected values are: h2-file, h2-mem, mariadb, mssql, mssql-2012, mysql, oracle, postgres, postgres-95"));
+        CLIResult cliResult = (CLIResult) result;
+        assertThat(cliResult.getErrorOutput(), containsString("Option '--db' expects a single value (vendor) Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
+    }
+
+    @Test
+    @Launch({"build", "--nosuch"})
+    public void failUnknownOption(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertEquals("Unknown option: '--nosuch'\n" +
+                "Try '" + KeycloakDistribution.SCRIPT_CMD + " build --help' for more information on the available options.", cliResult.getErrorOutput());
+    }
+
+    @Test
+    @Launch({"start", "--db-pasword mytestpw"})
+    public void failUnknownOptionWhitespaceSeparatorNotShowingValue(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertEquals("Unknown option: '--db-pasword'\n" +
+                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db\n" +
+                "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
+    }
+
+    @Test
+    @Launch({"start", "--db-pasword=mytestpw"})
+    public void failUnknownOptionEqualsSeparatorNotShowingValue(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertEquals("Unknown option: '--db-pasword'\n" +
+                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db\n" +
+                "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
+    }
+
+    @Test
+    @Launch({"start", "--db-username=foobar","--db-pasword=mytestpw", "--foobar=barfoo"})
+    public void failWithFirstOptionOnMultipleUnknownOptions(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertEquals("Unknown option: '--db-pasword'\n" +
+                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db\n" +
+                "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
     }
 }

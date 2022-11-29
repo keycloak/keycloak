@@ -18,8 +18,8 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
-
 import org.keycloak.storage.SearchableModelField;
+
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -53,13 +53,21 @@ public interface UserModel extends RoleMapperModel {
     public static class SearchableFields {
         public static final SearchableModelField<UserModel> ID              = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<UserModel> REALM_ID        = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<UserModel> USERNAME        = new SearchableModelField<>("username", String.class);
         public static final SearchableModelField<UserModel> FIRST_NAME      = new SearchableModelField<>("firstName", String.class);
         public static final SearchableModelField<UserModel> LAST_NAME       = new SearchableModelField<>("lastName", String.class);
         public static final SearchableModelField<UserModel> EMAIL           = new SearchableModelField<>("email", String.class);
         public static final SearchableModelField<UserModel> ENABLED         = new SearchableModelField<>("enabled", Boolean.class);
         public static final SearchableModelField<UserModel> EMAIL_VERIFIED  = new SearchableModelField<>("emailVerified", Boolean.class);
         public static final SearchableModelField<UserModel> FEDERATION_LINK = new SearchableModelField<>("federationLink", String.class);
+
+        /**
+         * Search for user's username in case sensitive mode.
+         */
+        public static final SearchableModelField<UserModel> USERNAME        = new SearchableModelField<>("username", String.class);
+        /**
+         * Search for user's username in case insensitive mode.
+         */
+        public static final SearchableModelField<UserModel> USERNAME_CASE_INSENSITIVE = new SearchableModelField<>("usernameCaseInsensitive", String.class);
 
         /**
          * This field can only searched either for users coming from an IDP, then the operand is (idp_alias),
@@ -118,7 +126,7 @@ public interface UserModel extends RoleMapperModel {
      * Get timestamp of user creation. May be null for old users created before this feature introduction.
      */
     Long getCreatedTimestamp();
-    
+
     void setCreatedTimestamp(Long timestamp);
 
     boolean isEnabled();
@@ -144,41 +152,21 @@ public interface UserModel extends RoleMapperModel {
     String getFirstAttribute(String name);
 
     /**
-     * @param name
-     * @return list of all attribute values or empty list if there are not any values. Never return null
-     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
-     */
-    @Deprecated
-    List<String> getAttribute(String name);
-
-    /**
      * Obtains all values associated with the specified attribute name.
      *
      * @param name the name of the attribute.
      * @return a non-null {@link Stream} of attribute values.
      */
-    default Stream<String> getAttributeStream(final String name) {
-        List<String> value = this.getAttribute(name);
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<String> getAttributeStream(final String name);
 
     Map<String, List<String>> getAttributes();
-
-    /**
-     * @deprecated Use {@link #getRequiredActionsStream() getRequiredActionsStream} instead.
-     */
-    @Deprecated
-    Set<String> getRequiredActions();
 
     /**
      * Obtains the names of required actions associated with the user.
      *
      * @return a non-null {@link Stream} of required action names.
      */
-    default Stream<String> getRequiredActionsStream() {
-        Set<String> value = this.getRequiredActions();
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<String> getRequiredActionsStream();
 
     void addRequiredAction(String action);
 
@@ -218,37 +206,11 @@ public interface UserModel extends RoleMapperModel {
     void setEmailVerified(boolean verified);
 
     /**
-     * @deprecated Use {@link #getGroupsStream() getGroupsStream} instead.
-     */
-    @Deprecated
-    Set<GroupModel> getGroups();
-
-    /**
      * Obtains the groups associated with the user.
      *
      * @return a non-null {@link Stream} of groups.
      */
-    default Stream<GroupModel> getGroupsStream() {
-        Set<GroupModel> value = this.getGroups();
-        return value != null ? value.stream() : Stream.empty();
-    }
-
-    /**
-     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
-     */
-    @Deprecated
-    default Set<GroupModel> getGroups(int first, int max) {
-        return getGroupsStream(null, first, max).collect(Collectors.toSet());
-    }
-
-    /**
-     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
-     */
-    @Deprecated
-    default Set<GroupModel> getGroups(String search, int first, int max) {
-        return getGroupsStream(search, first, max)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
+    Stream<GroupModel> getGroupsStream();
 
     /**
      * Returns a paginated stream of groups within this realm with search in the name
@@ -278,7 +240,7 @@ public interface UserModel extends RoleMapperModel {
     default long getGroupsCount() {
         return getGroupsCountByNameContaining(null);
     }
-    
+
     default long getGroupsCountByNameContaining(String search) {
         if (search == null) {
             return getGroupsStream().count();
@@ -298,41 +260,27 @@ public interface UserModel extends RoleMapperModel {
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
 
+    /**
+     * Instance of a user credential manager to validate and update the credentials of this user.
+     */
+    SubjectCredentialManager credentialManager();
+
     enum RequiredAction {
-        VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS,
-        VERIFY_PROFILE
+        VERIFY_EMAIL,
+        UPDATE_PROFILE,
+        CONFIGURE_TOTP,
+        CONFIGURE_RECOVERY_AUTHN_CODES,
+        UPDATE_PASSWORD,
+        TERMS_AND_CONDITIONS,
+        VERIFY_PROFILE,
+        UPDATE_EMAIL
     }
 
     /**
-     * The {@link UserModel.Streams} interface makes all collection-based methods in {@link UserModel} default by providing
-     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
-     * <p/>
-     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
-     * from the potential memory and performance optimizations of that approach.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
-    interface Streams extends UserModel, RoleMapperModel.Streams {
-        @Override
-        default List<String> getAttribute(String name) {
-            return this.getAttributeStream(name).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<String> getAttributeStream(final String name);
-
-        @Override
-        default Set<String> getRequiredActions() {
-            return this.getRequiredActionsStream().collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<String> getRequiredActionsStream();
-
-        @Override
-        default Set<GroupModel> getGroups() {
-            return this.getGroupsStream().collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<GroupModel> getGroupsStream();
+    @Deprecated
+    interface Streams extends UserModel, RoleMapperModel {
     }
 }

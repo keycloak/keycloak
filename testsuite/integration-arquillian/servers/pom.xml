@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,7 +33,7 @@
         <script.suffix>sh</script.suffix>
 
         <!--app container versions-->
-        <eap6.version>7.5.21.Final-redhat-1</eap6.version>
+        <eap.version>7.4.0.GA-redhat-00005</eap.version>
         <eap71.version>7.1.5.GA-redhat-00002</eap71.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>
 
@@ -49,7 +49,6 @@
 
         <!-- Tomcat versions needs to be overwritten to newer versions because of https://issues.redhat.com/browse/KEYCLOAK-14103 -->
         <tomcat9.version>9.0.29</tomcat9.version>
-        <tomcat8.version>8.5.49</tomcat8.version>
     </properties>
 
     <modules>

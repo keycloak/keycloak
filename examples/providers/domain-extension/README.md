@@ -24,7 +24,7 @@ curl -i --request POST http://localhost:8080/auth/realms/master/example/companie
 curl -i --request POST http://localhost:8080/auth/realms/master/example/companies --data "{ \"name\": \"bar company\" }" --header "Content-type: application/json"
 ````
 
-Then you can lookup all companies 
+Then you can look up all companies 
 
 ````
 curl -i --request GET http://localhost:8080/auth/realms/master/example/companies --header "Accept: application/json"

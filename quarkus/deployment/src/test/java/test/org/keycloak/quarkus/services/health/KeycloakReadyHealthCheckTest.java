@@ -33,7 +33,7 @@ public class KeycloakReadyHealthCheckTest {
     @RegisterExtension
     static final QuarkusUnitTest test = new QuarkusUnitTest()
             .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
-                    .addAsResource("keycloak.properties", "META-INF/keycloak.properties"));
+                    .addAsResource("keycloak.conf", "META-INF/keycloak.conf"));
 
     @Test
     public void testLivenessUp() {

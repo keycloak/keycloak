@@ -16,6 +16,8 @@
  */
 package org.keycloak.models.map.common.delegate;
 
+import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.EntityField;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 import java.util.function.Supplier;
@@ -24,37 +26,28 @@ import java.util.function.Supplier;
  *
  * @author hmlnarik
  */
-public class LazyDelegateProvider<T extends UpdatableEntity> implements DelegateProvider {
+public class LazyDelegateProvider<T extends AbstractEntity> implements DelegateProvider<T> {
 
-    private final Supplier<T> delegateSupplier;
-
-    private final AtomicMarkableReference<T> delegate = new AtomicMarkableReference<>(null, false);
+    protected final LazilyInitialized<T> delegateSupplier;
 
     public LazyDelegateProvider(Supplier<T> delegateSupplier) {
-        this.delegateSupplier = delegateSupplier;
+        this.delegateSupplier = new LazilyInitialized<>(delegateSupplier);
     }
 
     @Override
-    public T getDelegate(boolean isRead, Object field, Object... parameters) {
-        if (! isDelegateInitialized()) {
-            delegate.compareAndSet(null, delegateSupplier == null ? null : delegateSupplier.get(), false, true);
-        }
-        T ref = delegate.getReference();
+    public T getDelegate(boolean isRead, Enum<? extends EntityField<T>> field, Object... parameters) {
+        T ref = delegateSupplier.get();
         if (ref == null) {
             throw new IllegalStateException("Invalid delegate obtained");
         }
         return ref;
     }
 
-    protected boolean isDelegateInitialized() {
-        return delegate.isMarked();
-    }
-
     @Override
     public boolean isUpdated() {
-        if (isDelegateInitialized()) {
-            T d = getDelegate(true, this);
-            return d.isUpdated();
+        if (delegateSupplier.isInitialized()) {
+            T d = delegateSupplier.get();
+            return d instanceof UpdatableEntity ? ((UpdatableEntity) d).isUpdated() : false;
         }
         return false;
     }

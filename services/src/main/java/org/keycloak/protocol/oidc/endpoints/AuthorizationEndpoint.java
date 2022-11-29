@@ -18,9 +18,9 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -30,7 +30,8 @@ import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -58,8 +59,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Map;
 
@@ -94,22 +93,27 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private AuthorizationEndpointRequest request;
     private String redirectUri;
 
-    public AuthorizationEndpoint(RealmModel realm, EventBuilder event) {
-        super(realm, event);
+    public AuthorizationEndpoint(KeycloakSession session, EventBuilder event) {
+        super(session, event);
         event.event(EventType.LOGIN);
+    }
+
+    private AuthorizationEndpoint(final KeycloakSession session, final EventBuilder event, final Action action) {
+        this(session, event);
+        this.action = action;
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response buildPost() {
         logger.trace("Processing @POST request");
-        return process(httpRequest.getDecodedFormParameters());
+        return processInRetriableTransaction(httpRequest.getDecodedFormParameters());
     }
 
     @GET
     public Response buildGet() {
         logger.trace("Processing @GET request");
-        return process(session.getContext().getUri().getQueryParameters());
+        return processInRetriableTransaction(session.getContext().getUri().getQueryParameters());
     }
 
     /**
@@ -117,9 +121,22 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
      */
     @Path("device")
     public Object authorizeDevice() {
-        DeviceEndpoint endpoint = new DeviceEndpoint(realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
+        return new DeviceEndpoint(session, event);
+    }
+
+    /**
+     * Process the request in a retriable transaction.
+     */
+    private Response processInRetriableTransaction(final MultivaluedMap<String, String> formParameters) {
+        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+            @Override
+            public Response runInternal(KeycloakSession session) {
+                // create another instance of the endpoint to isolate each run.
+                AuthorizationEndpoint other = new AuthorizationEndpoint(session,
+                        new EventBuilder(session.getContext().getRealm(), session, clientConnection), action);
+                // process the request in the created instance.
+                return other.process(formParameters);            }
+        }, 10, 100);
     }
 
     private Response process(MultivaluedMap<String, String> params) {
@@ -129,7 +146,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         checkRealm();
         checkClient(clientId);
 
-        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params);
+        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.OIDC_AUTH_ENDPOINT);
 
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
                 .event(event)
@@ -151,7 +168,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             this.parsedResponseType = checker.getParsedResponseType();
             this.parsedResponseMode = checker.getParsedResponseMode();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            OIDCResponseMode responseMode = checker.getParsedResponseMode() != null ? checker.getParsedResponseMode() : OIDCResponseMode.QUERY;
+            OIDCResponseMode responseMode = null;
+            if (checker.isInvalidResponseType(ex)) {
+                responseMode = OIDCResponseMode.parseWhenInvalidResponseType(request.getResponseMode());
+            } else {
+                responseMode = checker.getParsedResponseMode() != null ? checker.getParsedResponseMode() : OIDCResponseMode.QUERY;
+            }
             return redirectErrorToClient(responseMode, ex.getError(), ex.getErrorDescription());
         }
         if (action == null) {
@@ -225,7 +247,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         client = realm.getClientByClientId(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
 
         if (!client.isEnabled()) {
@@ -296,7 +318,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         List<String> acrValues = AcrUtils.getRequiredAcrValues(request.getClaims());
 
         if (acrValues.isEmpty()) {
-            acrValues = AcrUtils.getAcrValues(request.getClaims(), request.getAcr());
+            acrValues = AcrUtils.getAcrValues(request.getClaims(), request.getAcr(), authenticationSession.getClient());
         } else {
             authenticationSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
         }
@@ -306,9 +328,16 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 Integer loa = acrLoaMap.get(acr);
                 return loa == null ? Integer.parseInt(acr) : loa;
             } catch (NumberFormatException e) {
-                // this is an unknown acr, we assume in case of an essential claim a very high LoA, and a minimum LoA if not essential
-                return Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION)) 
-                    ? Constants.MAXIMUM_LOA : Constants.MINIMUM_LOA;
+                // this is an unknown acr. In case of an essential claim, we directly reject authentication as we cannot met the specification requirement. Otherwise fallback to minimum LoA
+                boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
+                if (essential) {
+                    logger.errorf("Requested essential acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct ACR passed in the 'claims' parameter.", acr);
+                    event.error(Errors.INVALID_REQUEST);
+                    throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
+                } else {
+                    logger.warnf("Requested acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct used ACR.", acr);
+                    return Constants.MINIMUM_LOA;
+                }
             }
         }).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
 

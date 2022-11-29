@@ -36,7 +36,7 @@ public class ImpersonationConstants {
             adminRealm = realm;
             adminRole = realm.getRole(AdminRoles.ADMIN);
         } else {
-            adminRealm = model.getRealm(Config.getAdminRealm());
+            adminRealm = model.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
         ClientModel realmAdminApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
