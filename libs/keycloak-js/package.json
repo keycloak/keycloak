@@ -46,7 +46,7 @@
     "@rollup/plugin-inject": "^5.0.2",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-terser": "^0.1.0",
-    "@rollup/plugin-typescript": "^10.0.0",
+    "@rollup/plugin-typescript": "^10.0.1",
     "es6-promise": "^4.2.8",
     "rollup": "^3.5.0"
   },
