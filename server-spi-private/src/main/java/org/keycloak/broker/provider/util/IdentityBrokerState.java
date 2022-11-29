@@ -51,7 +51,7 @@ public class IdentityBrokerState {
                 bb.putLong(clientDbUuid.getMostSignificantBits());
                 bb.putLong(clientDbUuid.getLeastSignificantBits());
                 byte[] clientUuidBytes = bb.array();
-                clientIdEncoded = Base64.getEncoder().encodeToString(clientUuidBytes).replace("=", "");
+                clientIdEncoded = Base64.getUrlEncoder().encodeToString(clientUuidBytes).replace("=", "");
             } catch (IllegalArgumentException e) {
                 // Ignore...the clientid in the database was not in UUID format. Just use as is.
             }
@@ -73,7 +73,7 @@ public class IdentityBrokerState {
             try {
                 // If this decoding succeeds it was the result of the encoding of a UUID client.id - if it fails we interpret it as client.clientId
                 // in accordance to the method decoded above
-                byte[] decodedClientId = Base64.getDecoder().decode(clientId);
+                byte[] decodedClientId = Base64.getUrlDecoder().decode(clientId);
                 ByteBuffer bb = ByteBuffer.wrap(decodedClientId);
                 long first = bb.getLong();
                 long second = bb.getLong();

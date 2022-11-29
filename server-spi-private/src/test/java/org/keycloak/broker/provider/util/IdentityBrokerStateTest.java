@@ -46,6 +46,25 @@ public class IdentityBrokerStateTest {
     }
 
     @Test
+    public void testDecodedWithClientIdAnActualUuidBASE64UriFriendly() {
+
+        // Given
+        String state = "gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk";
+        String clientId = "c5ac1ea7-6c28-4be1-b7cd-d63a1ba57f78";
+        String clientClientId = "http://i.am.an.url";
+        String tabId = "vpISZLVDAc0";
+
+        // When
+        IdentityBrokerState encodedState = IdentityBrokerState.decoded(state, clientId, clientClientId, tabId);
+
+        // Then
+        Assert.assertNotNull(encodedState);
+        Assert.assertEquals(clientClientId, encodedState.getClientId());
+        Assert.assertEquals(tabId, encodedState.getTabId());
+        Assert.assertEquals("gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.xawep2woS-G3zdY6G6V_eA", encodedState.getEncoded());
+    }
+
+    @Test
     public void testEncodedWithClientIdUUid() {
         // Given
         String encoded = "gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.7UlEjBTPRx6oOgY9DcO8jA";
