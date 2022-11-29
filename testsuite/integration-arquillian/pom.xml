@@ -458,7 +458,7 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${mysql.driver.version}</jdbc.mvn.version>
+                <jdbc.mvn.version>${mysql-jdbc.version}</jdbc.mvn.version>
                 <docker.database.image>mysql:${mysql.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
@@ -492,7 +492,7 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${postgresql.driver.version}</jdbc.mvn.version>
+                <jdbc.mvn.version>${postgresql-jdbc.version}</jdbc.mvn.version>
                 <docker.database.image>postgres:${postgresql.version}</docker.database.image>
                 <docker.database.port>5432</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
@@ -534,7 +534,7 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${mariadb.driver.version}</jdbc.mvn.version>
+                <jdbc.mvn.version>${mariadb-jdbc.version}</jdbc.mvn.version>
                 <docker.database.image>mariadb:${mariadb.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
@@ -575,7 +575,7 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${mssql.driver.version}</jdbc.mvn.version>
+                <jdbc.mvn.version>${mssql-jdbc.version}</jdbc.mvn.version>
             </properties>
         </profile>
         <profile>
@@ -612,7 +612,7 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>com.oracle.database.jdbc</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>ojdbc11</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${oracle.driver.version}</jdbc.mvn.version>
+                <jdbc.mvn.version>${oracle-jdbc.version}</jdbc.mvn.version>
             </properties>
         </profile>
         <profile>
