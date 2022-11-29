@@ -20,10 +20,10 @@ package org.keycloak.broker.provider.util;
 import org.keycloak.authorization.policy.evaluation.Realm;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.common.util.Base64Url;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.util.Base64;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -51,8 +51,8 @@ public class IdentityBrokerState {
                 bb.putLong(clientDbUuid.getMostSignificantBits());
                 bb.putLong(clientDbUuid.getLeastSignificantBits());
                 byte[] clientUuidBytes = bb.array();
-                clientIdEncoded = Base64.getEncoder().encodeToString(clientUuidBytes).replace("=", "");
-            } catch (IllegalArgumentException e) {
+                clientIdEncoded = Base64Url.encode(clientUuidBytes);
+            } catch (RuntimeException e) {
                 // Ignore...the clientid in the database was not in UUID format. Just use as is.
             }
         }
@@ -73,7 +73,7 @@ public class IdentityBrokerState {
             try {
                 // If this decoding succeeds it was the result of the encoding of a UUID client.id - if it fails we interpret it as client.clientId
                 // in accordance to the method decoded above
-                byte[] decodedClientId = Base64.getDecoder().decode(clientId);
+                byte[] decodedClientId = Base64Url.decode(clientId);
                 ByteBuffer bb = ByteBuffer.wrap(decodedClientId);
                 long first = bb.getLong();
                 long second = bb.getLong();
@@ -83,7 +83,7 @@ public class IdentityBrokerState {
                 if (clientModel != null) {
                     clientId = clientModel.getClientId();
                 }
-            } catch (IllegalArgumentException | BufferUnderflowException e) {
+            } catch (RuntimeException e) {
                 // Ignore...the clientid was not in encoded uuid format. Just use as it is.
             }
         }
