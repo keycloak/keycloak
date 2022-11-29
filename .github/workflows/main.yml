@@ -4,6 +4,11 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+concurrency:
+  # Only cancel jobs for new commits on PRs, and always do a complete run on other branches (e.g. `main`).
+  # See: https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 env:
   NODE_VERSION: 18
 jobs:
