@@ -72,6 +72,10 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-map-hot-rod</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-map-file</artifactId>
+        </dependency>
         <!-- identity providers -->
         <dependency>
             <groupId>org.twitter4j</groupId>

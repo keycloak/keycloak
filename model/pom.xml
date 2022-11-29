@@ -41,5 +41,6 @@
         <module>build-processor</module>
         <module>map-hot-rod</module>
         <module>map-ldap</module>
+        <module>map-file</module>
     </modules>
 </project>
