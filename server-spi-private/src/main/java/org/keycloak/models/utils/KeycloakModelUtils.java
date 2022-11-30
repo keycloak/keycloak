@@ -17,6 +17,7 @@
 
 package org.keycloak.models.utils;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -89,6 +90,8 @@ import static org.keycloak.models.Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE_D
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public final class KeycloakModelUtils {
+
+    private static final Logger logger = Logger.getLogger(KeycloakModelUtils.class);
 
     public static final String AUTH_TYPE_CLIENT_SECRET = "client-secret";
     public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
@@ -325,6 +328,7 @@ public final class KeycloakModelUtils {
                 if (isExceptionRetriable(re) && ++retryCount < attemptsCount) {
                     int delay = Math.min(retryIntervalMillis * attemptsCount, (1 << retryCount) * retryIntervalMillis)
                             + rand.nextInt(retryIntervalMillis);
+                    logger.debugf("Caught retriable exception, retrying request. Retry count = %s, retry delay = %s", retryCount, delay);
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException ie) {
@@ -332,6 +336,9 @@ public final class KeycloakModelUtils {
                         throw new RuntimeException(ie);
                     }
                 } else {
+                    if (retryCount == attemptsCount) {
+                        logger.debug("Exhausted all retry attempts for request.");
+                    }
                     throw re;
                 }
             } finally {
