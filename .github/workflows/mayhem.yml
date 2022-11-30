@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: ["Scheduled Merge Remote Action"]
     types:
-      - completed    
+      - completed
 
 env:
   DEFAULT_JDK_VERSION: 11
@@ -24,6 +24,10 @@ jobs:
     name: Scan
     runs-on: ubuntu-latest
     steps:
+      - uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: stable
+
       - uses: actions/checkout@v2
         with:
           # fetch a greater number of commits for computing diffs between jobs
@@ -31,6 +35,7 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
+
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Cache Maven packages
@@ -79,16 +84,32 @@ jobs:
               start-dev & \
               timeout 60 bash -c 'until curl --fail localhost:8080; do sleep 2; done'
 
-      # !! The bearer token is only valid for 60 seconds. Can this be
-      # extended via the admin rest API or perhaps some other toggle
-      # at launch time?
-      - name: Get admin Bearer Token on master realm
+      - name: Compile rust-openid-token-plugin
         run: |
-          token=$( curl -X POST \
-            -H 'Content-Type: application/x-www-form-urlencoded' \
-            -d 'username=admin&password=admin&client_id=admin-cli&grant_type=password' \
-            http://localhost:8080/realms/master/protocol/openid-connect/token | jq -j ".access_token")
-          echo "AUTH_TOKEN=$token" >> "$GITHUB_ENV"
+          sudo apt update
+          sudo apt install -y protobuf-compiler libprotobuf-dev
+
+          cd $GITHUB_WORKSPACE/../
+          git clone https://github.com/ForAllSecure/mapi-examples
+          cd mapi-examples/plugins/rust-openid-token-plugin
+          cargo build --release
+
+      - uses: JarvusInnovations/background-action@v1
+        name: Launch Authorization Token Rewrite Plugin
+        with:
+          run: |
+            RUNNER_TRACKING_ID="" && \
+            $GITHUB_WORKSPACE/../mapi-examples/plugins/rust-openid-token-plugin/target/release/rust-openid-token-plugin \
+              --api-under-test-header-prefix "Bearer " \
+              --oauth-token-url "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+              --data-urlencode "client_id=admin-cli" \
+              --data-urlencode "username=admin" \
+              --data-urlencode "password=admin" \
+              --data-urlencode "grant_type=password" &
+          wait-on:
+            tcp:localhost:50051
+          log-output-if: true
+
 
       ##################################################
       # Mayhem
@@ -108,8 +129,8 @@ jobs:
           mapi-token: ${{ secrets.MAPI_TOKEN }}
           api-url: http://localhost:8080/admin/realms
           api-spec: .github/api/openapi_16.0.yml
-          target: mayhemheroes/keycloak-quarkus
-          duration: 1min
+          target: rossimo/keycloak-quarkus
+          duration: 20m
           sarif-report: mapi.sarif
           html-report: mapi.html
           #
@@ -125,12 +146,11 @@ jobs:
           run-args: |
             --concurrency
             4
-            --header-auth
-            Authorization:Bearer ${{ env.AUTH_TOKEN }}
             --ignore-rule
             InvalidResponseSpec
             --ignore-endpoint
             .*logout.*
+            --rewrite-plugin=http://localhost:50051
 
       ##################################################
       # Report
