@@ -37,7 +37,6 @@
     }
   },
   "dependencies": {
-    "axios": "^0.27.2",
     "camelize-ts": "^2.1.1",
     "lodash-es": "^4.17.21",
     "url-join": "^5.0.0",

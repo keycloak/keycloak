@@ -1,4 +1,3 @@
-import type { AxiosRequestConfig } from "axios";
 import type { RequestArgs } from "./resources/agent.js";
 import { AttackDetection } from "./resources/attackDetection.js";
 import { AuthenticationManagement } from "./resources/authenticationManagement.js";
@@ -26,7 +25,7 @@ export interface TokenProvider {
 export interface ConnectionConfig {
   baseUrl?: string;
   realmName?: string;
-  requestConfig?: AxiosRequestConfig;
+  requestOptions?: RequestInit;
   requestArgOptions?: Pick<RequestArgs, "catchNotFound">;
 }
 
@@ -55,14 +54,14 @@ export class KeycloakAdminClient {
   public accessToken?: string;
   public refreshToken?: string;
 
-  private requestConfig?: AxiosRequestConfig;
+  private requestOptions?: RequestInit;
   private globalRequestArgOptions?: Pick<RequestArgs, "catchNotFound">;
   private tokenProvider?: TokenProvider;
 
   constructor(connectionConfig?: ConnectionConfig) {
     this.baseUrl = connectionConfig?.baseUrl || defaultBaseUrl;
     this.realmName = connectionConfig?.realmName || defaultRealm;
-    this.requestConfig = connectionConfig?.requestConfig;
+    this.requestOptions = connectionConfig?.requestOptions;
     this.globalRequestArgOptions = connectionConfig?.requestArgOptions;
 
     // Initialize resources
@@ -89,7 +88,7 @@ export class KeycloakAdminClient {
       baseUrl: this.baseUrl,
       realmName: this.realmName,
       credentials,
-      requestConfig: this.requestConfig,
+      requestOptions: this.requestOptions,
     });
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
@@ -115,8 +114,8 @@ export class KeycloakAdminClient {
     return this.accessToken;
   }
 
-  public getRequestConfig() {
-    return this.requestConfig;
+  public getRequestOptions() {
+    return this.requestOptions;
   }
 
   public getGlobalRequestArgOptions():
@@ -139,6 +138,6 @@ export class KeycloakAdminClient {
     ) {
       this.realmName = connectionConfig.realmName;
     }
-    this.requestConfig = connectionConfig.requestConfig;
+    this.requestOptions = connectionConfig.requestOptions;
   }
 }

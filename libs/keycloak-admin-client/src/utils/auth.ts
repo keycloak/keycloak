@@ -1,6 +1,6 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import camelize from "camelize-ts";
 import { defaultBaseUrl, defaultRealm } from "./constants.js";
+import { fetchWithError } from "./fetchWithError.js";
 import { stringifyQueryParams } from "./stringifyQueryParams.js";
 
 export type GrantTypes = "client_credentials" | "password" | "refresh_token";
@@ -20,7 +20,7 @@ export interface Settings {
   realmName?: string;
   baseUrl?: string;
   credentials: Credentials;
-  requestConfig?: AxiosRequestConfig;
+  requestOptions?: RequestInit;
 }
 
 export interface TokenResponseRaw {
@@ -69,20 +69,25 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
       : {}),
   });
 
-  const config: AxiosRequestConfig = {
-    ...settings.requestConfig,
-  };
+  const options = settings.requestOptions ?? {};
+  const headers = new Headers(options.headers);
 
   if (credentials.clientSecret) {
-    config.auth = {
-      username: credentials.clientId,
-      password: credentials.clientSecret,
-    };
+    headers.set(
+      "Authorization",
+      atob(credentials.clientId + ":" + credentials.clientSecret)
+    );
   }
 
-  const { data } = await axios.default.post<
-    any,
-    AxiosResponse<TokenResponseRaw>
-  >(url, payload, config);
+  headers.set("content-type", "application/x-www-form-urlencoded");
+
+  const response = await fetchWithError(url, {
+    ...options,
+    method: "POST",
+    headers,
+    body: payload,
+  });
+
+  const data: TokenResponseRaw = await response.json();
   return camelize(data);
 };

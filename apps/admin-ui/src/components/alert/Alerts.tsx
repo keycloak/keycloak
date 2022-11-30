@@ -1,6 +1,5 @@
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 import { AlertVariant } from "@patternfly/react-core";
-import type { AxiosError } from "axios";
-import axios from "axios";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -85,8 +84,8 @@ function getErrorMessage(error: unknown) {
     return error;
   }
 
-  if (axios.isAxiosError(error)) {
-    return getErrorMessageAxios(error);
+  if (error instanceof NetworkError) {
+    return getNetworkErrorMessage(error);
   }
 
   if (error instanceof Error) {
@@ -96,8 +95,8 @@ function getErrorMessage(error: unknown) {
   throw new Error("Unable to determine error message.");
 }
 
-function getErrorMessageAxios(error: AxiosError) {
-  const data = (error.response?.data ?? {}) as Record<string, unknown>;
+function getNetworkErrorMessage({ responseData }: NetworkError) {
+  const data = responseData as Record<string, unknown>;
 
   for (const key of ["error_description", "errorMessage", "error"]) {
     const value = data[key];

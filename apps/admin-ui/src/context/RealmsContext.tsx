@@ -1,3 +1,4 @@
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { sortBy } from "lodash-es";
 import {
@@ -7,7 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-import axios from "axios";
 
 import { RecentUsed } from "../components/realm-selector/recent-used";
 import { createNamedContext } from "../utils/createNamedContext";
@@ -46,11 +46,7 @@ export const RealmsProvider: FunctionComponent = ({ children }) => {
       try {
         return await adminClient.realms.find({ briefRepresentation: true });
       } catch (error) {
-        if (
-          axios.isAxiosError(error) &&
-          error.response &&
-          error.response.status < 500
-        ) {
+        if (error instanceof NetworkError && error.response.status < 500) {
           return [];
         }
 

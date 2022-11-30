@@ -223,7 +223,6 @@ export class Users extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
     payloadKey: "actions",
     queryParamKeys: ["lifespan", "redirectUri", "clientId"],
-    headers: { "content-type": "application/json" },
     keyTransform: {
       clientId: "client_id",
       redirectUri: "redirect_uri",

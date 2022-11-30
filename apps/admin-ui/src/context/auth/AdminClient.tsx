@@ -1,5 +1,4 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import axios from "axios";
 import Keycloak from "keycloak-js";
 import { DependencyList, useEffect } from "react";
 import { useErrorHandler } from "react-error-boundary";
@@ -39,35 +38,24 @@ export function useFetch<T>(
   callback: (param: T) => void,
   deps?: DependencyList
 ) {
-  const { adminClient } = useAdminClient();
   const onError = useErrorHandler();
+  const controller = new AbortController();
+  const { signal } = controller;
 
   useEffect(() => {
-    const source = axios.CancelToken.source();
-
-    adminClient.setConfig({
-      requestConfig: { cancelToken: source.token },
-    });
-
     adminClientCall()
       .then((result) => {
-        if (!source.token.reason) {
+        if (!signal.aborted) {
           callback(result);
         }
       })
       .catch((error) => {
-        if (!axios.isCancel(error)) {
+        if (!signal.aborted) {
           onError(error);
         }
       });
 
-    adminClient.setConfig({
-      requestConfig: { cancelToken: undefined },
-    });
-
-    return () => {
-      source.cancel();
-    };
+    return () => controller.abort();
   }, deps);
 }
 
