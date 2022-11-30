@@ -28,7 +28,7 @@ export default class CreateClientPage extends CommonPage {
   private rootUrlInput = "#kc-root-url";
   private homeUrlInput = "#kc-home-url";
   private firstValidRedirectUrlInput = "redirectUris0";
-  private firstWebOriginsInput = "#webOrigins0";
+  private firstWebOriginsInput = "webOrigins0";
   private adminUrlInput = "#kc-admin-url";
 
   private loginThemeDrpDwn = "#loginTheme";
@@ -233,7 +233,7 @@ export default class CreateClientPage extends CommonPage {
     cy.get(this.rootUrlInput).should("not.be.disabled");
     cy.get(this.homeUrlInput).should("not.be.disabled");
     cy.findByTestId(this.firstValidRedirectUrlInput).should("not.be.disabled");
-    cy.get(this.firstWebOriginsInput).should("not.be.disabled");
+    cy.findByTestId(this.firstWebOriginsInput).should("not.be.disabled");
     cy.get(this.adminUrlInput).should("not.be.disabled");
 
     return this;

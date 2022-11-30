@@ -222,7 +222,7 @@ export default class RealmSettingsPage extends CommonPage {
   private eventListenersDrwDwnSelect =
     ".pf-c-button.pf-c-select__toggle-button.pf-m-plain";
   private eventListenerRemove = '[data-ouia-component-id="Remove"]';
-  private roleSelect = "#config\\.roles0";
+  private roleSelect = "config.roles0";
   private selectScopeButton = "addValue";
   private deleteClientRolesConditionBtn = "delete-client-roles-condition";
   private deleteClientScopesConditionBtn = "delete-client-scopes-condition";
@@ -1068,7 +1068,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.addConditionDrpDwnOption)
       .contains("client-roles")
       .click();
-    cy.get(this.roleSelect).clear().type("manage-realm");
+    cy.findByTestId(this.roleSelect).clear().type("manage-realm");
 
     cy.findByTestId(this.addConditionSaveBtn).click();
     cy.get(this.alertMessage).should(
@@ -1079,11 +1079,11 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   addClientScopes() {
-    cy.get("#config\\.scopes0").clear().type("one");
+    cy.findByTestId("config.scopes0").clear().type("one");
     cy.findByTestId(this.selectScopeButton).click();
-    cy.get("#config\\.scopes1").clear().type("two");
+    cy.findByTestId("config.scopes1").clear().type("two");
     cy.findByTestId(this.selectScopeButton).click();
-    cy.get("#config\\.scopes2").clear().type("three");
+    cy.findByTestId("config.scopes2").clear().type("three");
   }
 
   shouldAddClientScopesCondition() {
@@ -1109,8 +1109,8 @@ export default class RealmSettingsPage extends CommonPage {
 
     cy.findByTestId(this.clientRolesConditionLink).click();
 
-    cy.get(this.roleSelect).should("have.value", "manage-realm");
-    cy.get(this.roleSelect).clear().type("admin");
+    cy.findByTestId(this.roleSelect).should("have.value", "manage-realm");
+    cy.findByTestId(this.roleSelect).clear().type("admin");
 
     cy.findByTestId(this.addConditionSaveBtn).click();
     cy.get(this.alertMessage).should(
@@ -1124,7 +1124,7 @@ export default class RealmSettingsPage extends CommonPage {
 
     cy.findByTestId(this.clientScopesConditionLink).click();
 
-    cy.get("#config\\.scopes0").clear().type("edit");
+    cy.findByTestId("config.scopes0").clear().type("edit");
 
     cy.findByTestId(this.addConditionSaveBtn).click();
     cy.get(this.alertMessage).should(
