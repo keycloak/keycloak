@@ -48,7 +48,7 @@ jobs:
           - workspace: admin-ui
             command: build
           - workspace: admin-ui
-          # Account UI
+            # Account UI
             command: cy:check-types
           - workspace: account-ui
             command: lint
@@ -78,3 +78,13 @@ jobs:
 
       - name: Run ${{ matrix.command }} task
         run: npm run ${{ matrix.command }} --workspace=${{ matrix.workspace }}
+
+  dependabot:
+    needs: [run]
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' && github.event_name == 'pull_request' }}
+    steps:
+      - name: Enable auto-merge for Dependabot PRs
+        run: gh pr merge --auto --squash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
