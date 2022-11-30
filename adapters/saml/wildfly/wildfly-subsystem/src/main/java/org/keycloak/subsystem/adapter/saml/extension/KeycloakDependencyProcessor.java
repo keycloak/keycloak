@@ -36,7 +36,7 @@ import org.jboss.modules.ModuleLoader;
  */
 public abstract class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
 
-    private static final ModuleIdentifier KEYCLOAK_JBOSS_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-jboss-adapter-core");
+    private static final ModuleIdentifier KEYCLOAK_JBOSS_CORE_ADAPTER = KeycloakSubsystemDefinition.KEYCLOAK_JBOSS_CORE_ADAPTER;
     private static final ModuleIdentifier KEYCLOAK_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-adapter-core");
     private static final ModuleIdentifier KEYCLOAK_API_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-adapter-api-public");
     private static final ModuleIdentifier KEYCLOAK_COMMON = ModuleIdentifier.create("org.keycloak.keycloak-common");
