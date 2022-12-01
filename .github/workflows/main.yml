@@ -1,9 +1,9 @@
 name: CI
 on:
   push:
-    branches: [main]
+    branches: [main, release/**]
   pull_request:
-    branches: [main]
+    branches: [main, release/**]
 concurrency:
   # Only cancel jobs for new commits on PRs, and always do a complete run on other branches (e.g. `main`).
   # See: https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value

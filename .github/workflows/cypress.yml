@@ -1,9 +1,9 @@
 name: Cypress
 on:
   push:
-    branches: [main]
+    branches: [main, release/**]
   pull_request:
-    branches: [main]
+    branches: [main, release/**]
   schedule:
     - cron: '0 4 * * *'
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
       - name: Check out Keycloak Server
         uses: actions/checkout@v3
         with:
-          repository: ${{ inputs.keycloakRepo || 'keycloak/keycloak' }}
+          repository: ${{ inputs.keycloakRepo || (contains(github.ref, 'release/') && github.ref || 'keycloak/keycloak') }}
           ref: ${{ inputs.keycloakBranch || 'main' }}
           path: keycloak-repo
 
