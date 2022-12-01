@@ -24,7 +24,7 @@ jobs:
     if: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check out Admin UI
+      - name: Check out repository
         uses: actions/checkout@v3
         with:
           path: admin-ui-repo
@@ -91,7 +91,7 @@ jobs:
       matrix:
         container: [1, 2, 3, 4, 5]
     steps:
-      - name: Check out Admin UI
+      - name: Check out repository
         uses: actions/checkout@v3
 
       - name: Set up Node

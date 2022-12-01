@@ -15,7 +15,7 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out Admin UI
+      - name: Check out repository
         uses: actions/checkout@v3
 
       - name: Set up Node
@@ -88,3 +88,5 @@ jobs:
         run: gh pr merge --auto --squash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
