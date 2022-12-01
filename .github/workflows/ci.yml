@@ -13,10 +13,9 @@ env:
   DEFAULT_JDK_VERSION: 11
   MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
 
-#concurrency:
-  # Only run once for latest commit per ref and cancel other (previous) runs.
-  # group: ${{ github.workflow }}-${{ github.ref }}
-  # cancel-in-progress: true
+concurrency:
+  group: main-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build:
