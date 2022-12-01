@@ -865,6 +865,40 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>auth-server-fips140-2</id>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-bcfips-deps-client-tools</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${containers.home}/keycloak-client-tools/bin/client/lib</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${containers.home}/auth-server-quarkus/bin/client/lib</directory>
+                                            <includes>
+                                                <include>bc-fips-*</include>
+                                                <include>bctls-fips-*</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>

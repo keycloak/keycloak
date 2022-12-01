@@ -1864,6 +1864,12 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-client-cli-dist</artifactId>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.keycloak</groupId>
+                            <artifactId>keycloak-crypto-fips1402</artifactId>
+                        </exclusion>
+                    </exclusions>
                     <type>zip</type>
                 </dependency>
 

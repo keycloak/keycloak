@@ -1,8 +1,10 @@
 package org.keycloak.testsuite.cli;
 
 import org.junit.Assert;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.cli.exec.AbstractExec;
 
 import java.io.File;
@@ -48,7 +50,9 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
                 throw new AssertionError("STDOUT: " + exe.stdoutString(), e);
             }
         }
-        if (stdErrLineCount != -1) {
+        // There is additional logging in case that BC FIPS libraries are used, so the count of logged lines don't match with the case with plain BC used
+        // Hence we test count of lines just with FIPS disabled
+        if (stdErrLineCount != -1 && isFipsDisabled()) {
             try {
                 assertLineCount("stderr output", exe.stderrLines(), stdErrLineCount);
             } catch (Throwable e) {
@@ -68,6 +72,10 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
             }
         }
         Assert.assertTrue(label + " has " + lines.size() + " lines (expected: " + count + ")", lines.size() == count);
+    }
+
+    private boolean isFipsDisabled() {
+        return AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.disabled;
     }
 
 }

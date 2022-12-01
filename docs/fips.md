@@ -20,9 +20,12 @@ running the unit tests below):
 ```
 cd $KEYCLOAK_HOME/bin
 export MAVEN_REPO_HOME=$HOME/.m2/repository
-cp $MAVEN_REPO_HOME/org/bouncycastle/bc-fips/1.0.2.3/bc-fips-1.0.2.3.jar ../providers/
-cp $MAVEN_REPO_HOME/org/bouncycastle/bctls-fips/1.0.12.2/bctls-fips-1.0.12.2.jar ../providers/
-cp $MAVEN_REPO_HOME/org/bouncycastle/bcpkix-fips/1.0.5/bcpkix-fips-1.0.5.jar ../providers/
+export BCFIPS_VERSION=1.0.2.3
+export BCTLSFIPS_VERSION=1.0.12.2
+export BCPKIXFIPS_VERSION=1.0.5
+cp $MAVEN_REPO_HOME/org/bouncycastle/bc-fips/$BCFIPS_VERSION/bc-fips-$BCFIPS_VERSION.jar ../providers/
+cp $MAVEN_REPO_HOME/org/bouncycastle/bctls-fips/$BCTLSFIPS_VERSION/bctls-fips-$BCTLSFIPS_VERSION.jar ../providers/
+cp $MAVEN_REPO_HOME/org/bouncycastle/bcpkix-fips/$BCPKIXFIPS_VERSION/bcpkix-fips-$BCPKIXFIPS_VERSION.jar ../providers/
 ```
 
 2) Now create either pkcs12 or bcfks keystore. The pkcs12 works just in BCFIPS non-approved mode.
@@ -113,6 +116,17 @@ Note that in approved mode, there are few limitations at the moment like for exa
 - User passwords must be at least 14 characters long
 - Keystore/truststore must be of type bcfks due the both of `jks` and `pkcs12` don't work
 - Some warnings in the server.log at startup
+
+Run the CLI on the FIPS host
+----------------------------
+In case you want to run Client Registration CLI (`kcreg.sh/bat` script) or Admin CLI (`kcadm.sh/bat` script), it is needed
+that CLI will also use the BouncyCastle FIPS dependencies instead of plain BouncyCastle dependencies. To achieve this, you may copy the
+jars to the CLI library folder and that is enough. CLI tool will automatically use BCFIPS dependencies instead of plain BC when
+it detects that corresponding BCFIPS jars are present (see above for the versions used):
+```
+cp $MAVEN_REPO_HOME/org/bouncycastle/bc-fips/$BCFIPS_VERSION/bc-fips-$BCFIPS_VERSION.jar ../bin/client/lib/
+cp $MAVEN_REPO_HOME/org/bouncycastle/bctls-fips/$BCTLSFIPS_VERSION/bctls-fips-$BCTLSFIPS_VERSION.jar ../bin/client/lib/
+```
 
 Run the unit tests in the FIPS environment
 ------------------------------------------

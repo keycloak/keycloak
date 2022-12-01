@@ -254,7 +254,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
                 " --realm test " + credentials + " " + extraOptions + " -s clientId=test-client -o");
 
         Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-        Assert.assertEquals("login message", loginMessage, exe.stderrLines().get(0));
+        Assert.assertTrue("login message expected. But the messages are: " + exe.stderrLines(), exe.stderrLines().stream().anyMatch(message -> message.equals(loginMessage)));
 
         ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
         Assert.assertEquals("clientId", "test-client", client.getClientId());
@@ -309,7 +309,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2 - linecountOffset);
         String resourceUri = serverUrl + "/admin/realms/test/clients/" + client.getId();
-        Assert.assertEquals("error message", "Resource not found for url: " + resourceUri, exe.stderrLines().get(1 - linecountOffset));
+        Assert.assertEquals("error message", "Resource not found for url: " + resourceUri, exe.stderrLines().get(exe.stderrLines().size() - 1));
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
         Assert.assertEquals("config file not modified", lastModified, lastModified2);
