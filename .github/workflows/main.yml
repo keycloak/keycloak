@@ -85,6 +85,6 @@ jobs:
     if: ${{ github.actor == 'dependabot[bot]' && github.event_name == 'pull_request' }}
     steps:
       - name: Enable auto-merge for Dependabot PRs
-        run: gh pr merge --auto --squash --repo $GITHUB_REPOSITORY
+        run: gh pr merge --auto --squash --repo ${{ github.repository }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
