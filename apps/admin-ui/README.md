@@ -1,6 +1,6 @@
 # Keycloak Admin UI
 
-This project is the next generation of the Keycloak Administration UI. It is written with React and [PatternFly 4](https://www.patternfly.org/v4/).
+This project is the next generation of the Keycloak Administration UI. It is written with React and [PatternFly 4](https://www.patternfly.org/v4/) and uses [Vite](https://vitejs.dev/guide/) and [Cypress](https://docs.cypress.io/guides/overview/why-cypress).
 
 ## Development
 
@@ -45,6 +45,7 @@ Every time you create a commit it should be automatically linted and formatted f
 ```bash
 npm run lint
 ```
+
 ## Integration testing with Cypress
 
 This repository contains integration tests developed with the [Cypress framework](https://www.cypress.io/).
@@ -73,4 +74,3 @@ For more information about the Cypress command-line interface consult [the docum
 
 You can find information about the project structure in the [official Cypress documentation](https://docs.cypress.io/guides/core-concepts/writing-and-organizing-tests#Folder-structure).
 Read more about [how to write tests](./cypress/WRITING_TESTS.md)
-
