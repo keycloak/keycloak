@@ -10,7 +10,6 @@ export const BooleanComponent = ({
   name,
   label,
   helpText,
-  defaultValue,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
@@ -28,7 +27,7 @@ export const BooleanComponent = ({
       <Controller
         name={convertToName(name!)}
         data-testid={name}
-        defaultValue={defaultValue || false}
+        defaultValue={false}
         control={control}
         render={({ onChange, value }) => (
           <Switch
