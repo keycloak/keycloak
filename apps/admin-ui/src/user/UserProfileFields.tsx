@@ -18,7 +18,7 @@ import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTex
 import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
 import useToggle from "../utils/useToggle";
 
-const ROOT_ATTRIBUTES = ["username", "fistName", "lastName", "email"];
+const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
 const DEFAULT_ROLES = ["admin", "user"];
 
 type UserProfileFieldsProps = {
