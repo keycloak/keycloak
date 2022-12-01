@@ -19,6 +19,7 @@ package org.keycloak.it.cli.dist;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.it.junit5.extension.CLITestExtension.CONFIG_PROPERTY_SHOULD_USE_CHM_STORAGE_WHEN_POSSIBLE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
@@ -70,7 +71,7 @@ public class LoggingDistTest {
         assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus"));
         assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
 
-        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
+        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty(CONFIG_PROPERTY_SHOULD_USE_CHM_STORAGE_WHEN_POSSIBLE, "true"));
         if (useCHMStorageWhenPossible) {
             assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory]"));
         } else {
@@ -86,7 +87,7 @@ public class LoggingDistTest {
         assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus"));
         assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
 
-        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
+        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty(CONFIG_PROPERTY_SHOULD_USE_CHM_STORAGE_WHEN_POSSIBLE, "true"));
         if (useCHMStorageWhenPossible) {
             assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory]"));
         } else {
@@ -139,7 +140,7 @@ public class LoggingDistTest {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
 
-        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
+        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty(CONFIG_PROPERTY_SHOULD_USE_CHM_STORAGE_WHEN_POSSIBLE, "true"));
         if (useCHMStorageWhenPossible) {
             assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory\",\"level\":\"DEBUG\",\"message\":\"Initializing new map storage: users\""));
         } else {
@@ -155,7 +156,7 @@ public class LoggingDistTest {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
 
-        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
+        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty(CONFIG_PROPERTY_SHOULD_USE_CHM_STORAGE_WHEN_POSSIBLE, "true"));
         if (useCHMStorageWhenPossible) {
             assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory\",\"level\":\"DEBUG\",\"message\":\"Initializing new map storage: realms\""));
             assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory\",\"level\":\"DEBUG\",\"message\":\"Initializing new map storage: users\""));

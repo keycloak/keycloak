@@ -17,6 +17,14 @@
 
 package org.keycloak.it.cli.dist;
 
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
+import org.junit.jupiter.api.Test;
+import org.keycloak.it.cli.StartCommandTest;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.utils.KeycloakDistribution;
+
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,22 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
-import org.junit.jupiter.api.Test;
-import org.keycloak.it.cli.StartCommandTest;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
-
 @DistributionTest
 public class StartCommandDistTest extends StartCommandTest {
 
     @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
-    @WithLegacyStoreOnly
     void failIfAutoBuildUsingDevProfile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."));
@@ -69,7 +66,6 @@ public class StartCommandDistTest extends StartCommandTest {
 
     @Test
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
-    @WithLegacyStoreOnly
     void testStartUsingOptimizedDoesNotAllowBuildOptions(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Unknown option: '--cache'");

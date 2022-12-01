@@ -80,7 +80,7 @@ public class ClusterConfigDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start", "--log-level=info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--log-level=info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug", "--http-enabled=true", "--hostname-strict=false" })
     @WithLegacyStoreOnly
     void testStartDefaultsToClustering(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

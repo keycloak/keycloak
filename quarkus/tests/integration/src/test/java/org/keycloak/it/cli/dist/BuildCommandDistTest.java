@@ -17,19 +17,16 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest
 class BuildCommandDistTest {
@@ -49,7 +46,6 @@ class BuildCommandDistTest {
 
     @Test
     @Launch({ "--profile=dev", "build" })
-    @WithLegacyStoreOnly
     void failIfDevProfile(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: Failed to run 'build' command."),
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");

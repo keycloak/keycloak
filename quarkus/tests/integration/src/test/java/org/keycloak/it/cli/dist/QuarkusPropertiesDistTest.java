@@ -17,13 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
-import static io.restassured.RestAssured.when;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
-import java.util.function.Consumer;
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -36,8 +31,13 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithLegacyStoreOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
+import java.util.function.Consumer;
+
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.it.junit5.extension.CLITestExtension.CONFIG_PROPERTY_SHOULD_USE_CHM_STORAGE_WHEN_POSSIBLE;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Containers are immutable")
@@ -75,7 +75,6 @@ public class QuarkusPropertiesDistTest {
     @Test
     @Launch({ "-Dquarkus.log.console.level=info", "build" })
     @Order(4)
-    @WithLegacyStoreOnly
     void testIgnoreQuarkusSystemPropertyAtBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("INFO"));
@@ -115,7 +114,6 @@ public class QuarkusPropertiesDistTest {
     @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
     @Launch({ "build", "--metrics-enabled=true" })
     @Order(8)
-    @WithLegacyStoreOnly
     void buildFirstWithUnknownQuarkusBuildProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
@@ -123,14 +121,22 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @KeepServerAlive
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true" })
     @Order(9)
     @WithLegacyStoreOnly
     void testUnknownQuarkusBuildTimePropertyApplied(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertNoBuild();
-        when().get("/metrics").then().statusCode(200)
-                .body(containsString("vendor_hibernate_cache_query_plan_total"));
+
+        Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty(CONFIG_PROPERTY_SHOULD_USE_CHM_STORAGE_WHEN_POSSIBLE, "true"));
+        if (useCHMStorageWhenPossible) {
+            cliResult.assertBuild();
+        } else {
+            cliResult.assertNoBuild();
+        }
+        when().get("/metrics")
+              .then()
+              .statusCode(200)
+              .body(containsString("vendor_hibernate_cache_query_plan_total"));
     }
 
     public static class UpdateConsoleLogLevelToWarnFromQuarkusProps implements Consumer<KeycloakDistribution> {

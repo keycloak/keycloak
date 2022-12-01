@@ -57,6 +57,8 @@ import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 public class CLITestExtension extends QuarkusMainTestExtension {
 
     private static final String KEY_VALUE_SEPARATOR = "[= ]";
+
+    public static final String CONFIG_PROPERTY_SHOULD_USE_CHM_STORAGE_WHEN_POSSIBLE = "kc.test.storage.use-chm-storage-when-possible";
     private KeycloakDistribution dist;
     private final Set<String> testSysProps = new HashSet<>();
     private DatabaseContainer databaseContainer;
@@ -103,35 +105,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
 
             if (launch != null) {
-                List<String> argsFromLaunchAnnotation = new ArrayList<>(Arrays.asList(launch.value()));
-
-                WithLegacyStoreOnly withLegacyStoreOnly = context.getRequiredTestMethod().getAnnotation(WithLegacyStoreOnly.class);
-                if (withLegacyStoreOnly == null) {
-                    withLegacyStoreOnly = context.getTestClass()
-                            .orElse(Object.class)
-                            .getDeclaredAnnotation(WithLegacyStoreOnly.class);
-                }
-
-                Boolean useCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty("kc.test.storage.use-chm-storage-when-possible", "true"));
-                if (useCHMStorageWhenPossible &&
-                    withLegacyStoreOnly == null &&
-                    CollectionUtil.isNotEmpty(argsFromLaunchAnnotation)) {
-
-                    argsFromLaunchAnnotation.add(1, "--storage=chm");
-
-                    AtomicReference<String> featuresOptionFound = new AtomicReference<>(null);
-                    argsFromLaunchAnnotation.stream()
-                                            .filter(oneOption -> oneOption.startsWith("--features="))
-                                            .findFirst()
-                                            .ifPresent(oneOption -> featuresOptionFound.set(oneOption));
-                    if (featuresOptionFound.get() != null) {
-                        argsFromLaunchAnnotation.remove(featuresOptionFound.get());
-                        argsFromLaunchAnnotation.add(featuresOptionFound.get() + ",map-storage");
-                    }
-                }
-
-                result = dist.run(argsFromLaunchAnnotation);
+                result = dist.run( this.handleLaunchAnnotations(context) );
             }
+
         } else {
             configureProfile(context);
             super.beforeEach(context);
@@ -360,4 +336,44 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         Path distPath = ((RawKeycloakDistribution)dist).getDistPath();
         return new RawDistRootPath(distPath);
     }
+
+    private List<String> handleLaunchAnnotations(ExtensionContext extensionContext) {
+        Launch launchParams;
+        List<String> argsFromLaunchAnnotationList;
+        WithLegacyStoreOnly withLegacyStoreOnly;
+        Boolean shouldUseCHMStorageWhenPossible;
+        AtomicReference<String> stringAtomicReference;
+
+        launchParams = extensionContext.getRequiredTestMethod().getAnnotation(Launch.class);
+        argsFromLaunchAnnotationList = new ArrayList<>(Arrays.asList(launchParams.value()));
+
+        withLegacyStoreOnly = extensionContext.getRequiredTestMethod().getAnnotation(WithLegacyStoreOnly.class);
+        if (withLegacyStoreOnly == null) {
+            withLegacyStoreOnly = extensionContext.getTestClass()
+                    .orElse(Object.class)
+                    .getDeclaredAnnotation(WithLegacyStoreOnly.class);
+        }
+
+        shouldUseCHMStorageWhenPossible = Boolean.parseBoolean(System.getProperty(CONFIG_PROPERTY_SHOULD_USE_CHM_STORAGE_WHEN_POSSIBLE, "true"));
+        if (shouldUseCHMStorageWhenPossible &&
+            withLegacyStoreOnly == null &&
+            CollectionUtil.isNotEmpty(argsFromLaunchAnnotationList)) {
+
+            stringAtomicReference = new AtomicReference<>(null);
+            argsFromLaunchAnnotationList.stream()
+                    .filter(oneOption -> oneOption.startsWith("--features="))
+                    .findFirst()
+                    .ifPresent(oneOption -> stringAtomicReference.set(oneOption));
+
+            if (stringAtomicReference.get() != null) {
+                argsFromLaunchAnnotationList.remove(stringAtomicReference.get());
+                argsFromLaunchAnnotationList.add(stringAtomicReference.get() + ",map-storage");
+            }
+
+            argsFromLaunchAnnotationList.add("--storage=chm");
+        }
+
+        return argsFromLaunchAnnotationList;
+    }
+
 }
