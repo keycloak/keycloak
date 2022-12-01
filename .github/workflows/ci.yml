@@ -14,6 +14,8 @@ env:
   MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
 
 concurrency:
+  # Only cancel jobs for new commits on PRs, and always do a complete run on other branches (e.g. `main`).
+  # See: https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
   group: keycloak-ci-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
