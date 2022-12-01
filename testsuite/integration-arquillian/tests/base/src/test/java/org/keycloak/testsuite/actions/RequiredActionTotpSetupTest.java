@@ -352,7 +352,9 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         String totpSecret = totpPage.getTotpSecret();
 
-        totpPage.configure(totp.generateTOTP(totpSecret));
+        String firstCode = totp.generateTOTP(totpSecret);
+
+        totpPage.configure(firstCode);
 
         String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
                 .getDetails().get(Details.CODE_ID);
@@ -366,17 +368,14 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogout(authSessionId).assertEvent();
 
-        if (!reusableCodesEnabled) {
-            setTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS);
-        }
-
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        String src = driver.getPageSource();
-        loginTotpPage.login(totp.generateTOTP(totpSecret));
+
+        loginTotpPage.login(firstCode);
 
         if (!reusableCodesEnabled) {
             loginTotpPage.assertCurrent();
+            assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
         } else {
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             events.expectLogin().assertEvent();
