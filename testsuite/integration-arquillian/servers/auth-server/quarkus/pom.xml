@@ -356,6 +356,17 @@
                                     <includeArtifactIds>bc-fips,bctls-fips,bcpkix-fips</includeArtifactIds>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-bcfips-deps-client</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/bin/client/lib</outputDirectory>
+                                    <includeArtifactIds>bc-fips,bctls-fips</includeArtifactIds>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
