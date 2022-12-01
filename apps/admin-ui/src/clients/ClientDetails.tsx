@@ -583,16 +583,17 @@ export default function ClientDetails() {
             >
               <ClientSessions client={client} />
             </Tab>
-            {permissionsEnabled && (hasManageClients || client.access?.manage) && (
-              <Tab
-                id="permissions"
-                data-testid="permissionsTab"
-                title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
-                {...route("permissions")}
-              >
-                <PermissionsTab id={client.id!} type="clients" />
-              </Tab>
-            )}
+            {permissionsEnabled &&
+              (hasManageClients || client.access?.manage) && (
+                <Tab
+                  id="permissions"
+                  data-testid="permissionsTab"
+                  title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+                  {...route("permissions")}
+                >
+                  <PermissionsTab id={client.id!} type="clients" />
+                </Tab>
+              )}
             <Tab
               id="advanced"
               data-testid="advancedTab"
