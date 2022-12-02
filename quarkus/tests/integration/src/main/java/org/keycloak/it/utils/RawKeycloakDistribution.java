@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.net.ssl.HostnameVerifier;
@@ -83,15 +84,18 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean debug;
     private boolean reCreate;
     private boolean removeBuildOptionsAfterBuild;
+    private boolean createAdminUser;
     private ExecutorService outputExecutor;
     private boolean inited = false;
     private Map<String, String> envVars = new HashMap<>();
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate, boolean removeBuildOptionsAfterBuild) {
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate, boolean removeBuildOptionsAfterBuild,
+            boolean createAdminUser) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.reCreate = reCreate;
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
+        this.createAdminUser = createAdminUser;
         this.distPath = prepareDistribution();
     }
 
@@ -221,6 +225,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         if (!this.isManualStop()) {
             allArgs.add("-D" + LAUNCH_MODE + "=test");
         }
+
+        allArgs.add("-Djgroups.join_timeout=50");
 
         this.relativePath = arguments.stream().filter(arg -> arg.startsWith("--http-relative-path")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("/");
         this.httpPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--http-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8080"));
@@ -378,6 +384,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             while (keycloak.isAlive()) {
                 readStream(outStream, outputStream);
                 readStream(errStream, errorStream);
+                // a hint to temporarily disable the current thread in favor of the process where the distribution is running
+                // after some tests it shows effective to help starting the server faster
+                LockSupport.parkNanos(1L);
             }
         } catch (Throwable cause) {
             throw new RuntimeException("Failed to read server output", cause);
@@ -404,8 +413,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         ProcessBuilder pb = new ProcessBuilder(getCliArgs(arguments));
         ProcessBuilder builder = pb.directory(distPath.resolve("bin").toFile());
 
-        builder.environment().put("KEYCLOAK_ADMIN", "admin");
-        builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+        if (createAdminUser) {
+            builder.environment().put("KEYCLOAK_ADMIN", "admin");
+            builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+        }
 
         if (debug) {
             builder.environment().put("DEBUG_SUSPEND", "y");
@@ -427,8 +438,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     @Override
-    public void setEnvVar(String key, String value) {
-        this.envVars.put(key, value);
+    public void setEnvVar(String name, String value) {
+        this.envVars.put(name, value);
     }
 
     @Override
@@ -555,5 +566,18 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         copyOrReplaceFile(providerPackagePath.resolve("quarkus.properties"), Path.of("conf", "quarkus.properties"));
 
         providerJar.as(ZipExporter.class).exportTo(getDistPath().resolve("providers").resolve(providerJar.getName()).toFile());
+    }
+
+    @Override
+    public <D extends KeycloakDistribution> D unwrap(Class<D> type) {
+        if (!KeycloakDistribution.class.isAssignableFrom(type)) {
+            throw new IllegalArgumentException("Not a " + KeycloakDistribution.class + " type");
+        }
+
+        if (type.isInstance(this)) {
+            return (D) this;
+        }
+
+        throw new IllegalArgumentException("Not a " + type + " type");
     }
 }

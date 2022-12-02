@@ -30,10 +30,23 @@ public @interface DistributionTest {
 
     boolean debug() default false;
     boolean keepAlive() default false;
+    boolean createAdminUser() default false;
 
     enum ReInstall {
+
+        /**
+         * Install the distribution only once before running a test class.
+         */
         BEFORE_ALL,
+
+        /**
+         * Re-install the distribution before running a test method.
+         */
         BEFORE_TEST,
+
+        /**
+         * Does not reset the distribution such as removing data, providers, and conf directories.
+         */
         NEVER;
     }
 

@@ -33,7 +33,7 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import io.quarkus.test.junit.main.Launch;
 import io.restassured.RestAssured;
 
-@DistributionTest(keepAlive = true, reInstall = DistributionTest.ReInstall.BEFORE_TEST)
+@DistributionTest(keepAlive = true)
 @BeforeStartDistribution(CopyTLSKeystore.class)
 @RawDistOnly(reason = "Containers are immutable")
 public class ProxyDistTest {

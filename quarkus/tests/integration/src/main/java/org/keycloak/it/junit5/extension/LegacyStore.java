@@ -15,17 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.it.storage.database.dist;
+package org.keycloak.it.junit5.extension;
 
-import org.keycloak.it.junit5.extension.CLITest;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.LegacyStore;
-import org.keycloak.it.junit5.extension.WithDatabase;
-import org.keycloak.it.storage.database.MariaDBTest;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@DistributionTest(removeBuildOptionsAfterBuild = true)
-@WithDatabase(alias = "mariadb")
-@LegacyStore
-public class MariaDBDistTest extends MariaDBTest {
+/**
+ * Use this annotation to enable the legacy store when running a test.
+ */
+@Target(ElementType.TYPE)
+@ExtendWith({ CLITestExtension.class })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface LegacyStore {
 
+    /**
+     * If {@code true}, the cache is set to local by default.
+     */
+    boolean defaultLocalCache() default true;
 }
