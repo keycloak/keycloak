@@ -153,7 +153,7 @@ describe("Realm roles test", () => {
     rolesTab.goToAssociatedRolesTab();
     listingPage.removeItem("create-realm");
     sidebarPage.waitForPageLoad();
-    modalUtils.checkModalTitle("Remove mapping?").confirmModal();
+    modalUtils.checkModalTitle("Remove role?").confirmModal();
     sidebarPage.waitForPageLoad();
 
     masthead.checkNotificationMessage(
@@ -172,7 +172,7 @@ describe("Realm roles test", () => {
     associatedRolesPage.removeAssociatedRoles();
 
     sidebarPage.waitForPageLoad();
-    modalUtils.checkModalTitle("Remove mapping?").confirmModal();
+    modalUtils.checkModalTitle("Remove role?").confirmModal();
     sidebarPage.waitForPageLoad();
 
     masthead.checkNotificationMessage(
@@ -203,7 +203,7 @@ describe("Realm roles test", () => {
     // delete associated roles from list
     listingPage.removeItem("create-realm");
     sidebarPage.waitForPageLoad();
-    modalUtils.checkModalTitle("Remove mapping?").confirmModal();
+    modalUtils.checkModalTitle("Remove role?").confirmModal();
     sidebarPage.waitForPageLoad();
 
     masthead.checkNotificationMessage(
@@ -212,7 +212,7 @@ describe("Realm roles test", () => {
     );
     listingPage.removeItem("offline_access");
     sidebarPage.waitForPageLoad();
-    modalUtils.checkModalTitle("Remove mapping?").confirmModal();
+    modalUtils.checkModalTitle("Remove role?").confirmModal();
     sidebarPage.waitForPageLoad();
 
     masthead.checkNotificationMessage(

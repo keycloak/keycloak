@@ -48,8 +48,8 @@ describe("Realm settings - User registration tab", () => {
     listingPage.markItemRow(role).removeMarkedItems("Unassign");
     sidebarPage.waitForPageLoad();
     modalUtils
-      .checkModalTitle("Remove mapping?")
-      .checkModalMessage("Are you sure you want to remove this mapping?")
+      .checkModalTitle("Remove role?")
+      .checkModalMessage("Are you sure you want to remove this role?")
       .checkConfirmButtonText("Remove")
       .confirmModal();
     masthead.checkNotificationMessage("Scope mapping successfully removed");

@@ -343,7 +343,7 @@ describe("Client Scopes test", () => {
       masthead.checkNotificationMessage("Role mapping updated");
       scopeTab.checkRoles([role]);
       scopeTab.hideInheritedRoles().selectRow(role).unAssign();
-      modalUtils.checkModalTitle("Remove mapping?").confirmModal();
+      modalUtils.checkModalTitle("Remove role?").confirmModal();
       scopeTab.checkRoles([]);
     });
   });

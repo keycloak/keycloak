@@ -99,9 +99,9 @@
   "password": "Password",
   "oneTimePassword": "One-Time Password",
   "kerberos": "Kerberos",
-  "removeMappingTitle": "Remove mapping?",
-  "removeMappingConfirm_one": "Are you sure you want to remove this mapping?",
-  "removeMappingConfirm_other": "Are you sure you want to remove {{count}} mappings",
+  "removeMappingTitle": "Remove role?",
+  "removeMappingConfirm_one": "Are you sure you want to remove this role?",
+  "removeMappingConfirm_other": "Are you sure you want to remove {{count}} roles",
   "clientScopeSearch": {
     "name": "Name",
     "type": "Assigned type",

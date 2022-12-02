@@ -634,7 +634,7 @@ describe("Clients test", () => {
       rolesTab.goToAssociatedRolesTab();
       commonPage.tableUtils().selectRowItemAction("create-realm", "Unassign");
       commonPage.sidebar().waitForPageLoad();
-      commonPage.modalUtils().checkModalTitle("Remove mapping?").confirmModal();
+      commonPage.modalUtils().checkModalTitle("Remove role?").confirmModal();
       commonPage.sidebar().waitForPageLoad();
 
       commonPage
@@ -643,7 +643,7 @@ describe("Clients test", () => {
 
       commonPage.tableUtils().selectRowItemAction("manage-consent", "Unassign");
       commonPage.sidebar().waitForPageLoad();
-      commonPage.modalUtils().checkModalTitle("Remove mapping?").confirmModal();
+      commonPage.modalUtils().checkModalTitle("Remove role?").confirmModal();
     });
 
     it("Should delete associated role from search bar test", () => {
@@ -662,7 +662,7 @@ describe("Clients test", () => {
       associatedRolesPage.removeAssociatedRoles();
 
       commonPage.sidebar().waitForPageLoad();
-      commonPage.modalUtils().checkModalTitle("Remove mapping?").confirmModal();
+      commonPage.modalUtils().checkModalTitle("Remove role?").confirmModal();
       commonPage.sidebar().waitForPageLoad();
 
       commonPage
@@ -880,7 +880,7 @@ describe("Clients test", () => {
       serviceAccountTab.selectRow("create-realm").unAssign();
 
       commonPage.sidebar().waitForPageLoad();
-      commonPage.modalUtils().checkModalTitle("Remove mapping?").confirmModal();
+      commonPage.modalUtils().checkModalTitle("Remove role?").confirmModal();
       commonPage
         .masthead()
         .checkNotificationMessage("Scope mapping successfully removed");

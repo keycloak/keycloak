@@ -173,7 +173,7 @@ export default class GroupDetailPage extends GroupPage {
 
   deleteRole() {
     modalUtils
-      .checkModalTitle("Remove mapping?")
+      .checkModalTitle("Remove role?")
       .checkConfirmButtonText("Remove")
       .confirmModal();
   }
