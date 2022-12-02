@@ -55,11 +55,13 @@ public interface KeycloakDistribution {
         throw new RuntimeException("Not implemented");
     }
 
-    default void setEnvVar(String kc_db_username, String bad) {
+    default void setEnvVar(String name, String value) {
         throw new RuntimeException("Not implemented");
     }
 
     default void copyOrReplaceFile(Path file, Path targetFile) {
         throw new RuntimeException("Not implemented");
     }
+
+    <D extends KeycloakDistribution> D unwrap(Class<D> type);
 }
