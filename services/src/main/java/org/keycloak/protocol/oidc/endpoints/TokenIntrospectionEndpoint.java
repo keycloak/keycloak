@@ -33,6 +33,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
 
 import javax.ws.rs.POST;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -66,6 +68,7 @@ public class TokenIntrospectionEndpoint {
 
     @POST
     @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
     public Response introspect() {
         event.event(EventType.INTROSPECT_TOKEN);
 

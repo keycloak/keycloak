@@ -540,6 +540,7 @@ public class RealmAdminResource {
      *
      */
     @Path("push-revocation")
+    @Produces(MediaType.APPLICATION_JSON)
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.realm().requireManageRealm();
@@ -1010,6 +1011,7 @@ public class RealmAdminResource {
      */
     @Path("partialImport")
     @POST
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response partialImport(InputStream requestBody) {
         auth.realm().requireManageRealm();
@@ -1065,6 +1067,7 @@ public class RealmAdminResource {
      * @return
      */
     @Path("partial-export")
+    @Produces(MediaType.APPLICATION_JSON)
     @POST
     public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
                                                      @QueryParam("exportClients") Boolean exportClients) {

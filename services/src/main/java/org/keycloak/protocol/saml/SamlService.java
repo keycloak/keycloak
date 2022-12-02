@@ -1425,7 +1425,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     EntityUtils.consumeQuietly(result.getEntity());
                 }
 
-            } catch (IOException | ProcessingException | ParsingException e) {
+            } catch (IOException | ProcessingException | ParsingException | IllegalArgumentException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.IDENTITY_PROVIDER_ERROR);

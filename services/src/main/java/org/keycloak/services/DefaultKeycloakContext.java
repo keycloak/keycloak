@@ -76,8 +76,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
                 uriInfo = new HashMap<>();
             }
 
-            UriInfo originalUriInfo = getContextObject(UriInfo.class);
-            uriInfo.put(type, new KeycloakUriInfo(session, type, originalUriInfo));
+            uriInfo.put(type, new KeycloakUriInfo(session, type, getHttpRequest().getUri()));
         }
         return uriInfo.get(type);
     }

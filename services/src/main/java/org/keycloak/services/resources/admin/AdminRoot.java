@@ -40,6 +40,7 @@ import org.keycloak.urls.UrlType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
@@ -221,6 +222,18 @@ public class AdminRoot {
                 response);
 
         return new RealmsAdminResource(session, auth, tokenManager);
+    }
+
+    @Path("{any:.*}")
+    @OPTIONS
+    public Object preFlight() {
+        HttpRequest request = getHttpRequest();
+
+        if (!isAdminApiEnabled()) {
+            throw new NotFoundException();
+        }
+
+        return new AdminCorsPreflightService(request);
     }
 
     /**

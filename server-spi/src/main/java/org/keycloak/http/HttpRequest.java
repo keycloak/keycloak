@@ -48,6 +48,13 @@ public interface HttpRequest {
     MultivaluedMap<String, String> getDecodedFormParameters();
 
     /**
+     * Parses the parts from a multipart form request (e.g.: multipart/form-data media type).
+     *
+     * @return the parts from a multipart form request
+     */
+    MultivaluedMap<String, FormPartValue> getMultiPartFormParameters();
+
+    /**
      * Returns the HTTP headers.
      *
      * @return the HTTP headers
