@@ -187,7 +187,7 @@ export default function UsersSection() {
         )}
         {user.bruteForceStatus?.disabled && (
           <Label key={user.id} color="orange" icon={<WarningTriangleIcon />}>
-            {t("temporaryDisabled")}
+            {t("temporaryLocked")}
           </Label>
         )}
         {user.enabled && !user.bruteForceStatus?.disabled && "—"}
