@@ -27,10 +27,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -156,7 +156,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
         // not cached, create a note with cache
         if (metadataMap == null) {
-            metadataMap = new HashMap<>();
+            metadataMap = new ConcurrentHashMap<>();
             model.setNote(PARSED_CONFIG_COMPONENT_KEY, metadataMap);
         }
 
