@@ -28,7 +28,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @RawDistOnly(reason = "Need to check dist path")
-@DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
+@DistributionTest
 public class ChmStorageDistTest {
 
     @Test

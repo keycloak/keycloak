@@ -4,14 +4,15 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
@@ -24,22 +25,18 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@LegacyStore
 public class FeaturesDistTest {
 
     @Test
-    @Launch({ Build.NAME, "--features=preview", "--cache=local"})
-    @Order(1)
-    public void testEnableOnBuild(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    public void testEnableOnBuild(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run(Build.NAME, "--features=preview");
         cliResult.assertBuild();
         assertPreviewFeaturesEnabled(cliResult);
-    }
 
-    @Test
-    @Launch({ Start.NAME, "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
-    @Order(2)
-    public void testFeatureEnabledOnStart(LaunchResult result) {
-        assertPreviewFeaturesEnabled((CLIResult) result);
+        cliResult = dist.run(Start.NAME, "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG);
+        assertPreviewFeaturesEnabled(cliResult);
+
     }
 
     @Test
