@@ -1,7 +1,4 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
+import { Language } from "@patternfly/react-code-editor";
 import {
   ActionGroup,
   AlertVariant,
@@ -9,14 +6,18 @@ import {
   FormGroup,
   PageSection,
 } from "@patternfly/react-core";
-import { Language } from "@patternfly/react-code-editor";
+import { useState } from "react";
+import { FormProvider, useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import {
@@ -24,12 +25,12 @@ import {
   convertFormValuesToObject,
   convertToFormValues,
 } from "../../util";
+import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { CapabilityConfig } from "../add/CapabilityConfig";
 import { ClientDescription } from "../ClientDescription";
+import { FormFields } from "../ClientDetails";
 import { toClient } from "../routes/Client";
 import { toClients } from "../routes/Clients";
-import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
-import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 
 const isXml = (text: string) => text.startsWith("<");
 
@@ -38,7 +39,7 @@ export default function ImportForm() {
   const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
-  const form = useForm<ClientRepresentation>({ shouldUnregister: false });
+  const form = useForm<FormFields>({ shouldUnregister: false });
   const { register, handleSubmit, setValue } = form;
   const [imported, setImported] = useState<ClientRepresentation>({});
 
@@ -118,11 +119,9 @@ export default function ImportForm() {
             <ClientDescription hasConfigureAccess />
             <FormGroup label={t("common:type")} fieldId="kc-type">
               <KeycloakTextInput
-                type="text"
                 id="kc-type"
-                name="protocol"
                 isReadOnly
-                ref={register()}
+                {...register("protocol")}
               />
             </FormGroup>
             <CapabilityConfig unWrap={true} />

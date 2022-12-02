@@ -55,7 +55,7 @@ export const ExecutionConfigModal = ({
   } = form;
 
   const setupForm = (config?: AuthenticatorConfigRepresentation) => {
-    convertToFormValues(config, setValue);
+    convertToFormValues(config || {}, setValue);
   };
 
   useFetch(

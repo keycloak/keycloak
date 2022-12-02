@@ -17,6 +17,7 @@ import {
 import {
   arrayToKeyValue,
   keyValueToArray,
+  KeyValueType,
 } from "../components/key-value-form/key-value-convert";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
@@ -34,8 +35,9 @@ export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
   const { config } = useUserProfile();
 
   const convertAttributes = () => {
-    return arrayToKeyValue(user.attributes!).filter(
-      (a) => !config?.attributes?.some((attribute) => attribute.name === a.key)
+    return arrayToKeyValue<UserRepresentation>(user.attributes!).filter(
+      (a: KeyValueType) =>
+        !config?.attributes?.some((attribute) => attribute.name === a.key)
     );
   };
 

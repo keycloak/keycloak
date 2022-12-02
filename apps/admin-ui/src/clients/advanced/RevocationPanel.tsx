@@ -1,25 +1,25 @@
-import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom-v5-compat";
-import { Trans, useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
 import {
+  ActionGroup,
+  Button,
   FormGroup,
   InputGroup,
-  Button,
-  ActionGroup,
-  Tooltip,
   Text,
+  Tooltip,
 } from "@patternfly/react-core";
+import { useEffect, useRef } from "react";
+import { useFormContext } from "react-hook-form-v7";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router-dom-v5-compat";
 
-import { AdvancedProps, parseResult } from "../AdvancedTab";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { toClient } from "../routes/Client";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
+import { AdvancedProps, parseResult } from "../AdvancedTab";
+import { toClient } from "../routes/Client";
 
 export const RevocationPanel = ({
   save,

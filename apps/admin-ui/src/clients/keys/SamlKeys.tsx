@@ -1,35 +1,35 @@
-import { Fragment, useState } from "react";
-import { saveAs } from "file-saver";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
-  CardBody,
-  PageSection,
-  TextContent,
-  Text,
-  FormGroup,
-  Switch,
-  Card,
-  Form,
   ActionGroup,
-  Button,
   AlertVariant,
+  Button,
+  Card,
+  CardBody,
+  Form,
+  FormGroup,
+  PageSection,
+  Switch,
+  Text,
+  TextContent,
 } from "@patternfly/react-core";
+import { saveAs } from "file-saver";
+import { Fragment, useState } from "react";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useAlerts } from "../../components/alert/Alerts";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { SamlKeysDialog } from "./SamlKeysDialog";
 import { FormPanel } from "../../components/scroll-form/FormPanel";
-import { Certificate } from "./Certificate";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAlerts } from "../../components/alert/Alerts";
-import { SamlImportKeyDialog } from "./SamlImportKeyDialog";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { convertAttributeNameToForm } from "../../util";
 import useToggle from "../../utils/useToggle";
+import { FormFields } from "../ClientDetails";
+import { Certificate } from "./Certificate";
 import { ExportSamlKeyDialog } from "./ExportSamlKeyDialog";
+import { SamlImportKeyDialog } from "./SamlImportKeyDialog";
+import { SamlKeysDialog } from "./SamlKeysDialog";
 
 type SamlKeysProps = {
   clientId: string;
@@ -70,14 +70,14 @@ const KeySection = ({
   onImport,
 }: KeySectionProps) => {
   const { t } = useTranslation("clients");
-  const { control, watch } = useFormContext<ClientRepresentation>();
+  const { control, watch } = useFormContext<FormFields>();
   const title = KEYS_MAPPING[attr].title;
   const key = KEYS_MAPPING[attr].key;
   const name = KEYS_MAPPING[attr].name;
 
   const [showImportDialog, toggleImportDialog] = useToggle();
 
-  const section = watch(name);
+  const section = watch(name as keyof FormFields);
   return (
     <>
       {showImportDialog && (
@@ -100,21 +100,21 @@ const KeySection = ({
             hasNoPaddingTop
           >
             <Controller
-              name={name}
+              name={name as keyof FormFields}
               control={control}
               defaultValue="false"
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Switch
                   data-testid={key}
                   id={key}
                   label={t("common:on")}
                   labelOff={t("common:off")}
-                  isChecked={value === "true"}
+                  isChecked={field.value === "true"}
                   onChange={(value) => {
                     const v = value.toString();
                     if (v === "true") {
                       onChanged(attr);
-                      onChange(v);
+                      field.onChange(v);
                     } else {
                       onGenerate(attr, false);
                     }

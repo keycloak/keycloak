@@ -1,40 +1,41 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
-  FormGroup,
-  Select,
-  SelectVariant,
-  SelectOption,
-  PageSection,
   ActionGroup,
   Button,
-  Switch,
   ExpandableSection,
+  FormGroup,
+  PageSection,
+  Select,
+  SelectOption,
+  SelectVariant,
+  Switch,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, FormProvider, useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
+import type PolicyEvaluationResponse from "@keycloak/keycloak-admin-client/lib/defs/policyEvaluationResponse";
 import type ResourceEvaluation from "@keycloak/keycloak-admin-client/lib/defs/resourceEvaluation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import type PolicyEvaluationResponse from "@keycloak/keycloak-admin-client/lib/defs/policyEvaluationResponse";
 
-import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { ClientSelect } from "../../components/client/ClientSelect";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { FormPanel } from "../../components/scroll-form/FormPanel";
+import { UserSelect } from "../../components/users/UserSelect";
+import { useAccess } from "../../context/access/Access";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { KeyBasedAttributeInput } from "./KeyBasedAttributeInput";
-import { defaultContextAttributes } from "../utils";
-import { useAccess } from "../../context/access/Access";
 import { ForbiddenSection } from "../../ForbiddenSection";
+import { FormFields } from "../ClientDetails";
+import { defaultContextAttributes } from "../utils";
 import { Results } from "./evaluate/Results";
-import { ClientSelect } from "../../components/client/ClientSelect";
-import { UserSelect } from "../../components/users/UserSelect";
+import { KeyBasedAttributeInput } from "./KeyBasedAttributeInput";
 
 import "./auth-evaluate.css";
 
@@ -46,7 +47,7 @@ interface EvaluateFormInputs
     attributes: Record<string, string>[];
   };
   resources?: Record<string, string>[];
-  client: ClientRepresentation;
+  client: FormFields;
   user: string[];
 }
 
@@ -82,9 +83,8 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
     control,
     register,
     reset,
-    errors,
     trigger,
-    formState: { isValid },
+    formState: { isValid, errors },
   } = form;
   const { t } = useTranslation("clients");
   const { adminClient } = useAdminClient();
@@ -210,37 +210,37 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
             >
               <Controller
                 name="roleIds"
-                placeholderText={t("selectARole")}
                 control={control}
                 defaultValue={[]}
-                rules={{ validate: (value) => value.length > 0 }}
-                render={({ onChange, value }) => (
+                rules={{ validate: (value) => (value || "").length > 0 }}
+                render={({ field }) => (
                   <Select
+                    placeholderText={t("selectARole")}
                     variant={SelectVariant.typeaheadMulti}
                     toggleId="role"
                     onToggle={setRoleDropdownOpen}
-                    selections={value}
+                    selections={field.value}
                     onSelect={(_, v) => {
                       const option = v.toString();
-                      if (value.includes(option)) {
-                        onChange(
-                          value.filter((item: string) => item !== option)
+                      if (field.value?.includes(option)) {
+                        field.onChange(
+                          field.value.filter((item: string) => item !== option)
                         );
                       } else {
-                        onChange([...value, option]);
+                        field.onChange([...(field.value || []), option]);
                       }
                       setRoleDropdownOpen(false);
                     }}
                     onClear={(event) => {
                       event.stopPropagation();
-                      onChange([]);
+                      field.onChange([]);
                     }}
                     aria-label={t("realmRole")}
                     isOpen={roleDropdownOpen}
                   >
                     {clientRoles.map((role) => (
                       <SelectOption
-                        selected={role.name === value}
+                        selected={role.name === field.value}
                         key={role.name}
                         value={role.name}
                       />
@@ -308,15 +308,13 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                     />
                   }
                   fieldId="client"
-                  validated={form.errors.alias ? "error" : "default"}
+                  validated={errors.alias ? "error" : "default"}
                   helperTextInvalid={t("common:required")}
                 >
                   <KeycloakTextInput
-                    type="text"
                     id="alias"
-                    name="alias"
                     data-testid="alias"
-                    ref={register({ required: true })}
+                    {...register("alias", { required: true })}
                   />
                 </FormGroup>
                 <FormGroup
@@ -333,29 +331,31 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                     name="authScopes"
                     defaultValue={[]}
                     control={control}
-                    render={({ onChange, value }) => (
+                    render={({ field }) => (
                       <Select
                         toggleId="authScopes"
                         onToggle={setScopesDropdownOpen}
                         onSelect={(_, v) => {
                           const option = v.toString();
-                          if (value.includes(option)) {
-                            onChange(
-                              value.filter((item: string) => item !== option)
+                          if (field.value.includes(option)) {
+                            field.onChange(
+                              field.value.filter(
+                                (item: string) => item !== option
+                              )
                             );
                           } else {
-                            onChange([...value, option]);
+                            field.onChange([...field.value, option]);
                           }
                           setScopesDropdownOpen(false);
                         }}
-                        selections={value}
+                        selections={field.value}
                         variant={SelectVariant.typeaheadMulti}
                         aria-label={t("authScopes")}
                         isOpen={scopesDropdownOpen}
                       >
                         {scopes.map((scope) => (
                           <SelectOption
-                            selected={scope.name === value}
+                            selected={field.value.includes(scope.name!)}
                             key={scope.id}
                             value={scope.name}
                           />

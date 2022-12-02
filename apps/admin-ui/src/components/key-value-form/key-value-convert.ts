@@ -1,3 +1,5 @@
+import { Path, PathValue } from "react-hook-form-v7";
+
 export type KeyValueType = { key: string; value: string };
 
 export function keyValueToArray(attributeArray: KeyValueType[] = []) {
@@ -15,10 +17,10 @@ export function keyValueToArray(attributeArray: KeyValueType[] = []) {
   return result;
 }
 
-export function arrayToKeyValue(attributes: Record<string, string[]> = {}) {
+export function arrayToKeyValue<T>(attributes: Record<string, string[]> = {}) {
   const result = Object.entries(attributes).flatMap(([key, value]) =>
     value.map<KeyValueType>((value) => ({ key, value }))
   );
 
-  return result.concat({ key: "", value: "" });
+  return result.concat({ key: "", value: "" }) as PathValue<T, Path<T>>;
 }

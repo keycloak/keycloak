@@ -1,7 +1,3 @@
-import { useState } from "react";
-import { Control, Controller } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { sortBy } from "lodash-es";
 import {
   ActionGroup,
   Button,
@@ -10,13 +6,16 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { sortBy } from "lodash-es";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 type AuthenticationOverridesProps = {
-  control: Control<Record<string, any>>;
   save: () => void;
   reset: () => void;
   protocol?: string;
@@ -25,7 +24,6 @@ type AuthenticationOverridesProps = {
 
 export const AuthenticationOverrides = ({
   protocol,
-  control,
   save,
   reset,
   hasConfigureAccess,
@@ -35,6 +33,8 @@ export const AuthenticationOverrides = ({
   const [flows, setFlows] = useState<JSX.Element[]>([]);
   const [browserFlowOpen, setBrowserFlowOpen] = useState(false);
   const [directGrantOpen, setDirectGrantOpen] = useState(false);
+
+  const { control } = useFormContext();
 
   useFetch(
     () => adminClient.authenticationManagement.getFlows(),
@@ -77,17 +77,17 @@ export const AuthenticationOverrides = ({
           name="authenticationFlowBindingOverrides.browser"
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="browserFlow"
               variant={SelectVariant.single}
               onToggle={setBrowserFlowOpen}
               isOpen={browserFlowOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setBrowserFlowOpen(false);
               }}
-              selections={[value]}
+              selections={[field.value]}
             >
               {flows}
             </Select>
@@ -109,17 +109,17 @@ export const AuthenticationOverrides = ({
             name="authenticationFlowBindingOverrides.direct_grant"
             defaultValue=""
             control={control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 toggleId="directGrant"
                 variant={SelectVariant.single}
                 onToggle={setDirectGrantOpen}
                 isOpen={directGrantOpen}
                 onSelect={(_, value) => {
-                  onChange(value);
+                  field.onChange(value);
                   setDirectGrantOpen(false);
                 }}
-                selections={[value]}
+                selections={[field.value]}
               >
                 {flows}
               </Select>

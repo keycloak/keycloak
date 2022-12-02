@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Control, Controller } from "react-hook-form";
 import {
   ActionGroup,
   Button,
@@ -10,17 +7,20 @@ import {
   SelectVariant,
   Switch,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeyValueInput } from "../../components/key-value-form/hook-form-v7/KeyValueInput";
+import { MultiLineInput } from "../../components/multi-line-input/hook-form-v7/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { TokenLifespan } from "./TokenLifespan";
-import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
-import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { convertAttributeNameToForm } from "../../util";
+import { FormFields } from "../ClientDetails";
+import { TokenLifespan } from "./TokenLifespan";
 
 type AdvancedSettingsProps = {
-  control: Control<Record<string, any>>;
   save: () => void;
   reset: () => void;
   protocol?: string;
@@ -28,7 +28,6 @@ type AdvancedSettingsProps = {
 };
 
 export const AdvancedSettings = ({
-  control,
   save,
   reset,
   protocol,
@@ -36,6 +35,8 @@ export const AdvancedSettings = ({
 }: AdvancedSettingsProps) => {
   const { t } = useTranslation("clients");
   const [open, setOpen] = useState(false);
+
+  const { control, register } = useFormContext();
   return (
     <FormAccess
       role="manage-realm"
@@ -54,16 +55,16 @@ export const AdvancedSettings = ({
           }
         >
           <Controller
-            name={convertAttributeNameToForm(
+            name={convertAttributeNameToForm<FormFields>(
               "attributes.saml.assertion.lifespan"
             )}
             defaultValue=""
             control={control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <TimeSelector
                 units={["minute", "day", "hour"]}
-                value={value}
-                onChange={onChange}
+                value={field.value}
+                onChange={field.onChange}
               />
             )}
           />
@@ -78,7 +79,6 @@ export const AdvancedSettings = ({
             )}
             defaultValue=""
             units={["minute", "day", "hour"]}
-            control={control}
           />
 
           <TokenLifespan
@@ -88,7 +88,6 @@ export const AdvancedSettings = ({
             )}
             defaultValue=""
             units={["minute", "day", "hour"]}
-            control={control}
           />
 
           <TokenLifespan
@@ -98,7 +97,6 @@ export const AdvancedSettings = ({
             )}
             defaultValue=""
             units={["minute", "day", "hour"]}
-            control={control}
           />
 
           <TokenLifespan
@@ -108,7 +106,6 @@ export const AdvancedSettings = ({
             )}
             defaultValue=""
             units={["minute", "day", "hour"]}
-            control={control}
           />
 
           <TokenLifespan
@@ -118,7 +115,6 @@ export const AdvancedSettings = ({
             )}
             defaultValue=""
             units={["minute", "day", "hour"]}
-            control={control}
           />
 
           <FormGroup
@@ -136,13 +132,13 @@ export const AdvancedSettings = ({
               name="attributes.tls-client-certificate-bound-access-tokens"
               defaultValue={false}
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Switch
                   id="oAuthMutual-switch"
                   label={t("common:on")}
                   labelOff={t("common:off")}
-                  isChecked={value === "true"}
-                  onChange={(value) => onChange("" + value)}
+                  isChecked={field.value === "true"}
+                  onChange={(value) => field.onChange("" + value)}
                   aria-label={t("oAuthMutual")}
                 />
               )}
@@ -160,22 +156,22 @@ export const AdvancedSettings = ({
             }
           >
             <Controller
-              name={convertAttributeNameToForm(
+              name={convertAttributeNameToForm<FormFields>(
                 "attributes.pkce.code.challenge.method"
               )}
               defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Select
                   toggleId="keyForCodeExchange"
                   variant={SelectVariant.single}
                   onToggle={setOpen}
                   isOpen={open}
                   onSelect={(_, value) => {
-                    onChange(value);
+                    field.onChange(value);
                     setOpen(false);
                   }}
-                  selections={[value || t("common:choose")]}
+                  selections={[field.value || t("common:choose")]}
                 >
                   {["", "S256", "plain"].map((v) => (
                     <SelectOption key={v} value={v}>
@@ -197,18 +193,18 @@ export const AdvancedSettings = ({
             }
           >
             <Controller
-              name={convertAttributeNameToForm(
+              name={convertAttributeNameToForm<FormFields>(
                 "attributes.require.pushed.authorization.requests"
               )}
               defaultValue="false"
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Switch
                   id="pushedAuthorizationRequestRequired"
                   label={t("common:on")}
                   labelOff={t("common:off")}
-                  isChecked={value === "true"}
-                  onChange={(value) => onChange(value.toString())}
+                  isChecked={field.value === "true"}
+                  onChange={(value) => field.onChange(value.toString())}
                   aria-label={t("pushedAuthorizationRequestRequired")}
                 />
               )}
@@ -225,7 +221,9 @@ export const AdvancedSettings = ({
             }
           >
             <KeyValueInput
-              name={convertAttributeNameToForm("attributes.acr.loa.map")}
+              {...register(
+                convertAttributeNameToForm("attributes.acr.loa.map")
+              )}
             />
           </FormGroup>
           <FormGroup

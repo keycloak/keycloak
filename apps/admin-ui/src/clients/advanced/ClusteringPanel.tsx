@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   AlertVariant,
   Button,
@@ -11,8 +8,10 @@ import {
   SplitItem,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import { AdvancedProps, parseResult } from "../AdvancedTab";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
@@ -21,8 +20,9 @@ import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useAdminClient } from "../../context/auth/AdminClient";
-import { AddHostDialog } from ".././advanced/AddHostDialog";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
+import { AddHostDialog } from ".././advanced/AddHostDialog";
+import { AdvancedProps, parseResult } from "../AdvancedTab";
 
 export const ClusteringPanel = ({
   save,
@@ -98,8 +98,8 @@ export const ClusteringPanel = ({
                 name="nodeReRegistrationTimeout"
                 defaultValue=""
                 control={control}
-                render={({ onChange, value }) => (
-                  <TimeSelector value={value} onChange={onChange} />
+                render={({ field }) => (
+                  <TimeSelector value={field.value} onChange={field.onChange} />
                 )}
               />
             </SplitItem>

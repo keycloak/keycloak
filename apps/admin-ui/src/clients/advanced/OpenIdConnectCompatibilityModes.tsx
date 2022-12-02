@@ -1,25 +1,25 @@
-import { useTranslation } from "react-i18next";
-import { Control, Controller } from "react-hook-form";
 import { ActionGroup, Button, FormGroup, Switch } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { convertAttributeNameToForm } from "../../util";
+import { FormFields } from "../ClientDetails";
 
 type OpenIdConnectCompatibilityModesProps = {
-  control: Control<Record<string, any>>;
   save: () => void;
   reset: () => void;
   hasConfigureAccess?: boolean;
 };
 
 export const OpenIdConnectCompatibilityModes = ({
-  control,
   save,
   reset,
   hasConfigureAccess,
 }: OpenIdConnectCompatibilityModesProps) => {
   const { t } = useTranslation("clients");
+  const { control } = useFormContext();
   return (
     <FormAccess
       role="manage-realm"
@@ -38,18 +38,18 @@ export const OpenIdConnectCompatibilityModes = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.exclude.session.state.from.auth.response"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="excludeSessionStateFromAuthenticationResponse-switch"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange(value.toString())}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange(value.toString())}
               aria-label={t("excludeSessionStateFromAuthenticationResponse")}
             />
           )}
@@ -67,16 +67,18 @@ export const OpenIdConnectCompatibilityModes = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm("attributes.use.refresh.tokens")}
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.use.refresh.tokens"
+          )}
           defaultValue="true"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="useRefreshTokens"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange(value.toString())}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange(value.toString())}
               aria-label={t("useRefreshTokens")}
             />
           )}
@@ -94,18 +96,18 @@ export const OpenIdConnectCompatibilityModes = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.client_credentials.use_refresh_token"
           )}
           defaultValue="false"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="useRefreshTokenForClientCredentialsGrant"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange(value.toString())}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange(value.toString())}
               aria-label={t("useRefreshTokenForClientCredentialsGrant")}
             />
           )}
@@ -123,18 +125,18 @@ export const OpenIdConnectCompatibilityModes = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.token.response.type.bearer.lower-case"
           )}
           defaultValue="false"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="useLowerCaseBearerType"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange(value.toString())}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange(value.toString())}
               aria-label={t("useLowerCaseBearerType")}
             />
           )}

@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup, Radio } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
@@ -35,7 +35,7 @@ export const DecisionStrategySelect = ({
         data-testid="decisionStrategy"
         defaultValue={DECISION_STRATEGY[0]}
         control={control}
-        render={({ onChange, value }) => (
+        render={(field) => (
           <>
             {(isLimited
               ? DECISION_STRATEGY.slice(0, 2)
@@ -45,9 +45,9 @@ export const DecisionStrategySelect = ({
                 id={strategy}
                 key={strategy}
                 data-testid={strategy}
-                isChecked={value === strategy}
+                isChecked={field.value === strategy}
                 name="decisionStrategy"
-                onChange={() => onChange(strategy)}
+                onChange={() => field.onChange(strategy)}
                 label={t(`decisionStrategies.${strategy}`)}
                 className="pf-u-mb-md"
               />

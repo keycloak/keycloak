@@ -1,12 +1,12 @@
-import { Controller, useFormContext } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormAccess } from "../components/form-access/FormAccess";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { HelpItem } from "../components/help-enabler/HelpItem";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { FormFields } from "./ClientDetails";
 
 type ClientDescriptionProps = {
   protocol?: string;
@@ -21,7 +21,7 @@ export const ClientDescription = ({
     register,
     control,
     formState: { errors },
-  } = useFormContext<ClientRepresentation>();
+  } = useFormContext<FormFields>();
   return (
     <FormAccess role="manage-clients" fineGrainedAccess={configure} unWrap>
       <FormGroup
@@ -37,11 +37,9 @@ export const ClientDescription = ({
         isRequired
       >
         <KeycloakTextInput
-          ref={register({ required: true })}
-          type="text"
+          {...register("clientId", { required: true })}
           id="kc-client-id"
           data-testid="kc-client-id"
-          name="clientId"
           validated={
             errors.clientId ? ValidatedOptions.error : ValidatedOptions.default
           }
@@ -54,12 +52,7 @@ export const ClientDescription = ({
         label={t("common:name")}
         fieldId="kc-name"
       >
-        <KeycloakTextInput
-          ref={register()}
-          type="text"
-          id="kc-name"
-          name="name"
-        />
+        <KeycloakTextInput {...register("name")} id="kc-name" />
       </FormGroup>
       <FormGroup
         labelIcon={
@@ -76,15 +69,13 @@ export const ClientDescription = ({
         helperTextInvalid={errors.description?.message}
       >
         <KeycloakTextArea
-          ref={register({
+          {...register("description", {
             maxLength: {
               value: 255,
               message: t("common:maxLength", { length: 255 }),
             },
           })}
-          type="text"
           id="kc-description"
-          name="description"
           validated={
             errors.description
               ? ValidatedOptions.error
@@ -107,13 +98,13 @@ export const ClientDescription = ({
           name="alwaysDisplayInConsole"
           defaultValue={false}
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="kc-always-display-in-console-switch"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value}
-              onChange={onChange}
+              isChecked={field.value}
+              onChange={field.onChange}
               aria-label={t("alwaysDisplayInConsole")}
             />
           )}

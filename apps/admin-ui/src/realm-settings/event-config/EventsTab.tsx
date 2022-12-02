@@ -53,7 +53,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
 
   const setupForm = (eventConfig?: EventsConfigForm) => {
     setEvents(eventConfig);
-    convertToFormValues(eventConfig, setValue);
+    convertToFormValues(eventConfig || {}, setValue);
   };
 
   const clear = async (type: EventsType) => {

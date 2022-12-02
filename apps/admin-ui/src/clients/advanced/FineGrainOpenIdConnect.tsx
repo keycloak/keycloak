@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   ActionGroup,
   Button,
@@ -9,12 +6,16 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { MultiLineInput } from "../../components/multi-line-input/hook-form-v7/MultiLineInput";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, sortProviders } from "../../util";
-import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { FormFields } from "../ClientDetails";
 import { ApplicationUrls } from "./ApplicationUrls";
 
 type FineGrainOpenIdConnectProps = {
@@ -160,22 +161,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.access.token.signed.response.alg"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="accessTokenSignatureAlgorithm"
               variant={SelectVariant.single}
               onToggle={setAccessTokenOpen}
               isOpen={accessTokenOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setAccessTokenOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {keyOptions}
             </Select>
@@ -193,22 +194,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.id.token.signed.response.alg"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="idTokenSignatureAlgorithm"
               variant={SelectVariant.single}
               onToggle={setIdTokenOpen}
               isOpen={idTokenOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setIdTokenOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {keyOptions}
             </Select>
@@ -226,22 +227,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.id.token.encrypted.response.alg"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="idTokenEncryptionKeyManagementAlgorithm"
               variant={SelectVariant.single}
               onToggle={setIdTokenKeyManagementOpen}
               isOpen={idTokenKeyManagementOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setIdTokenKeyManagementOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {cekManagementOptions}
             </Select>
@@ -259,22 +260,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.id.token.encrypted.response.enc"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="idTokenEncryptionContentEncryptionAlgorithm"
               variant={SelectVariant.single}
               onToggle={setIdTokenContentOpen}
               isOpen={idTokenContentOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setIdTokenContentOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {contentOptions}
             </Select>
@@ -292,22 +293,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.user.info.response.signature.alg"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="userInfoSignedResponseAlgorithm"
               variant={SelectVariant.single}
               onToggle={setUserInfoSignedResponseOpen}
               isOpen={userInfoSignedResponseOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setUserInfoSignedResponseOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {signatureOptions}
             </Select>
@@ -325,22 +326,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.request.object.signature.alg"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="requestObjectSignatureAlgorithm"
               variant={SelectVariant.single}
               onToggle={setRequestObjectSignatureOpen}
               isOpen={requestObjectSignatureOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setRequestObjectSignatureOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {requestObjectOptions}
             </Select>
@@ -358,22 +359,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.request.object.encryption.alg"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="requestObjectEncryption"
               variant={SelectVariant.single}
               onToggle={setRequestObjectEncryptionOpen}
               isOpen={requestObjectEncryptionOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setRequestObjectEncryptionOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {requestObjectEncryptionOptions}
             </Select>
@@ -391,22 +392,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.request.object.encryption.enc"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="requestObjectEncoding"
               variant={SelectVariant.single}
               onToggle={setRequestObjectEncodingOpen}
               isOpen={requestObjectEncodingOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setRequestObjectEncodingOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {requestObjectEncodingOptions}
             </Select>
@@ -424,22 +425,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.request.object.required"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="requestObjectRequired"
               variant={SelectVariant.single}
               onToggle={setRequestObjectRequiredOpen}
               isOpen={requestObjectRequiredOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setRequestObjectRequiredOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {requestObjectRequiredOptions}
             </Select>
@@ -474,22 +475,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.authorization.signed.response.alg"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="authorizationSignedResponseAlg"
               variant={SelectVariant.single}
               onToggle={setAuthorizationSignedOpen}
               isOpen={authorizationSignedOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setAuthorizationSignedOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {authorizationSignedResponseOptions}
             </Select>
@@ -507,22 +508,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.authorization.encrypted.response.alg"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="authorizationEncryptedResponseAlg"
               variant={SelectVariant.single}
               onToggle={setAuthorizationEncryptedOpen}
               isOpen={authorizationEncryptedOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setAuthorizationEncryptedOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {cekManagementOptions}
             </Select>
@@ -540,22 +541,22 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.authorization.encrypted.response.enc"
           )}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="authorizationEncryptedResponseEnc"
               variant={SelectVariant.single}
               onToggle={setAuthorizationEncryptedResponseOpen}
               isOpen={authorizationEncryptedResponseOpen}
               onSelect={(_, value) => {
-                onChange(value);
+                field.onChange(value);
                 setAuthorizationEncryptedResponseOpen(false);
               }}
-              selections={value}
+              selections={field.value}
             >
               {contentOptions}
             </Select>

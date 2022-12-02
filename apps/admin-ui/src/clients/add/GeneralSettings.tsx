@@ -1,17 +1,17 @@
-import { useState } from "react";
 import {
   FormGroup,
   Select,
-  SelectVariant,
   SelectOption,
+  SelectVariant,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 
-import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
-import { ClientDescription } from "../ClientDescription";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
+import { ClientDescription } from "../ClientDescription";
 import { getProtocolName } from "../utils";
 
 export const GeneralSettings = () => {
@@ -41,22 +41,22 @@ export const GeneralSettings = () => {
           name="protocol"
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               id="kc-type"
               onToggle={isOpen}
               onSelect={(_, value) => {
-                onChange(value.toString());
+                field.onChange(value.toString());
                 isOpen(false);
               }}
-              selections={value}
+              selections={field.value}
               variant={SelectVariant.single}
               aria-label={t("selectEncryptionType")}
               isOpen={open}
             >
               {providers.map((option) => (
                 <SelectOption
-                  selected={option === value}
+                  selected={option === field.value}
                   key={option}
                   value={option}
                   data-testid={`option-${option}`}

@@ -1,3 +1,4 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   AlertVariant,
   Button,
@@ -6,9 +7,8 @@ import {
   WizardContextConsumer,
   WizardFooter,
 } from "@patternfly/react-core";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom-v5-compat";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -16,6 +16,7 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject } from "../../util";
+import { FormFields } from "../ClientDetails";
 import { toClient } from "../routes/Client";
 import { toClients } from "../routes/Clients";
 import { CapabilityConfig } from "./CapabilityConfig";
@@ -42,7 +43,7 @@ export default function NewClientForm() {
     frontchannelLogout: true,
   });
   const { addAlert, addError } = useAlerts();
-  const methods = useForm<ClientRepresentation>({ defaultValues: client });
+  const methods = useForm<FormFields>({ defaultValues: client });
   const protocol = methods.watch("protocol");
 
   const save = async () => {

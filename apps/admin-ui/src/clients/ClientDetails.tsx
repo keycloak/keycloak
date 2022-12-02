@@ -1,3 +1,4 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
@@ -10,10 +11,14 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { InfoCircleIcon } from "@patternfly/react-icons";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { cloneDeep, sortBy } from "lodash-es";
 import { useMemo, useState } from "react";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useWatch,
+} from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 import { useHistory, useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
@@ -23,13 +28,21 @@ import {
   useConfirmDialog,
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
+import type { KeyValueType } from "../components/key-value-form/key-value-convert";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { PermissionsTab } from "../components/permission-tab/PermissionTab";
+import {
+  routableTab,
+  RoutableTabs,
+} from "../components/routable-tabs/RoutableTabs";
 import {
   ViewHeader,
   ViewHeaderBadge,
 } from "../components/view-header/ViewHeader";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { useAccess } from "../context/access/Access";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { RolesList } from "../realm-roles/RolesList";
 import {
   convertAttributeNameToForm,
@@ -39,41 +52,33 @@ import {
 } from "../util";
 import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
-import { ClientSettings } from "./ClientSettings";
-import { ClientSessions } from "./ClientSessions";
-import { Credentials } from "./credentials/Credentials";
-import { Keys } from "./keys/Keys";
-import { ClientParams, ClientTab, toClient } from "./routes/Client";
-import { toClients } from "./routes/Clients";
-import { ClientScopes } from "./scopes/ClientScopes";
-import { EvaluateScopes } from "./scopes/EvaluateScopes";
-import { ServiceAccount } from "./service-account/ServiceAccount";
-import { isRealmClient, getProtocolName } from "./utils";
-import { SamlKeys } from "./keys/SamlKeys";
-import { AuthorizationSettings } from "./authorization/Settings";
+import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";
+import { AuthorizationExport } from "./authorization/AuthorizationExport";
+import { AuthorizationPermissions } from "./authorization/Permissions";
+import { AuthorizationPolicies } from "./authorization/Policies";
 import { AuthorizationResources } from "./authorization/Resources";
 import { AuthorizationScopes } from "./authorization/Scopes";
-import { AuthorizationPolicies } from "./authorization/Policies";
-import { AuthorizationPermissions } from "./authorization/Permissions";
-import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";
-import {
-  routableTab,
-  RoutableTabs,
-} from "../components/routable-tabs/RoutableTabs";
+import { AuthorizationSettings } from "./authorization/Settings";
+import { ClientSessions } from "./ClientSessions";
+import { ClientSettings } from "./ClientSettings";
+import { Credentials } from "./credentials/Credentials";
+import { Keys } from "./keys/Keys";
+import { SamlKeys } from "./keys/SamlKeys";
 import {
   AuthorizationTab,
   toAuthorizationTab,
 } from "./routes/AuthenticationTab";
+import { ClientParams, ClientTab, toClient } from "./routes/Client";
+import { toClients } from "./routes/Clients";
 import { toClientScopesTab } from "./routes/ClientScopeTab";
-import { AuthorizationExport } from "./authorization/AuthorizationExport";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { PermissionsTab } from "../components/permission-tab/PermissionTab";
-import type { KeyValueType } from "../components/key-value-form/key-value-convert";
-import { useAccess } from "../context/access/Access";
+import { ClientScopes } from "./scopes/ClientScopes";
+import { EvaluateScopes } from "./scopes/EvaluateScopes";
+import { ServiceAccount } from "./service-account/ServiceAccount";
+import { getProtocolName, isRealmClient } from "./utils";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
-  value: boolean;
+  value: boolean | undefined;
   save: () => void;
   client: ClientRepresentation;
   toggleDownloadDialog: () => void;
@@ -178,6 +183,11 @@ export type SaveOptions = {
   messageKey?: string;
 };
 
+export type FormFields = Omit<
+  ClientRepresentation,
+  "authorizationSettings" | "resources"
+>;
+
 export default function ClientDetails() {
   const { t } = useTranslation("clients");
   const { adminClient } = useAdminClient();
@@ -198,7 +208,7 @@ export default function ClientDetails() {
   const [downloadDialogOpen, toggleDownloadDialogOpen] = useToggle();
   const [changeAuthenticatorOpen, toggleChangeAuthenticatorOpen] = useToggle();
 
-  const form = useForm<ClientRepresentation>({ shouldUnregister: false });
+  const form = useForm<FormFields>({ shouldUnregister: false });
   const { clientId } = useParams<ClientParams>();
   const [key, setKey] = useState(0);
 
@@ -237,6 +247,7 @@ export default function ClientDetails() {
     if (client.attributes?.["acr.loa.map"]) {
       form.setValue(
         convertAttributeNameToForm("attributes.acr.loa.map"),
+        // @ts-ignore
         Object.entries(JSON.parse(client.attributes["acr.loa.map"])).flatMap(
           ([key, value]) => ({ key, value })
         )
@@ -262,46 +273,48 @@ export default function ClientDetails() {
       messageKey: "clientSaveSuccess",
     }
   ) => {
-    if (await form.trigger()) {
-      if (
-        !client?.publicClient &&
-        client?.clientAuthenticatorType !== clientAuthenticatorType &&
-        !confirmed
-      ) {
-        toggleChangeAuthenticatorOpen();
-        return;
-      }
+    if (!(await form.trigger())) {
+      return;
+    }
 
-      const values = convertFormValuesToObject(form.getValues());
+    if (
+      !client?.publicClient &&
+      client?.clientAuthenticatorType !== clientAuthenticatorType &&
+      !confirmed
+    ) {
+      toggleChangeAuthenticatorOpen();
+      return;
+    }
 
-      const submittedClient =
-        convertFormValuesToObject<ClientRepresentation>(values);
+    const values = convertFormValuesToObject(form.getValues());
 
-      if (submittedClient.attributes?.["acr.loa.map"]) {
-        submittedClient.attributes["acr.loa.map"] = JSON.stringify(
-          Object.fromEntries(
-            (submittedClient.attributes["acr.loa.map"] as KeyValueType[])
-              .filter(({ key }) => key !== "")
-              .map(({ key, value }) => [key, value])
-          )
-        );
-      }
+    const submittedClient =
+      convertFormValuesToObject<ClientRepresentation>(values);
 
-      try {
-        const newClient: ClientRepresentation = {
-          ...client,
-          ...submittedClient,
-        };
+    if (submittedClient.attributes?.["acr.loa.map"]) {
+      submittedClient.attributes["acr.loa.map"] = JSON.stringify(
+        Object.fromEntries(
+          (submittedClient.attributes["acr.loa.map"] as KeyValueType[])
+            .filter(({ key }) => key !== "")
+            .map(({ key, value }) => [key, value])
+        )
+      );
+    }
 
-        newClient.clientId = newClient.clientId?.trim();
+    try {
+      const newClient: ClientRepresentation = {
+        ...client,
+        ...submittedClient,
+      };
 
-        await adminClient.clients.update({ id: clientId }, newClient);
-        setupForm(newClient);
-        setClient(newClient);
-        addAlert(t(messageKey), AlertVariant.success);
-      } catch (error) {
-        addError("clients:clientSaveError", error);
-      }
+      newClient.clientId = newClient.clientId?.trim();
+
+      await adminClient.clients.update({ id: clientId }, newClient);
+      setupForm(newClient);
+      setClient(newClient);
+      addAlert(t(messageKey), AlertVariant.success);
+    } catch (error) {
+      addError("clients:clientSaveError", error);
     }
   };
 
@@ -360,10 +373,10 @@ export default function ClientDetails() {
         name="enabled"
         control={form.control}
         defaultValue={true}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <ClientDetailHeader
-            value={value}
-            onChange={onChange}
+            value={field.value}
+            onChange={field.onChange}
             client={client}
             save={save}
             toggleDeleteDialog={toggleDeleteDialog}

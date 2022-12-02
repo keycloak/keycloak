@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Control, Controller, FieldValues } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 import {
   FormGroup,
@@ -20,7 +20,6 @@ type TokenLifespanProps = {
   id: string;
   name: string;
   defaultValue: string;
-  control: Control<FieldValues>;
   units?: Unit[];
 };
 
@@ -31,7 +30,6 @@ export const TokenLifespan = ({
   id,
   name,
   defaultValue,
-  control,
   units,
 }: TokenLifespanProps) => {
   const { t } = useTranslation("clients");
@@ -41,6 +39,7 @@ export const TokenLifespan = ({
   const onFocus = () => setFocused(true);
   const onBlur = () => setFocused(false);
 
+  const { control } = useFormContext();
   const isExpireSet = (value: string | number) =>
     (typeof value === "number" && value !== -1) ||
     (typeof value === "string" && value !== "" && value !== "-1") ||
@@ -61,7 +60,7 @@ export const TokenLifespan = ({
         name={name}
         defaultValue={defaultValue}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Split hasGutter>
             <SplitItem>
               <Select
@@ -69,21 +68,21 @@ export const TokenLifespan = ({
                 onToggle={setOpen}
                 isOpen={open}
                 onSelect={(_, value) => {
-                  onChange(value);
+                  field.onChange(value);
                   setOpen(false);
                 }}
-                selections={[isExpireSet(value) ? t(expires) : t(never)]}
+                selections={[isExpireSet(field.value) ? t(expires) : t(never)]}
               >
                 <SelectOption value={-1}>{t(never)}</SelectOption>
                 <SelectOption value={60}>{t(expires)}</SelectOption>
               </Select>
             </SplitItem>
             <SplitItem>
-              {isExpireSet(value) && (
+              {isExpireSet(field.value) && (
                 <TimeSelector
                   units={units}
-                  value={value}
-                  onChange={onChange}
+                  value={field.value}
+                  onChange={field.onChange}
                   onFocus={onFocus}
                   onBlur={onBlur}
                   min={1}

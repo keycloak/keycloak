@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   FormGroup,
   Select,
@@ -8,23 +5,28 @@ import {
   SelectVariant,
   Switch,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm } from "../../util";
+import { FormFields } from "../ClientDetails";
 
 export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
   const { t } = useTranslation("clients");
-  const { register, control, watch } = useFormContext<ClientRepresentation>();
+  const { register, control, watch } = useFormContext<FormFields>();
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
   const loginThemes = useServerInfo().themes!["login"];
   const consentRequired = watch("consentRequired");
   const displayOnConsentScreen: string = watch(
-    convertAttributeNameToForm("attributes.display.on.consent.screen")
+    convertAttributeNameToForm<FormFields>(
+      "attributes.display.on.consent.screen"
+    )
   );
 
   return (
@@ -43,15 +45,15 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
           name="attributes.login_theme"
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="loginTheme"
               onToggle={setLoginThemeOpen}
               onSelect={(_, value) => {
-                onChange(value.toString());
+                field.onChange(value.toString());
                 setLoginThemeOpen(false);
               }}
-              selections={value || t("common:choose")}
+              selections={field.value || t("common:choose")}
               variant={SelectVariant.single}
               aria-label={t("loginTheme")}
               isOpen={loginThemeOpen}
@@ -62,7 +64,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
                 </SelectOption>,
                 ...loginThemes.map((theme) => (
                   <SelectOption
-                    selected={theme.name === value}
+                    selected={theme.name === field.value}
                     key={theme.name}
                     value={theme.name}
                   />
@@ -87,13 +89,13 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
           name="consentRequired"
           defaultValue={false}
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="kc-consent-switch"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value}
-              onChange={onChange}
+              isChecked={field.value}
+              onChange={field.onChange}
               aria-label={t("consentRequired")}
             />
           )}
@@ -111,18 +113,18 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         hasNoPaddingTop
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.display.on.consent.screen"
           )}
           defaultValue={false}
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="kc-display-on-client-switch"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange("" + value)}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange("" + value)}
               isDisabled={!consentRequired}
               aria-label={t("displayOnClient")}
             />
@@ -141,8 +143,11 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
       >
         <KeycloakTextArea
           id="kc-consent-screen-text"
-          name={convertAttributeNameToForm("attributes.consent.screen.text")}
-          ref={register}
+          {...register(
+            convertAttributeNameToForm<FormFields>(
+              "attributes.consent.screen.text"
+            )
+          )}
           isDisabled={!(consentRequired && displayOnConsentScreen === "true")}
         />
       </FormGroup>

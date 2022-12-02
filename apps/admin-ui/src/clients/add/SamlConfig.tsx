@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import {
   FormGroup,
   Select,
@@ -8,15 +5,27 @@ import {
   SelectVariant,
   Switch,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import {
+  Controller,
+  Path,
+  PathValue,
+  useFormContext,
+} from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { convertAttributeNameToForm } from "../../util";
+import { FormFields } from "../ClientDetails";
 
-export const Toggle = ({ name, label }: { name: string; label: string }) => {
+type ToggleProps = {
+  name: PathValue<FormFields, Path<FormFields>>;
+  label: string;
+};
+export const Toggle = ({ name, label }: ToggleProps) => {
   const { t } = useTranslation("clients");
-  const { control } = useFormContext<ClientRepresentation>();
+  const { control } = useFormContext<FormFields>();
 
   return (
     <FormGroup
@@ -34,14 +43,14 @@ export const Toggle = ({ name, label }: { name: string; label: string }) => {
         name={name}
         defaultValue="false"
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Switch
             id={name!}
             data-testid={label}
             label={t("common:on")}
             labelOff={t("common:off")}
-            isChecked={value === "true"}
-            onChange={(value) => onChange(value.toString())}
+            isChecked={field.value === "true"}
+            onChange={(value) => field.onChange(value.toString())}
             aria-label={t(label)}
           />
         )}
@@ -52,7 +61,7 @@ export const Toggle = ({ name, label }: { name: string; label: string }) => {
 
 export const SamlConfig = () => {
   const { t } = useTranslation("clients");
-  const { control } = useFormContext<ClientRepresentation>();
+  const { control } = useFormContext<FormFields>();
 
   const [nameFormatOpen, setNameFormatOpen] = useState(false);
   return (
@@ -75,22 +84,22 @@ export const SamlConfig = () => {
           name="attributes.saml_name_id_format"
           defaultValue="username"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="samlNameIdFormat"
               onToggle={setNameFormatOpen}
               onSelect={(_, value) => {
-                onChange(value.toString());
+                field.onChange(value.toString());
                 setNameFormatOpen(false);
               }}
-              selections={value}
+              selections={field.value}
               variant={SelectVariant.single}
               aria-label={t("nameIdFormat")}
               isOpen={nameFormatOpen}
             >
               {["username", "email", "transient", "persistent"].map((name) => (
                 <SelectOption
-                  selected={name === value}
+                  selected={name === field.value}
                   key={name}
                   value={name}
                 />

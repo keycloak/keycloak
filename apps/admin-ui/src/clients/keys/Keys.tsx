@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { saveAs } from "file-saver";
 import {
   ActionGroup,
   AlertVariant,
@@ -15,21 +12,24 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import { saveAs } from "file-saver";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { GenerateKeyDialog, getFileExtension } from "./GenerateKeyDialog";
-import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
+import { Controller, useFormContext, useWatch } from "react-hook-form-v7";
 import { useAlerts } from "../../components/alert/Alerts";
-import useToggle from "../../utils/useToggle";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { convertAttributeNameToForm } from "../../util";
-import { ImportKeyDialog, ImportFile } from "./ImportKeyDialog";
+import useToggle from "../../utils/useToggle";
+import { FormFields } from "../ClientDetails";
 import { Certificate } from "./Certificate";
+import { GenerateKeyDialog, getFileExtension } from "./GenerateKeyDialog";
+import { ImportFile, ImportKeyDialog } from "./ImportKeyDialog";
 
 type KeysProps = {
   save: () => void;
@@ -46,7 +46,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
     register,
     getValues,
     formState: { isDirty },
-  } = useFormContext<ClientRepresentation>();
+  } = useFormContext<FormFields>();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
@@ -149,16 +149,15 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
             >
               <Controller
                 name={convertAttributeNameToForm("attributes.use.jwks.url")}
-                defaultValue="false"
                 control={control}
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <Switch
                     data-testid="useJwksUrl"
                     id="useJwksUrl-switch"
                     label={t("common:on")}
                     labelOff={t("common:off")}
-                    isChecked={value === "true"}
-                    onChange={(value) => onChange(`${value}`)}
+                    isChecked={field.value === "true"}
+                    onChange={(value) => field.onChange(`${value}`)}
                     aria-label={t("useJwksUrl")}
                   />
                 )}
@@ -182,10 +181,10 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 }
               >
                 <KeycloakTextInput
-                  type="text"
                   id="jwksUrl"
-                  name={convertAttributeNameToForm("attributes.jwks.url")}
-                  ref={register}
+                  {...register(
+                    convertAttributeNameToForm("attributes.jwks.url")
+                  )}
                 />
               </FormGroup>
             )}
