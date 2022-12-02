@@ -33,6 +33,7 @@ import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
+import "./user-section.css";
 
 const UsersTabs = () => {
   const { t } = useTranslation("users");
@@ -166,6 +167,7 @@ const UsersTabs = () => {
         render={({ onChange, value }) => (
           <ViewHeader
             titleKey={user?.id ? user.username! : t("createUser")}
+            className="kc-username-view-header"
             divider={!id}
             dropdownItems={[
               <DropdownItem

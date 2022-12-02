@@ -124,15 +124,15 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
   --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 13rem;
 }
 
-.pf-c-card__header.kc-form-panel__header{
+.pf-c-card__header.kc-form-panel__header {
   padding-bottom: 0;
 }
 
-.pf-c-card__body.kc-form-panel__body{
+.pf-c-card__body.kc-form-panel__body {
   padding-bottom: 0;
 }
 
-.pf-c-content.kc-no-providers-text{
+.pf-c-content.kc-no-providers-text {
   margin-top: calc(
     var(--pf-global--spacer--2xl) - var(--pf-global--spacer--sm)
   );
@@ -140,3 +140,6 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
   margin-bottom: var(--pf-global--spacer--2xl);
 }
 
+.kc-username-view-header {
+  overflow-wrap: anywhere;
+}
