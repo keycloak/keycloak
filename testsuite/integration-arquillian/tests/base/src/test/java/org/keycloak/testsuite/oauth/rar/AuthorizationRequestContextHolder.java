@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package org.keycloak.testsuite.rar;
+package org.keycloak.testsuite.oauth.rar;
 
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.rar.AuthorizationDetails;

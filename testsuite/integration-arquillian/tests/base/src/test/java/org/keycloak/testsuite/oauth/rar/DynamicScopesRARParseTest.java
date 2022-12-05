@@ -15,10 +15,9 @@
  * limitations under the License.
  *
  */
-package org.keycloak.testsuite.rar;
+package org.keycloak.testsuite.oauth.rar;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;

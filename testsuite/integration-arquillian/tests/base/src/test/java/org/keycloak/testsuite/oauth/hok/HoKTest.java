@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.hok;
+package org.keycloak.testsuite.oauth.hok;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
