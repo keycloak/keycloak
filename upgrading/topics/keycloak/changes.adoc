@@ -1,5 +1,9 @@
 == Migration Changes
 
+=== Migrating to 21.0.0
+
+include::changes-21_0_0.adoc[leveloffset=3]
+
 === Migrating to 20.0.0
 
 include::changes-20_0_0.adoc[leveloffset=3]

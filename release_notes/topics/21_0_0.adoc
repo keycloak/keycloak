@@ -1,0 +1,7 @@
+= Keycloak uses Micrometer for metrics
+
+Keycloak provides an optional a metrics endpoint which exports metrics in the Prometheus format.
+In this release the implementation to provide this data switched from SmallRye to Micrometer.
+Due to this change, metrics have been renamed.
+
+See the migration guide for details.
