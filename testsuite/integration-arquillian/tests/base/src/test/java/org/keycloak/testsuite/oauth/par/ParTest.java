@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.par;
+package org.keycloak.testsuite.oauth.par;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
