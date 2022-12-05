@@ -17,42 +17,58 @@
 
 package org.keycloak.services;
 
-import java.security.cert.X509Certificate;
+import org.keycloak.http.HttpRequest;
+
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
-import org.keycloak.http.HttpRequest;
+import java.security.cert.X509Certificate;
 
 public class HttpRequestImpl implements HttpRequest {
 
     private org.jboss.resteasy.spi.HttpRequest delegate;
 
-    public <R> HttpRequestImpl(org.jboss.resteasy.spi.HttpRequest delegate) {
+    public HttpRequestImpl(org.jboss.resteasy.spi.HttpRequest delegate) {
         this.delegate = delegate;
     }
 
     @Override
     public String getHttpMethod() {
+        if (delegate == null) {
+            return null;
+        }
         return delegate.getHttpMethod();
     }
 
     @Override
     public MultivaluedMap<String, String> getDecodedFormParameters() {
+        if (delegate == null) {
+            return null;
+        }
         return delegate.getDecodedFormParameters();
     }
 
     @Override
     public HttpHeaders getHttpHeaders() {
+        if (delegate == null) {
+            return null;
+        }
         return delegate.getHttpHeaders();
     }
 
     @Override
     public X509Certificate[] getClientCertificateChain() {
+        if (delegate == null) {
+            return null;
+        }
         return (X509Certificate[]) delegate.getAttribute("javax.servlet.request.X509Certificate");
     }
 
     @Override
     public UriInfo getUri() {
+        if (delegate == null) {
+            return null;
+        }
         return delegate.getUri();
     }
 }
