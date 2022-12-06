@@ -83,6 +83,7 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
@@ -1065,6 +1066,33 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
             MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        }
+    }
+
+    @Test
+    public void logoutWithIdTokenAndRemovedClient() throws Exception {
+        ClientRepresentation clientRep = ClientBuilder.create()
+                .clientId("my-foo-client")
+                .enabled(true)
+                .baseUrl("https://foo/bar")
+                .addRedirectUri(APP_REDIRECT_URI)
+                .secret("password")
+                .build();
+        try (Response response = testRealm().clients().create(clientRep)) {
+            String uuid = ApiUtil.getCreatedId(response);
+            oauth.clientId("my-foo-client");
+
+            OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+            // Remove client after login of user
+            testRealm().clients().get(uuid).remove();
+
+            String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(tokenResponse.getIdToken()).build();
+            driver.navigate().to(logoutUrl);
+
+            // Invalid redirect URI page is shown. It was not possible to verify post_logout_redirect_uri due the client was removed
+            errorPage.assertCurrent();
+            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).detail(Details.REDIRECT_URI, APP_REDIRECT_URI).assertEvent();
         }
     }
 
