@@ -86,7 +86,7 @@
     "@4tw/cypress-drag-drop": "^2.2.2",
     "@babel/core": "^7.20.5",
     "@babel/preset-env": "^7.20.2",
-    "@cypress/webpack-batteries-included-preprocessor": "^2.2.4",
+    "@cypress/webpack-batteries-included-preprocessor": "^2.3.0",
     "@cypress/webpack-preprocessor": "^5.15.5",
     "@testing-library/cypress": "^8.0.7",
     "@testing-library/jest-dom": "^5.16.5",
