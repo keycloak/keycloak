@@ -356,13 +356,19 @@ public final class KeycloakModelUtils {
      * @param exception the exception to be checked.
      * @return {@code true} if the exception is retriable; {@code false} otherwise.
      */
-    public static boolean isExceptionRetriable(final Exception exception) {
+    public static boolean isExceptionRetriable(final Throwable exception) {
         Objects.requireNonNull(exception);
         // first find the root cause and check if it is a SQLException
         Throwable rootCause = exception;
         while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
             rootCause = rootCause.getCause();
         }
+        // JTA transaction handler might add multiple suppressed exceptions to the root cause, evaluate each of those
+        for (Throwable suppressed : rootCause.getSuppressed()) {
+            if (isExceptionRetriable(suppressed)) {
+                return true;
+            }
+        };
         if (rootCause instanceof SQLException) {
             // check if the exception state is a recoverable one (40001)
             return "40001".equals(((SQLException) rootCause).getSQLState());
