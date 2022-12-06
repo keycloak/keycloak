@@ -59,7 +59,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
 
   const useJwksUrl = useWatch({
     control,
-    name: "attributes.use.jwks.url",
+    name: convertAttributeNameToForm<FormFields>("attributes.use.jwks.url"),
     defaultValue: "false",
   });
 
