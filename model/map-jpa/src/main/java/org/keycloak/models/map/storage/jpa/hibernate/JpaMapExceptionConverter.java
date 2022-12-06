@@ -14,19 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.connections.jpa;
+package org.keycloak.models.map.storage.jpa.hibernate;
 
 import org.keycloak.common.Profile;
+import org.keycloak.models.map.storage.jpa.PersistenceExceptionConverter;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ExceptionConverter;
 
 import javax.persistence.PersistenceException;
 
 /**
+ * This is needed for example by <code>org.keycloak.transaction.JtaTransactionWrapper</code> to map an exception
+ * that occurs on commit.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author Alexander Schwartz
  */
-public class JpaExceptionConverter implements ExceptionConverter, EnvironmentDependentProviderFactory {
+public class JpaMapExceptionConverter implements ExceptionConverter, EnvironmentDependentProviderFactory {
     @Override
     public Throwable convert(Throwable e) {
         if (!(e instanceof PersistenceException)) return null;
@@ -35,11 +39,11 @@ public class JpaExceptionConverter implements ExceptionConverter, EnvironmentDep
 
     @Override
     public String getId() {
-        return "jpa";
+        return "jpa-map";
     }
 
     @Override
     public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }
