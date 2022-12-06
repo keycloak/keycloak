@@ -238,10 +238,9 @@ public class LogoutEndpoint {
                 OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
                 Set<String> postLogoutRedirectUris = wrapper.getPostLogoutRedirectUris() != null ? new HashSet(wrapper.getPostLogoutRedirectUris()) : new HashSet<>();
                 validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), redirectUri, postLogoutRedirectUris, true);
-            } else if (clientId == null) {
+            } else if (clientId == null && providerConfig.isLegacyLogoutRedirectUri()) {
                 /*
-                 * Only call verifyRealmRedirectUri, in case both clientId and client are null - otherwise
-                 * the logout uri contains a non-existing client, and we should show an INVALID_REDIRECT_URI error
+                 * Only call verifyRealmRedirectUri against all in the realm, in case when "Legacy" switch is enabled and when we don't have a client - usually due both clientId and client are null
                  */
                 validatedRedirectUri = RedirectUtils.verifyRealmRedirectUri(session, redirectUri);
             }
