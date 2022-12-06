@@ -120,6 +120,7 @@ describe("Realm settings events tab tests", () => {
     masthead.checkNotificationMessage("Successfully saved configuration");
     cy.wait(["@fetchConfig"]);
     sidebarPage.waitForPageLoad();
+    cy.wait(1000);
     for (const event of events) {
       listingPage.searchItem(event, false).itemExist(event);
     }
