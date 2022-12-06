@@ -45,6 +45,7 @@
   "emailInvalid": "You must enter a valid email.",
   "notVerified": "Not verified",
   "requiredUserActions": "Required user actions",
+  "federationLink": "Federation link",
   "addUser": "Add user",
   "impersonate": "Impersonate",
   "impersonateConfirm": "Impersonate user?",
