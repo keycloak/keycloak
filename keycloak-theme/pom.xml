@@ -244,7 +244,7 @@
             <plugin>
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
                 <groupId>io.smallrye</groupId>
-                <version>3.0.1</version>
+                <version>3.1.0</version>
                 <configuration>
                     <scanPackages>org.keycloak.admin.ui.rest</scanPackages>
                 </configuration>
