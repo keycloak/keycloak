@@ -3,7 +3,7 @@ import type SynchronizationResultRepresentation from "../defs/synchronizationRes
 import Resource from "./resource.js";
 
 type ActionType = "triggerFullSync" | "triggerChangedUsersSync";
-type DirectionType = "fedToKeycloak" | "keycloakToFed";
+export type DirectionType = "fedToKeycloak" | "keycloakToFed";
 type NameResponse = {
   id: string;
   name: string;

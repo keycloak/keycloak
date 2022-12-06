@@ -32,6 +32,7 @@ import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSp
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
+import { DirectionType } from "libs/keycloak-admin-client/lib/resources/userStorageProvider";
 
 export default function LdapMapperDetails() {
   const form = useForm<ComponentRepresentation>();
@@ -46,6 +47,8 @@ export default function LdapMapperDetails() {
   const { addAlert, addError } = useAlerts();
 
   const [isMapperDropdownOpen, setIsMapperDropdownOpen] = useState(false);
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(key + 1);
 
   useFetch(
     async () => {
@@ -118,6 +121,24 @@ export default function LdapMapperDetails() {
     }
   };
 
+  const sync = async (direction: DirectionType) => {
+    try {
+      const result = await adminClient.userStorageProvider.mappersSync({
+        parentId: mapping?.parentId || "",
+        id: mapperId,
+        direction,
+      });
+      addAlert(
+        t("syncLDAPGroupsSuccessful", {
+          result: result.status,
+        })
+      );
+    } catch (error) {
+      addError("user-federation:syncLDAPGroupsError", error);
+    }
+    refresh();
+  };
+
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "common:deleteMappingTitle",
     messageKey: "common:deleteMappingConfirm",
@@ -141,16 +162,17 @@ export default function LdapMapperDetails() {
     name: "providerId",
   });
 
-  const isNew = mapperId === "new";
-
   if (!components) {
     return <KeycloakSpinner />;
   }
 
+  const isNew = mapperId === "new";
+  const mapper = components.find((c) => c.id === mapperType);
   return (
     <>
       <DeleteConfirm />
       <ViewHeader
+        key={key}
         titleKey={mapping ? mapping.name! : t("common:createNewMapper")}
         dropdownItems={
           isNew
@@ -159,6 +181,24 @@ export default function LdapMapperDetails() {
                 <DropdownItem key="delete" onClick={toggleDeleteDialog}>
                   {t("common:delete")}
                 </DropdownItem>,
+                mapper?.metadata.fedToKeycloakSyncSupported && (
+                  <DropdownItem
+                    key="fedSync"
+                    onClick={() => sync("fedToKeycloak")}
+                  >
+                    {t("syncLDAPGroupsToKeycloak")}
+                  </DropdownItem>
+                ),
+                mapper?.metadata.keycloakToFedSyncSupported && (
+                  <DropdownItem
+                    key="ldapSync"
+                    onClick={() => {
+                      sync("keycloakToFed");
+                    }}
+                  >
+                    {t("syncKeycloakGroupsToLDAP")}
+                  </DropdownItem>
+                ),
               ]
         }
       />
@@ -284,11 +324,7 @@ export default function LdapMapperDetails() {
           )}
           <FormProvider {...form}>
             {!!mapperType && (
-              <DynamicComponents
-                properties={
-                  components.find((c) => c.id === mapperType)?.properties!
-                }
-              />
+              <DynamicComponents properties={mapper?.properties!} />
             )}
           </FormProvider>
         </FormAccess>
