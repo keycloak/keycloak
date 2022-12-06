@@ -242,7 +242,7 @@ export default function ClientScopeForm() {
       <PageSection variant="light" className="pf-u-p-0">
         {!id && (
           <PageSection variant="light">
-            <ScopeForm save={save} clientScope={{}} />
+            <ScopeForm save={save} />
           </PageSection>
         )}
         {id && clientScope && (

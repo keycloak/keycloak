@@ -29,7 +29,7 @@ const clientScopeTypes = Object.keys(ClientScope);
 export const allClientScopeTypes = Object.keys({
   ...AllClientScopes,
   ...ClientScope,
-});
+}) as AllClientScopeType[];
 
 export const clientScopeTypesSelectOptions = (
   t: TFunction,

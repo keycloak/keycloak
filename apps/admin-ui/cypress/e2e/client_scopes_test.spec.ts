@@ -272,12 +272,7 @@ describe("Client Scopes test", () => {
       sidebarPage.waitForPageLoad();
       listingPage.goToCreateItem();
 
-      createClientScopePage.save().checkClientNameRequiredMessage();
-
-      createClientScopePage
-        .fillClientScopeData("address")
-        .save()
-        .checkClientNameRequiredMessage(false);
+      createClientScopePage.fillClientScopeData("address").save();
 
       // The error should inform about duplicated name/id
       masthead.checkNotificationMessage(

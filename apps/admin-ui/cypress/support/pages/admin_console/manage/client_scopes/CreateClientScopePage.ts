@@ -26,7 +26,7 @@ export default class CreateClientScopePage extends CommonPage {
     this.clientScopeDescriptionInput = "#kc-description";
     this.clientScopeTypeDrpDwn = "#kc-protocol";
     this.clientScopeTypeList = "#kc-protocol + ul";
-    this.displayOnConsentInput = '[id="kc-display.on.consent.screen-switch"]';
+    this.displayOnConsentInput = '[id="kc-display-on-consent-screen"]';
     this.displayOnConsentSwitch =
       this.displayOnConsentInput + " + .pf-c-switch__toggle";
     this.consentScreenTextInput = "#kc-consent-screen-text";
@@ -69,12 +69,6 @@ export default class CreateClientScopePage extends CommonPage {
   selectClientScopeType(clientScopeType: string) {
     cy.get(this.clientScopeTypeDrpDwn).click();
     cy.get(this.clientScopeTypeList).contains(clientScopeType).click();
-
-    return this;
-  }
-
-  checkClientNameRequiredMessage(exist = true) {
-    cy.get(this.clientScopeNameError).should((!exist ? "not." : "") + "exist");
 
     return this;
   }
