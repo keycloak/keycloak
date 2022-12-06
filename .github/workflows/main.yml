@@ -9,8 +9,6 @@ concurrency:
   # See: https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
   group: main-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
-permissions:
-  pull-requests: write
 env:
   NODE_VERSION: 18
 jobs:
@@ -83,6 +81,7 @@ jobs:
 
   dependabot:
     needs: [run]
+    permissions: write-all
     runs-on: ubuntu-latest
     if: ${{ github.actor == 'dependabot[bot]' && github.event_name == 'pull_request' }}
     steps:
