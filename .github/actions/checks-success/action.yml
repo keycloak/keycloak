@@ -1,0 +1,16 @@
+name: Mark job as successful
+description: Workaround for GitHub Actions not setting conclusion on jobs passed through needs
+
+outputs:
+  status:
+    description: Job status
+    value: ${{ steps.check.outputs.status }}
+
+runs:
+  using: composite
+  steps:
+    - id: set-success
+      name: Set success
+      shell: bash
+      run: |
+        echo "status=success" >> $GITHUB_OUTPUT

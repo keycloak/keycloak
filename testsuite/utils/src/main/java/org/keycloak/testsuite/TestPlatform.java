@@ -42,6 +42,11 @@ public class TestPlatform implements PlatformProvider {
     }
 
     @Override
+    public String name() {
+        return "Undertow";
+    }
+
+    @Override
     public void onStartup(Runnable startupHook) {
         startupHook.run();
     }
