@@ -115,26 +115,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>auth-server-quarkus</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-jar-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <!-- For quarkus we don't want the test provider installed to avoid false positives -->
-                                <!-- Themes from providers are automatically registered -->
-                                <excludes>**/TestThemeResourceProvider**</excludes>
-                                <excludes>**/org.keycloak.theme.ThemeResourceProviderFactory</excludes>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
