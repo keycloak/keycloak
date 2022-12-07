@@ -180,7 +180,7 @@ describe("User creation", () => {
     userGroupsPage.goToGroupsTab();
     userGroupsPage.toggleAddGroupModal();
 
-    const groupsListCopy = groupsList.slice(0, 1);
+    const groupsListCopy = groupsList.slice(0, 3);
 
     groupsListCopy.forEach((element) => {
       cy.findByTestId(`${element}-check`).click();
@@ -196,6 +196,19 @@ describe("User creation", () => {
     userGroupsPage.goToGroupsTab();
     cy.findByTestId(`leave-${groupsList[0]}`).click();
     cy.findByTestId("confirm").click({ force: true });
+  });
+
+  it("search and leave group", () => {
+    listingPage.searchItem(itemId).itemExist(itemId);
+    listingPage.goToItemDetails(itemId);
+    userGroupsPage.goToGroupsTab();
+
+    listingPage.searchItem("group");
+    userGroupsPage.leaveGroupButtonDisabled();
+
+    listingPage.clickTableHeaderItemCheckboxAllRows();
+    userGroupsPage.leaveGroupButtonEnabled();
+    userGroupsPage.leaveGroup();
   });
 
   it("Go to user consents test", () => {
