@@ -1,5 +1,5 @@
 import LoginPage from "../support/pages/LoginPage";
-import Masthead from "../support/pages/admin_console/Masthead";
+import Masthead from "../support/pages/admin-ui/Masthead";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const username = "admin";
@@ -22,7 +22,7 @@ describe("Logging In", () => {
   it("logs in", () => {
     loginPage.logIn(username, password);
 
-    masthead.checkIsAdminConsole();
+    masthead.checkIsAdminUI();
 
     cy.getCookie("KEYCLOAK_SESSION_LEGACY").should("exist");
   });

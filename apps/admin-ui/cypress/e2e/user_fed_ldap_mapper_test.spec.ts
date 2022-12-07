@@ -1,8 +1,8 @@
 import LoginPage from "../support/pages/LoginPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import ListingPage from "../support/pages/admin_console/ListingPage";
-import ProviderPage from "../support/pages/admin_console/manage/providers/ProviderPage";
-import Masthead from "../support/pages/admin_console/Masthead";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
+import ProviderPage from "../support/pages/admin-ui/manage/providers/ProviderPage";
+import Masthead from "../support/pages/admin-ui/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 

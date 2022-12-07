@@ -23,7 +23,7 @@
   "keyAlias": "Nøkkelalias",
   "keyPassword": "Nøkkelpassord",
   "providers": "Leverandører",
-  "consoleDisplayName": "Konsoll vis navn",
+  "uiDisplayName": "Konsoll vis navn",
   "type": "Type",
   "providerId": "ID",
   "provider": "Leverandør",

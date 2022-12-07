@@ -122,27 +122,27 @@ export default function CustomProviderSettings() {
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
-            label={t("consoleDisplayName")}
+            label={t("uiDisplayName")}
             labelIcon={
               <HelpItem
-                helpText="user-federation-help:consoleDisplayNameHelp"
-                fieldLabelId="user-federation:consoleDisplayName"
+                helpText="user-federation-help:uiDisplayNameHelp"
+                fieldLabelId="user-federation:uiDisplayName"
               />
             }
             helperTextInvalid={t("validateName")}
             validated={errors.name ? "error" : "default"}
-            fieldId="kc-console-display-name"
+            fieldId="kc-ui-display-name"
             isRequired
           >
             <KeycloakTextInput
               isRequired
               type="text"
-              id="kc-console-display-name"
+              id="kc-ui-display-name"
               name="name"
               ref={register({
                 required: true,
               })}
-              data-testid="console-name"
+              data-testid="ui-name"
               validated={errors.name ? "error" : "default"}
             />
           </FormGroup>

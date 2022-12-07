@@ -1,23 +1,23 @@
-import Masthead from "../support/pages/admin_console/Masthead";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
+import Masthead from "../support/pages/admin-ui/Masthead";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import ListingPage from "../support/pages/admin_console/ListingPage";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
 
-import CreateProviderPage from "../support/pages/admin_console/manage/identity_providers/CreateProviderPage";
+import CreateProviderPage from "../support/pages/admin-ui/manage/identity_providers/CreateProviderPage";
 import ModalUtils from "../support/util/ModalUtils";
-import OrderDialog from "../support/pages/admin_console/manage/identity_providers/OrderDialog";
-import AddMapperPage from "../support/pages/admin_console/manage/identity_providers/AddMapperPage";
-import ProviderFacebookGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderFacebookGeneralSettings";
-import ProviderBaseGeneralSettingsPage from "../support/pages/admin_console/manage/identity_providers/ProviderBaseGeneralSettingsPage";
-import ProviderBaseAdvancedSettingsPage from "../support/pages/admin_console/manage/identity_providers/ProviderBaseAdvancedSettingsPage";
-import ProviderGithubGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderGithubGeneralSettings";
-import ProviderGoogleGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderGoogleGeneralSettings";
-import ProviderOpenshiftGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderOpenshiftGeneralSettings";
-import ProviderPaypalGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderPaypalGeneralSettings";
-import ProviderStackoverflowGeneralSettings from "../support/pages/admin_console/manage/identity_providers/social/ProviderStackoverflowGeneralSettings";
+import OrderDialog from "../support/pages/admin-ui/manage/identity_providers/OrderDialog";
+import AddMapperPage from "../support/pages/admin-ui/manage/identity_providers/AddMapperPage";
+import ProviderFacebookGeneralSettings from "../support/pages/admin-ui/manage/identity_providers/social/ProviderFacebookGeneralSettings";
+import ProviderBaseGeneralSettingsPage from "../support/pages/admin-ui/manage/identity_providers/ProviderBaseGeneralSettingsPage";
+import ProviderBaseAdvancedSettingsPage from "../support/pages/admin-ui/manage/identity_providers/ProviderBaseAdvancedSettingsPage";
+import ProviderGithubGeneralSettings from "../support/pages/admin-ui/manage/identity_providers/social/ProviderGithubGeneralSettings";
+import ProviderGoogleGeneralSettings from "../support/pages/admin-ui/manage/identity_providers/social/ProviderGoogleGeneralSettings";
+import ProviderOpenshiftGeneralSettings from "../support/pages/admin-ui/manage/identity_providers/social/ProviderOpenshiftGeneralSettings";
+import ProviderPaypalGeneralSettings from "../support/pages/admin-ui/manage/identity_providers/social/ProviderPaypalGeneralSettings";
+import ProviderStackoverflowGeneralSettings from "../support/pages/admin-ui/manage/identity_providers/social/ProviderStackoverflowGeneralSettings";
 import adminClient from "../support/util/AdminClient";
-import GroupPage from "../support/pages/admin_console/manage/groups/GroupPage";
+import GroupPage from "../support/pages/admin-ui/manage/groups/GroupPage";
 import CommonPage from "../support/pages/CommonPage";
 
 describe("Identity provider test", () => {

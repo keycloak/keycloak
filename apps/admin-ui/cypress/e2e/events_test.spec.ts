@@ -1,16 +1,16 @@
 import LoginPage from "../support/pages/LoginPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import UserEventsTab, {
   UserEventSearchData,
-} from "../support/pages/admin_console/manage/events/tabs/UserEventsTab";
-import AdminEventsTab from "../support/pages/admin_console/manage/events/tabs/AdminEventsTab";
-import RealmSettingsPage from "../support/pages/admin_console/manage/realm_settings/RealmSettingsPage";
-import Masthead from "../support/pages/admin_console/Masthead";
+} from "../support/pages/admin-ui/manage/events/tabs/UserEventsTab";
+import AdminEventsTab from "../support/pages/admin-ui/manage/events/tabs/AdminEventsTab";
+import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
+import Masthead from "../support/pages/admin-ui/Masthead";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import EventsPage, {
   EventsTab,
-} from "../support/pages/admin_console/manage/events/EventsPage";
-import ListingPage from "../support/pages/admin_console/ListingPage";
+} from "../support/pages/admin-ui/manage/events/EventsPage";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
 import adminClient from "../support/util/AdminClient";
 
 const loginPage = new LoginPage();

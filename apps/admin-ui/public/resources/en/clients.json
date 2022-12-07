@@ -273,7 +273,7 @@
   "clientSettings": "Client details",
   "selectEncryptionType": "Select Encryption type",
   "generalSettings": "General Settings",
-  "alwaysDisplayInConsole": "Always display in console",
+  "alwaysDisplayInUI": "Always display in UI",
   "capabilityConfig": "Capability config",
   "clientsExplain": "Clients are applications and services that can request authentication of a user.",
   "explainBearerOnly": "This is a special OIDC type. This client only allows bearer token requests and cannot participate in browser logins.",

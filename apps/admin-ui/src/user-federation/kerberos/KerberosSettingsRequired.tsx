@@ -61,14 +61,14 @@ export const KerberosSettingsRequired = ({
       {/* Required settings */}
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
-          label={t("consoleDisplayName")}
+          label={t("uiDisplayName")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:consoleDisplayNameHelp"
-              fieldLabelId="user-federation:consoleDisplayName"
+              helpText="user-federation-help:uiDisplayNameHelp"
+              fieldLabelId="user-federation:uiDisplayName"
             />
           }
-          fieldId="kc-console-display-name"
+          fieldId="kc-ui-display-name"
           isRequired
           validated={form.errors.name ? "error" : "default"}
           helperTextInvalid={form.errors.name?.message}
@@ -77,7 +77,7 @@ export const KerberosSettingsRequired = ({
           <KeycloakTextInput
             hidden
             type="text"
-            id="kc-console-providerId"
+            id="kc-ui-providerId"
             name="providerId"
             defaultValue="kerberos"
             ref={form.register}
@@ -86,7 +86,7 @@ export const KerberosSettingsRequired = ({
           <KeycloakTextInput
             hidden
             type="text"
-            id="kc-console-providerType"
+            id="kc-ui-providerType"
             name="providerType"
             defaultValue="org.keycloak.storage.UserStorageProvider"
             ref={form.register}
@@ -95,7 +95,7 @@ export const KerberosSettingsRequired = ({
           <KeycloakTextInput
             hidden
             type="text"
-            id="kc-console-parentId"
+            id="kc-ui-parentId"
             name="parentId"
             defaultValue={realm}
             ref={form.register}
@@ -105,7 +105,7 @@ export const KerberosSettingsRequired = ({
           <KeycloakTextInput
             isRequired
             type="text"
-            id="kc-console-name"
+            id="kc-ui-name"
             name="name"
             ref={form.register({
               required: {
@@ -115,7 +115,7 @@ export const KerberosSettingsRequired = ({
             })}
             data-testid="kerberos-name"
             validated={form.errors.name ? "error" : "default"}
-            aria-label={t("consoleDisplayName")}
+            aria-label={t("uiDisplayName")}
           />
         </FormGroup>
 

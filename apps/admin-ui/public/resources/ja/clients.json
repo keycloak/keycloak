@@ -80,7 +80,7 @@
   "user": "ユーザー",
   "clientList": "クライアント",
   "initialAccessToken": "初期アクセストークン",
-  "alwaysDisplayInConsole": "常にコンソールに表示",
+  "alwaysDisplayInUI": "常にコンソールに表示",
   "created": "作成日",
   "lastUpdated": "最終更新日",
   "expires": "有効期限",

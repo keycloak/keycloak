@@ -17,8 +17,8 @@ export default class RealmSettingsPage extends CommonPage {
   loginThemeList = "#kc-login-theme + ul";
   selectAccountTheme = "#kc-account-theme";
   accountThemeList = "#kc-account-theme + ul";
-  selectAdminTheme = "#kc-admin-console-theme";
-  adminThemeList = "#kc-admin-console-theme + ul";
+  selectAdminTheme = "#kc-admin-ui-theme";
+  adminThemeList = "#kc-admin-ui-theme + ul";
   selectEmailTheme = "#kc-email-theme";
   emailThemeList = "#kc-email-theme + ul";
   hostInput = "#kc-host";
@@ -449,7 +449,7 @@ export default class RealmSettingsPage extends CommonPage {
     return this;
   }
 
-  enterConsoleDisplayName(name: string) {
+  enterUIDisplayName(name: string) {
     cy.findByTestId(this.displayName).clear().type(name);
   }
 

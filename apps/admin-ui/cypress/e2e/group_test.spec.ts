@@ -1,16 +1,16 @@
-import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
-import GroupDetailPage from "../support/pages/admin_console/manage/groups/group_details/GroupDetailPage";
-import AttributesTab from "../support/pages/admin_console/manage//AttributesTab";
-import { SearchGroupPage } from "../support/pages/admin_console/manage/groups/SearchGroupPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
+import GroupModal from "../support/pages/admin-ui/manage/groups/GroupModal";
+import GroupDetailPage from "../support/pages/admin-ui/manage/groups/group_details/GroupDetailPage";
+import AttributesTab from "../support/pages/admin-ui/manage/AttributesTab";
+import { SearchGroupPage } from "../support/pages/admin-ui/manage/groups/SearchGroupPage";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import GroupPage from "../support/pages/admin_console/manage/groups/GroupPage";
-import ChildGroupsTab from "../support/pages/admin_console/manage/groups/group_details/tabs/ChildGroupsTab";
-import MembersTab from "../support/pages/admin_console/manage/groups/group_details/tabs/MembersTab";
+import GroupPage from "../support/pages/admin-ui/manage/groups/GroupPage";
+import ChildGroupsTab from "../support/pages/admin-ui/manage/groups/group_details/tabs/ChildGroupsTab";
+import MembersTab from "../support/pages/admin-ui/manage/groups/group_details/tabs/MembersTab";
 import adminClient from "../support/util/AdminClient";
 import { range } from "lodash-es";
-import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
+import RoleMappingTab from "../support/pages/admin-ui/manage/RoleMappingTab";
 import CommonPage from "../support/pages/CommonPage";
 
 describe("Group test", () => {

@@ -30,7 +30,7 @@ export const RealmSettingsThemesTab = ({
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
   const [accountThemeOpen, setAccountThemeOpen] = useState(false);
-  const [adminConsoleThemeOpen, setAdminConsoleThemeOpen] = useState(false);
+  const [adminUIThemeOpen, setAdminUIThemeOpen] = useState(false);
   const [emailThemeOpen, setEmailThemeOpen] = useState(false);
 
   const { control, handleSubmit, setValue } = useForm<RealmRepresentation>();
@@ -135,10 +135,10 @@ export const RealmSettingsThemesTab = ({
         </FormGroup>
         <FormGroup
           label={t("adminTheme")}
-          fieldId="kc-admin-console-theme"
+          fieldId="kc-admin-ui-theme"
           labelIcon={
             <HelpItem
-              helpText="realm-settings-help:adminConsoleTheme"
+              helpText="realm-settings-help:adminUITheme"
               fieldLabelId="realm-settings:adminTheme"
             />
           }
@@ -149,18 +149,16 @@ export const RealmSettingsThemesTab = ({
             defaultValue=""
             render={({ onChange, value }) => (
               <Select
-                toggleId="kc-admin-console-theme"
-                onToggle={() =>
-                  setAdminConsoleThemeOpen(!adminConsoleThemeOpen)
-                }
+                toggleId="kc-admin-ui-theme"
+                onToggle={() => setAdminUIThemeOpen(!adminUIThemeOpen)}
                 onSelect={(_, value) => {
                   onChange(value as string);
-                  setAdminConsoleThemeOpen(false);
+                  setAdminUIThemeOpen(false);
                 }}
                 selections={value}
                 variant={SelectVariant.single}
-                aria-label={t("adminConsoleTheme")}
-                isOpen={adminConsoleThemeOpen}
+                aria-label={t("adminUITheme")}
+                isOpen={adminUIThemeOpen}
                 placeholderText="Select a theme"
                 data-testid="select-admin-theme"
               >

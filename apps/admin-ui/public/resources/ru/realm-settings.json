@@ -25,7 +25,7 @@
   "keyAlias": "Синоним ключа",
   "keyPassword": "Пароль для ключа",
   "providers": "Поставщики",
-  "consoleDisplayName": "Наименование в консоли",
+  "uiDisplayName": "Наименование в консоли",
   "active": "Активные",
   "type": "Тип",
   "providerId": "ID",

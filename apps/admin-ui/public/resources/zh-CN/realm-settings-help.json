@@ -1,7 +1,7 @@
 {
   "requireSsl": "是否需要HTTPS？‘无’代表对于任何客户端IP地址都不需要HTTPS，‘外部请求’代表localhost和私有ip地址可以不通过https访问，‘所有请求’代表所有IP地址都需要通过https访问。",
   "accountTheme": "为用户管理界面选择主题",
-  "adminConsoleTheme": "为管理员控制台选择主题",
+  "adminUITheme": "为管理员控制台选择主题",
   "emailTheme": "为服务器发送的邮件选择主题",
   "save-user-events": "如果启用的登录事件保存到数据库，使事件可用于管理和帐户管理控制台。",
   "save-admin-events": "如果已启用的管理事件保存到数据库，使事件可用于管理控制台。",

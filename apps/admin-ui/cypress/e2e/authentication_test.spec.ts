@@ -1,16 +1,16 @@
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import LoginPage from "../support/pages/LoginPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import Masthead from "../support/pages/admin_console/Masthead";
-import ListingPage from "../support/pages/admin_console/ListingPage";
-import DuplicateFlowModal from "../support/pages/admin_console/manage/authentication/DuplicateFlowModal";
-import FlowDetails from "../support/pages/admin_console/manage/authentication/FlowDetail";
-import RequiredActions from "../support/pages/admin_console/manage/authentication/RequiredActions";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import Masthead from "../support/pages/admin-ui/Masthead";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
+import DuplicateFlowModal from "../support/pages/admin-ui/manage/authentication/DuplicateFlowModal";
+import FlowDetails from "../support/pages/admin-ui/manage/authentication/FlowDetail";
+import RequiredActions from "../support/pages/admin-ui/manage/authentication/RequiredActions";
 import adminClient from "../support/util/AdminClient";
-import PasswordPolicies from "../support/pages/admin_console/manage/authentication/PasswordPolicies";
+import PasswordPolicies from "../support/pages/admin-ui/manage/authentication/PasswordPolicies";
 import ModalUtils from "../support/util/ModalUtils";
 import CommonPage from "../support/pages/CommonPage";
-import BindFlowModal from "../support/pages/admin_console/manage/authentication/BindFlowModal";
+import BindFlowModal from "../support/pages/admin-ui/manage/authentication/BindFlowModal";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();

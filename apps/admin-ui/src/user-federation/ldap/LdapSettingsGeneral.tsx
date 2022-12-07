@@ -104,14 +104,14 @@ export const LdapSettingsGeneral = ({
       )}
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
-          label={t("consoleDisplayName")}
+          label={t("uiDisplayName")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:consoleDisplayNameHelp"
-              fieldLabelId="user-federation:consoleDisplayName"
+              helpText="user-federation-help:uiDisplayNameHelp"
+              fieldLabelId="user-federation:uiDisplayName"
             />
           }
-          fieldId="kc-console-display-name"
+          fieldId="kc-ui-display-name"
           isRequired
           validated={form.errors.name ? "error" : "default"}
           helperTextInvalid={form.errors.name?.message}
@@ -120,7 +120,7 @@ export const LdapSettingsGeneral = ({
           <KeycloakTextInput
             hidden
             type="text"
-            id="kc-console-provider-id"
+            id="kc-ui-provider-id"
             name="providerId"
             defaultValue="ldap"
             ref={form.register}
@@ -128,7 +128,7 @@ export const LdapSettingsGeneral = ({
           <KeycloakTextInput
             hidden
             type="text"
-            id="kc-console-provider-type"
+            id="kc-ui-provider-type"
             name="providerType"
             defaultValue="org.keycloak.storage.UserStorageProvider"
             ref={form.register}
@@ -136,7 +136,7 @@ export const LdapSettingsGeneral = ({
           <KeycloakTextInput
             hidden
             type="text"
-            id="kc-console-parentId"
+            id="kc-ui-parentId"
             name="parentId"
             defaultValue={realm}
             ref={form.register}
@@ -144,7 +144,7 @@ export const LdapSettingsGeneral = ({
           <KeycloakTextInput
             isRequired
             type="text"
-            id="kc-console-display-name"
+            id="kc-ui-display-name"
             name="name"
             defaultValue="ldap"
             ref={form.register({

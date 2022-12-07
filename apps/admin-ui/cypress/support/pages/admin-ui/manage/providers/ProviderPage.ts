@@ -27,7 +27,7 @@ export default class ProviderPage {
   private ldapEditModeList = "#kc-edit-mode + ul";
   ldapSearchScopeInput = "#kc-search-scope";
   private ldapSearchScopeInputList = "#kc-search-scope + ul";
-  ldapPagination = "console-pagination";
+  ldapPagination = "ui-pagination";
   ldapUsersDnInput = "ldap-users-dn";
   ldapUserLdapAttInput = "ldap-username-attribute";
   ldapRdnLdapAttInput = "ldap-rdn-attribute";

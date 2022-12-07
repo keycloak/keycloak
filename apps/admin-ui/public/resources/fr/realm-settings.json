@@ -31,7 +31,7 @@
   "endpoints": "Endpoints",
   "loginTheme": "Thème de connexion",
   "accountTheme": "Thème du compte",
-  "adminTheme": "Thème de la console d''administration",
+  "adminTheme": "Thème de la UI d''administration",
   "emailTheme": "Thème pour le courriel",
   "sessions": "Sessions",
   "SSOSessionIdle": "Sessions SSO inactives",

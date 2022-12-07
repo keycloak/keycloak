@@ -1,7 +1,7 @@
 {
   "requireSsl": "Ar HTTPS privalomas? 'niekada' - HTTPS nereikalaujamas. 'išorinėms užklausoms' - jungiantis iš localhost ar serverio IP adresų galima prieiti ir per HTTP. 'visoms užklausoms' - HTTPS reikalaujamas jungiantis iš visų IP adresų.",
   "accountTheme": "Pasirinkite kaip atrodys naudotojo profilio valdymo langai.",
-  "adminConsoleTheme": "Pasirinkite kaip atrodys administravimo konsolės langai.",
+  "adminUITheme": "Pasirinkite kaip atrodys administravimo konsolės langai.",
   "emailTheme": "Pasirinkite kaip atrodys siunčiami el. pašto laiškai.",
   "save-user-events": "Jei įgalinta, tuomet su prisijungimu susiję veiksmai saugomi duomenų bazėje ir tampa prieinami per administravimo bei naudotojo paskyros valdymo skydus. ",
   "save-admin-events": "Jei įgalinta, tuomet administravimo veiksmai saugomi duomenų bazėje ir tampa prieinami per administravimo valdymo skydą.",

@@ -1,14 +1,14 @@
 import LoginPage from "../support/pages/LoginPage";
-import Masthead from "../support/pages/admin_console/Masthead";
+import Masthead from "../support/pages/admin-ui/Masthead";
 import ListingPage, {
   Filter,
   FilterAssignedType,
   FilterProtocol,
-} from "../support/pages/admin_console/ListingPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import CreateClientScopePage from "../support/pages/admin_console/manage/client_scopes/CreateClientScopePage";
+} from "../support/pages/admin-ui/ListingPage";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import CreateClientScopePage from "../support/pages/admin-ui/manage/client_scopes/CreateClientScopePage";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
+import RoleMappingTab from "../support/pages/admin-ui/manage/RoleMappingTab";
 import ModalUtils from "../support/util/ModalUtils";
 import adminClient from "../support/util/AdminClient";
 

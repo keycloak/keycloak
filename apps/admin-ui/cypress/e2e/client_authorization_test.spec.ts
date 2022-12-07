@@ -1,14 +1,14 @@
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import adminClient from "../support/util/AdminClient";
 import LoginPage from "../support/pages/LoginPage";
-import ListingPage from "../support/pages/admin_console/ListingPage";
-import Masthead from "../support/pages/admin_console/Masthead";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import AuthorizationTab from "../support/pages/admin_console/manage/clients/client_details/tabs/AuthorizationTab";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
+import Masthead from "../support/pages/admin-ui/Masthead";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import AuthorizationTab from "../support/pages/admin-ui/manage/clients/client_details/tabs/AuthorizationTab";
 import ModalUtils from "../support/util/ModalUtils";
-import ClientDetailsPage from "../support/pages/admin_console/manage/clients/client_details/ClientDetailsPage";
-import PoliciesTab from "../support/pages/admin_console/manage/clients/client_details/tabs/authorization_subtabs/PoliciesTab";
-import PermissionsTab from "../support/pages/admin_console/manage/clients/client_details/tabs/authorization_subtabs/PermissionsTab";
+import ClientDetailsPage from "../support/pages/admin-ui/manage/clients/client_details/ClientDetailsPage";
+import PoliciesTab from "../support/pages/admin-ui/manage/clients/client_details/tabs/authorization_subtabs/PoliciesTab";
+import PermissionsTab from "../support/pages/admin-ui/manage/clients/client_details/tabs/authorization_subtabs/PermissionsTab";
 
 describe("Client authentication subtab", () => {
   const loginPage = new LoginPage();

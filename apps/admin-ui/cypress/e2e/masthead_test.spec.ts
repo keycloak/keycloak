@@ -1,7 +1,7 @@
-import ListingPage from "../support/pages/admin_console/ListingPage";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
 import LoginPage from "../support/pages/LoginPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import Masthead from "../support/pages/admin_console/Masthead";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import Masthead from "../support/pages/admin-ui/Masthead";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const loginPage = new LoginPage();
@@ -21,7 +21,7 @@ const goToAcctMgtTest = () => {
   masthead.accountManagement();
   cy.get("h1").contains("Welcome to Keycloak account management");
   cy.get("#landingReferrerLink").click({ force: true });
-  masthead.checkIsAdminConsole();
+  masthead.checkIsAdminUI();
 };
 
 describe("Masthead tests in desktop mode", () => {

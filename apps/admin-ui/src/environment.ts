@@ -5,7 +5,7 @@ export type Environment = {
   authServerUrl: string;
   /** The URL to the path of the auth server where client requests can be sent. */
   authUrl: string;
-  /** The URL to the base of the admin console. */
+  /** The URL to the base of the Admin UI. */
   consoleBaseUrl: string;
   /** The URL to resources such as the files in the `public` directory. */
   resourceUrl: string;

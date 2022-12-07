@@ -1,7 +1,7 @@
 {
   "requireSsl": "¿Es HTTP obligatorio? ''ninguna'' significa que HTTPS no es obligatorio para ninguna direcicón IP de cliente, ''peticiones externas'' indica que localhost y las direcciones IP privadas pueden acceder sin HTTPS, ''todas las peticiones'' significa que HTTPS es obligatorio para todas las direcciones IP.",
   "accountTheme": "Selecciona el tema para las páginas de gestión de la cuenta de usuario.",
-  "adminConsoleTheme": "Selecciona el tema para la consola de administración.",
+  "adminUITheme": "Selecciona el tema para la consola de administración.",
   "emailTheme": "Selecciona el tema para los emails que son enviados por el servidor.",
   "failureFactor": "Indica cuantos fallos se permiten antes de que se dispare una espera.",
   "waitIncrementSeconds": "Cuando se ha alcanzado el umbral de fallo, ¿cuanto tiempo debe estar un usuario bloqueado?",

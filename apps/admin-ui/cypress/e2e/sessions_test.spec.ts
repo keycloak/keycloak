@@ -1,9 +1,9 @@
 import LoginPage from "../support/pages/LoginPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import SessionsPage from "../support/pages/admin_console/manage/sessions/SessionsPage";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import SessionsPage from "../support/pages/admin-ui/manage/sessions/SessionsPage";
 import CommonPage from "../support/pages/CommonPage";
-import ListingPage from "../support/pages/admin_console/ListingPage";
-import GroupPage from "../support/pages/admin_console/manage/groups/GroupPage";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
+import GroupPage from "../support/pages/admin-ui/manage/groups/GroupPage";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const loginPage = new LoginPage();

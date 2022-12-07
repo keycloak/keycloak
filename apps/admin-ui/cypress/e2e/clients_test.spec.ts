@@ -2,22 +2,22 @@ import LoginPage from "../support/pages/LoginPage";
 import ListingPage, {
   Filter,
   FilterAssignedType,
-} from "../support/pages/admin_console/ListingPage";
-import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage";
+} from "../support/pages/admin-ui/ListingPage";
+import CreateClientPage from "../support/pages/admin-ui/manage/clients/CreateClientPage";
 import adminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
-import createRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
-import AssociatedRolesPage from "../support/pages/admin_console/manage/realm_roles/AssociatedRolesPage";
-import ClientRolesTab from "../support/pages/admin_console/manage/clients/ClientRolesTab";
-import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/tabs/InitialAccessTokenTab";
-import AdvancedTab from "../support/pages/admin_console/manage/clients/client_details/tabs/AdvancedTab";
+import RoleMappingTab from "../support/pages/admin-ui/manage/RoleMappingTab";
+import createRealmRolePage from "../support/pages/admin-ui/manage/realm_roles/CreateRealmRolePage";
+import AssociatedRolesPage from "../support/pages/admin-ui/manage/realm_roles/AssociatedRolesPage";
+import ClientRolesTab from "../support/pages/admin-ui/manage/clients/ClientRolesTab";
+import InitialAccessTokenTab from "../support/pages/admin-ui/manage/clients/tabs/InitialAccessTokenTab";
+import AdvancedTab from "../support/pages/admin-ui/manage/clients/client_details/tabs/AdvancedTab";
 import ClientDetailsPage, {
   ClientsDetailsTab,
-} from "../support/pages/admin_console/manage/clients/client_details/ClientDetailsPage";
+} from "../support/pages/admin-ui/manage/clients/client_details/ClientDetailsPage";
 import CommonPage from "../support/pages/CommonPage";
-import AttributesTab from "../support/pages/admin_console/manage/AttributesTab";
-import DedicatedScopesMappersTab from "../support/pages/admin_console/manage/clients/client_details/DedicatedScopesMappersTab";
+import AttributesTab from "../support/pages/admin-ui/manage/AttributesTab";
+import DedicatedScopesMappersTab from "../support/pages/admin-ui/manage/clients/client_details/DedicatedScopesMappersTab";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();

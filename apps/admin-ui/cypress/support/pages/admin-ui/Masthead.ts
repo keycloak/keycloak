@@ -15,7 +15,7 @@ export default class Masthead extends CommonElements {
     return cy.findByTestId(this.globalAlerts);
   }
 
-  checkIsAdminConsole() {
+  checkIsAdminUI() {
     cy.get(this.logoBtn).should("exist");
     cy.get(this.userDrpDwn).should("exist");
 

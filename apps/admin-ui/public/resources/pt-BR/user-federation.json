@@ -1,6 +1,6 @@
 {
   "userFederation": "Federação de usuários",
-  "consoleDisplayName": "Nome de exibição no console",
+  "uiDisplayName": "Nome de exibição no UI",
   "vendor": "Vendor",
   "connectionURL": "URL de conexão",
   "enableStartTls": "Habilitar StartTLS",

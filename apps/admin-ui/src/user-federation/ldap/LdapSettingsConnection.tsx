@@ -110,7 +110,7 @@ export const LdapSettingsConnection = ({
               fieldLabelId="user-federation:connectionURL"
             />
           }
-          fieldId="kc-console-connection-url"
+          fieldId="kc-ui-connection-url"
           isRequired
           validated={
             form.errors.config?.connectionUrl?.[0] ? "error" : "default"
@@ -120,7 +120,7 @@ export const LdapSettingsConnection = ({
           <KeycloakTextInput
             isRequired
             type="url"
-            id="kc-console-connection-url"
+            id="kc-ui-connection-url"
             data-testid="ldap-connection-url"
             name="config.connectionUrl[0]"
             ref={form.register({
@@ -235,12 +235,12 @@ export const LdapSettingsConnection = ({
               fieldLabelId="user-federation:consoleTimeout"
             />
           }
-          fieldId="kc-console-connection-timeout"
+          fieldId="kc-ui-connection-timeout"
         >
           <KeycloakTextInput
             type="number"
             min={0}
-            id="kc-console-connection-timeout"
+            id="kc-ui-connection-timeout"
             data-testid="connection-timeout"
             name="config.connectionTimeout[0]"
             ref={form.register}
@@ -304,7 +304,7 @@ export const LdapSettingsConnection = ({
                   fieldLabelId="user-federation:bindDn"
                 />
               }
-              fieldId="kc-console-bind-dn"
+              fieldId="kc-ui-bind-dn"
               helperTextInvalid={t("validateBindDn")}
               validated={
                 form.errors.config?.bindDn
@@ -315,7 +315,7 @@ export const LdapSettingsConnection = ({
             >
               <KeycloakTextInput
                 type="text"
-                id="kc-console-bind-dn"
+                id="kc-ui-bind-dn"
                 data-testid="ldap-bind-dn"
                 name="config.bindDn[0]"
                 ref={form.register({ required: true })}
@@ -334,7 +334,7 @@ export const LdapSettingsConnection = ({
                   fieldLabelId="user-federation:bindCredentials"
                 />
               }
-              fieldId="kc-console-bind-credentials"
+              fieldId="kc-ui-bind-credentials"
               helperTextInvalid={t("validateBindCredentials")}
               validated={
                 form.errors.config?.bindCredential
@@ -346,7 +346,7 @@ export const LdapSettingsConnection = ({
               <PasswordInput
                 hasReveal={!edit}
                 isRequired
-                id="kc-console-bind-credentials"
+                id="kc-ui-bind-credentials"
                 data-testid="ldap-bind-credentials"
                 name="config.bindCredential[0]"
                 ref={form.register({

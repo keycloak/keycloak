@@ -25,7 +25,7 @@
   "keyAlias": "密钥别名",
   "keyPassword": "密钥密码",
   "providers": "提供者",
-  "consoleDisplayName": "控制台显示名称",
+  "uiDisplayName": "控制台显示名称",
   "active": "活跃",
   "type": "类型",
   "providerId": "ID",

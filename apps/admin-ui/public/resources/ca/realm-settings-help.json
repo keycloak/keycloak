@@ -1,7 +1,7 @@
 {
   "requireSsl": "És HTTP obligatori? ''cap'' significa que HTTPS no és obligatori per cap direcicón IP de client, ''peticions externes'' indica que localhost i les adreces IP privades poden accedir sense HTTPS, ''totes les peticions'' vol dir que HTTPS és obligatori per a totes les adreces IP.",
   "accountTheme": "Selecciona el tema per a les pàgines de gestió del compte d''usuari.",
-  "adminConsoleTheme": "Selecciona el tema per a la consola d''administració.",
+  "adminUITheme": "Selecciona el tema per a la consola d''administració.",
   "emailTheme": "Selecciona el tema per als correus electrònics que són enviats pel servidor.",
   "failureFactor": "Indica quants errors es permeten abans que es dispari una espera.",
   "waitIncrementSeconds": "Quan s''ha arribat al llindar d''error, quant de temps ha d''estar un usuari bloquejat?",

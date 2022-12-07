@@ -2,7 +2,7 @@
   "userFederation": "Федерация пользователей",
   "unlinkUsers": "Отвязать пользователей",
   "removeImported": "Удалить импортированных",
-  "consoleDisplayName": "Наименование в консоли",
+  "uiDisplayName": "Наименование в консоли",
   "vendor": "Поставщик",
   "connectionURL": "URL соединения",
   "enableStartTls": "Включить StartTLS",

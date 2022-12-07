@@ -1,5 +1,5 @@
 {
   "requireSsl": "Ist HTTPS erforderlich? 'None' bedeutet, dass HTTPS für keine Client-IP-Adresse erforderlich ist. 'External requests' bedeutet, dass Localhost und private IP-Adressen ohne HTTPS zugreifen können. 'All requests' bedeutet, dass HTTPS für alle IP-Adressen erforderlich ist.",
-  "userManagedAccess": "Wenn aktiviert, können Benutzer ihre Ressourcen und Berechtigungen über die Account Management Console verwalten.",
+  "userManagedAccess": "Wenn aktiviert, können Benutzer ihre Ressourcen und Berechtigungen über die Account Management UI verwalten.",
   "editUsername": "Wenn aktiv, kann der Benutzername editiert werden."
 }

@@ -1,7 +1,7 @@
 {
   "requireSsl": "Kreves HTTPS? 'Ingen' betyr at HTTPS ikke kreves for noen klienters IP-adresse. 'Ekstern forespørsel' betyr at localhost og private IP-adresser kan få tilgang uten HTTPS. 'Alle forespørsler' betyr at HTTPS kreves for alle IP-adresser.",
   "accountTheme": "Velg tema for brukerkontoadministrasjonssider.",
-  "adminConsoleTheme": "Velg et tema for administrasjonskonsollen.",
+  "adminUITheme": "Velg et tema for administrasjonskonsollen.",
   "emailTheme": "Velg tema for e-post sendt av server.",
   "save-user-events": "Hvis aktivert vil innloggingshendelser bli lagret i databasen, noe som gjør hendelsene tilgjengelige for administrator og kontoadministrasjonskonsoll.",
   "save-admin-events": "Hvis aktivert vil administratorhendelser bli lagret i databasen, som vil gjøre hendelsene tilgjengelige i administrasjonskonsollen.",

@@ -1,6 +1,6 @@
 {
   "userFederation": "用户联合",
-  "consoleDisplayName": "控制台显示名称",
+  "uiDisplayName": "控制台显示名称",
   "vendor": "供应商",
   "connectionURL": "连接URL",
   "enableStartTls": "启用 StartTLS",

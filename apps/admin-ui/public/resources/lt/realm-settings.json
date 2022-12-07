@@ -25,7 +25,7 @@
   "keyAlias": "Rakto pseudonimas",
   "keyPassword": "Rakto slaptažodis",
   "providers": "Teikėjai",
-  "consoleDisplayName": "Konsolėje rodomas pavadinimas",
+  "uiDisplayName": "Konsolėje rodomas pavadinimas",
   "active": "Aktyvus",
   "type": "Tipas",
   "providerId": "ID",

@@ -1,5 +1,5 @@
-import PageObject from "../pages/admin_console/components/PageObject";
-import TablePage from "../pages/admin_console/components/TablePage";
+import PageObject from "../pages/admin-ui/components/PageObject";
+import TablePage from "../pages/admin-ui/components/TablePage";
 
 export default class ModalUtils extends PageObject {
   private modalDiv = ".pf-c-modal-box";

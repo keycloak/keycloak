@@ -7,8 +7,8 @@ export default class CreateClientPage extends CommonPage {
   private clientIdError = "#kc-client-id + div";
   private clientNameInput = "#kc-name";
   private clientDescriptionInput = "#kc-description";
-  private alwaysDisplayInConsoleSwitch =
-    '[for="kc-always-display-in-console-switch"] .pf-c-switch__toggle';
+  private alwaysDisplayInUISwitch =
+    '[for="kc-always-display-in-ui-switch"] .pf-c-switch__toggle';
   private frontchannelLogoutSwitch =
     '[for="kc-frontchannelLogout-switch"] .pf-c-switch__toggle';
 
@@ -90,7 +90,7 @@ export default class CreateClientPage extends CommonPage {
     }
 
     if (alwaysDisplay) {
-      cy.get(this.alwaysDisplayInConsoleSwitch).click();
+      cy.get(this.alwaysDisplayInUISwitch).click();
     }
 
     if (frontchannelLogout) {

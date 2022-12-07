@@ -118,7 +118,7 @@ We will use one global CSS file to surface customization variables. Styles parti
 
 PatternFly reference https://pf4.patternfly.org/guidelines#variables
 
-For the Keycloak admin console, we modify the PatternFly convention to namespace the classes and variables to the Keycloak packages.
+For the Admin UI, we modify the PatternFly convention to namespace the classes and variables to the Keycloak packages.
 
 **Class name**
 ```css
@@ -145,7 +145,7 @@ For the Keycloak admin console, we modify the PatternFly convention to namespace
 ...
 }
 
-// Compact data table just in the management console at the lg or higher breakpoint
+// Compact data table just in the management UI at the lg or higher breakpoint
 .keycloak-admin--data-table--compact--lg {
 ...
 }
@@ -158,7 +158,7 @@ However, there are other times when modifications must be made to the styling pr
 
 These values can be seen in the [PatternFly design guidelines](https://www.patternfly.org/v4/design-guidelines/styles/colors) and a [full listing of variables](https://www.patternfly.org/v4/documentation/overview/global-css-variables) can be found in the documentation section.
 
-For the Keycloak admin console, we modify the PatternFly convention to namespace the classes and variables to the Keycloak packages.
+For the Admin UI, we modify the PatternFly convention to namespace the classes and variables to the Keycloak packages.
 
 **Custom property**
 ```css
@@ -189,7 +189,7 @@ For the Keycloak admin console, we modify the PatternFly convention to namespace
 
 Utility classes can be used to add specific styling to a component, such as margin-bottom or padding. However, their use should be limited to one-off styling needs.  
 
-For example, instead of using the utility class for margin-right multiple times, we should define a new Keycloak admin console class that adds this *margin-right: var(--pf-global--spacer--sm);* and in this example, the new class can set the color appropriately as well.
+For example, instead of using the utility class for margin-right multiple times, we should define a new Admin UI class that adds this *margin-right: var(--pf-global--spacer--sm);* and in this example, the new class can set the color appropriately as well.
 
 **Using a utility class **
 ```css

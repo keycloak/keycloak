@@ -1,13 +1,13 @@
 import LoginPage from "../support/pages/LoginPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import ListingPage from "../support/pages/admin_console/ListingPage";
-import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
-import ProviderPage from "../support/pages/admin_console/manage/providers/ProviderPage";
-import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage";
-import Masthead from "../support/pages/admin_console/Masthead";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
+import GroupModal from "../support/pages/admin-ui/manage/groups/GroupModal";
+import ProviderPage from "../support/pages/admin-ui/manage/providers/ProviderPage";
+import CreateClientPage from "../support/pages/admin-ui/manage/clients/CreateClientPage";
+import Masthead from "../support/pages/admin-ui/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import GroupPage from "../support/pages/admin_console/manage/groups/GroupPage";
+import GroupPage from "../support/pages/admin-ui/manage/groups/GroupPage";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();

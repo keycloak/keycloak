@@ -1,6 +1,6 @@
 {
   "userFederation": "Brukerfederering",
-  "consoleDisplayName": "Konsoll vis navn",
+  "uiDisplayName": "Konsoll vis navn",
   "vendor": "Leverandør",
   "connectionURL": "Tilkoblings URL",
   "enableStartTls": "Aktiver StartTLS",

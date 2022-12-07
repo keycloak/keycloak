@@ -96,7 +96,7 @@ export const LdapSettingsSearching = ({
               fieldLabelId="user-federation:usersDn"
             />
           }
-          fieldId="kc-console-users-dn"
+          fieldId="kc-ui-users-dn"
           isRequired
           validated={form.errors.config?.usersDn?.[0] ? "error" : "default"}
           helperTextInvalid={form.errors.config?.usersDn?.[0].message}
@@ -105,7 +105,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             defaultValue=""
-            id="kc-console-users-dn"
+            id="kc-ui-users-dn"
             data-testid="ldap-users-dn"
             name="config.usersDn[0]"
             ref={form.register({
@@ -356,7 +356,7 @@ export const LdapSettingsSearching = ({
               fieldLabelId="user-federation:pagination"
             />
           }
-          fieldId="kc-console-pagination"
+          fieldId="kc-ui-pagination"
           hasNoPaddingTop
         >
           <Controller
@@ -365,8 +365,8 @@ export const LdapSettingsSearching = ({
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
-                id="kc-console-pagination"
-                data-testid="console-pagination"
+                id="kc-ui-pagination"
+                data-testid="ui-pagination"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}

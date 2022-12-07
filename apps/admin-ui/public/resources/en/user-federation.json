@@ -18,7 +18,7 @@
   "removeImported": "Remove imported",
   "deleteProvider": "Delete provider",
   "generalOptions": "General options",
-  "consoleDisplayName": "Console display name",
+  "uiDisplayName": "UI display name",
   "vendor": "Vendor",
   "connectionAndAuthenticationSettings": "Connection and authentication settings",
   "connectionURL": "Connection URL",

@@ -1,12 +1,12 @@
-import Masthead from "./admin_console/Masthead";
-import SidebarPage from "./admin_console/SidebarPage";
-import TabUtils from "./admin_console/components/TabPage";
-import FormUtils from "./admin_console/components/FormPage";
+import Masthead from "./admin-ui/Masthead";
+import SidebarPage from "./admin-ui/SidebarPage";
+import TabUtils from "./admin-ui/components/TabPage";
+import FormUtils from "./admin-ui/components/FormPage";
 import ModalUtils from "../util/ModalUtils";
-import ActionToolbarUtils from "./admin_console/components/ActionToolbarPage";
-import TableToolbarUtils from "./admin_console/components/TableToolbarPage";
-import TableUtils from "./admin_console/components/TablePage";
-import EmptyStatePage from "./admin_console/components/EmptyStatePage";
+import ActionToolbarUtils from "./admin-ui/components/ActionToolbarPage";
+import TableToolbarUtils from "./admin-ui/components/TableToolbarPage";
+import TableUtils from "./admin-ui/components/TablePage";
+import EmptyStatePage from "./admin-ui/components/EmptyStatePage";
 
 export default class CommonPage {
   private mastheadPage = new Masthead();

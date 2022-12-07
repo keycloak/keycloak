@@ -2,7 +2,7 @@
   "addKerberosWizardDescription": "Text needed here",
   "addLdapWizardDescription": "Text needed here",
   "ldapGeneralOptionsSettingsDescription": "This section contains a few basic options common to all user storage providers.",
-  "consoleDisplayNameHelp": "Display name of provider when linked in admin console",
+  "uiDisplayNameHelp": "Display name of provider when linked in the Admin UI",
   "vendorHelp": "LDAP vendor (provider)",
   "ldapConnectionAndAuthorizationSettingsDescription": "This section contains options related to the configuration of the connection to the LDAP server. It also contains options related to authentication of the LDAP connection to the LDAP server.",
   "consoleDisplayConnectionUrlHelp": "Connection URL to your LDAP server",

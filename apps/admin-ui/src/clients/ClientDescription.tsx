@@ -84,14 +84,14 @@ export const ClientDescription = ({
         />
       </FormGroup>
       <FormGroup
-        label={t("alwaysDisplayInConsole")}
+        label={t("alwaysDisplayInUI")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:alwaysDisplayInConsole"
-            fieldLabelId="clients:alwaysDisplayInConsole"
+            helpText="clients-help:alwaysDisplayInUI"
+            fieldLabelId="clients:alwaysDisplayInUI"
           />
         }
-        fieldId="kc-always-display-in-console"
+        fieldId="kc-always-display-in-ui"
         hasNoPaddingTop
       >
         <Controller
@@ -100,12 +100,12 @@ export const ClientDescription = ({
           control={control}
           render={({ field }) => (
             <Switch
-              id="kc-always-display-in-console-switch"
+              id="kc-always-display-in-ui-switch"
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={field.value}
               onChange={field.onChange}
-              aria-label={t("alwaysDisplayInConsole")}
+              aria-label={t("alwaysDisplayInUI")}
             />
           )}
         />

@@ -1,7 +1,7 @@
 {
   "requireSsl": "Niveau d''exigence HTTPS : ''aucun'' signifie que le HTTPS n''est requis pour aucune adresse IP cliente. ''les requêtes externes'' signifie que localhost et les adresses IP privées peuvent accéder sans HTTPS.  ''toutes les requêtes'' signifie que le protocole HTTPS est obligatoire pour toutes les adresses IP.",
   "accountTheme": "Sélectionnez le thème pour la gestion des comptes.",
-  "adminConsoleTheme": "Sélectionnez le thème de la console d''administration.",
+  "adminUITheme": "Sélectionnez le thème de la UI d''administration.",
   "emailTheme": "Sélectionnez le thème pour les courriels envoyées par le serveur.",
   "failureFactor": "Nombre d''erreurs avant de déclencher le temps d''attente.",
   "waitIncrementSeconds": "Quand le seuil des erreurs est atteint, combien de temps l''utilisateur est-il bloqué ?",

@@ -1,11 +1,11 @@
 import LoginPage from "../support/pages/LoginPage";
-import Masthead from "../support/pages/admin_console/Masthead";
-import ListingPage from "../support/pages/admin_console/ListingPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
+import Masthead from "../support/pages/admin-ui/Masthead";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import ModalUtils from "../support/util/ModalUtils";
 import adminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import SettingsTab from "../support/pages/admin_console/manage/clients/client_details/tabs/SettingsTab";
+import SettingsTab from "../support/pages/admin-ui/manage/clients/client_details/tabs/SettingsTab";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();

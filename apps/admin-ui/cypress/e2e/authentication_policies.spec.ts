@@ -1,9 +1,9 @@
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import Masthead from "../support/pages/admin_console/Masthead";
+import Masthead from "../support/pages/admin-ui/Masthead";
 import LoginPage from "../support/pages/LoginPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import OTPPolicies from "../support/pages/admin_console/manage/authentication/OTPPolicies";
-import WebAuthnPolicies from "../support/pages/admin_console/manage/authentication/WebAuthnPolicies";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import OTPPolicies from "../support/pages/admin-ui/manage/authentication/OTPPolicies";
+import WebAuthnPolicies from "../support/pages/admin-ui/manage/authentication/WebAuthnPolicies";
 
 describe("Policies", () => {
   const masthead = new Masthead();

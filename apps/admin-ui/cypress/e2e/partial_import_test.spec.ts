@@ -1,7 +1,7 @@
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
-import PartialImportModal from "../support/pages/admin_console/configure/realm_settings/PartialImportModal";
-import RealmSettings from "../support/pages/admin_console/configure/realm_settings/RealmSettings";
+import PartialImportModal from "../support/pages/admin-ui/configure/realm_settings/PartialImportModal";
+import RealmSettings from "../support/pages/admin-ui/configure/realm_settings/RealmSettings";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import adminClient from "../support/util/AdminClient";
 

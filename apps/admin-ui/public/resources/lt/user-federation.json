@@ -1,6 +1,6 @@
 {
   "userFederation": "Naudotojų federavimas",
-  "consoleDisplayName": "Konsolėje rodomas pavadinimas",
+  "uiDisplayName": "Konsolėje rodomas pavadinimas",
   "vendor": "Gamintojas",
   "connectionURL": "Jungties URL",
   "enableStartTls": "Įgalinti StartTLS",

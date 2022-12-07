@@ -2,7 +2,7 @@
   "userFederation": "ユーザー・フェデレーション",
   "unlinkUsers": "ユーザーのリンクを解除する",
   "removeImported": "インポートを削除",
-  "consoleDisplayName": "コンソール表示名",
+  "uiDisplayName": "コンソール表示名",
   "vendor": "ベンダー",
   "connectionURL": "接続URL",
   "enableStartTls": "StartTLSの有効",

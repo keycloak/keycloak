@@ -71,7 +71,7 @@ export const KeysProvidersTab = ({
   const providerTypes = keyProviderComponentTypes.map((item) => item.id);
 
   const [providerDropdownOpen, setProviderDropdownOpen] = useState(false);
-  const [defaultConsoleDisplayName, setDefaultConsoleDisplayName] =
+  const [defaultUIDisplayName, setDefaultUIDisplayName] =
     useState<ProviderType>();
 
   const [selectedComponent, setSelectedComponent] =
@@ -143,9 +143,9 @@ export const KeysProvidersTab = ({
 
   return (
     <>
-      {isCreateModalOpen && defaultConsoleDisplayName && (
+      {isCreateModalOpen && defaultUIDisplayName && (
         <KeyProviderModal
-          providerType={defaultConsoleDisplayName}
+          providerType={defaultUIDisplayName}
           onClose={() => {
             handleModalToggle();
             refresh();
@@ -197,7 +197,7 @@ export const KeysProvidersTab = ({
                         handleModalToggle();
 
                         setProviderDropdownOpen(false);
-                        setDefaultConsoleDisplayName(item as ProviderType);
+                        setDefaultUIDisplayName(item as ProviderType);
                       }}
                       data-testid={`option-${item}`}
                       key={item}
