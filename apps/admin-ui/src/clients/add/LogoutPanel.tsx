@@ -84,6 +84,7 @@ export const LogoutPanel = ({
         >
           <KeycloakTextInput
             id="frontchannelLogoutUrl"
+            type="url"
             {...register(
               convertAttributeNameToForm<FormFields>(
                 "attributes.frontchannel.logout.url"
@@ -126,6 +127,7 @@ export const LogoutPanel = ({
           >
             <KeycloakTextInput
               id="backchannelLogoutUrl"
+              type="url"
               {...register(
                 convertAttributeNameToForm<FormFields>(
                   "attributes.backchannel.logout.url"

@@ -115,7 +115,7 @@ export const RealmSettingsGeneralTab = ({
           }
         >
           <KeycloakTextInput
-            type="text"
+            type="url"
             id="kc-frontend-url"
             name={convertAttributeNameToForm("attributes.frontendUrl")}
             ref={register}

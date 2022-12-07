@@ -119,7 +119,7 @@ export const LdapSettingsConnection = ({
         >
           <KeycloakTextInput
             isRequired
-            type="text"
+            type="url"
             id="kc-console-connection-url"
             data-testid="ldap-connection-url"
             name="config.connectionUrl[0]"

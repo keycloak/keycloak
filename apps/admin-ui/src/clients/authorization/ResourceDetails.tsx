@@ -257,6 +257,7 @@ export default function ResourceDetails() {
             >
               <MultiLineInput
                 name="uris"
+                type="url"
                 aria-label={t("uris")}
                 addButtonLabel="clients:addUri"
               />
@@ -272,7 +273,12 @@ export default function ResourceDetails() {
                 />
               }
             >
-              <KeycloakTextInput id="iconUri" name="icon_uri" ref={register} />
+              <KeycloakTextInput
+                id="iconUri"
+                name="icon_uri"
+                type="url"
+                ref={register}
+              />
             </FormGroup>
             <FormGroup
               hasNoPaddingTop

@@ -59,7 +59,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
-          type="text"
+          type="url"
           data-testid="authorizationUrl"
           id="kc-authorization-url"
           name="config.authorizationUrl"
@@ -85,7 +85,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
-          type="text"
+          type="url"
           id="tokenUrl"
           data-testid="tokenUrl"
           name="config.tokenUrl"

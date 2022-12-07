@@ -110,7 +110,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
-          type="text"
+          type="url"
           data-testid="sso-service-url"
           id="kc-sso-service-url"
           name="config.singleSignOnServiceUrl"
@@ -141,7 +141,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
-          type="text"
+          type="url"
           id="single-logout-service-url"
           name="config.singleLogoutServiceUrl"
           ref={register}

@@ -129,7 +129,7 @@ export const DiscoveryEndpointField = ({
           isRequired
         >
           <KeycloakTextInput
-            type="text"
+            type="url"
             name="discoveryEndpoint"
             data-testid="discoveryEndpoint"
             id="kc-discovery-endpoint"

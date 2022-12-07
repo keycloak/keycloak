@@ -25,6 +25,7 @@ export const ApplicationUrls = () => {
       >
         <KeycloakTextInput
           id="logoUrl"
+          type="url"
           data-testid="logoUrl"
           {...register(
             convertAttributeNameToForm<FormFields>("attributes.logoUri")
@@ -44,6 +45,7 @@ export const ApplicationUrls = () => {
         <KeycloakTextInput
           id="policyUrl"
           data-testid="policyUrl"
+          type="url"
           {...register(
             convertAttributeNameToForm<FormFields>("attributes.policyUri")
           )}
@@ -61,6 +63,7 @@ export const ApplicationUrls = () => {
       >
         <KeycloakTextInput
           id="termsOfServiceUrl"
+          type="url"
           data-testid="termsOfServiceUrl"
           {...register(
             convertAttributeNameToForm<FormFields>("attributes.tosUri")

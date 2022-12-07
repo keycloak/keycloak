@@ -72,6 +72,7 @@ const GithubFields = () => {
       >
         <KeycloakTextInput
           id="baseUrl"
+          type="url"
           name="config.baseUrl"
           ref={register()}
         />
@@ -86,7 +87,12 @@ const GithubFields = () => {
         }
         fieldId="apiUrl"
       >
-        <KeycloakTextInput id="apiUrl" name="config.apiUrl" ref={register()} />
+        <KeycloakTextInput
+          id="apiUrl"
+          type="url"
+          name="config.apiUrl"
+          ref={register()}
+        />
       </FormGroup>
     </>
   );
@@ -197,6 +203,7 @@ const OpenshiftFields = () => {
     >
       <KeycloakTextInput
         id="baseUrl"
+        type="url"
         name="config.baseUrl"
         ref={register({ required: true })}
         isRequired

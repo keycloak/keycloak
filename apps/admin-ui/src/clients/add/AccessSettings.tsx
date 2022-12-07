@@ -49,7 +49,11 @@ export const AccessSettings = ({
               />
             }
           >
-            <KeycloakTextInput id="kc-root-url" {...register("rootUrl")} />
+            <KeycloakTextInput
+              id="kc-root-url"
+              type="url"
+              {...register("rootUrl")}
+            />
           </FormGroup>
           <FormGroup
             label={t("homeURL")}
@@ -61,7 +65,11 @@ export const AccessSettings = ({
               />
             }
           >
-            <KeycloakTextInput id="kc-home-url" {...register("baseUrl")} />
+            <KeycloakTextInput
+              id="kc-home-url"
+              type="url"
+              {...register("baseUrl")}
+            />
           </FormGroup>
           <FormGroup
             label={t("validRedirectUri")}
@@ -150,6 +158,7 @@ export const AccessSettings = ({
               >
                 <KeycloakTextInput
                   id="masterSamlProcessingUrl"
+                  type="url"
                   data-testid="masterSamlProcessingUrl"
                   {...register("adminUrl")}
                 />
@@ -187,7 +196,11 @@ export const AccessSettings = ({
             />
           }
         >
-          <KeycloakTextInput id="kc-admin-url" {...register("adminUrl")} />
+          <KeycloakTextInput
+            id="kc-admin-url"
+            type="url"
+            {...register("adminUrl")}
+          />
         </FormGroup>
       )}
       {client.bearerOnly && (

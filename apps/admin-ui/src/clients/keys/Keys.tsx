@@ -182,6 +182,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
               >
                 <KeycloakTextInput
                   id="jwksUrl"
+                  type="url"
                   {...register(
                     convertAttributeNameToForm("attributes.jwks.url")
                   )}
