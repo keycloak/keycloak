@@ -1,8 +1,4 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -15,26 +11,30 @@ import {
   SelectVariant,
   Switch,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
-import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import { useAlerts } from "../../components/alert/Alerts";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { toUpperCase } from "../../util";
+import { useParams } from "../../utils/useParams";
+import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import type { NewPermissionParams } from "../routes/NewPermission";
 import {
   PermissionDetailsParams,
   toPermissionDetails,
 } from "../routes/PermissionDetails";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { useAlerts } from "../../components/alert/Alerts";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { ResourcesPolicySelect } from "./ResourcesPolicySelect";
-import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { ScopeSelect } from "./ScopeSelect";
-import { toUpperCase } from "../../util";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 
 const DECISION_STRATEGIES = ["UNANIMOUS", "AFFIRMATIVE", "CONSENSUS"] as const;
 

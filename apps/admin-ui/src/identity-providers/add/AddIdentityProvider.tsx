@@ -1,26 +1,26 @@
-import { useParams } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   ActionGroup,
   AlertVariant,
   Button,
   PageSection,
 } from "@patternfly/react-core";
+import { FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { ExtendedFieldsForm } from "../component/ExtendedFieldsForm";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { toUpperCase } from "../../util";
+import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useAlerts } from "../../components/alert/Alerts";
-import { GeneralSettings } from "./GeneralSettings";
+import { toUpperCase } from "../../util";
+import { useParams } from "../../utils/useParams";
+import { ExtendedFieldsForm } from "../component/ExtendedFieldsForm";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import type { IdentityProviderCreateParams } from "../routes/IdentityProviderCreate";
 import { toIdentityProviders } from "../routes/IdentityProviders";
+import { GeneralSettings } from "./GeneralSettings";
 
 export default function AddIdentityProvider() {
   const { t } = useTranslation("identity-providers");

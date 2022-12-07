@@ -1,11 +1,11 @@
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useState } from "react";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type { RealmSettingsParams } from "./routes/RealmSettings";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useParams } from "../utils/useParams";
 import { RealmSettingsTabs } from "./RealmSettingsTabs";
-import { useParams } from "react-router-dom";
+import type { RealmSettingsParams } from "./routes/RealmSettings";
 
 export default function RealmSettingsSection() {
   const { adminClient } = useAdminClient();

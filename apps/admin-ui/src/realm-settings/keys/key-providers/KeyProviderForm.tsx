@@ -1,27 +1,27 @@
-import { useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm } from "react-hook-form";
-import {
-  AlertVariant,
-  FormGroup,
-  ValidatedOptions,
-  TextInput,
-  PageSection,
-  ActionGroup,
-  Button,
-} from "@patternfly/react-core";
-
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import type { KeyProviderParams, ProviderType } from "../../routes/KeyProvider";
+import {
+  ActionGroup,
+  AlertVariant,
+  Button,
+  FormGroup,
+  PageSection,
+  TextInput,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import { Controller, FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
 import { useAlerts } from "../../../components/alert/Alerts";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form-access/FormAccess";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
-import { KEY_PROVIDER_TYPE } from "../../../util";
-import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
+import { ViewHeader } from "../../../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
+import { KEY_PROVIDER_TYPE } from "../../../util";
+import { useParams } from "../../../utils/useParams";
+import type { KeyProviderParams, ProviderType } from "../../routes/KeyProvider";
 
 type KeyProviderFormProps = {
   id?: string;

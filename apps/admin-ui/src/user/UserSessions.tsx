@@ -1,11 +1,10 @@
 import { PageSection } from "@patternfly/react-core";
-
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import SessionsTable from "../sessions/SessionsTable";
+import { useParams } from "../utils/useParams";
 import type { UserParams } from "./routes/User";
 
 export const UserSessions = () => {

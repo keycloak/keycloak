@@ -24,8 +24,8 @@ import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
-import { useHistory, useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useHistory } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom-v5-compat";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 
 import { LdapMapperList } from "./ldap/mappers/LdapMapperList";

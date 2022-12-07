@@ -1,24 +1,24 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
+  ActionGroup,
+  AlertVariant,
+  Button,
   FormGroup,
   PageSection,
-  ActionGroup,
-  Button,
-  AlertVariant,
 } from "@patternfly/react-core";
+import { saveAs } from "file-saver";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
+import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { useParams } from "react-router-dom";
-import { saveAs } from "file-saver";
-import { prettyPrintJSON } from "../../util";
-import { useAlerts } from "../../components/alert/Alerts";
-import type { ClientParams } from "../routes/Client";
-import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { prettyPrintJSON } from "../../util";
+import { useParams } from "../../utils/useParams";
+import type { ClientParams } from "../routes/Client";
 
 import "./authorization-details.css";
 

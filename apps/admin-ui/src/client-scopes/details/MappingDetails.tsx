@@ -1,8 +1,5 @@
-import { useState } from "react";
-import { useParams, useRouteMatch } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -13,22 +10,26 @@ import {
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
-import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import { useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useRouteMatch } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
+import { useAlerts } from "../../components/alert/Alerts";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAlerts } from "../../components/alert/Alerts";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { MapperParams, MapperRoute } from "../routes/Mapper";
+import { useParams } from "../../utils/useParams";
 import { toClientScope } from "../routes/ClientScope";
-import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { MapperParams, MapperRoute } from "../routes/Mapper";
 
 import "./mapping-details.css";
 

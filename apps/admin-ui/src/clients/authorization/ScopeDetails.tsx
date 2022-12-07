@@ -12,7 +12,6 @@ import {
 import { useState } from "react";
 import { useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
 
 import { useAlerts } from "../../components/alert/Alerts";
@@ -21,6 +20,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useParams } from "../../utils/useParams";
 import useToggle from "../../utils/useToggle";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import type { ScopeDetailsParams } from "../routes/Scope";

@@ -1,32 +1,33 @@
-import { useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
   AlertVariant,
   PageSection,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
-import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { MapperList } from "../../client-scopes/details/MapperList";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useAlerts } from "../../components/alert/Alerts";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import {
   routableTab,
   RoutableTabs,
 } from "../../components/routable-tabs/RoutableTabs";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useParams } from "../../utils/useParams";
 import {
   DedicatedScopeDetailsParams,
   DedicatedScopeTab,
   toDedicatedScope,
 } from "../routes/DedicatedScopeDetails";
 import { toMapper } from "../routes/Mapper";
-import { useAlerts } from "../../components/alert/Alerts";
 import { DedicatedScope } from "./DecicatedScope";
 
 export default function DedicatedScopes() {

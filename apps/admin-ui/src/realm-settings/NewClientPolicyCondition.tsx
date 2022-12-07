@@ -20,8 +20,7 @@ import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib
 import { camelCase } from "lodash-es";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
-import { useParams } from "react-router";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useParams, useNavigate } from "react-router-dom-v5-compat";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";

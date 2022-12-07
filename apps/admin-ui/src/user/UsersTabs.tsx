@@ -11,7 +11,6 @@ import {
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
 
 import { useAlerts } from "../components/alert/Alerts";
@@ -22,6 +21,8 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
+import { useParams } from "../utils/useParams";
 import { toUser, UserParams } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { UserAttributes } from "./UserAttributes";
@@ -32,7 +33,7 @@ import { UserGroups } from "./UserGroups";
 import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
-import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
+
 import "./user-section.css";
 
 const UsersTabs = () => {

@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { Controller, FormProvider, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
+import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
   ActionGroup,
   Alert,
@@ -15,25 +13,27 @@ import {
   Switch,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
-import { ResourceDetailsParams, toResourceDetails } from "../routes/Resource";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
-import { convertFormValuesToObject, convertToFormValues } from "../../util";
-import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
-import { toAuthorizationTab } from "../routes/AuthenticationTab";
-import { ScopePicker } from "./ScopePicker";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { useParams } from "../../utils/useParams";
+import { toAuthorizationTab } from "../routes/AuthenticationTab";
+import { ResourceDetailsParams, toResourceDetails } from "../routes/Resource";
+import { ScopePicker } from "./ScopePicker";
 
 import "./resource-details.css";
 

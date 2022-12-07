@@ -13,12 +13,13 @@ import { isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+
 import { FormAccess } from "../../../components/form-access/FormAccess";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useParams } from "../../../utils/useParams";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
 import type { AttributeParams } from "../../routes/Attribute";
 

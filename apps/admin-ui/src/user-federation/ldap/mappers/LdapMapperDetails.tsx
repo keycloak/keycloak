@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -13,26 +14,25 @@ import {
   SelectVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { convertFormValuesToObject, convertToFormValues } from "../../../util";
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
-import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { DirectionType } from "libs/keycloak-admin-client/lib/resources/userStorageProvider";
+import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
-import { useAlerts } from "../../../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
-import { FormAccess } from "../../../components/form-access/FormAccess";
+import { useNavigate } from "react-router-dom-v5-compat";
 
-import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
+import { useAlerts } from "../../../components/alert/Alerts";
+import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
-import { useRealm } from "../../../context/realm-context/RealmContext";
+import { FormAccess } from "../../../components/form-access/FormAccess";
+import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
+import { ViewHeader } from "../../../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useRealm } from "../../../context/realm-context/RealmContext";
+import { convertFormValuesToObject, convertToFormValues } from "../../../util";
+import { useParams } from "../../../utils/useParams";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
-import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
-import { DirectionType } from "libs/keycloak-admin-client/lib/resources/userStorageProvider";
 
 export default function LdapMapperDetails() {
   const form = useForm<ComponentRepresentation>();

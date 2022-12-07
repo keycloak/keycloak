@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
+import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -19,35 +20,34 @@ import {
   TextVariants,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useParams } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { HelpItem } from "../components/help-enabler/HelpItem";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
-import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
-import { toNewClientPolicyCondition } from "./routes/AddCondition";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { toEditClientPolicyCondition } from "./routes/EditCondition";
-import { toClientProfile } from "./routes/ClientProfile";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { FormAccess } from "../components/form-access/FormAccess";
+import { HelpItem } from "../components/help-enabler/HelpItem";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { AddClientProfileModal } from "./AddClientProfileModal";
+import { toNewClientPolicyCondition } from "./routes/AddCondition";
+import { toClientPolicies } from "./routes/ClientPolicies";
+import { toClientProfile } from "./routes/ClientProfile";
 import {
   EditClientPolicyParams,
   toEditClientPolicy,
 } from "./routes/EditClientPolicy";
-import { AddClientProfileModal } from "./AddClientProfileModal";
-import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
-import { toClientPolicies } from "./routes/ClientPolicies";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { toEditClientPolicyCondition } from "./routes/EditCondition";
 
+import { useParams } from "../utils/useParams";
 import "./realm-settings-section.css";
 
 type NewClientPolicyForm = Required<ClientPolicyRepresentation>;

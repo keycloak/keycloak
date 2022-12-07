@@ -20,8 +20,9 @@ import {
   useWatch,
 } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { useHistory, useParams } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
+
 import { useAlerts } from "../components/alert/Alerts";
 import {
   ConfirmDialogModal,
@@ -50,6 +51,7 @@ import {
   convertToFormValues,
   exportClient,
 } from "../util";
+import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
 import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";

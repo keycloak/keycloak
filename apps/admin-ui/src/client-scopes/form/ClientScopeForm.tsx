@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
+import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
   AlertVariant,
   ButtonVariant,
@@ -10,31 +9,33 @@ import {
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { convertFormValuesToObject } from "../../util";
-import { MapperList } from "../details/MapperList";
-import { ScopeForm } from "../details/ScopeForm";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
-import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
-import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import {
   AllClientScopes,
   changeScope,
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { toMapper } from "../routes/Mapper";
-import { ClientScopeTab, toClientScope } from "../routes/ClientScope";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import {
   routableTab,
   RoutableTabs,
 } from "../../components/routable-tabs/RoutableTabs";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { convertFormValuesToObject } from "../../util";
+import { useParams } from "../../utils/useParams";
+import { MapperList } from "../details/MapperList";
+import { ScopeForm } from "../details/ScopeForm";
+import { ClientScopeTab, toClientScope } from "../routes/ClientScope";
+import { toMapper } from "../routes/Mapper";
 
 export default function ClientScopeForm() {
   const { t } = useTranslation("client-scopes");

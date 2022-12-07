@@ -10,18 +10,18 @@ import {
 import { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
+import { Link, useNavigate, useParams } from "react-router-dom-v5-compat";
+
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
+import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import type { EditAttributesGroupParams } from "../routes/EditAttributesGroup";
 import { toUserProfile } from "../routes/UserProfile";
 import { useUserProfile } from "./UserProfileContext";
-import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 
 import "../realm-settings-section.css";
 
@@ -59,7 +59,7 @@ export default function AttributesGroupForm() {
   const { realm } = useRealm();
   const { config, save } = useUserProfile();
   const navigate = useNavigate();
-  const params = useParams<Partial<EditAttributesGroupParams>>();
+  const params = useParams<EditAttributesGroupParams>();
   const form = useForm<FormFields>({ defaultValues, shouldUnregister: false });
 
   const matchingGroup = useMemo(

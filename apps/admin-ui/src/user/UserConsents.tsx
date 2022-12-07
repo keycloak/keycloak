@@ -1,23 +1,24 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import type UserConsentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userConsentRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
   Chip,
   ChipGroup,
 } from "@patternfly/react-core";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { emptyFormatter } from "../util";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { CubesIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { sortBy } from "lodash-es";
-import type UserConsentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userConsentRepresentation";
-import { CubesIcon } from "@patternfly/react-icons";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
 import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { emptyFormatter } from "../util";
 import useFormatDate from "../utils/useFormatDate";
+import { useParams } from "../utils/useParams";
 
 export const UserConsents = () => {
   const [selectedClient, setSelectedClient] =

@@ -1,8 +1,4 @@
-import { FunctionComponent, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -11,30 +7,34 @@ import {
   DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
+import { FunctionComponent, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
-import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import { useAlerts } from "../../../components/alert/Alerts";
+import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
+import { FormAccess } from "../../../components/form-access/FormAccess";
+import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
+import { ViewHeader } from "../../../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useParams } from "../../../utils/useParams";
+import { toAuthorizationTab } from "../../routes/AuthenticationTab";
 import {
   PolicyDetailsParams,
   toPolicyDetails,
 } from "../../routes/PolicyDetails";
-import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
-import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
-import { FormAccess } from "../../../components/form-access/FormAccess";
-import { useAlerts } from "../../../components/alert/Alerts";
-import { toAuthorizationTab } from "../../routes/AuthenticationTab";
 import { Aggregate } from "./Aggregate";
 import { Client } from "./Client";
-import { User } from "./User";
-import { NameDescription } from "./NameDescription";
-import { LogicSelector } from "./LogicSelector";
 import { ClientScope, RequiredIdValue } from "./ClientScope";
 import { Group, GroupValue } from "./Group";
+import { JavaScript } from "./JavaScript";
+import { LogicSelector } from "./LogicSelector";
+import { NameDescription } from "./NameDescription";
 import { Regex } from "./Regex";
 import { Role } from "./Role";
 import { Time } from "./Time";
-import { JavaScript } from "./JavaScript";
+import { User } from "./User";
 
 import "./policy-details.css";
 

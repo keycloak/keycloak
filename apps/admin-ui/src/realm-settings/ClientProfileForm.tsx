@@ -1,7 +1,6 @@
-import { Fragment, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { useForm, useFieldArray } from "react-hook-form";
+import type ClientPolicyExecutorRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyExecutorRepresentation";
+import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
+import type ClientProfilesRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfilesRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -17,32 +16,33 @@ import {
   Flex,
   FlexItem,
   FormGroup,
+  Label,
   PageSection,
   Text,
   TextVariants,
   ValidatedOptions,
-  Label,
 } from "@patternfly/react-core";
-
-import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
-import type ClientProfilesRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfilesRepresentation";
-import type ClientPolicyExecutorRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyExecutorRepresentation";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { HelpItem } from "../components/help-enabler/HelpItem";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
-import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
+import { Fragment, useMemo, useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
+
+import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { toAddExecutor } from "./routes/AddExecutor";
+import { FormAccess } from "../components/form-access/FormAccess";
+import { HelpItem } from "../components/help-enabler/HelpItem";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useParams } from "../utils/useParams";
+import { toAddExecutor } from "./routes/AddExecutor";
+import { toClientPolicies } from "./routes/ClientPolicies";
 import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
 import { toExecutor } from "./routes/Executor";
-import { toClientPolicies } from "./routes/ClientPolicies";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 import "./realm-settings-section.css";
 

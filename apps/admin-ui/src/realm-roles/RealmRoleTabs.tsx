@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { useParams, useRouteMatch } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
@@ -9,39 +8,41 @@ import {
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
 import { omit } from "lodash-es";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useRouteMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 
 import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import {
-  AttributesForm,
   AttributeForm,
+  AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import {
   arrayToKeyValue,
   keyValueToArray,
 } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { RealmRoleForm } from "./RealmRoleForm";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { AddRoleMappingModal } from "../components/role-mapping/AddRoleMappingModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-import { UsersInRoleTab } from "./UsersInRoleTab";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { toRealmRole } from "./routes/RealmRole";
+import { PermissionsTab } from "../components/permission-tab/PermissionTab";
+import { AddRoleMappingModal } from "../components/role-mapping/AddRoleMappingModal";
+import { RoleMapping } from "../components/role-mapping/RoleMapping";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useParams } from "../utils/useParams";
+import { RealmRoleForm } from "./RealmRoleForm";
 import {
   ClientRoleParams,
   ClientRoleRoute,
   toClientRole,
 } from "./routes/ClientRole";
-import { PermissionsTab } from "../components/permission-tab/PermissionTab";
-import { RoleMapping } from "../components/role-mapping/RoleMapping";
+import { toRealmRole } from "./routes/RealmRole";
+import { UsersInRoleTab } from "./UsersInRoleTab";
 
 export default function RealmRoleTabs() {
   const { t } = useTranslation("roles");

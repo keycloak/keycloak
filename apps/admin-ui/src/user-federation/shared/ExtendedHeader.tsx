@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,

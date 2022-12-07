@@ -1,6 +1,5 @@
 import { ReactElement } from "react";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useParams, useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,

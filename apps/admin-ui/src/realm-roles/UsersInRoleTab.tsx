@@ -1,15 +1,15 @@
 import { Button, PageSection, Popover } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
+
 import { useHelp } from "../components/help-enabler/HelpHeader";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter, upperCaseFormatter } from "../util";
+import { useParams } from "../utils/useParams";
 import type { ClientRoleParams } from "./routes/ClientRole";
 
 export const UsersInRoleTab = () => {

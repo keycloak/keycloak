@@ -1,22 +1,23 @@
-import { useState } from "react";
+import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
+import { DecisionEffect } from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import type PolicyResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyResultRepresentation";
 import {
+  capitalize,
   DescriptionList,
   TextContent,
   TextList,
   TextListItem,
-  capitalize,
 } from "@patternfly/react-core";
-import { Tbody, Tr, Td, ExpandableRowContent } from "@patternfly/react-table";
+import { ExpandableRowContent, Tbody, Td, Tr } from "@patternfly/react-table";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type PolicyResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyResultRepresentation";
-import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
-import { DecisionEffect } from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
-import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom-v5-compat";
+
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { useParams } from "../../utils/useParams";
+import type { ClientParams } from "../routes/Client";
 import { toPermissionDetails } from "../routes/PermissionDetails";
 import { toPolicyDetails } from "../routes/PolicyDetails";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import type { ClientParams } from "../routes/Client";
 
 type Props = {
   idx: number;

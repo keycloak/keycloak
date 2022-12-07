@@ -1,3 +1,4 @@
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -5,20 +6,18 @@ import {
   Form,
   PageSection,
 } from "@patternfly/react-core";
-
-import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
-import { SettingsCache } from "./shared/SettingsCache";
-import { useRealm } from "../context/realm-context/RealmContext";
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-
 import { FormProvider, useForm } from "react-hook-form";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
-import { Header } from "./shared/Header";
+
+import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useParams } from "../utils/useParams";
+import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
 import { toUserFederation } from "./routes/UserFederation";
+import { Header } from "./shared/Header";
+import { SettingsCache } from "./shared/SettingsCache";
 
 export default function UserFederationKerberosSettings() {
   const { t } = useTranslation("user-federation");
