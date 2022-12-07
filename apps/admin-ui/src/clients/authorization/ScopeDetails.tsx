@@ -1,8 +1,4 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -13,18 +9,24 @@ import {
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
-import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import type { ScopeDetailsParams } from "../routes/Scope";
+import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { toAuthorizationTab } from "../routes/AuthenticationTab";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import useToggle from "../../utils/useToggle";
+import { toAuthorizationTab } from "../routes/AuthenticationTab";
+import type { ScopeDetailsParams } from "../routes/Scope";
 import { DeleteScopeDialog } from "./DeleteScopeDialog";
+
+type FormFields = Omit<ScopeRepresentation, "resources">;
 
 export default function ScopeDetails() {
   const { t } = useTranslation("clients");
@@ -41,7 +43,7 @@ export default function ScopeDetails() {
     reset,
     handleSubmit,
     formState: { errors },
-  } = useForm<ScopeRepresentation>({
+  } = useForm<FormFields>({
     mode: "onChange",
   });
 
@@ -65,7 +67,7 @@ export default function ScopeDetails() {
     []
   );
 
-  const save = async (scope: ScopeRepresentation) => {
+  const onSubmit = async (scope: ScopeRepresentation) => {
     try {
       if (scopeId) {
         await adminClient.clients.updateAuthorizationScope(
@@ -126,7 +128,7 @@ export default function ScopeDetails() {
         <FormAccess
           isHorizontal
           role="view-clients"
-          onSubmit={handleSubmit(save)}
+          onSubmit={handleSubmit(onSubmit)}
         >
           <FormGroup
             label={t("common:name")}
@@ -142,11 +144,11 @@ export default function ScopeDetails() {
           >
             <KeycloakTextInput
               id="name"
-              name="name"
-              ref={register({ required: true })}
               validated={
                 errors.name ? ValidatedOptions.error : ValidatedOptions.default
               }
+              isRequired
+              {...register("name", { required: true })}
             />
           </FormGroup>
           <FormGroup
@@ -159,11 +161,7 @@ export default function ScopeDetails() {
               />
             }
           >
-            <KeycloakTextInput
-              id="displayName"
-              name="displayName"
-              ref={register}
-            />
+            <KeycloakTextInput id="displayName" {...register("displayName")} />
           </FormGroup>
           <FormGroup
             label={t("iconUri")}
@@ -175,7 +173,7 @@ export default function ScopeDetails() {
               />
             }
           >
-            <KeycloakTextInput id="iconUri" name="iconUri" ref={register} />
+            <KeycloakTextInput id="iconUri" {...register("iconUri")} />
           </FormGroup>
           <ActionGroup>
             <div className="pf-u-mt-md">
