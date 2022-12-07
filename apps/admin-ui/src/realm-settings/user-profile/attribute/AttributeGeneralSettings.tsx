@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import {
   Divider,
   FormGroup,
@@ -8,20 +9,20 @@ import {
   SelectVariant,
   Switch,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { isEqual } from "lodash-es";
+import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
 import { FormAccess } from "../../../components/form-access/FormAccess";
+import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
-import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import { USERNAME_EMAIL } from "../../NewAttributeSettings";
 import type { AttributeParams } from "../../routes/Attribute";
-import { useParams } from "react-router-dom";
-import { isEqual } from "lodash-es";
 
 import "../../realm-settings-section.css";
-import { USERNAME_EMAIL } from "../../NewAttributeSettings";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
@@ -64,6 +65,9 @@ export const AttributeGeneralSettings = () => {
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
 
+  if (!clientScopes) {
+    return <KeycloakSpinner />;
+  }
   return (
     <FormAccess role="manage-realm" isHorizontal>
       <FormGroup
@@ -163,14 +167,14 @@ export const AttributeGeneralSettings = () => {
             <Radio
               id="always"
               data-testid="always"
-              isChecked={selectedScopes.length === clientScopes?.length}
+              isChecked={selectedScopes.length === clientScopes.length}
               name="enabledWhen"
               label={t("always")}
               onChange={(value) => {
                 if (value) {
                   form.setValue(
                     "selector.scopes",
-                    clientScopes?.map((s) => s.name)
+                    clientScopes.map((s) => s.name)
                   );
                 } else {
                   form.setValue("selector.scopes", []);
@@ -181,7 +185,7 @@ export const AttributeGeneralSettings = () => {
             <Radio
               id="scopesAsRequested"
               data-testid="scopesAsRequested"
-              isChecked={selectedScopes.length !== clientScopes?.length}
+              isChecked={selectedScopes.length !== clientScopes.length}
               name="enabledWhen"
               label={t("scopesAsRequested")}
               onChange={(value) => {
@@ -190,7 +194,7 @@ export const AttributeGeneralSettings = () => {
                 } else {
                   form.setValue(
                     "selector.scopes",
-                    clientScopes?.map((s) => s.name)
+                    clientScopes.map((s) => s.name)
                   );
                 }
               }}
@@ -201,7 +205,7 @@ export const AttributeGeneralSettings = () => {
             <Controller
               name="selector.scopes"
               control={form.control}
-              defaultValue={[]}
+              defaultValue={clientScopes.map((s) => s.name)}
               render={({ onChange, value }) => (
                 <Select
                   name="scopes"
@@ -233,10 +237,10 @@ export const AttributeGeneralSettings = () => {
                     onChange([]);
                   }}
                   isOpen={selectEnabledWhenOpen}
-                  isDisabled={selectedScopes.length === clientScopes?.length}
+                  isDisabled={selectedScopes.length === clientScopes.length}
                   aria-labelledby={"scope"}
                 >
-                  {clientScopes?.map((option) => (
+                  {clientScopes.map((option) => (
                     <SelectOption key={option.name} value={option.name} />
                   ))}
                 </Select>
@@ -313,14 +317,14 @@ export const AttributeGeneralSettings = () => {
                 <Radio
                   id="requiredAlways"
                   data-testid="requiredAlways"
-                  isChecked={requiredScopes.length === clientScopes?.length}
+                  isChecked={requiredScopes.length === clientScopes.length}
                   name="requiredWhen"
                   label={t("always")}
                   onChange={(value) => {
                     if (value) {
                       form.setValue(
                         "required.scopes",
-                        clientScopes?.map((s) => s.name)
+                        clientScopes.map((s) => s.name)
                       );
                     } else {
                       form.setValue("required.scopes", []);
@@ -331,7 +335,7 @@ export const AttributeGeneralSettings = () => {
                 <Radio
                   id="requiredScopesAsRequested"
                   data-testid="requiredScopesAsRequested"
-                  isChecked={requiredScopes.length !== clientScopes?.length}
+                  isChecked={requiredScopes.length !== clientScopes.length}
                   name="requiredWhen"
                   label={t("scopesAsRequested")}
                   onChange={(value) => {
@@ -340,7 +344,7 @@ export const AttributeGeneralSettings = () => {
                     } else {
                       form.setValue(
                         "required.scopes",
-                        clientScopes?.map((s) => s.name)
+                        clientScopes.map((s) => s.name)
                       );
                     }
                   }}
@@ -382,12 +386,10 @@ export const AttributeGeneralSettings = () => {
                         onChange([]);
                       }}
                       isOpen={selectRequiredForOpen}
-                      isDisabled={
-                        requiredScopes.length === clientScopes?.length
-                      }
+                      isDisabled={requiredScopes.length === clientScopes.length}
                       aria-labelledby={"scope"}
                     >
-                      {clientScopes?.map((option) => (
+                      {clientScopes.map((option) => (
                         <SelectOption key={option.name} value={option.name} />
                       ))}
                     </Select>
