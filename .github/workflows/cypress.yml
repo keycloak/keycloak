@@ -124,6 +124,12 @@ jobs:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
 
+      - name: Install Google Chrome
+        uses: abhi1693/setup-browser@v0.3.4
+        with:
+          browser: chrome
+          version: latest
+
       - name: Run Cypress
         uses: cypress-io/github-action@v5
         continue-on-error: true
