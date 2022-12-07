@@ -1,6 +1,4 @@
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import {
   ActionGroup,
   Button,
@@ -12,10 +10,12 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import useToggle from "../../utils/useToggle";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import useToggle from "../../utils/useToggle";
 
 import "./search-dropdown.css";
 
@@ -24,6 +24,8 @@ export type SearchForm = {
   resource?: string;
   scope?: string;
   type?: string;
+  uri?: string;
+  owner?: string;
 };
 
 type SearchDropdownProps = {
@@ -58,7 +60,7 @@ export const SearchDropdown = ({
 
   useEffect(() => reset(search), [search]);
 
-  const typeOptions = (value: string) => [
+  const typeOptions = (value?: string) => [
     <SelectOption key="empty" value="">
       {t("allTypes")}
     </SelectOption>,
@@ -94,40 +96,32 @@ export const SearchDropdown = ({
       >
         <FormGroup label={t("common:name")} fieldId="name">
           <KeycloakTextInput
-            ref={register}
-            type="text"
             id="name"
-            name="name"
             data-testid="searchdropdown_name"
+            {...register("name")}
           />
         </FormGroup>
         {isResource && (
           <>
             <FormGroup label={t("common:type")} fieldId="type">
               <KeycloakTextInput
-                ref={register}
-                type="text"
                 id="type"
-                name="type"
                 data-testid="searchdropdown_type"
+                {...register("type")}
               />
             </FormGroup>
             <FormGroup label={t("uris")} fieldId="uri">
               <KeycloakTextInput
-                ref={register}
-                type="text"
                 id="uri"
-                name="uri"
                 data-testid="searchdropdown_uri"
+                {...register("uri")}
               />
             </FormGroup>
             <FormGroup label={t("owner")} fieldId="owner">
               <KeycloakTextInput
-                ref={register}
-                type="text"
                 id="owner"
-                name="owner"
                 data-testid="searchdropdown_owner"
+                {...register("owner")}
               />
             </FormGroup>
           </>
@@ -135,21 +129,17 @@ export const SearchDropdown = ({
         {!isResource && (
           <FormGroup label={t("resource")} fieldId="resource">
             <KeycloakTextInput
-              ref={register}
-              type="text"
               id="resource"
-              name="resource"
               data-testid="searchdropdown_resource"
+              {...register("resource")}
             />
           </FormGroup>
         )}
         <FormGroup label={t("scope")} fieldId="scope">
           <KeycloakTextInput
-            ref={register}
-            type="text"
             id="scope"
-            name="scope"
             data-testid="searchdropdown_scope"
+            {...register("scope")}
           />
         </FormGroup>
         {!isResource && (
@@ -158,21 +148,21 @@ export const SearchDropdown = ({
               name="type"
               defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Select
                   toggleId="type"
                   onToggle={toggleType}
                   onSelect={(event, value) => {
                     event.stopPropagation();
-                    onChange(value);
+                    field.onChange(value);
                     toggleType();
                   }}
-                  selections={value || t("allTypes")}
+                  selections={field.value || t("allTypes")}
                   variant={SelectVariant.single}
                   aria-label={t("common:type")}
                   isOpen={typeOpen}
                 >
-                  {typeOptions(value)}
+                  {typeOptions(field.value)}
                 </Select>
               )}
             />
