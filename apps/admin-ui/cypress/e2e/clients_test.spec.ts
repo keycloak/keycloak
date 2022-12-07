@@ -542,7 +542,7 @@ describe("Clients test", () => {
       attributesTab
         .addAttribute("crud_attribute_key", "crud_attribute_value")
         .save();
-      attributesTab.asseertRowItemsEqualTo(1);
+      attributesTab.assertRowItemsEqualTo(1);
       commonPage
         .masthead()
         .checkNotificationMessage("The role has been saved", true);

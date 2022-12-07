@@ -59,7 +59,7 @@ export default class AttributesTab {
     return this;
   }
 
-  public asseertRowItemsEqualTo(amount: number) {
+  public assertRowItemsEqualTo(amount: number) {
     cy.findAllByTestId("row").its("length").should("be.eq", amount);
     return this;
   }

@@ -420,7 +420,7 @@ describe("Group test", () => {
     });
 
     it("Remove attribute", () => {
-      attributesTab.deleteAttribute(1).asseertRowItemsEqualTo(1);
+      attributesTab.deleteAttribute(1).assertRowItemsEqualTo(1);
       groupPage.assertNotificationGroupUpdated();
     });
 
@@ -429,7 +429,7 @@ describe("Group test", () => {
         .addAttribute("key", "value")
         .addAnAttributeButton()
         .revert()
-        .asseertRowItemsEqualTo(1);
+        .assertRowItemsEqualTo(1);
     });
   });
 
