@@ -1,6 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import {
   ActionGroup,
   AlertVariant,
@@ -20,16 +17,19 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
+import { useEffect, useMemo, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type PasswordPolicyTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/passwordPolicyTypeRepresentation";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useAlerts } from "../../components/alert/Alerts";
-import { parsePolicy, SubmittedValues, serializePolicy } from "./util";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { PolicyRow } from "./PolicyRow";
+import { parsePolicy, serializePolicy, SubmittedValues } from "./util";
 
 type PolicySelectProps = {
   onSelect: (row: PasswordPolicyTypeRepresentation) => void;
@@ -87,16 +87,27 @@ export const PasswordPolicy = ({
   const { realm: realmName } = useRealm();
 
   const [rows, setRows] = useState<PasswordPolicyTypeRepresentation[]>([]);
-  const onSelect = (row: PasswordPolicyTypeRepresentation) =>
+  const onSelect = (row: PasswordPolicyTypeRepresentation) => {
     setRows([...rows, row]);
+    setValue(row.id!, row.defaultValue!, { shouldDirty: true });
+  };
 
-  const form = useForm<SubmittedValues>({ shouldUnregister: false });
-  const { handleSubmit, setValue, getValues } = form;
+  const form = useForm<SubmittedValues>({
+    defaultValues: {},
+    shouldUnregister: false,
+  });
+  const {
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { isDirty },
+  } = form;
 
   const setupForm = (realm: RealmRepresentation) => {
+    reset();
     const values = parsePolicy(realm.passwordPolicy || "", passwordPolicies!);
     values.forEach((v) => {
-      setValue(v.id!, v.value);
+      setValue(v.id!, v.value!);
     });
     setRows(values);
   };
@@ -142,7 +153,10 @@ export const PasswordPolicy = ({
                   <PolicyRow
                     key={`${r.id}-${index}`}
                     policy={r}
-                    onRemove={(id) => setRows(rows.filter((r) => r.id !== id))}
+                    onRemove={(id) => {
+                      setRows(rows.filter((r) => r.id !== id));
+                      setValue(r.id!, "", { shouldDirty: true });
+                    }}
                   />
                 ))}
                 <ActionGroup>
@@ -150,10 +164,7 @@ export const PasswordPolicy = ({
                     data-testid="save"
                     variant="primary"
                     type="submit"
-                    isDisabled={
-                      serializePolicy(rows, getValues()) ===
-                      realm.passwordPolicy
-                    }
+                    isDisabled={!isDirty}
                   >
                     {t("common:save")}
                   </Button>

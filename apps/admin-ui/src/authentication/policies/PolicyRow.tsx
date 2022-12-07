@@ -1,5 +1,4 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import type PasswordPolicyTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/passwordPolicyTypeRepresentation";
 import {
   Button,
   FormGroup,
@@ -10,10 +9,11 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
-import type PasswordPolicyTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/passwordPolicyTypeRepresentation";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./policy-row.css";
 
@@ -32,6 +32,7 @@ export const PolicyRow = ({
     register,
     formState: { errors },
   } = useFormContext();
+
   return (
     <FormGroup
       label={displayName}
@@ -54,8 +55,7 @@ export const PolicyRow = ({
             <KeycloakTextInput
               id={id}
               data-testid={id}
-              ref={register({ required: true })}
-              name={id}
+              {...register(id!, { required: true })}
               defaultValue={defaultValue}
               validated={
                 errors[id!] ? ValidatedOptions.error : ValidatedOptions.default
@@ -67,10 +67,11 @@ export const PolicyRow = ({
               name={id!}
               defaultValue={Number.parseInt(defaultValue || "0")}
               control={control}
-              render={({ onChange, value }) => {
+              render={({ field }) => {
                 const MIN_VALUE = 0;
                 const setValue = (newValue: number) =>
-                  onChange(Math.max(newValue, MIN_VALUE));
+                  field.onChange(Math.max(newValue, MIN_VALUE));
+                const value = Number(field.value);
 
                 return (
                   <NumberInput
