@@ -165,7 +165,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -175,14 +175,31 @@ jobs:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
           surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
+  databases-new-store:
+    name: Databases New Store
+    runs-on: ubuntu-latest
+    steps:
+      - id: matrix-db
+        # language=bash
+        run: |
+          # For PRs, run only PostgreSQL, on branches and nightly runs run all databases
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo 'db=["chm", "hot-rod", "jpa-postgres"]' >> $GITHUB_OUTPUT
+          else 
+            echo 'db=["chm", "hot-rod", "jpa-postgres", "jpa-cockroach"]' >> $GITHUB_OUTPUT
+          fi
+    outputs:
+      db: ${{ steps.matrix-db.outputs.db }}
+
   new-store-integration-tests:
     name: New Store IT
-    needs: build
+    needs: [build, databases-new-store]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with ~45 minutes
+    timeout-minutes: 70
     strategy:
       matrix:
-        db: [chm, hot-rod, jpa]
+        db: ${{ fromJson(needs.databases-new-store.outputs.db) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -196,7 +213,8 @@ jobs:
           declare -A PARAMS
           PARAMS["chm"]="-Pmap-storage -Dpageload.timeout=90000"
           PARAMS["hot-rod"]="-Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
-          PARAMS["jpa"]="-Pmap-storage,map-storage-jpa -Dpageload.timeout=90000"
+          PARAMS["jpa-postgres"]="-Pmap-storage,map-storage-jpa-postgres -Dpageload.timeout=90000"
+          PARAMS["jpa-cockroach"]="-Pmap-storage,map-storage-jpa-cockroach -Dpageload.timeout=90000"
 
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
