@@ -8,7 +8,10 @@ export type UserTab =
   | "groups"
   | "consents"
   | "attributes"
-  | "sessions";
+  | "sessions"
+  | "credentials"
+  | "role-mapping"
+  | "identity-provider-links";
 
 export type UserParams = {
   realm: string;

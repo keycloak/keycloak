@@ -11,19 +11,23 @@ import {
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useHistory } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
 
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import {
+  RoutableTabs,
+  routableTab,
+} from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { useParams } from "../utils/useParams";
-import { toUser, UserParams } from "./routes/User";
+import { toUser, UserParams, UserTab } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { UserAttributes } from "./UserAttributes";
 import { UserConsents } from "./UserConsents";
@@ -42,6 +46,7 @@ const UsersTabs = () => {
   const navigate = useNavigate();
   const { realm } = useRealm();
   const { hasAccess } = useAccess();
+  const history = useHistory();
 
   const { adminClient } = useAdminClient();
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
@@ -157,6 +162,16 @@ const UsersTabs = () => {
     return <KeycloakSpinner />;
   }
 
+  const toTab = (tab: UserTab) =>
+    toUser({
+      realm,
+      id,
+      tab,
+    });
+
+  const routableUserTab = (tab: UserTab) =>
+    routableTab({ history, to: toTab(tab) });
+
   return (
     <>
       <ImpersonateConfirm />
@@ -198,11 +213,15 @@ const UsersTabs = () => {
         <UserProfileProvider>
           <FormProvider {...userForm}>
             {id && user && (
-              <KeycloakTabs isBox mountOnEnter>
+              <RoutableTabs
+                isBox
+                mountOnEnter
+                defaultLocation={toTab("settings")}
+              >
                 <Tab
-                  eventKey="settings"
                   data-testid="user-details-tab"
                   title={<TabTitleText>{t("common:details")}</TabTitleText>}
+                  {...routableUserTab("settings")}
                 >
                   <PageSection variant="light">
                     {bruteForced && (
@@ -216,61 +235,61 @@ const UsersTabs = () => {
                   </PageSection>
                 </Tab>
                 <Tab
-                  eventKey="attributes"
                   data-testid="attributes"
                   title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
+                  {...routableUserTab("attributes")}
                 >
                   <UserAttributes user={user} />
                 </Tab>
                 <Tab
-                  eventKey="credentials"
                   data-testid="credentials"
                   isHidden={!user.access?.manage}
                   title={<TabTitleText>{t("common:credentials")}</TabTitleText>}
+                  {...routableUserTab("credentials")}
                 >
                   <UserCredentials user={user} />
                 </Tab>
                 <Tab
-                  eventKey="role-mapping"
                   data-testid="role-mapping-tab"
                   isHidden={!user.access?.mapRoles}
                   title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
+                  {...routableUserTab("role-mapping")}
                 >
                   <UserRoleMapping id={id} name={user.username!} />
                 </Tab>
                 <Tab
-                  eventKey="groups"
                   data-testid="user-groups-tab"
                   title={<TabTitleText>{t("common:groups")}</TabTitleText>}
+                  {...routableUserTab("groups")}
                 >
                   <UserGroups user={user} />
                 </Tab>
                 <Tab
-                  eventKey="consents"
                   data-testid="user-consents-tab"
                   title={<TabTitleText>{t("consents")}</TabTitleText>}
+                  {...routableUserTab("consents")}
                 >
                   <UserConsents />
                 </Tab>
                 {hasAccess("view-identity-providers") && (
                   <Tab
-                    eventKey="identity-provider-links"
                     data-testid="identity-provider-links-tab"
                     title={
                       <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
                     }
+                    {...routableUserTab("identity-provider-links")}
                   >
                     <UserIdentityProviderLinks userId={id} />
                   </Tab>
                 )}
                 <Tab
-                  eventKey="sessions"
                   data-testid="user-sessions-tab"
                   title={<TabTitleText>{t("sessions")}</TabTitleText>}
+                  {...routableUserTab("sessions")}
                 >
                   <UserSessions />
                 </Tab>
-              </KeycloakTabs>
+              </RoutableTabs>
             )}
             {!id && (
               <PageSection variant="light">
