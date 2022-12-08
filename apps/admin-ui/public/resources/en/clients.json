@@ -515,6 +515,7 @@
   "importError": "Could not import certificate {{error}}",
   "importParseError": "Could not parse the file {{error}}",
   "tokenLifespan": {
+    "inherited": "Inherits from realm settings",
     "expires": "Expires in",
     "never": "Never expires"
   },

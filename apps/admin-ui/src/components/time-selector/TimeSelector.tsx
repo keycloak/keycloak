@@ -129,6 +129,7 @@ export const TimeSelector = ({
             setOpen(!open);
           }}
           isOpen={open}
+          isDisabled={rest.isDisabled}
         >
           {times.map((time) => (
             <SelectOption

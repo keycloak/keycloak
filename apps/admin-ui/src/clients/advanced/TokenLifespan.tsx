@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form-v7";
-import { useTranslation } from "react-i18next";
 import {
   FormGroup,
   Select,
@@ -9,20 +6,24 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import {
   TimeSelector,
   Unit,
 } from "../../components/time-selector/TimeSelector";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 type TokenLifespanProps = {
   id: string;
   name: string;
-  defaultValue: string;
+  defaultValue?: number;
   units?: Unit[];
 };
 
+const inherited = "tokenLifespan.inherited";
 const never = "tokenLifespan.never";
 const expires = "tokenLifespan.expires";
 
@@ -58,7 +59,7 @@ export const TokenLifespan = ({
     >
       <Controller
         name={name}
-        defaultValue={defaultValue}
+        defaultValue=""
         control={control}
         render={({ field }) => (
           <Split hasGutter>
@@ -71,21 +72,29 @@ export const TokenLifespan = ({
                   field.onChange(value);
                   setOpen(false);
                 }}
-                selections={[isExpireSet(field.value) ? t(expires) : t(never)]}
+                selections={[
+                  isExpireSet(field.value)
+                    ? t(expires)
+                    : field.value === ""
+                    ? t(inherited)
+                    : t(never),
+                ]}
               >
+                <SelectOption value="">{t(inherited)}</SelectOption>
                 <SelectOption value={-1}>{t(never)}</SelectOption>
                 <SelectOption value={60}>{t(expires)}</SelectOption>
               </Select>
             </SplitItem>
             <SplitItem>
-              {isExpireSet(field.value) && (
+              {field.value !== "-1" && field.value !== -1 && (
                 <TimeSelector
                   units={units}
-                  value={field.value}
+                  value={field.value === "" ? defaultValue : field.value}
                   onChange={field.onChange}
                   onFocus={onFocus}
                   onBlur={onBlur}
                   min={1}
+                  isDisabled={field.value === ""}
                 />
               )}
             </SplitItem>

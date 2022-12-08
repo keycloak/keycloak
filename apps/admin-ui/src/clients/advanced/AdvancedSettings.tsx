@@ -7,6 +7,7 @@ import {
   SelectVariant,
   Switch,
 } from "@patternfly/react-core";
+import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
@@ -16,6 +17,8 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeyValueInput } from "../../components/key-value-form/hook-form-v7/KeyValueInput";
 import { MultiLineInput } from "../../components/multi-line-input/hook-form-v7/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
@@ -35,6 +38,16 @@ export const AdvancedSettings = ({
 }: AdvancedSettingsProps) => {
   const { t } = useTranslation("clients");
   const [open, setOpen] = useState(false);
+
+  const [realm, setRealm] = useState<RealmRepresentation>();
+  const { realm: realmName } = useRealm();
+  const { adminClient } = useAdminClient();
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm: realmName }),
+    setRealm,
+    []
+  );
 
   const { control, register } = useFormContext();
   return (
@@ -77,7 +90,7 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.access.token.lifespan"
             )}
-            defaultValue=""
+            defaultValue={realm?.accessTokenLifespan}
             units={["minute", "day", "hour"]}
           />
 
@@ -86,7 +99,7 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.client.session.idle.timeout"
             )}
-            defaultValue=""
+            defaultValue={realm?.clientSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
 
@@ -95,7 +108,7 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.client.session.max.lifespan"
             )}
-            defaultValue=""
+            defaultValue={realm?.clientSessionMaxLifespan}
             units={["minute", "day", "hour"]}
           />
 
@@ -104,7 +117,7 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.client.offline.session.idle.timeout"
             )}
-            defaultValue=""
+            defaultValue={realm?.offlineSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
 
@@ -113,7 +126,7 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.client.offline.session.max.lifespan"
             )}
-            defaultValue=""
+            defaultValue={realm?.offlineSessionMaxLifespan}
             units={["minute", "day", "hour"]}
           />
 
