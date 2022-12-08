@@ -5,8 +5,10 @@ import org.junit.Test;
 import org.keycloak.client.admin.cli.config.ConfigData;
 import org.keycloak.client.admin.cli.config.FileConfigHandler;
 import org.keycloak.client.admin.cli.config.RealmConfigData;
+import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcAdmExec;
+import org.keycloak.testsuite.util.KeystoreUtils;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
@@ -501,13 +503,24 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient() throws IOException {
+    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_JKSKeystore() throws IOException {
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.JKS);
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.JKS.getFileExtension());
+    }
+
+    @Test
+    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_PKCS12Keystore() throws IOException {
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.PKCS12);
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.PKCS12.getFileExtension());
+    }
+
+    private void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(String keystoreFileExtension) throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, password, and client JWT signature.
          */
-        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcadm/admin-cli-keystore.jks");
-        Assert.assertTrue("admin-cli-keystore.jks exists", keystore.isFile());
+        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcadm/admin-cli-keystore." + keystoreFileExtension);
+        Assert.assertTrue("admin-cli-keystore." + keystoreFileExtension + " must exist, but it does not exists", keystore.isFile());
 
         // try client without direct grants enabled
         KcAdmExec exe = KcAdmExec.execute("get clients --no-config --server " + serverUrl + " --realm test" +
@@ -536,7 +549,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Failed to load private key: Keystore was tampered with, or password was incorrect", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assert.assertTrue("error message", exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Failed to load private key:"));
 
 
         // try whole CRUD
@@ -563,8 +576,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using only client JWT signature - service account is used.
          */
-        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcadm/admin-cli-keystore.jks");
-        Assert.assertTrue("admin-cli-keystore.jks exists", keystore.isFile());
+        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcadm/admin-cli-keystore.p12");
+        Assert.assertTrue("admin-cli-keystore.p12 exists", keystore.isFile());
 
         testCRUDWithOnTheFlyAuth(serverUrl,
                 "--client admin-cli-jwt --keystore '" + keystore.getAbsolutePath() + "' --storepass storepass --keypass keypass --alias admin-cli", "",

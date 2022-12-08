@@ -8,18 +8,19 @@
 # List of providers and their preference orders (see above). Used on the host without FIPS (EG. when running the tests on GH actions)
 # Uses only BouncyCastle FIPS providers to make sure to use only FIPS compliant cryptography.
 #
-security.provider.1=org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
-security.provider.2=org.bouncycastle.jsse.provider.BouncyCastleJsseProvider fips:BCFIPS
-security.provider.3=
+#security.provider.1=org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
+#security.provider.2=org.bouncycastle.jsse.provider.BouncyCastleJsseProvider fips:BCFIPS
+#security.provider.3=
 
 #
 # Security providers used when global crypto-policies are set to FIPS (Usually it is used when FIPS enabled on system/JVM level)
 #
-fips.provider.1=org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
-fips.provider.2=org.bouncycastle.jsse.provider.BouncyCastleJsseProvider fips:BCFIPS
-fips.provider.3=
-#fips.provider.3=SunJGSS
-#fips.provider.4=XMLDSig
+#fips.provider.1=SunPKCS11 ${java.home}/conf/security/nss.fips.cfg
+#fips.provider.2=SUN
+#fips.provider.3=SunEC
+#fips.provider.4=com.sun.net.ssl.internal.ssl.Provider SunPKCS11-NSS-FIPS
+#fips.provider.5=SunJGSS
+#fips.provider.6=XMLDSig
 #fips.provider.5=
 
 # Commented this provider for now (and also other providers) as it uses lots of non-FIPS services.
