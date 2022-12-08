@@ -68,8 +68,13 @@ export type BundleForm = {
   messageBundle: KeyValueType;
 };
 
-const localeToDisplayName = (locale: string) =>
-  new Intl.DisplayNames([locale], { type: "language" }).of(locale);
+const localeToDisplayName = (locale: string) => {
+  try {
+    return new Intl.DisplayNames([locale], { type: "language" }).of(locale);
+  } catch (error) {
+    return locale;
+  }
+};
 
 export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const { t } = useTranslation("realm-settings");
