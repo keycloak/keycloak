@@ -34,7 +34,7 @@ final class ClassLoaderPropertyMappers {
 
             if (fipsEnabled != null && FipsMode.valueOf(fipsEnabled.getValue()).isFipsEnabled()) {
                 return Optional.of(
-                        "org.bouncycastle:bcprov-jdk15on,org.bouncycastle:bcpkix-jdk15on,org.keycloak:keycloak-crypto-default");
+                        "org.bouncycastle:bcprov-jdk15on,org.bouncycastle:bcpkix-jdk15on,org.bouncycastle:bcutil-jdk15on,org.keycloak:keycloak-crypto-default");
             }
 
             return Optional.of(
