@@ -3,13 +3,13 @@ import type { Path } from "react-router-dom-v5-compat";
 import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
-type IdentityProviderTabs = "settings" | "mappers";
+export type IdentityProviderTab = "settings" | "mappers" | "permissions";
 
 export type IdentityProviderParams = {
   realm: string;
   providerId: string;
   alias: string;
-  tab: IdentityProviderTabs;
+  tab: IdentityProviderTab;
 };
 
 export const IdentityProviderRoute: RouteDef = {
