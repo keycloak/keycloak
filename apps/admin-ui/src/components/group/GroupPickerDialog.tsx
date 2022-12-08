@@ -25,7 +25,7 @@ import { GroupPath } from "./GroupPath";
 export type GroupPickerDialogProps = {
   id?: string;
   type: "selectOne" | "selectMany";
-  filterGroups?: string[];
+  filterGroups?: GroupRepresentation[];
   text: { title: string; ok: string };
   canBrowse?: boolean;
   onConfirm: (groups: GroupRepresentation[] | undefined) => void;
@@ -103,9 +103,9 @@ export const GroupPickerDialog = ({
 
   const isRowDisabled = (row?: GroupRepresentation) => {
     return [
-      ...joinedGroups.map((item) => item.name),
-      ...(filterGroups || []),
-    ].some((group) => group === row?.name);
+      ...joinedGroups.map((item) => item.id),
+      ...(filterGroups || []).map((group) => group.id),
+    ].some((group) => group === row?.id);
   };
 
   const hasSubgroups = (group: GroupRepresentation) =>
@@ -131,7 +131,7 @@ export const GroupPickerDialog = ({
     <Modal
       variant={ModalVariant.small}
       title={t(text.title, {
-        group1: filterGroups?.[0],
+        group1: filterGroups?.[0]?.name,
         group2: navigation.length ? currentGroup().name : t("root"),
       })}
       isOpen

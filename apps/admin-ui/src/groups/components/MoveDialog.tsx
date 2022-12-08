@@ -71,7 +71,7 @@ export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
   return (
     <GroupPickerDialog
       type="selectOne"
-      filterGroups={[source.name!]}
+      filterGroups={[source]}
       text={{
         title: "groups:moveToGroup",
         ok: "groups:moveHere",

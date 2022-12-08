@@ -13,10 +13,12 @@ import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { GroupPickerDialog } from "../group/GroupPickerDialog";
 import { convertToName } from "./DynamicComponents";
+import GroupRepresentation from "libs/keycloak-admin-client/lib/defs/groupRepresentation";
 
 export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const [open, setOpen] = useState(false);
+  const [groups, setGroups] = useState<GroupRepresentation[]>();
   const { control } = useFormContext();
 
   return (
@@ -36,10 +38,11 @@ export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
               }}
               onConfirm={(groups) => {
                 onChange(groups?.[0].path);
+                setGroups(groups);
                 setOpen(false);
               }}
               onClose={() => setOpen(false)}
-              filterGroups={value}
+              filterGroups={groups}
             />
           )}
 
