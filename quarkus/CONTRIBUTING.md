@@ -189,6 +189,10 @@ and then execute the following command from the project root directory:
 mvn -f testsuite/integration-arquillian/pom.xml clean install -Pauth-server-quarkus -Dtest=OIDCProtocolMappersTest
 ```
 
+### Resolving DNS names when running tests
+
+In order to avoid using external services for DNS resolution, the tests are executed using a local host file by setting the `-Djdk.net.hosts.file=${project.build.testOutputDirectory}/hosts_file` system property.
+
 ## Documentation
 
 The documentation is a set of guides available from the [docs](../docs/guides/src/main/server) module. Please,
