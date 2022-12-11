@@ -153,68 +153,66 @@ export const SamlKeysDialog = ({
         </Button>,
       ]}
     >
-      <Form isHorizontal>
-        <FormGroup
-          label={t("selectMethod")}
-          fieldId="selectMethod"
-          hasNoPaddingTop
-        >
-          <Flex>
-            <FlexItem>
-              <Radio
-                isChecked={!type}
-                name="selectMethodType"
-                onChange={() => setType(false)}
-                label={t("selectMethodType.generate")}
-                id="selectMethodType-generate"
-              />
-            </FlexItem>
-            <FlexItem>
-              <Radio
-                isChecked={type}
-                name="selectMethodType"
-                onChange={() => setType(true)}
-                label={t("selectMethodType.import")}
-                id="selectMethodType-import"
-              />
-            </FlexItem>
-          </Flex>
-        </FormGroup>
-      </Form>
-      {!type && (
-        <Form>
+      <FormProvider {...form}>
+        <Form isHorizontal>
           <FormGroup
-            label={t("certificate")}
-            fieldId="certificate"
-            labelIcon={
-              <HelpItem
-                helpText="clients-help:certificate"
-                fieldLabelId="clients:certificate"
-              />
-            }
+            label={t("selectMethod")}
+            fieldId="selectMethod"
+            hasNoPaddingTop
           >
-            <Split hasGutter>
-              <SplitItem isFilled>
-                <Certificate plain keyInfo={keys} />
-              </SplitItem>
-              <SplitItem>
-                <Button
-                  variant="secondary"
-                  data-testid="generate"
-                  onClick={generate}
-                >
-                  {t("generate")}
-                </Button>
-              </SplitItem>
-            </Split>
+            <Flex>
+              <FlexItem>
+                <Radio
+                  isChecked={!type}
+                  name="selectMethodType"
+                  onChange={() => setType(false)}
+                  label={t("selectMethodType.generate")}
+                  id="selectMethodType-generate"
+                />
+              </FlexItem>
+              <FlexItem>
+                <Radio
+                  isChecked={type}
+                  name="selectMethodType"
+                  onChange={() => setType(true)}
+                  label={t("selectMethodType.import")}
+                  id="selectMethodType-import"
+                />
+              </FlexItem>
+            </Flex>
           </FormGroup>
         </Form>
-      )}
-      {type && (
-        <FormProvider {...form}>
-          <KeyForm useFile />
-        </FormProvider>
-      )}
+        {!type && (
+          <Form>
+            <FormGroup
+              label={t("certificate")}
+              fieldId="certificate"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:certificate"
+                  fieldLabelId="clients:certificate"
+                />
+              }
+            >
+              <Split hasGutter>
+                <SplitItem isFilled>
+                  <Certificate plain keyInfo={keys} />
+                </SplitItem>
+                <SplitItem>
+                  <Button
+                    variant="secondary"
+                    data-testid="generate"
+                    onClick={generate}
+                  >
+                    {t("generate")}
+                  </Button>
+                </SplitItem>
+              </Split>
+            </FormGroup>
+          </Form>
+        )}
+        {type && <KeyForm useFile />}
+      </FormProvider>
     </Modal>
   );
 };
