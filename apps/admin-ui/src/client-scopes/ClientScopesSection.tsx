@@ -160,13 +160,9 @@ export default function ClientScopesSection() {
 
   const ClientScopeDetailLink = ({
     id,
-    type,
     name,
   }: ClientScopeDefaultOptionalType) => (
-    <Link
-      key={id}
-      to={toClientScope({ realm, id: id!, type, tab: "settings" })}
-    >
+    <Link key={id} to={toClientScope({ realm, id: id!, tab: "settings" })}>
       {name}
     </Link>
   );

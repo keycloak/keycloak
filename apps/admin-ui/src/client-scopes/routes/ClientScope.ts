@@ -9,11 +9,10 @@ export type ClientScopeParams = {
   realm: string;
   id: string;
   tab: ClientScopeTab;
-  type?: string;
 };
 
 export const ClientScopeRoute: RouteDef = {
-  path: "/:realm/client-scopes/:id/:tab/:type",
+  path: "/:realm/client-scopes/:id/:tab",
   component: lazy(() => import("../form/ClientScopeForm")),
   breadcrumb: (t) => t("client-scopes:clientScopeDetails"),
   access: "view-clients",

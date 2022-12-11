@@ -38,7 +38,7 @@ export default function MappingDetails() {
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
-  const { id, mapperId, type } = useParams<MapperParams>();
+  const { id, mapperId } = useParams<MapperParams>();
   const form = useForm();
   const { register, setValue, errors, handleSubmit } = form;
   const [mapping, setMapping] = useState<ProtocolMapperTypeRepresentation>();
@@ -56,7 +56,7 @@ export default function MappingDetails() {
   const isOnClientScope = !!useRouteMatch(MapperRoute.path);
   const toDetails = () =>
     isOnClientScope
-      ? toClientScope({ realm, id, type: type!, tab: "mappers" })
+      ? toClientScope({ realm, id, tab: "mappers" })
       : `/${realm}/clients/${id}/mappers`;
 
   useFetch(
@@ -92,7 +92,7 @@ export default function MappingDetails() {
           data,
         };
       } else {
-        const model = type
+        const model = isOnClientScope
           ? await adminClient.clientScopes.findOne({ id })
           : await adminClient.clients.findOne({ id });
         if (!model) {
