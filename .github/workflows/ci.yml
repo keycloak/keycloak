@@ -40,8 +40,8 @@ jobs:
     needs: build
     timeout-minutes: 30
     steps:
-#      - uses: actions/checkout@v3
-#
+      - uses: actions/checkout@v3
+
 #      - id: unit-test-setup
 #        name: Unit test setup
 #        uses: ./.github/actions/unit-test-setup
@@ -73,14 +73,6 @@ jobs:
 #          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.tests }}`
 #          echo "Tests: $TESTS"
 #          ./mvnw install -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
-
-  base-integration-tests-check:
-    name: Base IT Check
-    needs: base-integration-tests
-    runs-on: ubuntu-latest
-    steps:
-      - id: check
-        uses: ./.github/actions/checks-success
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -260,10 +252,21 @@ jobs:
 #          echo "Tests: $TESTS"
 #          ./mvnw install -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
+
+  non-conditional-matrix-check:
+    name: Matrix check status
+    needs: [base-integration-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: check
+        uses: ./.github/actions/checks-success
+
   check:
     name: Check - Keycloak CI
     if: always()
-    needs: [unit-tests, base-integration-tests-check]
+    needs: [unit-tests, non-conditional-matrix-check]
     runs-on: ubuntu-latest
 
     steps:
