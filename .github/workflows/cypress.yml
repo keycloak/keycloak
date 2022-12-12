@@ -125,7 +125,7 @@ jobs:
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Install Google Chrome
-        uses: abhi1693/setup-browser@v0.3.4
+        uses: abhi1693/setup-browser@v0.3.5
         with:
           browser: chrome
           version: latest
