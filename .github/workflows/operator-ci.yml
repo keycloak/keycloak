@@ -28,7 +28,7 @@ concurrency:
 jobs:
   build:
     name: Build distribution
-    if: ${{ ( github.event_name != 'schedule' ) || ( github.event_name == 'schedule' && github.repository == 'keycloak/keycloak' ) }}
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

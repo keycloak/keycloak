@@ -3,19 +3,11 @@ name: Keycloak CI
 on:
   push:
     branches-ignore:
-      - 'main'
-      - 'dependabot/**'
-  #pull_request:
-    # Disable paths for now, as it breaks branch protection, needs some workarounds
-    # paths:
-    #  - '.github/actions/**'
-    #  - '.github/workflows/ci.yml'
-    #  - '**/pom.xml'
-    #  - '**/src/main/java/**'
-    #  - '**/src/main/resources/**'
-    #  - '**/src/main/test/**'
+      - main
+      - dependabot/**
+  pull_request:
   schedule:
-    - cron: '0 20,23,2,5 * * *'
+    - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
 env:
@@ -34,13 +26,13 @@ defaults:
 jobs:
   build:
     name: Build
-    if: ${{ ( github.event_name != 'schedule' ) || ( github.event_name == 'schedule' && github.repository == 'keycloak/keycloak' ) }}
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Build Keycloak
-        uses: ./.github/actions/build-keycloak
+#      - name: Build Keycloak
+#        uses: ./.github/actions/build-keycloak
 
   unit-tests:
     name: Base UT
@@ -48,14 +40,17 @@ jobs:
     needs: build
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v3
+#      - uses: actions/checkout@v3
+#
+#      - id: unit-test-setup
+#        name: Unit test setup
+#        uses: ./.github/actions/unit-test-setup
+#
+#      - name: Run unit tests
+#        run: ./mvnw install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples
 
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
-
-      - name: Run unit tests
-        run: ./mvnw install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples
+      - id: check
+        uses: ./.github/actions/checks-success
 
   base-integration-tests:
     name: Base IT
@@ -64,20 +59,28 @@ jobs:
     timeout-minutes: 100
     strategy:
       matrix:
-        tests: ['1','2','3','4','5','6']
+        tests: [1, 2, 3, 4, 5, 6]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Run base tests
+#        run: |
+#          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.tests }}`
+#          echo "Tests: $TESTS"
+#          ./mvnw install -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
-      - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.tests }}`
-          echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+  base-integration-tests-check:
+    name: Base IT Check
+    needs: base-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - id: check
+        uses: ./.github/actions/checks-success
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -86,26 +89,26 @@ jobs:
     timeout-minutes: 115
     strategy:
       matrix:
-        server: ['zip', 'container', 'storage']
+        server: [zip, container, storage]
       fail-fast: false
     env:
       MAVEN_OPTS: -Xmx1024m
     steps:
       - uses: actions/checkout@v3
 
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
-
-      - name: Run Quarkus integration Tests
-        run: |
-          declare -A PARAMS
-          PARAMS["zip"]=""
-          PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
-          PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest"
-          
-          ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
-          ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
+#      - id: unit-test-setup
+#        name: Unit test setup
+#        uses: ./.github/actions/unit-test-setup
+#
+#      - name: Run Quarkus integration Tests
+#        run: |
+#          declare -A PARAMS
+#          PARAMS["zip"]=""
+#          PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
+#          PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest"
+#
+#          ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
+#          ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
 
   jdk-integration-tests:
     name: Java Distribution IT
@@ -114,27 +117,27 @@ jobs:
     timeout-minutes: 100
     strategy:
       matrix:
-        dist: ['temurin']
-        version: ['17','19']
+        dist: [temurin]
+        version: [17, 19]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-        with:
-          jdk-dist: ${{ matrix.dist }}
-          jdk-version: ${{ matrix.version }}
-
-      - name: Prepare Quarkus distribution with current JDK
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
-
-      - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
-          echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#        with:
+#          jdk-dist: ${{ matrix.dist }}
+#          jdk-version: ${{ matrix.version }}
+#
+#      - name: Prepare Quarkus distribution with current JDK
+#        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
+#
+#      - name: Run base tests
+#        run: |
+#          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
+#          echo "Tests: $TESTS"
+#          ./mvnw install -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
   new-store-integration-tests:
     name: New Store IT
@@ -143,25 +146,25 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        db: ['chm', 'hot-rod', 'jpa']
+        db: [chm, hot-rod, jpa]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run base tests
-        run: |
-          declare -A PARAMS
-          PARAMS["chm"]="-Pmap-storage -Dpageload.timeout=90000"
-          PARAMS["hot-rod"]="-Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
-          PARAMS["jpa"]="-Pmap-storage,map-storage-jpa -Dpageload.timeout=90000"
-
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-          echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Run base tests
+#        run: |
+#          declare -A PARAMS
+#          PARAMS["chm"]="-Pmap-storage -Dpageload.timeout=90000"
+#          PARAMS["hot-rod"]="-Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
+#          PARAMS["jpa"]="-Pmap-storage,map-storage-jpa -Dpageload.timeout=90000"
+#
+#          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+#          echo "Tests: $TESTS"
+#          ./mvnw install -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
   legacy-store-integration-tests:
     name: Legacy Store IT
@@ -170,20 +173,20 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        db: ['postgres', 'mysql'] # 'mariadb' is not always shutting down, 'mssql', 'oracle11g' containers not available
+        db: [postgres, mysql] # 'mariadb' is not always shutting down, 'mssql', 'oracle11g' containers not available
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-          echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Run base tests
+#        run: |
+#          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+#          echo "Tests: $TESTS"
+#          ./mvnw install -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
   store-model-tests:
     name: Store Model Tests
@@ -193,12 +196,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run model tests
-        run: testsuite/model/test-all-profiles.sh
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Run model tests
+#        run: testsuite/model/test-all-profiles.sh
 
   clustering-integration-tests:
     name: Legacy Clustering IT
@@ -210,13 +213,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run cluster tests
-        run: |
-          ./mvnw install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Run cluster tests
+#        run: |
+#          ./mvnw install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
 
   fips-unit-tests:
     name: FIPS UT
@@ -226,15 +229,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
-
-      - name: Run crypto tests (BCFIPS non-approved mode)
-        run: ./mvnw install -nsu -B -am -pl crypto -Dcom.redhat.fips=true
-
-      - name: Run crypto tests (BCFIPS approved mode)
-        run: ./mvnw install -nsu -B -am -pl crypto -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
+#      - id: unit-test-setup
+#        name: Unit test setup
+#        uses: ./.github/actions/unit-test-setup
+#
+#      - name: Run crypto tests (BCFIPS non-approved mode)
+#        run: ./mvnw install -nsu -B -am -pl crypto -Dcom.redhat.fips=true
+#
+#      - name: Run crypto tests (BCFIPS approved mode)
+#        run: ./mvnw install -nsu -B -am -pl crypto -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
 
   fips-integration-tests:
     name: FIPS IT
@@ -244,15 +247,36 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Prepare Quarkus distribution with BCFIPS
+#        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
+#
+#      - name: Run base tests
+#        run: |
+#          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
+#          echo "Tests: $TESTS"
+#          ./mvnw install -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
-      - name: Prepare Quarkus distribution with BCFIPS
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
+  check:
+    name: Check - Keycloak CI
+    if: always()
+    needs: [unit-tests, base-integration-tests-check]
+    runs-on: ubuntu-latest
 
-      - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
-          echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Base UT
+        uses: ./.github/actions/checks-job-pass
+        with:
+          job: unit-tests
+          conclusion: ${{ needs.unit-tests.outputs.check }}
+
+      - name: Base IT
+        uses: ./.github/actions/checks-job-pass
+        with:
+          job: base-integration-tests-check
+          conclusion: ${{ needs.base-integration-tests-check.outputs.check }}
