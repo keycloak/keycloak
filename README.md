@@ -1,3 +1,5 @@
+[![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6818/badge)](https://bestpractices.coreinfrastructure.org/projects/6818)
+
 # Keycloak
 
 Keycloak is an Open Source Identity and Access Management solution for modern Applications and Services.
