@@ -49,7 +49,7 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.11.11",
     "chai": "^4.3.7",
-    "mocha": "^10.0.0",
+    "mocha": "^10.2.0",
     "ts-node": "^10.2.1"
   },
   "author": "wwwy3y3",
