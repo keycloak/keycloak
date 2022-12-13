@@ -17,9 +17,11 @@
 
 package org.keycloak.storage.ldap.mappers.membership;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -95,13 +97,14 @@ public enum MembershipType {
                 for (LDAPDn userDn : dns) {
                     String username = userDn.getFirstRdn().getAttrValue(ldapConfig.getRdnLdapAttribute());
                     if (username == null) {
-                        throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
-                            ldapConfig.getRdnLdapAttribute() + ", user DN: " + userDn + ", attributes from LDAP: " + userDn.getFirstRdn().getAllKeys());
+                        Logger log = Logger.getLogger(MembershipType.class);
+                        log.debugf("Entity returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: %s, user DN: %s " + ", attributes from LDAP: %s",
+                                ldapConfig.getRdnLdapAttribute(), userDn, userDn.getFirstRdn().getAllKeys());
+                        continue;
                     }
                     usernames.add(username);
                 }
             } else {
-                LDAPQuery query = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
                 LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
                 List<Condition> orSubconditions = new ArrayList<>();
                 for (LDAPDn userDn : dns) {
@@ -111,13 +114,19 @@ public enum MembershipType {
                         orSubconditions.add(condition);
                     }
                 }
-                Condition orCondition = conditionsBuilder.orCondition(orSubconditions.toArray(new Condition[] {}));
-                query.addWhereCondition(orCondition);
-                List<LDAPObject> ldapUsers = query.getResultList();
-                for (LDAPObject ldapUser : ldapUsers) {
-                    if (dns.contains(ldapUser.getDn())) {
-                        String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
-                        usernames.add(username);
+                // OR condition might be empty if none of the members had the FirstRdn with the expected value.
+                // In that case, can't query (as empty OR doesn't work with LDAP), and also don't need to query as the expected result would be an empty list.
+                if (orSubconditions.size() > 0) {
+                    try (LDAPQuery query = LDAPUtils.createQueryForUserSearch(ldapProvider, realm)) {
+                        Condition orCondition = conditionsBuilder.orCondition(orSubconditions.toArray(new Condition[]{}));
+                        query.addWhereCondition(orCondition);
+                        List<LDAPObject> ldapUsers = query.getResultList();
+                        for (LDAPObject ldapUser : ldapUsers) {
+                            if (dns.contains(ldapUser.getDn())) {
+                                String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
+                                usernames.add(username);
+                            }
+                        }
                     }
                 }
             }
