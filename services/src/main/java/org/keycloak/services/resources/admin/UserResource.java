@@ -20,8 +20,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
+import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
@@ -758,7 +760,7 @@ public class UserResource {
 
 
     /**
-     * Send a update account email to the user
+     * Send an email to the user with a link they can click to execute particular actions.
      *
      * An email contains a link the user can click to perform a set of required actions.
      * The redirectUri and clientId parameters are optional. If no redirect is given, then there will
@@ -768,7 +770,7 @@ public class UserResource {
      * @param redirectUri Redirect uri
      * @param clientId Client id
      * @param lifespan Number of seconds after which the generated token expires
-     * @param actions required actions the user needs to complete
+     * @param actions Required actions the user needs to complete
      * @return
      */
     @Path("execute-actions-email")
@@ -796,6 +798,11 @@ public class UserResource {
 
         if (clientId == null) {
             clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+        }
+
+        if (CollectionUtil.isNotEmpty(actions) && !RequiredActionsValidator.validRequiredActions(session, actions)) {
+            throw new WebApplicationException(
+                ErrorResponse.error("Provided invalid required actions", Status.BAD_REQUEST));
         }
 
         ClientModel client = realm.getClientByClientId(clientId);

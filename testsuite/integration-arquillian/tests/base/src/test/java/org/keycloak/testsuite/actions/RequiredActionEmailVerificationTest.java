@@ -41,6 +41,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
 import org.keycloak.testsuite.pages.AppPage;
@@ -66,6 +67,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.hamcrest.Matchers;
@@ -74,9 +76,11 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -1026,5 +1030,31 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.navigate().to(verificationUrl.trim());
         errorPage.assertCurrent();
         assertEquals("The link you clicked is an old stale link and is no longer valid. Maybe you have already verified your email.", errorPage.getError());
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.UPDATE_EMAIL, skipRestart = true)
+    public void actionTokenWithInvalidRequiredActions() throws IOException {
+        // Send email with required action
+        testRealm().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.UPDATE_EMAIL.name()));
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        MailUtils.EmailBody body = MailUtils.getBody(message);
+        assertThat(body, notNullValue());
+
+        final String link = MailUtils.getLink(body.getText());
+        assertThat(link, notNullValue());
+
+        // Disable feature and the required action UPDATE_EMAIL provider is not present
+        testingClient.disableFeature(Profile.Feature.UPDATE_EMAIL);
+
+        driver.navigate().to(link);
+
+        errorPage.assertCurrent();
+
+        // Required action included in the action token is not valid anymore, because we don't know the provider for it
+        assertThat(errorPage.getError(), is("Required actions included in the link are not valid"));
     }
 }
