@@ -19,7 +19,7 @@ export const JsonEditorTab = () => {
     editor?.setValue(config ? prettyPrintJSON(config) : "");
   }
 
-  function handleSave() {
+  async function handleSave() {
     const value = editor?.getValue();
 
     if (!value) {
@@ -27,7 +27,7 @@ export const JsonEditorTab = () => {
     }
 
     try {
-      save(JSON.parse(value));
+      await save(JSON.parse(value));
     } catch (error) {
       addError("realm-settings:invalidJsonError", error);
       return;
@@ -44,7 +44,12 @@ export const JsonEditorTab = () => {
       />
       <Form>
         <ActionGroup>
-          <Button variant="primary" onClick={handleSave} isDisabled={isSaving}>
+          <Button
+            data-testid="save"
+            variant="primary"
+            onClick={handleSave}
+            isDisabled={isSaving}
+          >
             {t("common:save")}
           </Button>
           <Button variant="link" onClick={resetCode} isDisabled={isSaving}>

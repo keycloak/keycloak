@@ -134,4 +134,27 @@ export default class UserProfile {
     cy.findByTestId(this.cancelRemovingValidatorBtn).click();
     return this;
   }
+
+  private textArea() {
+    return cy.get(".pf-c-code-editor__code textarea");
+  }
+
+  private getText() {
+    return this.textArea().get(".view-lines");
+  }
+
+  typeJSON(text: string) {
+    this.textArea().type(text);
+    return this;
+  }
+
+  shouldHaveText(text: string) {
+    this.getText().should("have.text", text);
+    return this;
+  }
+
+  saveJSON() {
+    cy.findAllByTestId("save").click();
+    return this;
+  }
 }

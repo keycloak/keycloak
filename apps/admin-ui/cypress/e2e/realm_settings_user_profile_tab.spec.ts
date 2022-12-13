@@ -26,17 +26,17 @@ describe("User profile tabs", () => {
   const realmName = "Realm_" + (Math.random() + 1).toString(36).substring(7);
   const attributeName = "Test";
 
-  before(() =>
+  before(() => {
     adminClient.createRealm(realmName, {
       attributes: { userProfileEnabled: "true" },
-    })
-  );
+    });
+    keycloakBefore();
+    loginPage.logIn();
+  });
 
   after(() => adminClient.deleteRealm(realmName));
 
   beforeEach(() => {
-    keycloakBefore();
-    loginPage.logIn();
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToRealmSettings();
   });
@@ -46,7 +46,6 @@ describe("User profile tabs", () => {
       getUserProfileTab();
       getAttributesTab();
       clickCreateAttributeButton();
-      cy.get("p").should("have.text", "Create a new attribute");
     });
 
     it("Completes new attribute form and performs cancel", () => {
@@ -113,9 +112,26 @@ describe("User profile tabs", () => {
   });
 
   describe("Json Editor sub tab tests", () => {
-    it("Goes to Json Editor tab", () => {
+    const removedThree = `
+    {ctrl+a}{backspace}
+{
+  "attributes": [
+    {
+"name": "username",
+"validations": {
+  "length": {
+  "min": 3,
+"max": 255 {downArrow},
+"username-prohibited-characters": {
+`;
+
+    it("Removes three validators with the editor", () => {
       getUserProfileTab();
       getJsonEditorTab();
+      userProfileTab.typeJSON(removedThree).saveJSON();
+      masthead.checkNotificationMessage(
+        "User profile settings successfully updated."
+      );
     });
   });
 });
