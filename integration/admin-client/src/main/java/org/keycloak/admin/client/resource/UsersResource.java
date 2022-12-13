@@ -215,6 +215,13 @@ public interface UsersResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchJson(@QueryParam("query") String query,
+                                    @QueryParam("first") Integer firstResult,
+                                    @QueryParam("max") Integer maxResults,
+                                    @QueryParam("briefRepresentation") Boolean briefRepresentation);    
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> list(@QueryParam("first") Integer firstResult,
                                   @QueryParam("max") Integer maxResults);
 
@@ -247,6 +254,18 @@ public interface UsersResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     Integer count(@QueryParam("search") String search);
+
+    /**
+     * Returns the number of users that can be viewed and match the given search criteria.
+     * If none is specified this is equivalent to {{@link #count()}}.
+     *
+     * @param search criteria to search for
+     * @return number of users matching the search criteria
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer countJson(@QueryParam("query") String query);
 
     /**
      * Returns the number of users that can be viewed and match the given filters.

@@ -53,6 +53,7 @@ import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEven
 import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
+import org.keycloak.models.search.SearchQueryJson;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.CacheableStorageProviderModel;
@@ -603,6 +604,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         return getDelegate().searchForUserByUserAttributeStream(realm, attrName, attrValue);
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, SearchQueryJson query, Integer firstResult, Integer maxResults)  {
+        return getDelegate().searchForUserStream(realm, query, firstResult, maxResults);
     }
 
     @Override

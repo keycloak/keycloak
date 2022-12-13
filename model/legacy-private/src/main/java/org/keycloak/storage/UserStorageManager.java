@@ -21,6 +21,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,6 +57,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.models.search.SearchQueryJson;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.client.ClientStorageProvider;
@@ -379,6 +381,31 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         return importValidation(realm, results);
     }
 
+
+    @Override
+    public Stream<UserModel> getUsersStream(RealmModel realm) {
+        return getUsersStream(realm, null, null, false);
+    }
+
+    @Override
+    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return getUsersStream(realm, firstResult, maxResults, false);
+    }
+
+    @Override
+    public Stream<UserModel> getUsersStream(final RealmModel realm, Integer firstResult, Integer maxResults, final boolean includeServiceAccounts) {
+        Stream<UserModel> results =  query((provider, firstResultInQuery, maxResultsInQuery) -> {
+            if (provider instanceof UserProvider) { // it is local storage
+                return ((UserProvider) provider).getUsersStream(realm, firstResultInQuery, maxResultsInQuery, includeServiceAccounts);
+            } else if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).getUsersStream(realm);
+            }
+            return Stream.empty();
+        }
+        , realm, firstResult, maxResults);
+        return importValidation(realm, results);
+    }
+
     @Override
     public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
         int localStorageUsersCount = localStorage().getUsersCount(realm, includeServiceAccount);
@@ -454,6 +481,24 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                 } else {
                     return ((UserQueryProvider)provider).getUsersCount(realm, attributes);
                 }
+            }
+            return 0;
+        }
+        , realm, firstResult, maxResults);
+        return importValidation(realm, results);
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, SearchQueryJson query, Integer firstResult, Integer maxResults) {
+        Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
+            if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).searchForUserStream(realm, query, firstResultInQuery, maxResultsInQuery);
+            }
+            return Stream.empty();
+        },
+        (provider, firstResultInQuery, maxResultsInQuery) -> {
+            if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).getUsersCount(realm, query);
             }
             return 0;
         }

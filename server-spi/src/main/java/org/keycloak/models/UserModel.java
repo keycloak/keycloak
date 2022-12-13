@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.models.search.SearchQueryJson;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
 
@@ -97,6 +98,8 @@ public interface UserModel extends RoleMapperModel {
          * or potentially many for e.g. IN) is checked per the operator.
          */
         public static final SearchableModelField<UserModel> ATTRIBUTE       = new SearchableModelField<>("attribute", String[].class);
+
+        public static final SearchableModelField<UserModel> QUERY       = new SearchableModelField<>("query", String.class); // SearchQueryJson.class);
     }
 
     interface UserRemovedEvent extends ProviderEvent {

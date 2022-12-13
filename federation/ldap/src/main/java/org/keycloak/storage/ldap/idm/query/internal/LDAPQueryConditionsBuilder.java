@@ -57,11 +57,25 @@ public class LDAPQueryConditionsBuilder {
         return new BetweenCondition(paramName, x, y);
     }
 
+    public Condition andCondition(Condition... conditions) {
+        if (conditions == null || conditions.length == 0) {
+            throw new ModelException("At least one condition should be provided to AND query");
+        }
+        return new AndCondition(conditions);
+    }
+
     public Condition orCondition(Condition... conditions) {
         if (conditions == null || conditions.length == 0) {
             throw new ModelException("At least one condition should be provided to OR query");
         }
         return new OrCondition(conditions);
+    }
+
+    public Condition notCondition(Condition condition) {
+        if (condition == null) {
+            throw new ModelException("One condition should be provided to NOT query");
+        }
+        return new NotCondition(condition);
     }
 
     public Condition addCustomLDAPFilter(String filter) {

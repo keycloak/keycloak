@@ -17,6 +17,8 @@
 
 package org.keycloak.storage.ldap;
 
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,11 +54,22 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.search.SearchQueryJson;
+import org.keycloak.models.search.SearchQueryJsonAnd;
+import org.keycloak.models.search.SearchQueryJsonEquals;
+import org.keycloak.models.search.SearchQueryJsonGt;
+import org.keycloak.models.search.SearchQueryJsonGte;
+import org.keycloak.models.search.SearchQueryJsonIn;
+import org.keycloak.models.search.SearchQueryJsonLike;
+import org.keycloak.models.search.SearchQueryJsonLt;
+import org.keycloak.models.search.SearchQueryJsonLte;
+import org.keycloak.models.search.SearchQueryJsonNot;
+import org.keycloak.models.search.SearchQueryJsonOr;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.LegacyStoreManagers;
 import org.keycloak.storage.ReadOnlyException;
@@ -83,8 +96,6 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
-
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -837,6 +848,67 @@ public class LDAPStorageProvider implements UserStorageProvider,
             ldapQuery.addWhereCondition(usernameCondition);
 
             return ldapQuery.getFirstResult();
+        }
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, SearchQueryJson query, Integer firstResult, Integer maxResults) {
+        Stream<LDAPObject> stream = searchLDAP(realm, query).stream()
+            .filter(ldapObject -> {
+                String ldapUsername = LDAPUtils.getUsername(ldapObject, this.ldapIdentityStore.getConfig());
+                return (UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername) == null);
+            });
+
+        return paginatedStream(stream, firstResult, maxResults).map(ldapObject -> importUserFromLDAP(session, realm, ldapObject));
+    }
+
+    protected List<LDAPObject> searchLDAP(RealmModel realm, SearchQueryJson query) {
+        List<LDAPObject> results = new ArrayList<LDAPObject>();
+        
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            ldapQuery.addWhereCondition(buildCondition(query));
+
+            results.addAll(ldapQuery.getResultList());
+        }
+
+        return results;
+    }
+
+    private Condition buildCondition(SearchQueryJson query) {
+        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+        switch (query.getOperator()) {
+            case AND:
+                SearchQueryJsonAnd queryAnd = (SearchQueryJsonAnd) query;
+                return conditionsBuilder.andCondition(queryAnd.getValues().stream().map(this::buildCondition).toArray(Condition[]::new));
+            case OR:
+                SearchQueryJsonOr queryOr = (SearchQueryJsonOr) query;
+                return conditionsBuilder.orCondition(queryOr.getValues().stream().map(this::buildCondition).toArray(Condition[]::new));
+            case IN:
+                SearchQueryJsonIn queryIn = (SearchQueryJsonIn) query;
+                return conditionsBuilder.in(queryIn.getProperty(), queryIn.getValues().toArray());
+            case NOT:
+                SearchQueryJsonNot queryNot = (SearchQueryJsonNot) query;
+                return conditionsBuilder.notCondition(buildCondition(queryNot));
+            case EQUALS:
+                SearchQueryJsonEquals queryEquals = (SearchQueryJsonEquals) query;
+                return conditionsBuilder.equal(queryEquals.getProperty(), queryEquals.getValue(), EscapeStrategy.NON_ASCII_CHARS_ONLY);
+            case LIKE:
+                SearchQueryJsonLike queryLike = (SearchQueryJsonLike) query;
+                return conditionsBuilder.equal(queryLike.getProperty(), queryLike.getValue(), EscapeStrategy.NON_ASCII_CHARS_ONLY);
+            case GT:
+                SearchQueryJsonGt queryGt = (SearchQueryJsonGt) query;
+                return conditionsBuilder.greaterThan(queryGt.getProperty(), queryGt.getValue());
+            case GTE:
+                SearchQueryJsonGte queryGte = (SearchQueryJsonGte) query;
+                return conditionsBuilder.greaterThanOrEqualTo(queryGte.getProperty(), queryGte.getValue());
+            case LT:
+                SearchQueryJsonLt queryLt = (SearchQueryJsonLt) query;
+                return conditionsBuilder.lessThan(queryLt.getProperty(), queryLt.getValue());
+            case LTE:
+                SearchQueryJsonLte queryLte = (SearchQueryJsonLte) query;
+                return conditionsBuilder.lessThanOrEqualTo(queryLte.getProperty(), queryLte.getValue());
+            default:
+                throw new ModelException("No implementation to build condition available for " + query.getOperator().name());
         }
     }
 

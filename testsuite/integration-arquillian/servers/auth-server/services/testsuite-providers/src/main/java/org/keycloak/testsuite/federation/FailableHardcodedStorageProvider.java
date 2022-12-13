@@ -27,6 +27,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.search.SearchQueryJson;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
@@ -281,6 +282,12 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
 
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
+        checkForceFail();
+        return Stream.empty();
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, SearchQueryJson query, Integer firstResult, Integer maxResults) {
         checkForceFail();
         return Stream.empty();
     }

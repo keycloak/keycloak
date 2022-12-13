@@ -41,6 +41,17 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.search.SearchQueryJson;
+import org.keycloak.models.search.SearchQueryJsonAnd;
+import org.keycloak.models.search.SearchQueryJsonEquals;
+import org.keycloak.models.search.SearchQueryJsonGt;
+import org.keycloak.models.search.SearchQueryJsonGte;
+import org.keycloak.models.search.SearchQueryJsonIn;
+import org.keycloak.models.search.SearchQueryJsonLike;
+import org.keycloak.models.search.SearchQueryJsonLt;
+import org.keycloak.models.search.SearchQueryJsonLte;
+import org.keycloak.models.search.SearchQueryJsonNot;
+import org.keycloak.models.search.SearchQueryJsonOr;
 import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
@@ -52,6 +63,7 @@ import org.keycloak.models.map.credential.MapUserCredentialManager;
 import org.keycloak.models.map.storage.MapKeycloakTransactionWithAuth;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -339,7 +351,7 @@ public class MapUserProvider implements UserProvider {
         if (tx.getCount(withCriteria(mcb)) > 0) {
             throw new ModelDuplicateException("User with username '" + username + "' in realm " + realm.getName() + " already exists" );
         }
-
+        
         if (id != null && tx.read(id) != null) {
             throw new ModelDuplicateException("User exists: " + id);
         }
@@ -525,7 +537,7 @@ public class MapUserProvider implements UserProvider {
         }
 
         MapUserEntity userEntity = usersWithEmail.get(0);
-
+        
         if (!realm.isDuplicateEmailsAllowed()) {
             if (userEntity.getEmail() != null && !userEntity.getEmail().equals(userEntity.getEmailConstraint())) {
                 // Realm settings have been changed from allowing duplicate emails to not allowing them.
@@ -533,7 +545,7 @@ public class MapUserProvider implements UserProvider {
                 userEntity.setEmailConstraint(userEntity.getEmail());
             }
         }
-
+        
         return entityToAdapterFunc(realm).apply(userEntity);
     }
 
@@ -668,6 +680,119 @@ public class MapUserProvider implements UserProvider {
         return tx.read(withCriteria(criteria).pagination(firstResult, maxResults, SearchableFields.USERNAME))
                 .map(entityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, SearchQueryJson query, Integer firstResult, Integer maxResults) {
+        LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, query, firstResult, maxResults, getShortStackTrace());
+
+        final DefaultModelCriteria<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> criteria = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+
+        if (! session.getAttributeOrDefault(UserModel.INCLUDE_SERVICE_ACCOUNT, true)) {
+            criteria = criteria.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
+        }
+
+        criteria = criteria.and(criteria, buildCriteria(realm, mcb, query));
+        
+        // Only return those results that the current user is authorized to view,
+        // i.e. there is an intersection of groups with view permission of the current
+        // user (passed in via UserModel.GROUPS attribute), the groups for the returned
+        // users, and the respective group resource available from the authorization provider
+        @SuppressWarnings("unchecked")
+        Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
+        if (userGroups != null) {
+            if (userGroups.isEmpty()) {
+                return Stream.empty();
+            }
+
+            final ResourceStore resourceStore =
+                    session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceStore();
+
+            HashSet<String> authorizedGroups = new HashSet<>(userGroups);
+            authorizedGroups.removeIf(id -> {
+                Map<Resource.FilterOption, String[]> values = new EnumMap<>(Resource.FilterOption.class);
+                values.put(Resource.FilterOption.EXACT_NAME, new String[] {"group.resource." + id});
+                return resourceStore.find(realm, null, values, 0, 1).isEmpty();
+            });
+
+            criteria = criteria.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);
+        }
+
+        return tx.read(withCriteria(criteria).pagination(firstResult, maxResults, SearchableFields.USERNAME))
+                .map(entityToAdapterFunc(realm))
+                .filter(Objects::nonNull);
+    }
+
+    private DefaultModelCriteria<UserModel> buildCriteria(RealmModel realm, DefaultModelCriteria<UserModel> mcb, SearchQueryJson query) {
+        switch (query.getOperator()) {
+            case AND:
+                SearchQueryJsonAnd queryAnd = (SearchQueryJsonAnd) query;
+                return mcb.and(queryAnd.getValues().stream().map(q -> this.buildCriteria(realm, mcb, q)).toArray(DefaultModelCriteria[]::new));
+            case OR:
+                SearchQueryJsonOr queryOr = (SearchQueryJsonOr) query;
+                return mcb.or(queryOr.getValues().stream().map(q -> this.buildCriteria(realm, mcb, q)).toArray(DefaultModelCriteria[]::new));
+            case IN:
+                SearchQueryJsonIn queryIn = (SearchQueryJsonIn) query;
+                return compare(realm, mcb, queryIn.getProperty(), Operator.IN, queryIn.getValues().toArray(new String[0]));
+            case NOT:
+                SearchQueryJsonNot queryNot = (SearchQueryJsonNot) query;
+                return mcb.not(buildCriteria(realm, mcb, queryNot));
+            case EQUALS:
+                SearchQueryJsonEquals queryEquals = (SearchQueryJsonEquals) query;
+                return compare(realm, mcb, queryEquals.getProperty(), Operator.EQ, queryEquals.getValue());
+            case LIKE:
+                SearchQueryJsonLike queryLike = (SearchQueryJsonLike) query;
+                return compare(realm, mcb, queryLike.getProperty(), Operator.LIKE, queryLike.getValue().replaceAll("\\*", "%"));
+            case GT:
+                SearchQueryJsonGt queryGt = (SearchQueryJsonGt) query;
+                return compare(realm, mcb, queryGt.getProperty(), Operator.GT, queryGt.getValue());
+            case GTE:
+                SearchQueryJsonGte queryGte = (SearchQueryJsonGte) query;
+                return compare(realm, mcb, queryGte.getProperty(), Operator.GE, queryGte.getValue());
+            case LT:
+                SearchQueryJsonLt queryLt = (SearchQueryJsonLt) query;
+                return compare(realm, mcb, queryLt.getProperty(), Operator.LT, queryLt.getValue());
+            case LTE:
+                SearchQueryJsonLte queryLte = (SearchQueryJsonLte) query;
+                return compare(realm, mcb, queryLte.getProperty(), Operator.LE, queryLte.getValue());
+            default:
+                throw new ModelException("No implementation to build condition available for " + query.getOperator().name());
+        }
+    }
+
+    private DefaultModelCriteria<UserModel> compare(RealmModel realm, DefaultModelCriteria<UserModel> mcb, String property, Operator operator, String... values) {
+        switch (property) {
+            case USERNAME:
+                boolean isUsernameCaseSensitive = isUsernameCaseSensitive(realm);
+                return mcb.compare(isUsernameCaseSensitive ? SearchableFields.USERNAME : SearchableFields.USERNAME_CASE_INSENSITIVE, 
+                    isUsernameCaseSensitive && Operator.LIKE == operator ? operator : Operator.ILIKE, 
+                    values);
+            case FIRST_NAME:
+                return mcb.compare(SearchableFields.FIRST_NAME, operator, values);
+            case LAST_NAME:
+                return mcb.compare(SearchableFields.LAST_NAME, operator, values);
+            case EMAIL:
+                return mcb.compare(SearchableFields.EMAIL, operator, values);
+            case EMAIL_VERIFIED:
+                boolean booleanValue = Boolean.parseBoolean(values[0]);
+                return mcb.compare(SearchableFields.EMAIL_VERIFIED, Operator.EQ, booleanValue);
+            case UserModel.ENABLED: 
+                boolean booleanValueEn = Boolean.parseBoolean(values[0]);
+                return mcb.compare(SearchableFields.ENABLED, Operator.EQ, booleanValueEn);
+            // TODO ???
+            // case UserModel.IDP_ALIAS:
+            //     if (!attributes.containsKey(UserModel.IDP_USER_ID)) {
+            //         return mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, value);
+            //     }
+            //     return mcb
+            // case UserModel.IDP_USER_ID:
+            //     return mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, property,
+            //             value);
+            default:
+                return mcb.compare(SearchableFields.ATTRIBUTE, operator, property, values);
+        }
     }
 
     @Override

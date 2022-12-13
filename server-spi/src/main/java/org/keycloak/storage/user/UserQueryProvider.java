@@ -20,6 +20,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.search.SearchQueryJson;
 
 import java.util.Collections;
 import java.util.List;
@@ -103,6 +104,24 @@ public interface UserQueryProvider {
      */
     default int getUsersCount(RealmModel realm, Map<String, String> params) {
         return (int) searchForUserStream(realm, params).count();
+    }
+
+    /**
+     * Returns the number of users that match the given filter parameters.
+     *
+     * @param realm  the realm
+     * @param query search filter in json
+     * @return number of users that match the given filters
+     */
+    default int getUsersCount(RealmModel realm, SearchQueryJson query) {
+        return getUsersCount(query, realm);
+    }
+    /**
+     * @deprecated Use {@link #getUsersCount(RealmModel, Set) getUsersCount} instead.
+     */
+    @Deprecated
+    default int getUsersCount(SearchQueryJson query, RealmModel realm) {
+        return (int) searchForUserStream(realm, query, null, null).count();
     }
 
     /**
@@ -316,6 +335,37 @@ public interface UserQueryProvider {
     Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue);
 
     /**
+     * Searches for user by json query. 
+     *
+     * This method is used by the REST API when querying users.
+     *
+     * @param realm a reference to the realm.
+     * @param query a query containing the search parameters.
+     * @return a non-null {@link Stream} of users that match the search criteria.
+     */
+    default Stream<UserModel> searchForUserStream(RealmModel realm, SearchQueryJson query) {
+        return searchForUserStream(realm, query, null, null);
+    }
+
+    /**
+     * Searches for user by json query. 
+     *
+     * This method is used by the REST API when querying users.
+     *
+     * @param realm a reference to the realm.
+     * @param query a query containing the search parameters.
+     * @param firstResult first result to return. Ignored if negative, zero, or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
+     * @return a non-null {@link Stream} of users that match the search criteria.
+     */
+    Stream<UserModel> searchForUserStream(RealmModel realm, SearchQueryJson query, Integer firstResult, Integer maxResults);
+
+    /**
+     * The {@link Streams} interface makes all collection-based methods in {@link UserQueryProvider} default by
+     * providing implementations that delegate to the {@link Stream}-based variants instead of the other way around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
      * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
      * and therefore the parent interface can be used directly
      */

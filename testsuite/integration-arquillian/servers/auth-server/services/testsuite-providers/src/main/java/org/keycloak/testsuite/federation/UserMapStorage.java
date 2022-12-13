@@ -30,6 +30,14 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
+import org.keycloak.models.search.SearchQueryJson;
+import org.keycloak.models.search.SearchQueryJsonAnd;
+import org.keycloak.models.search.SearchQueryJsonEquals;
+import org.keycloak.models.search.SearchQueryJsonLike;
+import org.keycloak.models.search.SearchQueryJsonNot;
+import org.keycloak.models.search.SearchQueryJsonOr;
+import org.keycloak.models.search.SearchQueryJsonIn;
+import org.keycloak.models.search.SearchQueryOperator;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -44,6 +52,7 @@ import org.keycloak.storage.user.UserRegistrationProvider;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -371,6 +380,58 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, SearchQueryJson query, Integer firstResult, Integer maxResults) {
+        Stream<String> userStream = userPasswords.keySet().stream()
+            .sorted();
+      
+        filterUsername(query).ifPresent(q -> {
+            if (SearchQueryOperator.EQUALS == q.getOperator()) {
+                SearchQueryJsonEquals equals = (SearchQueryJsonEquals) q;
+                userStream.filter(s -> s.toLowerCase().equals(equals.getValue().toLowerCase()));
+            } else if (SearchQueryOperator.LIKE == q.getOperator()) {
+                SearchQueryJsonLike like = (SearchQueryJsonLike) q;
+                userStream.filter(s -> s.toLowerCase().contains(like.getValue().toLowerCase()));
+            } else if (SearchQueryOperator.IN == q.getOperator()) {
+                SearchQueryJsonIn in = (SearchQueryJsonIn) q;
+                userStream.filter(s -> in.getValues().stream().anyMatch(i -> s.toLowerCase().contains(i.toLowerCase())));
+            }           
+        });
+      
+        return paginatedStream(userStream, firstResult, maxResults).map(userName -> createUser(realm, userName));
+    }
+
+    private Optional<SearchQueryJson> filterUsername(SearchQueryJson query) {
+        if (SearchQueryOperator.EQUALS == query.getOperator()) {
+            SearchQueryJsonEquals equal = (SearchQueryJsonEquals) query;
+            if (equal.getProperty().equals(UserModel.USERNAME)) {
+                return Optional.of(query);
+            }
+            return Optional.empty();
+        } else if (SearchQueryOperator.LIKE == query.getOperator()) {
+            SearchQueryJsonLike like = (SearchQueryJsonLike) query;
+            if (like.getProperty().equals(UserModel.USERNAME)) {
+                return Optional.of(query);
+            }
+            return Optional.empty();
+        } else if (SearchQueryOperator.IN == query.getOperator()) {
+            SearchQueryJsonLike in = (SearchQueryJsonLike) query;
+            if (in.getProperty().equals(UserModel.USERNAME)) {
+                return Optional.of(query);
+            }
+            return Optional.empty();
+        } else if (SearchQueryOperator.NOT == query.getOperator()) {
+            return filterUsername(((SearchQueryJsonNot) query).getValue());
+        } else if (SearchQueryOperator.AND == query.getOperator()) {
+            SearchQueryJsonAnd and = (SearchQueryJsonAnd) query;
+            return and.getValues().stream().filter(q -> filterUsername(q).isPresent()).findFirst();
+        } else if (SearchQueryOperator.OR == query.getOperator()) {
+            SearchQueryJsonOr or = (SearchQueryJsonOr) query;
+            return or.getValues().stream().filter(q -> filterUsername(q).isPresent()).findFirst();
+        }
+        return Optional.empty();
+    }
+
+    @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm, String userId) {
         Set<String> set = userGroups.get(getUserIdInMap(realm, userId));
         if (set == null) {
@@ -416,5 +477,4 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     private static String translateUserName(String userName) {
         return userName == null ? null : userName.toLowerCase();
     }
-
 }

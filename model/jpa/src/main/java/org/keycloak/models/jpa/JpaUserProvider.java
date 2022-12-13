@@ -44,6 +44,7 @@ import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
+import org.keycloak.models.search.SearchQueryJson;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -61,6 +62,8 @@ import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
+import javax.persistence.criteria.CriteriaBuilder.In;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -70,6 +73,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
@@ -1082,5 +1088,62 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     private UserEntity userInEntityManagerContext(String id) {
         UserEntity user = em.getReference(UserEntity.class, id);
         return em.contains(user) ? user : null;
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, SearchQueryJson searchQuery, Integer firstResult, Integer maxResults) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
+        Root<UserEntity> root = queryBuilder.from(UserEntity.class);
+
+        if (!session.getAttributeOrDefault(UserModel.INCLUDE_SERVICE_ACCOUNT, true)) {
+            queryBuilder.where(root.get("serviceAccountClientLink").isNull());
+        }
+
+        Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
+        if (userGroups != null) {
+            queryBuilder.where(buildConditionUserGroups(builder, queryBuilder, root, userGroups));
+        }
+
+        queryBuilder.where(builder.equal(root.get("realmId"), realm.getId()))
+            .where(JpaUserSearchQueryJsonMapper.build(root, builder, searchQuery))
+            .orderBy(builder.asc(root.get(UserModel.USERNAME)));
+
+        TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
+
+        UserProvider users = session.users();
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(userEntity -> users.getUserById(realm, userEntity.getId()));
+    }
+
+    /** Build predicate for groups. */
+    private Predicate buildConditionUserGroups(CriteriaBuilder builder, CriteriaQuery<UserEntity> queryBuilder, Root<UserEntity> root, Set<String> userGroups) {
+        Subquery subquery = queryBuilder.subquery(String.class);
+        Root<UserGroupMembershipEntity> from = subquery.from(UserGroupMembershipEntity.class);
+
+        subquery.select(builder.literal(1));
+
+        List<Predicate> subPredicates = new ArrayList<>();
+
+        subPredicates.add(from.get("groupId").in(userGroups));
+        subPredicates.add(builder.equal(from.get("user").get("id"), root.get("id")));
+
+        Subquery subquery1 = queryBuilder.subquery(String.class);
+
+        subquery1.select(builder.literal(1));
+        Root from1 = subquery1.from(ResourceEntity.class);
+
+        List<Predicate> subs = new ArrayList<>();
+
+        Expression<String> groupId = from.get("groupId");
+        subs.add(builder.like(from1.get("name"), builder.concat("group.resource.", groupId)));
+
+        subquery1.where(subs.toArray(new Predicate[subs.size()]));
+
+        subPredicates.add(builder.exists(subquery1));
+
+        subquery.where(subPredicates.toArray(new Predicate[subPredicates.size()]));
+
+        return builder.exists(subquery);
     }
 }

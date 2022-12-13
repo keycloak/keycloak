@@ -16,6 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
@@ -30,6 +33,8 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.search.SearchQueryJson;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
@@ -234,6 +239,7 @@ public class UsersResource {
      *
      * Returns a stream of users, filtered according to query parameters.
      *
+     * @param jsonQuery A String contained the query in json
      * @param search A String contained in username, first or last name, or email
      * @param last A String contained in lastName, or the complete lastName, if param "exact" is true
      * @param first A String contained in firstName, or the complete firstName, if param "exact" is true
@@ -247,13 +253,14 @@ public class UsersResource {
      * @param enabled Boolean representing if user is enabled or not
      * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
-     * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
+     * @param searchQuery A query to search for custom attributes, in the format 'key1:value1 key2:value2'
      * @return a non-null {@code Stream} of users
      */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<UserRepresentation> getUsers(@QueryParam("search") String search,
+    public Stream<UserRepresentation> getUsers(@QueryParam("jsonQuery") String jsonQuery,
+                                               @QueryParam("search") String search,
                                                @QueryParam("lastName") String last,
                                                @QueryParam("firstName") String first,
                                                @QueryParam("email") String email,
@@ -270,7 +277,19 @@ public class UsersResource {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
-
+                                                
+        if (jsonQuery != null) {
+            try {
+               Stream<UserModel> userModels = session.users().searchForUserStream(realm,
+                    new ObjectMapper().readValue(jsonQuery, SearchQueryJson.class),
+                    Optional.ofNullable(firstResult).orElse(-1),
+                    Optional.ofNullable(maxResults).orElse(Constants.DEFAULT_MAX_RESULTS));
+                return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException("Unable to read json query.", ex);
+            }
+        } 
+        
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
@@ -278,14 +297,15 @@ public class UsersResource {
                 ? Collections.emptyMap()
                 : SearchQueryUtils.getFields(searchQuery);
 
-        Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
                 UserModel userModel =
                         session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                Stream<UserModel> userModels = Stream.empty();
                 if (userModel != null) {
                     userModels = Stream.of(userModel);
                 }
+                return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
             } else {
                 Map<String, String> attributes = new HashMap<>();
                 attributes.put(UserModel.SEARCH, search.trim());
@@ -334,8 +354,6 @@ public class UsersResource {
                     return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
                             firstResult, maxResults, false);
                 }
-
-        return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
     }
 
     /**
@@ -452,6 +470,7 @@ public class UsersResource {
                     UserRepresentation userRep = briefRepresentationB
                             ? ModelToRepresentation.toBriefRepresentation(user)
                             : ModelToRepresentation.toRepresentation(session, realm, user);
+                    // needed ?
                     userRep.setAccess(usersEvaluator.getAccess(user));
                     return userRep;
                 });
