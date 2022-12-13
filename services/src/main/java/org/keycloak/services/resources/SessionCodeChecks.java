@@ -17,6 +17,10 @@
 
 package org.keycloak.services.resources;
 
+import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE;
+import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
+
 import java.net.URI;
 
 import javax.ws.rs.core.Cookie;
@@ -42,11 +46,13 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -177,6 +183,15 @@ public class SessionCodeChecks {
 
         // See if we are already authenticated and userSession with same ID exists.
         UserSessionModel userSession = authSessionManager.getUserSessionFromAuthCookie(realm);
+
+        if (userSession == null) {
+            // fallback to check if there is an identity cookie
+            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session, () -> authenticateIdentityCookie(session, realm, false));
+
+            if (authResult != null) {
+                userSession = authResult.getSession();
+            }
+        }
 
         if (userSession != null) {
             LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
