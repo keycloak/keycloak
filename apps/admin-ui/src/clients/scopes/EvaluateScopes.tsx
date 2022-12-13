@@ -1,3 +1,7 @@
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
   ClipboardCopy,
   Form,
@@ -18,16 +22,14 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { useEffect, useRef, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+
 import { useHelp } from "../../components/help-enabler/HelpHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { UserSelect } from "../../components/users/UserSelect";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -120,13 +122,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
     ClientScopeRepresentation[]
   >([]);
   const [isScopeOpen, setIsScopeOpen] = useState(false);
-  const [isUserOpen, setIsUserOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([prefix]);
   const [activeTab, setActiveTab] = useState(0);
-
-  const [userItems, setUserItems] = useState<JSX.Element[]>([]);
-  const [userSearch, setUserSearch] = useState("");
-  const [user, setUser] = useState<UserRepresentation>();
 
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
@@ -146,37 +143,12 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const tabContent4 = useRef(null);
   const tabContent5 = useRef(null);
 
+  const form = useForm();
+
   useFetch(
     () => adminClient.clients.listOptionalClientScopes({ id: clientId }),
     (optionalClientScopes) => setSelectableScopes(optionalClientScopes),
     []
-  );
-
-  const toString = (user: UserRepresentation) => {
-    return (
-      t("common:fullName", {
-        givenName: user.firstName,
-        familyName: user.lastName,
-      }).trim() ||
-      user.username ||
-      ""
-    );
-  };
-
-  useFetch(
-    () => adminClient.users.find({ search: userSearch }),
-    (users) =>
-      setUserItems(
-        users
-          .map((user) => {
-            user.toString = function () {
-              return toString(this);
-            };
-            return user;
-          })
-          .map((user) => <SelectOption key={user.id} value={user} />)
-      ),
-    [userSearch]
   );
 
   useFetch(
@@ -218,22 +190,23 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   useFetch(
     async () => {
       const scope = selected.join(" ");
+      const user = form.getValues("user");
       if (!user) return [];
 
       return await Promise.all([
         adminClient.clients.evaluateGenerateAccessToken({
           id: clientId,
-          userId: user.id!,
+          userId: user[0],
           scope,
         }),
         adminClient.clients.evaluateGenerateUserInfo({
           id: clientId,
-          userId: user.id!,
+          userId: user[0],
           scope,
         }),
         adminClient.clients.evaluateGenerateIdToken({
           id: clientId,
-          userId: user.id!,
+          userId: user[0],
           scope,
         }),
       ]);
@@ -243,7 +216,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       setUserInfo(prettyPrintJSON(userInfo));
       setIdToken(prettyPrintJSON(idToken));
     },
-    [user, selected]
+    [form.getValues("user"), selected]
   );
 
   return (
@@ -301,39 +274,16 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               </SplitItem>
             </Split>
           </FormGroup>
-          <FormGroup
-            label={t("user")}
-            fieldId="user"
-            labelIcon={
-              <HelpItem
-                helpText="clients-help:user"
-                fieldLabelId="clients:user"
-              />
-            }
-          >
-            <Select
-              toggleId="user"
+          <FormProvider {...form}>
+            <UserSelect
+              name="user"
+              label="users"
+              helpText="clients-help:user"
+              defaultValue=""
               variant={SelectVariant.typeahead}
-              typeAheadAriaLabel={t("user")}
-              onToggle={() => setIsUserOpen(!isUserOpen)}
-              onFilter={(e) => {
-                const value = e?.target.value || "";
-                setUserSearch(value);
-                return userItems;
-              }}
-              onClear={() => {
-                setUser(undefined);
-                setUserSearch("");
-              }}
-              selections={[user]}
-              onSelect={(_, value) => {
-                setUser(value as UserRepresentation);
-                setUserSearch("");
-                setIsUserOpen(false);
-              }}
-              isOpen={isUserOpen}
+              isRequired
             />
-          </FormGroup>
+          </FormProvider>
         </Form>
       </PageSection>
 
@@ -365,7 +315,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
           >
             <GeneratedCodeTab
               text={accessToken}
-              user={user}
+              user={form.getValues("user")}
               label="generatedAccessToken"
             />
           </TabContent>
@@ -378,7 +328,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
           >
             <GeneratedCodeTab
               text={idToken}
-              user={user}
+              user={form.getValues("user")}
               label="generatedIdToken"
             />
           </TabContent>
@@ -391,7 +341,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
           >
             <GeneratedCodeTab
               text={userInfo}
-              user={user}
+              user={form.getValues("user")}
               label="generatedUserInfo"
             />
           </TabContent>

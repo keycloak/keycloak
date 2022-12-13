@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
 import {
@@ -7,6 +7,7 @@ import {
   Select,
   SelectVariant,
 } from "@patternfly/react-core";
+import { debounce } from "lodash-es";
 
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type { UserQuery } from "@keycloak/keycloak-admin-client/lib/resources/users";
@@ -42,6 +43,7 @@ export const UserSelect = ({
   const [search, setSearch] = useState("");
 
   const { adminClient } = useAdminClient();
+  const debounceFn = useCallback(debounce(setSearch, 1000), []);
 
   useFetch(
     () => {
@@ -107,12 +109,14 @@ export const UserSelect = ({
             isOpen={open}
             selections={value}
             onFilter={(_, value) => {
-              setSearch(value);
+              debounceFn(value);
               return convert(users);
             }}
             onSelect={(_, v) => {
               const option = v.toString();
-              if (value.includes(option)) {
+              if (variant !== SelectVariant.typeaheadMulti) {
+                onChange([option]);
+              } else if (value.includes(option)) {
                 onChange(value.filter((item: string) => item !== option));
               } else {
                 onChange([...value, option]);
