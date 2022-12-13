@@ -32,7 +32,8 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
   });
 
   const isValid = watchFields.every(
-    ({ key, value }) => key.trim().length !== 0 && value.trim().length !== 0
+    ({ key, value }) =>
+      key && key.trim().length !== 0 && value && value.trim().length !== 0
   );
 
   useEffect(() => {
