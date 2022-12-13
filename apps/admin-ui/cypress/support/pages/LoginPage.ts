@@ -2,9 +2,7 @@ export default class LoginPage {
   private userNameInput = "#username";
   private passwordInput = "#password";
   private submitBtn = "#kc-login";
-  private userDrpDwn = "#user-dropdown";
 
-  private errorText = ".kc-feedback-text";
   private oldLoadContainer = "#loading";
   private loadContainer = "div.keycloak__loading-container";
 
@@ -31,17 +29,5 @@ export default class LoginPage {
         }
       });
     cy.get('[role="progressbar"]').should("not.exist");
-  }
-
-  checkErrorIsDisplayed() {
-    cy.get(this.userDrpDwn).should("exist");
-
-    return this;
-  }
-
-  checkErrorMessage(message: string) {
-    cy.get(this.errorText).invoke("text").should("contain", message);
-
-    return this;
   }
 }
