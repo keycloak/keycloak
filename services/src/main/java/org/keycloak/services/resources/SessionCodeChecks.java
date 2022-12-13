@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 
 import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE;
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 import java.net.URI;
 
@@ -185,7 +186,7 @@ public class SessionCodeChecks {
 
         if (userSession == null) {
             // fallback to check if there is an identity cookie
-            AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, false);
+            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session, () -> authenticateIdentityCookie(session, realm, false));
 
             if (authResult != null) {
                 userSession = authResult.getSession();
