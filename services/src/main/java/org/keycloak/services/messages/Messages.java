@@ -219,6 +219,8 @@ public class Messages {
 
     public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProviderMessage";
 
+    public static final String INVALID_TOKEN_REQUIRED_ACTIONS = "invalidTokenRequiredActions";
+
     public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityActionMessage";
 
     public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActiveMessage";
