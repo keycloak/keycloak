@@ -72,7 +72,7 @@ public class DefaultKeyProviders {
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         config.putSingle("priority", DEFAULT_PRIORITY);
         config.putSingle("keyUse", KeyUse.ENC.name());
-        config.putSingle("algorithm", JWEConstants.RSA_OAEP);
+        config.putSingle("algorithm", Algorithm.RSA_OAEP);
         generated.setConfig(config);
 
         realm.addComponentModel(generated);
@@ -123,6 +123,7 @@ public class DefaultKeyProviders {
             rsa.setProviderType(KeyProvider.class.getName());
 
             MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("keyUse", KeyUse.SIG.getSpecName());
             config.putSingle("priority", DEFAULT_PRIORITY);
             config.putSingle("privateKey", privateKeyPem);
             if (certificatePem != null) {
@@ -131,6 +132,25 @@ public class DefaultKeyProviders {
             rsa.setConfig(config);
 
             realm.addComponentModel(rsa);
+        }
+
+        if (!hasProvider(realm, "rsa-enc")) {
+            ComponentModel rsaEnc = new ComponentModel();
+            rsaEnc.setName("rsa-enc");
+            rsaEnc.setParentId(realm.getId());
+            rsaEnc.setProviderId("rsa-enc");
+            rsaEnc.setProviderType(KeyProvider.class.getName());
+
+            MultivaluedHashMap<String, String> configEnc = new MultivaluedHashMap<>();
+            configEnc.putSingle("keyUse", KeyUse.ENC.getSpecName());
+            configEnc.putSingle("priority", "100");
+            configEnc.putSingle("privateKey", privateKeyPem);
+            if (certificatePem != null) {
+                configEnc.putSingle("certificate", certificatePem);
+            }
+            rsaEnc.setConfig(configEnc);
+
+            realm.addComponentModel(rsaEnc);
         }
 
         createSecretProvider(realm);
