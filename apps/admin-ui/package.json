@@ -99,7 +99,7 @@
     "@types/react": "^17.0.45",
     "@types/react-dom": "^17.0.16",
     "@types/react-router-dom": "^5.3.3",
-    "@vitejs/plugin-react": "^2.2.0",
+    "@vitejs/plugin-react": "^3.0.0",
     "cypress": "^11.2.0",
     "del": "^7.0.0",
     "jsdom": "^20.0.3",
