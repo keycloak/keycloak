@@ -77,7 +77,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void privateKeyOnlyForEnc() throws Exception {
-        privateKeyOnly(ImportedRsaEncKeyProviderFactory.ID, KeyUse.ENC, JWEConstants.RSA_OAEP);
+        privateKeyOnly(ImportedRsaEncKeyProviderFactory.ID, KeyUse.ENC, Algorithm.RSA_OAEP);
     }
 
     private void privateKeyOnly(String providerId, KeyUse keyUse, String algorithm) throws Exception {
