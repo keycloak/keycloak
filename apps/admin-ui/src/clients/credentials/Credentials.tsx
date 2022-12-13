@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 import {
-  Alert,
   ActionGroup,
+  Alert,
   AlertVariant,
   Button,
   Card,
@@ -18,20 +18,21 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext, useWatch } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
-import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
+
 import "./credentials.css";
+import { FormFields } from "../ClientDetails";
 
 type AccessToken = {
   registrationAccessToken: string;
@@ -57,7 +58,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     control,
     formState: { isDirty },
     handleSubmit,
-  } = useFormContext<ClientRepresentation>();
+  } = useFormContext<FormFields>();
 
   const clientAuthenticatorType = useWatch({
     control: control,
@@ -158,23 +159,23 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
                 name="clientAuthenticatorType"
                 control={control}
                 defaultValue=""
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <Select
                     toggleId="kc-client-authenticator-type"
                     required
                     onToggle={isOpen}
                     onSelect={(_, value) => {
-                      onChange(value as string);
+                      field.onChange(value as string);
                       isOpen(false);
                     }}
-                    selections={value}
+                    selections={field.value}
                     variant={SelectVariant.single}
                     aria-label={t("clientAuthenticator")}
                     isOpen={open}
                   >
                     {providers.map((option) => (
                       <SelectOption
-                        selected={option.id === value}
+                        selected={option.id === field.value}
                         key={option.id}
                         value={option.id}
                       >
