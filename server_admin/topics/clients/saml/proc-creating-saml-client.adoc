@@ -151,6 +151,8 @@ This tab has many fields for specific situations.  Some fields are covered in ot
 
 *Logout Service Artifact Binding URL*:: _Artifact_ Binding URL for the Logout Service. When set together with the `Force Artifact Binding` option, _Artifact_ binding is forced for both login and logout flows. _Artifact_ binding is not used for logout unless this property is set.
 
+*Logout Service SOAP Binding URL*::  Redirect Binding URL for the Logout Service. Only applicable if *back channel logout* is used.
+
 *Artifact Binding URL*:: URL to send the HTTP artifact messages to.
 
 *Artifact Resolution Service*:: URL of the client SOAP endpoint where to send the `ArtifactResolve` messages to.
