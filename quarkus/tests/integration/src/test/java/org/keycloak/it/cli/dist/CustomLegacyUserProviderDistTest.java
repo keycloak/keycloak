@@ -23,7 +23,8 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.TestProvider;
-import com.acme.provider.user.CustomUserProvider;
+import com.acme.provider.legacy.jpa.entity.CustomLegacyJpaEntityProvider;
+import com.acme.provider.legacy.jpa.user.CustomLegacyUserProvider;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -31,15 +32,14 @@ import io.quarkus.test.junit.main.LaunchResult;
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @LegacyStore
-public class CustomJpaUserProviderDistTest {
+public class CustomLegacyUserProviderDistTest {
 
     @Test
-    @TestProvider(CustomUserProvider.class)
-    @Launch({ "start-dev", "--log-level=org.hibernate.jpa.internal.util.LogHelper:debug" })
+    @TestProvider(CustomLegacyUserProvider.class)
+    @Launch({ "start-dev", "--spi-user-provider=custom_jpa --spi-user-jpa-enabled=false" })
     void testUserManagedEntityNotAddedToDefaultPU(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertStringCount("name: user-store", 1);
-        cliResult.assertStringCount("com.acme.provider.user.Realm", 1);
+        cliResult.assertMessage("KC-SERVICES0047: custom_jpa (com.acme.provider.legacy.jpa.user.MyUserProviderFactory) is implementing the internal SPI user. This SPI is internal and may change without notice");
         cliResult.assertStartedDevMode();
     }
 }

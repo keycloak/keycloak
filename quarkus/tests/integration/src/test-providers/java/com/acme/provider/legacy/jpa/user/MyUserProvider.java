@@ -15,21 +15,15 @@
  * limitations under the License.
  */
 
-package com.acme.provider.user;
+package com.acme.provider.legacy.jpa.user;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.EntityManager;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.jpa.JpaUserProvider;
 
-@Entity
-public class Realm {
-    @Id
-    private String id;
+public class MyUserProvider extends JpaUserProvider {
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public MyUserProvider(KeycloakSession session, EntityManager em) {
+        super(session, em);
     }
 }

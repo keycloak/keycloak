@@ -15,21 +15,24 @@
  * limitations under the License.
  */
 
-package com.acme.provider.user;
+package com.acme.provider.legacy.jpa.user;
 
-import java.util.Collections;
-import java.util.Map;
-import org.keycloak.it.TestProvider;
+import javax.persistence.EntityManager;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.JpaUserProviderFactory;
 
-public class CustomUserProvider implements TestProvider {
+public class MyUserProviderFactory extends JpaUserProviderFactory {
 
     @Override
-    public Class[] getClasses() {
-        return new Class[] { Realm.class };
+    public UserProvider create(KeycloakSession session) {
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        return new MyUserProvider(session, em);
     }
 
     @Override
-    public Map<String, String> getManifestResources() {
-        return Collections.singletonMap("persistence.xml", "persistence.xml");
+    public String getId() {
+        return "custom_jpa";
     }
 }
