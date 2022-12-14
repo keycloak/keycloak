@@ -123,7 +123,7 @@ jobs:
         uses: ./.github/actions/checks-success
 
   check:
-    name: Check
+    name: Status Check - CodeQL
     if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
     needs: [changes, java, js-adapter, themes]
     runs-on: ubuntu-latest

@@ -211,7 +211,7 @@ jobs:
         uses: ./.github/actions/checks-success
 
   check:
-    name: Check
+    name: Status Check - Keycloak Operator CI
     if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
     needs: [check-set-status]
     runs-on: ubuntu-latest
