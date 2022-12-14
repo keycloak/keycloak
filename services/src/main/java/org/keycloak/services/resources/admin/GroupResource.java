@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.Urls;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -169,8 +170,12 @@ public class GroupResource {
             child = realm.createGroup(groupName, group);
             updateGroup(rep, child, realm, session);
             URI uri = session.getContext().getUri().getBaseUriBuilder()
-                                           .path(session.getContext().getUri().getMatchedURIs().get(2))
-                                           .path(child.getId()).build();
+                    .path(AdminRoot.class)
+                    .path(AdminRoot.class, "getRealmsAdmin")
+                    .path(RealmsAdminResource.class, "getRealmAdmin")
+                    .path(RealmAdminResource.class, "getGroups")
+                    .path(GroupsResource.class, "getGroupById")
+                    .build(realm.getName(), child.getId());
             builder.status(201).location(uri);
             rep.setId(child.getId());
             adminEvent.operation(OperationType.CREATE);

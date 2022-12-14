@@ -16,7 +16,7 @@
  */
 package org.keycloak.broker.provider;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;

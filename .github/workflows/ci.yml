@@ -14,8 +14,9 @@ env:
   MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
 
 concurrency:
-  # Only run once for latest commit per ref and cancel other (previous) runs.
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only cancel jobs for new commits on PRs, and always do a complete run on other branches (e.g. `main`).
+  # See: https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
+  group: keycloak-ci-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -339,7 +340,7 @@ jobs:
           PARAMS["bcfips-nonapproved-pkcs12"]="-Pauth-server-quarkus,auth-server-fips140-2"
           # Tests in the package "forms" and some keystore related tests
           TESTGROUP["group1"]="-Dtest=org.keycloak.testsuite.forms.**,ClientAuthSignedJWTTest,CredentialsTest,JavaKeystoreKeyProviderTest,ServerInfoTest,UserFederationLdapConnectionTest,LDAPUserLoginTest"
-          TESTGROUP["group2"]="-Dtest=org.keycloak.testsuite.x509.**,MutualTLSClientTest,FAPI1Test,FAPICIBATest" # Tests for X.509 authentication with users and clients
+          TESTGROUP["group2"]="-Dtest=org.keycloak.testsuite.x509.**,MutualTLSClientTest,FAPI1Test,FAPICIBATest,KcRegTest,KcRegCreateTest,KcAdmTest,KcAdmCreateTest"   # Tests for X.509 authentication with users and clients and CLI tests
           
           ./mvnw clean install -nsu -B ${PARAMS["${{ matrix.server }}"]} ${TESTGROUP["${{ matrix.tests }}"]} -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
           
@@ -473,7 +474,7 @@ jobs:
 
       - name: Run Quarkus Tests in Docker
         run: |
-          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.dist=docker | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.dist=docker -Dtest=StartCommandDistTest | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           exit $TEST_RESULT
 

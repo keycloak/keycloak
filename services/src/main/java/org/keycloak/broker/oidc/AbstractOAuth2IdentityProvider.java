@@ -19,7 +19,7 @@ package org.keycloak.broker.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
@@ -136,7 +136,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
-        return Response.ok(identity.getToken()).build();
+        return Response.ok(identity.getToken()).type(MediaType.APPLICATION_JSON).build();
     }
 
     @Override
@@ -470,7 +470,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             this.provider = provider;
             this.session = provider.session;
             this.clientConnection = session.getContext().getConnection();
-            this.httpRequest = session.getContext().getContextObject(HttpRequest.class);
+            this.httpRequest = session.getContext().getHttpRequest();
             this.headers = session.getContext().getRequestHeaders();
         }
 

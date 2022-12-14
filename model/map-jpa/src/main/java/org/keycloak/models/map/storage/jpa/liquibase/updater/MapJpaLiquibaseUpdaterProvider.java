@@ -181,13 +181,15 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
         if (modelName.equals("auth-events") || modelName.equals("admin-events"))
             modelName = "events";
 
-        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnectionFromPool(connection));
-        try {
+        // This acts on the unwrapped database connection as Liquibase will commit and rollback the transaction as needed.
+        // Otherwise, the connection will not recover from an SQL error when running for example on a PostgreSQL database.
+        // This was needed when adding support for JTA
+        try (Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnectionFromPool(connection.unwrap(Connection.class)))) {
             // if the database is cockroachdb, use the aggregate changelog (see GHI #11230).
             String changelog = database instanceof CockroachDatabase ? "META-INF/jpa-aggregate-changelog.xml" : "META-INF/jpa-" + modelName + "-changelog.xml";
             return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelog, this.getClass().getClassLoader(), "databasechangelog");
-        } finally {
-            database.close();
+        } catch (SQLException e) {
+            throw new LiquibaseException(e);
         }
     }
 

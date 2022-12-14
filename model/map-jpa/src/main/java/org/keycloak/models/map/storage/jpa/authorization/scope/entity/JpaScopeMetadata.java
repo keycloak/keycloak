@@ -27,7 +27,7 @@ public class JpaScopeMetadata extends MapScopeEntityImpl implements Serializable
     }
 
     public JpaScopeMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

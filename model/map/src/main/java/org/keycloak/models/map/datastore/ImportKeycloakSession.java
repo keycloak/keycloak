@@ -66,6 +66,7 @@ import org.keycloak.vault.VaultTranscriber;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -197,6 +198,11 @@ public class ImportKeycloakSession implements KeycloakSession {
     @Override
     public void setAttribute(String name, Object value) {
         session.setAttribute(name, value);
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return session.getAttributes();
     }
 
     @Override

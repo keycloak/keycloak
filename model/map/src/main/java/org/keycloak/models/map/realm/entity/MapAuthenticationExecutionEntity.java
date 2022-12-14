@@ -29,7 +29,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 public interface MapAuthenticationExecutionEntity extends UpdatableEntity, AbstractEntity {
     static MapAuthenticationExecutionEntity fromModel(AuthenticationExecutionModel model) {
         if (model == null) return null;
-        MapAuthenticationExecutionEntity entity = new MapAuthenticationExecutionEntityImpl();
+        MapAuthenticationExecutionEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapAuthenticationExecutionEntity.class);
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setAuthenticator(model.getAuthenticator());

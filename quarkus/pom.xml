@@ -31,25 +31,12 @@
     <packaging>pom</packaging>
 
     <properties>
-        <!--
-            Do not change the properties bellow.
-            Their names should match the name used by Quarkus BOM and the versions are automatically set when running the 'set-quarkus-version.sh' script.
-        -->
-        <resteasy.version>4.7.7.Final</resteasy.version>
-        <hibernate-orm.version>5.6.14.Final</hibernate-orm.version>
-        <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
-        <postgresql-jdbc.version>42.5.0</postgresql-jdbc.version>
         <wildfly-common.version>1.5.4.Final-format-001</wildfly-common.version>
-        <wildfly-elytron.version>1.20.1.Final</wildfly-elytron.version>
-        <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
 
         <!--
             We need to override certain dependencies from the parent POM.
             TODO: remove these properties after changing the parent POM to use the same property names used by Quarkus BOM.
         -->
-        <hibernate.core.version>${hibernate-orm.version}</hibernate.core.version>
-        <mysql.driver.version>${mysql-jdbc.version}</mysql.driver.version>
-        <postgresql.version>${postgresql-jdbc.version}</postgresql.version>
         <wildfly.common.version>${wildfly-common.version}</wildfly.common.version>
 
         <!--
@@ -70,9 +57,6 @@
         <maven.compiler.release>11</maven.compiler.release>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-
-        <!-- Needs to be aligned with Quarkus, see e.g. https://github.com/quarkusio/quarkus-quickstarts/blob/2.7.6.Final/getting-started-async/pom.xml#L14 -->
-        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -106,6 +90,7 @@
                 <artifactId>infinispan-client-hotrod</artifactId>
                 <version>${infinispan.version}</version>
             </dependency>
+
 
             <!-- Dependencies removed from JDK 11 and in compliance with those used by Wildfly. -->
             <dependency>

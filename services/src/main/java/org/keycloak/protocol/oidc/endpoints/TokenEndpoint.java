@@ -18,8 +18,8 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -164,8 +164,8 @@ public class TokenEndpoint {
         this.tokenManager = tokenManager;
         this.realm = session.getContext().getRealm();
         this.event = event;
-        this.request = session.getContext().getContextObject(HttpRequest.class);
-        this.httpResponse = session.getContext().getContextObject(HttpResponse.class);
+        this.request = session.getContext().getHttpRequest();
+        this.httpResponse = session.getContext().getHttpResponse();
         this.headers = session.getContext().getRequestHeaders();
     }
 
@@ -201,9 +201,8 @@ public class TokenEndpoint {
         // https://tools.ietf.org/html/rfc6749#section-5.1
         // The authorization server MUST include the HTTP "Cache-Control" response header field
         // with a value of "no-store" as well as the "Pragma" response header field with a value of "no-cache".
-        MultivaluedMap<String, Object> outputHeaders = httpResponse.getOutputHeaders();
-        outputHeaders.putSingle("Cache-Control", "no-store");
-        outputHeaders.putSingle("Pragma", "no-cache");
+        httpResponse.setHeader("Cache-Control", "no-store");
+        httpResponse.setHeader("Pragma", "no-cache");
 
         checkSsl();
         checkRealm();
