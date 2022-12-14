@@ -1,0 +1,17 @@
+name: NPM Cache
+description: Caches NPM artifacts
+
+runs:
+  using: composite
+  steps:
+    - id: weekly-cache-key
+      name: Key for weekly rotation of cache
+      shell: bash
+      run: echo "key=npm-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
+
+    - id: cache-npm-repository
+      name: NPM cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ steps.weekly-cache-key.outputs.key }}
