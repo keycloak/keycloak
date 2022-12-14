@@ -13,7 +13,7 @@ on:
 env:
   DEFAULT_JDK_VERSION: 11
   DEFAULT_JDK_DIST: temurin
-  MINIKUBE_VERSION: v1.24.0
+  MINIKUBE_VERSION: v1.28.0
   KUBERNETES_VERSION: v1.22.3
 
 defaults:
@@ -56,7 +56,7 @@ jobs:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.7.1
+        uses: manusa/actions-setup-minikube@v2.7.2
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -103,7 +103,7 @@ jobs:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.7.1
+        uses: manusa/actions-setup-minikube@v2.7.2
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -149,7 +149,7 @@ jobs:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.7.1
+        uses: manusa/actions-setup-minikube@v2.7.2
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
