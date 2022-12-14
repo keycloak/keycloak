@@ -1332,7 +1332,7 @@ public class TokenManager {
     /**
      * Check if access token was revoked with OAuth revocation endpoint
      */
-    public static class TokenRevocationCheck implements TokenVerifier.Predicate<AccessToken> {
+    public static class TokenRevocationCheck implements TokenVerifier.Predicate<JsonWebToken> {
 
         private final KeycloakSession session;
 
@@ -1341,7 +1341,7 @@ public class TokenManager {
         }
 
         @Override
-        public boolean test(AccessToken token) {
+        public boolean test(JsonWebToken token) {
             SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
             return !singleUseStore.contains(token.getId() + SingleUseObjectProvider.REVOKED_KEY);
         }
