@@ -6,7 +6,7 @@ if [ "$GROUP" == "" ]; then
   exit
 fi
 
-cd `readlink -f "$0" | xargs dirname`
+cd "`readlink -f "$0" | xargs dirname`"
 
 TESTSUITE_FILE='base-suite'
 TEST_DIR='../src/test/java/org/keycloak/testsuite'
