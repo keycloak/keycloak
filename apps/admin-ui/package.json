@@ -83,7 +83,7 @@
     "use-react-router-breadcrumbs": "^2.0.2"
   },
   "devDependencies": {
-    "@4tw/cypress-drag-drop": "^2.2.2",
+    "@4tw/cypress-drag-drop": "^2.2.3",
     "@babel/core": "^7.20.5",
     "@babel/preset-env": "^7.20.2",
     "@cypress/webpack-batteries-included-preprocessor": "^2.3.0",
