@@ -1,0 +1,49 @@
+name: Changed Files
+description: Checks changes against target branch
+
+outputs:
+  java:
+    description: Changes to Java files
+    value: ${{ steps.changes.outputs.java }}
+  themes:
+    description: Changes to themes
+    value: ${{ steps.changes.outputs.themes }}
+  js-adapter:
+    description: Changes to JavaScript adapter
+    value: ${{ steps.changes.outputs.js-adapter }}
+
+runs:
+  using: composite
+  steps:
+    - id: changes
+      name: Find changes
+      shell: bash
+      run: |
+        BASE_REF=${{ github.base_ref }}
+
+        changed () {
+          git diff --name-only origin/${{ github.base_ref }} | grep -E "$1" &>/dev/null && echo true || echo false
+        }
+        
+        if [ "$BASE_REF" != "" ]; then
+          echo "Checking changes against orgin/$BASE_REF"
+          git fetch origin
+
+          JAVA=`changed '^.*/.*.java$'`
+          THEMES=`changed '^themes/src/main/.*$'`
+          JS_ADAPTER=`changed '^adapters/oidc/js/.*$'`
+        else
+          echo "Not a pull request, marking everything as changed"
+        
+          JAVA=true
+          THEMES=true
+          JS_ADAPTER=true        
+        fi
+        
+        echo "Java changed:       $JAVA"
+        echo "Themes changed:     $THEMES"
+        echo "JS adapter changed: $JS_ADAPTER"
+
+        echo "java=$JAVA" >> $GITHUB_OUTPUT
+        echo "themes=$THEMES" >> $GITHUB_OUTPUT
+        echo "js-adapter=$JS_ADAPTER" >> $GITHUB_OUTPUT
