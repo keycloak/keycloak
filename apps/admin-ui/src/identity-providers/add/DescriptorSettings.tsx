@@ -4,6 +4,7 @@ import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
   ExpandableSection,
   FormGroup,
+  NumberInput,
   Select,
   SelectOption,
   SelectVariant,
@@ -472,15 +473,31 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="allowedClockSkew"
         helperTextInvalid={t("common:required")}
       >
-        <KeycloakTextInput
-          type="number"
-          min="0"
-          max="2147483"
-          id="allowedClockSkew"
-          data-testid="allowedClockSkew"
+        <Controller
           name="config.allowedClockSkew"
-          ref={register}
-          isReadOnly={readOnly}
+          defaultValue={0}
+          control={control}
+          render={({ onChange, value }) => {
+            const v = Number(value);
+            return (
+              <NumberInput
+                data-testid="allowedClockSkew"
+                inputName="allowedClockSkew"
+                min={0}
+                max={2147483}
+                value={v}
+                readOnly
+                onPlus={() => onChange(v + 1)}
+                onMinus={() => onChange(v - 1)}
+                onChange={(event) => {
+                  const value = Number(
+                    (event.target as HTMLInputElement).value
+                  );
+                  onChange(value < 0 ? 0 : value);
+                }}
+              />
+            );
+          }}
         />
       </FormGroup>
 
@@ -495,15 +512,31 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="attributeConsumingServiceIndex"
         helperTextInvalid={t("common:required")}
       >
-        <KeycloakTextInput
-          type="number"
-          min="0"
-          max="65535"
-          id="attributeConsumingServiceIndex"
-          data-testid="attributeConsumingServiceIndex"
+        <Controller
           name="config.attributeConsumingServiceIndex"
-          ref={register}
-          isReadOnly={readOnly}
+          defaultValue={0}
+          control={control}
+          render={({ onChange, value }) => {
+            const v = Number(value);
+            return (
+              <NumberInput
+                data-testid="attributeConsumingServiceIndex"
+                inputName="attributeConsumingServiceIndex"
+                min={0}
+                max={2147483}
+                value={v}
+                readOnly
+                onPlus={() => onChange(v + 1)}
+                onMinus={() => onChange(v - 1)}
+                onChange={(event) => {
+                  const value = Number(
+                    (event.target as HTMLInputElement).value
+                  );
+                  onChange(value < 0 ? 0 : value);
+                }}
+              />
+            );
+          }}
         />
       </FormGroup>
 

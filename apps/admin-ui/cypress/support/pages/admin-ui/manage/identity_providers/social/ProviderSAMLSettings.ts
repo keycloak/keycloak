@@ -224,15 +224,15 @@ export default class ProviderSAMLSettings extends PageObject {
 
   public assertTextFields() {
     cy.findByTestId(this.allowedClockSkew)
-      .click()
-      .type("not a number")
-      .should("be.empty")
+      .find("input")
+      .should("have.value", 0)
+      .clear()
       .type("111");
 
     cy.findByTestId(this.attributeConsumingServiceIndex)
-      .click()
-      .type("not a number")
-      .should("be.empty")
+      .find("input")
+      .should("have.value", 0)
+      .clear()
       .type("111");
 
     cy.findByTestId(this.attributeConsumingServiceName).click().type("name");

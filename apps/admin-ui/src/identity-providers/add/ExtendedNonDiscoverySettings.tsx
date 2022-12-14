@@ -91,23 +91,29 @@ export const ExtendedNonDiscoverySettings = () => {
         >
           <Controller
             name="config.allowedClockSkew"
-            control={control}
             defaultValue={0}
-            render={({ onChange, value }) => (
-              <NumberInput
-                value={value}
-                data-testid="allowedClockSkew"
-                onMinus={() => onChange(value - 1)}
-                onChange={onChange}
-                onPlus={() => onChange(value + 1)}
-                inputName="input"
-                inputAriaLabel={t("allowedClockSkew")}
-                minusBtnAriaLabel={t("common:minus")}
-                plusBtnAriaLabel={t("common:plus")}
-                min={0}
-                unit={t("common:times.seconds")}
-              />
-            )}
+            control={control}
+            render={({ onChange, value }) => {
+              const v = Number(value);
+              return (
+                <NumberInput
+                  data-testid="allowedClockSkew"
+                  inputName="allowedClockSkew"
+                  min={0}
+                  max={2147483}
+                  value={v}
+                  readOnly
+                  onPlus={() => onChange(v + 1)}
+                  onMinus={() => onChange(v - 1)}
+                  onChange={(event) => {
+                    const value = Number(
+                      (event.target as HTMLInputElement).value
+                    );
+                    onChange(value < 0 ? 0 : value);
+                  }}
+                />
+              );
+            }}
           />
         </FormGroup>
         <TextField field="config.forwardParameters" label="forwardParameters" />
