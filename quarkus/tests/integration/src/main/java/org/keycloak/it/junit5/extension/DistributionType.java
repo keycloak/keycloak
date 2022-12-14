@@ -40,6 +40,7 @@ public enum DistributionType {
         return new RawKeycloakDistribution(
                 config.debug(),
                 config.keepAlive(),
+                config.enableTls(),
                 !DistributionTest.ReInstall.NEVER.equals(config.reInstall()),
                 config.removeBuildOptionsAfterBuild(),
                 config.createAdminUser());
