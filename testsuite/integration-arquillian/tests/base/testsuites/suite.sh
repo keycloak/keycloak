@@ -32,4 +32,4 @@ for i in `cat "$SUITE_FILE" | grep -v '^[[:space:]]*$' | grep -v '^[[:space:]]*#
   SEP=","
 done
 
-echo $TESTS
+echo "$TESTS"
