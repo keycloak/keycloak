@@ -44,11 +44,6 @@ jobs:
           check-latest: true
           cache: maven
 
-      # See https://issues.redhat.com/browse/KEYCLOAK-17812
-      - name: Update Maven settings
-        working-directory: keycloak-repo
-        run: cp .github/settings.xml ~/.m2
-
       - name: Build Admin UI
         working-directory: admin-ui-repo
         run: mvn clean install --batch-mode --file keycloak-theme/pom.xml
