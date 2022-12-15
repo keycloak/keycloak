@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  DEFAULT_JDK_VERSION: 11
+  DEFAULT_JDK_VERSION: 17
   DEFAULT_JDK_DIST: temurin
   SUREFIRE_RERUN_FAILING_COUNT: 2
 
@@ -156,7 +156,7 @@ jobs:
     strategy:
       matrix:
         dist: [temurin]
-        version: [17, 19]
+        version: [11, 19]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -176,6 +176,10 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
           ./mvnw test -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+      - name: Build with JDK
+        run:
+          ./mvnw install -nsu -B -e -DskipTests -DskipExamples
 
       - name: Upload JVM Heapdumps
         if: always()
