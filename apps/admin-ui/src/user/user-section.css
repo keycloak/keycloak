@@ -52,7 +52,7 @@ button#kc-join-groups-button {
 
 .kc-consents-chip > .pf-c-chip__text {
   font-size: var(--pf-c-table--cell--FontSize);
-  display: inline-block;
+  max-width: 100%;
 }
 
 .pf-c-chip-group.kc-consents-chip-group
@@ -142,4 +142,8 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
 
 .kc-username-view-header {
   overflow-wrap: anywhere;
+}
+
+.pf-c-table tbody > tr > * {
+  white-space: nowrap;
 }
