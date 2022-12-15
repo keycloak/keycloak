@@ -3,7 +3,7 @@ actions,1
 adapter,2
 admin,1
 authz,3
-broker,3
+broker,2
 cli,4
 client,4
 cluster,IGNORED
