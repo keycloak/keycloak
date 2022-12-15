@@ -1,0 +1,20 @@
+name: Upload Surefire reports
+description: Upload Surefire reports to Foresight
+
+inputs:
+  api-key:
+    description: Foresight API key
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - id: upload-to-foresight
+      name: Upload Surefire reports to Foresight
+      uses: runforesight/foresight-test-kit-action@v1.3.1
+      if: github.repository == 'keycloak/keycloak'
+      with:
+        api_key: ${{ inputs.api-key }}
+        test_format: JUNIT
+        test_framework: JUNIT
+        test_path: '**/target/surefire-reports/*.xml'
