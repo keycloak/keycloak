@@ -55,6 +55,7 @@ jobs:
         if: always()
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
+          surefire-reports-path: '**/target/surefire-reports/*.xml'
 
   base-integration-tests:
     name: Base IT
@@ -84,6 +85,7 @@ jobs:
         if: always()
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
+          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -119,6 +121,7 @@ jobs:
         if: always()
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
+          surefire-reports-path: 'quarkus/tests/integration/target/surefire-reports/*.xml'
 
   jdk-integration-tests:
     name: Java Distribution IT
@@ -155,6 +158,7 @@ jobs:
         if: always()
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
+          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
   new-store-integration-tests:
     name: New Store IT
@@ -189,6 +193,7 @@ jobs:
         if: always()
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
+          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
   legacy-store-integration-tests:
     name: Legacy Store IT
@@ -218,6 +223,7 @@ jobs:
         if: always()
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
+          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
   store-model-tests:
     name: Store Model Tests
@@ -258,6 +264,7 @@ jobs:
         if: always()
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
+          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
   fips-unit-tests:
     name: FIPS UT
@@ -283,6 +290,7 @@ jobs:
         if: always()
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
+          surefire-reports-path: '**/target/surefire-reports/*.xml'
 
   fips-integration-tests:
     name: FIPS IT
@@ -311,6 +319,7 @@ jobs:
         if: always()
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
+          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
   check-set-status:
     name: Set check conclusion

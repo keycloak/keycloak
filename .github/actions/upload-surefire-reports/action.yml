@@ -5,6 +5,9 @@ inputs:
   api-key:
     description: Foresight API key
     required: false
+  surefire-reports-path:
+    description: Path to surefire-reports
+    required: true
 
 runs:
   using: composite
@@ -17,4 +20,4 @@ runs:
         api_key: ${{ inputs.api-key }}
         test_format: JUNIT
         test_framework: JUNIT
-        test_path: '**/target/surefire-reports/*.xml'
+        test_path: ${{ inputs.surefire-reports-path }}
