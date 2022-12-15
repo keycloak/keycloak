@@ -19,6 +19,8 @@ export default class AddMapperPage {
   private userSessionAttribute = "attribute";
   private userSessionAttributeValue = "attribute.value";
   private newMapperSaveButton = "new-mapper-save-button";
+  private newMapperCancelButton = "new-mapper-cancel-button";
+  private mappersUrl = "/oidc/mappers";
   private regexAttributeValuesSwitch = "are.attribute.values.regex";
   private syncmodeSelectToggle = "#syncMode";
   private attributesKeyInput = '[data-testid="config.attributes[0].key"]';
@@ -48,6 +50,11 @@ export default class AddMapperPage {
 
   saveNewMapper() {
     cy.findByTestId(this.newMapperSaveButton).click();
+    return this;
+  }
+
+  cancelNewMapper() {
+    cy.findByTestId(this.newMapperCancelButton).click();
     return this;
   }
 
@@ -393,6 +400,12 @@ export default class AddMapperPage {
 
     this.addRoleToMapperForm();
     this.saveNewMapper();
+
+    return this;
+  }
+
+  shouldGoToMappersTab() {
+    cy.url().should("include", this.mappersUrl);
 
     return this;
   }

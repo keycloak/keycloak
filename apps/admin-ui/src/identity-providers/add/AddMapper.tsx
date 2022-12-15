@@ -245,6 +245,7 @@ export default function AddMapper() {
             {t("common:save")}
           </Button>
           <Button
+            data-testid="new-mapper-cancel-button"
             variant="link"
             component={(props) => (
               <Link
@@ -253,7 +254,7 @@ export default function AddMapper() {
                   realm,
                   providerId,
                   alias: alias!,
-                  tab: "settings",
+                  tab: "mappers",
                 })}
               />
             )}
