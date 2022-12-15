@@ -92,7 +92,8 @@
                         <exclude/>
                     </excludes>
                     <!-- Surefire misses to pass on correct encoding to forked JVM, even though encoding is set correct. -->
-                    <argLine>-Dfile.encoding=UTF-8</argLine>
+                    <!-- https://issues.apache.org/jira/browse/SUREFIRE-951 -->
+                    <argLine>-Dfile.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError</argLine>
                 </configuration>
             </plugin>
         </plugins>
