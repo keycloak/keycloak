@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
+import { useFormContext } from "react-hook-form-v7";
 import { FormGroup } from "@patternfly/react-core";
 
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
@@ -15,7 +15,10 @@ export const StoreSettings = ({
   isSaml?: boolean;
 }) => {
   const { t } = useTranslation("clients");
-  const { register, errors } = useFormContext<KeyStoreConfig>();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<KeyStoreConfig>();
 
   return (
     <>
@@ -34,11 +37,9 @@ export const StoreSettings = ({
       >
         <KeycloakTextInput
           data-testid="keyAlias"
-          type="text"
           id="keyAlias"
-          name="keyAlias"
-          ref={register({ required: true })}
           validated={errors.keyAlias ? "error" : "default"}
+          {...register("keyAlias", { required: true })}
         />
       </FormGroup>
       {!hidePassword && (
@@ -58,9 +59,8 @@ export const StoreSettings = ({
           <PasswordInput
             data-testid="keyPassword"
             id="keyPassword"
-            name="keyPassword"
-            ref={register({ required: true })}
             validated={errors.keyPassword ? "error" : "default"}
+            {...register("keyPassword", { required: true })}
           />
         </FormGroup>
       )}
@@ -77,10 +77,8 @@ export const StoreSettings = ({
         >
           <KeycloakTextInput
             data-testid="realmCertificateAlias"
-            type="text"
             id="realmCertificateAlias"
-            name="realmAlias"
-            ref={register()}
+            {...register("realmAlias")}
           />
         </FormGroup>
       )}
@@ -100,9 +98,8 @@ export const StoreSettings = ({
         <PasswordInput
           data-testid="storePassword"
           id="storePassword"
-          name="storePassword"
-          ref={register({ required: true })}
           validated={errors.storePassword ? "error" : "default"}
+          {...register("storePassword", { required: true })}
         />
       </FormGroup>
     </>
