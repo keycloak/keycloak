@@ -6,6 +6,5 @@
 
 [allowlist]
   paths = [
-    '''saml-core/src/test/java/org/keycloak/saml/processing/core/saml/v2/util/AssertionUtilTest.java''',
-    '''testsuite/performance/tests/pom.xml''',
+    '''saml-core/src/test/java/org/keycloak/saml/processing/core/saml/v2/util/AssertionUtilTest.java'''
   ]
