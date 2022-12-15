@@ -58,6 +58,10 @@ jobs:
           
           ./mvnw test -nsu -B -pl "$PROJECTS" -am
 
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
       - id: upload-surefire-reports
         name: Upload Surefire reports
         uses: ./.github/actions/upload-surefire-reports
@@ -87,6 +91,10 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
           ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -128,6 +136,10 @@ jobs:
           ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
           ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
 
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
       - id: upload-surefire-reports
         name: Upload Surefire reports
         uses: ./.github/actions/upload-surefire-reports
@@ -164,6 +176,10 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
           ./mvnw test -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -218,6 +234,10 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
       - id: upload-surefire-reports
         name: Upload Surefire reports
         uses: ./.github/actions/upload-surefire-reports
@@ -248,6 +268,10 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
       - id: upload-surefire-reports
         name: Upload Surefire reports
         uses: ./.github/actions/upload-surefire-reports
@@ -271,6 +295,10 @@ jobs:
       - name: Run model tests
         run: testsuite/model/test-all-profiles.sh
 
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
   clustering-integration-tests:
     name: Legacy Clustering IT
     needs: build
@@ -288,6 +316,10 @@ jobs:
       - name: Run cluster tests
         run: |
           ./mvnw test -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -314,6 +346,10 @@ jobs:
 
       - name: Run crypto tests (BCFIPS approved mode)
         run: ./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -343,6 +379,10 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
           echo "Tests: $TESTS"
           ./mvnw test -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
