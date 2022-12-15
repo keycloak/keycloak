@@ -97,8 +97,7 @@ describe("Realm settings tabs tests", () => {
     cy.findByTestId("email-tab-save").click();
     cy.get("#kc-display-name-helper").contains("You must enter a valid email.");
     cy.get("#kc-host-helper").contains("Required field");
-    //revert
-    cy.wait(100);
+
     cy.findByTestId("email-tab-revert").click();
     cy.findByTestId("sender-email-address").should("be.empty");
     cy.findByTestId("from-display-name").should("be.empty");
