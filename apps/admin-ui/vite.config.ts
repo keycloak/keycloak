@@ -9,6 +9,7 @@ export default defineConfig({
     port: 8080,
   },
   build: {
+    sourcemap: true,
     target: "ES2022",
   },
   resolve: {
