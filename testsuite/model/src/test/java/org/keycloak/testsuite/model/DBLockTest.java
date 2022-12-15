@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -108,7 +107,6 @@ public class DBLockTest extends KeycloakModelTest {
     }
 
     @Test
-    @Ignore("Ignored as it is unstable. Analysis pending in https://github.com/keycloak/keycloak/issues/15487")
     public void testLockConcurrentlyGeneral() throws Exception {
         inComittedTransaction(1, (session , i) -> {
             testLockConcurrentlyInternal(session, DBLockProvider.Namespace.DATABASE);
@@ -117,7 +115,6 @@ public class DBLockTest extends KeycloakModelTest {
     }
 
     @Test
-    @Ignore("Ignored as it is unstable. Analysis pending in https://github.com/keycloak/keycloak/issues/15487")
     public void testLockConcurrentlyOffline() throws Exception {
         inComittedTransaction(1, (session , i) -> {
             testLockConcurrentlyInternal(session, DBLockProvider.Namespace.OFFLINE_SESSIONS);
