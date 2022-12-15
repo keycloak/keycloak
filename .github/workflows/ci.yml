@@ -13,6 +13,7 @@ on:
 env:
   DEFAULT_JDK_VERSION: 11
   DEFAULT_JDK_DIST: temurin
+  SUREFIRE_RERUN_FAILING_COUNT: 2
 
 concurrency:
   # Only cancel jobs for PR updates
@@ -77,7 +78,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw install -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -86,6 +87,11 @@ jobs:
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
           surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   quarkus-integration-tests:
     name: Quarkus IT
