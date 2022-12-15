@@ -49,6 +49,13 @@ jobs:
       - name: Run unit tests
         run: ./mvnw install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples
 
+      - id: upload-surefire-reports
+        name: Upload Surefire reports
+        uses: ./.github/actions/upload-surefire-reports
+        if: always()
+        with:
+          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+
   base-integration-tests:
     name: Base IT
     needs: build
@@ -70,6 +77,13 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
           ./mvnw install -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+      - id: upload-surefire-reports
+        name: Upload Surefire reports
+        uses: ./.github/actions/upload-surefire-reports
+        if: always()
+        with:
+          api-key: ${{ secrets.FORESIGHT_API_KEY }}
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -98,6 +112,13 @@ jobs:
 
           ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
           ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
+
+      - id: upload-surefire-reports
+        name: Upload Surefire reports
+        uses: ./.github/actions/upload-surefire-reports
+        if: always()
+        with:
+          api-key: ${{ secrets.FORESIGHT_API_KEY }}
 
   jdk-integration-tests:
     name: Java Distribution IT
@@ -128,6 +149,13 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw install -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
+      - id: upload-surefire-reports
+        name: Upload Surefire reports
+        uses: ./.github/actions/upload-surefire-reports
+        if: always()
+        with:
+          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+
   new-store-integration-tests:
     name: New Store IT
     needs: build
@@ -155,6 +183,13 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw install -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
+      - id: upload-surefire-reports
+        name: Upload Surefire reports
+        uses: ./.github/actions/upload-surefire-reports
+        if: always()
+        with:
+          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+
   legacy-store-integration-tests:
     name: Legacy Store IT
     needs: build
@@ -176,6 +211,13 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
           ./mvnw install -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+      - id: upload-surefire-reports
+        name: Upload Surefire reports
+        uses: ./.github/actions/upload-surefire-reports
+        if: always()
+        with:
+          api-key: ${{ secrets.FORESIGHT_API_KEY }}
 
   store-model-tests:
     name: Store Model Tests
@@ -210,6 +252,13 @@ jobs:
         run: |
           ./mvnw install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
 
+      - id: upload-surefire-reports
+        name: Upload Surefire reports
+        uses: ./.github/actions/upload-surefire-reports
+        if: always()
+        with:
+          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+
   fips-unit-tests:
     name: FIPS UT
     runs-on: ubuntu-latest
@@ -227,6 +276,13 @@ jobs:
 
       - name: Run crypto tests (BCFIPS approved mode)
         run: ./mvnw install -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
+
+      - id: upload-surefire-reports
+        name: Upload Surefire reports
+        uses: ./.github/actions/upload-surefire-reports
+        if: always()
+        with:
+          api-key: ${{ secrets.FORESIGHT_API_KEY }}
 
   fips-integration-tests:
     name: FIPS IT
@@ -248,6 +304,13 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
           echo "Tests: $TESTS"
           ./mvnw install -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+      - id: upload-surefire-reports
+        name: Upload Surefire reports
+        uses: ./.github/actions/upload-surefire-reports
+        if: always()
+        with:
+          api-key: ${{ secrets.FORESIGHT_API_KEY }}
 
   check-set-status:
     name: Set check conclusion
