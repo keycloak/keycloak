@@ -73,6 +73,22 @@ public class KeycloakSanitizerTest {
         html.set(0, "<p><a href=\"javascript:alert('hello!');\">link</a></p>");
         assertResult("<p>link</p>", html);
 
+        html.set(0, "<p><a href=\"javascript:alert(document.domain);\">link</a></p>");
+        assertResult("<p>link</p>", html);
+
+        html.set(0, "<p><a href=\"javascript&colon;alert(document.domain);\">link</a></p>");
+        assertResult("<p>link</p>", html);
+
+        // Effectively same as previous case, but with \0 character added
+        html.set(0, "<p><a href=\"javascript&\0colon;alert(document.domain);\">link</a></p>");
+        assertResult("<p>link</p>", html);
+
+        html.set(0, "<p><a href=\"javascript&amp;amp;\0colon;alert(document.domain);\">link</a></p>");
+        assertResult("<p>link</p>", html);
+
+        html.set(0, "<p><a href=\"javascript&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;\0colon;alert(document.domain);\">link</a></p>");
+        assertResult("", html);
+
         html.set(0, "<p><a href=\"https://localhost?key=123&msg=abc\">link</a></p>");
         assertResult("<p><a href=\"https://localhost?key=123&msg=abc\" rel=\"nofollow\">link</a></p>", html);
 
