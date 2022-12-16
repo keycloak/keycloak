@@ -1346,45 +1346,6 @@
         </profile>
 
         <profile>
-            <id>map-storage-hot-rod</id>
-            <properties>
-                <keycloak.testsuite.start-hotrod-container>true</keycloak.testsuite.start-hotrod-container>
-                <auth.server.quarkus.mapStorage.profile.config>hotrod</auth.server.quarkus.mapStorage.profile.config>
-            </properties>
-            <build>
-                <plugins>
-                </plugins>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <systemPropertyVariables>
-                                    <keycloak.authSession.map.storage.provider>hotrod</keycloak.authSession.map.storage.provider>
-                                    <keycloak.client.map.storage.provider>hotrod</keycloak.client.map.storage.provider>
-                                    <keycloak.clientScope.map.storage.provider>hotrod</keycloak.clientScope.map.storage.provider>
-                                    <keycloak.group.map.storage.provider>hotrod</keycloak.group.map.storage.provider>
-                                    <keycloak.role.map.storage.provider>hotrod</keycloak.role.map.storage.provider>
-                                    <keycloak.user.map.storage.provider>hotrod</keycloak.user.map.storage.provider>
-                                    <keycloak.loginFailure.map.storage.provider>hotrod</keycloak.loginFailure.map.storage.provider>
-                                    <keycloak.realm.map.storage.provider>hotrod</keycloak.realm.map.storage.provider>
-                                    <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
-                                    <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
-                                    <keycloak.eventStore.map.storage.provider>hotrod</keycloak.eventStore.map.storage.provider>
-                                    <keycloak.singleUseObject.map.storage.provider>hotrod</keycloak.singleUseObject.map.storage.provider>
-                                    <infinispan.version>${infinispan.version}</infinispan.version>
-                                    <keycloak.testsuite.start-hotrod-container>${keycloak.testsuite.start-hotrod-container}</keycloak.testsuite.start-hotrod-container>
-                                </systemPropertyVariables>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
-
-        <profile>
             <id>auth-server-profile</id>
             <activation>
                 <property>

@@ -211,10 +211,10 @@ jobs:
       - name: Run base tests
         run: |
           declare -A PARAMS
-          PARAMS["chm"]="-Pmap-storage -Dpageload.timeout=90000"
-          PARAMS["hot-rod"]="-Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
-          PARAMS["jpa-postgres"]="-Pmap-storage,map-storage-jpa-postgres -Dpageload.timeout=90000"
-          PARAMS["jpa-cockroach"]="-Pmap-storage,map-storage-jpa-cockroach -Dpageload.timeout=90000"
+          PARAMS["chm"]="-Pmap-storage-chm -Dpageload.timeout=90000"
+          PARAMS["hot-rod"]="-Pmap-storage-hot-rod -Dpageload.timeout=90000"
+          PARAMS["jpa-postgres"]="-Pmap-storage-jpa-postgres -Dpageload.timeout=90000"
+          PARAMS["jpa-cockroach"]="-Pmap-storage-jpa-cockroach -Dpageload.timeout=90000"
 
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"

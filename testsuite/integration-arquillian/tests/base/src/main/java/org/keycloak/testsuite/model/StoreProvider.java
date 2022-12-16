@@ -48,8 +48,8 @@ public enum StoreProvider {
         public void addStoreOptions(List<String> commands) {
             commands.add("--storage=" + getAlias());
             commands.add("--storage-hotrod-host='" + System.getProperty("keycloak.connectionsHotRod.host") + "'");
-            commands.add("--storage-hotrod-username" + System.getProperty("keycloak.connectionsHotRod.username"));
-            commands.add("--storage-hotrod-password" + System.getProperty("keycloak.connectionsHotRod.password"));
+            commands.add("--storage-hotrod-username=" + System.getProperty("keycloak.connectionsHotRod.username", "admin"));
+            commands.add("--storage-hotrod-password=" + System.getProperty("keycloak.connectionsHotRod.password", "admin"));
         }
     },
     LEGACY("legacy") {
