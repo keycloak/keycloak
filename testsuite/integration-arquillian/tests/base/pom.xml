@@ -779,7 +779,7 @@
             </build>
         </profile>
         <profile>
-            <id>map-storage</id>
+            <id>map-storage-chm</id>
             <build>
                 <plugins>
                     <plugin>
@@ -787,8 +787,10 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
+                                <!--
+                                The following properties needs to be synchronized across all map-storage profiles
+                                -->
                                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.mapStorage.provider>concurrenthashmap</keycloak.mapStorage.provider>
                                 <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
                                 <keycloak.realm.provider>map</keycloak.realm.provider>
                                 <keycloak.client.provider>map</keycloak.client.provider>
@@ -810,14 +812,17 @@
                                 <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
                                 <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
                                 <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
+                                <!--
+                                The end of the block synchronized across all map-storage profiles
+                                -->
+                                <keycloak.mapStorage.provider>concurrenthashmap</keycloak.mapStorage.provider>
                                 <auth.server.quarkus.mapStorage.profile.config>chm</auth.server.quarkus.mapStorage.profile.config>
-                          </systemPropertyVariables>
-                      </configuration>
+                            </systemPropertyVariables>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
-
         <profile>
             <id>map-storage-jpa-postgres</id>
             <properties>
@@ -826,24 +831,38 @@
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireActiveProfile>
-                                    <profiles>map-storage</profiles>
-                                    <message>map-storage profile not active</message>
-                                </requireActiveProfile>
-                            </rules>
-                        </configuration>
-                    </plugin>
-                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
+                                <!--
+                                The following properties needs to be synchronized across all map-storage profiles
+                                -->
+                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
+                                <keycloak.realm.provider>map</keycloak.realm.provider>
+                                <keycloak.client.provider>map</keycloak.client.provider>
+                                <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
+                                <keycloak.group.provider>map</keycloak.group.provider>
+                                <keycloak.role.provider>map</keycloak.role.provider>
+                                <keycloak.user.provider>map</keycloak.user.provider>
+                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
+                                <keycloak.authSession.provider>map</keycloak.authSession.provider>
+                                <keycloak.userSession.provider>map</keycloak.userSession.provider>
+                                <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
+                                <keycloak.authorization.provider>map</keycloak.authorization.provider>
+                                <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
+                                <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
+                                <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
+                                <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
+                                <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
+                                <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
+                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
+                                <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
+                                <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
+                                <!--
+                                The end of the block synchronized across all map-storage profiles
+                                -->
                                 <postgres.start-container>${postgres.start-container}</postgres.start-container>
 
                                 <keycloak.map.storage.connectionsJpa.url>${keycloak.map.storage.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
@@ -872,6 +891,68 @@
         </profile>
 
         <profile>
+            <id>map-storage-hot-rod</id>
+            <properties>
+                <keycloak.testsuite.start-hotrod-container>true</keycloak.testsuite.start-hotrod-container>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <!--
+                                The following properties needs to be synchronized across all map-storage profiles
+                                -->
+                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
+                                <keycloak.realm.provider>map</keycloak.realm.provider>
+                                <keycloak.client.provider>map</keycloak.client.provider>
+                                <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
+                                <keycloak.group.provider>map</keycloak.group.provider>
+                                <keycloak.role.provider>map</keycloak.role.provider>
+                                <keycloak.user.provider>map</keycloak.user.provider>
+                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
+                                <keycloak.authSession.provider>map</keycloak.authSession.provider>
+                                <keycloak.userSession.provider>map</keycloak.userSession.provider>
+                                <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
+                                <keycloak.authorization.provider>map</keycloak.authorization.provider>
+                                <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
+                                <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
+                                <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
+                                <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
+                                <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
+                                <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
+                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
+                                <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
+                                <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
+                                <!--
+                                The end of the block synchronized across all map-storage profiles
+                                -->
+                                <keycloak.authSession.map.storage.provider>hotrod</keycloak.authSession.map.storage.provider>
+                                <keycloak.client.map.storage.provider>hotrod</keycloak.client.map.storage.provider>
+                                <keycloak.clientScope.map.storage.provider>hotrod</keycloak.clientScope.map.storage.provider>
+                                <keycloak.group.map.storage.provider>hotrod</keycloak.group.map.storage.provider>
+                                <keycloak.role.map.storage.provider>hotrod</keycloak.role.map.storage.provider>
+                                <keycloak.user.map.storage.provider>hotrod</keycloak.user.map.storage.provider>
+                                <keycloak.loginFailure.map.storage.provider>hotrod</keycloak.loginFailure.map.storage.provider>
+                                <keycloak.realm.map.storage.provider>hotrod</keycloak.realm.map.storage.provider>
+                                <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
+                                <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
+                                <keycloak.eventStore.map.storage.provider>hotrod</keycloak.eventStore.map.storage.provider>
+                                <keycloak.singleUseObject.map.storage.provider>hotrod</keycloak.singleUseObject.map.storage.provider>
+                                <infinispan.version>${infinispan.version}</infinispan.version>
+                                <keycloak.testsuite.start-hotrod-container>${keycloak.testsuite.start-hotrod-container}</keycloak.testsuite.start-hotrod-container>
+                                <auth.server.quarkus.mapStorage.profile.config>hotrod</auth.server.quarkus.mapStorage.profile.config>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>map-storage-jpa-cockroach</id>
             <properties>
                 <cockroachdb.start-container>true</cockroachdb.start-container>
@@ -880,24 +961,38 @@
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireActiveProfile>
-                                    <profiles>map-storage</profiles>
-                                    <message>map-storage profile not active</message>
-                                </requireActiveProfile>
-                            </rules>
-                        </configuration>
-                    </plugin>
-                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
+                                <!--
+                                The following properties needs to be synchronized across all map-storage profiles
+                                -->
+                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
+                                <keycloak.realm.provider>map</keycloak.realm.provider>
+                                <keycloak.client.provider>map</keycloak.client.provider>
+                                <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
+                                <keycloak.group.provider>map</keycloak.group.provider>
+                                <keycloak.role.provider>map</keycloak.role.provider>
+                                <keycloak.user.provider>map</keycloak.user.provider>
+                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
+                                <keycloak.authSession.provider>map</keycloak.authSession.provider>
+                                <keycloak.userSession.provider>map</keycloak.userSession.provider>
+                                <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
+                                <keycloak.authorization.provider>map</keycloak.authorization.provider>
+                                <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
+                                <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
+                                <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
+                                <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
+                                <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
+                                <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
+                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
+                                <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
+                                <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
+                                <!--
+                                The end of the block synchronized across all map-storage profiles
+                                -->
                                 <cockroachdb.start-container>${cockroachdb.start-container}</cockroachdb.start-container>
 
                                 <keycloak.map.storage.connectionsJpa.url>${keycloak.map.storage.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
