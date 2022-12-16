@@ -8,6 +8,7 @@ runs:
       name: Find flaky tests
       if: github.repository == 'keycloak/keycloak'
       shell: bash
+      # language=bash
       run: |
         REPO="${{ github.repository }}"
         ISSUES_LINK="https://github.com/${{ github.repository }}/issues/"
@@ -22,7 +23,7 @@ runs:
               TITLE="Flaky test: $TEST"
               BODY="$RUN"$'\n''```'$'\n'"$LOG"$'\n''```'
               ISSUE="$(gh issue list --search "$TITLE in:title" --json number --jq .[].number)"
-
+        
               if [ "$PR" == "" ]; then        
                 if [ "$ISSUE" == "" ]; then
                   LINK="$(gh issue create -t "$TITLE" -b "$BODY" -l "kind/bug,area/ci,flaky-test" | grep $ISSUES_LINK)"
