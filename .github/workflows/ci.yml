@@ -55,7 +55,7 @@ jobs:
             PROJECTS="$PROJECTS$SEP$i"
             SEP=","
           done
-          
+
           ./mvnw test -nsu -B -pl "$PROJECTS" -am
 
       - name: Upload JVM Heapdumps
@@ -199,7 +199,7 @@ jobs:
           # For PRs, run only PostgreSQL, on branches and nightly runs run all databases
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo 'db=["chm", "hot-rod", "jpa-postgres"]' >> $GITHUB_OUTPUT
-          else 
+          else
             echo 'db=["chm", "hot-rod", "jpa-postgres", "jpa-cockroach"]' >> $GITHUB_OUTPUT
           fi
     outputs:
@@ -253,7 +253,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        db: [postgres, mysql] # 'mariadb' is not always shutting down, 'mssql', 'oracle11g' containers not available
+        db: [postgres, mysql, oracle] # 'mariadb' is not always shutting down, 'mssql' container not available yet
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
