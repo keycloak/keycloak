@@ -141,10 +141,12 @@ public class UserInfoEndpoint {
         authorization(accessToken);
 
         try {
-            MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
-            checkAccessTokenDuplicated(formParams);
-            accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-            authorization(accessToken);
+            if (MediaType.APPLICATION_FORM_URLENCODED.equalsIgnoreCase(headers.getHeaderString(HttpHeaders.CONTENT_TYPE))) {
+                MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
+                checkAccessTokenDuplicated(formParams);
+                accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
+                authorization(accessToken);  
+            }
         } catch (IllegalArgumentException e) {
             // not application/x-www-form-urlencoded, ignore
         }
