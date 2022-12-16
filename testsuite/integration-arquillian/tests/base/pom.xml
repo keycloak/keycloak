@@ -365,7 +365,7 @@
                                         <wait>
                                             <!-- Do not use waiting for port since that is unreliable, sometimes port is listening before DB is ready to serve -->
                                             <log>${docker.database.wait-for-log-regex}</log>
-                                            <time>300000</time>
+                                            <time>900000</time>
                                             <exec>
                                               <postStart>${docker.database.postStart}</postStart>
                                               <breakOnError>true</breakOnError>

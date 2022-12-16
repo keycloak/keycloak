@@ -55,7 +55,7 @@ jobs:
             PROJECTS="$PROJECTS$SEP$i"
             SEP=","
           done
-          
+
           ./mvnw test -nsu -B -pl "$PROJECTS" -am
 
       - id: upload-surefire-reports
@@ -185,7 +185,7 @@ jobs:
           # For PRs, run only PostgreSQL, on branches and nightly runs run all databases
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo 'db=["chm", "hot-rod", "jpa-postgres"]' >> $GITHUB_OUTPUT
-          else 
+          else
             echo 'db=["chm", "hot-rod", "jpa-postgres", "jpa-cockroach"]' >> $GITHUB_OUTPUT
           fi
     outputs:
@@ -235,7 +235,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        db: [postgres, mysql] # 'mariadb' is not always shutting down, 'mssql', 'oracle11g' containers not available
+        db: [postgres, mysql, oracle] # 'mariadb' is not always shutting down, 'mssql' containers not available
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -244,11 +244,21 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+      - name: Login to Quay.io
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+        if: contains(matrix.db, 'oracle') && !contains(github.event_name, 'pull_request')
+
       - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          if [[ "${{ matrix.db }}" != "oracle" || "${{ github.event_name }}" != "pull_request"]] then
+            ./mvnw test -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          fi
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
