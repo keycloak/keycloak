@@ -48,7 +48,15 @@ jobs:
         uses: ./.github/actions/unit-test-setup
 
       - name: Run unit tests
-        run: ./mvnw install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples
+        run: |
+          SEP=""
+          PROJECTS=""
+          for i in `find -name '*Test.java' -type f | egrep -v './(testsuite|quarkus)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
+            PROJECTS="$PROJECTS$SEP$i"
+            SEP=","
+          done
+          
+          ./mvnw test -nsu -B -pl "$PROJECTS" -am
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -78,7 +86,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw install -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -111,6 +119,7 @@ jobs:
         name: Unit test setup
         uses: ./.github/actions/unit-test-setup
 
+      # Not sure why, but needs to re-build otherwise there's some failures starting up
       - name: Run Quarkus integration Tests
         run: |
           declare -A PARAMS
@@ -156,7 +165,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -191,7 +200,7 @@ jobs:
 
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -221,7 +230,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -262,7 +271,7 @@ jobs:
 
       - name: Run cluster tests
         run: |
-          ./mvnw install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
+          ./mvnw test -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -285,10 +294,10 @@ jobs:
         uses: ./.github/actions/unit-test-setup
 
       - name: Run crypto tests (BCFIPS non-approved mode)
-        run: ./mvnw install -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true
+        run: ./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true
 
       - name: Run crypto tests (BCFIPS approved mode)
-        run: ./mvnw install -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
+        run: ./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
@@ -317,7 +326,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
           echo "Tests: $TESTS"
-          ./mvnw install -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - id: upload-surefire-reports
         name: Upload Surefire reports
