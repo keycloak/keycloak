@@ -23,7 +23,7 @@ runs:
               BODY="$RUN"$'\n''```'$'\n'"$LOG"$'\n''```'
               ISSUE="$(gh issue list --search "$TITLE in:title" --json number --jq .[].number)"
 
-              if [ "$PR" != "" ]; then        
+              if [ "$PR" == "" ]; then        
                 if [ "$ISSUE" == "" ]; then
                   LINK="$(gh issue create -t "$TITLE" -b "$BODY" -l "kind/bug,area/ci,flaky-test" | grep $ISSUES_LINK)"
                   ISSUE="$(echo $LINK | sed "s|$ISSUES_LINK||")"
