@@ -18,9 +18,10 @@ runs:
     - id: changes
       name: Find changes
       shell: bash
+      # language=bash
       run: |
         BASE_REF=${{ github.base_ref }}
-
+        
         changed () {
           git diff --name-only origin/${{ github.base_ref }} | grep -E "$1" &>/dev/null && echo true || echo false
         }
@@ -28,7 +29,7 @@ runs:
         if [ "$BASE_REF" != "" ]; then
           echo "Checking changes against orgin/$BASE_REF"
           git fetch origin
-
+        
           JAVA=`changed '^.*/.*.java$'`
           THEMES=`changed '^themes/src/main/.*$'`
           JS_ADAPTER=`changed '^adapters/oidc/js/.*$'`
@@ -43,7 +44,7 @@ runs:
         echo "Java changed:       $JAVA"
         echo "Themes changed:     $THEMES"
         echo "JS adapter changed: $JS_ADAPTER"
-
+        
         echo "java=$JAVA" >> $GITHUB_OUTPUT
         echo "themes=$THEMES" >> $GITHUB_OUTPUT
         echo "js-adapter=$JS_ADAPTER" >> $GITHUB_OUTPUT
