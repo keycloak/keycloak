@@ -118,6 +118,11 @@
             <version>${testcontainers.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>cockroachdb</artifactId>
+            <version>${testcontainers.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
@@ -814,7 +819,7 @@
         </profile>
 
         <profile>
-            <id>map-storage-jpa</id>
+            <id>map-storage-jpa-postgres</id>
             <properties>
                 <postgres.start-container>true</postgres.start-container>
             </properties>
@@ -865,6 +870,61 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>map-storage-jpa-cockroach</id>
+            <properties>
+                <cockroachdb.start-container>true</cockroachdb.start-container>
+                <keycloak.map.storage.connectionsJpa.url>jdbc:postgresql://localhost:26257/keycloak</keycloak.map.storage.connectionsJpa.url>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireActiveProfile>
+                                    <profiles>map-storage</profiles>
+                                    <message>map-storage profile not active</message>
+                                </requireActiveProfile>
+                            </rules>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <cockroachdb.start-container>${cockroachdb.start-container}</cockroachdb.start-container>
+
+                                <keycloak.map.storage.connectionsJpa.url>${keycloak.map.storage.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
+                                <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
+                                <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
+
+                                <keycloak.authorization.map.storage.provider>jpa</keycloak.authorization.map.storage.provider>
+                                <keycloak.authSession.map.storage.provider>jpa</keycloak.authSession.map.storage.provider>
+                                <keycloak.client.map.storage.provider>jpa</keycloak.client.map.storage.provider>
+                                <keycloak.clientScope.map.storage.provider>jpa</keycloak.clientScope.map.storage.provider>
+                                <keycloak.adminEventsStore.map.storage.provider>jpa</keycloak.adminEventsStore.map.storage.provider>
+                                <keycloak.authEventsStore.map.storage.provider>jpa</keycloak.authEventsStore.map.storage.provider>
+                                <keycloak.group.map.storage.provider>jpa</keycloak.group.map.storage.provider>
+                                <keycloak.loginFailure.map.storage.provider>jpa</keycloak.loginFailure.map.storage.provider>
+                                <keycloak.realm.map.storage.provider>jpa</keycloak.realm.map.storage.provider>
+                                <keycloak.role.map.storage.provider>jpa</keycloak.role.map.storage.provider>
+                                <keycloak.singleUseObject.map.storage.provider>jpa</keycloak.singleUseObject.map.storage.provider>
+                                <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
+                                <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
+                                <auth.server.quarkus.mapStorage.profile.config>jpa</auth.server.quarkus.mapStorage.profile.config>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
 
         <profile>
             <id>auth-server-fips140-2</id>
