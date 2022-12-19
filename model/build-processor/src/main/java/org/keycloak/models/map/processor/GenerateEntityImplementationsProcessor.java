@@ -184,15 +184,18 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 pw.println("        }");
             });
 
-            FieldAccessorType.getMethod(FieldAccessorType.MAP_ADD, methods, fieldName, types, fieldType).ifPresent(method -> {
-                TypeMirror firstParameterType = method.getParameters().get(0).asType();
-                TypeMirror secondParameterType = method.getParameters().get(1).asType();
-                pw.println("        @SuppressWarnings(\"unchecked\") @Override public Class<?> getMapKeyClass() {");
-                pw.println("            return " + types.erasure(firstParameterType) + ".class;");
-                pw.println("        }");
-                pw.println("        @SuppressWarnings(\"unchecked\") @Override public Class<?> getMapValueClass() {");
-                pw.println("            return " + types.erasure(secondParameterType) + ".class;");
-                pw.println("        }");
+            FieldAccessorType.getMethod(FieldAccessorType.GETTER, methods, fieldName, types, fieldType).ifPresent(method -> {
+                if (Util.isMapType((TypeElement) types.asElement(types.erasure(fieldType)))) {
+                    TypeMirror firstParameterType = Util.getGenericsDeclaration(method.getReturnType()).get(0);
+                    TypeMirror secondParameterType = Util.getGenericsDeclaration(method.getReturnType()).get(1);
+
+                    pw.println("        @SuppressWarnings(\"unchecked\") @Override public Class<?> getMapKeyClass() {");
+                    pw.println("            return " + types.erasure(firstParameterType) + ".class;");
+                    pw.println("        }");
+                    pw.println("        @SuppressWarnings(\"unchecked\") @Override public Class<?> getMapValueClass() {");
+                    pw.println("            return " + types.erasure(secondParameterType) + ".class;");
+                    pw.println("        }");
+                }
             });
 
             for (ExecutableElement ee : methods) {
