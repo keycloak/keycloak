@@ -18,7 +18,6 @@ package org.keycloak.models.map.common.delegate;
 
 import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.client.MapClientEntityFields;
-import org.keycloak.models.map.client.MapClientEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.tree.NodeProperties;
 import org.keycloak.models.map.storage.tree.TreeStorageNodeInstance;
@@ -60,8 +59,8 @@ public class PerFieldDelegateProviderPrimarySourceTest {
 
     @Before
     public void initEntities() {
-        upperEnt = new MapClientEntityImpl();
-        lowerEnt = new MapClientEntityImpl();
+        upperEnt = DeepCloner.DUMB_CLONER.newInstance(MapClientEntity.class);
+        lowerEnt = DeepCloner.DUMB_CLONER.newInstance(MapClientEntity.class);
 
         upperEnt.setProtocol("upper-protocol");
         upperEnt.addRedirectUri("upper-redirectUri-1");

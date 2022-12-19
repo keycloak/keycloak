@@ -1,0 +1,45 @@
+name: Snyk
+
+on:
+  schedule:
+    - cron: 0 0 * * *
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  analysis:
+    name: Analysis of Quarkus and Operator
+    runs-on: ubuntu-latest
+    if: github.repository == 'keycloak/keycloak'
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+      - uses: snyk/actions/setup@master
+
+      - name: Check for vulnerabilities in Quarkus
+        run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=quarkus-report.sarif quarkus
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Upload Quarkus scanner results to GitHub
+        uses: github/codeql-action/upload-sarif@v2.1.36
+        with:
+          sarif_file: quarkus-report.sarif
+
+      - name: Check for vulnerabilities in Operator
+        run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=operator-report.sarif operator
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Upload Operator scanner results to GitHub
+        uses: github/codeql-action/upload-sarif@v2.1.36
+        with:
+          sarif_file: operator-report.sarif

@@ -30,10 +30,24 @@ public @interface DistributionTest {
 
     boolean debug() default false;
     boolean keepAlive() default false;
+    boolean createAdminUser() default false;
+    boolean enableTls() default false;
 
     enum ReInstall {
+
+        /**
+         * Install the distribution only once before running a test class.
+         */
         BEFORE_ALL,
+
+        /**
+         * Re-install the distribution before running a test method.
+         */
         BEFORE_TEST,
+
+        /**
+         * Does not reset the distribution such as removing data, providers, and conf directories.
+         */
         NEVER;
     }
 
@@ -43,5 +57,10 @@ public @interface DistributionTest {
      * If any build option must be unset after the running the build command.
      */
     boolean removeBuildOptionsAfterBuild() default false;
+
+    /**
+     * If any option must be set when starting the server.
+     */
+    String[] defaultOptions() default {};
 }
 

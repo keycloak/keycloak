@@ -11,11 +11,18 @@
     <name>Keycloak Model Map</name>
     <description/>
 
+    <properties>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1-jboss-2</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>

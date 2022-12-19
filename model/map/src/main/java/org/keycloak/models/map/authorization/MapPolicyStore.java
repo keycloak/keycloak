@@ -30,7 +30,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.adapter.MapPolicyAdapter;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
-import org.keycloak.models.map.authorization.entity.MapPolicyEntityImpl;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -89,7 +89,7 @@ public class MapPolicyStore implements PolicyStore {
         }
 
         String uid = representation.getId();
-        MapPolicyEntity entity = new MapPolicyEntityImpl();
+        MapPolicyEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapPolicyEntity.class);
         entity.setId(uid);
         entity.setType(representation.getType());
         entity.setName(representation.getName());

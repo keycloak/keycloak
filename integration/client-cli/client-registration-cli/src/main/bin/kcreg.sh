@@ -28,4 +28,4 @@ if [ "x$JAVA" = "x" ]; then
 fi
 
 DIRNAME=`dirname "$RESOLVED_NAME"`
-"$JAVA" $KC_OPTS -cp $DIRNAME/client/keycloak-client-registration-cli-${project.version}.jar org.keycloak.client.registration.cli.KcRegMain "$@"
+"$JAVA" $KC_OPTS -cp $DIRNAME/client/keycloak-client-registration-cli-${project.version}.jar -Dkc.lib.dir=$DIRNAME/client/lib org.keycloak.client.registration.cli.KcRegMain "$@"

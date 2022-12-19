@@ -17,8 +17,8 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.NotAuthorizedException;
 import org.keycloak.common.Profile;
@@ -40,6 +40,7 @@ import org.keycloak.urls.UrlType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
@@ -223,6 +224,18 @@ public class AdminRoot {
         return new RealmsAdminResource(session, auth, tokenManager);
     }
 
+    @Path("{any:.*}")
+    @OPTIONS
+    public Object preFlight() {
+        HttpRequest request = getHttpRequest();
+
+        if (!isAdminApiEnabled()) {
+            throw new NotFoundException();
+        }
+
+        return new AdminCorsPreflightService(request);
+    }
+
     /**
      * General information about the server
      *
@@ -258,11 +271,11 @@ public class AdminRoot {
     }
 
     private HttpResponse getHttpResponse() {
-        return session.getContext().getContextObject(HttpResponse.class);
+        return session.getContext().getHttpResponse();
     }
 
     private HttpRequest getHttpRequest() {
-        return session.getContext().getContextObject(HttpRequest.class);
+        return session.getContext().getHttpRequest();
     }
 
     public static Theme getTheme(KeycloakSession session, RealmModel realm) throws IOException {

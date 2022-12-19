@@ -26,6 +26,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.client.MapClientEntityImpl;
 import org.keycloak.models.map.client.MapClientProviderFactory;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
@@ -117,13 +118,13 @@ public class ConcurrentHashMapStorageTest extends KeycloakModelTest {
             assertClientDoesNotExist(storage2, idMain, kcMain, kc2);
             assertClientDoesNotExist(storage2, id1, kc1, kc2);
 
-            MapClientEntity clientMain = new MapClientEntityImpl();
+            MapClientEntity clientMain = new MapClientEntityImpl(DeepCloner.DUMB_CLONER);
             clientMain.setId(idMain);
             clientMain.setRealmId(realmId);
-            MapClientEntity client1 = new MapClientEntityImpl();
+            MapClientEntity client1 = new MapClientEntityImpl(DeepCloner.DUMB_CLONER);
             client1.setId(id1);
             client1.setRealmId(realmId);
-            MapClientEntity client2 = new MapClientEntityImpl();
+            MapClientEntity client2 = new MapClientEntityImpl(DeepCloner.DUMB_CLONER);
             client2.setId(id2);
             client2.setRealmId(realmId);
 

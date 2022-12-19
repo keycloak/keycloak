@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 import static org.keycloak.util.JsonSerialization.readValue;
 
+import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -87,7 +88,9 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
-import org.keycloak.partialimport.PartialImportManager;
+import org.keycloak.partialimport.ErrorResponseException;
+import org.keycloak.partialimport.PartialImportResult;
+import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -97,7 +100,6 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
-import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -510,7 +512,6 @@ public class RealmAdminResource {
         if (provider != null) {
             Object resource = provider.getResource(session, realm, auth, adminEvent);
             if (resource != null) {
-                ResteasyProviderFactory.getInstance().injectProperties(resource);
                 return resource;
             }
         }
@@ -539,6 +540,7 @@ public class RealmAdminResource {
      *
      */
     @Path("push-revocation")
+    @Produces(MediaType.APPLICATION_JSON)
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.realm().requireManageRealm();
@@ -1006,17 +1008,55 @@ public class RealmAdminResource {
     /**
      * Partial import from a JSON file to an existing realm.
      *
-     * @param rep
-     * @return
      */
     @Path("partialImport")
     @POST
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response partialImport(PartialImportRepresentation rep) {
+    public Response partialImport(InputStream requestBody) {
         auth.realm().requireManageRealm();
+        try {
+            return Response.ok(
+                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
+                        RealmModel realmClone = kcSession.realms().getRealm(realm.getId());
+                        AdminEventBuilder adminEventClone = adminEvent.clone(kcSession);
+                        // calling a static method to avoid using the wrong instances
+                        return getPartialImportResults(requestBody, kcSession, realmClone, adminEventClone);
+                    })
+            ).build();
+        } catch (ModelDuplicateException e) {
+            return ErrorResponse.exists(e.getLocalizedMessage());
+        } catch (ErrorResponseException error) {
+            return error.getResponse();
+        } catch (Exception e) {
+            return ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-        PartialImportManager partialImport = new PartialImportManager(rep, session, realm, adminEvent);
-        return partialImport.saveResources();
+    private static PartialImportResults getPartialImportResults(InputStream requestBody, KeycloakSession kcSession, RealmModel kcRealm, AdminEventBuilder adminEventClone) {
+        ExportImportManager exportProvider = kcSession.getProvider(DatastoreProvider.class).getExportImportManager();
+        PartialImportResults results = exportProvider.partialImportRealm(kcRealm, requestBody);
+        for (PartialImportResult result : results.getResults()) {
+            switch (result.getAction()) {
+                case ADDED : fireCreatedEvent(result, adminEventClone); break;
+                case OVERWRITTEN: fireUpdateEvent(result, adminEventClone); break;
+            }
+        }
+        return results;
+    }
+
+    private static void fireCreatedEvent(PartialImportResult result, AdminEventBuilder adminEvent) {
+        adminEvent.operation(OperationType.CREATE)
+                .resourcePath(result.getResourceType().getPath(), result.getId())
+                .representation(result.getRepresentation())
+                .success();
+    };
+
+    private static void fireUpdateEvent(PartialImportResult result, AdminEventBuilder adminEvent) {
+        adminEvent.operation(OperationType.UPDATE)
+                .resourcePath(result.getResourceType().getPath(), result.getId())
+                .representation(result.getRepresentation())
+                .success();
     }
 
     /**
@@ -1027,6 +1067,7 @@ public class RealmAdminResource {
      * @return
      */
     @Path("partial-export")
+    @Produces(MediaType.APPLICATION_JSON)
     @POST
     public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
                                                      @QueryParam("exportClients") Boolean exportClients) {

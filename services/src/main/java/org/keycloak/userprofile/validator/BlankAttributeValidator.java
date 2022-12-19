@@ -19,6 +19,8 @@ package org.keycloak.userprofile.validator;
 import java.util.List;
 
 import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.AttributeContext;
+import org.keycloak.userprofile.UserProfileAttributeValidationContext;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -53,6 +55,12 @@ public class BlankAttributeValidator implements SimpleValidator {
         boolean failOnNull = config.getBooleanOrDefault(CFG_FAIL_ON_NULL, false);
         
         if (values.isEmpty() && !failOnNull) {
+            return context;
+        }
+
+        AttributeContext attributeContext = UserProfileAttributeValidationContext.from(context).getAttributeContext();
+
+        if (!attributeContext.getMetadata().isRequired(attributeContext)) {
             return context;
         }
 

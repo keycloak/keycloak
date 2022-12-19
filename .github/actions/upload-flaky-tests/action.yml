@@ -1,0 +1,43 @@
+name: Report flaky test
+description: Finds flaky tests and creates issues
+
+runs:
+  using: composite
+  steps:
+    - id: flaky-tests
+      name: Find flaky tests
+      if: github.repository == 'keycloak/keycloak'
+      shell: bash
+      # language=bash
+      run: |
+        REPO="${{ github.repository }}"
+        ISSUES_LINK="https://github.com/${{ github.repository }}/issues/"
+        PR="${{ github.event.pull_request.number }}"
+        RUN="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        for dir in $(find -type d -name surefire-reports); do
+          for i in $(ls $dir/*.txt); do
+            if ( grep '<<< FAILURE!' $i &>/dev/null ); then
+              TEST="$(echo $i | sed 's/.txt//g' | sed 's/.*\.//g')"
+              LOG="$(cat $i)"
+              
+              TITLE="Flaky test: $TEST"
+              BODY="$RUN"$'\n''```'$'\n'"$LOG"$'\n''```'
+              ISSUE="$(gh issue list --search "$TITLE in:title" --json number --jq .[].number)"
+        
+              if [ "$PR" == "" ]; then        
+                if [ "$ISSUE" == "" ]; then
+                  LINK="$(gh issue create -t "$TITLE" -b "$BODY" -l "kind/bug,area/ci,flaky-test" | grep $ISSUES_LINK)"
+                  ISSUE="$(echo $LINK | sed "s|$ISSUES_LINK||")"
+                else
+                  LINK="$(gh issue comment "$ISSUE" -b "$BODY")"
+                fi    
+              fi
+              
+              echo "## $TITLE" >> $GITHUB_STEP_SUMMARY
+              echo "$LINK" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "$LOG" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+        done

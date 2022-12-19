@@ -18,6 +18,9 @@ security.provider.3=
 fips.provider.1=org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
 fips.provider.2=org.bouncycastle.jsse.provider.BouncyCastleJsseProvider fips:BCFIPS
 fips.provider.3=
+#fips.provider.3=SunJGSS
+#fips.provider.4=XMLDSig
+#fips.provider.5=
 
 # Commented this provider for now (and also other providers) as it uses lots of non-FIPS services.
 # See https://access.redhat.com/documentation/en-us/openjdk/11/html-single/configuring_openjdk_11_on_rhel_with_fips/index#ref_openjdk-default-fips-configuration_openjdk

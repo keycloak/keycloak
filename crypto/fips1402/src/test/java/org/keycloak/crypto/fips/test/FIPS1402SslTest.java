@@ -129,6 +129,7 @@ public class FIPS1402SslTest {
         List<String> supportedProtocols = Arrays.asList(context.getDefaultSSLParameters().getProtocols());
         List<String> supportedCiphers = Arrays.asList(engine.getSupportedCipherSuites());
 
+        logger.infof("SSLContext provider: %s, SSLContext class: %s", context.getProvider().getName(), context.getClass().getName());
         logger.infof("Enabled ciphersuites: %s", enabledCipherSuites.size());
         logger.infof("Supported protocols: %s", supportedProtocols);
         logger.infof("Supported ciphers size: %d", supportedCiphers.size());

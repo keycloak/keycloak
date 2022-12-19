@@ -1893,7 +1893,7 @@ public class OAuthClient {
 
                 Header[] contentTypeHeaders = response.getHeaders("Content-Type");
                 String contentType = (contentTypeHeaders != null && contentTypeHeaders.length > 0) ? contentTypeHeaders[0].getValue() : null;
-                if (!"application/json".equals(contentType)) {
+                if (contentType == null || !contentType.startsWith("application/json")) {
                     Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 

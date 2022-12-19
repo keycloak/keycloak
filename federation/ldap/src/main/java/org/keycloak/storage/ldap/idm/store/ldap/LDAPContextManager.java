@@ -76,7 +76,7 @@ public final class LDAPContextManager implements AutoCloseable {
 
             if (vaultCharSecret != null && !ldapConfig.isStartTls()) {
                 connProp.put(SECURITY_CREDENTIALS, vaultCharSecret.getAsArray()
-                        .orElse(ldapConfig.getBindCredential().toCharArray()));
+                        .orElse(ldapConfig.getBindCredential() != null? ldapConfig.getBindCredential().toCharArray() : null));
             }
         }
 
@@ -90,7 +90,8 @@ public final class LDAPContextManager implements AutoCloseable {
             }
 
             tlsResponse = startTLS(ldapContext, ldapConfig.getAuthType(), ldapConfig.getBindDN(),
-                    vaultCharSecret.getAsArray().orElse(ldapConfig.getBindCredential().toCharArray()), sslSocketFactory);
+                    vaultCharSecret.getAsArray().orElse(ldapConfig.getBindCredential() != null? ldapConfig.getBindCredential().toCharArray() : null),
+                    sslSocketFactory);
 
             // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
             if (tlsResponse == null) {

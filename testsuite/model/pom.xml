@@ -113,7 +113,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.driver.version}</version>
+            <version>${postgresql-jdbc.version}</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -341,6 +341,14 @@
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
                 <keycloak.model.parameters>Map,JpaMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>map-jpa-cockroachdb</id>
+            <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                <keycloak.model.parameters>Map,JpaMapStorageCockroachdb</keycloak.model.parameters>
             </properties>
         </profile>
 
