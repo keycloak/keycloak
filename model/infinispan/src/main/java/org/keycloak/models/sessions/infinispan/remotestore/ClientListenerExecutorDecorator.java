@@ -127,8 +127,15 @@ public class ClientListenerExecutorDecorator<K> {
         } catch (RejectedExecutionException ree) {
             eventsInProgress.remove(key);
 
-            logger.errorf("Rejected execution of task for the event '%s' . Try to increase the pool size. Pool is '%s'", event.toString(), decorated.toString());
-            throw ree;
+            // server is shutting down or pool was terminated - don't throw errors
+            if (ree.getMessage() != null && (ree.getMessage().contains("Terminated") || ree.getMessage().contains("Shutting down"))) {
+                logger.warnf("Rejected execution of task for the event '%s' because server is shutting down or pool was terminated.", event.toString());
+                logger.debug(ree);
+            } else {
+                // avoid touching the cache when creating a log message to avoid a deadlock in Infinispan 12.1.7.Final
+                logger.errorf("Rejected execution of task for the event '%s' . Try to increase the pool size. Pool is '%s'", event.toString(), decorated.toString());
+                throw ree;
+            }
         }
     }
 
