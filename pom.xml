@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>2.13.5.Final</quarkus.version>
+        <quarkus.version>2.13.6.Final</quarkus.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -144,7 +144,7 @@
         <mysql.version>8.0.23</mysql.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <postgresql.version>13.2</postgresql.version>
-        <postgresql-jdbc.version>42.5.0</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.5.1</postgresql-jdbc.version>
         <mariadb.version>10.3.27</mariadb.version>
         <mariadb-jdbc.version>2.7.2</mariadb-jdbc.version>
         <mssql.version>2019-CU10-ubuntu-20.04</mssql.version>
