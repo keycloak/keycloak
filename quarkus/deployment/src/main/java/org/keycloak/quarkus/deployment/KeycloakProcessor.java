@@ -742,7 +742,7 @@ class KeycloakProcessor {
             metadata.setCode(StreamUtil.readString(in, StandardCharsets.UTF_8));
         }
 
-        metadata.setId(new StringBuilder("script").append("-").append(fileName).toString());
+        metadata.setId(entry.getKey() + "-" + "script" + "-" + fileName);
 
         String name = metadata.getName();
 
