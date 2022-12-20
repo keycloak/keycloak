@@ -5,7 +5,7 @@ on:
     branches-ignore:
       - main
       - dependabot/**
-  pull_request:
+#  pull_request:
   schedule:
     - cron: 0 20,23,2,5 * * *
   workflow_dispatch:

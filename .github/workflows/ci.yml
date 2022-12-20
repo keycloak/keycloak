@@ -35,40 +35,36 @@ jobs:
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
 
-  unit-tests:
-    name: Base UT
-    runs-on: ubuntu-latest
-    needs: build
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
-
-      - name: Run unit tests
-        run: |
-          SEP=""
-          PROJECTS=""
-          for i in `find -name '*Test.java' -type f | egrep -v './(testsuite|quarkus)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
-            PROJECTS="$PROJECTS$SEP$i"
-            SEP=","
-          done
-
-          ./mvnw test -nsu -B -pl "$PROJECTS" -am
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: '**/target/surefire-reports/*.xml'
+#  unit-tests:
+#    name: Base UT
+#    runs-on: ubuntu-latest
+#    needs: build
+#    timeout-minutes: 30
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - id: unit-test-setup
+#        name: Unit test setup
+#        uses: ./.github/actions/unit-test-setup
+#
+#      - name: Run unit tests
+#        run: |
+#          SEP=""
+#          PROJECTS=""
+#          for i in `find -name '*Test.java' -type f | egrep -v './(testsuite|quarkus)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
+#            PROJECTS="$PROJECTS$SEP$i"
+#            SEP=","
+#          done
+#
+#          ./mvnw test -nsu -B -pl "$PROJECTS" -am
+#
+#      - id: upload-surefire-reports
+#        name: Upload Surefire reports
+#        uses: ./.github/actions/upload-surefire-reports
+#        if: always()
+#        with:
+#          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+#          surefire-reports-path: '**/target/surefire-reports/*.xml'
 
   base-integration-tests:
     name: Base IT
@@ -77,7 +73,7 @@ jobs:
     timeout-minutes: 100
     strategy:
       matrix:
-        group: [1, 2, 3, 4, 5, 6]
+        group: [6]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -92,10 +88,6 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - id: upload-surefire-reports
         name: Upload Surefire reports
         uses: ./.github/actions/upload-surefire-reports
@@ -107,304 +99,272 @@ jobs:
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
 
-  quarkus-integration-tests:
-    name: Quarkus IT
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 115
-    strategy:
-      matrix:
-        server: [zip, container, storage]
-      fail-fast: false
-    env:
-      MAVEN_OPTS: -Xmx1024m
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
-
-      # Not sure why, but needs to re-build otherwise there's some failures starting up
-      - name: Run Quarkus integration Tests
-        run: |
-          declare -A PARAMS
-          PARAMS["zip"]=""
-          PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
-          PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest"
-
-          ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
-          ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'quarkus/tests/integration/target/surefire-reports/*.xml'
-
-  jdk-integration-tests:
-    name: Java Distribution IT
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 100
-    strategy:
-      matrix:
-        dist: [temurin]
-        version: [17, 19]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-        with:
-          jdk-dist: ${{ matrix.dist }}
-          jdk-version: ${{ matrix.version }}
-
-      - name: Prepare Quarkus distribution with current JDK
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
-
-      - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
-          echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
-
-  databases-new-store:
-    name: Databases New Store
-    runs-on: ubuntu-latest
-    steps:
-      - id: matrix-db
-        # language=bash
-        run: |
-          # For PRs, run only PostgreSQL, on branches and nightly runs run all databases
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo 'db=["chm", "hot-rod", "jpa-postgres"]' >> $GITHUB_OUTPUT
-          else
-            echo 'db=["chm", "hot-rod", "jpa-postgres", "jpa-cockroach"]' >> $GITHUB_OUTPUT
-          fi
-    outputs:
-      db: ${{ steps.matrix-db.outputs.db }}
-
-  new-store-integration-tests:
-    name: New Store IT
-    needs: [build, databases-new-store]
-    runs-on: ubuntu-latest
-    # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with ~45 minutes
-    timeout-minutes: 70
-    strategy:
-      matrix:
-        db: ${{ fromJson(needs.databases-new-store.outputs.db) }}
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run base tests
-        run: |
-          declare -A PARAMS
-          PARAMS["chm"]="-Pmap-storage-chm -Dpageload.timeout=90000"
-          PARAMS["hot-rod"]="-Pmap-storage-hot-rod -Dpageload.timeout=90000"
-          PARAMS["jpa-postgres"]="-Pmap-storage-jpa-postgres -Dpageload.timeout=90000"
-          PARAMS["jpa-cockroach"]="-Pmap-storage-jpa-cockroach -Dpageload.timeout=90000"
-
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-          echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
-
-  legacy-store-integration-tests:
-    name: Legacy Store IT
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    strategy:
-      matrix:
-        db: [postgres, mysql, oracle] # 'mariadb' is not always shutting down, 'mssql' container not available yet
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-          echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
-
-  store-model-tests:
-    name: Store Model Tests
-    runs-on: ubuntu-latest
-    needs: build
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run model tests
-        run: testsuite/model/test-all-profiles.sh
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-  clustering-integration-tests:
-    name: Legacy Clustering IT
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    env:
-      MAVEN_OPTS: -Xmx1024m
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run cluster tests
-        run: |
-          ./mvnw test -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
-
-  fips-unit-tests:
-    name: FIPS UT
-    runs-on: ubuntu-latest
-    needs: build
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
-
-      - name: Run crypto tests (BCFIPS non-approved mode)
-        run: ./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true
-
-      - name: Run crypto tests (BCFIPS approved mode)
-        run: ./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: '**/target/surefire-reports/*.xml'
-
-  fips-integration-tests:
-    name: FIPS IT
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Prepare Quarkus distribution with BCFIPS
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
-
-      - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
-          echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+#  quarkus-integration-tests:
+#    name: Quarkus IT
+#    needs: build
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 115
+#    strategy:
+#      matrix:
+#        server: [zip, container, storage]
+#      fail-fast: false
+#    env:
+#      MAVEN_OPTS: -Xmx1024m
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - id: unit-test-setup
+#        name: Unit test setup
+#        uses: ./.github/actions/unit-test-setup
+#
+#      # Not sure why, but needs to re-build otherwise there's some failures starting up
+#      - name: Run Quarkus integration Tests
+#        run: |
+#          declare -A PARAMS
+#          PARAMS["zip"]=""
+#          PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
+#          PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest"
+#
+#          ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
+#          ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
+#
+#      - id: upload-surefire-reports
+#        name: Upload Surefire reports
+#        uses: ./.github/actions/upload-surefire-reports
+#        if: always()
+#        with:
+#          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+#          surefire-reports-path: 'quarkus/tests/integration/target/surefire-reports/*.xml'
+#
+#  jdk-integration-tests:
+#    name: Java Distribution IT
+#    needs: build
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 100
+#    strategy:
+#      matrix:
+#        dist: [temurin]
+#        version: [17, 19]
+#      fail-fast: false
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#        with:
+#          jdk-dist: ${{ matrix.dist }}
+#          jdk-version: ${{ matrix.version }}
+#
+#      - name: Prepare Quarkus distribution with current JDK
+#        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
+#
+#      - name: Run base tests
+#        run: |
+#          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
+#          echo "Tests: $TESTS"
+#          ./mvnw test -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+#
+#      - id: upload-surefire-reports
+#        name: Upload Surefire reports
+#        uses: ./.github/actions/upload-surefire-reports
+#        if: always()
+#        with:
+#          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+#          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+#
+#  databases-new-store:
+#    name: Databases New Store
+#    runs-on: ubuntu-latest
+#    steps:
+#      - id: matrix-db
+#        # language=bash
+#        run: |
+#          # For PRs, run only PostgreSQL, on branches and nightly runs run all databases
+#          if [ "${{ github.event_name }}" == "pull_request" ]; then
+#            echo 'db=["chm", "hot-rod", "jpa-postgres"]' >> $GITHUB_OUTPUT
+#          else
+#            echo 'db=["chm", "hot-rod", "jpa-postgres", "jpa-cockroach"]' >> $GITHUB_OUTPUT
+#          fi
+#    outputs:
+#      db: ${{ steps.matrix-db.outputs.db }}
+#
+#  new-store-integration-tests:
+#    name: New Store IT
+#    needs: [build, databases-new-store]
+#    runs-on: ubuntu-latest
+#    # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with ~45 minutes
+#    timeout-minutes: 70
+#    strategy:
+#      matrix:
+#        db: ${{ fromJson(needs.databases-new-store.outputs.db) }}
+#      fail-fast: false
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Run base tests
+#        run: |
+#          declare -A PARAMS
+#          PARAMS["chm"]="-Pmap-storage -Dpageload.timeout=90000"
+#          PARAMS["hot-rod"]="-Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
+#          PARAMS["jpa-postgres"]="-Pmap-storage,map-storage-jpa-postgres -Dpageload.timeout=90000"
+#          PARAMS["jpa-cockroach"]="-Pmap-storage,map-storage-jpa-cockroach -Dpageload.timeout=90000"
+#
+#          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+#          echo "Tests: $TESTS"
+#          ./mvnw test -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+#
+#      - id: upload-surefire-reports
+#        name: Upload Surefire reports
+#        uses: ./.github/actions/upload-surefire-reports
+#        if: always()
+#        with:
+#          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+#          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+#
+#  legacy-store-integration-tests:
+#    name: Legacy Store IT
+#    needs: build
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 45
+#    strategy:
+#      matrix:
+#        db: [postgres, mysql] # 'mariadb' is not always shutting down, 'mssql', 'oracle11g' containers not available
+#      fail-fast: false
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Run base tests
+#        run: |
+#          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+#          echo "Tests: $TESTS"
+#          ./mvnw test -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+#
+#      - id: upload-surefire-reports
+#        name: Upload Surefire reports
+#        uses: ./.github/actions/upload-surefire-reports
+#        if: always()
+#        with:
+#          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+#          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+#
+#  store-model-tests:
+#    name: Store Model Tests
+#    runs-on: ubuntu-latest
+#    needs: build
+#    timeout-minutes: 60
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Run model tests
+#        run: testsuite/model/test-all-profiles.sh
+#
+#  clustering-integration-tests:
+#    name: Legacy Clustering IT
+#    needs: build
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 35
+#    env:
+#      MAVEN_OPTS: -Xmx1024m
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Run cluster tests
+#        run: |
+#          ./mvnw test -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
+#
+#      - id: upload-surefire-reports
+#        name: Upload Surefire reports
+#        uses: ./.github/actions/upload-surefire-reports
+#        if: always()
+#        with:
+#          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+#          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+#
+#  fips-unit-tests:
+#    name: FIPS UT
+#    runs-on: ubuntu-latest
+#    needs: build
+#    timeout-minutes: 20
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - id: unit-test-setup
+#        name: Unit test setup
+#        uses: ./.github/actions/unit-test-setup
+#
+#      - name: Run crypto tests (BCFIPS non-approved mode)
+#        run: ./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true
+#
+#      - name: Run crypto tests (BCFIPS approved mode)
+#        run: ./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
+#
+#      - id: upload-surefire-reports
+#        name: Upload Surefire reports
+#        uses: ./.github/actions/upload-surefire-reports
+#        if: always()
+#        with:
+#          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+#          surefire-reports-path: '**/target/surefire-reports/*.xml'
+#
+#  fips-integration-tests:
+#    name: FIPS IT
+#    needs: build
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 45
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - id: integration-test-setup
+#        name: Integration test setup
+#        uses: ./.github/actions/integration-test-setup
+#
+#      - name: Prepare Quarkus distribution with BCFIPS
+#        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
+#
+#      - name: Run base tests
+#        run: |
+#          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
+#          echo "Tests: $TESTS"
+#          ./mvnw test -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+#
+#      - id: upload-surefire-reports
+#        name: Upload Surefire reports
+#        uses: ./.github/actions/upload-surefire-reports
+#        if: always()
+#        with:
+#          api-key: ${{ secrets.FORESIGHT_API_KEY }}
+#          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
   check-set-status:
     name: Set check conclusion
     needs:
-      - unit-tests
+#      - unit-tests
       - base-integration-tests
-      - quarkus-integration-tests
-      - jdk-integration-tests
-      - new-store-integration-tests
-      - legacy-store-integration-tests
-      - store-model-tests
-      - clustering-integration-tests
-      - fips-unit-tests
-      - fips-integration-tests
+#      - quarkus-integration-tests
+#      - jdk-integration-tests
+#      - new-store-integration-tests
+#      - legacy-store-integration-tests
+#      - store-model-tests
+#      - clustering-integration-tests
+#      - fips-unit-tests
+#      - fips-integration-tests
     runs-on: ubuntu-latest
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}
