@@ -27,9 +27,6 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 
-@Path("/")
-@Consumes({"application/json"})
-@Produces({"application/json"})
 public class AuthenticationManagementResource extends RoleMappingResource {
     private final KeycloakSession session;
 
@@ -45,6 +42,8 @@ public class AuthenticationManagementResource extends RoleMappingResource {
 
     @GET
     @Path("/flows")
+    @Consumes({"application/json"})
+    @Produces({"application/json"})
     @Operation(
             summary = "List all authentication flows for this realm",
             description = "This endpoint returns all the authentication flows and lists if there they are used."
@@ -72,6 +71,8 @@ public class AuthenticationManagementResource extends RoleMappingResource {
 
     @GET
     @Path("/{type}/{id}")
+    @Consumes({"application/json"})
+    @Produces({"application/json"})
     @Operation(
             summary = "List all clients or identity providers that this flow is used by",
             description = "List all the clients or identity providers this flow is used by as a paginated list"

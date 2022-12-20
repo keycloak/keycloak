@@ -30,7 +30,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
 
-@Path("/")
 public class BruteForceUsersResource {
     private static final Logger logger = Logger.getLogger(BruteForceUsersResource.class);
     private static final String SEARCH_ID_PARAMETER = "id:";
