@@ -13,7 +13,7 @@ on:
 env:
   DEFAULT_JDK_VERSION: 11
   DEFAULT_JDK_DIST: temurin
-  SUREFIRE_RERUN_FAILING_COUNT: 2
+  SUREFIRE_RERUN_FAILING_COUNT: 100
 
 concurrency:
   # Only cancel jobs for PR updates
