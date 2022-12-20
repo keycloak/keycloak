@@ -4,7 +4,7 @@ import Masthead from "../../../Masthead";
 const masthead = new Masthead();
 
 export default class ProviderSAMLSettings extends PageObject {
-  private samlSwitch = "#Saml-switch";
+  private samlSwitch = "Saml-switch";
   private modalConfirm = "#modal-confirm";
   private serviceProviderEntityID = "serviceProviderEntityId";
   private identityProviderEntityId = "identityProviderEntityId";
@@ -58,12 +58,12 @@ export default class ProviderSAMLSettings extends PageObject {
   }
 
   public enableProviderSwitch() {
-    cy.get(this.samlSwitch).parent().click();
+    cy.findByTestId(this.samlSwitch).parent().click();
     masthead.checkNotificationMessage("Provider successfully updated");
   }
 
   public disableProviderSwitch() {
-    cy.get(this.samlSwitch).parent().click();
+    cy.findByTestId(this.samlSwitch).parent().click();
     cy.get(this.modalConfirm).click();
     masthead.checkNotificationMessage("Provider successfully updated");
   }

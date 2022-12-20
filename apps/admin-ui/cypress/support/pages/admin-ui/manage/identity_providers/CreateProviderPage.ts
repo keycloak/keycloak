@@ -3,6 +3,7 @@ export default class CreateProviderPage {
   private clientIdField = "clientId";
   private clientIdError = "#kc-client-secret-helper";
   private clientSecretField = "clientSecret";
+  private displayName = "displayName";
   private discoveryEndpoint = "discoveryEndpoint";
   private authorizationUrl = "authorizationUrl";
   private addButton = "createProvider";
@@ -88,6 +89,12 @@ export default class CreateProviderPage {
       cy.findByTestId(this.clientSecretField).type(secret);
     }
 
+    return this;
+  }
+
+  fillDisplayName(value: string) {
+    cy.findByTestId(this.displayName).type("x");
+    cy.findByTestId(this.displayName).clear().type(value).blur();
     return this;
   }
 

@@ -66,7 +66,11 @@ export const SamlGeneralSettings = ({
         />
       </FormGroup>
 
-      <TextField field="displayName" label="displayName" />
+      <TextField
+        field="displayName"
+        label="displayName"
+        data-testid="displayName"
+      />
       <DisplayOrder />
       <FormGroup
         label={t("endpoints")}

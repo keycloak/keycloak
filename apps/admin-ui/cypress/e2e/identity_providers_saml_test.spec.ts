@@ -30,6 +30,7 @@ describe("SAML identity provider test", () => {
 
   const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
   const samlDiscoveryUrl = `${keycloakServer}/realms/master/protocol/saml/descriptor`;
+  const samlDisplayName = "saml";
 
   describe("SAML identity provider creation", () => {
     const samlProviderName = "saml";
@@ -49,6 +50,7 @@ describe("SAML identity provider test", () => {
         .clickCard(samlProviderName);
       createProviderPage.checkAddButtonDisabled();
       createProviderPage
+        .fillDisplayName(samlDisplayName)
         .fillDiscoveryUrl(samlDiscoveryUrl)
         .shouldBeSuccessful()
         .clickAdd();

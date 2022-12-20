@@ -50,6 +50,7 @@ describe("OIDC identity provider test", () => {
       createProviderPage
         .fillDiscoveryUrl(discoveryUrl)
         .shouldBeSuccessful()
+        .fillDisplayName(oidcProviderName)
         .fill(oidcProviderName, secret)
         .clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg, true);
