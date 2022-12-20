@@ -51,7 +51,7 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().createRealm("realm");
+        RealmModel realm = createRealm(s, "realm");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realmId = realm.getId();
         UserModel user = s.users().addUser(realm, "user");
