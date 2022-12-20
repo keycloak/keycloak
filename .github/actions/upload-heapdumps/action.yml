@@ -10,3 +10,4 @@ runs:
       with:
         name: jvm-heap-dumps
         path: '**/java_pid*.hprof'
+        if-no-files-found: ignore
