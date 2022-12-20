@@ -32,7 +32,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.locking.GlobalLock;
 import org.keycloak.models.locking.GlobalLockProvider;
 import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -71,7 +70,6 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -150,8 +148,8 @@ public class KeycloakApplication extends Application {
             @Override
             public void run(KeycloakSession session) {
                 GlobalLockProvider locks = session.getProvider(GlobalLockProvider.class);
-                try (GlobalLock l = locks.acquireLock(GlobalLock.Constants.KEYCLOAK_BOOT)) {
-                    exportImportManager[0] = bootstrap();
+                try {
+                    exportImportManager[0] = locks.withLock(GlobalLockProvider.Constants.KEYCLOAK_BOOT, innerSession -> bootstrap());
                 } catch (LockAcquiringTimeoutException e) {
                     throw new RuntimeException("Acquiring keycloak-boot lock failed.", e);
                 }

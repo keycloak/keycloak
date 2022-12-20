@@ -27,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -75,7 +74,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.locking.GlobalLock;
 import org.keycloak.models.locking.GlobalLockProvider;
 import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
@@ -146,7 +144,6 @@ import org.keycloak.models.map.storage.jpa.user.entity.JpaUserEntity;
 import org.keycloak.models.map.storage.jpa.user.entity.JpaUserFederatedIdentityEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
@@ -495,13 +492,13 @@ public class JpaMapStorageProviderFactory implements
     }
 
     private void update(Class<?> modelType, Connection connection, KeycloakSession session) {
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession lockSession) -> {
-            GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
-            try (GlobalLock l = globalLock.acquireLock(modelType.getName())) {
-                session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
-            } catch (LockAcquiringTimeoutException e) {
+        try {
+            session.getProvider(GlobalLockProvider.class).withLock(modelType.getName(), lockedSession -> {
+                lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
+                return null;
+            });
+        } catch (LockAcquiringTimeoutException e) {
                 throw new RuntimeException("Acquiring " + modelType.getName() + " failed.", e);
-            }
-        });
+        }
     }
 }
