@@ -51,6 +51,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -517,7 +518,7 @@ public class CertificateValidator {
 
         logger.debugf("Certificate policies found: %s", String.join(",", policyList));
 
-        if (policyCheckMode == CERTIFICATE_POLICY_MODE_ANY)
+        if (Objects.equals(policyCheckMode, CERTIFICATE_POLICY_MODE_ANY))
         {
             boolean hasMatch = expectedPolicies.stream().anyMatch(p -> policyList.contains(p.toLowerCase()));
             if (!hasMatch) {
