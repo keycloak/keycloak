@@ -587,9 +587,9 @@
             </properties>
         </profile>
         <profile>
-            <id>db-oracle11g</id>
+            <id>db-oracle</id>
             <properties>
-                <docker.database.image>oracle/database:11.2.0.2-xe</docker.database.image>
+                <docker.database.image>docker.io/gvenzl/oracle-xe:21-slim-faststart</docker.database.image>
                 <docker.database.port>1521</docker.database.port>
                 <docker.database.shmsize>1073741824</docker.database.shmsize>
                 <docker.database.skip>false</docker.database.skip>
@@ -606,7 +606,7 @@
                 <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
                 <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
 
-                <docker.database.postStart>bash -c while\ !\ sqlplus\ -L\ SYS/sa@localhost/XE\ AS\ SYSDBA\ &lt;&lt;&lt;\ $'CREATE\ USER\ ${keycloak.connectionsJpa.user}\ IDENTIFIED\ BY\ ${keycloak.connectionsJpa.password};\n\ GRANT\ CONNECT,\ RESOURCE,\ DBA,\ GRANT\ ANY\ PRIVILEGE,\ UNLIMITED\ TABLESPACE\ TO\ ${keycloak.connectionsJpa.user};\n';\ do\ sleep\ 5;\ done</docker.database.postStart>
+                <docker.database.postStart>bash -c while\ !\ sqlplus\ -L\ SYS/sa@localhost/XE\ AS\ SYSDBA\ &lt;&lt;&lt;\ $'alter\ session\ set\ \"_ORACLE_SCRIPT\"=true;\n\ CREATE\ USER\ ${keycloak.connectionsJpa.user}\ IDENTIFIED\ BY\ ${keycloak.connectionsJpa.password};\n\ GRANT\ CONNECT,\ RESOURCE,\ DBA,\ GRANT\ ANY\ PRIVILEGE,\ UNLIMITED\ TABLESPACE\ TO\ ${keycloak.connectionsJpa.user};\n';\ do\ sleep\ 5;\ done</docker.database.postStart>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->

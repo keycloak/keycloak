@@ -359,7 +359,7 @@
 
                                             <!-- Oracle -->
                                             <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
-                                            <ORACLE_PWD>sa</ORACLE_PWD>
+                                            <ORACLE_PASSWORD>sa</ORACLE_PASSWORD>
                                         </env>
                                         <cmd>${docker.database.cmd}</cmd>
                                         <wait>
