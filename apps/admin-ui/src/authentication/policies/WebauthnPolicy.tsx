@@ -1,11 +1,3 @@
-import { useEffect, useState } from "react";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import {
   ActionGroup,
   AlertVariant,
@@ -22,18 +14,26 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
+import { useEffect, useState } from "react";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormContext,
+} from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { useAlerts } from "../../components/alert/Alerts";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { useHelp } from "../../components/help-enabler/HelpHeader";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { MultiLineInput } from "../../components/multi-line-input/hook-form-v7/MultiLineInput";
+import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useHelp } from "../../components/help-enabler/HelpHeader";
-import { useAlerts } from "../../components/alert/Alerts";
-import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 import "./webauthn-policy.css";
 
@@ -102,24 +102,26 @@ const WebauthnSelect = ({
         name={name}
         defaultValue={options[0]}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Select
             toggleId={name}
             onToggle={toggle}
             onSelect={(_, selectedValue) => {
               if (isMultiSelect) {
-                const changedValue = value.find(
+                const changedValue = field.value.find(
                   (item: string) => item === selectedValue
                 )
-                  ? value.filter((item: string) => item !== selectedValue)
-                  : [...value, selectedValue];
-                onChange(changedValue);
+                  ? field.value.filter((item: string) => item !== selectedValue)
+                  : [...field.value, selectedValue];
+                field.onChange(changedValue);
               } else {
-                onChange(selectedValue.toString());
+                field.onChange(selectedValue.toString());
                 toggle(false);
               }
             }}
-            selections={labelPrefix ? t(`${labelPrefix}.${value}`) : value}
+            selections={
+              labelPrefix ? t(`${labelPrefix}.${field.value}`) : field.value
+            }
             variant={
               isMultiSelect
                 ? SelectVariant.typeaheadMulti
@@ -131,7 +133,7 @@ const WebauthnSelect = ({
           >
             {options.map((option) => (
               <SelectOption
-                selected={option === value}
+                selected={option === field.value}
                 key={option}
                 value={option}
               >
@@ -166,9 +168,8 @@ export const WebauthnPolicy = ({
     control,
     register,
     setValue,
-    errors,
     handleSubmit,
-    formState: { isDirty },
+    formState: { isDirty, errors },
   } = form;
 
   const namePrefix = isPasswordLess
@@ -180,7 +181,7 @@ export const WebauthnPolicy = ({
 
   useEffect(() => setupForm(realm), []);
 
-  const save = async (realm: RealmRepresentation) => {
+  const onSubmit = async (realm: RealmRepresentation) => {
     const submittedRealm = convertFormValuesToObject(realm);
     try {
       await adminClient.realms.update({ realm: realmName }, submittedRealm);
@@ -207,7 +208,7 @@ export const WebauthnPolicy = ({
       <FormAccess
         role="manage-realm"
         isHorizontal
-        onSubmit={handleSubmit(save)}
+        onSubmit={handleSubmit(onSubmit)}
         className="keycloak__webauthn_policies_authentication__form"
       >
         <FormGroup
@@ -224,11 +225,10 @@ export const WebauthnPolicy = ({
           }
         >
           <KeycloakTextInput
-            ref={register({ required: true })}
-            name={`${namePrefix}RpEntityName`}
             id="webAuthnPolicyRpEntityName"
             data-testid="webAuthnPolicyRpEntityName"
             validated={errors.webAuthnPolicyRpEntityName ? "error" : "default"}
+            {...register(`${namePrefix}RpEntityName`, { required: true })}
           />
         </FormGroup>
         <FormProvider {...form}>
@@ -250,10 +250,8 @@ export const WebauthnPolicy = ({
           >
             <KeycloakTextInput
               id="webAuthnPolicyRpId"
-              name={`${namePrefix}RpId`}
-              ref={register()}
-              data-testid="webAuthnPolicyRpId
-            "
+              data-testid="webAuthnPolicyRpId"
+              {...register(`${namePrefix}RpId`)}
             />
           </FormGroup>
           <WebauthnSelect
@@ -297,12 +295,12 @@ export const WebauthnPolicy = ({
               defaultValue={0}
               control={control}
               rules={{ min: 0, max: 31536 }}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   data-testid="webAuthnPolicyCreateTimeout"
                   aria-label={t("webAuthnPolicyCreateTimeout")}
-                  value={value}
-                  onChange={onChange}
+                  value={field.value}
+                  onChange={field.onChange}
                   units={["second", "minute", "hour"]}
                   validated={
                     errors.webAuthnPolicyCreateTimeout ? "error" : "default"
@@ -325,13 +323,13 @@ export const WebauthnPolicy = ({
               name={`${namePrefix}AvoidSameAuthenticatorRegister`}
               defaultValue={false}
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Switch
                   id="webAuthnPolicyAvoidSameAuthenticatorRegister"
                   label={t("common:on")}
                   labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={onChange}
+                  isChecked={field.value}
+                  onChange={field.onChange}
                   aria-label={t("webAuthnPolicyAvoidSameAuthenticatorRegister")}
                 />
               )}
