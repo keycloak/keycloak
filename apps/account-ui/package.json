@@ -7,9 +7,9 @@
     "lint": "wireit"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.219.2",
-    "@patternfly/react-core": "^4.261.0",
-    "@patternfly/react-icons": "^4.92.10",
+    "@patternfly/patternfly": "^4.222.4",
+    "@patternfly/react-core": "^4.267.6",
+    "@patternfly/react-icons": "^4.93.3",
     "i18next": "^22.0.2",
     "i18next-http-backend": "^2.1.0",
     "keycloak-js": "999.0.0-dev",
