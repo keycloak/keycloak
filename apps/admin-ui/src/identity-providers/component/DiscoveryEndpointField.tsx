@@ -1,12 +1,12 @@
-import { ReactNode, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
 import { FormGroup, Switch } from "@patternfly/react-core";
+import { ReactNode, useEffect, useState } from "react";
+import { useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import environment from "../../environment";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
+import environment from "../../environment";
 
 type DiscoveryEndpointFieldProps = {
   id: string;
@@ -130,7 +130,6 @@ export const DiscoveryEndpointField = ({
         >
           <KeycloakTextInput
             type="url"
-            name="discoveryEndpoint"
             data-testid="discoveryEndpoint"
             id="kc-discovery-endpoint"
             placeholder={
@@ -138,7 +137,6 @@ export const DiscoveryEndpointField = ({
                 ? "https://hostname/auth/realms/master/.well-known/openid-configuration"
                 : ""
             }
-            onBlur={() => setDiscovering(true)}
             validated={
               errors.discoveryError || errors.discoveryEndpoint
                 ? "error"
@@ -151,7 +149,10 @@ export const DiscoveryEndpointField = ({
                 ? environment.resourceUrl + "/discovery-load-indicator.svg"
                 : ""
             }
-            ref={register({ required: true })}
+            {...register("discoveryEndpoint", {
+              required: true,
+              onBlur: () => setDiscovering(true),
+            })}
           />
         </FormGroup>
       )}

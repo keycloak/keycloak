@@ -1,13 +1,13 @@
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom-v5-compat";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { DisplayOrder } from "../component/DisplayOrder";
 import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
-import { DisplayOrder } from "../component/DisplayOrder";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
 
 export const OIDCGeneralSettings = ({ id }: { id: string }) => {
@@ -41,14 +41,12 @@ export const OIDCGeneralSettings = ({ id }: { id: string }) => {
         <KeycloakTextInput
           isReadOnly={tab === "settings"}
           isRequired
-          type="text"
           id="alias"
           data-testid="alias"
-          name="alias"
           validated={
             errors.alias ? ValidatedOptions.error : ValidatedOptions.default
           }
-          ref={register({ required: true })}
+          {...register("alias", { required: true })}
         />
       </FormGroup>
 

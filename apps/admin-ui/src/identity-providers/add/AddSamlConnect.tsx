@@ -1,23 +1,23 @@
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
   Button,
   PageSection,
 } from "@patternfly/react-core";
+import { FormProvider, useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
-import { SamlGeneralSettings } from "./SamlGeneralSettings";
-import { SamlConnectSettings } from "./SamlConnectSettings";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useAlerts } from "../../components/alert/Alerts";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { toIdentityProviders } from "../routes/IdentityProviders";
+import { SamlConnectSettings } from "./SamlConnectSettings";
+import { SamlGeneralSettings } from "./SamlGeneralSettings";
 
 type DiscoveryIdentityProvider = IdentityProviderRepresentation & {
   discoveryEndpoint?: string;
@@ -40,7 +40,7 @@ export default function AddSamlConnect() {
   const { addAlert } = useAlerts();
   const { realm } = useRealm();
 
-  const save = async (provider: DiscoveryIdentityProvider) => {
+  const onSubmit = async (provider: DiscoveryIdentityProvider) => {
     delete provider.discoveryEndpoint;
     try {
       await adminClient.identityProviders.create({
@@ -74,7 +74,7 @@ export default function AddSamlConnect() {
           <FormAccess
             role="manage-identity-providers"
             isHorizontal
-            onSubmit={handleSubmit(save)}
+            onSubmit={handleSubmit(onSubmit)}
           >
             <SamlGeneralSettings id={id} />
             <SamlConnectSettings />

@@ -1,19 +1,23 @@
-import { useFormContext } from "react-hook-form";
 import { FormGroup, Title } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form-v7";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { useTranslation } from "react-i18next";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { useAdminClient } from "../../context/auth/AdminClient";
 
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { DescriptorSettings } from "./DescriptorSettings";
-import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";
 import { addTrailingSlash } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
+import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
+import { DescriptorSettings } from "./DescriptorSettings";
+
+type FormFields = IdentityProviderRepresentation & {
+  discoveryError: string;
+};
 
 export const SamlConnectSettings = () => {
   const { t } = useTranslation("identity-providers");
@@ -27,7 +31,7 @@ export const SamlConnectSettings = () => {
     setError,
     clearErrors,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<FormFields>();
 
   const setupForm = (result: IdentityProviderRepresentation) => {
     Object.entries(result).map(([key, value]) =>
@@ -92,13 +96,11 @@ export const SamlConnectSettings = () => {
         validated={errors.config?.entityId ? "error" : "default"}
       >
         <KeycloakTextInput
-          type="text"
-          name="config.entityId"
           data-testid="serviceProviderEntityId"
           id="kc-service-provider-entity-id"
-          ref={register({ required: true })}
           validated={errors.config?.entityId ? "error" : "default"}
           defaultValue={`${environment.authServerUrl}/realms/${realm}`}
+          {...register("config.entityId", { required: true })}
         />
       </FormGroup>
 

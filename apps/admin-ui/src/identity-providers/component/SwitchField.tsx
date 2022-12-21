@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import { Switch } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import { FieldProps, FormGroupField } from "./FormGroupField";
 
@@ -24,16 +24,18 @@ export const SwitchField = ({
         name={field}
         defaultValue={fieldType === "string" ? "false" : false}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Switch
             id={label}
             label={t("common:on")}
             labelOff={t("common:off")}
             isChecked={
-              fieldType === "string" ? value === "true" : (value as boolean)
+              fieldType === "string"
+                ? field.value === "true"
+                : (field.value as boolean)
             }
             onChange={(value) =>
-              onChange(fieldType === "string" ? "" + value : value)
+              field.onChange(fieldType === "string" ? "" + value : value)
             }
             isDisabled={isReadOnly}
             aria-label={label}

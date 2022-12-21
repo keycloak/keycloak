@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup, TextInput } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
@@ -24,16 +24,16 @@ export const DisplayOrder = () => {
         name="config.guiOrder"
         control={control}
         defaultValue=""
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <TextInput
             id="kc-display-order"
             type="number"
-            value={value}
+            value={field.value}
             data-testid="displayOrder"
             min={0}
             onChange={(value) => {
               const num = Number(value);
-              onChange(value === "" ? value : num < 0 ? 0 : num);
+              field.onChange(value === "" ? value : num < 0 ? 0 : num);
             }}
           />
         )}

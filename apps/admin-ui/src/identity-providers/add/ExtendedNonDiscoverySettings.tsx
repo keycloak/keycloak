@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   ExpandableSection,
   Form,
@@ -10,11 +7,14 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
-import { FormGroupField } from "../component/FormGroupField";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 const promptOptions = {
   unspecified: "",
@@ -52,22 +52,26 @@ export const ExtendedNonDiscoverySettings = () => {
             name="config.prompt"
             defaultValue=""
             control={control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 toggleId="prompt"
                 required
                 onToggle={() => setPromptOpen(!promptOpen)}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value as string);
                   setPromptOpen(false);
                 }}
-                selections={value || t(`prompts.unspecified`)}
+                selections={field.value || t(`prompts.unspecified`)}
                 variant={SelectVariant.single}
                 aria-label={t("prompt")}
                 isOpen={promptOpen}
               >
                 {Object.entries(promptOptions).map(([key, val]) => (
-                  <SelectOption selected={val === value} key={key} value={val}>
+                  <SelectOption
+                    selected={val === field.value}
+                    key={key}
+                    value={val}
+                  >
                     {t(`prompts.${key}`)}
                   </SelectOption>
                 ))}
@@ -93,8 +97,8 @@ export const ExtendedNonDiscoverySettings = () => {
             name="config.allowedClockSkew"
             defaultValue={0}
             control={control}
-            render={({ onChange, value }) => {
-              const v = Number(value);
+            render={({ field }) => {
+              const v = Number(field.value);
               return (
                 <NumberInput
                   data-testid="allowedClockSkew"
@@ -103,13 +107,13 @@ export const ExtendedNonDiscoverySettings = () => {
                   max={2147483}
                   value={v}
                   readOnly
-                  onPlus={() => onChange(v + 1)}
-                  onMinus={() => onChange(v - 1)}
+                  onPlus={() => field.onChange(v + 1)}
+                  onMinus={() => field.onChange(v - 1)}
                   onChange={(event) => {
                     const value = Number(
                       (event.target as HTMLInputElement).value
                     );
-                    onChange(value < 0 ? 0 : value);
+                    field.onChange(value < 0 ? 0 : value);
                   }}
                 />
               );

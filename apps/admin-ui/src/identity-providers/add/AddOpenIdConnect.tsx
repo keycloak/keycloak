@@ -1,25 +1,25 @@
-import { useRouteMatch } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
   Button,
   PageSection,
 } from "@patternfly/react-core";
+import { FormProvider, useForm } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
+import { useRouteMatch } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
-import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
-import { OpenIdConnectSettings } from "./OpenIdConnectSettings";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { OIDCAuthentication } from "./OIDCAuthentication";
-import { useAlerts } from "../../components/alert/Alerts";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { toIdentityProviders } from "../routes/IdentityProviders";
+import { OIDCAuthentication } from "./OIDCAuthentication";
+import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
+import { OpenIdConnectSettings } from "./OpenIdConnectSettings";
 
 type DiscoveryIdentity = IdentityProviderRepresentation & {
   discoveryEndpoint?: string;
@@ -44,7 +44,7 @@ export default function AddOpenIdConnect() {
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
-  const save = async (provider: DiscoveryIdentity) => {
+  const onSubmit = async (provider: DiscoveryIdentity) => {
     delete provider.discoveryEndpoint;
     try {
       await adminClient.identityProviders.create({
@@ -77,7 +77,7 @@ export default function AddOpenIdConnect() {
           <FormAccess
             role="manage-identity-providers"
             isHorizontal
-            onSubmit={handleSubmit(save)}
+            onSubmit={handleSubmit(onSubmit)}
           >
             <OIDCGeneralSettings id={id} />
             <OpenIdConnectSettings />

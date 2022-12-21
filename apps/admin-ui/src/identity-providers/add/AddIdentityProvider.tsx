@@ -5,7 +5,7 @@ import {
   Button,
   PageSection,
 } from "@patternfly/react-core";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
 
@@ -36,7 +36,7 @@ export default function AddIdentityProvider() {
   const navigate = useNavigate();
   const { realm } = useRealm();
 
-  const save = async (provider: IdentityProviderRepresentation) => {
+  const onSubmit = async (provider: IdentityProviderRepresentation) => {
     try {
       await adminClient.identityProviders.create({
         ...provider,
@@ -68,7 +68,7 @@ export default function AddIdentityProvider() {
         <FormAccess
           role="manage-identity-providers"
           isHorizontal
-          onSubmit={handleSubmit(save)}
+          onSubmit={handleSubmit(onSubmit)}
         >
           <FormProvider {...form}>
             <GeneralSettings id={providerId} />

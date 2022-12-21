@@ -14,7 +14,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
@@ -387,10 +387,10 @@ export default function DetailSettings() {
         name="enabled"
         control={form.control}
         defaultValue={true}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Header
-            value={value}
-            onChange={onChange}
+            value={field.value || false}
+            onChange={field.onChange}
             save={save}
             toggleDeleteDialog={toggleDeleteDialog}
           />

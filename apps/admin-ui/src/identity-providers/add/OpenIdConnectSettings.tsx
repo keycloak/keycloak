@@ -1,15 +1,15 @@
-import { useFormContext } from "react-hook-form";
 import { FormGroup, Title } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form-v7";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { DiscoverySettings } from "./DiscoverySettings";
-import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
 import { addTrailingSlash } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
+import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
+import { DiscoverySettings } from "./DiscoverySettings";
 
 export const OpenIdConnectSettings = () => {
   const { t } = useTranslation("identity-providers");

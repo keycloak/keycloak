@@ -1,6 +1,8 @@
 import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
-import { Controller, useFormContext } from "react-hook-form";
+import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
+
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
@@ -47,8 +49,7 @@ const FacebookFields = () => {
     >
       <KeycloakTextInput
         id="facebookFetchedFields"
-        name="config.fetchedFields"
-        ref={register()}
+        {...register("config.fetchedFields")}
       />
     </FormGroup>
   );
@@ -73,8 +74,7 @@ const GithubFields = () => {
         <KeycloakTextInput
           id="baseUrl"
           type="url"
-          name="config.baseUrl"
-          ref={register()}
+          {...register("config.baseUrl")}
         />
       </FormGroup>
       <FormGroup
@@ -90,8 +90,7 @@ const GithubFields = () => {
         <KeycloakTextInput
           id="apiUrl"
           type="url"
-          name="config.apiUrl"
-          ref={register()}
+          {...register("config.apiUrl")}
         />
       </FormGroup>
     </>
@@ -116,8 +115,7 @@ const GoogleFields = () => {
       >
         <KeycloakTextInput
           id="googleHostedDomain"
-          name="config.hostedDomain"
-          ref={register()}
+          {...register("config.hostedDomain")}
         />
       </FormGroup>
       <FormGroup
@@ -134,13 +132,13 @@ const GoogleFields = () => {
           name="config.userIp"
           defaultValue="false"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="googleUserIp"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange(value.toString())}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange(value.toString())}
               aria-label={t("google.userIp")}
             />
           )}
@@ -160,13 +158,13 @@ const GoogleFields = () => {
           name="config.offlineAccess"
           defaultValue="false"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="googleOfflineAccess"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange(value.toString())}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange(value.toString())}
               aria-label={t("google.offlineAccess")}
             />
           )}
@@ -181,7 +179,7 @@ const OpenshiftFields = () => {
   const {
     register,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<IdentityProviderRepresentation>();
 
   return (
     <FormGroup
@@ -204,9 +202,8 @@ const OpenshiftFields = () => {
       <KeycloakTextInput
         id="baseUrl"
         type="url"
-        name="config.baseUrl"
-        ref={register({ required: true })}
         isRequired
+        {...register("config.baseUrl", { required: true })}
       />
     </FormGroup>
   );
@@ -231,13 +228,13 @@ const PaypalFields = () => {
         name="config.sandbox"
         defaultValue="false"
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Switch
             id="paypalSandbox"
             label={t("common:on")}
             labelOff={t("common:off")}
-            isChecked={value === "true"}
-            onChange={(value) => onChange(value.toString())}
+            isChecked={field.value === "true"}
+            onChange={(value) => field.onChange(value.toString())}
             aria-label={t("paypal.sandbox")}
           />
         )}
@@ -251,7 +248,7 @@ const StackoverflowFields = () => {
   const {
     register,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<IdentityProviderRepresentation>();
 
   return (
     <FormGroup
@@ -271,9 +268,8 @@ const StackoverflowFields = () => {
     >
       <KeycloakTextInput
         id="stackoverflowKey"
-        name="config.key"
-        ref={register({ required: true })}
         isRequired
+        {...register("config.key", { required: true })}
       />
     </FormGroup>
   );
@@ -296,8 +292,7 @@ const LinkedInFields = () => {
     >
       <KeycloakTextInput
         id="profileProjection"
-        name="config.profileProjection"
-        ref={register}
+        {...register("config.profileProjection")}
       />
     </FormGroup>
   );

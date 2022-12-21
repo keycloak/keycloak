@@ -1,15 +1,15 @@
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { RedirectUrl } from "../component/RedirectUrl";
-import { TextField } from "../component/TextField";
-import { DisplayOrder } from "../component/DisplayOrder";
 import { FormattedLink } from "../../components/external-link/FormattedLink";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";
+import { DisplayOrder } from "../component/DisplayOrder";
+import { RedirectUrl } from "../component/RedirectUrl";
+import { TextField } from "../component/TextField";
 
 import "./saml-general-settings.css";
 
@@ -54,15 +54,13 @@ export const SamlGeneralSettings = ({
       >
         <KeycloakTextInput
           isRequired
-          type="text"
           id="alias"
           data-testid="alias"
-          name="alias"
           isReadOnly={isAliasReadonly}
           validated={
             errors.alias ? ValidatedOptions.error : ValidatedOptions.default
           }
-          ref={register({ required: true })}
+          {...register("alias", { required: true })}
         />
       </FormGroup>
 

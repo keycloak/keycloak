@@ -1,19 +1,20 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
   ExpandableSection,
   FormGroup,
-  ValidatedOptions,
   Select,
   SelectOption,
   SelectVariant,
+  ValidatedOptions,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext, useWatch } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
+import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 import "./discovery-settings.css";
 
@@ -30,7 +31,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
     register,
     control,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<IdentityProviderRepresentation>();
 
   const validateSignature = useWatch({
     control,
@@ -62,14 +63,13 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           type="url"
           data-testid="authorizationUrl"
           id="kc-authorization-url"
-          name="config.authorizationUrl"
-          ref={register({ required: true })}
           validated={
             errors.config?.authorizationUrl
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
           isReadOnly={readOnly}
+          {...register("config.authorizationUrl", { required: true })}
         />
       </FormGroup>
 
@@ -88,14 +88,13 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           type="url"
           id="tokenUrl"
           data-testid="tokenUrl"
-          name="config.tokenUrl"
-          ref={register({ required: true })}
           validated={
             errors.config?.tokenUrl
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
           isReadOnly={readOnly}
+          {...register("config.tokenUrl", { required: true })}
         />
       </FormGroup>
       <TextField
@@ -152,24 +151,24 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             name="config.pkceMethod"
             defaultValue={PKCE_METHODS[0]}
             control={control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 toggleId="pkceMethod"
                 required
                 direction="down"
                 onToggle={() => setPkceMethodOpen(!pkceMethodOpen)}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value as string);
                   setPkceMethodOpen(false);
                 }}
-                selections={t(`${value}`)}
+                selections={t(`${field.value}`)}
                 variant={SelectVariant.single}
                 aria-label={t("pkceMethod")}
                 isOpen={pkceMethodOpen}
               >
                 {PKCE_METHODS.map((option) => (
                   <SelectOption
-                    selected={option === value}
+                    selected={option === field.value}
                     key={option}
                     value={option}
                   >

@@ -1,10 +1,11 @@
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
+import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { useFormContext } from "react-hook-form-v7";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { PasswordInput } from "../../components/password-input/PasswordInput";
 
 export const ClientIdSecret = ({
   secretRequired = true,
@@ -18,7 +19,7 @@ export const ClientIdSecret = ({
   const {
     register,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<IdentityProviderRepresentation>();
 
   return (
     <>
@@ -41,11 +42,9 @@ export const ClientIdSecret = ({
       >
         <KeycloakTextInput
           isRequired
-          type="text"
           id="kc-client-id"
           data-testid="clientId"
-          name="config.clientId"
-          ref={register({ required: true })}
+          {...register("config.clientId", { required: true })}
         />
       </FormGroup>
       <FormGroup
@@ -65,23 +64,20 @@ export const ClientIdSecret = ({
         }
         helperTextInvalid={t("common:required")}
       >
-        {create && (
+        {create ? (
           <PasswordInput
             isRequired={secretRequired}
             id="kc-client-secret"
             data-testid="clientSecret"
-            name="config.clientSecret"
-            ref={register({ required: secretRequired })}
+            {...register("config.clientSecret", { required: secretRequired })}
           />
-        )}
-        {!create && (
+        ) : (
           <KeycloakTextInput
             isRequired={secretRequired}
             type="password"
             id="kc-client-secret"
             data-testid="clientSecret"
-            name="config.clientSecret"
-            ref={register({ required: secretRequired })}
+            {...register("config.clientSecret", { required: secretRequired })}
           />
         )}
       </FormGroup>
