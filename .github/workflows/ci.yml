@@ -271,7 +271,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        db: [postgres, mysql, oracle, mssql] # 'mariadb' is not always shutting down
+        db: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3

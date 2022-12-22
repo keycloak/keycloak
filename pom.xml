@@ -145,7 +145,7 @@
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <postgresql.version>13.2</postgresql.version>
         <postgresql-jdbc.version>42.5.1</postgresql-jdbc.version>
-        <mariadb.version>10.3.27</mariadb.version>
+        <mariadb.version>10.6</mariadb.version>
         <mariadb-jdbc.version>2.7.2</mariadb-jdbc.version>
         <mssql.version>2019-latest</mssql.version>
         <mssql-jdbc.version>9.2.0.jre8</mssql-jdbc.version>
