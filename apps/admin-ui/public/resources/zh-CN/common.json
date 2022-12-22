@@ -56,6 +56,7 @@
   "attributes": "属性",
   "credentials": "凭据",
   "clientId": "客户端 ID",
+  "clientName": "姓名",
   "id": "ID",
   "mapperType": "映射器类型",
   "leave": "离开",

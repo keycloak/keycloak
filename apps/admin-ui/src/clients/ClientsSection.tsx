@@ -99,6 +99,12 @@ export default function ClientsSection() {
     </Link>
   );
 
+  const ClientName = (client: ClientRepresentation) => (
+    <TableText wrapModifier="truncate">
+      {emptyFormatter()(client.name)}
+    </TableText>
+  );
+
   const ClientDescription = (client: ClientRepresentation) => (
     <TableText wrapModifier="truncate">
       {emptyFormatter()(client.description)}
@@ -200,23 +206,32 @@ export default function ClientsSection() {
                 {
                   name: "clientId",
                   displayKey: "common:clientId",
+                  transforms: [cellWidth(20)],
                   cellRenderer: ClientDetailLink,
+                },
+                {
+                  name: "clientName",
+                  displayKey: "common:clientName",
+                  transforms: [cellWidth(20)],
+                  cellRenderer: ClientName,
                 },
                 {
                   name: "protocol",
                   displayKey: "common:type",
+                  transforms: [cellWidth(10)],
                   cellRenderer: (client) =>
                     getProtocolName(t, client.protocol ?? "openid-connect"),
                 },
                 {
                   name: "description",
                   displayKey: "common:description",
-                  transforms: [cellWidth(20)],
+                  transforms: [cellWidth(30)],
                   cellRenderer: ClientDescription,
                 },
                 {
                   name: "baseUrl",
                   displayKey: "clients:homeURL",
+                  transforms: [cellWidth(20)],
                   cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
                   cellRenderer: (c) =>
                     convertClientToUrl(c, adminClient.baseUrl),

@@ -176,6 +176,7 @@
   "valuePlaceholder": "Type a value",
   "credentials": "Credentials",
   "clientId": "Client ID",
+  "clientName": "Name",
   "id": "ID",
   "addMapper": "Add mapper",
   "createNewMapper": "Create new mapper",

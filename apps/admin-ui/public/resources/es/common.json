@@ -26,6 +26,7 @@
   },
   "credentials": "Credenciales",
   "clientId": "ID Cliente",
+  "clientName": "Nombre",
   "id": "ID",
   "mapperType": "Tipo de asignador",
   "password": "Contraseña"

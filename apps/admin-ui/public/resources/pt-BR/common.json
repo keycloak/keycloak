@@ -47,6 +47,7 @@
   "attributes": "Atributos",
   "credentials": "Credenciais",
   "clientId": "ID do cliente",
+  "clientName": "Nome",
   "id": "ID",
   "mapperType": "Tipo de mapeamento",
   "leave": "Sair",

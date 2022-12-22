@@ -47,6 +47,7 @@
   "attributes": "Attribute",
   "credentials": "Passwörter",
   "clientId": "Client-ID",
+  "clientName": "Name",
   "leave": "Verlassen",
   "password": "Passwort",
   "passwordConfirmation": "Passwort bestätigen",

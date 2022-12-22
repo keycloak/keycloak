@@ -48,6 +48,7 @@
   "attributes": "Attributter",
   "credentials": "Innloggingsdetaljer",
   "clientId": "Klient-ID",
+  "clientName": "Navn",
   "id": "ID",
   "mapperType": "Mappertype",
   "leave": "Forlat",

@@ -84,6 +84,7 @@
   "attributes": "属性",
   "credentials": "クレデンシャル",
   "clientId": "クライアントID",
+  "clientName": "名前",
   "id": "ID",
   "mapperType": "マッパータイプ",
   "leave": "外す",

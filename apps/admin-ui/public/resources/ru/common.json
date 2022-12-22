@@ -56,6 +56,7 @@
   "attributes": "Атрибуты",
   "credentials": "Учетные данные",
   "clientId": "ID клиента",
+  "clientName": "Имя",
   "id": "ID",
   "mapperType": "Тип сопоставления",
   "leave": "Покинуть",
