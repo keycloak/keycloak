@@ -57,9 +57,7 @@
   "saveEventListeners": "Save Event Listeners",
   "saveEventListenersSuccess": "Event listener has been updated.",
   "saveEventListenersError": "Error saving event listener: {{error}}",
-  "userEventsConfig": "User events configuration",
   "userEventsSettings": "User events settings",
-  "adminEventsConfig": "Admin events configuration",
   "adminEventsSettings": "Admin events settings",
   "saveEvents": "Save events",
   "expiration": "Expiration",
@@ -894,5 +892,4 @@
   "importSkipped_zero": "No records skipped.",
   "importSkipped_one": "One record skipped.",
   "importSkipped_other": "{{count}} records skipped."
-
 }

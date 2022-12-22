@@ -34,7 +34,6 @@ export const EventConfigForm = ({
     setValue,
     formState: { isDirty },
   } = form;
-
   const eventKey = type === "admin" ? "adminEventsEnabled" : "eventsEnabled";
   const eventsEnabled: boolean = watch(eventKey);
 

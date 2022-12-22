@@ -8,7 +8,6 @@ import {
   Tab,
   Tabs,
   TabTitleText,
-  Title,
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
@@ -35,7 +34,7 @@ type EventsConfigForm = RealmEventsConfigRepresentation & {
 export const EventsTab = ({ realm }: EventsTabProps) => {
   const { t } = useTranslation("realm-settings");
   const form = useForm<EventsConfigForm>();
-  const { setValue, handleSubmit, watch } = form;
+  const { setValue, handleSubmit } = form;
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -145,7 +144,6 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
     refresh();
   };
 
-  const eventsEnabled: boolean = watch("eventsEnabled") || false;
   return (
     <>
       <DeleteConfirm />
@@ -181,11 +179,6 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
           data-testid="rs-events-tab"
         >
           <PageSection>
-            <Title headingLevel="h1" size="xl">
-              {t("userEventsConfig")}
-            </Title>
-          </PageSection>
-          <PageSection>
             <FormAccess
               role="manage-events"
               isHorizontal
@@ -199,20 +192,20 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
               />
             </FormAccess>
           </PageSection>
-          {eventsEnabled && (
+          {events?.eventsEnabled && (
             <PageSection>
               <EventsTypeTable
                 key={tableKey}
                 addTypes={() => setAddEventType(true)}
                 loader={() =>
                   Promise.resolve(
-                    events?.enabledEventTypes?.map((id) => {
+                    events.enabledEventTypes?.map((id) => {
                       return { id };
                     }) || []
                   )
                 }
                 onDelete={(value) => {
-                  const enabledEventTypes = events?.enabledEventTypes?.filter(
+                  const enabledEventTypes = events.enabledEventTypes?.filter(
                     (e) => e !== value.id
                   );
                   addEvents(enabledEventTypes);
@@ -227,11 +220,6 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
           title={<TabTitleText>{t("adminEventsSettings")}</TabTitleText>}
           data-testid="rs-admin-events-tab"
         >
-          <PageSection>
-            <Title headingLevel="h4" size="xl">
-              {t("adminEventsConfig")}
-            </Title>
-          </PageSection>
           <PageSection>
             <FormAccess
               role="manage-events"
