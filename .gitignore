@@ -39,7 +39,3 @@ server
 dist
 dist-ssr
 *.local
-
-# Intellij
-.idea
-*.iml
