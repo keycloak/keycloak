@@ -265,7 +265,11 @@ export default function LdapMapperDetails() {
               label={t("common:mapperType")}
               labelIcon={
                 <HelpItem
-                  helpText="user-federation-help:mapperTypeHelp"
+                  helpText={
+                    mapper?.helpText
+                      ? mapper.helpText
+                      : t("user-federation-help:mapperTypeHelp")
+                  }
                   fieldLabelId="mapperType"
                 />
               }
@@ -287,7 +291,11 @@ export default function LdapMapperDetails() {
               label={t("common:mapperType")}
               labelIcon={
                 <HelpItem
-                  helpText="user-federation-help:mapperTypeHelp"
+                  helpText={
+                    mapper?.helpText
+                      ? mapper.helpText
+                      : t("user-federation-help:mapperTypeHelp")
+                  }
                   fieldLabelId="mapperType"
                 />
               }
