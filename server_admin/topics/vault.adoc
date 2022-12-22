@@ -7,11 +7,11 @@ To obtain a secret from a vault rather than entering it directly, enter the foll
 
 [source]
 ----
-**${vault.**_key_**}**
+${vault.key}
 ----
-where the `_key_` is the name of the secret recognized by the vault.
+where the `key` is the name of the secret recognized by the vault.
 
-To prevent secrets from leaking across realms, {project_name} combines the realm name with the `_key_` obtained from the vault expression. This method means that the `_key_` does not directly map to an entry in the vault but creates the final entry name according to the algorithm used to combine the `_key_` with the realm name.
+To prevent secrets from leaking across realms, {project_name} combines the realm name with the `key` obtained from the vault expression. This method means that the `key` does not directly map to an entry in the vault but creates the final entry name according to the algorithm used to combine the `key` with the realm name.
 
 You can obtain the secret from the vault in the following fields:
 
