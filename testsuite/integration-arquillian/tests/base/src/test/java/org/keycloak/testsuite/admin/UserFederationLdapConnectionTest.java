@@ -54,7 +54,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         assertStatus(response, 400);
 
         // Connection success
-        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldap://localhost:10389", "foo", "bar", "false", null, "false", LDAPConstants.AUTH_TYPE_NONE));
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldap://localhost:10389", null, null, "false", null, "false", LDAPConstants.AUTH_TYPE_NONE));
         assertStatus(response, 204);
 
         // Bad authentication
@@ -69,6 +69,10 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null));
         assertStatus(response, 204);
 
+        // Authentication success anonymous bind
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", null, null, "false", null, "false", LDAPConstants.AUTH_TYPE_NONE));
+        assertStatus(response, 204);
+
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null));
         assertStatus(response, 204);
 
@@ -81,7 +85,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
     @Test
     public void testLdapConnectionsSsl() {
 
-        Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldaps://localhost:10636", "foo", "bar", "false", null, null, LDAPConstants.AUTH_TYPE_NONE));
+        Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldaps://localhost:10636", null, null, "false", null, null, LDAPConstants.AUTH_TYPE_NONE));
         assertStatus(response, 204);
 
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldaps://localhostt:10636", "foo", "bar", "false", null));
@@ -94,6 +98,9 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         assertStatus(response, 204);
 
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", "10000"));
+        assertStatus(response, 204);
+
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", null, null, "false", null, "false", LDAPConstants.AUTH_TYPE_NONE));
         assertStatus(response, 204);
 
         // Authentication success with bindCredential from Vault

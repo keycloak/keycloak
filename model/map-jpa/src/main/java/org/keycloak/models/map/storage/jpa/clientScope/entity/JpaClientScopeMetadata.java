@@ -27,7 +27,7 @@ public class JpaClientScopeMetadata extends MapClientScopeEntityImpl implements 
     }
 
     public JpaClientScopeMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

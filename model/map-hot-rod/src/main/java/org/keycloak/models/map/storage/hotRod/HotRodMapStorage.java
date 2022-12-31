@@ -195,8 +195,10 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
 
         QueryFactory queryFactory = Search.getQueryFactory(remoteCache);
 
-        Query<Object[]> query = paginateQuery(queryFactory.create(queryString), queryParameters.getOffset(),
-                queryParameters.getLimit());
+        if (queryParameters.getLimit() != null || queryParameters.getOffset() != null) {
+            throw new IllegalArgumentException("HotRod storage does not support pagination for delete query");
+        }
+        Query<Object[]> query = queryFactory.create(queryString);
 
         query.setParameters(iqmcb.getParameters());
 

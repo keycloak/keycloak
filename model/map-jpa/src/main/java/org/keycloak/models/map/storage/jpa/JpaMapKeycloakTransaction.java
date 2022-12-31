@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.Parameter;
+import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
@@ -194,12 +195,17 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
             emQuery = emQuery.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         }
 
-        // In order to cache the result, the full result needs to be retrieved.
-        // There is also no difference to that in Hibernate, as Hibernate will first retrieve all elements from the ResultSet.
-        List<RE> resultList = emQuery.getResultList();
-        cache.put(queryCacheKey, resultList);
+        try {
+            // In order to cache the result, the full result needs to be retrieved.
+            // There is also no difference to that in Hibernate, as Hibernate will first retrieve all elements from the ResultSet.
+            List<RE> resultList = emQuery.getResultList();
+            cache.put(queryCacheKey, resultList);
 
-        return closing(resultList.stream()).map(this::mapToEntityDelegateUnique);
+            return closing(resultList.stream()).map(this::mapToEntityDelegateUnique);
+        } catch (PersistenceException pe) {
+            // handle exception that could occur on auto-flush when the query is executed
+            throw PersistenceExceptionConverter.convert(pe.getCause() != null ? pe.getCause() : pe);
+        }
     }
 
     private Map<QueryCacheKey, List<RE>> getQueryCache() {
@@ -238,7 +244,12 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         JpaPredicateFunction<RE> predicateFunc = mcb.getPredicateFunc();
         if (predicateFunc != null) countQuery.where(predicateFunc.apply(cb, countQuery::subquery, root));
 
-        return em.createQuery(countQuery).getSingleResult();
+        try {
+            return em.createQuery(countQuery).getSingleResult();
+        } catch (PersistenceException pe) {
+            // handle exception that could occur on auto-flush when the query is executed
+            throw PersistenceExceptionConverter.convert(pe.getCause() != null ? pe.getCause() : pe);
+        }
     }
 
     @Override
@@ -285,7 +296,12 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         JpaPredicateFunction<RE> predicateFunc = mcb.getPredicateFunc();
         if (predicateFunc != null) deleteQuery.where(predicateFunc.apply(cb, deleteQuery::subquery, root));
 
-        return em.createQuery(deleteQuery).executeUpdate() + removed[0];
+        try {
+            return em.createQuery(deleteQuery).executeUpdate() + removed[0];
+        } catch (PersistenceException pe) {
+            // handle exception that could occur on auto-flush when the query is executed
+            throw PersistenceExceptionConverter.convert(pe.getCause() != null ? pe.getCause() : pe);
+        }
     }
 
     private MapModelCriteriaBuilder<String, E, M> createCriteriaBuilderMap() {

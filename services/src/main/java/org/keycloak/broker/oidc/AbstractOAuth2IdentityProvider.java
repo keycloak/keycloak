@@ -19,7 +19,7 @@ package org.keycloak.broker.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
@@ -69,7 +69,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -137,7 +136,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
-        return Response.ok(identity.getToken()).build();
+        return Response.ok(identity.getToken()).type(MediaType.APPLICATION_JSON).build();
     }
 
     @Override
@@ -460,11 +459,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         protected final ClientConnection clientConnection;
 
-        @Context
-        protected HttpHeaders headers;
+        protected final HttpHeaders headers;
 
-        @Context
-        protected HttpRequest httpRequest;
+        protected final HttpRequest httpRequest;
 
         public Endpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event, AbstractOAuth2IdentityProvider provider) {
             this.callback = callback;
@@ -473,6 +470,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             this.provider = provider;
             this.session = provider.session;
             this.clientConnection = session.getContext().getConnection();
+            this.httpRequest = session.getContext().getHttpRequest();
+            this.headers = session.getContext().getRequestHeaders();
         }
 
         @GET

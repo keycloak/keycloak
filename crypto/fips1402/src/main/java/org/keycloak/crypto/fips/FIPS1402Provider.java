@@ -9,6 +9,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.SecureRandom;
 import java.security.spec.ECField;
 import java.security.spec.ECFieldF2m;
 import java.security.spec.ECFieldFp;
@@ -83,7 +84,7 @@ public class FIPS1402Provider implements CryptoProvider {
 
         Security.insertProviderAt(new KeycloakFipsSecurityProvider(bcFipsProvider), 1);
         if (existingBcFipsProvider == null) {
-            Security.insertProviderAt(this.bcFipsProvider, 2);
+            checkSecureRandom(() -> Security.insertProviderAt(this.bcFipsProvider, 2));
             Provider bcJsseProvider = new BouncyCastleJsseProvider("fips:BCFIPS");
             Security.insertProviderAt(bcJsseProvider, 3);
             log.debugf("Inserted security providers: %s", Arrays.asList(this.bcFipsProvider.getName(),bcJsseProvider.getName()));
@@ -191,11 +192,7 @@ public class FIPS1402Provider implements CryptoProvider {
     
     @Override
     public KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException {
-        if (format == KeystoreFormat.JKS) {
-            return KeyStore.getInstance(format.toString());
-        } else {
-            return KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
-        }
+        return KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
     }
 
     @Override
@@ -261,5 +258,35 @@ public class FIPS1402Provider implements CryptoProvider {
             }
 
         };
+    }
+
+    // BCFIPS require "SecureRandom.getInstanceStrong" to be available. But it may not be available on RHEL 8 on OpenJDK 17 due the https://bugzilla.redhat.com/show_bug.cgi?id=2155060
+    private void checkSecureRandom(Runnable insertBcFipsProvider) {
+        try {
+            SecureRandom sr = SecureRandom.getInstanceStrong();
+            log.debugf("Strong secure random available. Algorithm: %s, Provider: %s", sr.getAlgorithm(), sr.getProvider());
+            insertBcFipsProvider.run();
+        } catch (NoSuchAlgorithmException nsae) {
+
+            // Fallback to regular SecureRandom
+            SecureRandom secRandom = new SecureRandom();
+            String origStrongAlgs = Security.getProperty("securerandom.strongAlgorithms");
+            String usedAlg = secRandom.getAlgorithm() + ":" + secRandom.getProvider().getName();
+            log.debugf("Strong secure random not available. Tried algorithms: %s. Using algorithm as a fallback for strong secure random: %s", origStrongAlgs, usedAlg);
+
+            String strongAlgs = origStrongAlgs == null ? usedAlg : usedAlg + "," + origStrongAlgs;
+            Security.setProperty("securerandom.strongAlgorithms", strongAlgs);
+
+            try {
+                // Need to insert BCFIPS provider to security providers with "strong algorithm" available
+                insertBcFipsProvider.run();
+                SecureRandom.getInstance("DEFAULT", "BCFIPS");
+                log.debugf("Initialized BCFIPS secured random");
+            } catch (NoSuchAlgorithmException | NoSuchProviderException nsaee) {
+                throw new IllegalStateException("Not possible to initiate BCFIPS secure random", nsaee);
+            } finally {
+                Security.setProperty("securerandom.strongAlgorithms", origStrongAlgs != null ? origStrongAlgs : "");
+            }
+        }
     }
 }

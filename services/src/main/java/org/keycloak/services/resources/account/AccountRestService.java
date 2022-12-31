@@ -44,13 +44,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
@@ -100,10 +99,9 @@ import org.keycloak.validate.Validators;
  */
 public class AccountRestService {
 
-    @Context
-    private HttpRequest request;
-    @Context
-    protected HttpHeaders headers;
+    private final HttpRequest request;
+
+    protected final HttpHeaders headers;
 
     protected final ClientConnection clientConnection;
 
@@ -126,6 +124,8 @@ public class AccountRestService {
         this.locale = session.getContext().resolveLocale(user);
         this.version = version;
         event.client(auth.getClient()).user(auth.getUser());
+        this.request = session.getContext().getHttpRequest();
+        this.headers = session.getContext().getRequestHeaders();
     }
     
     /**

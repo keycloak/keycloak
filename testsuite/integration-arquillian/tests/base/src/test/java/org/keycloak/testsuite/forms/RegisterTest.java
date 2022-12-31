@@ -52,6 +52,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.mail.internet.MimeMessage;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -515,7 +516,9 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             assertTrue(registerPage.isCurrent());
             assertEquals("Invalid password: must not be equal to the username.", registerPage.getInputPasswordErrors().getPasswordError());
 
-            adminClient.realm("test").users().create(UserBuilder.create().username("registerUserNotUsername").build());
+            try (Response response = adminClient.realm("test").users().create(UserBuilder.create().username("registerUserNotUsername").build())) {
+                assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
 
             registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
 

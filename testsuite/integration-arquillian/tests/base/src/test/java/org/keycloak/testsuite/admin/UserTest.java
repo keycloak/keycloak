@@ -48,6 +48,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -181,6 +182,8 @@ public class UserTest extends AbstractAdminTest {
         try (Response response = realm.users().create(userRep)) {
             createdId = ApiUtil.getCreatedId(response);
         }
+
+        StripSecretsUtils.strip(userRep);
 
         if (assertAdminEvent) {
             assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep,
@@ -3112,5 +3115,25 @@ public class UserTest extends AbstractAdminTest {
             assertEquals(parentGroupName, obtainedGroups.get(0).getName());
             assertEquals(subGroupName, obtainedGroups.get(1).getName());
         }
+    }
+
+    @Test
+    public void expectNoPasswordShownWhenCreatingUserWithPassword() throws IOException {
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue("password");
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("test");
+        user.setCredentials(Collections.singletonList(credential));
+        user.setEnabled(true);
+
+        createUser(user, false);
+
+        String actualRepresentation = assertAdminEvents.poll().getRepresentation();
+        assertEquals(
+            JsonSerialization.writeValueAsString(user),
+            actualRepresentation
+        );
     }
 }

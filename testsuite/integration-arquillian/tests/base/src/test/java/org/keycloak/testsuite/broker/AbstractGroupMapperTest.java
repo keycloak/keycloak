@@ -41,10 +41,10 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
             IdentityProviderRepresentation idp, IdentityProviderMapperSyncMode syncMode, String groupPath);
 
     /**
-     * Sets up a scenario with a matching group.
+     * Sets up a scenario with the given group path.
      * @return the ID of the mapper
      */
-    protected abstract String setupScenarioWithMatchingGroup();
+    protected abstract String setupScenarioWithGroupPath(String groupPath);
 
     protected abstract void setupScenarioWithNonExistingGroup();
 
@@ -71,8 +71,8 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
     }
 
     @Test
-    public void mapperStillWorksWhenGroupIsMoved() {
-        final String mapperId = setupScenarioWithMatchingGroup();
+    public void mapperStillWorksWhenTopLevelGroupIsConvertedToSubGroup() {
+        final String mapperId = setupScenarioWithGroupPath(MAPPER_TEST_GROUP_PATH);
 
         String newParentGroupName = "new-parent";
         GroupRepresentation newParentGroup = new GroupRepresentation();
@@ -84,21 +84,60 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
 
         String expectedNewGroupPath = buildGroupPath(newParentGroupName, MAPPER_TEST_GROUP_NAME);
 
-        // mapper should have been updated to the new path of the group
-        IdentityProviderMapperRepresentation mapper =
-                realm.identityProviders().get(bc.getIDPAlias()).getMapperById(mapperId);
-        Map<String, String> config = mapper.getConfig();
-        assertThat(config.get(ConfigConstants.GROUP), equalTo(expectedNewGroupPath));
+        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
+    }
 
-        logInAsUserInIDPForFirstTimeAndAssertSuccess();
+    @Test
+    public void mapperStillWorksWhenSubGroupChangesParent() {
+        String parentGroupName = "parent-group";
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName(parentGroupName);
+        String parentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(parentGroup));
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatUserHasBeenAssignedToGroup(user, expectedNewGroupPath);
+        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
+        realm.groups().group(parentGroupId).subGroup(mappedGroup).close();
+
+        String initialGroupPath = buildGroupPath(parentGroupName, MAPPER_TEST_GROUP_NAME);
+
+        final String mapperId = setupScenarioWithGroupPath(initialGroupPath);
+
+        String newParentGroupName = "new-parent-group";
+        GroupRepresentation newParentGroup = new GroupRepresentation();
+        newParentGroup.setName(newParentGroupName);
+        String newParentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(newParentGroup));
+
+        realm.groups().group(newParentGroupId).subGroup(mappedGroup).close();
+
+        String expectedNewGroupPath = buildGroupPath(newParentGroupName, MAPPER_TEST_GROUP_NAME);
+
+        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
+    }
+
+    @Test
+    public void mapperStillWorksWhenSubGroupIsConvertedToTopLevelGroup() {
+        String parentGroupName = "parent-group";
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName(parentGroupName);
+        String parentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(parentGroup));
+
+        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
+        realm.groups().group(parentGroupId).subGroup(mappedGroup).close();
+
+        String initialGroupPath = buildGroupPath(parentGroupName, MAPPER_TEST_GROUP_NAME);
+
+        final String mapperId = setupScenarioWithGroupPath(initialGroupPath);
+
+        // convert the mapped group to a top-level group
+        realm.groups().add(realm.groups().group(mapperGroupId).toRepresentation());
+
+        String expectedNewGroupPath = buildGroupPath(MAPPER_TEST_GROUP_NAME);
+
+        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
     }
 
     @Test
     public void mapperStillWorksWhenGroupIsRenamed() {
-        final String mapperId = setupScenarioWithMatchingGroup();
+        final String mapperId = setupScenarioWithGroupPath(MAPPER_TEST_GROUP_PATH);
 
         String newGroupName = "new-name-" + MAPPER_TEST_GROUP_NAME;
         GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
@@ -107,16 +146,39 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
 
         String expectedNewGroupPath = buildGroupPath(newGroupName);
 
-        // mapper should have been updated to the new path of the group
-        IdentityProviderMapperRepresentation mapper =
-                realm.identityProviders().get(bc.getIDPAlias()).getMapperById(mapperId);
-        Map<String, String> config = mapper.getConfig();
-        assertThat(config.get(ConfigConstants.GROUP), equalTo(expectedNewGroupPath));
+        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
+    }
 
-        logInAsUserInIDPForFirstTimeAndAssertSuccess();
+    @Test
+    public void mapperStillWorksWhenAncestorGroupIsRenamed() {
+        String topLevelGroupName = "top-level";
+        GroupRepresentation topLevelGroup = new GroupRepresentation();
+        topLevelGroup.setName(topLevelGroupName);
+        String topLevelGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(topLevelGroup));
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatUserHasBeenAssignedToGroup(user, expectedNewGroupPath);
+        String midLevelGroupName = "mid-level";
+        GroupRepresentation midLevelGroup = new GroupRepresentation();
+        midLevelGroup.setName(midLevelGroupName);
+        String midLevelGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(midLevelGroup));
+
+        midLevelGroup = realm.groups().group(midLevelGroupId).toRepresentation();
+        realm.groups().group(topLevelGroupId).subGroup(midLevelGroup).close();
+
+        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
+        realm.groups().group(midLevelGroupId).subGroup(mappedGroup).close();
+
+        String initialGroupPath = buildGroupPath(topLevelGroupName, midLevelGroupName, MAPPER_TEST_GROUP_NAME);
+
+        final String mapperId = setupScenarioWithGroupPath(initialGroupPath);
+
+        String newTopLevelGroupName = "new-name-" + topLevelGroupName;
+        topLevelGroup = realm.groups().group(topLevelGroupId).toRepresentation();
+        topLevelGroup.setName(newTopLevelGroupName);
+        realm.groups().group(topLevelGroupId).update(topLevelGroup);
+
+        String expectedNewGroupPath = buildGroupPath(newTopLevelGroupName, midLevelGroupName, MAPPER_TEST_GROUP_NAME);
+
+        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
     }
 
     protected UserRepresentation loginAsUserTwiceWithMapper(
@@ -149,6 +211,18 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
 
         user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
         return user;
+    }
+
+    private void assertMapperHasExpectedPathAndSucceeds(String mapperId, String expectedGroupPath) {
+        IdentityProviderMapperRepresentation mapper =
+                realm.identityProviders().get(bc.getIDPAlias()).getMapperById(mapperId);
+        Map<String, String> config = mapper.getConfig();
+        assertThat(config.get(ConfigConstants.GROUP), equalTo(expectedGroupPath));
+
+        logInAsUserInIDPForFirstTimeAndAssertSuccess();
+
+        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
+        assertThatUserHasBeenAssignedToGroup(user, expectedGroupPath);
     }
 
     protected void assertThatUserHasBeenAssignedToGroup(UserRepresentation user) {

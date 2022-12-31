@@ -2,6 +2,15 @@ name: Bug Report
 description: Report a non-security sensitive bug in Keycloak
 labels: ["kind/bug", "status/triage"]
 body:
+  - type: checkboxes
+    attributes:
+      label: Before reporting an issue
+      description: Please search to see if the issue is already reported, and try to reproduce the issue on the latest release.
+      options:
+        - label: I have searched existing issues
+          required: true
+        - label: I have reproduced the issue with the latest release
+          required: true
   - type: dropdown
     id: area
     attributes:

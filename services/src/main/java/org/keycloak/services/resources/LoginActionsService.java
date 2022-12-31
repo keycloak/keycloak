@@ -17,7 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -91,7 +91,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -103,6 +102,7 @@ import java.net.URI;
 import java.util.Map;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
+import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -129,11 +129,9 @@ public class LoginActionsService {
 
     private final RealmModel realm;
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
     private final ClientConnection clientConnection;
 
@@ -179,7 +177,9 @@ public class LoginActionsService {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
+        this.request = session.getContext().getHttpRequest();
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     private boolean checkSsl() {
@@ -702,7 +702,7 @@ public class LoginActionsService {
 
         processLocaleParam(authSession);
 
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
+        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
 
         return processRegistration(checks.isActionRequest(), execution, authSession, null);
     }
@@ -993,7 +993,7 @@ public class LoginActionsService {
         event.event(EventType.CUSTOM_REQUIRED_ACTION);
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
 
-        RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, action);
+        RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, getDefaultRequiredActionCaseInsensitively(action));
         if (factory == null) {
             ServicesLogger.LOGGER.actionProviderNull();
             event.error(Errors.INVALID_CODE);

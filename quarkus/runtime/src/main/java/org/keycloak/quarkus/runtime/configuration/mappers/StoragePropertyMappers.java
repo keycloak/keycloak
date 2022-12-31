@@ -18,9 +18,11 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static java.util.Optional.of;
+import static java.util.function.Predicate.not;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.keycloak.config.StorageOptions;
 import org.keycloak.config.StorageOptions.StorageType;
@@ -301,11 +303,27 @@ final class StoragePropertyMappers {
     }
 
     private static Optional<String> getAreaStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        return of(storage.isEmpty() ? "jpa" : "map");
+        if (storage.isEmpty()) {
+            return of("jpa");
+        }
+
+        if (Stream.of(StorageType.values()).map(Enum::name).anyMatch(storage.get()::equals)) {
+            return of("map");
+        }
+
+        return storage;
     }
 
     private static Optional<String> getCacheStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        return of(storage.isEmpty() ? "infinispan" : "map");
+        if (storage.isEmpty()) {
+            return of("infinispan");
+        }
+
+        if (Stream.of(StorageType.values()).map(Enum::name).anyMatch(storage.get()::equals)) {
+            return of("map");
+        }
+
+        return storage;
     }
 
     private static Optional<String> getGlobalLockProvider(Optional<String> storage, ConfigSourceInterceptorContext context) {

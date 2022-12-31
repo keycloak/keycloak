@@ -1,0 +1,17 @@
+AccountRestServiceTest
+AuthorizationCodeTest
+CredentialsTest
+DeployedScriptAuthenticatorTest
+ExportImportTest
+GeneratedRsaKeyProviderTest
+JavaKeystoreKeyProviderTest
+KcOidcBrokerTest
+KerberosLdapTest
+LDAPUserLoginTest
+LoginTest
+MutualTLSClientTest
+PasswordPolicyTest
+SSOTest
+SamlClientTest
+TransactionsTest
+X509BrowserLoginTest

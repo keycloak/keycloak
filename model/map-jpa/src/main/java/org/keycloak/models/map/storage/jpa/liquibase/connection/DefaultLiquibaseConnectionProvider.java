@@ -18,6 +18,7 @@
 package org.keycloak.models.map.storage.jpa.liquibase.connection;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,10 @@ public class DefaultLiquibaseConnectionProvider implements MapLiquibaseConnectio
 
         String scopeId = enterLiquibaseScope();
         try {
-            Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnectionFromPool(connection));
+            // This acts on the unwrapped database connection as Liquibase will commit and rollback the transaction as needed.
+            // Otherwise, the connection will not recover from an SQL error when running for example on a PostgreSQL database.
+            // This was needed when adding support for JTA
+            Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnectionFromPool(connection.unwrap(Connection.class)));
             if (defaultSchema != null) {
                 database.setDefaultSchemaName(defaultSchema);
             }
@@ -88,6 +92,9 @@ public class DefaultLiquibaseConnectionProvider implements MapLiquibaseConnectio
             // If it returns the Liquibase object, the scope will be closed once the Liquibase object is being closed.
             exitLiquibaseScope(scopeId);
             throw ex;
+        } catch (SQLException e) {
+            exitLiquibaseScope(scopeId);
+            throw new LiquibaseException(e);
         }
     }
 

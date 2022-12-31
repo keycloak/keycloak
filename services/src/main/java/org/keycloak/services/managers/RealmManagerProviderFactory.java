@@ -22,13 +22,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.partialimport.PartialImportManager;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.storage.ImportRealmFromRepresentation;
+import org.keycloak.storage.ImportRealmFromRepresentationEvent;
+import org.keycloak.storage.PartialImportRealmFromRepresentationEvent;
 import org.keycloak.storage.SetDefaultsForNewRealm;
 
 /**
- * Provider to listen for {@link org.keycloak.storage.ImportRealmFromRepresentation} events.
+ * Provider to listen for {@link ImportRealmFromRepresentationEvent} events.
  * If that is no longer needed after further steps around the legacy storage migration, it can be removed.
  *
  * @author Alexander Schwartz
@@ -47,10 +49,14 @@ public class RealmManagerProviderFactory implements ProviderFactory<RealmManager
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         factory.register(event -> {
-            if (event instanceof ImportRealmFromRepresentation) {
-                ImportRealmFromRepresentation importRealmFromRepresentation = (ImportRealmFromRepresentation) event;
-                RealmModel realmModel = new RealmManager(importRealmFromRepresentation.getSession()).importRealm(importRealmFromRepresentation.getRealmRepresentation());
-                importRealmFromRepresentation.setRealmModel(realmModel);
+            if (event instanceof ImportRealmFromRepresentationEvent) {
+                ImportRealmFromRepresentationEvent importRealmFromRepresentationEvent = (ImportRealmFromRepresentationEvent) event;
+                RealmModel realmModel = new RealmManager(importRealmFromRepresentationEvent.getSession()).importRealm(importRealmFromRepresentationEvent.getRealmRepresentation());
+                importRealmFromRepresentationEvent.setRealmModel(realmModel);
+            } else if (event instanceof PartialImportRealmFromRepresentationEvent) {
+                PartialImportRealmFromRepresentationEvent partialImportRealmFromRepresentationEvent = (PartialImportRealmFromRepresentationEvent) event;
+                PartialImportManager partialImportManager = new PartialImportManager(partialImportRealmFromRepresentationEvent.getRep(), partialImportRealmFromRepresentationEvent.getSession(), partialImportRealmFromRepresentationEvent.getRealm());
+                partialImportRealmFromRepresentationEvent.setPartialImportResults(partialImportManager.saveResources());
             } else if (event instanceof SetDefaultsForNewRealm) {
                 SetDefaultsForNewRealm setDefaultsForNewRealm = (SetDefaultsForNewRealm) event;
                 new RealmManager(setDefaultsForNewRealm.getSession()).setDefaultsForNewRealm(setDefaultsForNewRealm.getRealmModel());

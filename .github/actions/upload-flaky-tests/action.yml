@@ -1,0 +1,33 @@
+name: Report flaky test
+description: Finds flaky tests and uploads reports
+
+runs:
+  using: composite
+  steps:
+    - id: flaky-tests
+      name: Find flaky tests
+      if: github.repository == 'keycloak/keycloak'
+      shell: bash
+      # language=bash
+      run: |
+        FLAKES=""
+        SEP=""
+        for dir in $(find -type d -name surefire-reports); do
+          for i in $(grep -l '<flakyFailure' $dir/TEST-*.xml); do
+            FLAKES="$FLAKES$SEP$i"
+            SEP=$'\n'
+          done
+        done
+        
+        if [ "$FLAKES" != "" ]; then
+          echo "flakes<<EOF" >> $GITHUB_OUTPUT
+          echo "$FLAKES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
+
+    - uses: actions/upload-artifact@v3
+      if: ${{ steps.flaky-tests.outputs.flakes }}
+      with:
+        name: flaky-tests-${{ github.job }}
+        path: ${{ steps.flaky-tests.outputs.flakes }}
+        if-no-files-found: error

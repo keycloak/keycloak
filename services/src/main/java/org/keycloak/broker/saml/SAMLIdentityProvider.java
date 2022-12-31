@@ -254,7 +254,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
-        return Response.ok(identity.getToken()).build();
+        return Response.ok(identity.getToken()).type(MediaType.TEXT_PLAIN_TYPE).build();
     }
 
     @Override

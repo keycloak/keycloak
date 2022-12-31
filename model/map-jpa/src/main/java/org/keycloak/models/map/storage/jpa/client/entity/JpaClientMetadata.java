@@ -27,7 +27,7 @@ public class JpaClientMetadata extends MapClientEntityImpl implements Serializab
     }
 
     public JpaClientMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

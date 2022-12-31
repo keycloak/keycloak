@@ -19,8 +19,8 @@ package org.keycloak.models.map.storage.hotRod;
 
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.events.Event;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
@@ -53,11 +53,8 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
     private final Map<String, Object> parameters;
     private static final Pattern LIKE_PATTERN_DELIMITER = Pattern.compile("%+");
     private static final Pattern NON_ANALYZED_FIELD_REGEX = Pattern.compile("[%_\\\\]");
-    // private static final Pattern ANALYZED_FIELD_REGEX = Pattern.compile("[+!^\"~*?:\\\\]"); // TODO reevaluate once https://github.com/keycloak/keycloak/issues/9295 is fixed
-    private static final Pattern ANALYZED_FIELD_REGEX = Pattern.compile("\\\\"); // escape "\" with extra "\"
     public static final Map<SearchableModelField<?>, String> INFINISPAN_NAME_OVERRIDES = new HashMap<>();
-    public static final Set<SearchableModelField<?>> ANALYZED_MODEL_FIELDS = new HashSet<>();
-
+    public static final Set<SearchableModelField<?>> LOWERCASE_NORMALIZED_MODEL_FIELDS = new HashSet<>();
 
     static {
         INFINISPAN_NAME_OVERRIDES.put(ClientModel.SearchableFields.SCOPE_MAPPING_ROLE, "scopeMappings");
@@ -96,13 +93,19 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
     }
 
     static {
-        // the "filename" analyzer in Infinispan works correctly for case-insensitive search with whitespaces
-        ANALYZED_MODEL_FIELDS.add(RoleModel.SearchableFields.DESCRIPTION);
-        ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.FIRST_NAME);
-        ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.LAST_NAME);
-        ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.EMAIL);
-        ANALYZED_MODEL_FIELDS.add(Policy.SearchableFields.TYPE);
-        ANALYZED_MODEL_FIELDS.add(Resource.SearchableFields.TYPE);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(Policy.SearchableFields.NAME);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(Policy.SearchableFields.TYPE);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(Resource.SearchableFields.NAME);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(Resource.SearchableFields.TYPE);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(Scope.SearchableFields.NAME);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(ClientModel.SearchableFields.CLIENT_ID);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(GroupModel.SearchableFields.NAME);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(RoleModel.SearchableFields.NAME);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(RoleModel.SearchableFields.DESCRIPTION);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(UserModel.SearchableFields.EMAIL);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(UserModel.SearchableFields.FIRST_NAME);
+        LOWERCASE_NORMALIZED_MODEL_FIELDS.add(UserModel.SearchableFields.LAST_NAME);
     }
 
     public IckleQueryMapModelCriteriaBuilder(Class<E> hotRodEntityClass, StringBuilder whereClauseBuilder, Map<String, Object> parameters) {
@@ -237,14 +240,6 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         return value;
     }
 
-    public static Object sanitizeAnalyzed(Object value) {
-        if (value instanceof String) {
-            return sanitizeEachUnitAndReplaceDelimiter((String) value, IckleQueryMapModelCriteriaBuilder::sanitizeSingleUnitAnalyzed, "*");
-        }
-
-        return value;
-    }
-
     private static String sanitizeEachUnitAndReplaceDelimiter(String value, UnaryOperator<String> sanitizeSingleUnit, String replacement) {
         return LIKE_PATTERN_DELIMITER.splitAsStream(value)
                 .map(sanitizeSingleUnit)
@@ -254,18 +249,6 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
 
     private static String sanitizeSingleUnitNonAnalyzed(String value) {
         return NON_ANALYZED_FIELD_REGEX.matcher(value).replaceAll("\\\\\\\\" + "$0");
-    }
-
-    private static String sanitizeSingleUnitAnalyzed(String value) {
-        return ANALYZED_FIELD_REGEX.matcher(value).replaceAll("\\\\\\\\"); // escape "\" with extra "\"
-        //      .replaceAll("\\\\\\\\" + "$0"); skipped for now because Infinispan is not able to escape
-        //      special characters for analyzed fields
-        //      TODO reevaluate once https://github.com/keycloak/keycloak/issues/9295 is fixed
-    }
-
-
-    public static boolean isAnalyzedModelField(SearchableModelField<?> modelField) {
-        return ANALYZED_MODEL_FIELDS.contains(modelField);
     }
 
     /**

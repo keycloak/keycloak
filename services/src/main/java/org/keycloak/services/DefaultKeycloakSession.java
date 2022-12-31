@@ -53,6 +53,7 @@ import org.keycloak.vault.VaultProvider;
 import org.keycloak.vault.VaultTranscriber;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -93,7 +94,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
         this.transactionManager = new DefaultKeycloakTransactionManager(this);
-        context = new DefaultKeycloakContext(this);
+        context = createKeycloakContext(this);
     }
 
     @Override
@@ -156,6 +157,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public void setAttribute(String name, Object value) {
         attributes.put(name, value);
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return Collections.unmodifiableMap(attributes);
     }
 
     @Override
@@ -468,5 +474,9 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     public boolean isClosed() {
         return closed;
+    }
+
+    protected DefaultKeycloakContext createKeycloakContext(KeycloakSession session) {
+        return new DefaultKeycloakContext(session);
     }
 }

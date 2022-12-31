@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.net.ssl.HostnameVerifier;
@@ -80,18 +81,24 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean manualStop;
     private String relativePath;
     private int httpPort;
+    private int httpsPort;
     private boolean debug;
+    private boolean enableTls;
     private boolean reCreate;
     private boolean removeBuildOptionsAfterBuild;
+    private boolean createAdminUser;
     private ExecutorService outputExecutor;
     private boolean inited = false;
     private Map<String, String> envVars = new HashMap<>();
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate, boolean removeBuildOptionsAfterBuild) {
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild,
+            boolean createAdminUser) {
         this.debug = debug;
         this.manualStop = manualStop;
+        this.enableTls = enableTls;
         this.reCreate = reCreate;
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
+        this.createAdminUser = createAdminUser;
         this.distPath = prepareDistribution();
     }
 
@@ -103,6 +110,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
         stop();
         try {
+            configureServer();
             startServer(arguments);
             if (manualStop) {
                 asyncReadOutput();
@@ -128,6 +136,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
 
         return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
+    }
+
+    private void configureServer() {
+        if (enableTls) {
+            copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
+        }
     }
 
     @Override
@@ -222,8 +236,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             allArgs.add("-D" + LAUNCH_MODE + "=test");
         }
 
+        allArgs.add("-Djgroups.join_timeout=50");
+
         this.relativePath = arguments.stream().filter(arg -> arg.startsWith("--http-relative-path")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("/");
         this.httpPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--http-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8080"));
+        this.httpsPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--https-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8443"));
 
         allArgs.add("-Dkc.home.dir=" + distPath + File.separator);
         allArgs.addAll(arguments);
@@ -232,7 +249,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void waitForReadiness() throws MalformedURLException {
-        URL contextRoot = new URL("http://localhost:" + httpPort + ("/" + relativePath + "/realms/master/").replace("//", "/"));
+        waitForReadiness("http", httpPort);
+
+        if (enableTls) {
+            waitForReadiness("https", httpsPort);
+        }
+    }
+
+    private void waitForReadiness(String scheme, int port) throws MalformedURLException {
+        URL contextRoot = new URL(scheme + "://localhost:" + port + ("/" + relativePath + "/realms/master/").replace("//", "/"));
         HttpURLConnection connection = null;
         long startTime = System.currentTimeMillis();
 
@@ -244,7 +269,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
             try {
                 // wait before checking for opening a new connection
-                Thread.sleep(1000);
                 if ("https".equals(contextRoot.getProtocol())) {
                     HttpsURLConnection httpsConnection = (HttpsURLConnection) (connection = (HttpURLConnection) contextRoot.openConnection());
                     httpsConnection.setSSLSocketFactory(createInsecureSslSocketFactory());
@@ -264,6 +288,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             } finally {
                 if (connection != null) {
                     connection.disconnect();
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception ignore) {
                 }
             }
         }
@@ -378,6 +406,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             while (keycloak.isAlive()) {
                 readStream(outStream, outputStream);
                 readStream(errStream, errorStream);
+                // a hint to temporarily disable the current thread in favor of the process where the distribution is running
+                // after some tests it shows effective to help starting the server faster
+                LockSupport.parkNanos(1L);
             }
         } catch (Throwable cause) {
             throw new RuntimeException("Failed to read server output", cause);
@@ -404,8 +435,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         ProcessBuilder pb = new ProcessBuilder(getCliArgs(arguments));
         ProcessBuilder builder = pb.directory(distPath.resolve("bin").toFile());
 
-        builder.environment().put("KEYCLOAK_ADMIN", "admin");
-        builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+        if (createAdminUser) {
+            builder.environment().put("KEYCLOAK_ADMIN", "admin");
+            builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+        }
 
         if (debug) {
             builder.environment().put("DEBUG_SUSPEND", "y");
@@ -427,8 +460,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     @Override
-    public void setEnvVar(String key, String value) {
-        this.envVars.put(key, value);
+    public void setEnvVar(String name, String value) {
+        this.envVars.put(name, value);
     }
 
     @Override
@@ -555,5 +588,18 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         copyOrReplaceFile(providerPackagePath.resolve("quarkus.properties"), Path.of("conf", "quarkus.properties"));
 
         providerJar.as(ZipExporter.class).exportTo(getDistPath().resolve("providers").resolve(providerJar.getName()).toFile());
+    }
+
+    @Override
+    public <D extends KeycloakDistribution> D unwrap(Class<D> type) {
+        if (!KeycloakDistribution.class.isAssignableFrom(type)) {
+            throw new IllegalArgumentException("Not a " + KeycloakDistribution.class + " type");
+        }
+
+        if (type.isInstance(this)) {
+            return (D) this;
+        }
+
+        throw new IllegalArgumentException("Not a " + type + " type");
     }
 }

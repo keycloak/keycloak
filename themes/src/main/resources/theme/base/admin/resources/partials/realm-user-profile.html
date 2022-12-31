@@ -152,7 +152,7 @@
                 <input type="hidden" ui-select2="selectorByScopeSelect" id="selectorByScopeSelect" data-ng-model="selectorByScope" data-placeholder="Select a scope..." multiple/>
             </div>
         </div>
-        <div class="form-group" data-ng-show="isNotUsernameOrEmail(currentAttribute.name)">
+        <div class="form-group" data-ng-show="showRequiredSettings(currentAttribute.name)">
             <label class="col-md-2 control-label" for="isRequired">{{:: 'user.profile.attribute.required' | translate}}</label>
             <kc-tooltip>{{:: 'user.profile.attribute.required.tooltip' | translate}}</kc-tooltip>
             <div class="col-md-6">
@@ -160,14 +160,14 @@
                        on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
             </div>
         </div>
-        <div class="form-group" data-ng-show="isRequired">
+        <div class="form-group" data-ng-show="isRequired && showRequiredSettings(currentAttribute.name)">
             <label class="col-md-2 control-label" for="isRequiredRoles">{{:: 'user.profile.attribute.required.roles' | translate}}</label>
             <kc-tooltip>{{:: 'user.profile.attribute.required.roles.tooltip' | translate}}</kc-tooltip>
             <div class="col-md-6">
                 <input type="hidden" ui-select2="isRequiredRoles" id="isRequiredRoles" data-ng-model="requiredRoles" data-placeholder="Select a role..." multiple/>
             </div>
         </div>
-        <div class="form-group" data-ng-show="isRequired">
+        <div class="form-group" data-ng-show="isRequired && showRequiredSettings(currentAttribute.name)">
             <label class="col-md-2 control-label" for="isRequiredScopes">{{:: 'user.profile.attribute.required.scopes' | translate}}</label>
             <kc-tooltip>{{:: 'user.profile.attribute.required.scopes.tooltip' | translate}}</kc-tooltip>
             <div class="col-md-6">

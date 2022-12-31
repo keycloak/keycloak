@@ -81,16 +81,9 @@ Or slightly longer version (that allows you to specify debugging port as well as
 
 and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so this won't help to debug those.
 
-### JBoss auth server debugging
+### Auth server debugging
 
-When tests are run on JBoss based container (WildFly/EAP) there is possibility to attach a debugger, by default on localhost:5005.
-
-The server won't wait to attach the debugger. There are some properties what can change the default behaviour.
-
-    -Dauth.server.debug.port=$PORT
-    -Dauth.server.debug.suspend=y
-
-More info: http://javahowto.blogspot.cz/2010/09/java-agentlibjdwp-for-attaching.html
+See below in the "Quarkus" section.
 
 ### JBoss app server debugging
 
@@ -788,7 +781,14 @@ Run tests using the `auth-server-quarkus` profile:
     
 Right now, the server runs in a separate process. To debug the server set `auth.server.debug` system property to `true`.
 
-To configure the debugger port, set the `auth.server.debug.port` system property with any valid port number. Default is `5005`. 
+To configure the debugger port, set the `auth.server.debug.port` system property with any valid port number. Default is `5005`.
+Note you can also set port for example to `*:5005` or `my-host:5005` to set the bind host.
+
+By default, quarkus server is started in the testsuite and you need to attach remote debugger to it during running. You can
+use `auth.server.debug.suspend=y` to "suspend" server startup when running testsuite, which means that server startup is blocked
+until debugger is attached.
+
+More info: http://javahowto.blogspot.cz/2010/09/java-agentlibjdwp-for-attaching.html
 
 ## Cookies testing
 In order to reproduce some specific cookies behaviour in browsers (like SameSite policies or 3rd party cookie blocking),
@@ -832,19 +832,24 @@ we rely on [nip.io](https://nip.io) for DNS switching, so tests will work everyw
 To run base testsuite with new storage run the following command (this will execute testsuite with ConcurrentHashMap storage):
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pauth-server-quarkus -Pmap-storage
+                  -Pauth-server-quarkus -Pmap-storage-chm
 ```
 
 ### Running tests with JPA Map storage
 
-By default tests with `map-storage-jpa` profile spawns a new Postgres container
-with each test execution. Default image used is "postgres:alpine". To spawn different 
-version, it can be used "keycloak.map.storage.postgres.docker.image" system property.
+By default, testing with the profile `map-storage-jpa-postgres` spawns a new Postgres container
+with each test execution. The default image used is `postgres:alpine`. To spawn a different
+version, use the system property `keycloak.map.storage.postgres.docker.image`.
+
+In a similar way the profile `map-storage-jpa-cockroach` spawns a new CockroachDB container
+with each test execution. It uses the official CockroachDB image in the version stated in the
+class `CockroachdbContainerTestEnricher`. To spawn a different
+version, use the system property `keycloak.map.storage.cockroachdb.docker.image`.
 
 Execute tests:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pmap-storage,map-storage-jpa
+                  -Pmap-storage-jpa-postgres
 ```
 
 It's also possible to configure tests to connect to an external database, it might be useful 
@@ -859,7 +864,7 @@ podman run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_US
 To run the tests without spawning the container for you, execute tests with the following command:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-  -Pmap-storage,map-storage-jpa \
+  -Pmap-storage-jpa-postgres \
   -Dpostgres.start-container=false \
   -Dkeycloak.map.storage.connectionsJpa.url=<jdbc_url> \
   -Dkeycloak.map.storage.connectionsJpa.user=<user> \
@@ -872,7 +877,7 @@ By default, Base testsuite with `map-storage-hotrod` profile spawn a new Infinis
 with each test execution. To run the tests execute:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pmap-storage,map-storage-hotrod
+                  -Pmap-storage-hotrod
 ```
 Note: For running Infinispan server we are using Testcontainer, see section 
 _Usage of Testcontainers_ for details on how to set up your container engine.
@@ -882,7 +887,7 @@ connect to an external instance of Infinispan. To do so, execute tests with
 the following command:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pmap-storage,map-storage-hotrod
+                  -Pmap-storage-hotrod
                   -Dkeycloak.testsuite.start-hotrod-container=false \
                   -Dkeycloak.connectionsHotRod.host=<host> \
                   -Dkeycloak.connectionsHotRod.port=<port> \

@@ -20,12 +20,13 @@ import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 public class PostgresContainerTestEnricher {
 
     private static final Boolean START_CONTAINER = Boolean.valueOf(System.getProperty("postgres.start-container", "false"));
     private static final String POSTGRES_DOCKER_IMAGE_NAME = System.getProperty("keycloak.map.storage.postgres.docker.image", "postgres:alpine");
-    private static final PostgreSQLContainer POSTGRES_CONTAINER = new PostgreSQLContainer(POSTGRES_DOCKER_IMAGE_NAME);
+    private static final PostgreSQLContainer POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_DOCKER_IMAGE_NAME).asCompatibleSubstituteFor("postgres"));
     private static final String POSTGRES_DB_USER = System.getProperty("keycloak.map.storage.connectionsJpa.user", "keycloak");
     private static final String POSTGRES_DB_PASSWORD = System.getProperty("keycloak.map.storage.connectionsJpa.password", "pass");
 
