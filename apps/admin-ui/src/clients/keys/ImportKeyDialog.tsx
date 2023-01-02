@@ -41,12 +41,6 @@ export const ImportKeyDialog = ({
 
   const [openArchiveFormat, setOpenArchiveFormat] = useState(false);
 
-  const format = useWatch<string>({
-    control,
-    name: "keystoreFormat",
-    defaultValue: "JKS",
-  });
-
   const baseFormats = useServerInfo().cryptoInfo?.supportedKeystoreTypes ?? [];
 
   const formats = baseFormats.concat([
@@ -54,6 +48,12 @@ export const ImportKeyDialog = ({
     "Public Key PEM",
     "JSON Web Key Set",
   ]);
+
+  const format = useWatch({
+    control,
+    name: "keystoreFormat",
+    defaultValue: formats[0],
+  });
 
   return (
     <Modal
@@ -105,7 +105,7 @@ export const ImportKeyDialog = ({
           <Controller
             name="keystoreFormat"
             control={control}
-            defaultValue="JKS"
+            defaultValue={formats[0]}
             render={({ onChange, value }) => (
               <Select
                 toggleId="archiveFormat"

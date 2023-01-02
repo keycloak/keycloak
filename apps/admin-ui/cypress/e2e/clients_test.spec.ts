@@ -1004,7 +1004,7 @@ describe("Clients test", () => {
     it("Generate new keys", () => {
       const keysTab = clientDetailsPage.goToKeysTab();
       keysTab.clickGenerate();
-      keysTab.fillGenerateModal("keyname", "123", "1234").clickConfirm();
+      keysTab.fillGenerateModal("JKS", "keyname", "123", "1234").clickConfirm();
 
       commonPage
         .masthead()

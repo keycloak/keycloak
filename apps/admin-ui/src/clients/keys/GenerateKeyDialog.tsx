@@ -66,6 +66,10 @@ export const KeyForm = ({
   const format = watch("format");
 
   const { cryptoInfo } = useServerInfo();
+  const supportedKeystoreTypes = [
+    ...(cryptoInfo?.supportedKeystoreTypes ?? []),
+    ...(hasPem ? CERT_PEM : []),
+  ];
 
   return (
     <Form className="pf-u-pt-lg">
@@ -81,7 +85,7 @@ export const KeyForm = ({
       >
         <Controller
           name="format"
-          defaultValue="JKS"
+          defaultValue={supportedKeystoreTypes[0]}
           control={control}
           render={({ field }) => (
             <Select
@@ -96,15 +100,13 @@ export const KeyForm = ({
               aria-label={t("archiveFormat")}
               isOpen={openArchiveFormat}
             >
-              {cryptoInfo?.supportedKeystoreTypes
-                .concat(hasPem ? CERT_PEM : [])
-                .map((option) => (
-                  <SelectOption
-                    selected={option === field.value}
-                    key={option}
-                    value={option}
-                  />
-                ))}
+              {supportedKeystoreTypes.map((option) => (
+                <SelectOption
+                  selected={option === field.value}
+                  key={option}
+                  value={option}
+                />
+              ))}
             </Select>
           )}
         />
