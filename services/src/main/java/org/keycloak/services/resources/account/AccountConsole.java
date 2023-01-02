@@ -111,7 +111,8 @@ public class AccountConsole {
             if (auth != null) user = auth.getUser();
             Locale locale = session.getContext().resolveLocale(user);
             map.put("locale", locale.toLanguageTag());
-            Properties messages = theme.getMessages(locale);
+            Properties messages = new Properties();
+            messages.putAll(theme.getMessages(locale));
             if(StringUtil.isNotBlank(realm.getDefaultLocale())) {
                 messages.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
             }
