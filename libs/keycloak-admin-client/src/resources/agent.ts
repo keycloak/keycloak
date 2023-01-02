@@ -226,10 +226,6 @@ export class Agent {
 
     url.search = stringifyQueryParams(searchParams);
 
-    if (!requestHeaders.has("content-type")) {
-      requestHeaders.set("content-type", "application/x-www-form-urlencoded");
-    }
-
     try {
       const res = await fetchWithError(url, {
         ...requestOptions,
@@ -261,6 +257,16 @@ export class Agent {
         // return with format {[field]: string}
         const { field } = returnResourceIdInLocationHeader;
         return { [field]: resourceId };
+      }
+
+      if (
+        Object.entries(headers || []).find(
+          ([key, value]) =>
+            key.toLowerCase() === "accept" &&
+            value === "application/octet-stream"
+        )
+      ) {
+        return res.arrayBuffer();
       }
 
       return parseResponse(res);

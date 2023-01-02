@@ -956,21 +956,27 @@ export class Clients extends Resource<{ realm?: string }> {
   public downloadKey = this.makeUpdateRequest<
     { id: string; attr: string },
     KeyStoreConfig,
-    string
+    ArrayBuffer
   >({
     method: "POST",
     path: "/{id}/certificates/{attr}/download",
     urlParamKeys: ["id", "attr"],
+    headers: {
+      accept: "application/octet-stream",
+    },
   });
 
   public generateAndDownloadKey = this.makeUpdateRequest<
     { id: string; attr: string },
     KeyStoreConfig,
-    string
+    ArrayBuffer
   >({
     method: "POST",
     path: "/{id}/certificates/{attr}/generate-and-download",
     urlParamKeys: ["id", "attr"],
+    headers: {
+      accept: "application/octet-stream",
+    },
   });
 
   public uploadKey = this.makeUpdateRequest<{ id: string; attr: string }, any>({
