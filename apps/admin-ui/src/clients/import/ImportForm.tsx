@@ -87,7 +87,10 @@ export default function ImportForm() {
     try {
       const newClient = await adminClient.clients.create({
         ...imported,
-        ...convertFormValuesToObject(client),
+        ...convertFormValuesToObject({
+          ...client,
+          attributes: client.attributes || {},
+        }),
       });
       addAlert(t("clientImportSuccess"), AlertVariant.success);
       navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
