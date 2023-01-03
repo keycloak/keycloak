@@ -19,5 +19,9 @@
   "realmInfo": "Realm info",
   "spi": "SPI",
   "showMore": "Show more",
-  "showLess": "Show less"
+  "showLess": "Show less",
+  "memory": "Memory",
+  "totalMemory": "Total memory",
+  "freeMemory": "Free memory",
+  "usedMemory": "Used memory"
 }

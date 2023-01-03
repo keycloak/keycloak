@@ -150,7 +150,7 @@ const Dashboard = () => {
           <Tab
             id="info"
             data-testid="infoTab"
-            title={<TabTitleText>{t("realmInfo")}</TabTitleText>}
+            title={<TabTitleText>{t("serverInfo")}</TabTitleText>}
             {...route("info")}
           >
             <PageSection variant="light">
@@ -172,6 +172,31 @@ const Dashboard = () => {
                           </DescriptionListTerm>
                           <DescriptionListDescription>
                             {toUpperCase(serverInfo.profileInfo?.name!)}
+                          </DescriptionListDescription>
+                        </DescriptionListGroup>
+                      </DescriptionList>
+                    </CardBody>
+                    <CardTitle>{t("memory")}</CardTitle>
+                    <CardBody>
+                      <DescriptionList>
+                        <DescriptionListGroup>
+                          <DescriptionListTerm>
+                            {t("totalMemory")}
+                          </DescriptionListTerm>
+                          <DescriptionListDescription>
+                            {serverInfo.memoryInfo?.totalFormated}
+                          </DescriptionListDescription>
+                          <DescriptionListTerm>
+                            {t("freeMemory")}
+                          </DescriptionListTerm>
+                          <DescriptionListDescription>
+                            {serverInfo.memoryInfo?.freeFormated}
+                          </DescriptionListDescription>
+                          <DescriptionListTerm>
+                            {t("usedMemory")}
+                          </DescriptionListTerm>
+                          <DescriptionListDescription>
+                            {serverInfo.memoryInfo?.usedFormated}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                       </DescriptionList>
