@@ -163,13 +163,15 @@ export const RealmSelector = () => {
           toggle={
             <DropdownToggle
               data-testid="realmSelectorToggle"
-              onToggle={() => setOpen(!open)}
+              onToggle={() => {
+                if (realms.length === 0) refresh();
+                setOpen(!open);
+              }}
               className="keycloak__realm_selector_dropdown__toggle"
             >
               {realm}
             </DropdownToggle>
           }
-          onFocus={refresh}
           dropdownItems={[...dropdownItems, addRealmComponent]}
         />
       )}
