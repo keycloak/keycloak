@@ -42,7 +42,7 @@ export type UserFormProps = {
   user?: UserRepresentation;
   bruteForce?: BruteForced;
   save: (user: UserRepresentation) => void;
-  onGroupsUpdate: (groups: GroupRepresentation[]) => void;
+  onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
 
 export const UserForm = ({
@@ -119,12 +119,12 @@ export const UserForm = ({
 
   const deleteItem = (id: string) => {
     setSelectedGroups(selectedGroups.filter((item) => item.name !== id));
-    onGroupsUpdate(selectedGroups);
+    onGroupsUpdate?.(selectedGroups);
   };
 
   const addChips = async (groups: GroupRepresentation[]): Promise<void> => {
     setSelectedGroups([...selectedGroups!, ...groups]);
-    onGroupsUpdate([...selectedGroups!, ...groups]);
+    onGroupsUpdate?.([...selectedGroups!, ...groups]);
   };
 
   const addGroups = async (groups: GroupRepresentation[]): Promise<void> => {
@@ -171,6 +171,22 @@ export const UserForm = ({
           filterGroups={selectedGroups}
         />
       )}
+      <FormGroup label={t("common:enabled")} fieldId="kc-user-enabled">
+        <Controller
+          name="enabled"
+          defaultValue={true}
+          control={control}
+          render={({ onChange, value }) => (
+            <Switch
+              id="kc-user-enabled"
+              onChange={(value) => onChange(value)}
+              isChecked={value}
+              label={t("common:yes")}
+              labelOff={t("common:no")}
+            />
+          )}
+        />
+      </FormGroup>
       {user?.id && (
         <>
           <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
@@ -321,8 +337,8 @@ export const UserForm = ({
                   isDisabled={false}
                   onChange={(value) => onChange(value)}
                   isChecked={value}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("common:yes")}
+                  labelOff={t("common:no")}
                 />
               )}
             />

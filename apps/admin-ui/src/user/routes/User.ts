@@ -21,7 +21,7 @@ export type UserParams = {
 
 export const UserRoute: RouteDef = {
   path: "/:realm/users/:id/:tab",
-  component: lazy(() => import("../UsersTabs")),
+  component: lazy(() => import("../EditUser")),
   breadcrumb: (t) => t("users:userDetails"),
   access: "query-users",
 };

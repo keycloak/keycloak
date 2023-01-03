@@ -11,8 +11,7 @@ import {
   JSXElementConstructor,
   ReactElement,
 } from "react";
-import type { Path } from "react-router-dom-v5-compat";
-import { useLocation } from "react-router-dom-v5-compat";
+import { Path, useHref, useLocation } from "react-router-dom-v5-compat";
 
 // TODO: Remove the custom 'children' props and type once the following issue has been resolved:
 // https://github.com/patternfly/patternfly-react/issues/6766
@@ -75,4 +74,9 @@ type RoutableTabParams = {
 export const routableTab = ({ to, history }: RoutableTabParams) => ({
   eventKey: to.pathname ?? "",
   href: history.createHref(to),
+});
+
+export const useRoutableTab = (to: Partial<Path>) => ({
+  eventKey: to.pathname ?? "",
+  href: useHref(to),
 });

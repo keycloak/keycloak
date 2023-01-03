@@ -8,7 +8,7 @@ export type AddUserParams = { realm: string };
 
 export const AddUserRoute: RouteDef = {
   path: "/:realm/users/add-user",
-  component: lazy(() => import("../UsersTabs")),
+  component: lazy(() => import("../CreateUser")),
   breadcrumb: (t) => t("users:createUser"),
   access: ["query-users", "query-groups"],
 };
