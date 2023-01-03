@@ -65,7 +65,6 @@ public class LoggingDistTest {
     }
 
     @Test
-    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-level=off,org.keycloak:debug" })
     void testRootAndCategoryLevels(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -74,16 +73,6 @@ public class LoggingDistTest {
     }
 
     @Test
-    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:debug\"" })
-    void testWinRootAndCategoryLevels(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus"));
-        assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
-    }
-
-    @Test
-    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,debug" })
     void testSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -93,7 +82,6 @@ public class LoggingDistTest {
     }
 
     @Test
-    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-level=\"off,org.keycloak:warn,debug\"" })
     void testWinSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -103,7 +91,6 @@ public class LoggingDistTest {
     }
 
     @Test
-    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-console-format=\"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1.}] %s%e%n\"" })
     void testSetLogFormat(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -120,7 +107,6 @@ public class LoggingDistTest {
     }
 
     @Test
-    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-level=off,org.keycloak:debug,liquibase:debug", "--log-console-output=json" })
     void testLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -130,18 +116,6 @@ public class LoggingDistTest {
     }
 
     @Test
-    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:debug,liquibase:debug\"", "--log-console-output=json" })
-    void testWinLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory\",\"level\":\"DEBUG\""));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"liquibase.servicelocator\",\"level\":\"FINE\""));
-    }
-
-    @Test
-    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=console,file"})
     void testKeycloakLogFileCreated(RawDistRootPath path) {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
@@ -150,16 +124,6 @@ public class LoggingDistTest {
     }
 
     @Test
-    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log=\"console,file\""})
-    void testWinKeycloakLogFileCreated(RawDistRootPath path) {
-        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
-        File logFile = new File(logFilePath.toString());
-        assertTrue(logFile.isFile(), "Log file does not exist!");
-    }
-
-    @Test
-    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=console,file", "--log-file-format=\"%d{HH:mm:ss} %-5p [%c{1.}] (%t) %s%e%n\""})
     void testFileLoggingHasDifferentFormat(RawDistRootPath path) throws IOException {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
