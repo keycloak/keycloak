@@ -9,6 +9,7 @@ import {
   DropdownSeparator,
   InputGroup,
   KebabToggle,
+  Tooltip,
   TreeView,
   TreeViewDataItem,
 } from "@patternfly/react-core";
@@ -25,6 +26,8 @@ import { useSubGroups } from "../SubGroupsContext";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { joinPath } from "../../utils/joinPath";
+
+import "./group-tree.css";
 
 type GroupTreeContextMenuProps = {
   group: GroupRepresentation;
@@ -128,13 +131,14 @@ export const GroupTree = ({ refresh: viewRefresh }: GroupTreeProps) => {
     return {
       id: group.id,
       name: (
-        <Link
-          key={group.id}
-          to={`/${realm}/groups/${joinPath(...groups.map((g) => g.id!))}`}
-          onClick={() => setSubGroups(groups)}
-        >
-          {group.name}
-        </Link>
+        <Tooltip content={group.name}>
+          <Link
+            to={`/${realm}/groups/${joinPath(...groups.map((g) => g.id!))}`}
+            onClick={() => setSubGroups(groups)}
+          >
+            {group.name}
+          </Link>
+        </Tooltip>
       ),
       children:
         group.subGroups && group.subGroups.length > 0
@@ -191,7 +195,12 @@ export const GroupTree = ({ refresh: viewRefresh }: GroupTreeProps) => {
       }
     >
       {data.length > 0 && (
-        <TreeView data={data} allExpanded={search.length > 0} hasGuides />
+        <TreeView
+          data={data}
+          allExpanded={search.length > 0}
+          hasGuides
+          className="keycloak_groups_treeview"
+        />
       )}
     </PaginatingTableToolbar>
   ) : (
