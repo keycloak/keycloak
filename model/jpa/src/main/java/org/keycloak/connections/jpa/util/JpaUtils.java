@@ -17,8 +17,6 @@
 
 package org.keycloak.connections.jpa.util;
 
-import org.hibernate.engine.query.spi.sql.NativeSQLQueryReturn;
-import org.hibernate.engine.query.spi.sql.NativeSQLQuerySpecification;
 import org.jboss.logging.Logger;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
@@ -175,7 +173,6 @@ public class JpaUtils {
      * should exist inside the jar file. The default file contains all the
      * needed queries and the specific one can overload all or some of them for
      * that database type.
-     * @param em The entity manager to use
      * @param databaseType The database type as managed in
      * @return
      */
@@ -224,11 +221,11 @@ public class JpaUtils {
         SessionFactoryImplementor sessionFactory = entityManager.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class);
 
         if (isNative) {
-            NativeSQLQuerySpecification spec = new NativeSQLQuerySpecification(querySql, new NativeSQLQueryReturn[0], Collections.emptySet());
-            sessionFactory.getQueryPlanCache().getNativeSQLQueryPlan(spec);
+//            NativeSQLQuerySpecification spec = new NativeSQLQuerySpecification(querySql, new NativeSQLQueryReturn[0], Collections.emptySet());
+//            sessionFactory.getQueryPlanCache().getNativeSQLQueryPlan(spec);
             sessionFactory.addNamedQuery(queryName, entityManager.createNativeQuery(querySql));
         } else {
-            sessionFactory.getQueryPlanCache().getHQLQueryPlan(querySql, false, Collections.emptyMap());
+//            sessionFactory.getQueryPlanCache().getHQLQueryPlan(querySql, false, Collections.emptyMap());
             sessionFactory.addNamedQuery(queryName, entityManager.createQuery(querySql));
         }
     }
