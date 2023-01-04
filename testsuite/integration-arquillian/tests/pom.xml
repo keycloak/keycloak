@@ -1616,6 +1616,12 @@
                 </dependency>
 
                 <dependency>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                    <version>1.12.18</version>
+                </dependency>
+
+                <dependency>
                     <groupId>org.jboss.arquillian.junit</groupId>
                     <artifactId>arquillian-junit-container</artifactId>
                 </dependency>
