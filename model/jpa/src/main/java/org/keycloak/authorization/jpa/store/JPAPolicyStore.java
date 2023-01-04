@@ -141,7 +141,7 @@ public class JPAPolicyStore implements PolicyStore {
     @Override
     public List<Policy> find(RealmModel realm, ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<PolicyEntity> querybuilder = builder.createQuery(PolicyEntity.class);
+        CriteriaQuery<String> querybuilder = builder.createQuery(String.class);
         Root<PolicyEntity> root = querybuilder.from(PolicyEntity.class);
         List<Predicate> predicates = new ArrayList();
         querybuilder.select(root.get("id"));
