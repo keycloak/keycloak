@@ -27,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -45,11 +44,15 @@ import jakarta.transaction.RollbackException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 
+import org.hibernate.boot.MetadataBuilder;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
+import org.hibernate.service.ServiceRegistry;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -127,6 +130,7 @@ import org.keycloak.models.map.storage.jpa.event.auth.JpaAuthEventMapKeycloakTra
 import org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity;
 import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.storage.jpa.loginFailure.JpaUserLoginFailureMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity;
 import org.keycloak.models.map.storage.jpa.realm.JpaRealmMapKeycloakTransaction;
@@ -373,6 +377,12 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
+
+        // register custom jsonb type
+        ServiceRegistry standardRegistry = new StandardServiceRegistryBuilder().build();
+        MetadataSources sources = new MetadataSources(standardRegistry);
+        MetadataBuilder metadataBuilder = sources.getMetadataBuilder();
+        metadataBuilder.applyBasicType(JsonbType.INSTANCE);
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
