@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

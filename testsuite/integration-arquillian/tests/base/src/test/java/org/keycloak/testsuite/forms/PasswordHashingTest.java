@@ -42,7 +42,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import javax.ws.rs.BadRequestException;
+import jakarta.ws.rs.BadRequestException;
 import java.security.spec.KeySpec;
 
 import static org.junit.Assert.assertArrayEquals;

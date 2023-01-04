@@ -53,15 +53,15 @@ import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity.Key;
 import org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.LockModeType;
+import jakarta.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;

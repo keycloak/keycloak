@@ -19,8 +19,8 @@ package org.keycloak.testsuite.broker;
 
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.junit.Before;
 import org.junit.Test;

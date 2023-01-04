@@ -18,7 +18,7 @@ package org.keycloak.testsuite.adapter.servlet;
 
 import java.net.URL;
 import java.util.List;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;

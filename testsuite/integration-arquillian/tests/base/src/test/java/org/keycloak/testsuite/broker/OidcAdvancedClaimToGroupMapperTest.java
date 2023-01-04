@@ -19,7 +19,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:artur.baltabayev@bosch.io">Artur Baltabayev</a>,

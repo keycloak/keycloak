@@ -19,7 +19,7 @@ package org.keycloak.testsuite.page;
 
 import org.keycloak.testsuite.util.ServerURLs;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;

@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.arquillian.undertow.saml.util;
 
 import java.util.Set;
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.core.Application;
 
 /**
  * Wildfly JAX-RS Integration has support for scanning  deployment for annotations.

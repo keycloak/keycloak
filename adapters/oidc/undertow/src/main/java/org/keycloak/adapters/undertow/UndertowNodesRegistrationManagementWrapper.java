@@ -19,8 +19,8 @@ package org.keycloak.adapters.undertow;
 
 import org.keycloak.adapters.NodesRegistrationManagement;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

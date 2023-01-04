@@ -31,10 +31,10 @@ import org.keycloak.adapters.undertow.UndertowHttpFacade;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 
 import io.undertow.servlet.api.DeploymentInfo;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.util.Map;

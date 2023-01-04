@@ -69,7 +69,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

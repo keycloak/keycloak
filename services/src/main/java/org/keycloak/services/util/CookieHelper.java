@@ -24,8 +24,8 @@ import org.keycloak.common.util.ServerCookie;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;

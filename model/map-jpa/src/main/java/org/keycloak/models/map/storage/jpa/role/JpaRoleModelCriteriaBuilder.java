@@ -19,9 +19,9 @@ package org.keycloak.models.map.storage.jpa.role;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
-import javax.persistence.criteria.CriteriaBuilder.In;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleModel.SearchableFields;

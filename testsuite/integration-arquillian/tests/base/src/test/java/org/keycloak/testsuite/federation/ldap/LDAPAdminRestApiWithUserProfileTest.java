@@ -27,8 +27,8 @@ import static org.keycloak.testsuite.forms.VerifyProfileTest.setUserProfileConfi
 import static org.keycloak.util.JsonSerialization.readValue;
 import static org.keycloak.util.JsonSerialization.writeValueAsString;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 

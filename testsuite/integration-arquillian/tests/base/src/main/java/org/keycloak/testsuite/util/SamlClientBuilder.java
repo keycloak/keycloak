@@ -40,7 +40,7 @@ import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
 import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
 import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
 import java.util.function.Function;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.hamcrest.Matcher;
 import org.junit.Assert;
