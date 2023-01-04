@@ -17,7 +17,7 @@
 
 package org.keycloak.partialimport;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 
 /**

@@ -18,8 +18,8 @@
 package org.keycloak.quarkus.runtime.integration;
 
 import java.security.cert.X509Certificate;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.CDI;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import org.jboss.resteasy.spi.HttpRequest;

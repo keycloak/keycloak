@@ -20,8 +20,8 @@ package org.keycloak.testsuite.federation.kerberos;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 
 import org.ietf.jgss.GSSCredential;
 import org.jboss.arquillian.graphene.page.Page;

@@ -20,7 +20,7 @@ package org.keycloak.testsuite.util;
 import org.jboss.logging.Logger;
 import org.subethamail.smtp.server.SMTPServer;
 
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;

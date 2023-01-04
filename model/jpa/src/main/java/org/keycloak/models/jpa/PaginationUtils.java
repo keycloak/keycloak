@@ -17,7 +17,7 @@
 
 package org.keycloak.models.jpa;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 
 public class PaginationUtils {
 

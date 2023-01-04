@@ -17,7 +17,7 @@
 
 package org.keycloak.protocol.oidc.par.clientpolicy.context;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;

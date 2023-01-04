@@ -19,7 +19,7 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Properties;

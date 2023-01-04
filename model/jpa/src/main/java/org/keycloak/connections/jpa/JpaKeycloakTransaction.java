@@ -20,8 +20,8 @@ package org.keycloak.connections.jpa;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakTransaction;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -52,9 +52,9 @@ import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.util.JsonSerialization;
 
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.ws.rs.core.Application;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
+import jakarta.ws.rs.core.Application;
 
 import java.io.File;
 import java.io.FileInputStream;

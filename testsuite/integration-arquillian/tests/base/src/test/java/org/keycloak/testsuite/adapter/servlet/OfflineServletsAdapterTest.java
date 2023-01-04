@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.adapter.servlet;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.List;
 
 import org.jboss.arquillian.container.test.api.Deployment;
