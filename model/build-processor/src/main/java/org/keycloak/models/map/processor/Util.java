@@ -17,7 +17,7 @@
 package org.keycloak.models.map.processor;
 
 import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -45,8 +45,9 @@ import javax.lang.model.util.SimpleTypeVisitor8;
  */
 public class Util {
 
-    private static final HashSet<String> SET_TYPES = new HashSet<>(Arrays.asList(Set.class.getCanonicalName(), TreeSet.class.getCanonicalName(), HashSet.class.getCanonicalName(), LinkedHashSet.class.getCanonicalName()));
-    private static final HashSet<String> MAP_TYPES = new HashSet<>(Arrays.asList(Map.class.getCanonicalName(), HashMap.class.getCanonicalName()));
+    private static final Set<String> LIST_TYPES = Set.of(List.class.getCanonicalName(), ArrayList.class.getCanonicalName(), LinkedList.class.getCanonicalName());
+    private static final Set<String> SET_TYPES = Set.of(Set.class.getCanonicalName(), TreeSet.class.getCanonicalName(), HashSet.class.getCanonicalName(), LinkedHashSet.class.getCanonicalName());
+    private static final Set<String> MAP_TYPES = Set.of(Map.class.getCanonicalName(), HashMap.class.getCanonicalName());
 
     public static List<TypeMirror> getGenericsDeclaration(TypeMirror fieldType) {
         List<TypeMirror> res = new LinkedList<>();
@@ -67,6 +68,15 @@ public class Util {
         return parameters.stream()
           .map(p -> p.asType() + " " + p.getSimpleName())
           .collect(Collectors.joining(", "));
+    }
+
+    public static boolean isCollectionType(TypeElement typeElement) {
+        return isListType(typeElement) || isSetType(typeElement);
+    }
+
+    public static boolean isListType(TypeElement typeElement) {
+        Name name = typeElement.getQualifiedName();
+        return LIST_TYPES.contains(name.toString());
     }
 
     public static boolean isSetType(TypeElement typeElement) {
