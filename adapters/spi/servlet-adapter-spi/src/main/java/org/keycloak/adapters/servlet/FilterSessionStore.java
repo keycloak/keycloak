@@ -17,6 +17,7 @@
 
 package org.keycloak.adapters.servlet;
 
+import jakarta.servlet.ReadListener;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.KeycloakAccount;
@@ -174,6 +175,21 @@ public class FilterSessionStore implements AdapterSessionStore {
                     if (needRequestRestore && body != null) {
                         final ByteArrayInputStream is = new ByteArrayInputStream(body);
                         return new ServletInputStream() {
+                            @Override
+                            public boolean isFinished() {
+                                return false;
+                            }
+
+                            @Override
+                            public boolean isReady() {
+                                return false;
+                            }
+
+                            @Override
+                            public void setReadListener(ReadListener readListener) {
+
+                            }
+
                             @Override
                             public int read() throws IOException {
                                 return is.read();
