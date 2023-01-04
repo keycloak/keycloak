@@ -18,8 +18,8 @@
 
 package org.keycloak.authorization.admin;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;

@@ -36,7 +36,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.KeystoreUtils;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.nio.charset.Charset;

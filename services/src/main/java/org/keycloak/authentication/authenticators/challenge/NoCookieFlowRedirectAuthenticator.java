@@ -16,9 +16,9 @@
  */
 package org.keycloak.authentication.authenticators.challenge;
 
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.AuthenticationFlowContext;

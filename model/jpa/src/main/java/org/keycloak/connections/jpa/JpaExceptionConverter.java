@@ -20,7 +20,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ExceptionConverter;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

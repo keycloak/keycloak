@@ -10,7 +10,7 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
 import org.keycloak.protocol.docker.installation.compose.DockerComposeZipContent;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

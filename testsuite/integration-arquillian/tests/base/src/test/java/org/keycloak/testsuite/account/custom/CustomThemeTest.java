@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.account.custom;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;

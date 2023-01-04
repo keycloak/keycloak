@@ -30,8 +30,8 @@ import org.keycloak.services.messages.Messages;
 
 import java.util.Optional;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Same like classic username+password form, but for use in IdP linking.

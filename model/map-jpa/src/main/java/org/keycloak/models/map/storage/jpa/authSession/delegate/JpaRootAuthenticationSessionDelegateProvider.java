@@ -17,7 +17,7 @@
 package org.keycloak.models.map.storage.jpa.authSession.delegate;
 
 import java.util.UUID;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntityFields;
 import org.keycloak.models.map.common.EntityField;

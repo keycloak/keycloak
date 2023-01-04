@@ -51,9 +51,9 @@ import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;
-import javax.transaction.InvalidTransactionException;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
+import jakarta.transaction.InvalidTransactionException;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
 
 import java.security.Key;
 import java.security.KeyPair;

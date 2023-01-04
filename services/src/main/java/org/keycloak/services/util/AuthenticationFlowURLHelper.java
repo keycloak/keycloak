@@ -19,9 +19,9 @@ package org.keycloak.services.util;
 
 import java.net.URI;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationProcessor;
