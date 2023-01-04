@@ -19,7 +19,7 @@ package org.keycloak.models.jpa.converter;
 
 import java.io.IOException;
 import java.util.Map;
-import javax.persistence.AttributeConverter;
+import jakarta.persistence.AttributeConverter;
 import org.jboss.logging.Logger;
 import org.keycloak.util.JsonSerialization;
 

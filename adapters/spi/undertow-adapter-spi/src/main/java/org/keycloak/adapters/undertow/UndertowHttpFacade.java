@@ -33,10 +33,10 @@ import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
 import javax.security.cert.X509Certificate;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

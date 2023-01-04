@@ -24,8 +24,8 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.client.AbstractClientTest;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
-import javax.ws.rs.ServerErrorException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.ServerErrorException;
+import jakarta.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

@@ -18,7 +18,7 @@ package org.keycloak.models.map.storage.jpa.authorization.scope.delagate;
 
 import java.util.UUID;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntityFields;

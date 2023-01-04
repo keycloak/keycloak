@@ -17,7 +17,7 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.ext.Provider;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 

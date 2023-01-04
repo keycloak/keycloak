@@ -19,7 +19,7 @@ package org.keycloak.adapters.saml;
 import org.keycloak.adapters.spi.SessionIdMapper;
 
 import java.util.Objects;
-import javax.servlet.http.*;
+import jakarta.servlet.http.*;
 
 /**
  *

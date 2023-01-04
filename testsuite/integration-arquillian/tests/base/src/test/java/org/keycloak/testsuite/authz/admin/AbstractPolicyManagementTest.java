@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
