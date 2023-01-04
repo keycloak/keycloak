@@ -137,16 +137,16 @@ public class RealmEntity {
     protected String emailTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.EAGER)
-    Collection<RealmAttributeEntity> attributes;
+    Collection<RealmAttributeEntity> attributes = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RequiredCredentialEntity> requiredCredentials;
+    Collection<RequiredCredentialEntity> requiredCredentials = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    List<UserFederationProviderEntity> userFederationProviders;
+    List<UserFederationProviderEntity> userFederationProviders = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<UserFederationMapperEntity> userFederationMappers;
+    Collection<UserFederationMapperEntity> userFederationMappers = new LinkedList<>();
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -187,22 +187,22 @@ public class RealmEntity {
     protected String defaultRoleId;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    protected List<IdentityProviderEntity> identityProviders;
+    protected List<IdentityProviderEntity> identityProviders = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<IdentityProviderMapperEntity> identityProviderMappers;
+    Collection<IdentityProviderMapperEntity> identityProviderMappers = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<AuthenticatorConfigEntity> authenticators;
+    Collection<AuthenticatorConfigEntity> authenticators = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RequiredActionProviderEntity> requiredActionProviders;
+    Collection<RequiredActionProviderEntity> requiredActionProviders = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<AuthenticationFlowEntity> authenticationFlows;
+    Collection<AuthenticationFlowEntity> authenticationFlows = new LinkedList<>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.ALL}, orphanRemoval = true, mappedBy = "realm")
-    Set<ComponentEntity> components;
+    Set<ComponentEntity> components = new HashSet<>();
 
     @Column(name="BROWSER_FLOW")
     protected String browserFlow;
@@ -239,7 +239,7 @@ public class RealmEntity {
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realmId")
     @MapKey(name="locale")
-    Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts;
+    Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts = new HashMap<>();
 
     public String getId() {
         return id;

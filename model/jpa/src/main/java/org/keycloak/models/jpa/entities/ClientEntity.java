@@ -107,7 +107,7 @@ public class ClientEntity {
     protected Set<String> redirectUris;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
-    protected Collection<ClientAttributeEntity> attributes;
+    protected Collection<ClientAttributeEntity> attributes = new LinkedList<>();
 
     @ElementCollection
     @MapKeyColumn(name="BINDING_NAME")
@@ -116,7 +116,7 @@ public class ClientEntity {
     protected Map<String, String> authFlowBindings;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
-    Collection<ProtocolMapperEntity> protocolMappers;
+    Collection<ProtocolMapperEntity> protocolMappers = new LinkedList<>();
 
     @Column(name="SURROGATE_AUTH_REQUIRED")
     private boolean surrogateAuthRequired;
