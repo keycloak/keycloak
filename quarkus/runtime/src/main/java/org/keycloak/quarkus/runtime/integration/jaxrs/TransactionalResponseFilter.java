@@ -19,16 +19,17 @@ package org.keycloak.quarkus.runtime.integration.jaxrs;
 
 import java.io.IOException;
 import java.util.stream.Stream;
-import javax.annotation.Priority;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.container.PreMatching;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.container.PreMatching;
+import jakarta.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.ext.Provider;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
+
+import jakarta.annotation.Priority;
 
 @Provider
 @PreMatching

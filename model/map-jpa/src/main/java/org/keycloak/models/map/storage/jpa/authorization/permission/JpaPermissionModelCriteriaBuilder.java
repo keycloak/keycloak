@@ -19,7 +19,7 @@ package org.keycloak.models.map.storage.jpa.authorization.permission;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import javax.persistence.criteria.CriteriaBuilder.In;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.PermissionTicket.SearchableFields;

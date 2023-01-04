@@ -54,8 +54,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilderException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.ws.soap.SOAPFaultException;
 

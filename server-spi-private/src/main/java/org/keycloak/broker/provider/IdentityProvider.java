@@ -26,8 +26,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * @author Pedro Igor
@@ -97,7 +97,7 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
     Response performLogin(AuthenticationRequest request);
 
     /**
-     * <p>Returns a {@link javax.ws.rs.core.Response} containing the token previously stored during the authentication process for a
+     * <p>Returns a {@link jakarta.ws.rs.core.Response} containing the token previously stored during the authentication process for a
      * specific user.</p>
      *
      * @param identity

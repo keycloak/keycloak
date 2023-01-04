@@ -18,8 +18,8 @@ package org.keycloak.models.map.storage.jpa.userSession;
 
 import java.util.Objects;
 import java.util.UUID;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionModel.SearchableFields;

@@ -28,7 +28,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.LoginActionsServiceChecks.IsActionRequired;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import static org.keycloak.services.resources.LoginActionsService.RESET_CREDENTIALS_PATH;
 

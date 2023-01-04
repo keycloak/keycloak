@@ -51,8 +51,8 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.mail.internet.MimeMessage;
-import javax.ws.rs.core.Response;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;

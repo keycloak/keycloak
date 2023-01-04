@@ -23,7 +23,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.*;
 import java.io.IOException;
 import java.util.List;
 
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Test;

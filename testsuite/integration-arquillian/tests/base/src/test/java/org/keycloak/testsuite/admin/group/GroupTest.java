@@ -49,8 +49,8 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -64,8 +64,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response.Status;
 import static org.hamcrest.Matchers.*;
 
 import org.junit.Rule;

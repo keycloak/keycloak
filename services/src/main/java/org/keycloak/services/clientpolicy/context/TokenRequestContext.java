@@ -17,7 +17,7 @@
 
 package org.keycloak.services.clientpolicy.context;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
