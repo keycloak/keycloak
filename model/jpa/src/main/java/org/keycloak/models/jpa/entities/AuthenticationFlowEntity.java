@@ -67,7 +67,7 @@ public class AuthenticationFlowEntity {
 
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "parentFlow")
-    Collection<AuthenticationExecutionEntity> executions;
+    Collection<AuthenticationExecutionEntity> executions = new LinkedList<>();
     public String getId() {
         return id;
     }

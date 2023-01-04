@@ -224,7 +224,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     @Override
     public List<PermissionTicket> find(RealmModel realm, ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, Integer firstResult, Integer maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<PermissionTicketEntity> querybuilder = builder.createQuery(PermissionTicketEntity.class);
+        CriteriaQuery<String> querybuilder = builder.createQuery(String.class);
         Root<PermissionTicketEntity> root = querybuilder.from(PermissionTicketEntity.class);
 
         querybuilder.select(root.get("id"));
