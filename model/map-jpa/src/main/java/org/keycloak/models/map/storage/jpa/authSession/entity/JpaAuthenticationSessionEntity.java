@@ -30,9 +30,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
+import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
@@ -41,7 +41,6 @@ import static org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenti
 
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
-import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.sessions.CommonClientSessionModel;
 
 /**
@@ -49,7 +48,6 @@ import org.keycloak.sessions.CommonClientSessionModel;
  */
 @Entity
 @Table(name = TABLE_NAME)
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapAuthenticationSessionEntity, JpaRootVersionedEntity, JpaChildEntity<JpaRootAuthenticationSessionEntity>{
 
     public static final String TABLE_NAME = "kc_auth_session";
@@ -67,7 +65,7 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Type(type = "jsonb")
+    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
     @Column(columnDefinition = "jsonb")
     private final JpaAuthenticationSessionMetadata metadata;
 
