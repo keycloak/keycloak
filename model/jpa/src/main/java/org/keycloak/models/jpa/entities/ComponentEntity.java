@@ -64,7 +64,7 @@ public class ComponentEntity {
     protected String subType;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={ CascadeType.ALL}, orphanRemoval = true, mappedBy = "component")
-    Set<ComponentConfigEntity> componentConfigs;
+    Set<ComponentConfigEntity> componentConfigs = new HashSet<>();
 
     public String getId() {
         return id;
