@@ -7,7 +7,7 @@ export type NewClientScopeParams = { realm: string };
 
 export const NewClientScopeRoute: RouteDef = {
   path: "/:realm/client-scopes/new",
-  component: lazy(() => import("../form/ClientScopeForm")),
+  component: lazy(() => import("../CreateClientScope")),
   breadcrumb: (t) => t("client-scopes:createClientScope"),
   access: "manage-clients",
 };
