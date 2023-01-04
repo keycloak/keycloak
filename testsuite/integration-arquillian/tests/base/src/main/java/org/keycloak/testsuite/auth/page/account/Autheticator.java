@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.auth.page.account;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 
 /**
  *

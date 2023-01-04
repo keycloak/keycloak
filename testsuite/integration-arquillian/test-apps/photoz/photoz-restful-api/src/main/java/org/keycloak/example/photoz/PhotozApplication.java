@@ -5,8 +5,8 @@ import org.keycloak.example.photoz.album.AlbumService;
 import org.keycloak.example.photoz.album.ProfileService;
 import org.keycloak.example.photoz.unsecured.UnsecuredService;
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 import java.util.LinkedHashSet;
 import java.util.Set;
 

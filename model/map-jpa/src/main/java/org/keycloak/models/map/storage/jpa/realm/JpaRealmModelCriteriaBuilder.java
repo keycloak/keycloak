@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.map.storage.jpa.realm;
 
-import javax.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.JoinType;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;

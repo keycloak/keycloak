@@ -18,7 +18,7 @@ package org.keycloak.models.map.storage.jpa.loginFailure.delegate;
 
 import java.util.UUID;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.keycloak.models.map.common.EntityField;
 import org.keycloak.models.map.common.delegate.DelegateProvider;

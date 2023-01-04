@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Optional;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;

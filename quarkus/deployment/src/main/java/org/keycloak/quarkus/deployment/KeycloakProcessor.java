@@ -33,8 +33,8 @@ import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.theme.ClasspathThemeProviderFactory.KEYCLOAK_THEMES_JSON;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.SAML_MAPPERS;
 
-import javax.persistence.Entity;
-import javax.persistence.spi.PersistenceUnitTransactionType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;

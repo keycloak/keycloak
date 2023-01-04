@@ -20,8 +20,8 @@ package org.keycloak.examples.rest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resource.RealmResourceProvider;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Produces;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

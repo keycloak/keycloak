@@ -24,7 +24,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.ReadOnlyException;
 
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 
 public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
 

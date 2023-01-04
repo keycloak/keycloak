@@ -19,9 +19,9 @@ package org.keycloak.models.map.storage.jpa.user;
 import java.util.Arrays;
 import java.util.Collection;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;

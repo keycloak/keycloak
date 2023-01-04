@@ -21,7 +21,7 @@ import org.keycloak.common.Profile.Feature;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;

@@ -28,9 +28,9 @@ import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.utils.ProxyClassLoader;
 import org.keycloak.models.KeycloakSession;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.spi.PersistenceUnitTransactionType;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;

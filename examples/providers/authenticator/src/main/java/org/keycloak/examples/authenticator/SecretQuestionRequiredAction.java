@@ -23,7 +23,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.examples.authenticator.credential.SecretQuestionCredentialModel;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

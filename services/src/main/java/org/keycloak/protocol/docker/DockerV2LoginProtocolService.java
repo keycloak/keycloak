@@ -7,9 +7,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.utils.ProfileHelper;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 public class DockerV2LoginProtocolService {
 
