@@ -238,16 +238,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Map<String, String> setTimeOffset(Map<String, String> time) {
         int offset = Integer.parseInt(time.get("offset"));
 
-        if (offset > 60) {
-            suspendTask(ClearExpiredUserSessions.TASK_NAME);
-        }
-
         Time.setOffset(offset);
 
         // Time offset was restarted
         if (offset == 0) {
             session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
-            restorePeriodicTasks();
         }
 
         return getTimeOffset();
