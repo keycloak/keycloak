@@ -35,15 +35,14 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
+import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.role.MapRoleEntity.AbstractRoleEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
-import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
  * There are some fields marked by {@code @Column(insertable = false, updatable = false)}.
@@ -52,7 +51,6 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  */
 @Entity
 @Table(name = "kc_role", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "clientId", "name"})})
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootVersionedEntity {
 
     @Id
@@ -64,7 +62,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootVersione
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
     @Column(columnDefinition = "jsonb")
     private final JpaRoleMetadata metadata;
 

@@ -25,7 +25,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import java.util.Date;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
