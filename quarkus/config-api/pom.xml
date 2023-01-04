@@ -37,6 +37,11 @@
             <artifactId>keycloak-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-commons-jakarta</artifactId>
+            <version>${infinispan.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-map-hot-rod</artifactId>
             <exclusions>
