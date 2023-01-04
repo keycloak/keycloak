@@ -22,7 +22,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.POST;
+import jakarta.ws.rs.POST;
 
 /**
  * Clear user cache.

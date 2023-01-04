@@ -16,8 +16,8 @@
  */
 package org.keycloak.adapters.elytron;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletRequest;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRequest;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.servlet.ServletExtension;
