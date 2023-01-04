@@ -115,8 +115,8 @@
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.ws.rs</groupId>
-                                            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
-                                            <version>${jboss-jaxrs-api_2.1_spec}</version>
+                                            <artifactId>jboss-jaxrs-api_3.0_spec</artifactId>
+                                            <version>${jboss-jaxrs-api_3.0_spec}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.resteasy</groupId>
