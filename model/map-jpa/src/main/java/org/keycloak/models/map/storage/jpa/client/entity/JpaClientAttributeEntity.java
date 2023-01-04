@@ -16,9 +16,9 @@
  */
 package org.keycloak.models.map.storage.jpa.client.entity;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import org.keycloak.models.map.storage.jpa.JpaAttributeEntityWithHashValue;
 

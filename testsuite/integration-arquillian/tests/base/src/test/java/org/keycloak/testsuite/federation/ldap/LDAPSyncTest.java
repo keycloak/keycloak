@@ -60,7 +60,7 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import javax.ws.rs.BadRequestException;
+import jakarta.ws.rs.BadRequestException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

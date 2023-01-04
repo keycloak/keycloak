@@ -52,8 +52,8 @@ import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;

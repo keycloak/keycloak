@@ -33,8 +33,8 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.authorization.protection.permission.PermissionTicketService;
 import org.keycloak.authorization.protection.policy.UserManagedPermissionService;
 

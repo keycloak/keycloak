@@ -31,7 +31,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

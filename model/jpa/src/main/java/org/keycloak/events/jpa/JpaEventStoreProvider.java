@@ -36,8 +36,8 @@ import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;

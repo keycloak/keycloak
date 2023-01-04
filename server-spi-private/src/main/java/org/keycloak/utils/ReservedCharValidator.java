@@ -16,7 +16,7 @@
  */
 package org.keycloak.utils;
 
-import javax.ws.rs.BadRequestException;
+import jakarta.ws.rs.BadRequestException;
 import org.jboss.logging.Logger;
 
 import java.util.regex.Matcher;

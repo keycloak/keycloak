@@ -39,7 +39,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.openqa.selenium.WebDriver;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;

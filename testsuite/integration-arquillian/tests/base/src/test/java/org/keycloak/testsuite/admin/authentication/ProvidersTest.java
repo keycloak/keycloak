@@ -25,7 +25,7 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;

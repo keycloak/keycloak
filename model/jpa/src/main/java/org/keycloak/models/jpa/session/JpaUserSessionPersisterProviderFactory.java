@@ -26,7 +26,7 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.session.UserSessionPersisterProviderFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

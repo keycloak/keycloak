@@ -23,7 +23,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.jetty.core.JettyRequestAuthenticator;
 import org.keycloak.adapters.spi.HttpFacade;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

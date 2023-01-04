@@ -25,7 +25,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProviderFactory;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

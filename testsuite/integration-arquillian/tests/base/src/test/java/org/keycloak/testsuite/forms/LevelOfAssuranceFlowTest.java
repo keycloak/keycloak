@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;

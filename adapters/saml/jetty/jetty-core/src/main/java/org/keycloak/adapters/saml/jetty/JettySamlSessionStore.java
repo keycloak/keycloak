@@ -29,7 +29,7 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;

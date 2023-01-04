@@ -21,9 +21,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -30,7 +30,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

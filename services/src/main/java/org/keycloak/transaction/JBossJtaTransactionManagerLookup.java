@@ -22,7 +22,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.transaction.TransactionManager;
+import jakarta.transaction.TransactionManager;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

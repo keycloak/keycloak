@@ -18,7 +18,7 @@
 package org.keycloak.quarkus.runtime.storage.database.jpa;
 
 import java.util.function.Supplier;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManagerFactory;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;

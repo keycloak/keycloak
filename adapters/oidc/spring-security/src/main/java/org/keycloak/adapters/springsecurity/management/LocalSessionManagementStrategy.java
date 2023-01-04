@@ -17,7 +17,7 @@
 
 package org.keycloak.adapters.springsecurity.management;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

@@ -18,7 +18,7 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Optional;
-import javax.ws.rs.HttpMethod;
+import jakarta.ws.rs.HttpMethod;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;

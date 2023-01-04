@@ -48,10 +48,10 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;

@@ -27,11 +27,11 @@ import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 
 import java.util.List;
-import javax.persistence.LockModeType;
+import jakarta.persistence.LockModeType;
 
 import java.util.Objects;
 import java.util.stream.Collectors;

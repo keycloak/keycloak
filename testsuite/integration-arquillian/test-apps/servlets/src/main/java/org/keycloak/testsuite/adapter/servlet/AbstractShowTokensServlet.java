@@ -24,9 +24,9 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.JsonSerialization;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 /**

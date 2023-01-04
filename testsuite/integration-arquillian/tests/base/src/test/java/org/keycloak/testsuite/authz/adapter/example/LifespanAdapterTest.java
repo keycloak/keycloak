@@ -19,7 +19,7 @@ package org.keycloak.testsuite.authz.adapter.example;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;

@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.admin.group;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;

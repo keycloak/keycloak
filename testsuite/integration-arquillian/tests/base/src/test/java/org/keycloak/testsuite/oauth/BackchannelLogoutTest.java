@@ -51,7 +51,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 

@@ -21,8 +21,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.containsString;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;

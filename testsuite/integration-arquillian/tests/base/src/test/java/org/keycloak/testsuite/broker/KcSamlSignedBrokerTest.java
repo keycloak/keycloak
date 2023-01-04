@@ -43,7 +43,7 @@ import java.util.Map;
 
 import java.util.Map.Entry;
 import java.util.Set;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.namespace.QName;
 import org.apache.http.HttpResponse;

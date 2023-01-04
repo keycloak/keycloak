@@ -16,7 +16,7 @@
  */
 package org.keycloak.admin.client;
 
-import javax.ws.rs.client.WebTarget;
+import jakarta.ws.rs.client.WebTarget;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
@@ -25,7 +25,7 @@ import org.keycloak.admin.client.spi.ResteasyClientProvider;
 import org.keycloak.admin.client.token.TokenManager;
 
 import javax.net.ssl.SSLContext;
-import javax.ws.rs.client.Client;
+import jakarta.ws.rs.client.Client;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.ServiceLoader;

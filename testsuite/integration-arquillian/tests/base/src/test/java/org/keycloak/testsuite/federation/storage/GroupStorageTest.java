@@ -34,7 +34,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedGroupStorageProviderFactory;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.stream.Collectors;
