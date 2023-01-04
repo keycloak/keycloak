@@ -33,7 +33,7 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;

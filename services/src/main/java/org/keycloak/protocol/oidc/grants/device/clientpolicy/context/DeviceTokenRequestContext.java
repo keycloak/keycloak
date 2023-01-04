@@ -17,7 +17,7 @@
 
 package org.keycloak.protocol.oidc.grants.device.clientpolicy.context;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;

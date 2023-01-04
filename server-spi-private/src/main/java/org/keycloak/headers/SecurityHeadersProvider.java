@@ -18,8 +18,8 @@ package org.keycloak.headers;
 
 import org.keycloak.provider.Provider;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
 
 public interface SecurityHeadersProvider extends Provider {
 

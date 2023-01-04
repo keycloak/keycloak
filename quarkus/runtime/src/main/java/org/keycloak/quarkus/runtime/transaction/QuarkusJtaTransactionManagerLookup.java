@@ -17,8 +17,8 @@
 
 package org.keycloak.quarkus.runtime.transaction;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.transaction.TransactionManager;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.transaction.TransactionManager;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;

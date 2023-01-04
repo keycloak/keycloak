@@ -19,7 +19,7 @@ package org.keycloak.authentication;
 
 import org.keycloak.models.utils.FormMessage;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.List;
 
 /**

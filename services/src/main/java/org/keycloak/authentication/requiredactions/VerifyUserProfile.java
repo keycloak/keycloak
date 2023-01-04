@@ -20,9 +20,9 @@ package org.keycloak.authentication.requiredactions;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;

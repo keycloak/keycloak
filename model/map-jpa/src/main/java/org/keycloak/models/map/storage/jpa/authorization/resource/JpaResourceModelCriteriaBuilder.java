@@ -20,8 +20,8 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import javax.persistence.criteria.CriteriaBuilder.In;
-import javax.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
+import jakarta.persistence.criteria.JoinType;
 
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Resource.SearchableFields;

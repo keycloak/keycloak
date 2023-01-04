@@ -11,9 +11,9 @@ import org.keycloak.testsuite.dballocator.client.data.ReleaseResult;
 import org.keycloak.testsuite.dballocator.client.exceptions.DBAllocatorException;
 import org.keycloak.testsuite.dballocator.client.retry.IncrementalBackoffRetryPolicy;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;

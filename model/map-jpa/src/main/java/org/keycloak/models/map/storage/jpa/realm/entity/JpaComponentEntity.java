@@ -21,15 +21,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.Version;
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
@@ -52,7 +52,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * the component endpoints.
  * <p/>
  * By implementing {@link JpaRootVersionedEntity}, this entity will enforce optimistic locking, which can lead to
- * {@link javax.persistence.OptimisticLockException} if more than one thread attempts to modify the <b>same</b> component
+ * {@link jakarta.persistence.OptimisticLockException} if more than one thread attempts to modify the <b>same</b> component
  * at the same time.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>

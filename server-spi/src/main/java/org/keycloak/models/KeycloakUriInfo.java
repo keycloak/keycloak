@@ -20,10 +20,10 @@ import org.jboss.resteasy.spi.ResteasyUriBuilder;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.UrlType;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.PathSegment;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.PathSegment;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
 

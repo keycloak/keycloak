@@ -20,11 +20,11 @@ package org.keycloak.admin.client;
 import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
 import static org.keycloak.OAuth2Constants.PASSWORD;
 
-import javax.ws.rs.client.Client;
+import jakarta.ws.rs.client.Client;
 
 /**
  * Provides a {@link Keycloak} client builder with the ability to customize the underlying
- * {@link javax.ws.rs.client.Client RESTEasy client} used to communicate with the Keycloak server.
+ * {@link jakarta.ws.rs.client.Client RESTEasy client} used to communicate with the Keycloak server.
  * <p>
  * <p>Example usage with a connection pool size of 20:</p>
  * <pre>
@@ -50,7 +50,7 @@ import javax.ws.rs.client.Client;
  * </pre>
  *
  * @author Scott Rossillo
- * @see javax.ws.rs.client.Client
+ * @see jakarta.ws.rs.client.Client
  */
 public class KeycloakBuilder {
     private String serverUrl;

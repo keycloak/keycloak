@@ -19,7 +19,7 @@ package org.keycloak.connections.jpa;
 
 import org.jboss.logging.Logger;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -22,8 +22,8 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;

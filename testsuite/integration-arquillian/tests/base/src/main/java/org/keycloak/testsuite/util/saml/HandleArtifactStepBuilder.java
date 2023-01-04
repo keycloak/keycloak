@@ -26,7 +26,7 @@ import org.keycloak.saml.processing.core.saml.v2.writers.SAMLRequestWriter;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

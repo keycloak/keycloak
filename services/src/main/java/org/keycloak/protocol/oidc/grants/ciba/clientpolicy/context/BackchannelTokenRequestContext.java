@@ -17,7 +17,7 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
