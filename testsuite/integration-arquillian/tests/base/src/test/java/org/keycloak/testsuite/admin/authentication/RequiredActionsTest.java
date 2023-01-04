@@ -26,8 +26,8 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;

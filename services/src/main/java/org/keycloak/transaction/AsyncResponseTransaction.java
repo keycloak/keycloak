@@ -6,8 +6,8 @@ import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.messages.Messages;
 
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.core.Response;
 
 /**
  * When using {@link AsyncResponse#resume(Object)} directly in the code, the response is returned before all changes 

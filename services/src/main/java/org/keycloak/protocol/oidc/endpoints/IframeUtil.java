@@ -23,8 +23,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.P3PHelper;
 
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 
 public class IframeUtil {

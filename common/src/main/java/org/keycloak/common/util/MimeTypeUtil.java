@@ -17,7 +17,7 @@
 
 package org.keycloak.common.util;
 
-import javax.activation.MimetypesFileTypeMap;
+import jakarta.activation.MimetypesFileTypeMap;
 import java.io.File;
 
 /**

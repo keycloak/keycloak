@@ -21,7 +21,7 @@ import org.keycloak.testsuite.console.page.fragment.RealmSelector;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.List;
 
 /**

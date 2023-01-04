@@ -21,7 +21,7 @@ package org.keycloak.testsuite.oauth;
 import java.io.Closeable;
 import java.util.Collections;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;

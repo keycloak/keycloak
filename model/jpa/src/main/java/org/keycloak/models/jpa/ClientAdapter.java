@@ -30,7 +30,7 @@ import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import java.security.MessageDigest;
 import java.util.Collections;

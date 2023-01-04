@@ -22,7 +22,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 
-import javax.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.CacheControl;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

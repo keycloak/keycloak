@@ -23,7 +23,7 @@ import org.keycloak.http.HttpResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.urls.UrlType;
 
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.HttpHeaders;
 import java.net.URI;
 import java.util.Locale;
 

@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaBuilder;
 
 import org.keycloak.events.Event;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;

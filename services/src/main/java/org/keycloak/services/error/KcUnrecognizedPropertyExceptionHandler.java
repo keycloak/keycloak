@@ -20,10 +20,10 @@ package org.keycloak.services.error;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
 import org.keycloak.models.KeycloakSession;
 
 /**

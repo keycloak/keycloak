@@ -29,7 +29,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Predicate;
 
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
