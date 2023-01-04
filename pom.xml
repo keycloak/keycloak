@@ -976,11 +976,31 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-remote</artifactId>
                 <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-commons</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-jboss-marshalling</artifactId>
                 <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-commons</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -1022,11 +1042,23 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-query-jakarta</artifactId>
                 <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-commons</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-remote-query-client</artifactId>
                 <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-commons</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
