@@ -45,7 +45,7 @@ import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;

@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.console.page;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 
 public class ForbiddenPage extends AdminConsole {
 

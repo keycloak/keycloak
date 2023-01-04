@@ -52,9 +52,9 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.openqa.selenium.Cookie;
 
-import javax.mail.internet.MimeMessage;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;

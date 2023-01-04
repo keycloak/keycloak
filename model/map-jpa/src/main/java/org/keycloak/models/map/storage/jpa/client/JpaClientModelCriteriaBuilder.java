@@ -16,8 +16,8 @@
  */
 package org.keycloak.models.map.storage.jpa.client;
 
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientModel.SearchableFields;

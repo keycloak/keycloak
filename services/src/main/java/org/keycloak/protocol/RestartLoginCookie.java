@@ -32,8 +32,8 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
 

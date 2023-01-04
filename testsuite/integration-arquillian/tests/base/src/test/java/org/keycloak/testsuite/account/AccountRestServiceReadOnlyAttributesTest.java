@@ -20,7 +20,7 @@ package org.keycloak.testsuite.account;
 
 import java.io.IOException;
 
-import javax.ws.rs.BadRequestException;
+import jakarta.ws.rs.BadRequestException;
 
 import org.jboss.logging.Logger;
 import org.junit.Assert;

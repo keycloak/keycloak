@@ -24,7 +24,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
-import javax.ws.rs.BadRequestException;
+import jakarta.ws.rs.BadRequestException;
 import java.util.HashMap;
 import java.util.Map;
 

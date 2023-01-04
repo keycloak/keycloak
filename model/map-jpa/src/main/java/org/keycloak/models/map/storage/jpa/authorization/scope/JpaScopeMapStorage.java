@@ -16,10 +16,10 @@
  */
 package org.keycloak.models.map.storage.jpa.authorization.scope;
 
-import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Selection;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Selection;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;

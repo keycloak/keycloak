@@ -18,7 +18,7 @@ package org.keycloak.models.map.storage.jpa.authorization.permission.delegate;
 
 import java.util.UUID;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntityFields;

@@ -19,7 +19,7 @@ package org.keycloak.adapters.springsecurity.management;
 
 import java.util.List;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import org.keycloak.adapters.spi.UserSessionManagement;
 import org.slf4j.Logger;

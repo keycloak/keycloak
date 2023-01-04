@@ -17,7 +17,7 @@
 
 package org.keycloak.adapters.jetty.spi;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
