@@ -27,6 +27,7 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
+import jakarta.servlet.ReadListener;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.LogoutError;
@@ -201,6 +202,22 @@ public class UndertowHttpFacade implements HttpFacade {
                     public ServletInputStream getInputStream() {
                         inputStream.mark(0);
                         return new ServletInputStream() {
+                            //TODO
+                            @Override
+                            public boolean isFinished() {
+                                return false;
+                            }
+
+                            @Override
+                            public boolean isReady() {
+                                return false;
+                            }
+
+                            @Override
+                            public void setReadListener(ReadListener readListener) {
+
+                            }
+
                             @Override
                             public int read() throws IOException {
                                 return inputStream.read();
