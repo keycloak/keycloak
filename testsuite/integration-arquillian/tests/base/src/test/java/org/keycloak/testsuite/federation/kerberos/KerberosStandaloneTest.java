@@ -19,9 +19,9 @@ package org.keycloak.testsuite.federation.kerberos;
 
 import java.net.URI;
 import java.util.List;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -142,7 +142,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
 
 
         // Follow login with HttpClient. Improve if needed
-        MultivaluedMap<String, String> params = new javax.ws.rs.core.MultivaluedHashMap<>();
+        MultivaluedMap<String, String> params = new jakarta.ws.rs.core.MultivaluedHashMap<>();
         params.putSingle("username", "test-user@localhost");
         params.putSingle("password", "password");
         Response response = client.target(url).request()

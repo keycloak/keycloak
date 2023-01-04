@@ -24,7 +24,7 @@ import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

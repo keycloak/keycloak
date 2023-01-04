@@ -21,7 +21,7 @@ import org.apache.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * {@link RequestMatcher} that determines if a given request is an API request or an

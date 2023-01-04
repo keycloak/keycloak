@@ -18,8 +18,8 @@ package org.keycloak.connections.jpa;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import org.keycloak.models.KeycloakSession;
 
 /**

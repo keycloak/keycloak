@@ -16,12 +16,12 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
 import com.google.common.collect.Streams;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
@@ -49,17 +49,17 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -103,7 +103,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(realm, this.identityProviderModel);
@@ -121,7 +121,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         String alias = this.identityProviderModel.getAlias();
@@ -149,7 +149,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         try {
@@ -254,7 +254,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         try {
@@ -275,7 +275,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
@@ -312,7 +312,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         return realm.getIdentityProviderMappersByAliasStream(identityProviderModel.getAlias())
@@ -332,7 +332,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
@@ -363,7 +363,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
@@ -385,7 +385,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
@@ -408,7 +408,7 @@ public class IdentityProviderResource {
         this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
-            throw new javax.ws.rs.NotFoundException();
+            throw new jakarta.ws.rs.NotFoundException();
         }
 
         IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);

@@ -5,7 +5,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
 
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 
 @Deprecated
 public class RequestHostnameProviderFactory implements HostnameProviderFactory {

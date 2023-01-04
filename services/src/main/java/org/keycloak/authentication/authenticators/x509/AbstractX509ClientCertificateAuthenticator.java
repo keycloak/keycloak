@@ -25,7 +25,7 @@ import java.security.cert.X509Certificate;
 import java.util.function.Function;
 
 import javax.security.auth.x500.X500Principal;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.commons.codec.binary.Hex;
 

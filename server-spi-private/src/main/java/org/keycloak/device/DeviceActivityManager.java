@@ -17,7 +17,7 @@
 
 package org.keycloak.device;
 
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 
 import org.keycloak.common.util.Base64;
