@@ -976,12 +976,12 @@
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-client-hotrod</artifactId>
+                <artifactId>infinispan-client-hotrod-jakarta</artifactId>
                 <version>${infinispan.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-query-dsl</artifactId>
+                <artifactId>infinispan-query-jakarta</artifactId>
                 <version>${infinispan.version}</version>
             </dependency>
             <dependency>
