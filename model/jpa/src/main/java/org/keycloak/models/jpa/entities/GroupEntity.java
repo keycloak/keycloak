@@ -19,7 +19,7 @@ package org.keycloak.models.jpa.entities;
 
 import org.hibernate.annotations.Nationalized;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Collection;
 import java.util.LinkedList;
 

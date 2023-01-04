@@ -37,8 +37,8 @@ import org.w3c.dom.Element;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.Arrays;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import javax.xml.stream.XMLStreamWriter;
 
 

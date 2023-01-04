@@ -26,7 +26,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.KerberosUtils;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;

@@ -16,7 +16,7 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.models.UserModel;
 
 public class EmailBean {

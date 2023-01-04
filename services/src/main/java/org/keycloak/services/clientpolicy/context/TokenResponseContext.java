@@ -16,7 +16,7 @@
  */
 package org.keycloak.services.clientpolicy.context;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.protocol.oidc.TokenManager;

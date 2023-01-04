@@ -32,7 +32,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;

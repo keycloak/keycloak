@@ -28,7 +28,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.Resteasy;

@@ -17,12 +17,12 @@
 
 package org.keycloak.models.map.storage.jpa;
 
-import javax.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.Subquery;
 
 /**
  * This is handed down to a {@link JpaModelCriteriaBuilder} to be able to create subqueries.
- * Depending on the caller this will delegate of an instance of a {@link javax.persistence.criteria.CriteriaDelete}
- * or a {@link javax.persistence.criteria.CriteriaQuery} as necessary.
+ * Depending on the caller this will delegate of an instance of a {@link jakarta.persistence.criteria.CriteriaDelete}
+ * or a {@link jakarta.persistence.criteria.CriteriaQuery} as necessary.
  *
  * @author Alexander Schwartz
  */

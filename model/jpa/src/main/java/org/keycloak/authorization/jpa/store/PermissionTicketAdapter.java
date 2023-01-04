@@ -18,7 +18,7 @@ package org.keycloak.authorization.jpa.store;
 
 import static org.keycloak.authorization.UserManagedPermissionUtil.updatePolicy;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.keycloak.authorization.jpa.entities.PermissionTicketEntity;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;

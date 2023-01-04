@@ -26,7 +26,7 @@ import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;

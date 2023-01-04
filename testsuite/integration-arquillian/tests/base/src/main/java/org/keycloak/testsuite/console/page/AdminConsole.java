@@ -26,7 +26,7 @@ import org.keycloak.testsuite.page.PageWithLogOutAction;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;

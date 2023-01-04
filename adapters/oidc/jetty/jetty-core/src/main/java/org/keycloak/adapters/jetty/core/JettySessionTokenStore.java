@@ -29,7 +29,7 @@ import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Handle storage of token info in HTTP Session. Per-request object

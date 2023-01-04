@@ -25,7 +25,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.infinispan.commons.util.FileLookupFactory;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;

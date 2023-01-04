@@ -20,7 +20,7 @@ package org.keycloak.quarkus.runtime.integration.jaxrs;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.ApplicationPath;
+import jakarta.ws.rs.ApplicationPath;
 
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;

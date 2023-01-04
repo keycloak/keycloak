@@ -23,10 +23,10 @@ import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForM
 
 import java.net.URI;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;

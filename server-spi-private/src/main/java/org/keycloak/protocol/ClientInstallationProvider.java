@@ -23,7 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 
 /**

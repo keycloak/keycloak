@@ -19,10 +19,10 @@ package org.keycloak.protocol.oidc.grants.ciba.channel;
 import java.io.IOException;
 import java.util.Map;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.ClientModel;

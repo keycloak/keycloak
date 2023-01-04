@@ -34,9 +34,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import javax.servlet.ServletException;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Application;
+import jakarta.servlet.ServletException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Application;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;

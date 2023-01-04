@@ -20,7 +20,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.UserSessionModel;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * Exchange a token crafted by this provider for a local realm token.

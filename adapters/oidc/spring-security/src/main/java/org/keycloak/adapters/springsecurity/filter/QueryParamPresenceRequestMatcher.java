@@ -16,7 +16,7 @@
  */
 package org.keycloak.adapters.springsecurity.filter;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.security.web.util.matcher.RequestMatcher;
 

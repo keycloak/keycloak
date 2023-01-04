@@ -18,8 +18,8 @@ package org.keycloak.transaction;
 
 import org.keycloak.models.KeycloakTransaction;
 
-import javax.transaction.Status;
-import javax.transaction.UserTransaction;
+import jakarta.transaction.Status;
+import jakarta.transaction.UserTransaction;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

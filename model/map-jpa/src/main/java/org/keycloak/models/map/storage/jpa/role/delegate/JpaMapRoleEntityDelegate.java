@@ -23,9 +23,9 @@ import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntity;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntityKey;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import java.util.Set;
 import java.util.stream.Collectors;
 

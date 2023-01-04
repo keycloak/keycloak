@@ -20,12 +20,12 @@ package org.keycloak.models.jpa.entities;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.Table;
 
 import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.jpa.converter.MapStringConverter;

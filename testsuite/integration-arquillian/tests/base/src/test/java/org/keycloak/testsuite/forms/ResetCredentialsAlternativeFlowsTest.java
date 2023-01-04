@@ -59,7 +59,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
