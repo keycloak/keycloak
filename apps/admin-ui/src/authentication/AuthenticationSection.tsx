@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useHistory } from "react-router-dom";
 import { Link } from "react-router-dom-v5-compat";
 import { Trans, useTranslation } from "react-i18next";
 import { sortBy } from "lodash-es";
@@ -32,8 +31,8 @@ import helpUrls from "../help-urls";
 import { BindFlowDialog } from "./BindFlowDialog";
 import { UsedBy } from "./components/UsedBy";
 import {
-  routableTab,
   RoutableTabs,
+  useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
 import { addTrailingSlash } from "../util";
@@ -61,7 +60,6 @@ export default function AuthenticationSection() {
   const { t } = useTranslation("authentication");
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
-  const history = useHistory();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const { addAlert, addError } = useAlerts();
@@ -91,6 +89,13 @@ export default function AuthenticationSection() {
       (flow) => flow.usedBy?.type
     );
   };
+
+  const useTab = (tab: AuthenticationTab) =>
+    useRoutableTab(toAuthentication({ realm, tab }));
+
+  const flowsTab = useTab("flows");
+  const requiredActionsTab = useTab("required-actions");
+  const policiesTab = useTab("policies");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "authentication:deleteConfirmFlow",
@@ -141,12 +146,6 @@ export default function AuthenticationSection() {
     </>
   );
 
-  const route = (tab: AuthenticationTab) =>
-    routableTab({
-      to: toAuthentication({ realm, tab }),
-      history,
-    });
-
   return (
     <>
       <DeleteConfirm />
@@ -184,7 +183,7 @@ export default function AuthenticationSection() {
           <Tab
             data-testid="flows"
             title={<TabTitleText>{t("flows")}</TabTitleText>}
-            {...route("flows")}
+            {...flowsTab}
           >
             <KeycloakDataTable
               key={key}
@@ -260,14 +259,14 @@ export default function AuthenticationSection() {
           <Tab
             data-testid="requiredActions"
             title={<TabTitleText>{t("requiredActions")}</TabTitleText>}
-            {...route("required-actions")}
+            {...requiredActionsTab}
           >
             <RequiredActions />
           </Tab>
           <Tab
             data-testid="policies"
             title={<TabTitleText>{t("policies")}</TabTitleText>}
-            {...route("policies")}
+            {...policiesTab}
           >
             <Policies />
           </Tab>
