@@ -31,9 +31,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
+import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.common.UuidValidator;
@@ -41,7 +41,6 @@ import org.keycloak.models.map.realm.entity.MapComponentEntity;
 import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
-import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 
 /**
@@ -59,7 +58,6 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  */
 @Entity
 @Table(name = "kc_component")
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaComponentEntity extends UpdatableEntity.Impl implements MapComponentEntity, JpaRootVersionedEntity, JpaChildEntity<JpaRealmEntity> {
 
     @Id
@@ -79,7 +77,7 @@ public class JpaComponentEntity extends UpdatableEntity.Impl implements MapCompo
     @Basic(fetch = FetchType.LAZY)
     private String providerType;
 
-    @Type(type = "jsonb")
+    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
     @Column(columnDefinition = "jsonb")
     private final JpaComponentMetadata metadata;
 
