@@ -54,6 +54,7 @@
         <arquillian-tomcat8-container-version>1.1.0.Final</arquillian-tomcat8-container-version>
         <arquillian-tomcat9-container-version>1.1.0.Final</arquillian-tomcat9-container-version>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
+<!--        <undertow-embedded.version>1.0.0.Final-SNAPSHOT</undertow-embedded.version>-->
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
         <appium.client.version>6.1.0</appium.client.version>
 
