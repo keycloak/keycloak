@@ -47,11 +47,15 @@ import jakarta.transaction.RollbackException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 
+import org.hibernate.boot.MetadataBuilder;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
+import org.hibernate.service.ServiceRegistry;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -130,6 +134,7 @@ import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.lock.JpaLockMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.lock.entity.JpaLockEntity;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.storage.jpa.loginFailure.JpaUserLoginFailureMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity;
 import org.keycloak.models.map.storage.jpa.realm.JpaRealmMapKeycloakTransaction;
@@ -423,6 +428,12 @@ public class JpaMapStorageProviderFactory implements
 
         // Pass on the property to 'EventListenerIntegrator' to activate the necessary event listeners for JPA map storage
         properties.put(EventListenerIntegrator.JPA_MAP_STORAGE_ENABLED, Boolean.TRUE.toString());
+
+        // register custom jsonb type
+        ServiceRegistry standardRegistry = new StandardServiceRegistryBuilder().build();
+        MetadataSources sources = new MetadataSources(standardRegistry);
+        MetadataBuilder metadataBuilder = sources.getMetadataBuilder();
+        metadataBuilder.applyBasicType(JsonbType.INSTANCE);
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(

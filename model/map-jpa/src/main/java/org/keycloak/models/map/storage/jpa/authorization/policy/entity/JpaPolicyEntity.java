@@ -36,16 +36,15 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
+import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity.AbstractMapPolicyEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
-import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
@@ -56,7 +55,6 @@ import org.keycloak.representations.idm.authorization.Logic;
  */
 @Entity
 @Table(name = "kc_authz_policy", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "resourceServerId", "name"})})
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaPolicyEntity extends AbstractMapPolicyEntity implements JpaRootVersionedEntity {
 
     @Id
@@ -68,7 +66,7 @@ public class JpaPolicyEntity extends AbstractMapPolicyEntity implements JpaRootV
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
     @Column(columnDefinition = "jsonb")
     private final JpaPolicyMetadata metadata;
 
