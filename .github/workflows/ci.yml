@@ -106,6 +106,10 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Base IT
 
   quarkus-integration-tests:
     name: Quarkus IT
