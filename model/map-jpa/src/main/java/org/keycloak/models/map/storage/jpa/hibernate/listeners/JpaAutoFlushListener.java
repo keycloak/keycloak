@@ -97,7 +97,8 @@ public class JpaAutoFlushListener extends DefaultAutoFlushEventListener {
 
     private boolean flushMightBeNeeded(final EventSource source) {
         return !source.getHibernateFlushMode().lessThan(FlushMode.AUTO)
-                && source.getDontFlushFromFind() == 0
+                // getDontFLushFromFind removed in hibernate 6s
+//                && source.getDontFlushFromFind() == 0
                 && (source.getPersistenceContext().getNumberOfManagedEntities() > 0 ||
                 source.getPersistenceContext().getCollectionEntriesSize() > 0);
     }

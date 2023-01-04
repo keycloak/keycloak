@@ -17,16 +17,16 @@
 package org.keycloak.models.map.storage.jpa.hibernate.dialect;
 
 import org.hibernate.dialect.PostgreSQL95Dialect;
-import org.hibernate.dialect.function.SQLFunctionTemplate;
+//import org.hibernate.dialect.function.SQLFunctionTemplate;
 import org.hibernate.type.StandardBasicTypes;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 public class JsonbPostgreSQL95Dialect extends PostgreSQL95Dialect {
     public JsonbPostgreSQL95Dialect() {
         super();
-        registerFunction("->", new SQLFunctionTemplate(JsonbType.INSTANCE, "?1->?2"));
-        registerFunction("->>", new SQLFunctionTemplate(StandardBasicTypes.STRING, "?1->>?2"));
-        registerFunction("@>", new SQLFunctionTemplate(StandardBasicTypes.BOOLEAN, "?1@>?2::jsonb"));
-        registerFunction("kc_hash", new SQLFunctionTemplate(StandardBasicTypes.BINARY, "sha256(?1::bytea)"));
+//        registerFunction("->", new SQLFunctionTemplate(JsonbType.INSTANCE, "?1->?2"));
+//        registerFunction("->>", new SQLFunctionTemplate(StandardBasicTypes.STRING, "?1->>?2"));
+//        registerFunction("@>", new SQLFunctionTemplate(StandardBasicTypes.BOOLEAN, "?1@>?2::jsonb"));
+//        registerFunction("kc_hash", new SQLFunctionTemplate(StandardBasicTypes.BINARY, "sha256(?1::bytea)"));
     }
 }
