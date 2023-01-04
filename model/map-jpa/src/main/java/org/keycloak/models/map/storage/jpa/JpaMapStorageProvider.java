@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.map.storage.jpa;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;

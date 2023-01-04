@@ -110,8 +110,8 @@ import org.keycloak.url.RequestHostnameProviderFactory;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
-import javax.persistence.Entity;
-import javax.persistence.spi.PersistenceUnitTransactionType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;

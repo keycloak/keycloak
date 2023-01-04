@@ -31,7 +31,7 @@ import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.util.OAuthClient;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

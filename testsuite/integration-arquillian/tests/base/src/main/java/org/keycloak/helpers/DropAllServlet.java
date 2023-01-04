@@ -17,16 +17,16 @@
  */
 package org.keycloak.helpers;
 
+import jakarta.annotation.Resource;
 import liquibase.Liquibase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import org.jboss.logging.Logger;
 
-import javax.annotation.Resource;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Statement;

@@ -25,7 +25,7 @@ import org.keycloak.common.util.ServerCookie;
 import org.keycloak.common.util.UriUtils;
 
 import javax.security.cert.X509Certificate;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -117,8 +117,8 @@ public class CatalinaHttpFacade implements HttpFacade {
         @Override
         public Cookie getCookie(String cookieName) {
             if (request.getCookies() == null) return null;
-            javax.servlet.http.Cookie cookie = null;
-            for (javax.servlet.http.Cookie c : request.getCookies()) {
+            jakarta.servlet.http.Cookie cookie = null;
+            for (jakarta.servlet.http.Cookie c : request.getCookies()) {
                 if (c.getName().equals(cookieName)) {
                     cookie = c;
                     break;

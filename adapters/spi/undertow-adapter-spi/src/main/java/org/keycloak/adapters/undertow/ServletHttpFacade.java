@@ -22,8 +22,8 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.LogoutError;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

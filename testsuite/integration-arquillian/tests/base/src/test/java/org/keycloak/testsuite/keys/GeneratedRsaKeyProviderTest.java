@@ -39,7 +39,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.utils.StringUtil;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.List;

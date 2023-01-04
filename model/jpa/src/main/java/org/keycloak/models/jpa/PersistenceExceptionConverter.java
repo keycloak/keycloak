@@ -21,8 +21,8 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 
-import javax.persistence.EntityExistsException;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityManager;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

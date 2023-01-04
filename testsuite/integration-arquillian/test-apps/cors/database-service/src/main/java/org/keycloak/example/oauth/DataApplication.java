@@ -17,8 +17,8 @@
 
 package org.keycloak.example.oauth;
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

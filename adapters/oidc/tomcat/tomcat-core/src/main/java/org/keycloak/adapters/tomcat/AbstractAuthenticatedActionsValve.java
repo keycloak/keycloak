@@ -27,7 +27,7 @@ import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.io.IOException;
 
 /**

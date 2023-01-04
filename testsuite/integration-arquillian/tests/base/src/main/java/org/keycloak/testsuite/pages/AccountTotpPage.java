@@ -20,7 +20,7 @@ import org.keycloak.services.resources.account.AccountFormService;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
