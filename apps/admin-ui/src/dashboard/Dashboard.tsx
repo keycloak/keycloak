@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { useHistory } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import { union, filter } from "lodash-es";
 import {
@@ -35,8 +34,8 @@ import environment from "../environment";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import useLocaleSort from "../utils/useLocaleSort";
 import {
-  routableTab,
   RoutableTabs,
+  useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { DashboardTab, toDashboard } from "./routes/Dashboard";
 import { ProviderInfo } from "./ProviderInfo";
@@ -70,7 +69,6 @@ const Dashboard = () => {
   const { t } = useTranslation("dashboard");
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
-  const history = useHistory();
   const localeSort = useLocaleSort();
 
   const isDeprecatedFeature = (feature: string) =>
@@ -111,18 +109,20 @@ const Dashboard = () => {
     [serverInfo.profileInfo]
   );
 
+  const useTab = (tab: DashboardTab) =>
+    useRoutableTab(
+      toDashboard({
+        realm,
+        tab,
+      })
+    );
+
+  const infoTab = useTab("info");
+  const providersTab = useTab("providers");
+
   if (Object.keys(serverInfo).length === 0) {
     return <KeycloakSpinner />;
   }
-
-  const route = (tab: DashboardTab) =>
-    routableTab({
-      to: toDashboard({
-        realm,
-        tab,
-      }),
-      history,
-    });
 
   return (
     <>
@@ -151,7 +151,7 @@ const Dashboard = () => {
             id="info"
             data-testid="infoTab"
             title={<TabTitleText>{t("serverInfo")}</TabTitleText>}
-            {...route("info")}
+            {...infoTab}
           >
             <PageSection variant="light">
               <Grid hasGutter>
@@ -276,7 +276,7 @@ const Dashboard = () => {
             id="providers"
             data-testid="providersTab"
             title={<TabTitleText>{t("providerInfo")}</TabTitleText>}
-            {...route("providers")}
+            {...providersTab}
           >
             <ProviderInfo />
           </Tab>
