@@ -23,7 +23,6 @@ import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;

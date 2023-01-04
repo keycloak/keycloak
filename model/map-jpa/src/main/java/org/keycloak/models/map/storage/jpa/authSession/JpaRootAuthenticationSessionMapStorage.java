@@ -93,8 +93,8 @@ public class JpaRootAuthenticationSessionMapStorage extends JpaMapStorage<JpaRoo
             //noinspection JpaQueryApiInspection
             Query deleteById =
                     em.createNamedQuery("deleteRootAuthenticationSessionByIdNoOptimisticLocking");
-            deleteById.unwrap(NativeQuery.class).addSynchronizedQuerySpace(JpaRootAuthenticationSessionEntity.TABLE_NAME,
-                    JpaAuthenticationSessionEntity.TABLE_NAME);
+            deleteById.unwrap(NativeQuery.class).addSynchronizedQuerySpace(JpaRootAuthenticationSessionEntity.TABLE_NAME)
+                    .addSynchronizedQuerySpace(JpaAuthenticationSessionEntity.TABLE_NAME);
             deleteById.setParameter("id", key);
             int deleteCount = deleteById.executeUpdate();
             rootAuth.getAuthenticationSessions().forEach(e -> em.detach(e));
