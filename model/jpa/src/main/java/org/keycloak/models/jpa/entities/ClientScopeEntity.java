@@ -60,7 +60,7 @@ public class ClientScopeEntity {
     @Column(name = "DESCRIPTION")
     private String description;
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
-    Collection<ProtocolMapperEntity> protocolMappers;
+    Collection<ProtocolMapperEntity> protocolMappers = new LinkedList<>();
 
     @Column(name = "REALM_ID")
     protected String realmId;
@@ -69,7 +69,7 @@ public class ClientScopeEntity {
     private String protocol;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
-    protected Collection<ClientScopeAttributeEntity> attributes;
+    protected Collection<ClientScopeAttributeEntity> attributes = new LinkedList<>();
 
     @ElementCollection
     @Column(name="ROLE_ID")

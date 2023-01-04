@@ -101,7 +101,7 @@ public class RoleEntity {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected List<RoleAttributeEntity> attributes;
+    protected List<RoleAttributeEntity> attributes = new LinkedList<>();
 
     public String getId() {
         return id;

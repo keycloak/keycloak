@@ -115,7 +115,7 @@ public class ResourceEntity {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="resource", fetch = FetchType.LAZY)
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    private Collection<ResourceAttributeEntity> attributes;
+    private Collection<ResourceAttributeEntity> attributes = new LinkedList<>();
 
     public String getId() {
         return id;
