@@ -19,7 +19,7 @@ package org.keycloak.theme.beans;
 
 import org.keycloak.models.RealmModel;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;

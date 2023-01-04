@@ -70,9 +70,9 @@ import org.keycloak.testsuite.util.WaitUtils;
 import java.io.Closeable;
 import org.openqa.selenium.WebDriver;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;

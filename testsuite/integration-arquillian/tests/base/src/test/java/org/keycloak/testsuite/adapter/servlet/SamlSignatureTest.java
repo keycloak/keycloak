@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import javax.xml.crypto.dsig.XMLSignature;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jboss.arquillian.container.test.api.Deployment;

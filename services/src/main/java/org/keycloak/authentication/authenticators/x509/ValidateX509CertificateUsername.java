@@ -20,7 +20,7 @@ package org.keycloak.authentication.authenticators.x509;
 
 import java.security.cert.X509Certificate;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;

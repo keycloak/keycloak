@@ -17,7 +17,7 @@
 package org.keycloak.testsuite.model;
 
 import java.util.List;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;

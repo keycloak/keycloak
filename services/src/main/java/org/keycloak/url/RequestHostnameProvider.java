@@ -2,7 +2,7 @@ package org.keycloak.url;
 
 import org.keycloak.urls.HostnameProvider;
 
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 
 @Deprecated
 public class RequestHostnameProvider implements HostnameProvider {
