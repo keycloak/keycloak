@@ -26,15 +26,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
+import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity.AbstractMapPermissionTicketEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
-import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 
 /**
@@ -44,7 +43,6 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  */
 @Entity
 @Table(name = "kc_authz_permission", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "resourceServerId", "scopeId", "resourceId", "owner", "requester"})})
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaPermissionEntity extends AbstractMapPermissionTicketEntity implements JpaRootVersionedEntity {
 
     @Id
@@ -56,7 +54,7 @@ public class JpaPermissionEntity extends AbstractMapPermissionTicketEntity imple
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
     @Column(columnDefinition = "jsonb")
     private final JpaPermissionMetadata metadata;
 

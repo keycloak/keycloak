@@ -18,8 +18,6 @@
 package org.keycloak.models.map.storage.jpa;
 
 import org.hibernate.Session;
-import org.hibernate.engine.query.spi.sql.NativeSQLQueryReturn;
-import org.hibernate.engine.query.spi.sql.NativeSQLQuerySpecification;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.jboss.logging.Logger;
 
@@ -149,11 +147,12 @@ public class JpaMapUtils {
         SessionFactoryImplementor sessionFactory = entityManager.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class);
 
         if (isNative) {
-            NativeSQLQuerySpecification spec = new NativeSQLQuerySpecification(querySql, new NativeSQLQueryReturn[0], Collections.emptySet());
-            sessionFactory.getQueryPlanCache().getNativeSQLQueryPlan(spec);
+            // deprecation notes mention usage of a new QueryEngine in hibernate 6
+//            NativeSQLQuerySpecification spec = new NativeSQLQuerySpecification(querySql, new NativeSQLQueryReturn[0], Collections.emptySet());
+//            sessionFactory.getQueryPlanCache().getNativeSQLQueryPlan(spec);
             sessionFactory.addNamedQuery(queryName, entityManager.createNativeQuery(querySql));
         } else {
-            sessionFactory.getQueryPlanCache().getHQLQueryPlan(querySql, false, Collections.emptyMap());
+//            sessionFactory.getQueryPlanCache().getHQLQueryPlan(querySql, false, Collections.emptyMap());
             sessionFactory.addNamedQuery(queryName, entityManager.createQuery(querySql));
         }
     }

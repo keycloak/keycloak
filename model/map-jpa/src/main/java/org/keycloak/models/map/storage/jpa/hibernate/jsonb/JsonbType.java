@@ -44,12 +44,12 @@ import org.hibernate.type.AbstractSingleColumnStandardBasicType;
 import org.hibernate.type.descriptor.ValueBinder;
 import org.hibernate.type.descriptor.ValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
-import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
-import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
+import org.hibernate.type.descriptor.java.AbstractJavaType;
+import org.hibernate.type.descriptor.java.JavaType;
 import org.hibernate.type.descriptor.java.MutableMutabilityPlan;
-import org.hibernate.type.descriptor.sql.BasicBinder;
-import org.hibernate.type.descriptor.sql.BasicExtractor;
-import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
+import org.hibernate.type.descriptor.jdbc.BasicBinder;
+import org.hibernate.type.descriptor.jdbc.BasicExtractor;
+import org.hibernate.type.descriptor.jdbc.JdbcType;
 import org.hibernate.usertype.DynamicParameterizedType;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
@@ -142,41 +142,36 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
         return "jsonb";
     }
 
-    private static class JsonbSqlTypeDescriptor implements SqlTypeDescriptor {
+    private static class JsonbSqlTypeDescriptor implements JdbcType {
 
         private static final JsonbSqlTypeDescriptor INSTANCE = new JsonbSqlTypeDescriptor();
 
         @Override
-        public int getSqlType() {
+        public int getJdbcTypeCode() {
             return Types.OTHER;
         }
 
         @Override
-        public boolean canBeRemapped() {
-            return true;
-        }
-
-        @Override
-        public <X> ValueBinder<X> getBinder(JavaTypeDescriptor<X> javaTypeDescriptor) {
+        public <X> ValueBinder<X> getBinder(JavaType<X> javaTypeDescriptor) {
             return new BasicBinder<X>(javaTypeDescriptor, this) {
                 @Override
                 protected void doBind(PreparedStatement st, X value, int index, WrapperOptions options) throws SQLException {
-                    st.setObject(index, javaTypeDescriptor.unwrap(value, JsonNode.class, options), getSqlType());
+                    st.setObject(index, javaTypeDescriptor.unwrap(value, JsonNode.class, options), getJdbcTypeCode());
                 }
 
                 @Override
                 protected void doBind(CallableStatement st, X value, String name, WrapperOptions options) throws SQLException {
-                    st.setObject(name, javaTypeDescriptor.unwrap(value, JsonNode.class, options), getSqlType());
+                    st.setObject(name, javaTypeDescriptor.unwrap(value, JsonNode.class, options), getJdbcTypeCode());
                 }
             };
         }
 
         @Override
-        public <X> ValueExtractor<X> getExtractor(JavaTypeDescriptor<X> javaTypeDescriptor) {
+        public <X> ValueExtractor<X> getExtractor(JavaType<X> javaTypeDescriptor) {
             return new BasicExtractor<X>(javaTypeDescriptor, this) {
                 @Override
-                protected X doExtract(ResultSet rs, String name, WrapperOptions options) throws SQLException {
-                    return javaTypeDescriptor.wrap(extractJson(rs, name), options);
+                protected X doExtract(ResultSet rs, int index, WrapperOptions options) throws SQLException {
+                    return javaTypeDescriptor.wrap(extractJson(rs, index), options);
                 }
 
                 @Override
@@ -191,8 +186,8 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             };
         }
 
-        private Object extractJson(ResultSet rs, String name) throws SQLException {
-            return rs.getObject(name);
+        private Object extractJson(ResultSet rs, int index) throws SQLException {
+            return rs.getObject(index);
         }
 
         private Object extractJson(CallableStatement statement, int index) throws SQLException {
@@ -204,7 +199,7 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
         }
     }
 
-    private static class JsonbJavaTypeDescriptor extends AbstractTypeDescriptor<Object> implements DynamicParameterizedType {
+    private static class JsonbJavaTypeDescriptor extends AbstractJavaType<Object> implements DynamicParameterizedType {
 
         private Class valueType;
 
@@ -228,9 +223,9 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
 
         @Override
         @SuppressWarnings("unchecked")
-        public Object fromString(String json) {
+        public Object fromString(CharSequence json) {
             try {
-                ObjectNode tree = MAPPER.readValue(json, ObjectNode.class);
+                ObjectNode tree = MAPPER.readValue(json.toString(), ObjectNode.class);
                 JsonNode ev = tree.get("entityVersion");
                 if (ev == null || ! ev.isInt()) throw new IllegalArgumentException("unable to read entity version from " + json);
 
