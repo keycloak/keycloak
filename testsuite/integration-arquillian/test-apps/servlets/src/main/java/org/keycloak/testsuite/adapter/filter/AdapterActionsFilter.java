@@ -25,9 +25,9 @@ import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.reflections.Reflections;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;

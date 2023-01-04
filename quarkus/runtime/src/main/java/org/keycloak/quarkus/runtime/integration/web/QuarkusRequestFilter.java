@@ -31,7 +31,7 @@ import io.vertx.ext.web.RoutingContext;
 /**
  * <p>This filter is responsible for managing the request lifecycle as well as setting up the necessary context to process incoming
  * requests. We need this filter running on the top of the chain in order to push contextual objects before executing Resteasy. It is not
- * possible to use a {@link javax.ws.rs.container.ContainerRequestFilter} for this purpose because some mechanisms like error handling
+ * possible to use a {@link jakarta.ws.rs.container.ContainerRequestFilter} for this purpose because some mechanisms like error handling
  * will not be able to access these contextual objects.
  * 
  * <p>The filter itself runs in an event loop and should delegate to worker threads any blocking code (for now, all requests are handled

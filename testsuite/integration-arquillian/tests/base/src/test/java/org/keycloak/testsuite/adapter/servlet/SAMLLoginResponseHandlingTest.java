@@ -32,7 +32,7 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedHashMap;

@@ -27,8 +27,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.components.TestProvider;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
