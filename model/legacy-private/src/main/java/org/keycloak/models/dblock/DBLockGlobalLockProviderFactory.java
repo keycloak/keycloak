@@ -37,7 +37,7 @@ public class DBLockGlobalLockProviderFactory implements GlobalLockProviderFactor
             dbLockManager.checkForcedUnlock();
         }
 
-        return new DBLockGlobalLockProvider(dbLockManager.getDBLock());
+        return new DBLockGlobalLockProvider(session, dbLockManager.getDBLock());
     }
 
     @Override

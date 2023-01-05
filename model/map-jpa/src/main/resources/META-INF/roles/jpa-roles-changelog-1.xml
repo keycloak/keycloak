@@ -22,8 +22,12 @@ limitations under the License.
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
                     http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    <!-- format of id of changeSet: roles-${org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE} -->
-    <changeSet author="keycloak" id="roles-1">
+    <changeSet author="keycloak" id="roles-1.1">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <changeSetExecuted author="keycloak" id="roles-1" changeLogFile="META-INF/roles/jpa-roles-changelog-1.xml" />
+            </not>
+        </preConditions>
 
         <createTable tableName="kc_role">
             <column name="id" type="UUID">
@@ -69,10 +73,6 @@ limitations under the License.
         <createIndex tableName="kc_role_attribute" indexName="role_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_role_attribute" indexName="role_attr_name_value">
-            <column name="name"/>
-            <column name="VALUE(255)" valueComputed="VALUE(255)"/>
-        </createIndex>
         <createTable tableName="kc_role_composite">
             <column name="role_id" type="UUID">
                 <constraints foreignKeyName="role_composite_fk_root_fkey" references="kc_role(id)" deleteCascade="true" nullable="false"/>
@@ -87,16 +87,38 @@ limitations under the License.
         <createIndex tableName="kc_role_composite" indexName="role_composite_child_role_id">
             <column name="child_role_id"/>
         </createIndex>
-        <modifySql dbms="postgresql,cockroachdb">
-            <replace replace="VALUE(255)" with="(value::varchar(250))"/>
-        </modifySql>
     </changeSet>
 
-    <changeSet author="keycloak" id="roles-2" dbms="postgresql">
+    <changeSet author="keycloak" id="roles-15699-drop-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <changeSetExecuted author="keycloak" id="roles-1" changeLogFile="META-INF/roles/jpa-roles-changelog-1.xml" />
+        </preConditions>
+        <dropIndex tableName="kc_role_attribute" indexName="role_attr_name_value" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="roles-15699-drop-constraint" dbms="postgresql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <changeSetExecuted author="keycloak" id="roles-2" changeLogFile="META-INF/roles/jpa-roles-changelog-1.xml" />
+        </preConditions>
+        <dropUniqueConstraint tableName="kc_role_attribute" constraintName="kc_role_attribute_fk_root_name_value_key" />
+    </changeSet>
+
+<changeSet author="keycloak" id="roles-15699-add-hash-column-index">
+        <ext:addGeneratedColumn tableName="kc_role_attribute">
+            <ext:column name="value_hash" type="kc_hash" hashOf="value"/>
+        </ext:addGeneratedColumn>
+
+        <createIndex tableName="kc_role_attribute" indexName="role_attr_name_value_hash">
+            <column name="name" />
+            <column name="value_hash" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="roles-15699-unique-constraint" dbms="postgres">
         <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
         <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
         <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
-        <addUniqueConstraint tableName="kc_role_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
+        <addUniqueConstraint tableName="kc_role_attribute" columnNames="fk_root, name, value_hash" deferrable="true" initiallyDeferred="true" />
     </changeSet>
 
 </databaseChangeLog>

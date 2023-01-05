@@ -791,7 +791,6 @@
                                 The following properties needs to be synchronized across all map-storage profiles
                                 -->
                                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
                                 <keycloak.realm.provider>map</keycloak.realm.provider>
                                 <keycloak.client.provider>map</keycloak.client.provider>
                                 <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
@@ -817,6 +816,7 @@
                                 -->
                                 <keycloak.mapStorage.provider>concurrenthashmap</keycloak.mapStorage.provider>
                                 <auth.server.quarkus.mapStorage.profile.config>chm</auth.server.quarkus.mapStorage.profile.config>
+                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -839,7 +839,6 @@
                                 The following properties needs to be synchronized across all map-storage profiles
                                 -->
                                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
                                 <keycloak.realm.provider>map</keycloak.realm.provider>
                                 <keycloak.client.provider>map</keycloak.client.provider>
                                 <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
@@ -883,6 +882,7 @@
                                 <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
                                 <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
                                 <auth.server.quarkus.mapStorage.profile.config>jpa</auth.server.quarkus.mapStorage.profile.config>
+                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -906,7 +906,6 @@
                                 The following properties needs to be synchronized across all map-storage profiles
                                 -->
                                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
                                 <keycloak.realm.provider>map</keycloak.realm.provider>
                                 <keycloak.client.provider>map</keycloak.client.provider>
                                 <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
@@ -945,6 +944,7 @@
                                 <infinispan.version>${infinispan.version}</infinispan.version>
                                 <keycloak.testsuite.start-hotrod-container>${keycloak.testsuite.start-hotrod-container}</keycloak.testsuite.start-hotrod-container>
                                 <auth.server.quarkus.mapStorage.profile.config>hotrod</auth.server.quarkus.mapStorage.profile.config>
+                                <keycloak.globalLock.provider>hotrod</keycloak.globalLock.provider>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -1013,6 +1013,7 @@
                                 <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
                                 <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
                                 <auth.server.quarkus.mapStorage.profile.config>jpa</auth.server.quarkus.mapStorage.profile.config>
+                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
