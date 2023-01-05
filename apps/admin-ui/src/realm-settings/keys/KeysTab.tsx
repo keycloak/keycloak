@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Tab, TabTitleText } from "@patternfly/react-core";
 
@@ -8,8 +7,8 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { KEY_PROVIDER_TYPE } from "../../util";
 import {
-  routableTab,
   RoutableTabs,
+  useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { KeySubTab, toKeysTab } from "../routes/KeysTab";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -31,7 +30,6 @@ const sortByPriority = (components: ComponentRepresentation[]) => {
 
 export const KeysTab = () => {
   const { t } = useTranslation("realm-settings");
-  const history = useHistory();
 
   const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
@@ -53,15 +51,15 @@ export const KeysTab = () => {
     [key]
   );
 
+  const useTab = (tab: KeySubTab) =>
+    useRoutableTab(toKeysTab({ realm: realmName, tab }));
+
+  const listTab = useTab("list");
+  const providersTab = useTab("providers");
+
   if (!realmComponents) {
     return <KeycloakSpinner />;
   }
-
-  const keysRoute = (tab: KeySubTab) =>
-    routableTab({
-      to: toKeysTab({ realm: realmName, tab }),
-      history,
-    });
 
   return (
     <RoutableTabs
@@ -74,7 +72,7 @@ export const KeysTab = () => {
         data-testid="rs-keys-list-tab"
         aria-label="keys-list-subtab"
         title={<TabTitleText>{t("keysList")}</TabTitleText>}
-        {...keysRoute("list")}
+        {...listTab}
       >
         <KeysListTab realmComponents={realmComponents} />
       </Tab>
@@ -83,7 +81,7 @@ export const KeysTab = () => {
         data-testid="rs-providers-tab"
         aria-label="rs-providers-tab"
         title={<TabTitleText>{t("providers")}</TabTitleText>}
-        {...keysRoute("providers")}
+        {...providersTab}
       >
         <KeysProvidersTab realmComponents={realmComponents} refresh={refresh} />
       </Tab>
