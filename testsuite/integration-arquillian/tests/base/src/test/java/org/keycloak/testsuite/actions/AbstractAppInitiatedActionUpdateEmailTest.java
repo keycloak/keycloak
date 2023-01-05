@@ -58,7 +58,6 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 				.lastName("Doh").build();
 		prepareUser(user);
 		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
-		setRegistrationEmailAsUsername(testRealm(), false);
 	}
 
 	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {
@@ -137,12 +136,19 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 
 	@Test
 	public void updateWithEmailAsUsernameEnabled() throws Exception {
+		Boolean genuineRegistrationEmailAsUsername = testRealm()
+				.toRepresentation()
+				.isRegistrationEmailAsUsername();
+
 		setRegistrationEmailAsUsername(testRealm(), true);
+		try {
+			changeEmailUsingAIA("new@email.com");
 
-		changeEmailUsingAIA("new@email.com");
-
-		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new@email.com");
-		Assert.assertNotNull(user);
+			UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new@email.com");
+			Assert.assertNotNull(user);
+		} finally {
+			setRegistrationEmailAsUsername(testRealm(), genuineRegistrationEmailAsUsername);
+		}
 	}
 
 	protected abstract void changeEmailUsingAIA(String newEmail) throws Exception;
