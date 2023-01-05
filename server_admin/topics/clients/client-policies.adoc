@@ -123,6 +123,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce more secure signature algorithm when client registration
 * Enforce `binding_message` parameter is used for CIBA requests
 * Enforce <<_secret_rotation, Client Secret Rotation>>
+* Enforce Client Registration Access Token
 * Enforce checking if a client is the one to which an intent was issued in a use case where an intent is issued before starting an authorization code flow to get an access token like UK OpenBanking
 
 [[_client_policy_profile]]

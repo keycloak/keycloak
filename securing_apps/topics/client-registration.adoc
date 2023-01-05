@@ -61,7 +61,8 @@ Authorization: bearer eyJhbGciOiJSUz...
 When you create a client through the Client Registration Service the response will include a registration access token.
 The registration access token provides access to retrieve the client configuration later, but also to update or delete the client.
 The registration access token is included with the request in the same way as a bearer token or initial access token.
-Registration access tokens are only valid once, when it's used the response will include a new token. 
+
+By default, registration access token rotation is enabled. This means a registration access token is only valid once. When the token is used, the response will include a new token. Note that registration access token rotation can be disabled by using link:{adminguide_link}#_client_policies[Client Policies].
 
 If a client was created outside of the Client Registration Service it won't have a registration access token associated with it.
 You can create one through the admin console. This can also be useful if you lose the token for a particular client.
