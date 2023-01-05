@@ -88,13 +88,13 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private TokenManager tokenManager;
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
-
-    private boolean closed;
+    private boolean closed = false;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
         this.transactionManager = new DefaultKeycloakTransactionManager(this);
         context = createKeycloakContext(this);
+        LOG.tracef("Created %s%s", this, StackUtil.getShortStackTrace());
     }
 
     @Override
@@ -452,31 +452,72 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return clientPolicyManager;
     }
 
+    private static final Logger LOG = Logger.getLogger(DefaultKeycloakSession.class);
+
     @Override
     public void close() {
+        if (LOG.isTraceEnabled()) {
+            LOG.tracef("Closing %s%s%s", this,
+              getTransactionManager().isActive() ? " (transaction active" + (getTransactionManager().getRollbackOnly() ? ", ROLLBACK-ONLY" : "") + ")" : "",
+              StackUtil.getShortStackTrace());
+        }
+
         if (closed) {
-            throw new IllegalStateException("Illegal call to #close() on already closed KeycloakSession");
+            throw new IllegalStateException("Illegal call to #close() on already closed " + this);
         }
-        Consumer<? super Provider> safeClose = p -> {
-            try {
-                p.close();
-            } catch (Exception e) {
-                // Ignore exception
+
+        RuntimeException re = closeTransactionManager();
+
+        try {
+            Consumer<? super Provider> safeClose = p -> {
+                try {
+                    p.close();
+                } catch (Exception e) {
+                    // Ignore exception
+                }
+            };
+            providers.values().forEach(safeClose);
+            closable.forEach(safeClose);
+            for (Entry<InvalidableObjectType, Set<Object>> me : invalidationMap.entrySet()) {
+                factory.invalidate(this, me.getKey(), me.getValue().toArray());
             }
-        };
-        providers.values().forEach(safeClose);
-        closable.forEach(safeClose);
-        for (Entry<InvalidableObjectType, Set<Object>> me : invalidationMap.entrySet()) {
-            factory.invalidate(this, me.getKey(), me.getValue().toArray());
+        } finally {
+            this.closed = true;
         }
-        closed = true;
+
+        if (re != null) {
+            throw re;
+        }
     }
 
-    public boolean isClosed() {
-        return closed;
+    protected RuntimeException closeTransactionManager() {
+        if (! this.transactionManager.isActive()) {
+            return null;
+        }
+
+        try {
+            if (this.transactionManager.getRollbackOnly()) {
+                this.transactionManager.rollback();
+            } else {
+                this.transactionManager.commit();
+            }
+        } catch (RuntimeException re) {
+            return re;
+        }
+
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("session @ %08x", System.identityHashCode(this));
     }
 
     protected DefaultKeycloakContext createKeycloakContext(KeycloakSession session) {
         return new DefaultKeycloakContext(session);
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 }

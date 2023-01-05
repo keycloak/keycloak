@@ -15,49 +15,48 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.locking;
+package org.keycloak.models.map.storage.hotRod.locking;
 
+import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTaskWithResult;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.locking.GlobalLockProvider;
+import org.keycloak.models.locking.GlobalLockProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-import java.time.Duration;
+public class HotRodGlobalLockProviderFactory implements GlobalLockProviderFactory, EnvironmentDependentProviderFactory {
 
-public class NoneGlobalLockProviderFactory implements GlobalLockProviderFactory, EnvironmentDependentProviderFactory {
+    public static final String PROVIDER_ID = "hotrod";
+    protected static final String HOT_ROD_LOCKS_CACHE = "locks";
 
-    public static final String PROVIDER_ID = "none";
+    private RemoteCache<String, String> locksCache;
+    private long defaultTimeoutMilliseconds;
+
 
     @Override
     public GlobalLockProvider create(KeycloakSession session) {
-        return new GlobalLockProvider() {
-            @Override
-            public void close() {
-            }
+        if (locksCache == null) {
+            lazyInit(session);
+        }
 
-            @Override
-            public <V> V withLock(String lockName, Duration timeToWaitForLock, KeycloakSessionTaskWithResult<V> task) {
-                return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), task);
-            }
+        return new HotRodGlobalLockProvider(session, locksCache, defaultTimeoutMilliseconds);
+    }
 
-            @Override
-            public void forceReleaseAllLocks() {
-
-            }
-        };
+    private void lazyInit(KeycloakSession session) {
+        HotRodConnectionProvider hotRodConnectionProvider = session.getProvider(HotRodConnectionProvider.class);
+        locksCache = hotRodConnectionProvider.getRemoteCache(HOT_ROD_LOCKS_CACHE);
     }
 
     @Override
     public void init(Config.Scope config) {
-
+        defaultTimeoutMilliseconds = config.getLong("defaultTimeoutMilliseconds", 5000L);
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
     }
 
     @Override

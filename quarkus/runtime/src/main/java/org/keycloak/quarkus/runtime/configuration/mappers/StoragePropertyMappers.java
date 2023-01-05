@@ -327,7 +327,18 @@ final class StoragePropertyMappers {
     }
 
     private static Optional<String> getGlobalLockProvider(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        return of(storage.isEmpty() ? "dblock" : "none");
+        try {
+            if (storage.isPresent()) {
+                return of(storage.map(StorageType::valueOf)
+                        .filter(type -> type.equals(StorageType.hotrod))
+                        .map(StorageType::getProvider)
+                        .orElse("none"));
+            }
+        } catch (IllegalArgumentException iae) {
+            throw new IllegalArgumentException("Invalid storage provider: " + storage.orElse(null), iae);
+        }
+
+        return of("dblock");
     }
 
     private static Optional<String> getUserSessionPersisterStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {

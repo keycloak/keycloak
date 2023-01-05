@@ -20,7 +20,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
+import org.keycloak.models.map.storage.jpa.JpaAttributeEntityWithHashValue;
 
 /**
  * JPA implementation for realm attributes. This entity represents a realm attribute and has a many-to-one relationship
@@ -30,9 +30,9 @@ import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
  */
 @Entity
 @Table(name = "kc_realm_attribute", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"fk_root", "name", "value"})
+        @UniqueConstraint(columnNames = {"fk_root", "name", "value_hash"})
 })
-public class JpaRealmAttributeEntity extends JpaAttributeEntity<JpaRealmEntity> {
+public class JpaRealmAttributeEntity extends JpaAttributeEntityWithHashValue<JpaRealmEntity> {
 
     public JpaRealmAttributeEntity() {
     }
