@@ -9,15 +9,14 @@ import {
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
 
 import { MapperList } from "../../client-scopes/details/MapperList";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import {
-  routableTab,
   RoutableTabs,
+  useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
@@ -32,7 +31,6 @@ import { DedicatedScope } from "./DecicatedScope";
 
 export default function DedicatedScopes() {
   const { t } = useTranslation("clients");
-  const history = useHistory();
   const navigate = useNavigate();
   const { realm, clientId } = useParams<DedicatedScopeDetailsParams>();
 
@@ -43,11 +41,11 @@ export default function DedicatedScopes() {
 
   useFetch(() => adminClient.clients.findOne({ id: clientId }), setClient, []);
 
-  const route = (tab: DedicatedScopeTab) =>
-    routableTab({
-      to: toDedicatedScope({ realm, clientId, tab }),
-      history,
-    });
+  const useTab = (tab: DedicatedScopeTab) =>
+    useRoutableTab(toDedicatedScope({ realm, clientId, tab }));
+
+  const mappersTab = useTab("mappers");
+  const scopeTab = useTab("scope");
 
   if (!client) {
     return <KeycloakSpinner />;
@@ -118,7 +116,7 @@ export default function DedicatedScopes() {
           <Tab
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             data-testid="mappersTab"
-            {...route("mappers")}
+            {...mappersTab}
           >
             <MapperList
               model={client}
@@ -132,7 +130,7 @@ export default function DedicatedScopes() {
           <Tab
             title={<TabTitleText>{t("scope")}</TabTitleText>}
             data-testid="scopeTab"
-            {...route("scope")}
+            {...scopeTab}
           >
             <DedicatedScope client={client} />
           </Tab>
