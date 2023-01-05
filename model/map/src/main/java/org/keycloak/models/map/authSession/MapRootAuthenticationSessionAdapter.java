@@ -23,6 +23,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -105,7 +106,7 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
             }
         }
 
-        MapAuthenticationSessionEntity authSessionEntity = new MapAuthenticationSessionEntityImpl();
+        MapAuthenticationSessionEntity authSessionEntity = DeepCloner.DUMB_CLONER.newInstance(MapAuthenticationSessionEntity.class);
         authSessionEntity.setClientUUID(client.getId());
 
         long timestamp = Time.currentTimeMillis();

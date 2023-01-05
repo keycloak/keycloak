@@ -81,7 +81,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean manualStop;
     private String relativePath;
     private int httpPort;
+    private int httpsPort;
     private boolean debug;
+    private boolean enableTls;
     private boolean reCreate;
     private boolean removeBuildOptionsAfterBuild;
     private boolean createAdminUser;
@@ -89,10 +91,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean inited = false;
     private Map<String, String> envVars = new HashMap<>();
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate, boolean removeBuildOptionsAfterBuild,
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild,
             boolean createAdminUser) {
         this.debug = debug;
         this.manualStop = manualStop;
+        this.enableTls = enableTls;
         this.reCreate = reCreate;
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
         this.createAdminUser = createAdminUser;
@@ -107,6 +110,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
         stop();
         try {
+            configureServer();
             startServer(arguments);
             if (manualStop) {
                 asyncReadOutput();
@@ -132,6 +136,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
 
         return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
+    }
+
+    private void configureServer() {
+        if (enableTls) {
+            copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
+        }
     }
 
     @Override
@@ -230,6 +240,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         this.relativePath = arguments.stream().filter(arg -> arg.startsWith("--http-relative-path")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("/");
         this.httpPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--http-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8080"));
+        this.httpsPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--https-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8443"));
 
         allArgs.add("-Dkc.home.dir=" + distPath + File.separator);
         allArgs.addAll(arguments);
@@ -238,7 +249,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void waitForReadiness() throws MalformedURLException {
-        URL contextRoot = new URL("http://localhost:" + httpPort + ("/" + relativePath + "/realms/master/").replace("//", "/"));
+        waitForReadiness("http", httpPort);
+
+        if (enableTls) {
+            waitForReadiness("https", httpsPort);
+        }
+    }
+
+    private void waitForReadiness(String scheme, int port) throws MalformedURLException {
+        URL contextRoot = new URL(scheme + "://localhost:" + port + ("/" + relativePath + "/realms/master/").replace("//", "/"));
         HttpURLConnection connection = null;
         long startTime = System.currentTimeMillis();
 
@@ -250,7 +269,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
             try {
                 // wait before checking for opening a new connection
-                Thread.sleep(1000);
                 if ("https".equals(contextRoot.getProtocol())) {
                     HttpsURLConnection httpsConnection = (HttpsURLConnection) (connection = (HttpURLConnection) contextRoot.openConnection());
                     httpsConnection.setSSLSocketFactory(createInsecureSslSocketFactory());
@@ -270,6 +288,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             } finally {
                 if (connection != null) {
                     connection.disconnect();
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception ignore) {
                 }
             }
         }

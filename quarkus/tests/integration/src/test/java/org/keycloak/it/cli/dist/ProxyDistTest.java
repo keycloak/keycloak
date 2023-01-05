@@ -24,8 +24,6 @@ import static org.hamcrest.Matchers.containsString;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.cli.dist.util.CopyTLSKeystore;
-import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -33,8 +31,7 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import io.quarkus.test.junit.main.Launch;
 import io.restassured.RestAssured;
 
-@DistributionTest(keepAlive = true)
-@BeforeStartDistribution(CopyTLSKeystore.class)
+@DistributionTest(keepAlive = true, enableTls = true)
 @RawDistOnly(reason = "Containers are immutable")
 public class ProxyDistTest {
 
@@ -44,38 +41,38 @@ public class ProxyDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io" })
+    @Launch({ "start-dev", "--hostname=mykeycloak.org" })
     public void testSchemeAndPortFromRequestWhenNoProxySet() {
-        assertFrontEndUrl("http://mykeycloak.127.0.0.1.nip.io:8080", "http://mykeycloak.127.0.0.1.nip.io:8080/");
-        assertFrontEndUrl("http://localhost:8080", "http://mykeycloak.127.0.0.1.nip.io:8080/");
-        assertFrontEndUrl("https://localhost:8443", "https://mykeycloak.127.0.0.1.nip.io:8443/");
+        assertFrontEndUrl("http://mykeycloak.org:8080", "http://mykeycloak.org:8080/");
+        assertFrontEndUrl("http://localhost:8080", "http://mykeycloak.org:8080/");
+        assertFrontEndUrl("https://localhost:8443", "https://mykeycloak.org:8443/");
         given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://localhost:8080/admin"));
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io", "--proxy=edge" })
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=edge" })
     public void testXForwardedHeadersWithEdge() {
         assertXForwardedHeaders();
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io", "--proxy=reencrypt" })
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=reencrypt" })
     public void testXForwardedHeadersWithReencrypt() {
         assertXForwardedHeaders();
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname-url=http://mykeycloak.127.0.0.1.nip.io:1234", "--hostname-admin-url=http://mykeycloakadmin.127.0.0.1.nip.io:1234", "--proxy=edge" })
+    @Launch({ "start-dev", "--hostname-url=http://mykeycloak.org:1234", "--hostname-admin-url=http://mykeycloakadmin.127.0.0.1.nip.io:1234", "--proxy=edge" })
     public void testIgnoreForwardedHeadersWhenFrontendUrlSet() {
-        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.127.0.0.1.nip.io:8080").then().body(containsString("http://mykeycloakadmin.127.0.0.1.nip.io:1234/admin"));
+        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.org:8080").then().body(containsString("http://mykeycloakadmin.127.0.0.1.nip.io:1234/admin"));
         given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().body(containsString("http://mykeycloakadmin.127.0.0.1.nip.io:1234/admin"));
     }
 
     private void assertXForwardedHeaders() {
-        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.127.0.0.1.nip.io:8080").then().body(containsString("http://test:8080/admin"));
+        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.org:8080").then().body(containsString("http://test:8080/admin"));
         given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://test:8080/admin"));
         given().header("X-Forwarded-Host", "test").when().get("https://localhost:8443").then().body(containsString("https://test:8443/admin"));
-        //given().header("X-Forwarded-Host", "mykeycloak.127.0.0.1.nip.io").when().get("https://localhost:8443/admin/master/console").then().body(containsString("<script src=\"/js/keycloak.js?version="));
+        //given().header("X-Forwarded-Host", "mykeycloak.org").when().get("https://localhost:8443/admin/master/console").then().body(containsString("<script src=\"/js/keycloak.js?version="));
         given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().body(containsString("https://localhost/admin"));
         given().header("X-Forwarded-Proto", "https").header("X-Forwarded-Port", "8443").when().get("http://localhost:8080").then().body(containsString("https://localhost:8443/admin"));
     }

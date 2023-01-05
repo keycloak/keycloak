@@ -832,19 +832,24 @@ we rely on [nip.io](https://nip.io) for DNS switching, so tests will work everyw
 To run base testsuite with new storage run the following command (this will execute testsuite with ConcurrentHashMap storage):
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pauth-server-quarkus -Pmap-storage
+                  -Pauth-server-quarkus -Pmap-storage-chm
 ```
 
 ### Running tests with JPA Map storage
 
-By default tests with `map-storage-jpa` profile spawns a new Postgres container
-with each test execution. Default image used is "postgres:alpine". To spawn different 
-version, it can be used "keycloak.map.storage.postgres.docker.image" system property.
+By default, testing with the profile `map-storage-jpa-postgres` spawns a new Postgres container
+with each test execution. The default image used is `postgres:alpine`. To spawn a different
+version, use the system property `keycloak.map.storage.postgres.docker.image`.
+
+In a similar way the profile `map-storage-jpa-cockroach` spawns a new CockroachDB container
+with each test execution. It uses the official CockroachDB image in the version stated in the
+class `CockroachdbContainerTestEnricher`. To spawn a different
+version, use the system property `keycloak.map.storage.cockroachdb.docker.image`.
 
 Execute tests:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pmap-storage,map-storage-jpa
+                  -Pmap-storage-jpa-postgres
 ```
 
 It's also possible to configure tests to connect to an external database, it might be useful 
@@ -859,7 +864,7 @@ podman run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_US
 To run the tests without spawning the container for you, execute tests with the following command:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-  -Pmap-storage,map-storage-jpa \
+  -Pmap-storage-jpa-postgres \
   -Dpostgres.start-container=false \
   -Dkeycloak.map.storage.connectionsJpa.url=<jdbc_url> \
   -Dkeycloak.map.storage.connectionsJpa.user=<user> \
@@ -872,7 +877,7 @@ By default, Base testsuite with `map-storage-hotrod` profile spawn a new Infinis
 with each test execution. To run the tests execute:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pmap-storage,map-storage-hotrod
+                  -Pmap-storage-hotrod
 ```
 Note: For running Infinispan server we are using Testcontainer, see section 
 _Usage of Testcontainers_ for details on how to set up your container engine.
@@ -882,7 +887,7 @@ connect to an external instance of Infinispan. To do so, execute tests with
 the following command:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pmap-storage,map-storage-hotrod
+                  -Pmap-storage-hotrod
                   -Dkeycloak.testsuite.start-hotrod-container=false \
                   -Dkeycloak.connectionsHotRod.host=<host> \
                   -Dkeycloak.connectionsHotRod.port=<port> \

@@ -27,6 +27,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
@@ -625,7 +626,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
     private MapUserSessionEntity createUserSessionEntityInstance(String id, String realmId, String userId, String loginUsername, String ipAddress,
                                                                  String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId,
                                                                  boolean offline) {
-        MapUserSessionEntityImpl userSessionEntity = new MapUserSessionEntityImpl();
+        MapUserSessionEntity userSessionEntity = DeepCloner.DUMB_CLONER.newInstance(MapUserSessionEntity.class);
         userSessionEntity.setId(id);
         userSessionEntity.setRealmId(realmId);
         userSessionEntity.setUserId(userId);
@@ -643,7 +644,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     private MapAuthenticatedClientSessionEntity createAuthenticatedClientSessionEntityInstance(String id, String userSessionId, String realmId,
                                                                                                String clientId, boolean offline) {
-        MapAuthenticatedClientSessionEntityImpl clientSessionEntity = new MapAuthenticatedClientSessionEntityImpl();
+        MapAuthenticatedClientSessionEntity clientSessionEntity = DeepCloner.DUMB_CLONER.newInstance(MapAuthenticatedClientSessionEntity.class);
         clientSessionEntity.setId(id == null ? KeycloakModelUtils.generateId() : id);
         clientSessionEntity.setRealmId(realmId);
         clientSessionEntity.setClientId(clientId);

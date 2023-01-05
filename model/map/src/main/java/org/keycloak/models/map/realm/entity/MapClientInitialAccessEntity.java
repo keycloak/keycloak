@@ -33,7 +33,7 @@ public interface MapClientInitialAccessEntity extends UpdatableEntity, AbstractE
     static MapClientInitialAccessEntity createEntity(int expiration, int count) {
         long currentTime = Time.currentTimeMillis();
 
-        MapClientInitialAccessEntity entity = new MapClientInitialAccessEntityImpl();
+        MapClientInitialAccessEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapClientInitialAccessEntity.class);
         entity.setId(KeycloakModelUtils.generateId());
         entity.setTimestamp(currentTime);
         entity.setExpiration(expiration == 0 ? null : currentTime + TimeAdapter.fromSecondsToMilliseconds(expiration));

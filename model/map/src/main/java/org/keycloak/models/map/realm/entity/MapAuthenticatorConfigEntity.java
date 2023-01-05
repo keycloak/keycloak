@@ -32,7 +32,7 @@ import java.util.Map;
 public interface MapAuthenticatorConfigEntity extends UpdatableEntity, AbstractEntity {
     static MapAuthenticatorConfigEntity fromModel(AuthenticatorConfigModel model) {
         if (model == null) return null;
-        MapAuthenticatorConfigEntity entity = new MapAuthenticatorConfigEntityImpl();
+        MapAuthenticatorConfigEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapAuthenticatorConfigEntity.class);
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setAlias(model.getAlias());

@@ -17,6 +17,9 @@
 
 package org.keycloak.models.map.storage.hotRod.authorization;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
+import org.infinispan.api.annotations.indexing.Keyword;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -39,7 +42,7 @@ import java.util.Set;
         modelClass = "org.keycloak.authorization.model.Policy",
         cacheName = "authz"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodPolicyEntity.VERSION)
 public class HotRodPolicyEntity extends AbstractHotRodEntity {
 
@@ -59,61 +62,57 @@ public class HotRodPolicyEntity extends AbstractHotRodEntity {
     }
 
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true, sortable = true)
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String realmId;
 
+    @Keyword(sortable = true, normalizer = "lowercase")
     @ProtoField(number = 4)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     public String name;
 
     @ProtoField(number = 5)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    public String nameLowercase;
-
-    @ProtoField(number = 6)
     public String description;
 
-    @ProtoField(number = 7)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES, analyze = Analyze.YES, analyzer = @Analyzer(definition = \"filename\"))")
+    @Keyword(sortable = true, normalizer = "lowercase")
+    @ProtoField(number = 6)
     public String type;
 
-    @ProtoField(number = 8)
+    @ProtoField(number = 7)
     public Integer decisionStrategy;
 
-    @ProtoField(number = 9)
+    @ProtoField(number = 8)
     public Integer logic;
 
-    @ProtoField(number = 10)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 9)
     public Set<HotRodStringPair> configs;
 
-    @ProtoField(number = 11)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 10)
     public String resourceServerId;
 
-    @ProtoField(number = 12)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 11)
     public Set<String> associatedPolicyIds;
 
-    @ProtoField(number = 13)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 12)
     public Set<String> resourceIds;
 
-    @ProtoField(number = 14)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 13)
     public Set<String> scopeIds;
 
-    @ProtoField(number = 15)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 14)
     public String owner;
 
     public static abstract class AbstractHotRodPolicyEntity extends UpdatableHotRodEntityDelegateImpl<HotRodPolicyEntity> implements MapPolicyEntity {
@@ -136,7 +135,6 @@ public class HotRodPolicyEntity extends AbstractHotRodEntity {
             HotRodPolicyEntity entity = getHotRodEntity();
             entity.updated |= ! Objects.equals(entity.name, name);
             entity.name = name;
-            entity.nameLowercase = name == null ? null : name.toLowerCase();
         }
     }
 

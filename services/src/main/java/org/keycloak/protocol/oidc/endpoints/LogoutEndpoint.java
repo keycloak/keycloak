@@ -370,6 +370,8 @@ public class LogoutEndpoint {
                 session.getProvider(LoginFormsProvider.class).setAttribute(Constants.SKIP_LINK, true);
             }
 
+            event.error(Errors.SESSION_EXPIRED);
+
             return ErrorPage.error(session, logoutSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
         }
 
@@ -405,6 +407,7 @@ public class LogoutEndpoint {
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
+                event.error(Errors.LOGOUT_FAILED);
                 return ErrorPage.error(session, logoutSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
             } else {
                 // Probably changing locale on logout screen after logout was already performed. If there is no session in the browser, we can just display that logout was already finished
@@ -431,7 +434,10 @@ public class LogoutEndpoint {
             try {
                 userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, userSessionIdFromIdToken));
 
-                if (userSession != null) {
+                if (userSession == null) {
+                    event.event(EventType.LOGOUT);
+                    event.error(Errors.SESSION_EXPIRED);
+                } else {
                     Integer idTokenIssuedAt = Integer.parseInt(idTokenIssuedAtStr);
                     checkTokenIssuedAt(idTokenIssuedAt, userSession);
                 }

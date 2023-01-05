@@ -18,6 +18,8 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Encode;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -91,6 +93,7 @@ public class RedirectUtils {
         KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
+        redirectUri = decodeRedirectUri(redirectUri);
         if (redirectUri != null) {
             try {
                 URI uri = URI.create(redirectUri);
@@ -150,6 +153,42 @@ public class RedirectUtils {
         } else {
             return redirectUri;
         }
+    }
+
+    // Decode redirectUri. We don't decode query and fragment as those can be encoded in the original URL.
+    // URL can be decoded multiple times (in case it was encoded multiple times, or some of it's parts were encoded multiple times)
+    private static String decodeRedirectUri(String redirectUri) {
+        if (redirectUri == null) return null;
+        int MAX_DECODING_COUNT = 5; // Max count of attempts for decoding URL (in case it was encoded multiple times)
+
+        try {
+            KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri);
+            String origQuery = uriBuilder.getQuery();
+            String origFragment = uriBuilder.getFragment();
+            String encodedRedirectUri = uriBuilder
+                    .replaceQuery(null)
+                    .fragment(null)
+                    .buildAsString();
+            String decodedRedirectUri = null;
+
+            for (int i = 0; i < MAX_DECODING_COUNT; i++) {
+                decodedRedirectUri = Encode.decode(encodedRedirectUri);
+                if (decodedRedirectUri.equals(encodedRedirectUri)) {
+                    // URL is decoded. We can return it (after attach original query and fragment)
+                    return KeycloakUriBuilder.fromUri(decodedRedirectUri)
+                            .replaceQuery(origQuery)
+                            .fragment(origFragment)
+                            .buildAsString();
+                } else {
+                    // Next attempt
+                    encodedRedirectUri = decodedRedirectUri;
+                }
+            }
+        } catch (IllegalArgumentException iae) {
+            logger.debugf("Illegal redirect URI used: %s, Details: %s", redirectUri, iae.getMessage());
+        }
+        logger.debugf("Was not able to decode redirect URI: %s", redirectUri);
+        return null;
     }
 
     private static String lowerCaseHostname(String redirectUri) {
