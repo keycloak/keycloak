@@ -3,7 +3,7 @@ import type { Path } from "react-router-dom-v5-compat";
 import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
-type UserFederationLdapTab = "settings" | "mappers";
+export type UserFederationLdapTab = "settings" | "mappers";
 
 export type UserFederationLdapParams = {
   realm: string;

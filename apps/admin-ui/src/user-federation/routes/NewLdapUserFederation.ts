@@ -7,7 +7,7 @@ export type NewLdapUserFederationParams = { realm: string };
 
 export const NewLdapUserFederationRoute: RouteDef = {
   path: "/:realm/user-federation/ldap/new",
-  component: lazy(() => import("../UserFederationLdapSettings")),
+  component: lazy(() => import("../CreateUserFederationLdapSettings")),
   breadcrumb: (t) =>
     t("user-federation:addProvider", { provider: "LDAP", count: 1 }),
   access: "view-realm",
