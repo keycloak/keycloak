@@ -202,7 +202,7 @@ public class AuthenticationSessionManager {
             public boolean test(String id) {
                 StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
                 // in case the id is encoded with a route when running in a cluster
-                String decodedId = encoder.decodeSessionId(cookiesVal.iterator().next());
+                String decodedId = encoder.decodeSessionId(id);
                 // we can't blindly trust the cookie and assume it is valid and referencing a valid root auth session
                 // but make sure the root authentication session actually exists
                 // without this check there is a risk of resolving user sessions from invalid root authentication sessions as they share the same id

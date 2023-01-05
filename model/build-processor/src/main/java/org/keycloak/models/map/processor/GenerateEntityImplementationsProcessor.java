@@ -177,15 +177,14 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
             pw.println("            return FIELD_NAME_CAMEL_CASE;");
             pw.println("        }");
 
-            FieldAccessorType.getMethod(FieldAccessorType.COLLECTION_ADD, methods, fieldName, types, fieldType).ifPresent(method -> {
-                TypeMirror firstParameterType = method.getParameters().get(0).asType();
-                pw.println("        @SuppressWarnings(\"unchecked\") @Override public Class<?> getCollectionElementClass() {");
-                pw.println("            return " + types.erasure(firstParameterType) + ".class;");
-                pw.println("        }");
-            });
-
             FieldAccessorType.getMethod(FieldAccessorType.GETTER, methods, fieldName, types, fieldType).ifPresent(method -> {
-                if (Util.isMapType((TypeElement) types.asElement(types.erasure(fieldType)))) {
+                if (Util.isCollectionType((TypeElement) types.asElement(types.erasure(fieldType)))) {
+                    TypeMirror firstParameterType = Util.getGenericsDeclaration(method.getReturnType()).get(0);
+                    pw.println("        @SuppressWarnings(\"unchecked\") @Override public Class<?> getCollectionElementClass() {");
+                    pw.println("            return " + types.erasure(firstParameterType) + ".class;");
+                    pw.println("        }");
+
+                } else if (Util.isMapType((TypeElement) types.asElement(types.erasure(fieldType)))) {
                     TypeMirror firstParameterType = Util.getGenericsDeclaration(method.getReturnType()).get(0);
                     TypeMirror secondParameterType = Util.getGenericsDeclaration(method.getReturnType()).get(1);
 
