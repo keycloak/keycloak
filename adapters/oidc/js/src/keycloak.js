@@ -257,7 +257,7 @@ function Keycloak (config) {
                 });
             } else if (initOptions) {
                 if (initOptions.token && initOptions.refreshToken) {
-                    setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
+                    setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken, new Date().getTime());
 
                     if (loginIframe.enable) {
                         setupCheckLoginIframe().then(function() {
