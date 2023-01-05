@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useHistory } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
@@ -50,8 +49,8 @@ import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner"
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { toUsers, UserTab } from "./routes/Users";
 import {
-  routableTab,
   RoutableTabs,
+  useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { useAccess } from "../context/access/Access";
 import { BruteUser, findUsers } from "../components/role-mapping/resource";
@@ -63,7 +62,6 @@ export default function UsersSection() {
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
-  const history = useHistory();
   const navigate = useNavigate();
   const [userStorage, setUserStorage] = useState<ComponentRepresentation[]>();
   const [searchUser, setSearchUser] = useState<string>();
@@ -102,6 +100,17 @@ export default function UsersSection() {
     },
     []
   );
+
+  const useTab = (tab: UserTab) =>
+    useRoutableTab(
+      toUsers({
+        realm: realmName,
+        tab,
+      })
+    );
+
+  const listTab = useTab("list");
+  const permissionsTab = useTab("permissions");
 
   const UserDetailLink = (user: UserRepresentation) => (
     <Link
@@ -274,15 +283,6 @@ export default function UsersSection() {
     </>
   );
 
-  const route = (tab: UserTab) =>
-    routableTab({
-      to: toUsers({
-        realm: realmName,
-        tab,
-      }),
-      history,
-    });
-
   return (
     <>
       <DeleteConfirm />
@@ -311,7 +311,7 @@ export default function UsersSection() {
             id="list"
             data-testid="listTab"
             title={<TabTitleText>{t("userList")}</TabTitleText>}
-            {...route("list")}
+            {...listTab}
           >
             <KeycloakDataTable
               key={key}
@@ -420,7 +420,7 @@ export default function UsersSection() {
               id="permissions"
               data-testid="permissionsTab"
               title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
-              {...route("permissions")}
+              {...permissionsTab}
             >
               <PermissionsTab type="users" />
             </Tab>
