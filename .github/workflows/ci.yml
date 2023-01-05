@@ -318,11 +318,18 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run model tests
-        run: testsuite/model/test-all-profiles.sh
+        run: testsuite/model/test-all-profiles.sh -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }}
 
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Store Model Tests
 
   clustering-integration-tests:
     name: Legacy Clustering IT
