@@ -62,7 +62,7 @@ import liquibase.statement.SqlStatement;
  */
 @DatabaseChange(name="createJsonIndex", description = "Creates an index for one or more JSON properties",
         priority = ChangeMetaData.PRIORITY_DEFAULT, appliesTo = "index")
-public class CreateJsonIndexChange extends AbstractChange implements ChangeWithColumns<JsonEnabledColumnConfig> {
+public class CreateJsonIndexChange extends AbstractChange implements ChangeWithColumns<AddGeneratedColumnConfig> {
 
     private final CreateIndexChange delegate;
 
@@ -143,18 +143,18 @@ public class CreateJsonIndexChange extends AbstractChange implements ChangeWithC
     }
 
     @Override
-    public void addColumn(JsonEnabledColumnConfig column) {
+    public void addColumn(AddGeneratedColumnConfig column) {
         delegate.addColumn(column);
     }
 
     @Override
     @DatabaseChangeProperty(mustEqualExisting = "index.column", description = "Column(s) to add to the index", requiredForDatabase = "all")
-    public List<JsonEnabledColumnConfig> getColumns() {
-        return this.delegate.getColumns().stream().map(JsonEnabledColumnConfig.class::cast).collect(Collectors.toList());
+    public List<AddGeneratedColumnConfig> getColumns() {
+        return this.delegate.getColumns().stream().map(AddGeneratedColumnConfig.class::cast).collect(Collectors.toList());
     }
 
     @Override
-    public void setColumns(List<JsonEnabledColumnConfig> columns) {
+    public void setColumns(List<AddGeneratedColumnConfig> columns) {
         columns.forEach(this.delegate::addColumn);
     }
 
@@ -167,7 +167,7 @@ public class CreateJsonIndexChange extends AbstractChange implements ChangeWithC
     public SqlStatement[] generateStatements(Database database) {
         return new SqlStatement[]{new CreateJsonIndexStatement(this.getCatalogName(), this.getSchemaName(), this.getTableName(),
                 this.getIndexName(), this.isUnique(), this.getAssociatedWith(), this.getTablespace(), this.getClustered(),
-                this.getColumns().toArray(new JsonEnabledColumnConfig[0]))};
+                this.getColumns().toArray(new AddGeneratedColumnConfig[0]))};
     }
 
     @Override
