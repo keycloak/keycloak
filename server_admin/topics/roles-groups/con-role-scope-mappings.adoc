@@ -21,7 +21,7 @@ You can view the role mappings for a client.
 .Full scope
 image:images/full-client-scope.png[Full scope]
 
-By default, the effective roles of scopes are every declared role in the realm. To change this default behavior, toggle *Full Scope Allowed* to *ON* and declare the specific roles you want in each client.
+By default, the effective roles of scopes are every declared role in the realm. To change this default behavior, toggle *Full Scope Allowed* to *OFF* and declare the specific roles you want in each client.
 You can also use <<_client_scopes, client scopes>> to define the same role scope mappings for a set of clients.
 
 .Partial scope
