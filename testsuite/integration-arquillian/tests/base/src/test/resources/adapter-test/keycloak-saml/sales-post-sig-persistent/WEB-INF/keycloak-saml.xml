@@ -35,7 +35,8 @@
         <RoleIdentifiers>
             <Attribute name="Role"/>
         </RoleIdentifiers>
-        <IDP entityID="idp">
+        <IDP entityID="idp"
+             signatureAlgorithm="RSA_SHA1">
             <SingleSignOnService signRequest="true"
                                  validateResponseSignature="true"
                                  requestBinding="POST"

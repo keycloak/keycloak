@@ -530,6 +530,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Test
     public void unauthorizedSSOTest() {
+        WaitUtils.pause(10000000);
         assertForbiddenLogin(salesPostServletPage, "unauthorized", "password", testRealmSAMLPostLoginPage, "principal=");
         assertForbidden(employee2ServletPage, "principal=");
         assertForbidden(employeeSigFrontServletPage, "principal=");
