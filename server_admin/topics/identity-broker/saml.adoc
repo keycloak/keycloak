@@ -50,7 +50,9 @@ image:images/saml-add-identity-provider.png[Add Identity Provider]
 |When *ON*, {project_name} uses the realm's keypair to sign requests sent to the external SAML IDP.
 
 |Signature Algorithm
-|If *Want AuthnRequests Signed* is *ON*, the signature algorithm to use.
+|If *Want AuthnRequests Signed* is *ON*, the signature algorithm to use. Note that `SHA1` based algorithms are deprecated and may be removed in a future release.
+We recommend to use some more secure algorithm instead of `*_SHA1`. Also, with `*_SHA1` algorithms, verifying signatures
+do not work if the SAML identity provider (for example another instance of {project_name}) runs on Java 17 or higher.
 
 |SAML Signature Key Name
 |Signed SAML documents sent using POST binding contain the identification of signing key in `KeyName` element, which, by default, contains the {project_name} key ID. External SAML IDPs can expect a different key name. This switch controls whether `KeyName` contains:

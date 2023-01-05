@@ -27,7 +27,9 @@ signatureAlgorithm::
   This is the signature algorithm that the IDP expects signed documents to use.
   Allowed values are: `RSA_SHA1`, `RSA_SHA256`, `RSA_SHA512`, and `DSA_SHA1`.
   This setting is _OPTIONAL_
-  and defaults to `RSA_SHA256`.
+  and defaults to `RSA_SHA256`. Note that `SHA1` based algorithms are deprecated and can be removed in the future.
+ We recommend the use of some more secure algorithm instead of `*_SHA1`. Also, with `*_SHA1` algorithms, verifying signatures
+  do not work if the SAML server (usually {project_name}) runs on Java 17 or higher.
 signatureCanonicalizationMethod::
   This is the signature canonicalization method that the IDP expects signed documents to use.  This setting is  _OPTIONAL_.
   The default value is `\http://www.w3.org/2001/10/xml-exc-c14n#` and should be good for most IDPs.

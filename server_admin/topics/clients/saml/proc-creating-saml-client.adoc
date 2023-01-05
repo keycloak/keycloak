@@ -84,7 +84,9 @@ This option is used when {project_name} server and adapter provide the IDP and S
 
 *Sign Assertions*:: The assertion is signed and embedded in the SAML XML Auth response.
 
-*Signature Algorithm*:: The algorithm used in signing SAML documents.
+*Signature Algorithm*:: The algorithm used in signing SAML documents. Note that `SHA1` based algorithms are deprecated and may be removed in a future release.
+We recommend the use of some more secure algorithm instead of `*_SHA1`. Also, with `*_SHA1` algorithms, verifying signatures
+do not work if the SAML client runs on Java 17 or higher.
 
 *SAML Signature Key Name*:: Signed SAML documents sent using POST binding contain the identification of the signing key in the *KeyName* element. This action can be controlled by the *SAML Signature Key Name* option. This option controls the contents of the *Keyname*.
 +
