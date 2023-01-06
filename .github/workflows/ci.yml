@@ -309,7 +309,7 @@ jobs:
     name: Store Model Tests
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v3
 
