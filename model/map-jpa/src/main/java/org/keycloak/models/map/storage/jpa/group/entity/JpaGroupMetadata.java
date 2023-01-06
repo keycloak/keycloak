@@ -40,4 +40,6 @@ public class JpaGroupMetadata extends MapGroupEntityImpl implements Serializable
         this.entityVersion = entityVersion;
     }
 
+    private String metadataClass = this.getClass().getCanonicalName();
+
 }
