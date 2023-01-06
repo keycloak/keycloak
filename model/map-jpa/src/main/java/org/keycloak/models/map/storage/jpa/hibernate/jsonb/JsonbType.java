@@ -227,15 +227,20 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             try {
                 ObjectNode tree = MAPPER.readValue(json.toString(), ObjectNode.class);
                 JsonNode ev = tree.get("entityVersion");
+                JsonNode mc = tree.get("metadataClass");
                 if (ev == null || ! ev.isInt()) throw new IllegalArgumentException("unable to read entity version from " + json);
 
                 Integer entityVersion = ev.asInt();
 
                 tree = migrate(tree, entityVersion);
 
+                String metadataClass = mc.asText();
+                valueType = Class.forName(metadataClass);
                 return MAPPER.treeToValue(tree, valueType);
             } catch (IOException e) {
                 throw new HibernateException("unable to read", e);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
         }
 
