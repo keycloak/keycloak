@@ -39,6 +39,9 @@ import jakarta.persistence.criteria.Selection;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.query.spi.QueryImplementor;
+import org.hibernate.query.sqm.SqmExpressible;
+import org.hibernate.query.sqm.tree.domain.SqmBasicValuedSimplePath;
+import org.hibernate.query.sqm.tree.expression.JpaCriteriaParameter;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -356,10 +359,14 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
             this.queryString = query.getQueryString();
             this.queryParameters = new HashMap<>();
             for (Parameter<?> parameter : query.getParameters()) {
-                if (parameter.getName() == null) {
+                // HACK TO GET KC TO START WITH NEW STORE - HAS TO BE FIXED AS SOME SEARCHES USE A DIFFERENT EXPRESSIBLE IMPL
+                JpaCriteriaParameter criteriaParameter = (JpaCriteriaParameter) parameter;
+                SqmBasicValuedSimplePath expressible = (SqmBasicValuedSimplePath) criteriaParameter.getExpressible();
+                String parameterName  = expressible.getNavigablePath().getLocalName();
+                if (parameterName == null) {
                     throw new ModelException("Can't prepare query for caching as parameter doesn't have a name");
                 }
-                this.queryParameters.put(parameter.getName(), query.getParameterValue(parameter.getName()));
+                this.queryParameters.put(parameterName, ((JpaCriteriaParameter<?>) parameter).getValue());
             }
             this.queryMaxResults = emQuery.getMaxResults();
             this.queryFirstResult = emQuery.getFirstResult();
