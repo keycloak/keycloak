@@ -40,4 +40,6 @@ public class JpaScopeMetadata extends MapScopeEntityImpl implements Serializable
         this.entityVersion = entityVersion;
     }
 
+    private String metadataClass = this.getClass().getCanonicalName();
+
 }

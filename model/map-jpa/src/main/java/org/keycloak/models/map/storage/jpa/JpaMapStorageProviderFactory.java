@@ -375,12 +375,8 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
-
-        // register custom jsonb type
-        ServiceRegistry standardRegistry = new StandardServiceRegistryBuilder().build();
-        MetadataSources sources = new MetadataSources(standardRegistry);
-        MetadataBuilder metadataBuilder = sources.getMetadataBuilder();
-        metadataBuilder.applyBasicType(JsonbType.INSTANCE);
+        // metadata contributor to register the json type
+        properties.put("hibernate.metadata_builder_contributor", "org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbMetadataBuilderContributor");
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
