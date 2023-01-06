@@ -45,4 +45,7 @@ public class JpaAdminEventMetadata extends MapAdminEventEntityImpl implements Se
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
+    private String metadataClass = this.getClass().getCanonicalName();
+
 }
