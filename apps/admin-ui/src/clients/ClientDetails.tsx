@@ -20,7 +20,6 @@ import {
   useWatch,
 } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
 
 import { useAlerts } from "../components/alert/Alerts";
@@ -33,8 +32,8 @@ import type { KeyValueType } from "../components/key-value-form/key-value-conver
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import {
-  routableTab,
   RoutableTabs,
+  useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import {
   ViewHeader,
@@ -72,7 +71,7 @@ import {
 } from "./routes/AuthenticationTab";
 import { ClientParams, ClientTab, toClient } from "./routes/Client";
 import { toClients } from "./routes/Clients";
-import { toClientScopesTab } from "./routes/ClientScopeTab";
+import { ClientScopesTab, toClientScopesTab } from "./routes/ClientScopeTab";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
@@ -204,7 +203,6 @@ export default function ClientDetails() {
   const hasManageClients = hasAccess("manage-clients");
   const hasViewUsers = hasAccess("view-users");
 
-  const history = useHistory();
   const navigate = useNavigate();
 
   const [downloadDialogOpen, toggleDownloadDialogOpen] = useToggle();
@@ -226,6 +224,55 @@ export default function ClientDetails() {
     const roles = await adminClient.clients.listRoles({ id: clientId });
     return sortBy(roles, (role) => role.name?.toUpperCase());
   };
+
+  const useTab = (tab: ClientTab) =>
+    useRoutableTab(
+      toClient({
+        realm,
+        clientId,
+        tab,
+      })
+    );
+
+  const settingsTab = useTab("settings");
+  const keysTab = useTab("keys");
+  const credentialsTab = useTab("credentials");
+  const rolesTab = useTab("roles");
+  const clientScopesTab = useTab("clientScopes");
+  const authorizationTab = useTab("authorization");
+  const serviceAccountTab = useTab("serviceAccount");
+  const sessionsTab = useTab("sessions");
+  const permissionsTab = useTab("permissions");
+  const advancedTab = useTab("advanced");
+
+  const useClientScopesTab = (tab: ClientScopesTab) =>
+    useRoutableTab(
+      toClientScopesTab({
+        realm,
+        clientId,
+        tab,
+      })
+    );
+
+  const clientScopesSetupTab = useClientScopesTab("setup");
+  const clientScopesEvaluateTab = useClientScopesTab("evaluate");
+
+  const useAuthorizationTab = (tab: AuthorizationTab) =>
+    useRoutableTab(
+      toAuthorizationTab({
+        realm,
+        clientId,
+        tab,
+      })
+    );
+
+  const authorizationSettingsTab = useAuthorizationTab("settings");
+  const authorizationResourcesTab = useAuthorizationTab("resources");
+  const authorizationScopesTab = useAuthorizationTab("scopes");
+  const authorizationPoliciesTab = useAuthorizationTab("policies");
+  const authorizationPermissionsTab = useAuthorizationTab("permissions");
+  const authorizationEvaluateTab = useAuthorizationTab("evaluate");
+  const authorizationExportTab = useAuthorizationTab("export");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clients:clientDeleteConfirmTitle",
@@ -324,26 +371,6 @@ export default function ClientDetails() {
     return <KeycloakSpinner />;
   }
 
-  const route = (tab: ClientTab) =>
-    routableTab({
-      to: toClient({
-        realm,
-        clientId,
-        tab,
-      }),
-      history,
-    });
-
-  const authenticationRoute = (tab: AuthorizationTab) =>
-    routableTab({
-      to: toAuthorizationTab({
-        realm,
-        clientId,
-        tab,
-      }),
-      history,
-    });
-
   return (
     <>
       <ConfirmDialogModal
@@ -393,7 +420,7 @@ export default function ClientDetails() {
               id="settings"
               data-testid="clientSettingsTab"
               title={<TabTitleText>{t("common:settings")}</TabTitleText>}
-              {...route("settings")}
+              {...settingsTab}
             >
               <ClientSettings
                 client={client}
@@ -407,7 +434,7 @@ export default function ClientDetails() {
                 id="keys"
                 data-testid="keysTab"
                 title={<TabTitleText>{t("keys")}</TabTitleText>}
-                {...route("keys")}
+                {...keysTab}
               >
                 {client.protocol === "openid-connect" && (
                   <Keys
@@ -427,7 +454,7 @@ export default function ClientDetails() {
                 <Tab
                   id="credentials"
                   title={<TabTitleText>{t("credentials")}</TabTitleText>}
-                  {...route("credentials")}
+                  {...credentialsTab}
                 >
                   <Credentials
                     key={key}
@@ -441,7 +468,7 @@ export default function ClientDetails() {
               id="roles"
               data-testid="rolesTab"
               title={<TabTitleText>{t("roles")}</TabTitleText>}
-              {...route("roles")}
+              {...rolesTab}
             >
               <RolesList
                 loader={loader}
@@ -455,7 +482,7 @@ export default function ClientDetails() {
                 id="clientScopes"
                 data-testid="clientScopesTab"
                 title={<TabTitleText>{t("clientScopes")}</TabTitleText>}
-                {...route("clientScopes")}
+                {...clientScopesTab}
               >
                 <RoutableTabs
                   defaultLocation={toClientScopesTab({
@@ -467,14 +494,7 @@ export default function ClientDetails() {
                   <Tab
                     id="setup"
                     title={<TabTitleText>{t("setup")}</TabTitleText>}
-                    {...routableTab({
-                      to: toClientScopesTab({
-                        realm,
-                        clientId,
-                        tab: "setup",
-                      }),
-                      history,
-                    })}
+                    {...clientScopesSetupTab}
                   >
                     <ClientScopes
                       clientName={client.clientId!}
@@ -486,14 +506,7 @@ export default function ClientDetails() {
                   <Tab
                     id="evaluate"
                     title={<TabTitleText>{t("evaluate")}</TabTitleText>}
-                    {...routableTab({
-                      to: toClientScopesTab({
-                        realm,
-                        clientId,
-                        tab: "evaluate",
-                      }),
-                      history,
-                    })}
+                    {...clientScopesEvaluateTab}
                   >
                     <EvaluateScopes
                       clientId={clientId}
@@ -508,7 +521,7 @@ export default function ClientDetails() {
                 id="authorization"
                 data-testid="authorizationTab"
                 title={<TabTitleText>{t("authorization")}</TabTitleText>}
-                {...route("authorization")}
+                {...authorizationTab}
               >
                 <RoutableTabs
                   mountOnEnter
@@ -523,7 +536,7 @@ export default function ClientDetails() {
                     id="settings"
                     data-testid="authorizationSettings"
                     title={<TabTitleText>{t("settings")}</TabTitleText>}
-                    {...authenticationRoute("settings")}
+                    {...authorizationSettingsTab}
                   >
                     <AuthorizationSettings clientId={clientId} />
                   </Tab>
@@ -531,7 +544,7 @@ export default function ClientDetails() {
                     id="resources"
                     data-testid="authorizationResources"
                     title={<TabTitleText>{t("resources")}</TabTitleText>}
-                    {...authenticationRoute("resources")}
+                    {...authorizationResourcesTab}
                   >
                     <AuthorizationResources clientId={clientId} />
                   </Tab>
@@ -539,7 +552,7 @@ export default function ClientDetails() {
                     id="scopes"
                     data-testid="authorizationScopes"
                     title={<TabTitleText>{t("scopes")}</TabTitleText>}
-                    {...authenticationRoute("scopes")}
+                    {...authorizationScopesTab}
                   >
                     <AuthorizationScopes clientId={clientId} />
                   </Tab>
@@ -547,7 +560,7 @@ export default function ClientDetails() {
                     id="policies"
                     data-testid="authorizationPolicies"
                     title={<TabTitleText>{t("policies")}</TabTitleText>}
-                    {...authenticationRoute("policies")}
+                    {...authorizationPoliciesTab}
                   >
                     <AuthorizationPolicies clientId={clientId} />
                   </Tab>
@@ -557,7 +570,7 @@ export default function ClientDetails() {
                     title={
                       <TabTitleText>{t("common:permissions")}</TabTitleText>
                     }
-                    {...authenticationRoute("permissions")}
+                    {...authorizationPermissionsTab}
                   >
                     <AuthorizationPermissions clientId={clientId} />
                   </Tab>
@@ -565,7 +578,7 @@ export default function ClientDetails() {
                     id="evaluate"
                     data-testid="authorizationEvaluate"
                     title={<TabTitleText>{t("evaluate")}</TabTitleText>}
-                    {...authenticationRoute("evaluate")}
+                    {...authorizationEvaluateTab}
                   >
                     <AuthorizationEvaluate client={client} save={save} />
                   </Tab>
@@ -573,7 +586,7 @@ export default function ClientDetails() {
                     id="export"
                     data-testid="authorizationExport"
                     title={<TabTitleText>{t("common:export")}</TabTitleText>}
-                    {...authenticationRoute("export")}
+                    {...authorizationExportTab}
                   >
                     <AuthorizationExport />
                   </Tab>
@@ -585,7 +598,7 @@ export default function ClientDetails() {
                 id="serviceAccount"
                 data-testid="serviceAccountTab"
                 title={<TabTitleText>{t("serviceAccount")}</TabTitleText>}
-                {...route("serviceAccount")}
+                {...serviceAccountTab}
               >
                 <ServiceAccount client={client} />
               </Tab>
@@ -594,7 +607,7 @@ export default function ClientDetails() {
               id="sessions"
               data-testid="sessionsTab"
               title={<TabTitleText>{t("sessions")}</TabTitleText>}
-              {...route("sessions")}
+              {...sessionsTab}
             >
               <ClientSessions client={client} />
             </Tab>
@@ -604,7 +617,7 @@ export default function ClientDetails() {
                   id="permissions"
                   data-testid="permissionsTab"
                   title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
-                  {...route("permissions")}
+                  {...permissionsTab}
                 >
                   <PermissionsTab id={client.id!} type="clients" />
                 </Tab>
@@ -613,7 +626,7 @@ export default function ClientDetails() {
               id="advanced"
               data-testid="advancedTab"
               title={<TabTitleText>{t("advanced")}</TabTitleText>}
-              {...route("advanced")}
+              {...advancedTab}
             >
               <AdvancedTab save={save} client={client} />
             </Tab>
