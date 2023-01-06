@@ -31,14 +31,13 @@ import { pickBy } from "lodash-es";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form-v7";
 import { Trans, useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
 import { Link } from "react-router-dom-v5-compat";
 
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
-  routableTab,
   RoutableTabs,
+  useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -141,6 +140,11 @@ export default function EventsSection() {
       max,
     });
   }
+
+  const useTab = (tab: EventsTab) => useRoutableTab(toEvents({ realm, tab }));
+
+  const userEventsTab = useTab("user-events");
+  const adminEventsTab = useTab("admin-events");
 
   function onSubmit() {
     setSearchDropdownOpen(false);
@@ -419,13 +423,6 @@ export default function EventsSection() {
     );
   };
 
-  const history = useHistory();
-  const route = (tab: EventsTab) =>
-    routableTab({
-      to: toEvents({ realm, tab }),
-      history,
-    });
-
   return (
     <>
       <ViewHeader
@@ -450,7 +447,7 @@ export default function EventsSection() {
         >
           <Tab
             title={<TabTitleText>{t("userEvents")}</TabTitleText>}
-            {...route("user-events")}
+            {...userEventsTab}
           >
             <div className="keycloak__events_table">
               <KeycloakDataTable
@@ -507,7 +504,7 @@ export default function EventsSection() {
           <Tab
             title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
             data-testid="admin-events-tab"
-            {...route("admin-events")}
+            {...adminEventsTab}
           >
             <AdminEvents />
           </Tab>
