@@ -398,6 +398,8 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
+        // metadata contributor to register the json type
+        properties.put("hibernate.metadata_builder_contributor", "org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbMetadataBuilderContributor");
         Long lockTimeout = config.getLong("lockTimeout", DEFAULT_LOCK_TIMEOUT);
         if (lockTimeout >= 0) {
             // This property does not work for PostgreSQL/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16181
@@ -408,12 +410,6 @@ public class JpaMapStorageProviderFactory implements
 
         // Pass on the property to 'EventListenerIntegrator' to activate the necessary event listeners for JPA map storage
         properties.put(EventListenerIntegrator.JPA_MAP_STORAGE_ENABLED, Boolean.TRUE.toString());
-
-        // register custom jsonb type
-        ServiceRegistry standardRegistry = new StandardServiceRegistryBuilder().build();
-        MetadataSources sources = new MetadataSources(standardRegistry);
-        MetadataBuilder metadataBuilder = sources.getMetadataBuilder();
-        metadataBuilder.applyBasicType(JsonbType.INSTANCE);
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
