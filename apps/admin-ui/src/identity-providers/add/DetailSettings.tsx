@@ -16,7 +16,6 @@ import {
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
 
 import { useAlerts } from "../../components/alert/Alerts";
@@ -26,8 +25,8 @@ import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinn
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { PermissionsTab } from "../../components/permission-tab/PermissionTab";
 import {
-  routableTab,
   RoutableTabs,
+  useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { ScrollForm } from "../../components/scroll-form/ScrollForm";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
@@ -132,7 +131,6 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
 export default function DetailSettings() {
   const { t } = useTranslation("identity-providers");
   const { alias, providerId } = useParams<IdentityProviderParams>();
-  const history = useHistory();
 
   const form = useForm<IdentityProviderRepresentation>();
   const { handleSubmit, getValues, reset } = form;
@@ -187,6 +185,20 @@ export default function DetailSettings() {
     },
     []
   );
+
+  const toTab = (tab: IdentityProviderTab) =>
+    toIdentityProvider({
+      realm,
+      alias,
+      providerId,
+      tab,
+    });
+
+  const useTab = (tab: IdentityProviderTab) => useRoutableTab(toTab(tab));
+
+  const settingsTab = useTab("settings");
+  const mappersTab = useTab("mappers");
+  const permissionsTab = useTab("permissions");
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
     const p = savedProvider || getValues();
@@ -368,17 +380,6 @@ export default function DetailSettings() {
     },
   ];
 
-  const toTab = (tab: IdentityProviderTab) =>
-    toIdentityProvider({
-      realm,
-      alias,
-      providerId,
-      tab,
-    });
-
-  const routableIdpTab = (tab: IdentityProviderTab) =>
-    routableTab({ history, to: toTab(tab) });
-
   return (
     <FormProvider {...form}>
       <DeleteConfirm />
@@ -402,7 +403,7 @@ export default function DetailSettings() {
           <Tab
             id="settings"
             title={<TabTitleText>{t("common:settings")}</TabTitleText>}
-            {...routableIdpTab("settings")}
+            {...settingsTab}
           >
             <ScrollForm className="pf-u-px-lg" sections={sections} />
           </Tab>
@@ -410,7 +411,7 @@ export default function DetailSettings() {
             id="mappers"
             data-testid="mappers-tab"
             title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
-            {...routableIdpTab("mappers")}
+            {...mappersTab}
           >
             <KeycloakDataTable
               emptyState={
@@ -488,7 +489,7 @@ export default function DetailSettings() {
               id="permissions"
               data-testid="permissionsTab"
               title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
-              {...routableIdpTab("permissions")}
+              {...permissionsTab}
             >
               <PermissionsTab id={alias} type="identityProviders" />
             </Tab>
