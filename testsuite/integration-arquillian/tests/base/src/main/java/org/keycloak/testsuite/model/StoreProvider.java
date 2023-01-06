@@ -59,6 +59,9 @@ public enum StoreProvider {
             commands.add("--db-url='" + System.getProperty("keycloak.connectionsJpa.url") + "'");
             commands.add("--db-username=" + System.getProperty("keycloak.connectionsJpa.user"));
             commands.add("--db-password=" + System.getProperty("keycloak.connectionsJpa.password"));
+            if ("mssql".equals(getDbVendor().orElse(null))){
+                commands.add("--transaction-xa-enabled=false");
+            }
         }
     },
     DEFAULT("default") {

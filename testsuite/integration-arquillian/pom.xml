@@ -565,7 +565,7 @@
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>vEry5tron9Pwd</keycloak.connectionsJpa.password>
-                <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database};integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;</keycloak.connectionsJpa.url>
                 <!-- Map Store JPA -->
                 <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
                 <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>

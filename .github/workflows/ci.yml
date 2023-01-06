@@ -275,7 +275,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        db: [postgres, mysql, oracle] # 'mariadb' is not always shutting down, 'mssql' container not available yet
+        db: [postgres, mysql, oracle, mssql] # 'mariadb' is not always shutting down
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -313,7 +313,7 @@ jobs:
     name: Store Model Tests
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v3
 
@@ -322,11 +322,18 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run model tests
-        run: testsuite/model/test-all-profiles.sh
+        run: testsuite/model/test-all-profiles.sh -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }}
 
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Store Model Tests
 
   clustering-integration-tests:
     name: Legacy Clustering IT
