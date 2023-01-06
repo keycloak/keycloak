@@ -49,6 +49,12 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-spring-boot-2-adapter</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
