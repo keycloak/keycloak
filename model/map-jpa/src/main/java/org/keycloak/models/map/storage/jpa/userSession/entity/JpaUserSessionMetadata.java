@@ -40,4 +40,6 @@ public class JpaUserSessionMetadata extends MapUserSessionEntityImpl implements 
         this.entityVersion = entityVersion;
     }
 
+    private String metadataClass = this.getClass().getCanonicalName();
+
 }
