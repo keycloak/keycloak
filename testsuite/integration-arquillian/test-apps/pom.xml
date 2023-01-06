@@ -23,6 +23,6 @@
         <module>servlets</module>
         <module>app-profile-jee</module>
         <module>cors</module>
-        <module>spring-boot-adapter-app</module>
+        <!--<module>spring-boot-adapter-app</module>-->
     </modules>
 </project>
