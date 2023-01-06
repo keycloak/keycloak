@@ -40,4 +40,6 @@ public class JpaResourceMetadata extends MapResourceEntityImpl implements Serial
         this.entityVersion = entityVersion;
     }
 
+    private String metadataClass = this.getClass().getCanonicalName();
+
 }
