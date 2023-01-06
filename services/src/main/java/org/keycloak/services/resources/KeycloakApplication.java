@@ -32,7 +32,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.locking.GlobalLock;
 import org.keycloak.models.locking.GlobalLockProvider;
 import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -71,7 +70,6 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -150,8 +148,8 @@ public class KeycloakApplication extends Application {
             @Override
             public void run(KeycloakSession session) {
                 GlobalLockProvider locks = session.getProvider(GlobalLockProvider.class);
-                try (GlobalLock l = locks.acquireLock(GlobalLock.Constants.KEYCLOAK_BOOT)) {
-                    exportImportManager[0] = bootstrap();
+                try {
+                    exportImportManager[0] = locks.withLock(GlobalLockProvider.Constants.KEYCLOAK_BOOT, innerSession -> bootstrap());
                 } catch (LockAcquiringTimeoutException e) {
                     throw new RuntimeException("Acquiring keycloak-boot lock failed.", e);
                 }
@@ -295,9 +293,8 @@ public class KeycloakApplication extends Application {
     }
 
     public void importRealm(RealmRepresentation rep, String from) {
-        KeycloakSession session = sessionFactory.create();
         boolean exists = false;
-        try {
+        try (KeycloakSession session = sessionFactory.create()) {
             session.getTransactionManager().begin();
 
             try {
@@ -316,15 +313,14 @@ public class KeycloakApplication extends Application {
                     RealmModel realm = manager.importRealm(rep);
                     ServicesLogger.LOGGER.importedRealm(realm.getName(), from);
                 }
-                session.getTransactionManager().commit();
             } catch (Throwable t) {
-                session.getTransactionManager().rollback();
-                if (!exists) {
-                    ServicesLogger.LOGGER.unableToImportRealm(t, rep.getRealm(), from);
-                }
+                session.getTransactionManager().setRollbackOnly();
+                throw t;
             }
-        } finally {
-            session.close();
+        } catch (Throwable t) {
+            if (!exists) {
+                ServicesLogger.LOGGER.unableToImportRealm(t, rep.getRealm(), from);
+            }
         }
     }
 
@@ -346,37 +342,30 @@ public class KeycloakApplication extends Application {
 
                 for (RealmRepresentation realmRep : realms) {
                     for (UserRepresentation userRep : realmRep.getUsers()) {
-                        KeycloakSession session = sessionFactory.create();
-
                         try {
-                            session.getTransactionManager().begin();
-                            RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
+                            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                                RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
 
-                            if (realm == null) {
-                                ServicesLogger.LOGGER.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
-                            }
+                                if (realm == null) {
+                                    ServicesLogger.LOGGER.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
+                                }
 
-                            UserProvider users = session.users();
+                                UserProvider users = session.users();
 
-                            if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
-                                ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
-                            } else {
-                                UserModel user = users.addUser(realm, userRep.getUsername());
-                                user.setEnabled(userRep.isEnabled());
-                                RepresentationToModel.createCredentials(userRep, session, realm, user, false);
-                                RepresentationToModel.createRoleMappings(userRep, user, realm);
-                                ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
-                            }
-
-                            session.getTransactionManager().commit();
+                                if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
+                                    ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
+                                } else {
+                                    UserModel user = users.addUser(realm, userRep.getUsername());
+                                    user.setEnabled(userRep.isEnabled());
+                                    RepresentationToModel.createCredentials(userRep, session, realm, user, false);
+                                    RepresentationToModel.createRoleMappings(userRep, user, realm);
+                                    ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
+                                }
+                            });
                         } catch (ModelDuplicateException e) {
-                            session.getTransactionManager().rollback();
                             ServicesLogger.LOGGER.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
                         } catch (Throwable t) {
-                            session.getTransactionManager().rollback();
                             ServicesLogger.LOGGER.addUserFailed(t, userRep.getUsername(), realmRep.getRealm());
-                        } finally {
-                            session.close();
                         }
                     }
                 }

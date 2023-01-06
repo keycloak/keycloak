@@ -15,20 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.locking;
+package org.keycloak.models;
 
-/**
- * An object of this type represents a successfully acquired global lock provided by {@link GlobalLockProvider}
- */
-public interface GlobalLock extends AutoCloseable {
+public class ClientRegistrationAccessTokenConstants {
 
-    /**
-     * Releases the lock represented by this
-     */
-    @Override
-    void close();
+	public static final String ROTATION_ENABLED = "client.registration.access.token.enabled";
 
-    public static class Constants {
-        public static final String KEYCLOAK_BOOT = "keycloak-boot";
-    }
+	private ClientRegistrationAccessTokenConstants(){}
+
 }

@@ -111,6 +111,7 @@ import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFact
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.RegistrationAccessTokenRotationDisabledExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
@@ -3389,6 +3390,38 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
         assertEquals("no claim for an intent value for ID token" , oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+    }
+
+    @Test
+    public void testRegistrationAccessTokenRotationDisabledExecutor() throws Exception {
+        // register profiles - client autoConfigured to disable registration access token rotation
+        String json = new ClientProfilesBuilder().addProfile(
+                new ClientProfileBuilder().createProfile(PROFILE_NAME, "Test Profile")
+                        .addExecutor(
+                                RegistrationAccessTokenRotationDisabledExecutorFactory.PROVIDER_ID,
+                                new ClientPolicyExecutorConfigurationRepresentation()
+                        )
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = new ClientPoliciesBuilder().addPolicy(
+                new ClientPolicyBuilder().createPolicy(POLICY_NAME, "Test Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), r -> {});
+        OIDCClientRepresentation createdClient = getClientDynamically(clientId);
+
+        updateClientDynamically(clientId, clientRep ->
+                clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_BASIC));
+
+        assertEquals(createdClient.getRegistrationAccessToken(), getClientDynamically(clientId).getRegistrationAccessToken());
     }
 
     private void openVerificationPage(String verificationUri) {

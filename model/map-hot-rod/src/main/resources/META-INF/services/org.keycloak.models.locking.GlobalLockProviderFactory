@@ -15,6 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.map.storage.jpa.liquibase.extension.JsonDataType
-org.keycloak.models.map.storage.jpa.liquibase.extension.KeycloakHashDataType
-org.keycloak.models.map.storage.jpa.liquibase.extension.KeycloakKeyDataType
+org.keycloak.models.map.storage.hotRod.locking.HotRodGlobalLockProviderFactory

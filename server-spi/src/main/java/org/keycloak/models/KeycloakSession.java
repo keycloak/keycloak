@@ -32,7 +32,7 @@ import java.util.function.Function;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSession {
+public interface KeycloakSession extends AutoCloseable {
 
     KeycloakContext getContext();
 

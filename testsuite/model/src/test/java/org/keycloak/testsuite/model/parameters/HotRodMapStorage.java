@@ -24,6 +24,8 @@ import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
+import org.keycloak.models.locking.GlobalLockProviderSpi;
+import org.keycloak.models.locking.NoneGlobalLockProviderFactory;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderFactory;
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
@@ -41,6 +43,7 @@ import org.keycloak.models.map.role.MapRoleProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
+import org.keycloak.models.map.storage.hotRod.locking.HotRodGlobalLockProviderFactory;
 import org.keycloak.models.map.user.MapUserProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.provider.ProviderFactory;
@@ -72,6 +75,7 @@ public class HotRodMapStorage extends KeycloakModelParameters {
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
       .add(HotRodMapStorageProviderFactory.class)
       .add(HotRodConnectionProviderFactory.class)
+      .add(HotRodGlobalLockProviderFactory.class)
       .build();
     
     private final InfinispanContainer hotRodContainer = new InfinispanContainer();
@@ -92,7 +96,8 @@ public class HotRodMapStorage extends KeycloakModelParameters {
           .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).provider(MapUserLoginFailureProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi(EventStoreSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID).config("storage-admin-events.provider", HotRodMapStorageProviderFactory.PROVIDER_ID)
-                                                                                       .config("storage-auth-events.provider", HotRodMapStorageProviderFactory.PROVIDER_ID);
+                                                                                       .config("storage-auth-events.provider", HotRodMapStorageProviderFactory.PROVIDER_ID)
+            .spi(GlobalLockProviderSpi.GLOBAL_LOCK).defaultProvider(HotRodGlobalLockProviderFactory.PROVIDER_ID);
 
         cf.spi(MapStorageSpi.NAME)
                 .provider(ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)

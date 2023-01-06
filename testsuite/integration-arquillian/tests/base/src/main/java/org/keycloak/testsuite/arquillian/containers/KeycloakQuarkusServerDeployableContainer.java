@@ -258,6 +258,9 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         }
 
         addStorageOptions(storeProvider, commands);
+        if (System.getProperty("auth.server.quarkus.log-level") != null) {
+            commands.add("--log-level=" + System.getProperty("auth.server.quarkus.log-level"));
+        }
 
         commands.addAll(getAdditionalBuildArgs());
 
