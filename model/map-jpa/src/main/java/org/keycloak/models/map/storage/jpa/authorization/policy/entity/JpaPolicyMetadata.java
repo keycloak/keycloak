@@ -40,4 +40,6 @@ public class JpaPolicyMetadata extends MapPolicyEntityImpl implements Serializab
         this.entityVersion = entityVersion;
     }
 
+    private String metadataClass = this.getClass().getCanonicalName();
+
 }
