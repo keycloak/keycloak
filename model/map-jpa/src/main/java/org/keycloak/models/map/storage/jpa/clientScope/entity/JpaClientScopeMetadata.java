@@ -40,4 +40,6 @@ public class JpaClientScopeMetadata extends MapClientScopeEntityImpl implements 
         this.entityVersion = entityVersion;
     }
 
+    private String metadataClass = this.getClass().getCanonicalName();
+
 }
