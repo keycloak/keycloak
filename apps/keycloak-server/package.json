@@ -2,7 +2,8 @@
   "name": "keycloak-server",
   "scripts": {
     "start": "./scripts/start-server.mjs",
-    "import-client": "wireit"
+    "import-client": "wireit",
+    "clear-data": "rm -r ./server/data"
   },
   "wireit": {
     "import-client": {
