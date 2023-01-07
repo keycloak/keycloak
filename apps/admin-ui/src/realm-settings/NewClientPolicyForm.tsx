@@ -401,7 +401,7 @@ export default function NewClientPolicyForm() {
       (policy) => createdPolicy.name === policy.name
     );
 
-    if (!index || index === -1) {
+    if (index === undefined || index === -1) {
       return;
     }
 
