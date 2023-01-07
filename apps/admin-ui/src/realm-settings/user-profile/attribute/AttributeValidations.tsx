@@ -28,9 +28,7 @@ import "../../realm-settings-section.css";
 export const AttributeValidations = () => {
   const { t } = useTranslation("realm-settings");
   const [addValidatorModalOpen, toggleModal] = useToggle();
-  const [validatorToDelete, setValidatorToDelete] = useState<{
-    name: string;
-  }>();
+  const [validatorToDelete, setValidatorToDelete] = useState<string>();
   const { setValue, control, register } = useFormContext();
 
   const validators = useWatch<IndexedValidations[]>({
@@ -46,13 +44,13 @@ export const AttributeValidations = () => {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteValidatorConfirmTitle"),
     messageKey: t("deleteValidatorConfirmMsg", {
-      validatorName: validatorToDelete?.name!,
+      validatorName: validatorToDelete,
     }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedValidators = validators.filter(
-        (validator) => validator.key !== validatorToDelete?.name
+        (validator) => validator.key !== validatorToDelete
       );
 
       setValue("validations", [...updatedValidators]);
@@ -67,7 +65,7 @@ export const AttributeValidations = () => {
           onConfirm={(newValidator) => {
             setValue("validations", [
               ...validators,
-              { key: newValidator.id, value: newValidator.properties },
+              { key: newValidator.id, value: newValidator.config },
             ]);
           }}
           toggleDialog={toggleModal}
@@ -111,9 +109,7 @@ export const AttributeValidations = () => {
                       data-testid="deleteValidator"
                       onClick={() => {
                         toggleDeleteDialog();
-                        setValidatorToDelete({
-                          name: validator.key,
-                        });
+                        setValidatorToDelete(validator.key);
                       }}
                     >
                       {t("common:delete")}

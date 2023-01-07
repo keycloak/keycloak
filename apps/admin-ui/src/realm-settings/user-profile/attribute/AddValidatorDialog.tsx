@@ -20,11 +20,12 @@ import { AddValidatorRoleDialog } from "./AddValidatorRoleDialog";
 import useToggle from "../../../utils/useToggle";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
 import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
+import ComponentRepresentation from "libs/keycloak-admin-client/lib/defs/componentRepresentation";
 
 export type AddValidatorDialogProps = {
   selectedValidators: IndexedValidations[];
   toggleDialog: () => void;
-  onConfirm: (newValidator: ComponentTypeRepresentation) => void;
+  onConfirm: (newValidator: ComponentRepresentation) => void;
 };
 
 export const AddValidatorDialog = ({
@@ -74,7 +75,7 @@ export const AddValidatorDialog = ({
               </Tr>
             </Thead>
             <Tbody>
-              {allValidator.map((validator) => (
+              {validators.map((validator) => (
                 <Tr
                   key={validator.id}
                   onRowClick={() => {

@@ -4,11 +4,12 @@ import { Button, Form, Modal, ModalVariant } from "@patternfly/react-core";
 
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
+import ComponentRepresentation from "libs/keycloak-admin-client/lib/defs/componentRepresentation";
 
 export type AddValidatorRoleDialogProps = {
   open: boolean;
   toggleDialog: () => void;
-  onConfirm: (newValidator: ComponentTypeRepresentation) => void;
+  onConfirm: (newValidator: ComponentRepresentation) => void;
   selected: ComponentTypeRepresentation;
 };
 
