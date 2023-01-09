@@ -15,13 +15,17 @@
 #
 # Security providers used when global crypto-policies are set to FIPS (Usually it is used when FIPS enabled on system/JVM level)
 #
-#fips.provider.1=SunPKCS11 ${java.home}/conf/security/nss.fips.cfg
-#fips.provider.2=SUN
-#fips.provider.3=SunEC
-#fips.provider.4=com.sun.net.ssl.internal.ssl.Provider SunPKCS11-NSS-FIPS
-#fips.provider.5=SunJGSS
-#fips.provider.6=XMLDSig
-#fips.provider.5=
+# NOTE: This list of providers is needed to be override just because XMLDSig provider is not yet present on the OpenJDK 17 by default on the RHEL FIPS host on OpenJDK 17.0.3.
+# However once it is present, there won't be a need to override this and this part can be fully commented/removed.
+# TODO: Comment/remove this once https://bugzilla.redhat.com/show_bug.cgi?id=1940064 is fixed and OpenJDK 17 updated to corresponding version where XMLDSig is available by default
+#
+fips.provider.1=SunPKCS11 ${java.home}/conf/security/nss.fips.cfg
+fips.provider.2=SUN
+fips.provider.3=SunEC
+fips.provider.4=SunJSSE
+fips.provider.5=SunJCE
+fips.provider.6=SunRsaSign
+fips.provider.7=XMLDSig
 
 # Commented this provider for now (and also other providers) as it uses lots of non-FIPS services.
 # See https://access.redhat.com/documentation/en-us/openjdk/11/html-single/configuring_openjdk_11_on_rhel_with_fips/index#ref_openjdk-default-fips-configuration_openjdk
