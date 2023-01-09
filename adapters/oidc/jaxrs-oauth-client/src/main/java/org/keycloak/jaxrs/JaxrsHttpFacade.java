@@ -24,9 +24,9 @@ import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.common.util.HostUtils;
 
 import javax.security.cert.X509Certificate;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.SecurityContext;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.SecurityContext;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -95,10 +95,10 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
 
         @Override
         public Cookie getCookie(String cookieName) {
-            Map<String, jakarta.ws.rs.core.Cookie> cookies = requestContext.getCookies();
+            Map<String, javax.ws.rs.core.Cookie> cookies = requestContext.getCookies();
             if (cookies == null)
                 return null;
-            jakarta.ws.rs.core.Cookie cookie = cookies.get(cookieName);
+            javax.ws.rs.core.Cookie cookie = cookies.get(cookieName);
             if (cookie == null)
                 return null;
             return new Cookie(cookie.getName(), cookie.getValue(), cookie.getVersion(), cookie.getDomain(), cookie.getPath());
@@ -153,7 +153,7 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
 
     protected class ResponseFacade implements OIDCHttpFacade.Response {
 
-        private jakarta.ws.rs.core.Response.ResponseBuilder responseBuilder = jakarta.ws.rs.core.Response.status(204);
+        private javax.ws.rs.core.Response.ResponseBuilder responseBuilder = javax.ws.rs.core.Response.status(204);
 
         @Override
         public void setStatus(int status) {
@@ -190,21 +190,21 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
 
         @Override
         public void sendError(int code) {
-            jakarta.ws.rs.core.Response response = responseBuilder.status(code).build();
+            javax.ws.rs.core.Response response = responseBuilder.status(code).build();
             requestContext.abortWith(response);
             responseFinished = true;
         }
 
         @Override
         public void sendError(int code, String message) {
-            jakarta.ws.rs.core.Response response = responseBuilder.status(code).entity(message).build();
+            javax.ws.rs.core.Response response = responseBuilder.status(code).entity(message).build();
             requestContext.abortWith(response);
             responseFinished = true;
         }
 
         @Override
         public void end() {
-            jakarta.ws.rs.core.Response response = responseBuilder.build();
+            javax.ws.rs.core.Response response = responseBuilder.build();
             requestContext.abortWith(response);
             responseFinished = true;
         }
