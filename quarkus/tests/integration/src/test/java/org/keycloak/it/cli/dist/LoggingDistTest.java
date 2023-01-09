@@ -104,7 +104,7 @@ public class LoggingDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-console-format=\"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1.}] %s%e%n\"" })
+    @Launch({ "start-dev", "--log-console-format=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1.}] %s%e%n" })
     void testSetLogFormat(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("(keycloak-cache-init)"));
@@ -160,7 +160,7 @@ public class LoggingDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log=console,file", "--log-file-format=\"%d{HH:mm:ss} %-5p [%c{1.}] (%t) %s%e%n\""})
+    @Launch({ "start-dev", "--log=console,file", "--log-file-format=%d{HH:mm:ss} %-5p [%c{1.}] (%t) %s%e%n"})
     void testFileLoggingHasDifferentFormat(RawDistRootPath path) throws IOException {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());

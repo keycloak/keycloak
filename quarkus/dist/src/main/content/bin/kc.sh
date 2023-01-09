@@ -63,7 +63,7 @@ do
             if [[ "$1" = "start-dev" ]]; then
               CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1"
             else
-              CONFIG_ARGS="$CONFIG_ARGS $1"
+              CONFIG_ARGS="$CONFIG_ARGS \"$1\""
             fi
           else
             SERVER_OPTS="$SERVER_OPTS $1"
@@ -120,7 +120,7 @@ if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
-if [[ (! $CONFIG_ARGS = *"--optimized"*) ]] && [[ ! "$CONFIG_ARGS" == " build"* ]] && [[ ! "$CONFIG_ARGS" == *"-h" ]] && [[ ! "$CONFIG_ARGS" == *"--help"* ]]; then
+if [[ ! $CONFIG_ARGS = *"--optimized"* ]] && [[ ! $CONFIG_ARGS = " \"build"* ]] && [[ ! $CONFIG_ARGS = *"-h\"" ]] && [[ ! $CONFIG_ARGS = *"--help"* ]]; then
     eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS
     EXIT_CODE=$?
     JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"

@@ -99,4 +99,11 @@ public class StartCommandDistTest {
         cliResult.assertError("Unknown option: '--cache'");
     }
 
+    @Test
+    @Launch({ "start", "--optimized", "--hostname-strict=false", "--https-key-store-file=/tmp/te st.jks" })
+    void testStartParamWithBlank(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoError("Option '--https-key-store-file' expects a single value (file)");
+    }
+
 }

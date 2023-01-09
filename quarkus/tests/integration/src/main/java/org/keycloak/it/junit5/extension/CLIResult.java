@@ -82,6 +82,11 @@ public interface CLIResult extends LaunchResult {
                 () -> "The Error Output:\n " + getErrorOutput() + "\ndoesn't contains " + msg);
     }
 
+    default void assertNoError(String msg) {
+        assertFalse(getErrorOutput().contains(msg),
+                () -> "The Error Output:\n " + getErrorOutput() + "\n contains the error " + msg);
+    }
+
     default void assertHelp() {
         try (NamedEnvironment env = KcNamerFactory.asWindowsOsSpecificTest()) {
             Approvals.verify(getOutput());
