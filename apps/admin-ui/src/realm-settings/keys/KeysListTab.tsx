@@ -27,7 +27,7 @@ import useToggle from "../../utils/useToggle";
 import "../realm-settings-section.css";
 
 const FILTER_OPTIONS = ["ACTIVE", "PASSIVE", "DISABLED"] as const;
-type FilterType = typeof FILTER_OPTIONS[number];
+type FilterType = (typeof FILTER_OPTIONS)[number];
 
 type KeyData = KeyMetadataRepresentation & {
   provider?: string;

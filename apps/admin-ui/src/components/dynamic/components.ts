@@ -35,7 +35,7 @@ const ComponentTypes = [
   "Password",
 ] as const;
 
-export type Components = typeof ComponentTypes[number];
+export type Components = (typeof ComponentTypes)[number];
 
 export const COMPONENTS: {
   [index in Components]: FunctionComponent<ComponentProps>;

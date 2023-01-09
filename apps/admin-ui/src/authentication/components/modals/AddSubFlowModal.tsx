@@ -30,7 +30,7 @@ const types = ["basic-flow", "form-flow"] as const;
 export type Flow = {
   name: string;
   description: string;
-  type: typeof types[number];
+  type: (typeof types)[number];
   provider: string;
 };
 

@@ -37,7 +37,7 @@ type SamlKeysProps = {
 };
 
 const KEYS = ["saml.signing", "saml.encryption"] as const;
-export type KeyTypes = typeof KEYS[number];
+export type KeyTypes = (typeof KEYS)[number];
 
 const KEYS_MAPPING: { [key in KeyTypes]: { [index: string]: string } } = {
   "saml.signing": {

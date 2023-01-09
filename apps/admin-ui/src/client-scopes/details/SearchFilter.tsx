@@ -19,7 +19,7 @@ import type { Row } from "../../clients/scopes/ClientScopes";
 
 export type SearchType = "name" | "type" | "protocol";
 export const PROTOCOLS = ["all", "saml", "openid-connect"] as const;
-export type ProtocolType = typeof PROTOCOLS[number];
+export type ProtocolType = (typeof PROTOCOLS)[number];
 
 export const nameFilter =
   (search = "") =>
