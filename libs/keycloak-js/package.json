@@ -48,7 +48,7 @@
     "@rollup/plugin-terser": "^0.2.1",
     "@rollup/plugin-typescript": "^10.0.1",
     "es6-promise": "^4.2.8",
-    "rollup": "^3.9.0"
+    "rollup": "^3.9.1"
   },
   "dependencies": {
     "base64-js": "^1.5.1",
