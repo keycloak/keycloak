@@ -28,9 +28,9 @@ import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpSession;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;

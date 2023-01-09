@@ -24,7 +24,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 
 import javax.security.cert.X509Certificate;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponse;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -109,8 +109,8 @@ public class JettyHttpFacade implements HttpFacade {
         @Override
         public Cookie getCookie(String cookieName) {
             if (request.getCookies() == null) return null;
-            jakarta.servlet.http.Cookie cookie = null;
-            for (jakarta.servlet.http.Cookie c : request.getCookies()) {
+            javax.servlet.http.Cookie cookie = null;
+            for (javax.servlet.http.Cookie c : request.getCookies()) {
                 if (c.getName().equals(cookieName)) {
                     cookie = c;
                     break;
@@ -210,7 +210,7 @@ public class JettyHttpFacade implements HttpFacade {
 
         @Override
         public void setCookie(String name, String value, String path, String domain, int maxAge, boolean secure, boolean httpOnly) {
-            jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie(name, value);
+            javax.servlet.http.Cookie cookie = new javax.servlet.http.Cookie(name, value);
             if (domain != null) cookie.setDomain(domain);
             if (path != null) cookie.setPath(path);
             if (secure) cookie.setSecure(true);

@@ -23,7 +23,7 @@ import org.keycloak.adapters.spi.HttpFacade.Request;
 import org.keycloak.adapters.spi.LogoutError;
 import org.springframework.util.Assert;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -91,13 +91,13 @@ class WrappedHttpServletRequest implements Request {
     @Override
     public Cookie getCookie(String cookieName) {
 
-        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+        javax.servlet.http.Cookie[] cookies = request.getCookies();
 
         if (cookies == null) {
             return null;
         }
 
-        for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+        for (javax.servlet.http.Cookie cookie : request.getCookies()) {
             if (cookie.getName().equals(cookieName)) {
                 return new Cookie(cookie.getName(), cookie.getValue(), cookie.getVersion(), cookie.getDomain(), cookie.getPath());
             }

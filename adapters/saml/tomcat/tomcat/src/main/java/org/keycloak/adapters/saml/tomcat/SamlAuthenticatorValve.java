@@ -28,7 +28,7 @@ import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.Principal;

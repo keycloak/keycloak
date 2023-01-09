@@ -22,7 +22,7 @@ import io.undertow.server.session.Session;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.servlet.spec.HttpSessionImpl;
 
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.security.AccessController;
 
