@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.security.auth.callback.CallbackHandler;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponse;
 
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.SamlAuthenticator;

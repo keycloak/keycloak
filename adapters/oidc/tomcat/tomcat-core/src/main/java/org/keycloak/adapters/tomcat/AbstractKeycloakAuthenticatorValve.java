@@ -37,9 +37,9 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.TokenStore;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
