@@ -10,6 +10,7 @@ import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
@@ -22,6 +23,10 @@ import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.xml.crypto.dsig.XMLSignature;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -43,10 +48,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             .update())
         {
 
-            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
-            SAMLParser parser = SAMLParser.getInstance();
-            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
-            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+            SPSSODescriptorType spDescriptor = getExportedSamlProvider();
 
             //attribute mappers do not exist- no AttributeConsumingService
             assertThat(spDescriptor.getAttributeConsumingService(), empty());
@@ -72,10 +74,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
             identityProviderResource.addMapper(attrMapperEmail);
 
-            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
-            SAMLParser parser = SAMLParser.getInstance();
-            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
-            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+            SPSSODescriptorType spDescriptor = getExportedSamlProvider();
 
             assertThat(spDescriptor.getAttributeConsumingService(), not(empty()));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getIndex(), is(12));
@@ -108,10 +107,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
             identityProviderResource.addMapper(attrMapperEmail);
 
-            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
-            SAMLParser parser = SAMLParser.getInstance();
-            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
-            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+            SPSSODescriptorType spDescriptor = getExportedSamlProvider();
 
             assertThat(spDescriptor.getAttributeConsumingService(), not(empty()));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getIndex(), is(12));
@@ -145,10 +141,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
             identityProviderResource.addMapper(attrMapperEmail);
 
-            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
-            SAMLParser parser = SAMLParser.getInstance();
-            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
-            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+            SPSSODescriptorType spDescriptor = getExportedSamlProvider();
 
             assertThat(spDescriptor.getAttributeConsumingService(), not(empty()));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getIndex(), is(12));
@@ -181,10 +174,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
             identityProviderResource.addMapper(attrMapperRole);
 
-            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
-            SAMLParser parser = SAMLParser.getInstance();
-            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
-            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+            SPSSODescriptorType spDescriptor = getExportedSamlProvider();
 
             assertThat(spDescriptor.getAttributeConsumingService(), not(empty()));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getIndex(), is(9));
@@ -196,4 +186,75 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName().get(0).getValue(), is("My Attribute Set"));
         }
     }
+
+    @Test
+    public void testKeysDescriptors() throws IOException, ParsingException, URISyntaxException {
+        // No keys by default
+        SPSSODescriptorType spDescriptor = getExportedSamlProvider();
+        Assert.assertNotNull("KeyDescriptor is null", spDescriptor.getKeyDescriptor());
+        Assert.assertEquals("KeyDescriptor.size", 0, spDescriptor.getKeyDescriptor().size());
+
+        // Enable signing for IDP. Only signing key is present
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
+                .update())
+        {
+            spDescriptor = getExportedSamlProvider();
+            Assert.assertEquals("KeyDescriptor.size", 1, spDescriptor.getKeyDescriptor().size());
+            Map<String, String> certs = convertCerts(spDescriptor);
+            Assert.assertEquals(1, certs.size());
+            Assert.assertNotNull(certs.get("signing"));
+        }
+
+        // Enable signing and encryption. Both keys are present and mapped to same realm key
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true")
+                .update())
+        {
+            spDescriptor = getExportedSamlProvider();
+            Assert.assertEquals("KeyDescriptor.size", 2, spDescriptor.getKeyDescriptor().size());
+            Map<String, String> certs = convertCerts(spDescriptor);
+            Assert.assertEquals(2, certs.size());
+            String signingCert = certs.get("signing");
+            String encCert = certs.get("encryption");
+            Assert.assertNotNull(signingCert);
+            Assert.assertNotNull(encCert);
+            Assert.assertEquals(signingCert, encCert);
+        }
+
+        // Enable signing and encryption and set encryption algorithm. Both keys are present and mapped to different realm key (signing to "rsa-generated"m encryption to "rsa-enc-generated")
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true")
+                .setAttribute(SAMLIdentityProviderConfig.ENCRYPTION_ALGORITHM, JWEConstants.RSA_OAEP)
+                .update())
+        {
+            spDescriptor = getExportedSamlProvider();
+            Assert.assertEquals("KeyDescriptor.size", 2, spDescriptor.getKeyDescriptor().size());
+            Map<String, String> certs = convertCerts(spDescriptor);
+            Assert.assertEquals(2, certs.size());
+            String signingCert = certs.get("signing");
+            String encCert = certs.get("encryption");
+            Assert.assertNotNull(signingCert);
+            Assert.assertNotNull(encCert);
+            Assert.assertNotEquals(signingCert, encCert);
+        }
+    }
+
+    private SPSSODescriptorType getExportedSamlProvider() throws ParsingException {
+        String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+        SAMLParser parser = SAMLParser.getInstance();
+        EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+        return o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+    }
+
+    // Key is usage ("signing" or "encryption"), Value is string with X509 certificate
+    private Map<String, String> convertCerts(SPSSODescriptorType spDescriptor) {
+        return spDescriptor.getKeyDescriptor().stream()
+                .collect(Collectors.toMap(
+                        keyDescriptor -> keyDescriptor.getUse().value(),
+                        keyDescriptor -> keyDescriptor.getKeyInfo().getElementsByTagNameNS(XMLSignature.XMLNS, "X509Certificate").item(0).getTextContent()));
+    }
+
 }

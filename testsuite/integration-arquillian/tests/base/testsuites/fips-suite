@@ -18,3 +18,5 @@ SamlSignatureTest
 KcSamlBrokerTest
 KcSamlFirstBrokerLoginTest
 KcSamlEncryptedIdTest
+KcSamlSignedBrokerTest
+KcSamlSpDescriptorTest
