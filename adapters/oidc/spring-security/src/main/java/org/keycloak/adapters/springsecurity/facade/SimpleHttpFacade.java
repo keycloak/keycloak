@@ -27,8 +27,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.Assert;
 
 import javax.security.cert.X509Certificate;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Simple {@link org.keycloak.adapters.OIDCHttpFacade} wrapping an {@link HttpServletRequest} and {@link HttpServletResponse}.

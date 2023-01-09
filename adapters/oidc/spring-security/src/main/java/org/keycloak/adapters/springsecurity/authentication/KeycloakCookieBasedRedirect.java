@@ -17,8 +17,8 @@
 
 package org.keycloak.adapters.springsecurity.authentication;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Utility class that provides methods to create and retrieve cookies used for login redirects.
