@@ -30,6 +30,10 @@
     <name>Keycloak Server SPI</name>
     <description/>
 
+    <properties>
+        <mockito.version>1.9.5</mockito.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.jboss.spec.javax.transaction</groupId>
@@ -59,6 +63,12 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

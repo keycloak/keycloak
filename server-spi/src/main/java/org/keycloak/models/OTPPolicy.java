@@ -148,8 +148,9 @@ public class OTPPolicy implements Serializable {
         try {
 
             String displayName = realm.getDisplayName() != null && !realm.getDisplayName().isEmpty() ? realm.getDisplayName() : realm.getName();
-
-            String accountName = URLEncoder.encode(user.getUsername(), "UTF-8");
+            String accountDisplayName = realm.isLoginWithEmailAllowed() && !realm.isRegistrationEmailAsUsername() ? user.getEmail() : user.getUsername();
+            
+            String accountName = URLEncoder.encode(accountDisplayName, "UTF-8");
             String issuerName = URLEncoder.encode(displayName, "UTF-8") .replaceAll("\\+", "%20");
 
             /*
