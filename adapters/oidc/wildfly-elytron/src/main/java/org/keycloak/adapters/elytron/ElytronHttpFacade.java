@@ -43,10 +43,10 @@ import org.wildfly.security.http.Scope;
 
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.cert.X509Certificate;
-import jakarta.servlet.ServletInputStream;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
