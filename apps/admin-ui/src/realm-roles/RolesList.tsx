@@ -116,7 +116,7 @@ export const RolesList = ({
     },
   });
 
-  const goToCreate = () => navigate(`${url}/add-role`);
+  const goToCreate = () => navigate(`${url}/new`);
 
   if (!realm) {
     return <KeycloakSpinner />;

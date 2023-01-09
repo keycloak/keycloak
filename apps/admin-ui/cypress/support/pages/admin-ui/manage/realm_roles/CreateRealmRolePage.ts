@@ -1,8 +1,8 @@
 class CreateRealmRolePage {
   private realmRoleNameInput = "#kc-name";
   private realmRoleNameError = "#kc-name-helper";
-  private realmRoleDescriptionInput = "#kc-role-description";
-  private saveBtn = "realm-roles-save-button";
+  private realmRoleDescriptionInput = "#kc-description";
+  private saveBtn = "save";
   private cancelBtn = "cancel";
 
   //#region General Settings

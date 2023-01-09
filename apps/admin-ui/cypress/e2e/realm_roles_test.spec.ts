@@ -243,13 +243,6 @@ describe("Realm roles test", () => {
       createRealmRolePage.checkDescription(updateDescription);
     });
 
-    it("should revert realm role", () => {
-      listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
-      createRealmRolePage.checkDescription(updateDescription);
-      createRealmRolePage.updateDescription("going to revert").cancel();
-      createRealmRolePage.checkDescription(updateDescription);
-    });
-
     const keyValue = new KeyValueInput("attributes");
     it("should add attribute", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);

@@ -93,9 +93,8 @@ export default class ProviderPage {
   private mappersTab = "ldap-mappers-tab";
   private rolesTab = "rolesTab";
   private createRoleBtn = "no-roles-for-this-client-empty-action";
-  private realmRolesSaveBtn = "realm-roles-save-button";
+  private roleSaveBtn = "save";
   private roleNameField = "#kc-name";
-  private clientIdSelect = "#client\\.id-select-typeahead";
 
   private groupName = "aa-uf-mappers-group";
   private clientName = "aa-uf-mappers-client";
@@ -313,7 +312,7 @@ export default class ProviderPage {
     cy.wait(1000);
     cy.get(this.roleNameField).clear().type(roleName);
     cy.wait(1000);
-    cy.findByTestId(this.realmRolesSaveBtn).click();
+    cy.findByTestId(this.roleSaveBtn).click();
     cy.wait(1000);
   }
 

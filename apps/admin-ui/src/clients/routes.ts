@@ -12,6 +12,7 @@ import {
   ResourceDetailsRoute,
   ResourceDetailsWithResourceIdRoute,
 } from "./routes/Resource";
+import { NewRoleRoute } from "./routes/NewRole";
 import { NewScopeRoute } from "./routes/NewScope";
 import {
   ScopeDetailsRoute,
@@ -44,6 +45,7 @@ const routes: RouteDef[] = [
   NewResourceRoute,
   ResourceDetailsRoute,
   ResourceDetailsWithResourceIdRoute,
+  NewRoleRoute,
   NewScopeRoute,
   ScopeDetailsRoute,
   ScopeDetailsWithScopeIdRoute,
