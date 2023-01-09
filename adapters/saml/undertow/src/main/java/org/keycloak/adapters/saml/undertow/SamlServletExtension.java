@@ -41,7 +41,7 @@ import org.keycloak.adapters.undertow.ChangeSessionId;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
-import jakarta.servlet.ServletContext;
+import javax.servlet.ServletContext;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

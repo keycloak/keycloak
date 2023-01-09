@@ -17,7 +17,6 @@
 
 package org.keycloak.jaxrs;
 
-import jakarta.annotation.Priority;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterUtils;
@@ -35,11 +34,12 @@ import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.UserSessionManagement;
 import org.keycloak.common.constants.GenericConstants;
 
-import jakarta.ws.rs.Priorities;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.PreMatching;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
+import javax.annotation.Priority;
+import javax.ws.rs.Priorities;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.PreMatching;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
