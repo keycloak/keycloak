@@ -95,7 +95,11 @@
         <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
         <jakarta.transaction.version>2.0.1</jakarta.transaction.version>
         <jakarta.activation.version>2.1.0</jakarta.activation.version>
+        <jakarta.xml.soap.version>3.0.0</jakarta.xml.soap.version>
 
+        <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
+        <jboss-jaxrs-api_2.1_spec>2.0.2.Final</jboss-jaxrs-api_2.1_spec>
+        <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
         <jboss.logging.version>3.4.1.Final</jboss.logging.version>
         <jboss.logging.tools.version>2.2.1.Final</jboss.logging.tools.version>
         <jboss.marshalling.version>2.0.11.Final</jboss.marshalling.version>
@@ -110,10 +114,12 @@
         <sun.istack.version>3.0.10</sun.istack.version>
         <sun.xml.bind.version>2.3.3-b02</sun.xml.bind.version>
         <javax.xml.bind.jaxb.version>2.4.0-b180830.0359</javax.xml.bind.jaxb.version>
+        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.3.2.Final</undertow.version>
+        <undertow.version>2.2.22.Final</undertow.version>
+        <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
         <wildfly-elytron.version>1.20.1.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
@@ -396,6 +402,11 @@
                 <groupId>jakarta.servlet</groupId>
                 <artifactId>jakarta.servlet-api</artifactId>
                 <version>${jakarta.servlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.soap</groupId>
+                <artifactId>jakarta.xml.soap-api</artifactId>
+                <version>${jakarta.xml.soap.version}</version>
             </dependency>
 
             <dependency>
@@ -1783,6 +1794,27 @@
                 </exclusions>
             </dependency>
 
+            <!-- JavaEE dependencies - used for adapters -->
+            <dependency>
+                <groupId>org.jboss.spec.javax.servlet</groupId>
+                <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+                <version>${servlet.api.30.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.ws.rs</groupId>
+                <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+                <version>${jboss-jaxrs-api_2.1_spec}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.servlet</groupId>
+                <artifactId>jboss-servlet-api_4.0_spec</artifactId>
+                <version>${jboss-servlet-api_4.0_spec}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${javax.annotation-api.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -21,7 +21,7 @@ import org.apache.catalina.connector.Request;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpSession;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

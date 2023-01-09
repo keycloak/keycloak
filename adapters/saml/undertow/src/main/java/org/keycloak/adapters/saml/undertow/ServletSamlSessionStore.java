@@ -38,9 +38,9 @@ import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.security.Principal;
