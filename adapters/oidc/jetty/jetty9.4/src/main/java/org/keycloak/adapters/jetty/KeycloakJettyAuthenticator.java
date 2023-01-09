@@ -28,7 +28,7 @@ import org.keycloak.adapters.jetty.core.JettySessionTokenStore;
 import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
 import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
 
-import jakarta.servlet.ServletRequest;
+import javax.servlet.ServletRequest;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

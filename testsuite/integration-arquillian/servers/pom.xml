@@ -52,6 +52,7 @@
     </properties>
 
     <modules>
+        <module>adapter-spi</module>
         <module>auth-server</module>
         <module>app-server</module>
         <module>cache-server</module>
