@@ -25,7 +25,7 @@ import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
 
-import jakarta.servlet.ServletRequest;
+import javax.servlet.ServletRequest;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import jakarta.servlet.http.Cookie;
+import javax.servlet.http.Cookie;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
