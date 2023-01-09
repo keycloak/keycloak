@@ -22,8 +22,8 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.enums.TokenStore;
 import org.springframework.util.Assert;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * {@link AdapterTokenStoreFactory} that returns a new {@link SpringSecurityTokenStore} for each request.

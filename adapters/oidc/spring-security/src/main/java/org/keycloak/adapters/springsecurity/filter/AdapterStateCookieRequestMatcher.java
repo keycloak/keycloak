@@ -17,8 +17,8 @@
 
 package org.keycloak.adapters.springsecurity.filter;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import org.keycloak.constants.AdapterConstants;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
