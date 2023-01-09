@@ -17,13 +17,13 @@
 
 package org.keycloak.jaxrs;
 
-import jakarta.annotation.Priority;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.common.constants.GenericConstants;
 import org.osgi.framework.BundleContext;
 
-import jakarta.ws.rs.Priorities;
-import jakarta.ws.rs.container.PreMatching;
+import javax.annotation.Priority;
+import javax.ws.rs.Priorities;
+import javax.ws.rs.container.PreMatching;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
