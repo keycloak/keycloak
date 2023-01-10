@@ -196,18 +196,7 @@ public class UndertowHttpFacade implements HttpFacade {
 
                 inputStream = new BufferedInputStream(exchange.getInputStream());
                 
-                context.setServletRequest(new HttpServletRequestWrapper((HttpServletRequest) servletRequest) {
-                    @Override
-                    public ServletInputStream getInputStream() {
-                        inputStream.mark(0);
-                        return new ServletInputStream() {
-                            @Override
-                            public int read() throws IOException {
-                                return inputStream.read();
-                            }
-                        };
-                    }
-                });
+                context.setServletRequest(UndertowHttpServletRequest.setupServletInputStream(servletRequest, inputStream));
                 return inputStream;
             }
 
