@@ -84,6 +84,12 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-server-hotrod</artifactId>
                 <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.squareup.okhttp3</groupId>
+                        <artifactId>okhttp</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -131,6 +137,33 @@
                         <artifactId>activation</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- Openshift -->
+            <dependency>
+                <groupId>com.openshift</groupId>
+                <artifactId>openshift-restclient-java</artifactId>
+                <version>${version.com.openshift.openshift-restclient-java}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.squareup.okhttp3</groupId>
+                        <artifactId>okhttp</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>4.9.3</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
