@@ -174,7 +174,7 @@ public class Urls {
     }
 
     public static UriBuilder requiredActionBase(URI baseUri) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "requiredAction");
+        return loginActionsBase(baseUri).path(LoginActionsService.REQUIRED_ACTION);
     }
 
 
