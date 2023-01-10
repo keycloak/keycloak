@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.testsuite.client.policies;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -59,6 +59,8 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceEx
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
 
 /**
+ * This test class is for testing loading and updating profiles and policies file of client policies.
+ * 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
