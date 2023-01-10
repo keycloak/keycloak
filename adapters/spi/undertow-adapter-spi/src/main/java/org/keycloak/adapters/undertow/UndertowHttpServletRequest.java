@@ -26,7 +26,7 @@ import java.io.InputStream;
 
 public class UndertowHttpServletRequest {
 
-    public static HttpServletRequestWrapper setupServletInputStream(ServletRequest servletRequest, InputStream inputStream) {
+    public static HttpServletRequestWrapper setupServletInputStream(ServletRequest servletRequest, final InputStream inputStream) {
         return new HttpServletRequestWrapper((HttpServletRequest) servletRequest) {
             @Override
             public ServletInputStream getInputStream() {

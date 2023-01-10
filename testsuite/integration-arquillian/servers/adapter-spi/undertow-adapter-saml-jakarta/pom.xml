@@ -3,43 +3,80 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>keycloak-adapters-pom</artifactId>
-        <groupId>org.keycloak</groupId>
+        <artifactId>integration-arquillian-servers</artifactId>
+        <groupId>org.keycloak.testsuite</groupId>
         <version>999-SNAPSHOT</version>
-        <relativePath>../../../../../adapters/pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-undertow-jakarta-spi</artifactId>
-    <name>App Server - Undertow SPI (JakartaEE)</name>
+    <artifactId>keycloak-saml-undertow-adapter-jakarta</artifactId>
+    <name>Undertow SAML Adapter (JakartaEE)</name>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <undertow-adapter-spi-base>${project.basedir}/../../../../../adapters/spi/undertow-adapter-spi</undertow-adapter-spi-base>
-        <jakarta-transformer-sources>${undertow-adapter-spi-base}/src/main/java/org/keycloak/adapters/undertow/</jakarta-transformer-sources>
-        <jakarta-transformer-target>${project.basedir}/src/main/java/org/keycloak/adapters/undertow/</jakarta-transformer-target>
+        <jakarta-transformer-sources>${project.basedir}/../../../../../adapters/saml/undertow</jakarta-transformer-sources>
+        <jakarta-transformer-target>${project.basedir}</jakarta-transformer-target>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-spi</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-adapter-api-public</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-adapter-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>keycloak-undertow-adapter-jakarta</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-servlet</artifactId>
-            <version>${undertow-jakarta.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-core</artifactId>
-            <version>${undertow-jakarta.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
