@@ -474,6 +474,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                         return corsResponse(badRequest("User [" + authResult.getUser().getId() + "] is not associated with identity provider [" + providerId + "]."), clientModel);
                     }
 
+                    if (identity.getToken() == null) {
+                        return corsResponse(notFound("No token stored for user [" + authResult.getUser().getId() + "] with associated identity provider [" + providerId + "]."), clientModel);
+                    }
+
                     this.event.success();
 
                     return corsResponse(identityProvider.retrieveToken(session, identity), clientModel);
@@ -1222,6 +1226,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private Response forbidden(String message) {
         fireErrorEvent(message);
         return ErrorResponse.error(message, Response.Status.FORBIDDEN);
+    }
+
+    private Response notFound(String message) {
+        fireErrorEvent(message);
+        return ErrorResponse.error(message, Response.Status.NOT_FOUND);
     }
 
     public static IdentityProvider getIdentityProvider(KeycloakSession session, RealmModel realm, String alias) {
