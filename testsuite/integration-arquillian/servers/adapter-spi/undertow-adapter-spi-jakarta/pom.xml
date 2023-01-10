@@ -3,83 +3,34 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>integration-arquillian-servers</artifactId>
-        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>keycloak-adapters-pom</artifactId>
+        <groupId>org.keycloak</groupId>
         <version>999-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../../../../../adapters/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-undertow-adapter-jakarta</artifactId>
-    <name>Undertow OIDC Adapter (JakartaEE)</name>
-    <packaging>jar</packaging>
+    <artifactId>keycloak-undertow-adapter-spi-jakarta</artifactId>
+    <name>Adapter Undertow SPI (JakartaEE)</name>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <keycloak.osgi.export>
-            org.keycloak.adapters.undertow.*
-        </keycloak.osgi.export>
-        <keycloak.osgi.import>
-            io.undertow.*;version="[1.4,3)",
-            javax.servlet.*;version="[3.1,5)";resolution:=optional,
-            *;resolution:=optional
-        </keycloak.osgi.import>
-
-        <jakarta-transformer-sources>${project.basedir}/../../../../../adapters/oidc/undertow</jakarta-transformer-sources>
-        <jakarta-transformer-target>${project.basedir}</jakarta-transformer-target>
+        <undertow-adapter-base>${project.basedir}/../../../../../adapters/spi/undertow-adapter-spi</undertow-adapter-base>
+        <jakarta-transformer-sources>${undertow-adapter-base}/src/main/java/org/keycloak/adapters/undertow/</jakarta-transformer-sources>
+        <jakarta-transformer-target>${project.basedir}/src/main/java/org/keycloak/adapters/undertow/</jakarta-transformer-target>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter-spi-jakarta</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-spi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-core</artifactId>
+            <artifactId>keycloak-common</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-servlet</artifactId>
@@ -89,11 +40,6 @@
             <groupId>io.undertow</groupId>
             <artifactId>undertow-core</artifactId>
             <version>${undertow-jakarta.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
