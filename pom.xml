@@ -286,7 +286,24 @@
     <dependencyManagement>
 
         <dependencies>
+            <!-- Temporary version overrides for CVE fixes -->
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>4.9.3</version>
+            </dependency>
+            <dependency>
+                <groupId>com.thoughtworks.xstream</groupId>
+                <artifactId>xstream</artifactId>
+                <version>1.4.20</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>4.1.86.Final</version>
+            </dependency>
 
+            <!-- Keycloak -->
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
