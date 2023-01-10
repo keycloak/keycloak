@@ -73,6 +73,7 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
