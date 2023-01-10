@@ -24,7 +24,8 @@ import liquibase.statement.core.AddColumnStatement;
 
 /**
  * A {@link liquibase.statement.SqlStatement} that extends the standard {@link AddColumnStatement} to include properties
- * to identify the JSON column and JSON property that are to be used to generated the values for the column being added.
+ * to either identify the JSON column and JSON property or a column name ({@code hashOf}) to be used for hashing that are 
+ * to be used to generated the values for the column being added.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
@@ -32,13 +33,15 @@ public class GeneratedColumnStatement extends AddColumnStatement {
 
     private String jsonColumn;
     private String jsonProperty;
+    private String hashOf;
 
-    public GeneratedColumnStatement(final AddColumnStatement statement, final String jsonColumn, final String jsonProperty) {
+    public GeneratedColumnStatement(final AddColumnStatement statement, final String jsonColumn, final String jsonProperty, final String hashOf) {
         super(statement.getCatalogName(), statement.getSchemaName(), statement.getTableName(), statement.getColumnName(),
                 statement.getColumnType(), statement.getDefaultValue(), statement.getRemarks(),
                 statement.getConstraints().toArray(new ColumnConstraint[0]));
         this.jsonColumn = jsonColumn;
         this.jsonProperty = jsonProperty;
+        this.hashOf = hashOf;
     }
 
     public GeneratedColumnStatement(final List<GeneratedColumnStatement> statements) {
@@ -61,5 +64,12 @@ public class GeneratedColumnStatement extends AddColumnStatement {
      */
     public String getJsonProperty() {
         return this.jsonProperty;
+    }
+
+    /**
+     * Obtains the column name (hashOf) to be used as the value for hashing for the new column.
+     */
+    public String getHashOf() {
+        return hashOf;
     }
 }

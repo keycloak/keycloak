@@ -1,7 +1,10 @@
 package org.keycloak.models.map.common;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a field in an entity with appropriate accessors.
@@ -48,12 +51,22 @@ public interface EntityField<E> {
      * @param e Entity
      * @param value Value to be added to the collection
      * @throws ClassCastException If this field is not a collection.
+     * @throws UnsupportedOperationException If this collection type is not yet known.
      */
     default <T> void collectionAdd(E e, T value) {
         @SuppressWarnings("unchecked")
         Collection<T> c = (Collection<T>) get(e);
         if (c != null) {
             c.add(value);
+        } else {
+            if (getFieldClass().equals(List.class)) {
+                c = Collections.singletonList(value);
+            } else if (getFieldClass().equals(Set.class)) {
+                c = Collections.singleton(value);
+            } else {
+                throw new UnsupportedOperationException("Unsupported collection type."); // in case we add e.g. java.util.Queue in future
+            }
+            set(e, c);
         }
     }
     /**
@@ -93,6 +106,8 @@ public interface EntityField<E> {
         Map<K, T> m = (Map<K, T>) get(e);
         if (m != null) {
             m.put(key, value);
+        } else {
+            set(e, Collections.singletonMap(key, value));
         }
     }
     /**

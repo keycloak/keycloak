@@ -7,7 +7,7 @@ on:
       - dependabot/**
   pull_request:
   schedule:
-    - cron: 0 0/3 * * *
+    - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
 env:
@@ -106,6 +106,10 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Base IT
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -175,7 +179,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -188,6 +192,13 @@ jobs:
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
           surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Java Distribution IT
 
   databases-new-store:
     name: Databases New Store
@@ -209,8 +220,8 @@ jobs:
     name: New Store IT
     needs: [build, databases-new-store]
     runs-on: ubuntu-latest
-    # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with ~45 minutes
-    timeout-minutes: 70
+    # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with 50-60 minutes
+    timeout-minutes: 90
     strategy:
       matrix:
         db: ${{ fromJson(needs.databases-new-store.outputs.db) }}
@@ -232,7 +243,7 @@ jobs:
 
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -246,6 +257,13 @@ jobs:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
           surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: New Store IT
+
   legacy-store-integration-tests:
     name: Legacy Store IT
     needs: build
@@ -253,7 +271,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        db: [postgres, mysql, oracle] # 'mariadb' is not always shutting down, 'mssql' container not available yet
+        db: [postgres, mysql, oracle, mssql] # 'mariadb' is not always shutting down
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -266,7 +284,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -280,11 +298,18 @@ jobs:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
           surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Legacy Store IT
+
   store-model-tests:
     name: Store Model Tests
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v3
 
@@ -293,11 +318,18 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run model tests
-        run: testsuite/model/test-all-profiles.sh
+        run: testsuite/model/test-all-profiles.sh -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }}
 
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Store Model Tests
 
   clustering-integration-tests:
     name: Legacy Clustering IT
@@ -315,7 +347,7 @@ jobs:
 
       - name: Run cluster tests
         run: |
-          ./mvnw test -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -328,6 +360,13 @@ jobs:
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
           surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Legacy Clustering IT
 
   fips-unit-tests:
     name: FIPS UT
@@ -378,7 +417,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
           echo "Tests: $TESTS"
-          ./mvnw test -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -391,6 +430,13 @@ jobs:
         with:
           api-key: ${{ secrets.FORESIGHT_API_KEY }}
           surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: FIPS IT
 
   check-set-status:
     name: Set check conclusion

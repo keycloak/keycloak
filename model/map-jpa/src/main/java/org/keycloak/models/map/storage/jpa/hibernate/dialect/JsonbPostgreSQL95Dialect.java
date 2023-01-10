@@ -27,5 +27,6 @@ public class JsonbPostgreSQL95Dialect extends PostgreSQL95Dialect {
         registerFunction("->", new SQLFunctionTemplate(JsonbType.INSTANCE, "?1->?2"));
         registerFunction("->>", new SQLFunctionTemplate(StandardBasicTypes.STRING, "?1->>?2"));
         registerFunction("@>", new SQLFunctionTemplate(StandardBasicTypes.BOOLEAN, "?1@>?2::jsonb"));
+        registerFunction("kc_hash", new SQLFunctionTemplate(StandardBasicTypes.BINARY, "sha256(?1::bytea)"));
     }
 }

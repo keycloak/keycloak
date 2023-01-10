@@ -1036,4 +1036,25 @@ public class UserInfoTest extends AbstractKeycloakTest {
         assertNull(userInfo.getOtherClaims().get("realm_access"));
         assertNull(userInfo.getOtherClaims().get("resource_access"));
     }
+    
+    @Test
+    public void test_noContentType() throws Exception {
+        Client client = AdminClientUtil.createResteasyClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+                    
+            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            Response response = userInfoTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getToken())
+                    .build("POST")
+                    .invoke();
+            
+            Assert.assertEquals(200, response.getStatus());
+            Assert.assertEquals("OK", response.getStatusInfo().toString());
+           	
+        } finally {
+            client.close();
+        }
+    }
 }

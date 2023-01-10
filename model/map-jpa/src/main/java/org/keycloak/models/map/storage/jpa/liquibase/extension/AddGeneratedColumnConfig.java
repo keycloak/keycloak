@@ -23,17 +23,17 @@ import liquibase.parser.core.ParsedNodeException;
 import liquibase.resource.ResourceAccessor;
 
 /**
- * A {@link liquibase.change.ColumnConfig} extension that contains attributes to specify a JSON column and the property
- * to be selected from the JSON file.
- * </p>
- * This config is used by extensions that need to operated on data stored in JSON columns.
+ * A {@link liquibase.change.ColumnConfig} extension that contains attributes either to specify 
+ *  - a JSON column and the property to be selected from the JSON file 
+ *  - a hashOf property with column name to be used for the generating a column with hash value of it.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class JsonEnabledColumnConfig extends AddColumnConfig {
+public class AddGeneratedColumnConfig extends AddColumnConfig {
 
     private String jsonColumn;
     private String jsonProperty;
+    private String hashOf;
 
     /**
      * Obtains the name of the column that contains JSON files.
@@ -71,11 +71,30 @@ public class JsonEnabledColumnConfig extends AddColumnConfig {
         this.jsonProperty = jsonProperty;
     }
 
+    /**
+     * Obtains the column name to be used for the generating a column with hash value of it.
+     * 
+     * @return the name of the column
+     */
+    public String getHashOf() {
+        return hashOf;
+    }
+
+    /**
+     * Sets the column name to be used for the generating a column with hash value of it.
+     * 
+     * @param hashOf the column name for hash
+     */
+    public void setHashOf(String hashOf) {
+        this.hashOf = hashOf;
+    }
+
     @Override
     public void load(ParsedNode parsedNode, ResourceAccessor resourceAccessor) throws ParsedNodeException {
         // load the standard column attributs and then load the JSON attributes.
         super.load(parsedNode, resourceAccessor);
         this.jsonColumn = parsedNode.getChildValue(null, "jsonColumn", String.class);
         this.jsonProperty = parsedNode.getChildValue(null, "jsonProperty", String.class);
+        this.hashOf = parsedNode.getChildValue(null, "hashOf", String.class);
     }
 }

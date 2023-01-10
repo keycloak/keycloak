@@ -865,7 +865,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                     offline ? SessionTimeouts::getOfflineSessionLifespanMs : SessionTimeouts::getUserSessionLifespanMs,
                     offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
         } else {
-            cache.putAll(sessionsById);
+            Retry.executeWithBackoff((int iteration) -> {
+                cache.putAll(sessionsById);
+            }, 10, 10);
         }
 
         // put all entities to the remoteCache (if exists)
@@ -899,15 +901,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
 
         // Import client sessions
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache = offline ? offlineClientSessionCache : clientSessionCache;
-        clientSessCache = CacheDecorators.skipCacheLoaders(clientSessCache);
+        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache =
+          CacheDecorators.skipCacheLoaders(offline ? offlineClientSessionCache : clientSessionCache);
 
         if (importWithExpiration) {
             importSessionsWithExpiration(clientSessionsById, clientSessCache,
                     offline ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs,
                     offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
         } else {
-            clientSessCache.putAll(clientSessionsById);
+            Retry.executeWithBackoff((int iteration) -> {
+                clientSessCache.putAll(clientSessionsById);
+            }, 10, 10);
         }
 
         // put all entities to the remoteCache (if exists)

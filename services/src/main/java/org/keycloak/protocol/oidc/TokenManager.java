@@ -356,13 +356,10 @@ public class TokenManager {
 
         // Fallback to lookup user based on username (preferred_username claim)
         if (token.getPreferredUsername() != null) {
-            user = session.users().getUserByUsername(realm, token.getPreferredUsername());
-            if (user != null) {
-                return user;
-            }
+            return session.users().getUserByUsername(realm, token.getPreferredUsername());
         }
 
-        return user;
+        return null;
     }
 
 
