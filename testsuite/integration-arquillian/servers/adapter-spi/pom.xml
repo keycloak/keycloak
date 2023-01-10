@@ -14,8 +14,9 @@
     <name>Testsuite Adapter SPI</name>
 
     <modules>
-        <module>undertow-adapter-jakarta-spi</module>
+        <module>undertow-adapter-spi-jakarta</module>
         <module>undertow-adapter-jakarta</module>
+        <module>undertow-adapter-saml-jakarta</module>
     </modules>
 
     <properties>
