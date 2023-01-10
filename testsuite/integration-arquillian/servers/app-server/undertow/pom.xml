@@ -34,8 +34,9 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-undertow-adapter</artifactId>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>keycloak-saml-undertow-adapter-jakarta</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
