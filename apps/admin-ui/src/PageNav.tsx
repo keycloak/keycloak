@@ -1,6 +1,5 @@
 import { FormEvent, FunctionComponent } from "react";
-import { NavLink, useRouteMatch } from "react-router-dom";
-import { useLocation, useNavigate } from "react-router-dom-v5-compat";
+import { NavLink, useMatch, useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   Nav,
@@ -23,7 +22,6 @@ export const PageNav: FunctionComponent = () => {
   const { t } = useTranslation("common");
   const { hasAccess, hasSomeAccess } = useAccess();
   const { realm } = useRealm();
-  const location = useLocation();
   const navigate = useNavigate();
 
   type SelectedItem = {
@@ -54,17 +52,13 @@ export const PageNav: FunctionComponent = () => {
       return null;
     }
 
-    //remove "/realm-name" from the start of the path
-    const activeItem = location.pathname.substring(realm.length + 1);
     return (
       <li>
         <NavLink
           id={"nav-item" + path.replace("/", "-")}
           to={`/${realm}${path}`}
-          className="pf-c-nav__link"
-          activeClassName="pf-m-current"
-          isActive={() =>
-            path === activeItem || (path !== "/" && activeItem.startsWith(path))
+          className={({ isActive }) =>
+            `pf-c-nav__link${isActive ? " pf-m-current" : ""}`
           }
         >
           {t(title)}
@@ -87,7 +81,7 @@ export const PageNav: FunctionComponent = () => {
     "view-identity-providers"
   );
 
-  const isOnAddRealm = !!useRouteMatch(AddRealmRoute.path);
+  const isOnAddRealm = !!useMatch(AddRealmRoute.path);
 
   return (
     <PageSidebar
