@@ -19,6 +19,9 @@ image:images/saml-add-identity-provider.png[Add Identity Provider]
 |Service Provider Entity ID
 |The SAML Entity ID that the remote Identity Provider uses to identify requests from this Service Provider. By default, this setting is set to the realms base URL `<root>{kc_realms_path}/{realm-name}`.
 
+|Identity Provider Entity ID
+|The Entity ID used to validate the Issuer for received SAML assertions. If empty, no Issuer validation is performed.
+
 |Single Sign-On Service URL
 |The SAML endpoint that starts the authentication process.  If your SAML IDP publishes an IDP entity descriptor, the value of this field is specified there.
 
@@ -49,10 +52,20 @@ image:images/saml-add-identity-provider.png[Add Identity Provider]
 |Want AuthnRequests Signed
 |When *ON*, {project_name} uses the realm's keypair to sign requests sent to the external SAML IDP.
 
+|Want Assertions Signed
+|Indicates whether this service provider expects a signed Assertion.
+
+|Want Assertions Encrypted
+|Indicates whether this service provider expects an encrypted Assertion.
+
 |Signature Algorithm
 |If *Want AuthnRequests Signed* is *ON*, the signature algorithm to use. Note that `SHA1` based algorithms are deprecated and may be removed in a future release.
 We recommend to use some more secure algorithm instead of `*_SHA1`. Also, with `*_SHA1` algorithms, verifying signatures
 do not work if the SAML identity provider (for example another instance of {project_name}) runs on Java 17 or higher.
+
+|Encryption Algorithm
+|Encryption algorithm, which is used by SAML IDP for encryption of SAML documents, assertions or IDs. The corresponding decryption key
+for decrypt SAML document parts will be chosen based on this configured algorithm and should be available in realm keys for the encryption (ENC) usage.
 
 |SAML Signature Key Name
 |Signed SAML documents sent using POST binding contain the identification of signing key in `KeyName` element, which, by default, contains the {project_name} key ID. External SAML IDPs can expect a different key name. This switch controls whether `KeyName` contains:
