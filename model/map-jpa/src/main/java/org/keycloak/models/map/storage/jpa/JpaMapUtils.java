@@ -147,12 +147,8 @@ public class JpaMapUtils {
         SessionFactoryImplementor sessionFactory = entityManager.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class);
 
         if (isNative) {
-            // deprecation notes mention usage of a new QueryEngine in hibernate 6
-//            NativeSQLQuerySpecification spec = new NativeSQLQuerySpecification(querySql, new NativeSQLQueryReturn[0], Collections.emptySet());
-//            sessionFactory.getQueryPlanCache().getNativeSQLQueryPlan(spec);
             sessionFactory.addNamedQuery(queryName, entityManager.createNativeQuery(querySql));
         } else {
-//            sessionFactory.getQueryPlanCache().getHQLQueryPlan(querySql, false, Collections.emptyMap());
             sessionFactory.addNamedQuery(queryName, entityManager.createQuery(querySql));
         }
     }
