@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { saveAs } from "file-saver";
 import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form-v7";
 import {
   AlertVariant,
   Button,
@@ -75,10 +75,10 @@ export const SamlKeysDialog = ({
   const { t } = useTranslation("clients");
   const [type, setType] = useState(false);
   const [keys, setKeys] = useState<CertificateRepresentation>();
-  const form = useForm<SamlKeysDialogForm>();
+  const form = useForm<SamlKeysDialogForm>({ mode: "onChange" });
   const {
     handleSubmit,
-    formState: { isDirty },
+    formState: { isValid },
   } = form;
 
   const { adminClient } = useAdminClient();
@@ -132,7 +132,7 @@ export const SamlKeysDialog = ({
           key="confirm"
           data-testid="confirm"
           variant="primary"
-          isDisabled={!isDirty && !keys}
+          isDisabled={!isValid && !keys}
           onClick={() => {
             if (type) {
               handleSubmit(submit)();
@@ -181,9 +181,7 @@ export const SamlKeysDialog = ({
               </FlexItem>
             </Flex>
           </FormGroup>
-        </Form>
-        {!type && (
-          <Form>
+          {!type && (
             <FormGroup
               label={t("certificate")}
               fieldId="certificate"
@@ -209,8 +207,8 @@ export const SamlKeysDialog = ({
                 </SplitItem>
               </Split>
             </FormGroup>
-          </Form>
-        )}
+          )}
+        </Form>
         {type && <KeyForm useFile />}
       </FormProvider>
     </Modal>
