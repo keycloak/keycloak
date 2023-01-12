@@ -1,3 +1,4 @@
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -6,10 +7,8 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { useRouteMatch } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
+import { Link, useLocation, useNavigate } from "react-router-dom-v5-compat";
 
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
@@ -28,8 +27,8 @@ type DiscoveryIdentity = IdentityProviderRepresentation & {
 export default function AddOpenIdConnect() {
   const { t } = useTranslation("identity-providers");
   const navigate = useNavigate();
-  const { url } = useRouteMatch();
-  const isKeycloak = url.includes("keycloak-oidc");
+  const { pathname } = useLocation();
+  const isKeycloak = pathname.includes("keycloak-oidc");
   const id = `${isKeycloak ? "keycloak-" : ""}oidc`;
 
   const form = useForm<IdentityProviderRepresentation>({
