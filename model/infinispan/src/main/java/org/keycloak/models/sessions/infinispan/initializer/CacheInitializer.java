@@ -17,6 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 import org.jboss.logging.Logger;
 
 /**
@@ -30,10 +32,32 @@ public abstract class CacheInitializer {
     }
 
     public void loadSessions() {
+        Instant loadingMustContinueBy = Instant.now().plusSeconds(getStalledTimeoutInSeconds());
+        boolean loadingStalledInPreviousStep = false;
+        int lastProgressIndicator = 0;
         while (!isFinished()) {
             if (!isCoordinator()) {
                 try {
-                    Thread.sleep(1000);
+                    TimeUnit.SECONDS.sleep(1);
+
+                    final int progressIndicator = getProgressIndicator();
+                    final boolean loadingStalled = lastProgressIndicator == progressIndicator;
+                    if (loadingStalled) {
+                        if (loadingStalledInPreviousStep) {
+                            if (Instant.now().isAfter(loadingMustContinueBy)) {
+                                throw new RuntimeException("Loading sessions has stalled for " + getStalledTimeoutInSeconds() + " seconds, possibly caused by split-brain");
+                            }
+
+                            log.tracef("Loading sessions stalled. Waiting until %s", loadingMustContinueBy);
+                        } else {
+                            loadingMustContinueBy = Instant.now().plusSeconds(getStalledTimeoutInSeconds());
+                            loadingStalledInPreviousStep = true;
+                        }
+                    } else {
+                        loadingStalledInPreviousStep = false;
+                    }
+
+                    lastProgressIndicator = progressIndicator;
                 } catch (InterruptedException ie) {
                     log.error("Interrupted", ie);
                     throw new RuntimeException("Loading sessions failed", ie);
@@ -50,7 +74,18 @@ public abstract class CacheInitializer {
     protected abstract boolean isCoordinator();
 
     /**
+     * Returns an integer which captures current progress. If there is a progress in loading,
+     * this indicator must be different most of the time so that it does not hit 30-seconds
+     * limit.
+     * @see #stalledTimeoutInSeconds
+     * @return
+     */
+    protected abstract int getProgressIndicator();
+
+    /**
      * Just coordinator will run this
      */
     protected abstract void startLoading();
+
+    protected abstract int getStalledTimeoutInSeconds();
 }
