@@ -1,10 +1,8 @@
 import type { RouteDef } from "../route-config";
+import { CustomUserFederationRoute } from "./routes/CustomUserFederation";
+import { NewCustomUserFederationRoute } from "./routes/NewCustomUserFederation";
 import { NewKerberosUserFederationRoute } from "./routes/NewKerberosUserFederation";
 import { NewLdapUserFederationRoute } from "./routes/NewLdapUserFederation";
-import {
-  CustomEditProviderRoute,
-  CustomProviderRoute,
-} from "./routes/NewProvider";
 import { UserFederationRoute } from "./routes/UserFederation";
 import { UserFederationKerberosRoute } from "./routes/UserFederationKerberos";
 import {
@@ -25,8 +23,8 @@ const routes: RouteDef[] = [
   UserFederationLdapRoute,
   UserFederationLdapWithTabRoute,
   UserFederationLdapMapperRoute,
-  CustomProviderRoute,
-  CustomEditProviderRoute,
+  NewCustomUserFederationRoute,
+  CustomUserFederationRoute,
 ];
 
 export default routes;

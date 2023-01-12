@@ -21,7 +21,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { useParams } from "../../utils/useParams";
-import type { ProviderRouteParams } from "../routes/NewProvider";
+import type { CustomUserFederationRouteParams } from "../routes/CustomUserFederation";
 import { toUserFederation } from "../routes/UserFederation";
 import { ExtendedHeader } from "../shared/ExtendedHeader";
 import { SettingsCache } from "../shared/SettingsCache";
@@ -31,7 +31,7 @@ import "./custom-provider-settings.css";
 
 export default function CustomProviderSettings() {
   const { t } = useTranslation("user-federation");
-  const { id, providerId } = useParams<ProviderRouteParams>();
+  const { id, providerId } = useParams<CustomUserFederationRouteParams>();
   const navigate = useNavigate();
   const form = useForm<ComponentRepresentation>({
     shouldUnregister: false,

@@ -1,45 +1,40 @@
-import { ReactElement, useState } from "react";
 import {
-  CardHeader,
   CardActions,
-  CardTitle,
   CardBody,
   CardFooter,
+  CardHeader,
+  CardTitle,
   Dropdown,
-  KebabToggle,
-  Label,
   Flex,
   FlexItem,
+  KebabToggle,
+  Label,
 } from "@patternfly/react-core";
-import "./keycloak-card.css";
-import { useRouteMatch } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { ReactElement, useState } from "react";
+import { To, useNavigate } from "react-router-dom-v5-compat";
 import { ClickableCard } from "./ClickableCard";
 
+import "./keycloak-card.css";
+
 export type KeycloakCardProps = {
-  id: string;
   title: string;
   dropdownItems?: ReactElement[];
   labelText?: string;
   labelColor?: any;
   footerText?: string;
-  configEnabled?: boolean;
-  providerId?: string;
+  to: To;
 };
 
 export const KeycloakCard = ({
-  id,
   title,
   dropdownItems,
   labelText,
   labelColor,
   footerText,
-  providerId,
+  to,
 }: KeycloakCardProps) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
   const navigate = useNavigate();
-  const { url } = useRouteMatch();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const onDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -49,12 +44,8 @@ export const KeycloakCard = ({
     e.stopPropagation();
   };
 
-  const openSettings = () => {
-    navigate(`${url}/${providerId}/${id}`);
-  };
-
   return (
-    <ClickableCard isSelectable onClick={openSettings}>
+    <ClickableCard isSelectable onClick={() => navigate(to)}>
       <CardHeader>
         <CardActions>
           {dropdownItems && (

@@ -1,3 +1,4 @@
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
@@ -13,22 +14,25 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { DatabaseIcon } from "@patternfly/react-icons";
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom-v5-compat";
+
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ManagePriorityDialog } from "./ManagePriorityDialog";
+import { ClickableCard } from "../components/keycloak-card/ClickableCard";
 import { KeycloakCard } from "../components/keycloak-card/KeycloakCard";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { toUpperCase } from "../util";
-import { toProvider } from "./routes/NewProvider";
-import { ClickableCard } from "../components/keycloak-card/ClickableCard";
 import helpUrls from "../help-urls";
+import { toUpperCase } from "../util";
+import { ManagePriorityDialog } from "./ManagePriorityDialog";
+import { toCustomUserFederation } from "./routes/CustomUserFederation";
+import { toNewCustomUserFederation } from "./routes/NewCustomUserFederation";
+import { toUserFederationKerberos } from "./routes/UserFederationKerberos";
+import { toUserFederationLdap } from "./routes/UserFederationLdap";
 
 import "./user-federation.css";
 
@@ -72,7 +76,7 @@ export default function UserFederationSection() {
         <DropdownItem
           key={p.id}
           onClick={() =>
-            navigate(toProvider({ realm, providerId: p.id!, id: "new" }))
+            navigate(toNewCustomUserFederation({ realm, providerId: p.id! }))
           }
         >
           {p.id.toUpperCase() == "LDAP"
@@ -119,6 +123,17 @@ export default function UserFederationSection() {
     return a < b ? -1 : 1;
   };
 
+  const toDetails = (providerId: string, id: string) => {
+    switch (providerId) {
+      case "ldap":
+        return toUserFederationLdap({ realm, id });
+      case "kerberos":
+        return toUserFederationKerberos({ realm, id });
+      default:
+        return toCustomUserFederation({ realm, providerId, id });
+    }
+  };
+
   if (userFederations) {
     cards = userFederations.sort(cardSorter).map((userFederation, index) => (
       <GalleryItem
@@ -126,7 +141,7 @@ export default function UserFederationSection() {
         className="keycloak-admin--user-federation__gallery-item"
       >
         <KeycloakCard
-          id={userFederation.id!}
+          to={toDetails(userFederation.providerId!, userFederation.id!)}
           dropdownItems={[
             <DropdownItem
               key={`${index}-cardDelete`}
@@ -138,7 +153,6 @@ export default function UserFederationSection() {
               {t("common:delete")}
             </DropdownItem>,
           ]}
-          providerId={userFederation.providerId!}
           title={userFederation.name!}
           footerText={toUpperCase(userFederation.providerId!)}
           labelText={
@@ -196,7 +210,9 @@ export default function UserFederationSection() {
                 <ClickableCard
                   key={p.id}
                   onClick={() =>
-                    navigate(toProvider({ realm, providerId: p.id! }))
+                    navigate(
+                      toNewCustomUserFederation({ realm, providerId: p.id! })
+                    )
                   }
                   data-testid={`${p.id}-card`}
                 >

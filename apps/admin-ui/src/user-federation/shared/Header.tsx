@@ -1,20 +1,20 @@
-import { ReactElement } from "react";
-import { useParams, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   ButtonVariant,
   DropdownItem,
 } from "@patternfly/react-core";
+import { ReactElement } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "react-router-dom-v5-compat";
 
-import type { ProviderRouteParams } from "../routes/NewProvider";
+import { Controller, useFormContext } from "react-hook-form";
+import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
-import { useAlerts } from "../../components/alert/Alerts";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { CustomUserFederationRouteParams } from "../routes/CustomUserFederation";
 import { toUserFederation } from "../routes/UserFederation";
-import { Controller, useFormContext } from "react-hook-form";
 
 type HeaderProps = {
   provider: string;
@@ -30,7 +30,7 @@ export const Header = ({
   dropdownItems = [],
 }: HeaderProps) => {
   const { t } = useTranslation("user-federation");
-  const { id } = useParams<ProviderRouteParams>();
+  const { id } = useParams<Partial<CustomUserFederationRouteParams>>();
   const navigate = useNavigate();
 
   const { adminClient } = useAdminClient();
