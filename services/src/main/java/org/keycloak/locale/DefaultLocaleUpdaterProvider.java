@@ -17,13 +17,16 @@
 package org.keycloak.locale;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.util.CookieBuilder;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.ReadOnlyException;
 
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.UriInfo;
 
 public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
@@ -51,21 +54,29 @@ public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
 
     @Override
     public void updateLocaleCookie(String locale) {
-        RealmModel realm = session.getContext().getRealm();
-        UriInfo uriInfo = session.getContext().getUri();
+        final KeycloakContext context = session.getContext();
+        RealmModel realm = context.getRealm();
+        UriInfo uriInfo = context.getUri();
 
         boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
-        CookieHelper.addCookie(LocaleSelectorProvider.LOCALE_COOKIE, locale, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, secure, true, session);
+        final NewCookie cookie = new CookieBuilder(LocaleSelectorProvider.LOCALE_COOKIE, locale)
+                .path(AuthenticationManager.getRealmCookiePath(realm, uriInfo))
+                .secure(secure)
+                .httpOnly(true)
+                .build();
+        context.getHttpResponse().addCookie(cookie);
+
         logger.debugv("Updating locale cookie to {0}", locale);
     }
 
     @Override
     public void expireLocaleCookie() {
-        RealmModel realm = session.getContext().getRealm();
-        UriInfo uriInfo = session.getContext().getUri();
+        final KeycloakContext context = session.getContext();
+        RealmModel realm = context.getRealm();
+        UriInfo uriInfo = context.getUri();
 
-        boolean secure = realm.getSslRequired().isRequired(session.getContext().getConnection());
-        CookieHelper.addCookie(LocaleSelectorProvider.LOCALE_COOKIE, "", AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, "Expiring cookie", 0, secure, true, session);
+        boolean secure = realm.getSslRequired().isRequired(context.getConnection());
+        CookieHelper.expireCookie(context.getHttpResponse(), LocaleSelectorProvider.LOCALE_COOKIE, AuthenticationManager.getRealmCookiePath(realm, uriInfo), secure, true);
     }
 
     @Override

@@ -84,7 +84,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
 import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_SESSION_COOKIE;
-import static org.keycloak.services.util.CookieHelper.LEGACY_COOKIE;
 import static org.keycloak.storage.UserStorageProviderModel.CACHE_POLICY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_DAY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
@@ -254,15 +253,10 @@ public class UserStorageTest extends AbstractAuthTest {
         assertCurrentUrlStartsWith(testRealmAccountPage);
 
         Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
-        Cookie legacySessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE + LEGACY_COOKIE);
 
         String cookieValue = sameSiteSessionCookie.getValue();
         Assert.assertThat(cookieValue.contains("spécial"), is(false));
         Assert.assertThat(cookieValue.contains("sp%C3%A9cial"), is(true));
-
-        String legacyCookieValue = legacySessionCookie.getValue();
-        Assert.assertThat(legacyCookieValue.contains("spécial"), is(false));
-        Assert.assertThat(legacyCookieValue.contains("sp%C3%A9cial"), is(true));
 
         testRealmAccountPage.logOut();
     }

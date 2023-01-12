@@ -107,10 +107,8 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
         String idToken = response.getIdToken();
 
         // simulate browser restart by deleting an identity cookie
-        log.debugf("Deleting %s and %s cookies", AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE,
-                AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE + CookieHelper.LEGACY_COOKIE);
+        log.debugf("Deleting %s cookie", AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
         driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
-        driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE + CookieHelper.LEGACY_COOKIE);
 
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName(), null, idToken);
         driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));

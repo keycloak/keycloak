@@ -16,6 +16,9 @@
  */
 
 package org.keycloak.http;
+
+import javax.ws.rs.core.NewCookie;
+
 /**
  * <p>Represents an out coming HTTP response.
  *
@@ -41,8 +44,15 @@ public interface HttpResponse {
     /**
      * Set a header. Any existing values will be replaced.
      *
-     * @param name the header name
+     * @param name  the header name
      * @param value the header value
      */
     void setHeader(String name, String value);
+
+    /**
+     * Add a cookie to a response.
+     *
+     * @param cookie the cookie
+     */
+    void addCookie(NewCookie cookie);
 }

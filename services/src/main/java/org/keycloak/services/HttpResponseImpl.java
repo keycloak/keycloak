@@ -18,10 +18,11 @@
 package org.keycloak.services;
 
 import org.keycloak.http.HttpResponse;
+import javax.ws.rs.core.NewCookie;
 
 public class HttpResponseImpl implements HttpResponse {
 
-    private org.jboss.resteasy.spi.HttpResponse delegate;
+    private final org.jboss.resteasy.spi.HttpResponse delegate;
 
     public HttpResponseImpl(org.jboss.resteasy.spi.HttpResponse delegate) {
         this.delegate = delegate;
@@ -40,5 +41,10 @@ public class HttpResponseImpl implements HttpResponse {
     @Override
     public void setHeader(String name, String value) {
         delegate.getOutputHeaders().putSingle(name, value);
+    }
+
+    @Override
+    public void addCookie(NewCookie cookie) {
+        delegate.addNewCookie(cookie);
     }
 }
