@@ -1,34 +1,35 @@
 import type { RouteDef } from "../route-config";
 import { AddClientRoute } from "./routes/AddClient";
-import { ClientRoute } from "./routes/Client";
-import { ClientsRoute, ClientsRouteWithTab } from "./routes/Clients";
-import { CreateInitialAccessTokenRoute } from "./routes/CreateInitialAccessToken";
-import { ImportClientRoute } from "./routes/ImportClient";
-import { MapperRoute } from "./routes/Mapper";
-import { ClientScopesRoute } from "./routes/ClientScopeTab";
 import { AuthorizationRoute } from "./routes/AuthenticationTab";
-import { NewResourceRoute } from "./routes/NewResource";
-import {
-  ResourceDetailsRoute,
-  ResourceDetailsWithResourceIdRoute,
-} from "./routes/Resource";
-import { NewRoleRoute } from "./routes/NewRole";
-import { NewScopeRoute } from "./routes/NewScope";
-import {
-  ScopeDetailsRoute,
-  ScopeDetailsWithScopeIdRoute,
-} from "./routes/Scope";
-import { NewPolicyRoute } from "./routes/NewPolicy";
-import { PolicyDetailsRoute } from "./routes/PolicyDetails";
-import {
-  NewPermissionRoute,
-  NewPermissionWithSelectedIdRoute,
-} from "./routes/NewPermission";
-import { PermissionDetailsRoute } from "./routes/PermissionDetails";
+import { ClientRoute } from "./routes/Client";
+import { ClientRoleRoute } from "./routes/ClientRole";
+import { ClientsRoute, ClientsRouteWithTab } from "./routes/Clients";
+import { ClientScopesRoute } from "./routes/ClientScopeTab";
+import { CreateInitialAccessTokenRoute } from "./routes/CreateInitialAccessToken";
 import {
   DedicatedScopeDetailsRoute,
   DedicatedScopeDetailsWithTabRoute,
 } from "./routes/DedicatedScopeDetails";
+import { ImportClientRoute } from "./routes/ImportClient";
+import { MapperRoute } from "./routes/Mapper";
+import {
+  NewPermissionRoute,
+  NewPermissionWithSelectedIdRoute,
+} from "./routes/NewPermission";
+import { NewPolicyRoute } from "./routes/NewPolicy";
+import { NewResourceRoute } from "./routes/NewResource";
+import { NewRoleRoute } from "./routes/NewRole";
+import { NewScopeRoute } from "./routes/NewScope";
+import { PermissionDetailsRoute } from "./routes/PermissionDetails";
+import { PolicyDetailsRoute } from "./routes/PolicyDetails";
+import {
+  ResourceDetailsRoute,
+  ResourceDetailsWithResourceIdRoute,
+} from "./routes/Resource";
+import {
+  ScopeDetailsRoute,
+  ScopeDetailsWithScopeIdRoute,
+} from "./routes/Scope";
 
 const routes: RouteDef[] = [
   AddClientRoute,
@@ -41,6 +42,7 @@ const routes: RouteDef[] = [
   DedicatedScopeDetailsRoute,
   DedicatedScopeDetailsWithTabRoute,
   ClientScopesRoute,
+  ClientRoleRoute,
   AuthorizationRoute,
   NewResourceRoute,
   ResourceDetailsRoute,

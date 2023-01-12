@@ -92,7 +92,7 @@ const createLink = (realm: string, event: AdminEventRepresentation) => {
   }
 
   if (event.resourcePath?.startsWith("roles-by-id")) {
-    return toRealmRole({ realm, id });
+    return toRealmRole({ realm, id, tab: "details" });
   }
 
   return "";

@@ -13,25 +13,16 @@ export type ClientRoleParams = {
   realm: string;
   clientId: string;
   id: string;
-  tab?: ClientRoleTab;
+  tab: ClientRoleTab;
 };
 
 export const ClientRoleRoute: RouteDef = {
-  path: "/:realm/clients/:clientId/roles/:id",
-  component: lazy(() => import("../RealmRoleTabs")),
+  path: "/:realm/clients/:clientId/roles/:id/:tab",
+  component: lazy(() => import("../../realm-roles/RealmRoleTabs")),
   breadcrumb: (t) => t("roles:roleDetails"),
   access: "view-realm",
 };
 
-export const ClientRoleRouteWithTab: RouteDef = {
-  ...ClientRoleRoute,
-  path: "/:realm/clients/:clientId/roles/:id/:tab",
-};
-
-export const toClientRole = (params: ClientRoleParams): Partial<Path> => {
-  const path = params.tab ? ClientRoleRouteWithTab.path : ClientRoleRoute.path;
-
-  return {
-    pathname: generatePath(path, params),
-  };
-};
+export const toClientRole = (params: ClientRoleParams): Partial<Path> => ({
+  pathname: generatePath(ClientRoleRoute.path, params),
+});

@@ -1,32 +1,30 @@
-import { FunctionComponent, useState } from "react";
-import { useRouteMatch } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
-import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
-
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useAlerts } from "../components/alert/Alerts";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { emptyFormatter, upperCaseFormatter } from "../util";
-import { useRealm } from "../context/realm-context/RealmContext";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { HelpItem } from "../components/help-enabler/HelpItem";
-import { ClientParams, ClientRoute } from "../clients/routes/Client";
-import { toClientRole } from "./routes/ClientRole";
-import { toRealmRole } from "./routes/RealmRole";
-import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, To, useNavigate } from "react-router-dom-v5-compat";
 
-import "./RealmRolesSection.css";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { toRealmSettings } from "../../realm-settings/routes/RealmSettings";
+import { emptyFormatter, upperCaseFormatter } from "../../util";
+import { useAlerts } from "../alert/Alerts";
+import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
+import { HelpItem } from "../help-enabler/HelpItem";
+import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
+import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
+
+import "./RolesList.css";
 
 type RolesListProps = {
   paginated?: boolean;
   parentRoleId?: string;
   messageBundle?: string;
   isReadOnly: boolean;
+  toCreate: To;
+  toDetail: (roleId: string) => To;
   loader?: (
     first?: number,
     max?: number,
@@ -34,32 +32,19 @@ type RolesListProps = {
   ) => Promise<RoleRepresentation[]>;
 };
 
-type RoleLinkProps = {
-  role: RoleRepresentation;
-};
-
-const RoleLink: FunctionComponent<RoleLinkProps> = ({ children, role }) => {
-  const { realm } = useRealm();
-  const clientRouteMatch = useRouteMatch<ClientParams>(ClientRoute.path);
-  const to = clientRouteMatch
-    ? toClientRole({ ...clientRouteMatch.params, id: role.id!, tab: "details" })
-    : toRealmRole({ realm, id: role.id!, tab: "details" });
-
-  return <Link to={to}>{children}</Link>;
-};
-
 export const RolesList = ({
   loader,
   paginated = true,
   parentRoleId,
   messageBundle = "roles",
+  toCreate,
+  toDetail,
   isReadOnly,
 }: RolesListProps) => {
   const { t } = useTranslation(messageBundle);
   const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const { url } = useRouteMatch();
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();
 
@@ -75,7 +60,7 @@ export const RolesList = ({
 
   const RoleDetailLink = (role: RoleRepresentation) =>
     role.name !== realm?.defaultRole?.name ? (
-      <RoleLink role={role}>{role.name}</RoleLink>
+      <Link to={toDetail(role.id!)}>{role.name}</Link>
     ) : (
       <>
         <Link
@@ -116,8 +101,6 @@ export const RolesList = ({
     },
   });
 
-  const goToCreate = () => navigate(`${url}/new`);
-
   if (!realm) {
     return <KeycloakSpinner />;
   }
@@ -133,7 +116,10 @@ export const RolesList = ({
         isPaginated={paginated}
         toolbarItem={
           !isReadOnly && (
-            <Button data-testid="create-role" onClick={goToCreate}>
+            <Button
+              data-testid="create-role"
+              component={(props) => <Link {...props} to={toCreate} />}
+            >
               {t("createRole")}
             </Button>
           )
@@ -179,7 +165,7 @@ export const RolesList = ({
             message={t("noRoles")}
             instructions={isReadOnly ? "" : t("noRolesInstructions")}
             primaryActionText={isReadOnly ? "" : t("createRole")}
-            onPrimaryAction={goToCreate}
+            onPrimaryAction={() => navigate(toCreate)}
           />
         }
       />

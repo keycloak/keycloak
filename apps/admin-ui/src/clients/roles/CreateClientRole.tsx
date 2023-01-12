@@ -9,8 +9,8 @@ import { AttributeForm } from "../../components/key-value-form/AttributeForm";
 import { RoleForm } from "../../components/role-form/RoleForm";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { toClientRole } from "../../realm-roles/routes/ClientRole";
 import { toClient } from "../routes/Client";
+import { toClientRole } from "../routes/ClientRole";
 import { NewRoleParams } from "../routes/NewRole";
 
 export default function CreateClientRole() {

@@ -16,6 +16,11 @@ import { useRouteMatch } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
 
 import { toClient } from "../clients/routes/Client";
+import {
+  ClientRoleParams,
+  ClientRoleRoute,
+  toClientRole,
+} from "../clients/routes/ClientRole";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import {
@@ -37,11 +42,6 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useParams } from "../utils/useParams";
-import {
-  ClientRoleParams,
-  ClientRoleRoute,
-  toClientRole,
-} from "./routes/ClientRole";
 import { toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
 import { UsersInRoleTab } from "./UsersInRoleTab";

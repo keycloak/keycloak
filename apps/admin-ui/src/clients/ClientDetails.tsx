@@ -31,6 +31,7 @@ import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
+import { RolesList } from "../components/roles-list/RolesList";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -43,7 +44,6 @@ import { useAccess } from "../context/access/Access";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { RolesList } from "../realm-roles/RolesList";
 import {
   convertAttributeNameToForm,
   convertFormValuesToObject,
@@ -70,8 +70,10 @@ import {
   toAuthorizationTab,
 } from "./routes/AuthenticationTab";
 import { ClientParams, ClientTab, toClient } from "./routes/Client";
+import { toClientRole } from "./routes/ClientRole";
 import { toClients } from "./routes/Clients";
 import { ClientScopesTab, toClientScopesTab } from "./routes/ClientScopeTab";
+import { toCreateRole } from "./routes/NewRole";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
@@ -474,6 +476,15 @@ export default function ClientDetails() {
                 loader={loader}
                 paginated={false}
                 messageBundle="clients"
+                toCreate={toCreateRole({ realm, clientId: client.id! })}
+                toDetail={(roleId) =>
+                  toClientRole({
+                    realm,
+                    clientId: client.id!,
+                    id: roleId,
+                    tab: "details",
+                  })
+                }
                 isReadOnly={!(hasManageClients || client.access?.configure)}
               />
             </Tab>
