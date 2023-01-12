@@ -1,5 +1,6 @@
-import { useMemo, useState, KeyboardEvent } from "react";
-import { useTranslation } from "react-i18next";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
+import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
 import {
   AlertVariant,
   Button,
@@ -15,23 +16,20 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
+import { KeyboardEvent, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom-v5-compat";
 
-import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
-
-import type { ProviderType } from "../routes/KeyProvider";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useRouteMatch } from "react-router-dom";
-import { Link } from "react-router-dom-v5-compat";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../../util";
-import { DraggableTable } from "../../authentication/components/DraggableTable";
-import { KeyProviderModal } from "./key-providers/KeyProviderModal";
 import useToggle from "../../utils/useToggle";
+import { ProviderType, toKeyProvider } from "../routes/KeyProvider";
+import { KeyProviderModal } from "./key-providers/KeyProviderModal";
 
 import "../realm-settings-section.css";
 
@@ -57,7 +55,6 @@ export const KeysProvidersTab = ({
   const { addAlert, addError } = useAlerts();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
-  const { url } = useRouteMatch();
 
   const [searchVal, setSearchVal] = useState("");
   const [filteredComponents, setFilteredComponents] = useState<ComponentData[]>(
@@ -255,7 +252,11 @@ export const KeysProvidersTab = ({
                 <Link
                   key={component.name}
                   data-testid="provider-name-link"
-                  to={`${url}/${component.id}/${component.providerId}/settings`}
+                  to={toKeyProvider({
+                    realm,
+                    id: component.id!,
+                    providerType: component.providerId as ProviderType,
+                  })}
                 >
                   {component.name}
                 </Link>
