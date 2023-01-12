@@ -13,9 +13,9 @@ import {
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useRouteMatch } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
+import { Link, useMatch, useNavigate } from "react-router-dom-v5-compat";
 
+import { toClient } from "../../clients/routes/Client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
@@ -53,11 +53,11 @@ export default function MappingDetails() {
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
   const isUpdating = !!mapperId.match(isGuid);
 
-  const isOnClientScope = !!useRouteMatch(MapperRoute.path);
+  const isOnClientScope = !!useMatch(MapperRoute.path);
   const toDetails = () =>
     isOnClientScope
       ? toClientScope({ realm, id, tab: "mappers" })
-      : `/${realm}/clients/${id}/mappers`;
+      : toClient({ realm, clientId: id, tab: "mappers" });
 
   useFetch(
     async () => {
