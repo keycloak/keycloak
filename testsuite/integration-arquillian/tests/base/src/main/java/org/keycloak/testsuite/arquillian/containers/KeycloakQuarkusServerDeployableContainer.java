@@ -294,6 +294,15 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         commands.add("--spi-truststore-file-file=" + configuration.getTruststoreFile());
         commands.add("--spi-truststore-file-password=" + configuration.getTruststorePassword());
         commands.add("--spi-truststore-file-type=" + configuration.getTruststoreType());
+
+        // BCFIPS approved mode requires passwords of at least 112 bits (14 characters) to be used. To bypass this, we use this by default
+        // as testsuite uses shorter passwords everywhere
+        if (FipsMode.strict == configuration.getFipsMode()) {
+            commands.add("--spi-password-hashing-pbkdf2-max-padding-length=14");
+            commands.add("--spi-password-hashing-pbkdf2-sha256-max-padding-length=14");
+            commands.add("--spi-password-hashing-pbkdf2-sha512-max-padding-length=14");
+        }
+
         commands.add("--log-level=INFO,org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE,org.keycloak.truststore:TRACE");
 
         configuration.appendJavaOpts("-Djava.security.properties=" + System.getProperty("auth.server.java.security.file"));

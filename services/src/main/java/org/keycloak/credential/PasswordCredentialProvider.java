@@ -64,9 +64,13 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         if (hash == null) {
             return false;
         }
-        PasswordCredentialModel credentialModel = hash.encodedCredential(password, policy.getHashIterations());
-        credentialModel.setCreatedDate(Time.currentTimeMillis());
-        createCredential(realm, user, credentialModel);
+        try {
+            PasswordCredentialModel credentialModel = hash.encodedCredential(password, policy.getHashIterations());
+            credentialModel.setCreatedDate(Time.currentTimeMillis());
+            createCredential(realm, user, credentialModel);
+        } catch (Throwable t) {
+            throw new ModelException(t.getMessage(), t);
+        }
         return true;
     }
 
@@ -174,27 +178,32 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
             logger.debugv("PasswordHashProvider {0} not found for user {1} ", password.getPasswordCredentialData().getAlgorithm(), user.getUsername());
             return false;
         }
-        if (!hash.verify(input.getChallengeResponse(), password)) {
-            logger.debugv("Failed password validation for user {0} ", user.getUsername());
+        try {
+            if (!hash.verify(input.getChallengeResponse(), password)) {
+                logger.debugv("Failed password validation for user {0} ", user.getUsername());
+                return false;
+            }
+            PasswordPolicy policy = realm.getPasswordPolicy();
+            if (policy == null) {
+                return true;
+            }
+            hash = getHashProvider(policy);
+            if (hash == null) {
+                return true;
+            }
+            if (hash.policyCheck(policy, password)) {
+                return true;
+            }
+
+            PasswordCredentialModel newPassword = hash.encodedCredential(input.getChallengeResponse(), policy.getHashIterations());
+            newPassword.setId(password.getId());
+            newPassword.setCreatedDate(password.getCreatedDate());
+            newPassword.setUserLabel(password.getUserLabel());
+            user.credentialManager().updateStoredCredential(newPassword);
+        } catch (Throwable t) {
+            logger.warn("Error when validating user password", t);
             return false;
         }
-        PasswordPolicy policy = realm.getPasswordPolicy();
-        if (policy == null) {
-            return true;
-        }
-        hash = getHashProvider(policy);
-        if (hash == null) {
-            return true;
-        }
-        if (hash.policyCheck(policy, password)) {
-            return true;
-        }
-
-        PasswordCredentialModel newPassword = hash.encodedCredential(input.getChallengeResponse(), policy.getHashIterations());
-        newPassword.setId(password.getId());
-        newPassword.setCreatedDate(password.getCreatedDate());
-        newPassword.setUserLabel(password.getUserLabel());
-        user.credentialManager().updateStoredCredential(newPassword);
 
         return true;
     }

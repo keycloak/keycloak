@@ -968,3 +968,16 @@ there should be messages similar to those:
  BCJSSE version 1.001202 - class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider,
 ]
 ```
+
+### BCFIPS approved mode
+
+For running testsuite with server using BCFIPS approved mode, those additional properties should be added when running tests:
+```
+-Dauth.server.fips.mode=strict \
+-Dauth.server.supported.keystore.types=BCFKS \
+-Dauth.server.keystore.type=bcfks
+```
+The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
+```
+KC(BCFIPS version 1.000203 Approved Mode) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
+```
