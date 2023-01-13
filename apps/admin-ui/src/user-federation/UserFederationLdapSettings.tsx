@@ -24,6 +24,7 @@ import {
   UserFederationLdapParams,
   UserFederationLdapTab,
 } from "./routes/UserFederationLdap";
+import { toUserFederationLdapMapper } from "./routes/UserFederationLdapMapper";
 import { ExtendedHeader } from "./shared/ExtendedHeader";
 import {
   LdapComponentRepresentation,
@@ -124,7 +125,20 @@ export default function UserFederationLdapSettings() {
             data-testid="ldap-mappers-tab"
             {...mappersTab}
           >
-            <LdapMapperList />
+            <LdapMapperList
+              toCreate={toUserFederationLdapMapper({
+                realm,
+                id: id!,
+                mapperId: "new",
+              })}
+              toDetail={(mapperId) =>
+                toUserFederationLdapMapper({
+                  realm,
+                  id: id!,
+                  mapperId,
+                })
+              }
+            />
           </Tab>
         </RoutableTabs>
       </PageSection>

@@ -33,6 +33,7 @@ import { useRealm } from "../../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../../util";
 import { useParams } from "../../../utils/useParams";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
+import { UserFederationLdapMapperParams } from "../../routes/UserFederationLdapMapper";
 
 export default function LdapMapperDetails() {
   const form = useForm<ComponentRepresentation>();
@@ -40,7 +41,7 @@ export default function LdapMapperDetails() {
   const [components, setComponents] = useState<ComponentTypeRepresentation[]>();
 
   const { adminClient } = useAdminClient();
-  const { id, mapperId } = useParams<{ id: string; mapperId: string }>();
+  const { id, mapperId } = useParams<UserFederationLdapMapperParams>();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const { t } = useTranslation("user-federation");

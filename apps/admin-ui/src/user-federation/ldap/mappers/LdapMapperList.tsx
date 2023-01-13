@@ -1,28 +1,31 @@
-import { useState } from "react";
-import { useRouteMatch } from "react-router-dom";
-import { useParams, Link, useNavigate } from "react-router-dom-v5-compat";
-import { useTranslation } from "react-i18next";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, To, useNavigate, useParams } from "react-router-dom-v5-compat";
 
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { KeycloakDataTable } from "../../../components/table-toolbar/KeycloakDataTable";
-import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
 import { useAlerts } from "../../../components/alert/Alerts";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
+import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../../../components/table-toolbar/KeycloakDataTable";
+import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
-export const LdapMapperList = () => {
+export type LdapMapperListProps = {
+  toCreate: To;
+  toDetail: (mapperId: string) => To;
+};
+
+export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation("user-federation");
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const { url } = useRouteMatch();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
@@ -74,15 +77,8 @@ export const LdapMapperList = () => {
     },
   });
 
-  const getUrl = (url: string) => {
-    if (!url.includes("/mappers")) {
-      return `${url}/mappers`;
-    }
-    return `${url}`;
-  };
-
   const MapperLink = (mapper: ComponentRepresentation) => (
-    <Link to={`${getUrl(url)}/${mapper.id}`}>{mapper.name}</Link>
+    <Link to={toDetail(mapper.id!)}>{mapper.name}</Link>
   );
 
   return (
@@ -98,7 +94,7 @@ export const LdapMapperList = () => {
             <Button
               data-testid="add-mapper-btn"
               variant="primary"
-              onClick={() => navigate(`${url}/new`)}
+              component={(props) => <Link {...props} to={toCreate} />}
             >
               {t("common:addMapper")}
             </Button>
@@ -127,7 +123,7 @@ export const LdapMapperList = () => {
             message={t("common:emptyMappers")}
             instructions={t("common:emptyMappersInstructions")}
             primaryActionText={t("common:emptyPrimaryAction")}
-            onPrimaryAction={() => navigate(`${url}/new`)}
+            onPrimaryAction={() => navigate(toCreate)}
           />
         }
       />
