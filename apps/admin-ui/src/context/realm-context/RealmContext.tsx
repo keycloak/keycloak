@@ -1,10 +1,8 @@
 import { FunctionComponent, useEffect, useMemo } from "react";
-import { useRouteMatch } from "react-router-dom";
+import { useMatch } from "react-router-dom-v5-compat";
+
 import { RecentUsed } from "../../components/realm-selector/recent-used";
-import {
-  DashboardParams,
-  DashboardRouteWithRealm,
-} from "../../dashboard/routes/Dashboard";
+import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";
 import environment from "../../environment";
 import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
@@ -22,9 +20,11 @@ export const RealmContext = createNamedContext<RealmContextType | undefined>(
 export const RealmContextProvider: FunctionComponent = ({ children }) => {
   const { adminClient } = useAdminClient();
   const recentUsed = useMemo(() => new RecentUsed(), []);
-  const routeMatch = useRouteMatch<DashboardParams>(
-    DashboardRouteWithRealm.path
-  );
+  const routeMatch = useMatch({
+    path: DashboardRouteWithRealm.path,
+    end: false,
+  });
+
   const realmParam = routeMatch?.params.realm;
   const realm = useMemo(
     () => realmParam ?? environment.loginRealm,
