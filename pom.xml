@@ -117,6 +117,8 @@
         <ua-parser.version>1.5.2</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>30.1-jre</google.guava.version>
+        <xstream.version>1.4.20</xstream.version>
+        <okhttp.version>4.10.0</okhttp.version>
 
         <!-- Openshift -->
         <version.com.openshift.openshift-restclient-java>9.0.5.Final</version.com.openshift.openshift-restclient-java>
@@ -145,7 +147,7 @@
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <postgresql.version>13.2</postgresql.version>
         <postgresql-jdbc.version>42.5.1</postgresql-jdbc.version>
-        <mariadb.version>10.3.27</mariadb.version>
+        <mariadb.version>10.6</mariadb.version>
         <mariadb-jdbc.version>2.7.2</mariadb-jdbc.version>
         <mssql.version>2019-latest</mssql.version>
         <mssql-jdbc.version>9.2.0.jre8</mssql-jdbc.version>
@@ -181,7 +183,7 @@
         <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
         <frontend.plugin.version>1.12.0</frontend.plugin.version>
-        <docker.maven.plugin.version>0.28.0</docker.maven.plugin.version>
+        <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
 
         <!-- Surefire Settings -->
@@ -286,12 +288,31 @@
     <dependencyManagement>
 
         <dependencies>
-
+            <dependency>
+                <groupId>com.thoughtworks.xstream</groupId>
+                <artifactId>xstream</artifactId>
+                <version>${xstream.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>1.33</version>
+            </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>logging-interceptor</artifactId>
+                <version>${okhttp.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>

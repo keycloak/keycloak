@@ -13,3 +13,10 @@ KcRegTest
 KcRegCreateTest
 KcAdmTest
 KcAdmCreateTest
+SAMLServletAdapterTest
+SamlSignatureTest
+KcSamlBrokerTest
+KcSamlFirstBrokerLoginTest
+KcSamlEncryptedIdTest
+KcSamlSignedBrokerTest
+KcSamlSpDescriptorTest

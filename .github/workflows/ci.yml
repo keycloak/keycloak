@@ -220,8 +220,8 @@ jobs:
     name: New Store IT
     needs: [build, databases-new-store]
     runs-on: ubuntu-latest
-    # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with ~45 minutes
-    timeout-minutes: 70
+    # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with 50-60 minutes
+    timeout-minutes: 90
     strategy:
       matrix:
         db: ${{ fromJson(needs.databases-new-store.outputs.db) }}
@@ -271,7 +271,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        db: [postgres, mysql, oracle, mssql] # 'mariadb' is not always shutting down
+        db: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
