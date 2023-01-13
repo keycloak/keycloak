@@ -5,3 +5,9 @@ In this release the implementation to provide this data switched from SmallRye t
 Due to this change, metrics have been renamed.
 
 See the migration guide for details.
+
+= Hashicop Vault no longer supported
+
+We removed the out-of-box support for Hashicorp vault in this release.
+
+See this https://github.com/keycloak/keycloak/discussions/16446[discussion] for more details.
