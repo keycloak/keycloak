@@ -176,6 +176,19 @@
             <artifactId>infinispan-server-hotrod</artifactId>
             <version>${infinispan.version}</version>
         </dependency>
+
+        <!-- Embedded Distribution -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-quarkus-integration-tests</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
     
     <build>
@@ -1054,6 +1067,51 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>auth-server-quarkus-embedded</id>
+            <properties>
+                <surefire.memory.Xms>1024m</surefire.memory.Xms>
+                <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
+                <surefire.memory.metaspace>512m</surefire.memory.metaspace>
+                <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-quarkus-integration-tests</artifactId>
+                    <version>${project.version}</version>
+                    <exclusions>
+
+                        <!-- TODO: FIPS not yet supported -->
+                        <exclusion>
+                            <groupId>org.keycloak</groupId>
+                            <artifactId>keycloak-crypto-fips1402</artifactId>
+                        </exclusion>
+
+                        <!-- Remove Junit5 deps-->
+                        <exclusion>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>io.quarkus</groupId>
+                            <artifactId>quarkus-junit5-internal</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.logmanager</groupId>
+                    <artifactId>log4j-jboss-logmanager</artifactId>
+                    <version>1.3.0.Final</version>
+                </dependency>
+                <dependency>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                    <version>1.12.18</version>
+                </dependency>
+            </dependencies>
         </profile>
 
     </profiles>

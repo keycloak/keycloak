@@ -38,7 +38,7 @@ public enum StoreProvider {
         public void addStoreOptions(List<String> commands) {
             commands.add("--storage=" + getAlias());
             getDbVendor().ifPresent(vendor -> commands.add("--db=" + vendor));
-            commands.add("--db-url='" + System.getProperty("keycloak.map.storage.connectionsJpa.url") + "'");
+            commands.add("--db-url=" + System.getProperty("keycloak.map.storage.connectionsJpa.url"));
             commands.add("--db-username=" + System.getProperty("keycloak.map.storage.connectionsJpa.user"));
             commands.add("--db-password=" + System.getProperty("keycloak.map.storage.connectionsJpa.password"));
         }
