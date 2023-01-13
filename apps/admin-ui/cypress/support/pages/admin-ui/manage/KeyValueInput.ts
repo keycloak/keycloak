@@ -8,8 +8,10 @@ export default class KeyValueInput {
   }
 
   fillKeyValue({ key, value }: KeyValueType, index = 0) {
-    cy.findByTestId(`${this.name}[${index}].key`).clear().type(key);
-    cy.findByTestId(`${this.name}[${index}].value`).clear().type(value);
+    cy.findByTestId(`${this.name}[${index}].key`).clear();
+    cy.findByTestId(`${this.name}[${index}].key`).type(key);
+    cy.findByTestId(`${this.name}[${index}].value`).clear();
+    cy.findByTestId(`${this.name}[${index}].value`).type(value);
     cy.findByTestId(`${this.name}-add-row`).click();
     return this;
   }
