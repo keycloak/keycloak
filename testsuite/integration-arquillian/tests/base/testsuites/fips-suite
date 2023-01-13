@@ -20,3 +20,4 @@ KcSamlFirstBrokerLoginTest
 KcSamlEncryptedIdTest
 KcSamlSignedBrokerTest
 KcSamlSpDescriptorTest
+KerberosLdapTest

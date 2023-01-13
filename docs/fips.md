@@ -97,6 +97,24 @@ When starting server at startup, you can check that startup log contains `KC` pr
 KC(BCFIPS version 1.000203 Approved Mode) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
 ```
 
+Other considerations
+--------------------
+#### SAML and Kerberos
+In order to have SAML working, there is a need to have `XMLDSig` security provider to be available in your `JAVA_HOME/conf/security/java.security`.
+In order to have Kerberos working, there is a need to have `SunJGSS` security provider available. In FIPS enabled RHEL 8.6 in OpenJDK 17.0.5, these
+security providers are not by default in the `java.security`, which means that they effectively cannot work.
+
+To have SAML working, you can manually add the provider into `java.security` into the list fips providers. For example add the line like:
+```
+fips.provider.7=XMLDSig
+```
+Adding this security provider should be fine as in fact it is FIPS compliant and likely will be added by default in the future OpenJDK micro version.
+Details: https://bugzilla.redhat.com/show_bug.cgi?id=1940064
+
+For Kerberos, there are few more things to be done to have security provider FIPS compliant. Hence it is not recommended to add security provider
+if you want to be FIPS compliant. The `KERBEROS` feature is disabled by default in Keycloak when it is executed on this platform and when security provider is not
+available. Details: https://bugzilla.redhat.com/show_bug.cgi?id=2051628
+
 Run the CLI on the FIPS host
 ----------------------------
 In case you want to run Client Registration CLI (`kcreg.sh/bat` script) or Admin CLI (`kcadm.sh/bat` script), it is needed
