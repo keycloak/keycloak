@@ -39,8 +39,13 @@ type ScopesProps = {
   clientId: string;
 };
 
-export type ExpandableScopeRepresentation = ScopeRepresentation & {
+export type PermissionScopeRepresentation = ScopeRepresentation & {
   permissions?: PolicyRepresentation[];
+  isLoaded: boolean;
+};
+
+type ExpandableRow = {
+  id: string;
   isExpanded: boolean;
 };
 
@@ -51,9 +56,10 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
   const { realm } = useRealm();
 
   const [deleteDialog, toggleDeleteDialog] = useToggle();
-  const [scopes, setScopes] = useState<ExpandableScopeRepresentation[]>();
+  const [scopes, setScopes] = useState<PermissionScopeRepresentation[]>();
   const [selectedScope, setSelectedScope] =
-    useState<ExpandableScopeRepresentation>();
+    useState<PermissionScopeRepresentation>();
+  const [collapsed, setCollapsed] = useState<ExpandableRow[]>([]);
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -78,39 +84,68 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       return await Promise.all(
         scopes.map(async (scope) => {
           const options = { id: clientId, scopeId: scope.id! };
-          const [resources, permissions] = await Promise.all([
-            adminClient.clients.listAllResourcesByScope(options),
-            adminClient.clients.listAllPermissionsByScope(options),
-          ]);
+          const permissions =
+            await adminClient.clients.listAllPermissionsByScope(options);
 
           return {
             ...scope,
-            resources,
             permissions,
-            isExpanded: false,
+            isLoaded: false,
           };
         })
       );
     },
-    setScopes,
+    (scopes) => {
+      setScopes(scopes);
+      setCollapsed(scopes.map((s) => ({ id: s.id!, isExpanded: false })));
+    },
     [key, search, first, max]
   );
 
-  const ResourceRenderer = ({
-    row,
-  }: {
-    row: ExpandableScopeRepresentation;
-  }) => (
-    <>
-      {row.resources?.[0]?.name ? row.resources[0]?.name : "—"}{" "}
-      <MoreLabel array={row.resources} />
-    </>
+  const getScope = (id: string) => scopes?.find((scope) => scope.id === id)!;
+  const isExpanded = (id: string | undefined) =>
+    collapsed.find((c) => c.id === id)?.isExpanded || false;
+
+  useFetch(
+    async () => {
+      const newlyOpened = collapsed
+        .filter((row) => row.isExpanded)
+        .map(({ id }) => getScope(id))
+        .filter((s) => !s.isLoaded);
+
+      return await Promise.all(
+        newlyOpened.map(async (scope) => ({
+          ...scope,
+          resources: await adminClient.clients.listAllResourcesByScope({
+            id: clientId,
+            scopeId: scope.id!,
+          }),
+          isLoaded: true,
+        }))
+      );
+    },
+    (resourcesScopes) => {
+      let result = [...(scopes || [])];
+      resourcesScopes.forEach((resourceScope) => {
+        const index = scopes?.findIndex(
+          (scope) => resourceScope.id === scope.id
+        )!;
+        result = [
+          ...result.slice(0, index),
+          resourceScope,
+          ...result.slice(index + 1),
+        ];
+      });
+
+      setScopes(result);
+    },
+    [collapsed]
   );
 
   const PermissionsRenderer = ({
     row,
   }: {
-    row: ExpandableScopeRepresentation;
+    row: PermissionScopeRepresentation;
   }) => (
     <>
       {row.permissions?.[0]?.name ? row.permissions[0]?.name : "—"}{" "}
@@ -166,29 +201,24 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                 <Tr>
                   <Th />
                   <Th>{t("common:name")}</Th>
-                  <Th>{t("resources")}</Th>
                   <Th>{t("common:permissions")}</Th>
                   <Th />
                   <Th />
                 </Tr>
               </Thead>
               {scopes.map((scope, rowIndex) => (
-                <Tbody key={scope.id} isExpanded={scope.isExpanded}>
+                <Tbody key={scope.id} isExpanded={isExpanded(scope.id)}>
                   <Tr>
                     <Td
                       expand={{
                         rowIndex,
-                        isExpanded: scope.isExpanded,
-                        onToggle: (_, rowIndex) => {
-                          const rows = scopes.map((resource, index) =>
-                            index === rowIndex
-                              ? {
-                                  ...resource,
-                                  isExpanded: !resource.isExpanded,
-                                }
-                              : resource
-                          );
-                          setScopes(rows);
+                        isExpanded: isExpanded(scope.id),
+                        onToggle: (_event, index, isExpanded) => {
+                          setCollapsed([
+                            ...collapsed.slice(0, index),
+                            { id: scope.id!, isExpanded },
+                            ...collapsed.slice(index + 1),
+                          ]);
                         },
                       }}
                     />
@@ -202,9 +232,6 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                       >
                         {scope.name}
                       </Link>
-                    </Td>
-                    <Td>
-                      <ResourceRenderer row={scope} />
                     </Td>
                     <Td>
                       <PermissionsRenderer row={scope} />
@@ -242,11 +269,14 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                       }}
                     />
                   </Tr>
-                  <Tr key={`child-${scope.id}`} isExpanded={scope.isExpanded}>
+                  <Tr
+                    key={`child-${scope.id}`}
+                    isExpanded={isExpanded(scope.id)}
+                  >
                     <Td />
                     <Td colSpan={4}>
                       <ExpandableRowContent>
-                        {scope.isExpanded && (
+                        {isExpanded(scope.id) && (
                           <DescriptionList
                             isHorizontal
                             className="keycloak_resource_details"

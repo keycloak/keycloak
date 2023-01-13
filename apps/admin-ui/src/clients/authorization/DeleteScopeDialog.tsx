@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Alert, AlertVariant } from "@patternfly/react-core";
 
-import type { ExpandableScopeRepresentation } from "./Scopes";
+import type { PermissionScopeRepresentation } from "./Scopes";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
@@ -10,7 +10,7 @@ import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/s
 type DeleteScopeDialogProps = {
   clientId: string;
   selectedScope:
-    | ExpandableScopeRepresentation
+    | PermissionScopeRepresentation
     | ScopeRepresentation
     | undefined;
   refresh: () => void;
