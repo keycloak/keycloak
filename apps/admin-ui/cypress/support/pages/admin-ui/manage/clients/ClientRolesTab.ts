@@ -11,7 +11,7 @@ export default class ClientRolesTab extends CommonPage {
   private createRoleEmptyStateBtn = "no-roles-for-this-client-empty-action";
   private hideInheritedRolesChkBox = "#hideInheritedRoles";
   private rolesTab = "rolesTab";
-  private associatedRolesTab = ".kc-associated-roles-tab > button";
+  private associatedRolesTab = "associatedRolesTab";
 
   goToDetailsTab() {
     this.tabUtils().clickTab(ClientRolesTabItems.Details);
@@ -34,7 +34,7 @@ export default class ClientRolesTab extends CommonPage {
   }
 
   goToAssociatedRolesTab() {
-    cy.get(this.associatedRolesTab).click();
+    cy.findByTestId(this.associatedRolesTab).click();
     return this;
   }
 

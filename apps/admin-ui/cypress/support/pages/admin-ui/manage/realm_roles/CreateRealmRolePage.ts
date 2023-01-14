@@ -63,7 +63,7 @@ class CreateRealmRolePage {
   }
 
   goToAttributesTab() {
-    cy.get(".kc-attributes-tab > button").click();
+    cy.findByTestId("attributesTab").click();
     return this;
   }
 }

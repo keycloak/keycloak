@@ -19,6 +19,7 @@ import { toClient } from "../clients/routes/Client";
 import {
   ClientRoleParams,
   ClientRoleRoute,
+  ClientRoleTab,
   toClientRole,
 } from "../clients/routes/ClientRole";
 import { useAlerts } from "../components/alert/Alerts";
@@ -32,17 +33,20 @@ import {
   keyValueToArray,
 } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { RoleForm } from "../components/role-form/RoleForm";
 import { AddRoleMappingModal } from "../components/role-mapping/AddRoleMappingModal";
 import { RoleMapping } from "../components/role-mapping/RoleMapping";
+import {
+  RoutableTabs,
+  useRoutableTab,
+} from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useParams } from "../utils/useParams";
-import { RealmRoleRoute, toRealmRole } from "./routes/RealmRole";
+import { RealmRoleRoute, RealmRoleTab, toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
 import { UsersInRoleTab } from "./UsersInRoleTab";
 
@@ -57,7 +61,7 @@ export default function RealmRoleTabs() {
   const { adminClient } = useAdminClient();
   const [role, setRole] = useState<AttributeForm>();
 
-  const { id, clientId } = useParams<{ id: string; clientId: string }>();
+  const { id, clientId } = useParams<ClientRoleParams>();
   const { pathname } = useLocation();
 
   const { realm: realmName } = useRealm();
@@ -292,6 +296,27 @@ export default function RealmRoleTabs() {
     navigate(to);
   };
 
+  const toTab = (tab: RealmRoleTab | ClientRoleTab) =>
+    clientRoleRouteMatch
+      ? toClientRole({
+          ...clientRoleRouteMatch.params,
+          tab: tab as ClientRoleTab,
+        })
+      : toRealmRole({
+          realm: realmName,
+          id,
+          tab,
+        });
+
+  const useTab = (tab: RealmRoleTab | ClientRoleTab) =>
+    useRoutableTab(toTab(tab));
+
+  const detailsTab = useTab("details");
+  const associatedRolesTab = useTab("associated-roles");
+  const attributesTab = useTab("attributes");
+  const usersInRoleTab = useTab("users-in-role");
+  const permissionsTab = useTab("permissions");
+
   const addComposites = async (composites: RoleRepresentation[]) => {
     try {
       await adminClient.roles.createComposite(
@@ -339,10 +364,10 @@ export default function RealmRoleTabs() {
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">
-        <KeycloakTabs isBox mountOnEnter>
+        <RoutableTabs isBox mountOnEnter defaultLocation={toTab("details")}>
           <Tab
-            eventKey="details"
             title={<TabTitleText>{t("common:details")}</TabTitleText>}
+            {...detailsTab}
           >
             <RoleForm
               form={form}
@@ -358,9 +383,9 @@ export default function RealmRoleTabs() {
           </Tab>
           {role.composite && (
             <Tab
-              eventKey="associated-roles"
-              className="kc-associated-roles-tab"
+              data-testid="associatedRolesTab"
               title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
+              {...associatedRolesTab}
             >
               <RoleMapping
                 name={role.name!}
@@ -373,9 +398,10 @@ export default function RealmRoleTabs() {
           )}
           {!isDefaultRole(role.name!) && (
             <Tab
-              eventKey="attributes"
+              data-testid="attributesTab"
               className="kc-attributes-tab"
               title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
+              {...attributesTab}
             >
               <AttributesForm
                 form={form}
@@ -386,8 +412,8 @@ export default function RealmRoleTabs() {
           )}
           {!isDefaultRole(role.name!) && (
             <Tab
-              eventKey="users-in-role"
               title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
+              {...usersInRoleTab}
             >
               <UsersInRoleTab data-cy="users-in-role-tab" />
             </Tab>
@@ -396,13 +422,13 @@ export default function RealmRoleTabs() {
             "ADMIN_FINE_GRAINED_AUTHZ"
           ) && (
             <Tab
-              eventKey="permissions"
               title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+              {...permissionsTab}
             >
               <PermissionsTab id={role.id} type="roles" />
             </Tab>
           )}
-        </KeycloakTabs>
+        </RoutableTabs>
       </PageSection>
     </>
   );

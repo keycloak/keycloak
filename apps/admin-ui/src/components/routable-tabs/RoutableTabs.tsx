@@ -4,7 +4,6 @@ import {
   TabsComponent,
   TabsProps,
 } from "@patternfly/react-core";
-import type { History } from "history";
 import {
   Children,
   isValidElement,
@@ -65,16 +64,6 @@ export const RoutableTabs = ({
     </Tabs>
   );
 };
-
-type RoutableTabParams = {
-  to: Partial<Path>;
-  history: History<unknown>;
-};
-
-export const routableTab = ({ to, history }: RoutableTabParams) => ({
-  eventKey: to.pathname ?? "",
-  href: history.createHref(to),
-});
 
 export const useRoutableTab = (to: Partial<Path>) => ({
   eventKey: to.pathname ?? "",

@@ -194,8 +194,6 @@
   "emptyMappers": "No mappers",
   "emptyMappersInstructions": "If you want to add mappers, please click the button below to add some predefined mappers or to configure a new mapper.",
   "emptyPrimaryAction": "Add predefined mapper",
-  "leaveDirtyTitle": "Leave without saving?",
-  "leaveDirtyConfirm": "Do you want to leave this page without saving? Any unsaved changes will be lost.",
   "leave": "Leave",
   "reorder": "Reorder",
   "onDragStart": "Dragging started for item {{item}}",
