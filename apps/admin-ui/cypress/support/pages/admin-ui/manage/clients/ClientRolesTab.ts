@@ -19,9 +19,7 @@ export default class ClientRolesTab extends CommonPage {
   }
 
   goToAttributesTab() {
-    cy.intercept("/admin/realms/master/roles-by-id/*").as("load");
     this.tabUtils().clickTab(ClientRolesTabItems.Attributes);
-    cy.wait("@load");
     return this;
   }
 
@@ -36,9 +34,7 @@ export default class ClientRolesTab extends CommonPage {
   }
 
   goToAssociatedRolesTab() {
-    cy.intercept("/admin/realms/master/roles-by-id/*").as("load");
     cy.get(this.associatedRolesTab).click();
-    cy.wait("@load");
     return this;
   }
 

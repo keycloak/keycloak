@@ -100,14 +100,11 @@ export default function RealmRoleTabs() {
 
       const convertedRole = convert(role);
 
+      reset(convertedRole);
       setRealm(realm);
       setRole(convertedRole);
-
-      Object.entries(convertedRole).map((entry) => {
-        setValue(entry[0], entry[1]);
-      });
     },
-    [key, url]
+    [key]
   );
 
   const onSubmit: SubmitHandler<AttributeForm> = async (formValues) => {

@@ -535,9 +535,7 @@ describe("Clients test", () => {
     });
 
     it("Should add attribute to client role", () => {
-      cy.intercept("/admin/realms/master/roles-by-id/*").as("load");
       commonPage.tableUtils().clickRowItemLink(itemId);
-      cy.wait("@load");
       rolesTab.goToAttributesTab();
       attributesTab
         .addAttribute("crud_attribute_key", "crud_attribute_value")
@@ -549,9 +547,7 @@ describe("Clients test", () => {
     });
 
     it("Should delete attribute from client role", () => {
-      cy.intercept("/admin/realms/master/roles-by-id/*").as("load");
       commonPage.tableUtils().clickRowItemLink(itemId);
-      cy.wait("@load");
       rolesTab.goToAttributesTab();
       attributesTab.deleteAttribute(1);
       commonPage
