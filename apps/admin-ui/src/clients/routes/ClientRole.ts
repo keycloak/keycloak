@@ -17,11 +17,11 @@ export type ClientRoleParams = {
 };
 
 export const ClientRoleRoute: RouteDef = {
-  path: "/:realm/clients/:clientId/roles/:id/:tab",
+  path: "/:realm/clients/:clientId/roles/:id/:tab" as const,
   component: lazy(() => import("../../realm-roles/RealmRoleTabs")),
   breadcrumb: (t) => t("roles:roleDetails"),
   access: "view-realm",
-};
+} satisfies RouteDef;
 
 export const toClientRole = (params: ClientRoleParams): Partial<Path> => ({
   pathname: generatePath(ClientRoleRoute.path, params),

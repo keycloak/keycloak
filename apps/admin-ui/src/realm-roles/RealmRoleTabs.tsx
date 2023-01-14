@@ -13,7 +13,7 @@ import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useRouteMatch } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useLocation, useMatch, useNavigate } from "react-router-dom-v5-compat";
 
 import { toClient } from "../clients/routes/Client";
 import {
@@ -42,7 +42,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useParams } from "../utils/useParams";
-import { toRealmRole } from "./routes/RealmRole";
+import { RealmRoleRoute, toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
 import { UsersInRoleTab } from "./UsersInRoleTab";
 
@@ -58,8 +58,7 @@ export default function RealmRoleTabs() {
   const [role, setRole] = useState<AttributeForm>();
 
   const { id, clientId } = useParams<{ id: string; clientId: string }>();
-
-  const { url } = useRouteMatch();
+  const { pathname } = useLocation();
 
   const { realm: realmName } = useRealm();
 
@@ -147,6 +146,25 @@ export default function RealmRoleTabs() {
     }
   };
 
+  const realmRoleMatch = useMatch(RealmRoleRoute.path);
+  const clientRoleMatch = useMatch(ClientRoleRoute.path);
+
+  const toOverview = () => {
+    if (realmRoleMatch) {
+      return toRealmRoles({ realm: realmName });
+    }
+
+    if (clientRoleMatch) {
+      return toClient({
+        realm: realmName,
+        clientId: clientRoleMatch.params.clientId!,
+        tab: "roles",
+      });
+    }
+
+    throw new Error("Roles overview route could not be determined.");
+  };
+
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleDeleteConfirm",
     messageKey: t("roles:roleDeleteConfirmDialog", {
@@ -165,14 +183,14 @@ export default function RealmRoleTabs() {
           });
         }
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
-        navigate(url.substr(0, url.indexOf("/roles") + "/roles".length));
+        navigate(toOverview());
       } catch (error) {
         addError("roles:roleDeleteError", error);
       }
     },
   });
 
-  const dropdownItems = url.includes("associated-roles")
+  const dropdownItems = pathname.includes("associated-roles")
     ? [
         <DropdownItem
           key="delete-all-associated"
