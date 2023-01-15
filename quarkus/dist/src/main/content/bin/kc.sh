@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 case "$(uname)" in
     CYGWIN*)
@@ -11,6 +11,10 @@ case "$(uname)" in
         ;;
     FreeBSD)
         RESOLVED_NAME="$(readlink -f "$0")"
+        ;;
+    OpenBSD)
+        RESOLVED_NAME="$(readlink -f "$0")"
+        JAVA_HOME="$(/usr/local/bin/javaPathHelper -h keycloak)"
         ;;
     Linux)
         RESOLVED_NAME="$(readlink -f "$0")"
