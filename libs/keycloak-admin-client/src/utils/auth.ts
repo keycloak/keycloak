@@ -14,6 +14,7 @@ export interface Credentials {
   totp?: string;
   offlineToken?: boolean;
   refreshToken?: string;
+  scopes?: string[];
 }
 
 export interface Settings {
@@ -32,6 +33,7 @@ export interface TokenResponseRaw {
   not_before_policy: number;
   session_state: string;
   scope: string;
+  id_token?: string;
 }
 
 export interface TokenResponse {
@@ -43,6 +45,7 @@ export interface TokenResponse {
   notBeforePolicy: number;
   sessionState: string;
   scope: string;
+  idToken?: string;
 }
 
 export const getToken = async (settings: Settings): Promise<TokenResponse> => {
@@ -61,6 +64,7 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
     client_id: credentials.clientId,
     totp: credentials.totp,
     ...(credentials.offlineToken ? { scope: "offline_access" } : {}),
+    ...(credentials.scopes ? { scope: credentials.scopes.join(" ") } : {}),
     ...(credentials.refreshToken
       ? {
           refresh_token: credentials.refreshToken,
