@@ -37,7 +37,11 @@ export const PaginatingTableToolbar: FunctionComponent<TableToolbarProps> = ({
   inputGroupOnEnter,
 }) => {
   const page = Math.round(first / max);
-  const pagination = (variant: "top" | "bottom" = "top") => (
+  const KeycloakPagination = ({
+    variant = "top",
+  }: {
+    variant?: "top" | "bottom";
+  }) => (
     <Pagination
       isCompact
       toggleTemplate={({ firstIndex, lastIndex }: ToggleTemplateProps) => (
@@ -61,14 +65,18 @@ export const PaginatingTableToolbar: FunctionComponent<TableToolbarProps> = ({
       toolbarItem={
         <>
           {toolbarItem}
-          {count !== 0 && (
-            <ToolbarItem variant="pagination">{pagination()}</ToolbarItem>
-          )}
+          <ToolbarItem variant="pagination">
+            <KeycloakPagination />
+          </ToolbarItem>
         </>
       }
       subToolbar={subToolbar}
       toolbarItemFooter={
-        count !== 0 ? <ToolbarItem>{pagination("bottom")}</ToolbarItem> : null
+        count !== 0 ? (
+          <ToolbarItem>
+            <KeycloakPagination variant="bottom" />
+          </ToolbarItem>
+        ) : null
       }
       inputGroupName={inputGroupName}
       inputGroupPlaceholder={inputGroupPlaceholder}

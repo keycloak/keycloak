@@ -99,17 +99,17 @@ describe("Client Scopes test", () => {
         .itemExist(FilterAssignedType.None, false);
     });
 
-    //TODO https://github.com/keycloak/keycloak-admin-ui/issues/1959
     it("should filter items by Protocol All", () => {
       listingPage
         .selectFilter(Filter.Protocol)
-        .selectSecondaryFilterProtocol(FilterProtocol.All)
+        .selectSecondaryFilterProtocol(FilterProtocol.All);
+      sidebarPage.waitForPageLoad();
+      listingPage
         .showNextPageTableItems()
         .itemExist(FilterProtocol.SAML, true)
         .itemExist(openIDConnectItemText, true); //using FilterProtocol.OpenID will fail, text does not match.
     });
 
-    //TODO https://github.com/keycloak/keycloak-admin-ui/issues/1959
     it("should filter items by Protocol SAML", () => {
       listingPage
         .selectFilter(Filter.Protocol)
@@ -118,7 +118,6 @@ describe("Client Scopes test", () => {
         .itemExist(openIDConnectItemText, false); //using FilterProtocol.OpenID will fail, text does not match.
     });
 
-    //TODO https://github.com/keycloak/keycloak-admin-ui/issues/1959
     it("should filter items by Protocol OpenID", () => {
       listingPage
         .selectFilter(Filter.Protocol)
