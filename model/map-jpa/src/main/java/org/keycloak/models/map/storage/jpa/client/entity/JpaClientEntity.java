@@ -36,9 +36,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
-import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.DeepCloner;
@@ -46,6 +44,7 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
 
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
  * There are some fields marked by {@code @Column(insertable = false, updatable = false)}.
@@ -70,7 +69,7 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootVers
     @Column
     private int version;
 
-    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaClientMetadata metadata;
 

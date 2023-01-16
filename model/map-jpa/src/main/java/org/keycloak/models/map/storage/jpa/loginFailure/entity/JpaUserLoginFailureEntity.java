@@ -36,6 +36,7 @@ import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE;
 
 /**
@@ -62,7 +63,7 @@ public class JpaUserLoginFailureEntity extends MapUserLoginFailureEntity.Abstrac
     @Column
     private int version;
 
-    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaUserLoginFailureMetadata metadata;
 

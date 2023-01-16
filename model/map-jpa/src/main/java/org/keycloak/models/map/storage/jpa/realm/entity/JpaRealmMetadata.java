@@ -46,5 +46,4 @@ public class JpaRealmMetadata extends MapRealmEntityImpl implements Serializable
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
 }
