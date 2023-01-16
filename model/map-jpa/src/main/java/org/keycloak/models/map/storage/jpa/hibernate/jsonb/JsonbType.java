@@ -40,7 +40,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import org.hibernate.HibernateException;
-import org.hibernate.type.AbstractSingleColumnStandardBasicType;
 import org.hibernate.type.descriptor.ValueBinder;
 import org.hibernate.type.descriptor.ValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
@@ -81,8 +80,10 @@ import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntityImpl;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
 import org.keycloak.util.EnumWithStableIndex;
+import java.util.function.BiConsumer;
+import org.hibernate.usertype.BaseUserTypeSupport;
 
-public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType {
+public class JsonbType extends BaseUserTypeSupport<Object> implements DynamicParameterizedType {
 
     public static final JsonbType INSTANCE = new JsonbType();
     public static final ObjectMapper MAPPER = new ObjectMapper()
@@ -112,7 +113,6 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             .addMixIn(EntityWithAttributes.class, IgnoredMetadataFieldsMixIn.class)
             .addMixIn(EnumWithStableIndex.class, EnumsMixIn.class)
             ;
-
     abstract class IgnoredMetadataFieldsMixIn {
         @JsonIgnore public abstract String getId();
         @JsonIgnore public abstract Map<String, List<String>> getAttributes();
@@ -128,18 +128,17 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
         @JsonValue public abstract int getStableIndex();
     }
 
-    public JsonbType() {
-        super(JsonbSqlTypeDescriptor.INSTANCE, new JsonbJavaTypeDescriptor());
-    }
+    private Class valueType;
+
+	@Override
+    @SuppressWarnings("unchecked")
+	protected void resolve(BiConsumer resolutionConsumer) {
+		resolutionConsumer.accept(new JsonbJavaTypeDescriptor(), JsonbSqlTypeDescriptor.INSTANCE);
+	}
 
     @Override
     public void setParameterValues(Properties parameters) {
-        ((JsonbJavaTypeDescriptor) getJavaTypeDescriptor()).setParameterValues(parameters);
-    }
-
-    @Override
-    public String getName() {
-        return "jsonb";
+        this.valueType = ((ParameterType) parameters.get(PARAMETER_TYPE)).getReturnedClass();
     }
 
     private static class JsonbSqlTypeDescriptor implements JdbcType {
@@ -199,14 +198,7 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
         }
     }
 
-    private static class JsonbJavaTypeDescriptor extends AbstractJavaType<Object> implements DynamicParameterizedType {
-
-        private Class valueType;
-
-        @Override
-        public void setParameterValues(Properties parameters) {
-            valueType = ((ParameterType) parameters.get(PARAMETER_TYPE)).getReturnedClass();
-        }
+    private class JsonbJavaTypeDescriptor extends AbstractJavaType<Object>  {
 
         public JsonbJavaTypeDescriptor() {
             super(Object.class, new MutableMutabilityPlan<Object>() {
@@ -227,20 +219,15 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             try {
                 ObjectNode tree = MAPPER.readValue(json.toString(), ObjectNode.class);
                 JsonNode ev = tree.get("entityVersion");
-                JsonNode mc = tree.get("metadataClass");
                 if (ev == null || ! ev.isInt()) throw new IllegalArgumentException("unable to read entity version from " + json);
 
                 Integer entityVersion = ev.asInt();
 
                 tree = migrate(tree, entityVersion);
 
-                String metadataClass = mc.asText();
-                valueType = Class.forName(metadataClass);
                 return MAPPER.treeToValue(tree, valueType);
             } catch (IOException e) {
                 throw new HibernateException("unable to read", e);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
             }
         }
 
