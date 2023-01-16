@@ -46,6 +46,4 @@ public class JpaUserLoginFailureMetadata extends MapUserLoginFailureEntityImpl i
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }

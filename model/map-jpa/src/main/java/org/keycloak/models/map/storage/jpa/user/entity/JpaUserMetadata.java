@@ -55,6 +55,4 @@ public class JpaUserMetadata extends MapUserEntityImpl implements Serializable {
         return this.usernameWithCase;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }
