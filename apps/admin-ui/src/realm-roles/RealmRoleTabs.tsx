@@ -12,7 +12,6 @@ import { omit } from "lodash-es";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useRouteMatch } from "react-router-dom";
 import { useLocation, useMatch, useNavigate } from "react-router-dom-v5-compat";
 
 import { toClient } from "../clients/routes/Client";
@@ -169,6 +168,36 @@ export default function RealmRoleTabs() {
     throw new Error("Roles overview route could not be determined.");
   };
 
+  const toTab = (tab: RealmRoleTab | ClientRoleTab) => {
+    if (realmRoleMatch) {
+      return toRealmRole({
+        realm: realmName,
+        id,
+        tab,
+      });
+    }
+
+    if (clientRoleMatch) {
+      return toClientRole({
+        realm: realmName,
+        id,
+        clientId: clientRoleMatch.params.clientId!,
+        tab: tab as ClientRoleTab,
+      });
+    }
+
+    throw new Error("Route could not be determined.");
+  };
+
+  const useTab = (tab: RealmRoleTab | ClientRoleTab) =>
+    useRoutableTab(toTab(tab));
+
+  const detailsTab = useTab("details");
+  const associatedRolesTab = useTab("associated-roles");
+  const attributesTab = useTab("attributes");
+  const usersInRoleTab = useTab("users-in-role");
+  const permissionsTab = useTab("permissions");
+
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleDeleteConfirm",
     messageKey: t("roles:roleDeleteConfirmDialog", {
@@ -252,7 +281,7 @@ export default function RealmRoleTabs() {
           AlertVariant.success,
           t("compositesRemovedAlertDescription")
         );
-        toDetail();
+        navigate(toTab("details"));
         refresh();
       } catch (error) {
         addError("roles:roleDeleteError", error);
@@ -264,59 +293,6 @@ export default function RealmRoleTabs() {
     setOpen(!open);
   };
 
-  const clientRoleRouteMatch = useRouteMatch<ClientRoleParams>(
-    ClientRoleRoute.path
-  );
-
-  const toDetail = () => {
-    const to = clientRoleRouteMatch
-      ? toClientRole({
-          ...clientRoleRouteMatch.params,
-          tab: "details",
-        })
-      : toRealmRole({
-          realm: realm?.realm!,
-          id,
-          tab: "details",
-        });
-    navigate(to);
-  };
-
-  const toAssociatedRoles = () => {
-    const to = clientRoleRouteMatch
-      ? toClientRole({
-          ...clientRoleRouteMatch.params,
-          tab: "associated-roles",
-        })
-      : toRealmRole({
-          realm: realm?.realm!,
-          id,
-          tab: "associated-roles",
-        });
-    navigate(to);
-  };
-
-  const toTab = (tab: RealmRoleTab | ClientRoleTab) =>
-    clientRoleRouteMatch
-      ? toClientRole({
-          ...clientRoleRouteMatch.params,
-          tab: tab as ClientRoleTab,
-        })
-      : toRealmRole({
-          realm: realmName,
-          id,
-          tab,
-        });
-
-  const useTab = (tab: RealmRoleTab | ClientRoleTab) =>
-    useRoutableTab(toTab(tab));
-
-  const detailsTab = useTab("details");
-  const associatedRolesTab = useTab("associated-roles");
-  const attributesTab = useTab("attributes");
-  const usersInRoleTab = useTab("users-in-role");
-  const permissionsTab = useTab("permissions");
-
   const addComposites = async (composites: RoleRepresentation[]) => {
     try {
       await adminClient.roles.createComposite(
@@ -324,7 +300,7 @@ export default function RealmRoleTabs() {
         composites
       );
       refresh();
-      toAssociatedRoles();
+      navigate(toTab("associated-roles"));
       addAlert(t("addAssociatedRolesSuccess"), AlertVariant.success);
     } catch (error) {
       addError("roles:addAssociatedRolesError", error);
@@ -372,9 +348,9 @@ export default function RealmRoleTabs() {
             <RoleForm
               form={form}
               onSubmit={onSubmit}
-              role={clientRoleRouteMatch ? "manage-clients" : "manage-realm"}
+              role={clientRoleMatch ? "manage-clients" : "manage-realm"}
               cancelLink={
-                clientRoleRouteMatch
+                clientRoleMatch
                   ? toClient({ realm: realmName, clientId, tab: "roles" })
                   : toRealmRoles({ realm: realmName })
               }
