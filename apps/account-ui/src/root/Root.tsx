@@ -7,6 +7,7 @@ import {
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
+import { AlertProvider } from "../components/alerts/Alerts";
 
 import { environment } from "../environment";
 import { keycloak } from "../keycloak";
@@ -48,9 +49,11 @@ export const Root = () => {
       sidebar={<PageNav />}
       isManagedSidebar
     >
-      <Suspense fallback={<Spinner />}>
-        <Outlet />
-      </Suspense>
+      <AlertProvider>
+        <Suspense fallback={<Spinner />}>
+          <Outlet />
+        </Suspense>
+      </AlertProvider>
     </Page>
   );
 };

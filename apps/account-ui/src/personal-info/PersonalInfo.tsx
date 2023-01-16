@@ -2,10 +2,10 @@ import { Form } from "@patternfly/react-core";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { fetchPersonalInfo } from "../api";
+import { getPersonalInfo } from "../api/methods";
+import { UserRepresentation } from "../api/representations";
 import { TextControl } from "../components/controls/TextControl";
 import { Page } from "../components/page/Page";
-import { UserRepresentation } from "../representations";
 import { usePromise } from "../utils/usePromise";
 
 const PersonalInfo = () => {
@@ -14,7 +14,7 @@ const PersonalInfo = () => {
     mode: "onChange",
   });
 
-  usePromise((signal) => fetchPersonalInfo({ signal }), reset);
+  usePromise((signal) => getPersonalInfo({ signal }), reset);
 
   return (
     <Page title={t("personalInfo")} description={t("personalInfoDescription")}>
