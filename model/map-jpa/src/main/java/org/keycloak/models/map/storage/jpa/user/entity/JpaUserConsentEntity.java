@@ -31,14 +31,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
-import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.user.MapUserConsentEntity;
 
 /**
@@ -67,7 +66,7 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaUserConsentMetadata metadata;
 

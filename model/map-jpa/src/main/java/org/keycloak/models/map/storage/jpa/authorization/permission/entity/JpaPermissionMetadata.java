@@ -40,6 +40,4 @@ public class JpaPermissionMetadata extends MapPermissionTicketEntityImpl impleme
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }

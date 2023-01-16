@@ -33,15 +33,14 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
-import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.events.EventType;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.events.MapAuthEventEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_EVENT;
 
 /**
@@ -63,7 +62,7 @@ public class JpaAuthEventEntity extends MapAuthEventEntity.AbstractAuthEventEnti
     @Column
     private int version;
 
-    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaAuthEventMetadata metadata;
 
