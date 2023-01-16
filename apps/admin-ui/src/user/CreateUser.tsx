@@ -31,6 +31,7 @@ export default function CreateUser() {
         ...formUser,
         username: formUser.username?.trim(),
         groups: addedGroups.map((group) => group.path!),
+        enabled: true,
       });
 
       addAlert(t("userCreated"), AlertVariant.success);

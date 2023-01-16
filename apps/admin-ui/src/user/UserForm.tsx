@@ -45,6 +45,40 @@ export type UserFormProps = {
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
 
+const EmailVerified = () => {
+  const { t } = useTranslation("users");
+  const { control } = useFormContext();
+  return (
+    <FormGroup
+      label={t("emailVerified")}
+      fieldId="kc-email-verified"
+      helperTextInvalid={t("common:required")}
+      labelIcon={
+        <HelpItem
+          helpText="users-help:emailVerified"
+          fieldLabelId="users:emailVerified"
+        />
+      }
+    >
+      <Controller
+        name="emailVerified"
+        defaultValue={false}
+        control={control}
+        render={({ onChange, value }) => (
+          <Switch
+            data-testid="email-verified-switch"
+            id="kc-user-email-verified"
+            onChange={(value) => onChange(value)}
+            isChecked={value}
+            label={t("common:yes")}
+            labelOff={t("common:no")}
+          />
+        )}
+      />
+    </FormGroup>
+  );
+};
+
 export const UserForm = ({
   user,
   bruteForce: { isBruteForceProtected, isLocked } = {
@@ -147,6 +181,10 @@ export const UserForm = ({
     setOpen(!open);
   };
 
+  const isUserProfileEnabled =
+    isFeatureEnabled(Feature.DeclarativeUserProfile) &&
+    realm?.attributes?.userProfileEnabled === "true";
+
   return (
     <FormAccess
       isHorizontal
@@ -171,22 +209,7 @@ export const UserForm = ({
           filterGroups={selectedGroups}
         />
       )}
-      <FormGroup label={t("common:enabled")} fieldId="kc-user-enabled">
-        <Controller
-          name="enabled"
-          defaultValue={true}
-          control={control}
-          render={({ onChange, value }) => (
-            <Switch
-              id="kc-user-enabled"
-              onChange={(value) => onChange(value)}
-              isChecked={value}
-              label={t("common:yes")}
-              labelOff={t("common:no")}
-            />
-          )}
-        />
-      </FormGroup>
+      {isUserProfileEnabled && <EmailVerified />}
       {user?.id && (
         <>
           <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
@@ -272,8 +295,7 @@ export const UserForm = ({
           <FederatedUserLink user={user} />
         </FormGroup>
       )}
-      {isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-      realm?.attributes?.userProfileEnabled === "true" ? (
+      {isUserProfileEnabled ? (
         <UserProfileFields />
       ) : (
         <>
@@ -315,34 +337,7 @@ export const UserForm = ({
               aria-label={t("emailInput")}
             />
           </FormGroup>
-          <FormGroup
-            label={t("emailVerified")}
-            fieldId="kc-email-verified"
-            helperTextInvalid={t("common:required")}
-            labelIcon={
-              <HelpItem
-                helpText="users-help:emailVerified"
-                fieldLabelId="users:emailVerified"
-              />
-            }
-          >
-            <Controller
-              name="emailVerified"
-              defaultValue={false}
-              control={control}
-              render={({ onChange, value }) => (
-                <Switch
-                  data-testid="email-verified-switch"
-                  id="kc-user-email-verified"
-                  isDisabled={false}
-                  onChange={(value) => onChange(value)}
-                  isChecked={value}
-                  label={t("common:yes")}
-                  labelOff={t("common:no")}
-                />
-              )}
-            />
-          </FormGroup>
+          <EmailVerified />
           <FormGroup
             label={t("firstName")}
             fieldId="kc-firstname"
