@@ -46,15 +46,11 @@ import jakarta.transaction.RollbackException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 
-import org.hibernate.boot.MetadataBuilder;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
-import org.hibernate.service.ServiceRegistry;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authorization.model.PermissionTicket;

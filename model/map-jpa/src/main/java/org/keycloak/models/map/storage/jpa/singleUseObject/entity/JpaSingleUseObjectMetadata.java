@@ -46,6 +46,4 @@ public class JpaSingleUseObjectMetadata extends MapSingleUseObjectEntityImpl imp
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }
