@@ -36,9 +36,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
-import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity.AbstractClientScopeEntity;
 import org.keycloak.models.map.common.DeepCloner;
@@ -67,7 +65,7 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     @Column
     private int version;
 
-    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaClientScopeMetadata metadata;
 

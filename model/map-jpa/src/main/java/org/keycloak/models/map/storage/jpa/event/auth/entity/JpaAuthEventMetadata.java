@@ -46,6 +46,4 @@ public class JpaAuthEventMetadata extends MapAuthEventEntityImpl implements Seri
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }
