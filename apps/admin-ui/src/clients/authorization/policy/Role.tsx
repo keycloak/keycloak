@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useFormContext, Controller } from "react-hook-form";
+import { useFormContext, Controller } from "react-hook-form-v7";
 import { FormGroup, Button, Checkbox } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import {
@@ -77,18 +77,18 @@ export const Role = () => {
         control={control}
         defaultValue={[]}
         rules={{
-          validate: (value: RequiredIdValue[]) =>
-            value.filter((c) => c.id).length > 0,
+          validate: (value?: RequiredIdValue[]) =>
+            value && value.filter((c) => c.id).length > 0,
         }}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <>
             {open && (
               <AddRoleMappingModal
                 id="role"
                 type="roles"
                 onAssign={(rows) => {
-                  onChange([
-                    ...value,
+                  field.onChange([
+                    ...(field.value || []),
                     ...rows.map((row) => ({ id: row.role.id })),
                   ]);
                   setSelectedRoles([...selectedRoles, ...rows]);
@@ -129,16 +129,16 @@ export const Role = () => {
                 </Td>
                 <Td>
                   <Controller
-                    name={`roles[${index}].required`}
+                    name={`roles.${index}.required`}
                     defaultValue={false}
                     control={control}
-                    render={({ onChange, value }) => (
+                    render={({ field }) => (
                       <Checkbox
                         id="required"
                         data-testid="standard"
                         name="required"
-                        isChecked={value}
-                        onChange={onChange}
+                        isChecked={field.value}
+                        onChange={field.onChange}
                       />
                     )}
                   />

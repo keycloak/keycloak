@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import {
   DatePicker,
   Flex,
@@ -59,15 +59,20 @@ const DateTime = ({ name }: { name: string }) => {
       defaultValue=""
       control={control}
       rules={{ required: true }}
-      render={({ onChange, value }) => {
-        const dateTime = value.match(DATE_TIME_FORMAT) || ["", "", "0", "00"];
+      render={({ field }) => {
+        const dateTime = field.value.match(DATE_TIME_FORMAT) || [
+          "",
+          "",
+          "0",
+          "00",
+        ];
         return (
           <Split hasGutter id={name}>
             <SplitItem>
               <DatePicker
                 value={dateTime[1]}
                 onChange={(_, date) => {
-                  onChange(parseDate(value, date));
+                  field.onChange(parseDate(field.value, date));
                 }}
               />
             </SplitItem>
@@ -75,7 +80,7 @@ const DateTime = ({ name }: { name: string }) => {
               <TimePicker
                 time={`${dateTime[2]}:${dateTime[3]}`}
                 onChange={(_, hour, minute) =>
-                  onChange(parseTime(value, hour, minute))
+                  field.onChange(parseTime(field.value, hour, minute))
                 }
                 is24Hour
               />
@@ -102,17 +107,17 @@ const NumberControl = ({ name, min, max }: NumberControlProps) => {
       name={name}
       defaultValue=""
       control={control}
-      render={({ onChange, value }) => (
+      render={({ field }) => (
         <NumberInput
           id={name}
-          value={value}
+          value={field.value}
           min={min}
           max={max}
-          onPlus={() => onChange(Number(value) + 1)}
-          onMinus={() => onChange(Number(value) - 1)}
+          onPlus={() => field.onChange(Number(field.value) + 1)}
+          onMinus={() => field.onChange(Number(field.value) - 1)}
           onChange={(event) => {
             const newValue = Number(event.currentTarget.value);
-            onChange(setValue(!isNaN(newValue) ? newValue : 0));
+            field.onChange(setValue(!isNaN(newValue) ? newValue : 0));
           }}
         />
       )}
@@ -149,7 +154,10 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
 
 export const Time = () => {
   const { t } = useTranslation("clients");
-  const { getValues, errors } = useFormContext();
+  const {
+    getValues,
+    formState: { errors },
+  } = useFormContext();
   const [repeat, setRepeat] = useState(getValues("month"));
   return (
     <>

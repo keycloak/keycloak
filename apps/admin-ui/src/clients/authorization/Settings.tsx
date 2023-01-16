@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form-v7";
 import {
   AlertVariant,
   Button,
@@ -20,7 +20,7 @@ import { SaveReset } from "../advanced/SaveReset";
 import { ImportDialog } from "./ImportDialog";
 import useToggle from "../../utils/useToggle";
 import { useAlerts } from "../../components/alert/Alerts";
-import { DecisionStrategySelect } from "./DecisionStragegySelect";
+import { DecisionStrategySelect } from "./DecisionStrategySelect";
 
 const POLICY_ENFORCEMENT_MODES = [
   "ENFORCING",
@@ -28,12 +28,17 @@ const POLICY_ENFORCEMENT_MODES = [
   "DISABLED",
 ] as const;
 
+export type FormFields = Omit<
+  ResourceServerRepresentation,
+  "scopes" | "resources"
+>;
+
 export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
   const { t } = useTranslation("clients");
   const [resource, setResource] = useState<ResourceServerRepresentation>();
   const [importDialog, toggleImportDialog] = useToggle();
 
-  const form = useForm<ResourceServerRepresentation>({});
+  const form = useForm<FormFields>({});
   const { control, reset, handleSubmit } = form;
 
   const { adminClient } = useAdminClient();
@@ -58,7 +63,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
     }
   };
 
-  const save = async (resource: ResourceServerRepresentation) => {
+  const onSubmit = async (resource: ResourceServerRepresentation) => {
     try {
       await adminClient.clients.updateResourceServer(
         { id: clientId },
@@ -82,7 +87,11 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           closeDialog={toggleImportDialog}
         />
       )}
-      <FormAccess role="view-clients" isHorizontal>
+      <FormAccess
+        role="view-clients"
+        isHorizontal
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <FormGroup
           label={t("import")}
           fieldId="import"
@@ -114,16 +123,16 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
             data-testid="policyEnforcementMode"
             defaultValue={POLICY_ENFORCEMENT_MODES[0]}
             control={control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <>
                 {POLICY_ENFORCEMENT_MODES.map((mode) => (
                   <Radio
                     id={mode}
                     key={mode}
                     data-testid={mode}
-                    isChecked={value === mode}
+                    isChecked={field.value === mode}
                     name="policyEnforcementMode"
-                    onChange={() => onChange(mode)}
+                    onChange={() => field.onChange(mode)}
                     label={t(`policyEnforcementModes.${mode}`)}
                     className="pf-u-mb-md"
                   />
@@ -151,13 +160,13 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
             data-testid="allowRemoteResourceManagement"
             defaultValue={false}
             control={control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Switch
                 id="allowRemoteResourceManagement"
                 label={t("common:on")}
                 labelOff={t("common:off")}
-                isChecked={value}
-                onChange={onChange}
+                isChecked={field.value}
+                onChange={field.onChange}
                 aria-label={t("allowRemoteResourceManagement")}
               />
             )}
@@ -165,7 +174,6 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
         </FormGroup>
         <SaveReset
           name="authenticationSettings"
-          save={() => handleSubmit(save)()}
           reset={() => reset(resource)}
           isActive
         />

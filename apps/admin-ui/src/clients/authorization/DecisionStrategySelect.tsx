@@ -1,5 +1,5 @@
 import { FormGroup, Radio } from "@patternfly/react-core";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
@@ -35,7 +35,7 @@ export const DecisionStrategySelect = ({
         data-testid="decisionStrategy"
         defaultValue={DECISION_STRATEGY[0]}
         control={control}
-        render={(field) => (
+        render={({ field }) => (
           <>
             {(isLimited
               ? DECISION_STRATEGY.slice(0, 2)

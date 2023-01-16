@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
+import { useFormContext } from "react-hook-form-v7";
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
@@ -35,11 +35,9 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         }
       >
         <KeycloakTextInput
-          type="text"
           id="kc-name"
-          name="name"
           data-testid="name"
-          ref={register({ required: true })}
+          {...register("name", { required: true })}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
@@ -60,15 +58,13 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         helperTextInvalid={errors.description?.message}
       >
         <KeycloakTextArea
-          ref={register({
+          {...register("description", {
             maxLength: {
               value: 255,
               message: t("common:maxLength", { length: 255 }),
             },
           })}
-          type="text"
           id="kc-description"
-          name="description"
           data-testid="description"
           validated={
             errors.description

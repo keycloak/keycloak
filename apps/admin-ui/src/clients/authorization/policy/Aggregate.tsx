@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { useParams } from "../../../utils/useParams";
 import type { PolicyDetailsParams } from "../../routes/PolicyDetails";
-import { DecisionStrategySelect } from "../DecisionStragegySelect";
+import { DecisionStrategySelect } from "../DecisionStrategySelect";
 import { ResourcesPolicySelect } from "../ResourcesPolicySelect";
 
 export const Aggregate = () => {

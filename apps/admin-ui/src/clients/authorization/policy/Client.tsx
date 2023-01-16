@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import {
   SelectOption,
   FormGroup,
@@ -84,23 +84,25 @@ export const Client = () => {
         rules={{
           validate: (value) => value.length > 0,
         }}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Select
             toggleId="clients"
             variant={SelectVariant.typeaheadMulti}
             onToggle={(open) => setOpen(open)}
             isOpen={open}
-            selections={value}
+            selections={field.value}
             onFilter={(_, value) => {
               setSearch(value);
               return convert(clients);
             }}
             onSelect={(_, v) => {
               const option = v.toString();
-              if (value.includes(option)) {
-                onChange(value.filter((item: string) => item !== option));
+              if (field.value.includes(option)) {
+                field.onChange(
+                  field.value.filter((item: string) => item !== option)
+                );
               } else {
-                onChange([...value, option]);
+                field.onChange([...field.value, option]);
               }
               setOpen(false);
             }}

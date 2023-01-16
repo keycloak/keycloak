@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import { FormGroup } from "@patternfly/react-core";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 
@@ -25,13 +25,12 @@ export const JavaScript = () => {
         name="code"
         defaultValue=""
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <CodeEditor
             id="code"
             data-testid="code"
-            type="text"
-            onChange={onChange}
-            code={value}
+            onChange={field.onChange}
+            code={field.value}
             height="600px"
             language={Language.javascript}
           />

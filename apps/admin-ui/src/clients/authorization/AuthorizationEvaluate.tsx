@@ -10,7 +10,7 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form-v7";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
@@ -213,7 +213,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                 control={control}
                 defaultValue={[]}
                 rules={{ validate: (value) => (value || "").length > 0 }}
-                render={({ field }) => (
+                render={(field) => (
                   <Select
                     placeholderText={t("selectARole")}
                     variant={SelectVariant.typeaheadMulti}
@@ -314,7 +314,8 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                   <KeycloakTextInput
                     id="alias"
                     data-testid="alias"
-                    {...register("alias", { required: true })}
+                    name="alias"
+                    ref={register({ required: true })}
                   />
                 </FormGroup>
                 <FormGroup
@@ -331,7 +332,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                     name="authScopes"
                     defaultValue={[]}
                     control={control}
-                    render={({ field }) => (
+                    render={(field) => (
                       <Select
                         toggleId="authScopes"
                         onToggle={setScopesDropdownOpen}

@@ -8,7 +8,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import { FunctionComponent, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
 
@@ -105,7 +105,7 @@ export default function PolicyDetails() {
     []
   );
 
-  const save = async (policy: Policy) => {
+  const onSubmit = async (policy: Policy) => {
     // remove entries that only have the boolean set and no id
     policy.groups = policy.groups?.filter((g) => g.id);
     policy.clientScopes = policy.clientScopes?.filter((c) => c.id);
@@ -194,7 +194,7 @@ export default function PolicyDetails() {
       <PageSection variant="light">
         <FormAccess
           isHorizontal
-          onSubmit={handleSubmit(save)}
+          onSubmit={handleSubmit(onSubmit)}
           role="view-clients"
         >
           <FormProvider {...form}>

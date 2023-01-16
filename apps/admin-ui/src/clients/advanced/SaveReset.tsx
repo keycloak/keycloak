@@ -3,7 +3,7 @@ import { ActionGroup, ActionGroupProps, Button } from "@patternfly/react-core";
 
 type SaveResetProps = ActionGroupProps & {
   name: string;
-  save: () => void;
+  save?: () => void;
   reset: () => void;
   isActive?: boolean;
 };
@@ -18,7 +18,12 @@ export const SaveReset = ({
   const { t } = useTranslation("common");
   return (
     <ActionGroup {...rest}>
-      <Button isDisabled={!isActive} data-testid={name + "Save"} onClick={save}>
+      <Button
+        isDisabled={!isActive}
+        data-testid={name + "Save"}
+        onClick={save}
+        type={save ? "button" : "submit"}
+      >
         {t("save")}
       </Button>
       <Button

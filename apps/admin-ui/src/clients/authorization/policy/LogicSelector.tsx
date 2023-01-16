@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import { FormGroup, Radio } from "@patternfly/react-core";
 
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
@@ -24,16 +24,16 @@ export const LogicSelector = () => {
         data-testid="logic"
         defaultValue={LOGIC_TYPES[0]}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <>
             {LOGIC_TYPES.map((type) => (
               <Radio
                 id={type}
                 key={type}
                 data-testid={type}
-                isChecked={value === type}
+                isChecked={field.value === type}
                 name="logic"
-                onChange={() => onChange(type)}
+                onChange={() => field.onChange(type)}
                 label={t(`logicType.${type.toLowerCase()}`)}
                 className="pf-u-mb-md"
               />
