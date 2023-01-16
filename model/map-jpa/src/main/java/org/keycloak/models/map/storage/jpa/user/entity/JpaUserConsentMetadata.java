@@ -46,6 +46,4 @@ public class JpaUserConsentMetadata extends MapUserConsentEntityImpl implements 
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }
