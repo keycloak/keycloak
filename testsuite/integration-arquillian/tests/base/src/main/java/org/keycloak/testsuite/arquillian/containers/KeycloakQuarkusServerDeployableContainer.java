@@ -1,17 +1,7 @@
 package org.keycloak.testsuite.arquillian.containers;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
@@ -20,67 +10,31 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.exec.StreamPumper;
-import org.apache.commons.lang3.SystemUtils;
-import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
-import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
-import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
-import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.logging.Logger;
-import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.descriptor.api.Descriptor;
-import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.model.StoreProvider;
 
 /**
  * @author mhajas
  */
-public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
+public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDeployableContainer {
 
     private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
 
-    private KeycloakQuarkusConfiguration configuration;
     private Process container;
-    private static AtomicBoolean restart = new AtomicBoolean();
     private Thread stdoutForwarderThread;
-
-    @Inject
-    private Instance<SuiteContext> suiteContext;
-
-    private List<String> additionalBuildArgs = Collections.emptyList();
-
-    @Override
-    public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
-        return KeycloakQuarkusConfiguration.class;
-    }
-
-    @Override
-    public void setup(KeycloakQuarkusConfiguration configuration) {
-        this.configuration = configuration;
-    }
 
     @Override
     public void start() throws LifecycleException {
@@ -107,50 +61,6 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
                 container.destroyForcibly();
             }
         }
-    }
-
-    @Override
-    public ProtocolDescription getDefaultProtocol() {
-        return null;
-    }
-
-    @Override
-    public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        log.infof("Trying to deploy: " + archive.getName());
-
-        try {
-            deployArchiveToServer(archive);
-            restartServer();
-        } catch (Exception e) {
-            throw new DeploymentException(e.getMessage(),e);
-        }
-
-        return new ProtocolMetaData();
-    }
-
-    @Override
-    public void undeploy(Archive<?> archive) throws DeploymentException {
-        File wrkDir = configuration.getProvidersPath().resolve("providers").toFile();
-        try {
-            if (isWindows()) {
-                // stop before updating providers to avoid file locking issues on Windows
-                stop();
-            }
-            Files.deleteIfExists(wrkDir.toPath().resolve(archive.getName()));
-            restartServer();
-        } catch (Exception e) {
-            throw new DeploymentException(e.getMessage(),e);
-        }
-    }
-
-    @Override
-    public void deploy(Descriptor descriptor) throws DeploymentException {
-
-    }
-
-    @Override
-    public void undeploy(Descriptor descriptor) throws DeploymentException {
-
     }
 
     private void importRealm() throws IOException, URISyntaxException {
@@ -201,213 +111,26 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         return builder.start();
     }
 
-    private ProcessBuilder getProcessBuilder() {
-        List<String> commands = new ArrayList<>();
-        Map<String, String> env = new HashMap<>();
+    @Override
+    protected List<String> configureArgs(List<String> args) {
+        List<String> commands = new ArrayList<>(args);
 
-        commands.add(getCommand());
-        commands.add("-v");
-        commands.add("start");
+        commands.add(0, getCommand());
         commands.add("--optimized");
-        commands.add("--http-enabled=true");
-
-        if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
-            commands.add("--debug");
-
-            String debugPort = configuration.getDebugPort() > 0 ? Integer.toString(configuration.getDebugPort()) : System.getProperty("auth.server.debug.port", "5005");
-            env.put("DEBUG_PORT", debugPort);
-
-            String debugSuspend = System.getProperty("auth.server.debug.suspend");
-            if (debugSuspend != null) {
-                env.put("DEBUG_SUSPEND", debugSuspend);
-            }
-        }
-
-        commands.add("--http-port=" + configuration.getBindHttpPort());
-        commands.add("--https-port=" + configuration.getBindHttpsPort());
-
-        if (configuration.getRoute() != null) {
-            commands.add("-Djboss.node.name=" + configuration.getRoute());
-        }
-
-        final StoreProvider storeProvider = StoreProvider.getCurrentProvider();
-
-        final Supplier<Boolean> shouldSetUpDb = () -> !restart.get() && !storeProvider.equals(StoreProvider.DEFAULT);
-        final Supplier<String> getClusterConfig = () -> System.getProperty("auth.server.quarkus.cluster.config", "local");
-
-        log.debugf("FIPS Mode: %s", configuration.getFipsMode());
-
-        // only run build during first execution of the server (if the DB is specified), restarts or when running cluster tests
-        if (restart.get() || shouldSetUpDb.get() || "ha".equals(getClusterConfig.get()) || configuration.getFipsMode() != FipsMode.disabled) {
-            commands.removeIf("--optimized"::equals);
-            commands.add("--http-relative-path=/auth");
-
-            if (!storeProvider.isMapStore()) {
-                String cacheMode = getClusterConfig.get();
-
-                if ("local".equals(cacheMode)) {
-                    commands.add("--cache=local");
-                } else {
-                    commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
-                }
-            }
-
-            if (configuration.getFipsMode() != FipsMode.disabled) {
-                addFipsOptions(commands);
-            }
-        }
-
-        addStorageOptions(storeProvider, commands);
-        if (System.getProperty("auth.server.quarkus.log-level") != null) {
-            commands.add("--log-level=" + System.getProperty("auth.server.quarkus.log-level"));
-        }
-
-        commands.addAll(getAdditionalBuildArgs());
 
         log.debugf("Quarkus parameters: %s", commands);
 
-        String[] processCommands = commands.toArray(new String[0]);
+        return commands;
+    }
 
+    private ProcessBuilder getProcessBuilder() {
+        Map<String, String> env = new HashMap<>();
+        String[] processCommands = getArgs(env).toArray(new String[0]);
         ProcessBuilder pb = new ProcessBuilder(processCommands);
+
         pb.environment().putAll(env);
 
         return pb;
-    }
-
-    private void addStorageOptions(StoreProvider storeProvider, List<String> commands) {
-        log.debugf("Store '%s' is used.", storeProvider.name());
-        storeProvider.addStoreOptions(commands);
-    }
-
-    private void addFipsOptions(List<String> commands) {
-        commands.add("--fips-mode=" + configuration.getFipsMode().toString());
-
-        log.debugf("Keystore file: %s, keystore type: %s, truststore file: %s, truststore type: %s",
-                configuration.getKeystoreFile(), configuration.getKeystoreType(),
-                configuration.getTruststoreFile(), configuration.getTruststoreType());
-        commands.add("--https-key-store-file=" + configuration.getKeystoreFile());
-        commands.add("--https-key-store-type=" + configuration.getKeystoreType());
-        commands.add("--https-key-store-password=" + configuration.getKeystorePassword());
-        commands.add("--https-trust-store-file=" + configuration.getTruststoreFile());
-        commands.add("--https-trust-store-type=" + configuration.getTruststoreType());
-        commands.add("--https-trust-store-password=" + configuration.getTruststorePassword());
-        commands.add("--spi-truststore-file-file=" + configuration.getTruststoreFile());
-        commands.add("--spi-truststore-file-password=" + configuration.getTruststorePassword());
-        commands.add("--spi-truststore-file-type=" + configuration.getTruststoreType());
-        commands.add("--log-level=INFO,org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE,org.keycloak.truststore:TRACE");
-
-        configuration.appendJavaOpts("-Djava.security.properties=" + System.getProperty("auth.server.java.security.file"));
-    }
-
-    private void waitForReadiness() throws MalformedURLException, LifecycleException {
-        SuiteContext suiteContext = this.suiteContext.get();
-        //TODO: not sure if the best endpoint but it makes sure that everything is properly initialized. Once we have
-        // support for MP Health this should change
-        URL contextRoot = new URL(getBaseUrl(suiteContext) + "/auth/realms/master/");
-        HttpURLConnection connection;
-        long startTime = System.currentTimeMillis();
-
-        while (true) {
-            if (System.currentTimeMillis() - startTime > getStartTimeout()) {
-                stop();
-                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
-            }
-
-            try {
-                // wait before checking for opening a new connection
-                Thread.sleep(1000);
-                if ("https".equals(contextRoot.getProtocol())) {
-                    HttpsURLConnection httpsConnection = (HttpsURLConnection) (connection = (HttpURLConnection) contextRoot.openConnection());
-                    httpsConnection.setSSLSocketFactory(createInsecureSslSocketFactory());
-                    httpsConnection.setHostnameVerifier(createInsecureHostnameVerifier());
-                } else {
-                    connection = (HttpURLConnection) contextRoot.openConnection();
-                }
-
-                connection.setReadTimeout((int) getStartTimeout());
-                connection.setConnectTimeout((int) getStartTimeout());
-                connection.connect();
-
-                if (connection.getResponseCode() == 200) {
-                    break;
-                }
-
-                connection.disconnect();
-            } catch (Exception ignore) {
-            }
-        }
-
-        log.infof("Keycloak is ready at %s", contextRoot);
-    }
-
-    private URL getBaseUrl(SuiteContext suiteContext) throws MalformedURLException {
-        URL baseUrl = suiteContext.getAuthServerInfo().getContextRoot();
-
-        // might be running behind a load balancer
-        if ("https".equals(baseUrl.getProtocol())) {
-            baseUrl = new URL(baseUrl.toString().replace(String.valueOf(baseUrl.getPort()), String.valueOf(configuration.getBindHttpsPort())));
-        } else {
-            baseUrl = new URL(baseUrl.toString().replace(String.valueOf(baseUrl.getPort()), String.valueOf(configuration.getBindHttpPort())));
-        }
-        return baseUrl;
-    }
-
-    private HostnameVerifier createInsecureHostnameVerifier() {
-        return new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
-    }
-
-    private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
-        TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
-            public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
-            }
-
-            public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
-            }
-
-            public X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-        }};
-
-        SSLContext sslContext;
-        SSLSocketFactory socketFactory;
-
-        try {
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-            socketFactory = sslContext.getSocketFactory();
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new IOException("Can't create unsecure trust manager");
-        }
-        return socketFactory;
-    }
-
-    private long getStartTimeout() {
-        return TimeUnit.SECONDS.toMillis(configuration.getStartupTimeoutInSeconds());
-    }
-
-    public void resetConfiguration() {
-        additionalBuildArgs = Collections.emptyList();
-    }
-
-    private void deployArchiveToServer(Archive<?> archive) throws IOException, LifecycleException {
-        if (isWindows()) {
-            // stop before updating providers to avoid file locking issues on Windows
-            stop();
-        }
-        File providersDir = configuration.getProvidersPath().resolve("providers").toFile();
-        InputStream zipStream = archive.as(ZipExporter.class).exportAsInputStream();
-        Files.copy(zipStream, providersDir.toPath().resolve(archive.getName()), StandardCopyOption.REPLACE_EXISTING);
-    }
-
-    public void restartServer() throws Exception {
-        stop();
-        start();
     }
 
     private String getCommand() {
@@ -415,14 +138,6 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             return configuration.getProvidersPath().resolve("bin").resolve("kc.bat").toString();
         }
         return "./kc.sh";
-    }
-
-    public List<String> getAdditionalBuildArgs() {
-        return additionalBuildArgs;
-    }
-
-    public void setAdditionalBuildArgs(List<String> newArgs) {
-        additionalBuildArgs = newArgs;
     }
 
     private void destroyDescendantsOnWindows(Process parent, boolean force) {
@@ -456,10 +171,6 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             Thread.sleep(500);
         } catch (InterruptedException e) {
         }
-    }
-
-    private static boolean isWindows() {
-        return SystemUtils.IS_OS_WINDOWS;
     }
 
     public static void deleteDirectory(final Path directory) throws IOException {
