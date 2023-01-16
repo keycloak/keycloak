@@ -40,6 +40,4 @@ public class JpaAuthenticationSessionMetadata extends MapAuthenticationSessionEn
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }

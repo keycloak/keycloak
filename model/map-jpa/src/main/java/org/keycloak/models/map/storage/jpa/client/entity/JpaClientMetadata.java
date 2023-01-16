@@ -40,6 +40,4 @@ public class JpaClientMetadata extends MapClientEntityImpl implements Serializab
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }
