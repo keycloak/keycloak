@@ -1,3 +1,4 @@
+import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   ExpandableSection,
   FormGroup,
@@ -7,7 +8,6 @@ import {
   SelectVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";

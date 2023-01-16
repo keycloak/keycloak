@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import {
   Modal,
   ModalVariant,
@@ -14,13 +14,13 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
+import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
+import useToggle from "../../../utils/useToggle";
 import type { IndexedValidations } from "../../NewAttributeSettings";
 import { AddValidatorRoleDialog } from "./AddValidatorRoleDialog";
-import useToggle from "../../../utils/useToggle";
-import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
-import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
-import ComponentRepresentation from "libs/keycloak-admin-client/lib/defs/componentRepresentation";
 
 export type AddValidatorDialogProps = {
   selectedValidators: IndexedValidations[];

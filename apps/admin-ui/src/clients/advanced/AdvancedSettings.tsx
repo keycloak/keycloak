@@ -1,3 +1,4 @@
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   ActionGroup,
   Button,
@@ -7,7 +8,6 @@ import {
   SelectVariant,
   Switch,
 } from "@patternfly/react-core";
-import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";

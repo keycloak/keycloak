@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
   Button,
   Chip,
@@ -8,12 +6,14 @@ import {
   FormGroup,
   InputGroup,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type { ComponentProps } from "./components";
-import { HelpItem } from "../help-enabler/HelpItem";
 import { GroupPickerDialog } from "../group/GroupPickerDialog";
+import { HelpItem } from "../help-enabler/HelpItem";
+import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
-import GroupRepresentation from "libs/keycloak-admin-client/lib/defs/groupRepresentation";
 
 export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
   const { t } = useTranslation("dynamic");

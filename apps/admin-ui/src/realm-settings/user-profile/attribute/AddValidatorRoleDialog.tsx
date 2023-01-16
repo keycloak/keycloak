@@ -1,10 +1,10 @@
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
-import { Button, Form, Modal, ModalVariant } from "@patternfly/react-core";
-
+import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
+import { Button, Form, Modal, ModalVariant } from "@patternfly/react-core";
+import { FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
-import ComponentRepresentation from "libs/keycloak-admin-client/lib/defs/componentRepresentation";
 
 export type AddValidatorRoleDialogProps = {
   open: boolean;

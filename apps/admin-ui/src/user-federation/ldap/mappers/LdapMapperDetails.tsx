@@ -1,5 +1,6 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
+import { DirectionType } from "@keycloak/keycloak-admin-client/lib/resources/userStorageProvider";
 import {
   ActionGroup,
   AlertVariant,
@@ -14,7 +15,6 @@ import {
   SelectVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { DirectionType } from "libs/keycloak-admin-client/lib/resources/userStorageProvider";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";

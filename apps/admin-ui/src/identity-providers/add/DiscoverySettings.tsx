@@ -1,3 +1,4 @@
+import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   ExpandableSection,
   FormGroup,
@@ -10,7 +11,6 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 
-import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { SwitchField } from "../component/SwitchField";
