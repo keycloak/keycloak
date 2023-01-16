@@ -38,9 +38,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 
-import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.realm.MapRealmEntity;
@@ -58,6 +56,7 @@ import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 
 /**
@@ -85,7 +84,7 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     @Column
     private int version;
 
-    @Type(value = UserTypeLegacyBridge.class, parameters = @Parameter(name = UserTypeLegacyBridge.TYPE_NAME_PARAM_KEY, value = "jsonb"))
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaRealmMetadata metadata;
 

@@ -46,6 +46,4 @@ public class JpaUserFederatedIdentityMetadata extends MapUserFederatedIdentityEn
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }
