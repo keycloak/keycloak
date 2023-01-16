@@ -145,14 +145,19 @@ export const AttributeGeneralSettings = () => {
                 onChange(value.toString());
                 setIsAttributeGroupDropdownOpen(false);
               }}
-              selections={[value || t("common:choose")]}
+              selections={[value || t("common:none")]}
               variant={SelectVariant.single}
             >
-              {config?.groups?.map((group) => (
-                <SelectOption key={group.name} value={group.name}>
-                  {group.name}
-                </SelectOption>
-              ))}
+              {[
+                <SelectOption key="empty" value="">
+                  {t("common:none")}
+                </SelectOption>,
+                ...(config?.groups?.map((group) => (
+                  <SelectOption key={group.name} value={group.name}>
+                    {group.name}
+                  </SelectOption>
+                )) || []),
+              ]}
             </Select>
           )}
         ></Controller>
