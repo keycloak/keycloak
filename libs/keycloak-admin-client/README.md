@@ -122,9 +122,9 @@ npm test
 
 ## Supported APIs
 
-### [Realm admin](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_realms_admin_resource)
+### [Realm admin](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_realms_admin_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/realms.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/realms.spec.ts
 
 - Import a realm from a full representation of that realm (`POST /`)
 - Get the top-level representation of the realm (`GET /{realm}`)
@@ -142,9 +142,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Get client policies profiles (`GET /{realm}/client-policies/profiles`)
 - Update client policies profiles (`PUT /{realm}/client-policies/profiles`)
 - Get a group by path (`GET /{realm}/group-by-path/{path}`)
-### [Role](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_roles_resource)
+### [Role](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_roles_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/roles.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/roles.spec.ts
 
 - Create a new role for the realm (`POST /{realm}/roles`)
 - Get all roles for the realm (`GET /{realm}/roles`)
@@ -153,7 +153,7 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Delete a role by name (`DELETE /{realm}/roles/{role-name}`)
 - Get all users in a role by name for the realm (`GET /{realm}/roles/{role-name}/users`)
 
-### [Roles (by ID)](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_roles_by_id_resource)
+### [Roles (by ID)](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_roles_by_id_resource)
 
 - Get a specific role (`GET /{realm}/roles-by-id/{role-id}`)
 - Update the role (`PUT /{realm}/roles-by-id/{role-id}`)
@@ -164,9 +164,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Get client-level roles for the client that are in the role’s composite (`GET /{realm}/roles-by-id/{role-id}/composites/clients/{client}`)
 - Get realm-level roles that are in the role’s composite (`GET /{realm}/roles-by-id/{role-id}/composites/realm`)
 
-### [User](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_users_resource)
+### [User](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_users_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/users.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/users.spec.ts
 
 - Create a new user (`POST /{realm}/users`)
 - Get users Returns a list of users, filtered according to query parameters (`GET /{realm}/users`)
@@ -187,7 +187,7 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 
 ### User group-mapping
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/users.spec.ts#L178
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/users.spec.ts#L178
 
 - Add user to group (`PUT /{id}/groups/{groupId}`)
 - List all user groups (`GET /{id}/groups`)
@@ -196,7 +196,7 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 
 ### User role-mapping
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/users.spec.ts#L143
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/users.spec.ts#L352
 
 - Get user role-mappings (`GET /{realm}/users/{id}/role-mappings`)
 - Add realm-level role mappings to the user (`POST /{realm}/users/{id}/role-mappings/realm`)
@@ -205,9 +205,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Get realm-level roles that can be mapped (`GET /{realm}/users/{id}/role-mappings/realm/available`)
 - Get effective realm-level role mappings This will recurse all composite roles to get the result. (`GET /{realm}/users/{id}/role-mappings/realm/composite`)
 
-### [Group](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_groups_resource)
+### [Group](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_groups_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/groups.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/groups.spec.ts
 
 - Create (`POST /{realm}/groups`)
 - List (`GET /{realm}/groups`)
@@ -220,7 +220,7 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 
 ### Group role-mapping
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/groups.spec.ts#L76
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/groups.spec.ts#L103
 
 - Get group role-mappings (`GET /{realm}/groups/{id}/role-mappings`)
 - Add realm-level role mappings to the group (`POST /{realm}/groups/{id}/role-mappings/realm`)
@@ -229,9 +229,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Get realm-level roles that can be mapped (`GET /{realm}/groups/{id}/role-mappings/realm/available`)
 - Get effective realm-level role mappings This will recurse all composite roles to get the result. (`GET /{realm}/groups/{id}/role-mappings/realm/composite`)
 
-### [Client](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_clients_resource)
+### [Client](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_clients_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
 
 - Create a new client (`POST /{realm}/clients`)
 - Get clients belonging to the realm (`GET /{realm}/clients`)
@@ -239,9 +239,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Update the client (`PUT /{realm}/clients/{id}`)
 - Delete the client (`DELETE /{realm}/clients/{id}`)
 
-### [Client roles](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_roles_resource)
+### [Client roles](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_roles_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
 
 - Create a new role for the client (`POST /{realm}/clients/{id}/roles`)
 - Get all roles for the client (`GET /{realm}/clients/{id}/roles`)
@@ -249,9 +249,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Update a role by name (`PUT /{realm}/clients/{id}/roles/{role-name}`)
 - Delete a role by name (`DELETE /{realm}/clients/{id}/roles/{role-name}`)
 
-### [Client role-mapping for group](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_client_role_mappings_resource)
+### [Client role-mapping for group](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_client_role_mappings_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/groups.spec.ts#L150
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/groups.spec.ts#L192
 
 - Add client-level roles to the group role mapping (`POST /{realm}/groups/{id}/role-mappings/clients/{client}`)
 - Get client-level role mappings for the group (`GET /{realm}/groups/{id}/role-mappings/clients/{client}`)
@@ -259,9 +259,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Get available client-level roles that can be mapped to the group (`GET /{realm}/groups/{id}/role-mappings/clients/{client}/available`)
 - Get effective client-level role mappings This will recurse all composite roles to get the result. (`GET /{realm}/groups/{id}/role-mappings/clients/{client}/composite`)
 
-### [Client role-mapping for user](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_client_role_mappings_resource)
+### [Client role-mapping for user](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_client_role_mappings_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/users.spec.ts#L217
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/users.spec.ts#L352
 
 - Add client-level roles to the user role mapping (`POST /{realm}/users/{id}/role-mappings/clients/{client}`)
 - Get client-level role mappings for the user (`GET /{realm}/users/{id}/role-mappings/clients/{client}`)
@@ -269,7 +269,7 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Get available client-level roles that can be mapped to the user (`GET /{realm}/users/{id}/role-mappings/clients/{client}/available`)
 - Get effective client-level role mappings This will recurse all composite roles to get the result. (`GET /{realm}/users/{id}/role-mappings/clients/{client}/composite`)
 
-### [Client Attribute Certificate](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_client_attribute_certificate_resource)
+### [Client Attribute Certificate](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_client_attribute_certificate_resource)
 
 - Get key info (`GET /{realm}/clients/{id}/certificates/{attr}`)
 - Get a keystore file for the client, containing private key and public certificate (`POST /{realm}/clients/{id}/certificates/{attr}/download`)
@@ -278,9 +278,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Upload certificate and eventually private key (`POST /{realm}/clients/{id}/certificates/{attr}/upload`)
 - Upload only certificate, not private key (`POST /{realm}/clients/{id}/certificates/{attr}/upload-certificate`)
 
-### [Identity Providers](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_identity_providers_resource)
+### [Identity Providers](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_identity_providers_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/idp.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/idp.spec.ts
 
 - Create a new identity provider (`POST /{realm}/identity-provider/instances`)
 - Get identity providers (`GET /{realm}/identity-provider/instances`)
@@ -295,9 +295,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Delete the identity provider mapper (`DELETE /{realm}/identity-provider/instances/{alias}/mappers/{id}`)
 - Find the identity provider mapper types (`GET /{realm}/identity-provider/instances/{alias}/mapper-types`)
 
-### [Client Scopes](https://www.keycloak.org/docs-api/6.0/rest-api/index.html#_client_scopes_resource)
+### [Client Scopes](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_client_scopes_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
 
 - Create a new client scope (`POST /{realm}/client-scopes`)
 - Get client scopes belonging to the realm (`GET /{realm}/client-scopes`)
@@ -305,9 +305,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Update the client scope (`PUT /{realm}/client-scopes/{id}`)
 - Delete the client scope (`DELETE /{realm}/client-scopes/{id}`)
 
-### [Client Scopes for realm](https://www.keycloak.org/docs-api/6.0/rest-api/index.html#_client_scopes_resource)
+### [Client Scopes for realm](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_client_scopes_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
 
 - Get realm default client scopes (`GET /{realm}/default-default-client-scopes`)
 - Add realm default client scope (`PUT /{realm}/default-default-client-scopes/{id}`)
@@ -316,9 +316,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Add realm optional client scope (`PUT /{realm}/default-optional-client-scopes/{id}`)
 - Delete realm optional client scope (`DELETE /{realm}/default-optional-client-scopes/{id}`)
 
-### [Client Scopes for client](https://www.keycloak.org/docs-api/6.0/rest-api/index.html#_client_scopes_resource)
+### [Client Scopes for client](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_client_scopes_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
 
 - Get default client scopes (`GET /{realm}/clients/{id}/default-client-scopes`)
 - Add default client scope (`PUT /{realm}/clients/{id}/default-client-scopes/{clientScopeId}`)
@@ -327,9 +327,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Add optional client scope (`PUT /{realm}/clients/{id}/optional-client-scopes/{clientScopeId}`)
 - Delete optional client scope (`DELETE /{realm}/clients/{id}/optional-client-scopes/{clientScopeId}`)
 
-### [Scope Mappings for client scopes](https://www.keycloak.org/docs-api/6.0/rest-api/index.html#_scope_mappings_resource)
+### [Scope Mappings for client scopes](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_scope_mappings_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
 
 - Get all scope mappings for the client (`GET /{realm}/client-scopes/{id}/scope-mappings`)
 - Add client-level roles to the client’s scope (`POST /{realm}/client-scopes/{id}/scope-mappings/clients/{client}`)
@@ -343,9 +343,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Get realm-level roles that are available to attach to this client’s scope (`GET /{realm}/client-scopes/{id}/scope-mappings/realm/available`)
 - Get effective realm-level roles associated with the client’s scope (`GET /{realm}/client-scopes/{id}/scope-mappings/realm/composite`)
 
-### [Scope Mappings for clients](https://www.keycloak.org/docs-api/6.0/rest-api/index.html#_scope_mappings_resource)
+### [Scope Mappings for clients](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_scope_mappings_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
 
 - Get all scope mappings for the client (`GET /{realm}/clients/{id}/scope-mappings`)
 - Add client-level roles to the client’s scope (`POST /{realm}/clients/{id}/scope-mappings/clients/{client}`)
@@ -359,9 +359,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Get realm-level roles that are available to attach to this client’s scope (`GET /{realm}/clients/{id}/scope-mappings/realm/available`)
 - Get effective realm-level roles associated with the client’s scope (`GET /{realm}/clients/{id}/scope-mappings/realm/composite`)
 
-### [Protocol Mappers for client scopes](https://www.keycloak.org/docs-api/6.0/rest-api/index.html#_protocol_mappers_resource)
+### [Protocol Mappers for client scopes](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_protocol_mappers_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clientScopes.spec.ts
 
 - Create multiple mappers (`POST /{realm}/client-scopes/{id}/protocol-mappers/add-models`)
 - Create a mapper (`POST /{realm}/client-scopes/{id}/protocol-mappers/models`)
@@ -371,9 +371,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Delete the mapper (`DELETE /{realm}/client-scopes/{id}/protocol-mappers/models/{mapperId}`)
 - Get mappers by name for a specific protocol (`GET /{realm}/client-scopes/{id}/protocol-mappers/protocol/{protocol}`)
 
-### [Protocol Mappers for clients](https://www.keycloak.org/docs-api/6.0/rest-api/index.html#_protocol_mappers_resource)
+### [Protocol Mappers for clients](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_protocol_mappers_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
 
 - Create multiple mappers (`POST /{realm}/clients/{id}/protocol-mappers/add-models`)
 - Create a mapper (`POST /{realm}/clients/{id}/protocol-mappers/models`)
@@ -385,7 +385,7 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 
 ### [Component]()
 
-Supported for [user federation](https://www.keycloak.org/docs/latest/server_admin/index.html#_user-storage-federation). Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/components.spec.ts
+Supported for [user federation](https://www.keycloak.org/docs/latest/server_admin/index.html#_user-storage-federation). Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/components.spec.ts
 
 - Create (`POST /{realm}/components`)
 - List (`GET /{realm}/components`)
@@ -395,16 +395,16 @@ Supported for [user federation](https://www.keycloak.org/docs/latest/server_admi
 
 ### [Sessions for clients]()
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
 
 - List user sessions for a specific client (`GET /{realm}/clients/{id}/user-sessions`)
 - List offline sessions for a specific client (`GET /{realm}/clients/{id}/offline-sessions`)
 - Get user session count for a specific client (`GET /{realm}/clients/{id}/session-count`)
 - List offline session count for a specific client (`GET /{realm}/clients/{id}/offline-session-count`)
 
-### [Authentication Management: Required actions](https://www.keycloak.org/docs-api/8.0/rest-api/index.html#_authentication_management_resource)
+### [Authentication Management: Required actions](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_authentication_management_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/authenticationManagement.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/authenticationManagement.spec.ts
 
 - Register a new required action (`POST /{realm}/authentication/register-required-action`)
 - Get required actions. Returns a list of required actions. (`GET /{realm}/authentication/required-actions`)
@@ -417,7 +417,7 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 
 ### [Authorization: Permission](https://www.keycloak.org/docs/8.0/authorization_services/#_overview)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
 
 - Create permission (`POST /{realm}/clients/{id}/authz/resource-server/permission/{type}`)
 - Get permission (`GET /{realm}/clients/{id}/authz/resource-server/permission/{type}/{permissionId}`)
@@ -426,7 +426,7 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 
 ### [Authorization: Policy](https://www.keycloak.org/docs/8.0/authorization_services/#_overview)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/clients.spec.ts
 
 - Create policy (`POST /{realm}/clients/{id}/authz/resource-server/policy/{type}`)
 - Get policy (`GET /{realm}/clients/{id}/authz/resource-server/policy/{type}/{policyId}`)
@@ -434,9 +434,9 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 - Update policy (`PUT /{realm}/clients/{id}/authz/resource-server/policy/{type}/{policyId}`)
 - Delete policy (`DELETE /{realm}/clients/{id}/authz/resource-server/policy/{policyId}`)
 
-### [Attack Detection](https://www.keycloak.org/docs-api/5.0/rest-api/index.html#_attack_detection_resource)
+### [Attack Detection](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_attack_detection_resource)
 
-Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/libs/keycloak-admin-client/test/attackDetection.spec.ts
+Demo code: https://github.com/keycloak/keycloak-ui/blob/main/libs/keycloak-admin-client/test/attackDetection.spec.ts
 
 - Clear any user login failures for all users This can release temporary disabled users (`DELETE /{realm}/attack-detection/brute-force/users`)
 - Get status of a username in brute force detection (`GET /{realm}/attack-detection/brute-force/users/{userId}`)
@@ -444,11 +444,11 @@ Demo code: https://github.com/keycloak/keycloak-nodejs-admin-client/blob/main/li
 
 ## Not yet supported
 
-- [Authentication Management](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_authentication_management_resource)
-- [Client Initial Access](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_client_initial_access_resource)
-- [Client Registration Policy](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_client_registration_policy_resource)
-- [Key](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_key_resource)
-- [User Storage Provider](https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_user_storage_provider_resource)
+- [Authentication Management](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_authentication_management_resource)
+- [Client Initial Access](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_client_initial_access_resource)
+- [Client Registration Policy](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_client_registration_policy_resource)
+- [Key](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_key_resource)
+- [User Storage Provider](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_user_storage_provider_resource)
 
 ## Maintainers
 
