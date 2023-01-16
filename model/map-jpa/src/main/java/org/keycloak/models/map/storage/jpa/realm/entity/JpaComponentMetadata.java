@@ -46,6 +46,4 @@ public class JpaComponentMetadata extends MapComponentEntityImpl implements Seri
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }
