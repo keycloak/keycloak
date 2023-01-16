@@ -158,7 +158,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   const [isChanged, setIsChanged] = useState<KeyTypes>();
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation[]>();
   const [selectedType, setSelectedType] = useState<KeyTypes>();
-  const [openImport, setImportOpen] = useState(false);
+  const [openImport, setImportOpen] = useState<KeyTypes>();
   const [refresh, setRefresh] = useState(0);
 
   const { setValue } = useFormContext();
@@ -247,11 +247,11 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
       <ReGenerateConfirm />
       {KEYS.map((attr, index) => (
         <Fragment key={attr}>
-          {openImport && (
+          {openImport === attr && (
             <SamlImportKeyDialog
               id={clientId}
               attr={attr}
-              onClose={() => setImportOpen(false)}
+              onClose={() => setImportOpen(undefined)}
             />
           )}
           <KeySection
@@ -267,7 +267,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
                 toggleReGenerateDialog();
               }
             }}
-            onImport={() => setImportOpen(true)}
+            onImport={() => setImportOpen(attr)}
           />
         </Fragment>
       ))}
