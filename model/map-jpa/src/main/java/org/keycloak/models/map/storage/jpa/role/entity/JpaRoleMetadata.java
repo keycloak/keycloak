@@ -40,6 +40,4 @@ public class JpaRoleMetadata extends MapRoleEntityImpl implements Serializable {
         this.entityVersion = entityVersion;
     }
 
-    private String metadataClass = this.getClass().getCanonicalName();
-
 }
