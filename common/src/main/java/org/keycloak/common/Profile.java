@@ -85,7 +85,9 @@ public class Profile {
 
         UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
 
-        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT);
+        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT),
+
+        ACCESS_FILTERING("IP Address Filtering", Type.DISABLED_BY_DEFAULT);
 
         private final Type type;
         private String label;
