@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.jpa.util;
 
+import jakarta.persistence.ValidationMode;
 import org.jboss.logging.Logger;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
@@ -70,6 +71,7 @@ public class JpaUtils {
                 // Now build the entity manager factory, supplying a proxy classloader, so Hibernate will be able
                 // to find and load the extra provided entities.
                 persistenceUnit.setTransactionType(txType);
+                persistenceUnit.setValidationMode(ValidationMode.NONE.name());
                 return Bootstrap.getEntityManagerFactoryBuilder(persistenceUnit, properties,
                         new ProxyClassLoader(providedEntities)).build();
             }
