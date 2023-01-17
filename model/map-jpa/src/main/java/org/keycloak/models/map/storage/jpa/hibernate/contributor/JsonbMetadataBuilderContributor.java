@@ -14,26 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.hibernate.jsonb;
+package org.keycloak.models.map.storage.jpa.hibernate.contributor;
 
 import org.hibernate.boot.MetadataBuilder;
 import org.hibernate.boot.spi.MetadataBuilderContributor;
-import org.hibernate.query.sqm.function.FunctionKind;
-import org.hibernate.query.sqm.function.PatternBasedSqmFunctionDescriptor;
-import org.hibernate.query.sqm.produce.function.StandardArgumentsValidators;
-import org.hibernate.query.sqm.produce.function.internal.PatternRenderer;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
- * A {@link MetadataBuilderContributor} to register JSONB types/functions.
+ * A {@link MetadataBuilderContributor} to register JSONB type.
  */
 public class JsonbMetadataBuilderContributor implements MetadataBuilderContributor {
 
     @Override
     public void contribute(MetadataBuilder metadataBuilder) {
         metadataBuilder.applyBasicType(JsonbType.INSTANCE);
-        metadataBuilder.applySqlFunction("->>", new PatternBasedSqmFunctionDescriptor(
-            new PatternRenderer("?1->>?2"), StandardArgumentsValidators.exactly(2), null, null, "->>",
-                FunctionKind.NORMAL, null
-        ));
     }
 }
