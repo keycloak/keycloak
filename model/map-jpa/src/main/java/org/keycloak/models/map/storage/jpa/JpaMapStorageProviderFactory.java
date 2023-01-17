@@ -36,6 +36,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.ValidationMode;
 import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import javax.sql.DataSource;
 import jakarta.transaction.HeuristicMixedException;
@@ -396,6 +397,7 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.dialect", config.get("driverDialect"));
         // metadata contributor to register the json type
         properties.put("hibernate.metadata_builder_contributor", "org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbMetadataBuilderContributor");
+        properties.put("jakarta.persistence.validation.mode", ValidationMode.NONE.name());
         Long lockTimeout = config.getLong("lockTimeout", DEFAULT_LOCK_TIMEOUT);
         if (lockTimeout >= 0) {
             // This property does not work for PostgreSQL/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16181
