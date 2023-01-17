@@ -34,6 +34,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.ValidationMode;
 import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import javax.sql.DataSource;
 import jakarta.transaction.HeuristicMixedException;
@@ -377,6 +378,7 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.dialect", config.get("driverDialect"));
         // metadata contributor to register the json type
         properties.put("hibernate.metadata_builder_contributor", "org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbMetadataBuilderContributor");
+        properties.put("javax.persistence.validation.mode", ValidationMode.NONE.name());
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
