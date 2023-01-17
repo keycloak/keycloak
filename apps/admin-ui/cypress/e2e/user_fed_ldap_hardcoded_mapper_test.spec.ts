@@ -130,6 +130,7 @@ describe("User Fed LDAP mapper tests", () => {
       .selectClientType("openid-connect")
       .fillClientData(clientName)
       .continue()
+      .continue()
       .save();
 
     masthead.checkNotificationMessage(clientCreatedSuccess);

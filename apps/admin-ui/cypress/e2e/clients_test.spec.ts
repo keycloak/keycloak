@@ -262,6 +262,7 @@ describe("Clients test", () => {
         .fillClientData(clientId)
         .continue()
         .checkCapabilityConfigElements()
+        .continue()
         .save();
 
       commonPage
@@ -304,7 +305,7 @@ describe("Clients test", () => {
         .continue()
         .checkClientIdRequiredMessage();
 
-      createClientPage.fillClientData("account").continue().save();
+      createClientPage.fillClientData("account").continue().continue().save();
 
       // The error should inform about duplicated name/id
       commonPage
@@ -335,6 +336,7 @@ describe("Clients test", () => {
         .clickOidcCibaGrant()
         .clickServiceAccountRoles()
         .clickStandardFlow()
+        .continue()
         .save();
 
       commonPage
@@ -448,7 +450,11 @@ describe("Clients test", () => {
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().createClient();
 
-      createClientPage.fillClientData(identicalClientId).continue().save();
+      createClientPage
+        .fillClientData(identicalClientId)
+        .continue()
+        .continue()
+        .save();
 
       commonPage.masthead().closeAllAlertMessages();
       commonPage.sidebar().goToClients();
@@ -492,6 +498,7 @@ describe("Clients test", () => {
       createClientPage
         .selectClientType("openid-connect")
         .fillClientData(client)
+        .continue()
         .continue()
         .save();
       commonPage
@@ -705,7 +712,7 @@ describe("Clients test", () => {
 
       commonPage.sidebar().waitForPageLoad();
 
-      createClientPage.save();
+      createClientPage.continue().save();
       commonPage
         .masthead()
         .checkNotificationMessage("Client created successfully");
