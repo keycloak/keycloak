@@ -20,6 +20,7 @@ package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Assert;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -42,10 +43,13 @@ import org.openqa.selenium.WebDriver;
 import javax.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.authentication.AuthenticationFlowError.USER_CONFLICT;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USER_ATTRIBUTE;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
 /**
@@ -262,6 +266,22 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
 
         assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void loginFailedOnCertificateCNIsNotTheSameAsClientUsername() throws Exception {
+        //cert username is: test-user@localhost
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", createLoginSubjectCN2UsernameOrEmailConfig().getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        //OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequestTemp("secret", "john-doh@localhost");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "john-doh@localhost", "password");
+        // shouldn't return a token, because the username is not the same in the cert.
+        assertEquals(401, response.getStatusCode());
+        MatcherAssert.assertThat(response.getError(), containsString(USER_CONFLICT.name()));
+        MatcherAssert.assertThat(response.getErrorDescription(), equalTo("authentication failed, check your credentials"));
     }
 
     @Test

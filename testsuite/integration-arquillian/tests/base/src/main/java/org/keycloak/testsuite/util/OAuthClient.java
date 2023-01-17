@@ -470,6 +470,25 @@ public class OAuthClient {
             throw new RuntimeException(ioe);
         }
     }
+    public AccessTokenResponse doAccessTokenRequestTemp(String clientSecret, String username) {
+        CloseableHttpClient client = httpClient.get();
+        HttpPost post = new HttpPost(getAccessTokenUrl());
+
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, clientSecret));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.USERNAME, username));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        try {
+            return new AccessTokenResponse(client.execute(post));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve access token", e);
+        }
+    }
 
     // KEYCLOAK-6771 Certificate Bound Token
     public AccessTokenResponse doAccessTokenRequest(String code, String password, CloseableHttpClient client) {

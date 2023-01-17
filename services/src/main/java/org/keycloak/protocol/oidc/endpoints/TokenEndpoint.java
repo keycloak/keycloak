@@ -18,11 +18,13 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.authorization.AuthorizationTokenService;
 import org.keycloak.authorization.util.Tokens;
@@ -66,7 +68,9 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -124,6 +128,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
+import static org.keycloak.utils.MediaType.APPLICATION_JSON_TYPE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -636,7 +641,15 @@ public class TokenEndpoint {
                 .setSession(session)
                 .setUriInfo(session.getContext().getUri())
                 .setRequest(request);
-        Response challenge = processor.authenticateOnly();
+        Response challenge;
+        try {
+            challenge = processor.authenticateOnly();
+        } catch (AuthenticationFlowException exception){
+            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
+            error.setError(exception.getError().name());
+            error.setErrorDescription("authentication failed, check your credentials");
+            return Response.status(Status.UNAUTHORIZED).type(APPLICATION_JSON_TYPE).entity(error).build();
+        }
         if (challenge != null) {
             // Remove authentication session as "Resource Owner Password Credentials Grant" is single-request scoped authentication
             new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
