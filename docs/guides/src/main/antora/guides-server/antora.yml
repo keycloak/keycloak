@@ -1,0 +1,11 @@
+title: Guides Keycloak Server
+name: guides-server
+version: '20.0'
+nav:
+  - modules/ROOT/nav.adoc
+ext:
+  collector:
+    run:
+      command: ls
+    scan:
+      dir: build/generated-files

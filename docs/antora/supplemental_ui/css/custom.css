@@ -1,0 +1,18 @@
+footer.footer {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    padding-left: 0.5rem;
+}
+
+.imageblock.shadow img {
+    border-width: 1px;
+    border-color: darkgrey;
+    box-shadow: 5px 5px 5px darkgrey;
+    border-style: solid;
+}
+
+/* avoid jumping navigation due to changing width of bold font weight when a nav link becomes active */
+.is-current-page > .nav-link, .is-current-page > .nav-text {
+    font-weight: normal;
+    text-shadow: 1px 0 0 black;
+}

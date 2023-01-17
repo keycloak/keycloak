@@ -1,0 +1,55 @@
+<header class="header">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="{{{or site.url siteRootPath}}}">{{site.title}}</a>
+            {{#if env.SITE_SEARCH_PROVIDER}}
+                <div class="navbar-item search hide-for-print">
+                    <div id="search-field" class="field">
+                        <input id="search-input" type="text" placeholder="Search the docs"{{#if page.home}} autofocus{{/if}}>
+                        <label class="filter checkbox">
+                            <input type="checkbox" data-facet-filter="component:{{page.component.name}}"> In this guide
+                        </label>
+                    </div>
+                </div>
+            {{/if}}
+            <button class="navbar-burger" data-target="topbar-nav">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <div id="topbar-nav" class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item" href="{{{or site.url siteRootPath}}}/">Overview</a>
+                <a class="navbar-item" href="{{{or site.url siteRootPath}}}/guides-operator/latest/">Operator Guides</a>
+                <a class="navbar-item" href="{{{or site.url siteRootPath}}}/guides-server/latest/">Server Guides</a>
+                <a class="navbar-item" href="{{{or site.url siteRootPath}}}/server-admin/latest/">Server Administration</a>
+                <!--
+                <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link" href="#">Products</a>
+                    <div class="navbar-dropdown">
+                        <a class="navbar-item" href="#">Product A</a>
+                        <a class="navbar-item" href="#">Product B</a>
+                        <a class="navbar-item" href="#">Product C</a>
+                    </div>
+                </div>
+                <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link" href="#">Services</a>
+                    <div class="navbar-dropdown">
+                        <a class="navbar-item" href="#">Service A</a>
+                        <a class="navbar-item" href="#">Service B</a>
+                        <a class="navbar-item" href="#">Service C</a>
+                    </div>
+                </div>
+                -->
+                <!--
+                <div class="navbar-item">
+                    <span class="control">
+                        <a class="button is-primary" href="#">Download</a>
+                    </span>
+                </div>
+                -->
+            </div>
+        </div>
+    </nav>
+</header>
