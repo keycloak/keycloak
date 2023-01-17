@@ -23,7 +23,7 @@
 
 [#option-extended-${option.key},role="options-extended"]
 !===
-!<#if option.descriptionExtended?has_content>[.options-description-extended]#${option.descriptionExtended!}#</#if>
+<#if option.descriptionExtended?has_content>![.options-description-extended]#${option.descriptionExtended!}#</#if>
 ![.options-description-example]#*CLI:* `${option.keyCli}`#
 ![.options-description-example]#*Env:* `${option.keyEnv}`#
 !===

@@ -1,0 +1,6 @@
+root_level: 0
+component_versions: '*'
+section_merge_strategy: fuse
+build:
+  command: 'true'
+  keep_aggregate_source: true

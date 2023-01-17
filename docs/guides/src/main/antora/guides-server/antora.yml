@@ -6,6 +6,8 @@ nav:
 ext:
   collector:
     run:
-      command: ls
+      command: docs/guides/src/main/antora/guides-server/build.sh
     scan:
-      dir: build/generated-files
+      base: modules/ROOT/pages
+      dir: docs/guides/target/generated-guides/server-antora
+

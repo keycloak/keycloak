@@ -7,11 +7,12 @@
   "scripts": {
     "author": "antora --stacktrace --redirect-facility static antora-playbook-author.yml",
     "build": "antora --stacktrace --redirect-facility static antora-playbook.yml",
-    "serve": "http-server _site -c-1 -p 5000 -a 127.0.0.1"
+    "serve-antora": "http-server _site -c-1 -p 5000 -a 127.0.0.1"
   },
   "devDependencies": {
     "@antora/cli": "^3.1.1",
     "@antora/lunr-extension": "^1.0.0-alpha.8",
+    "@antora/collector-extension": "^1.0.0-alpha.3",
     "@antora/pdf-extension": "^1.0.0-alpha.6",
     "@antora/site-generator": "^3.1.1",
     "asciidoctor-highlight.js": "^0.4.0",

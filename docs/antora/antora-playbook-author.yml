@@ -7,7 +7,7 @@ content:
   sources:
     - url: ../..
       start_paths:
-        - doc/guides/src/main/antora/guides-server
+        - docs/guides/src/main/antora/guides-server
       branches:
         - 'HEAD'
 
@@ -18,7 +18,8 @@ urls:
 antora:
   extensions:
     - '@antora/lunr-extension'
-#    - '@antora/pdf-extension'
+    - '@antora/collector-extension'
+    - './lib/index.js'
 
 ui:
   bundle:
