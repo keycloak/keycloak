@@ -24,7 +24,7 @@
   "optimizeLookup": "When signing SAML documents in REDIRECT binding for SP that is secured by Keycloak adapter, should the ID of the signing key be included in SAML protocol message in <Extensions> element? This optimizes validation of the signature as the validating party uses a single key instead of trying every known key for validation.",
   "signDocuments": "Should SAML documents be signed by the realm?",
   "signAssertions": "Should assertions inside SAML documents be signed? This setting is not needed if document is already being signed.",
-  "signatureAlgorithm": "The signature algorithm to use to sign documents.",
+  "signatureAlgorithm": "The signature algorithm to use to sign documents. Note that 'SHA1' based algorithms are deprecated and can be removed in the future. It is recommended to stick to some more secure algorithm instead of '*_SHA1'",
   "signatureKeyName": "Signed SAML documents contain identification of signing key in KeyName element. For Keycloak / RH-SSO counterparty, use KEY_ID, for MS AD FS use CERT_SUBJECT, for others check and use NONE if no other option works.",
   "canonicalization": "Canonicalization Method for XML signatures.",
   "webOrigins": "Allowed CORS origins. To permit all origins of Valid Redirect URIs, add '+'. This does not include the '*' wildcard though. To permit all origins, explicitly add '*'.",
