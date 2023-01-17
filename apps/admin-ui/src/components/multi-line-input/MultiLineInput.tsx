@@ -6,24 +6,17 @@ import {
   TextInputProps,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
-import { Fragment, useEffect, useState } from "react";
-import { useFormContext } from "react-hook-form";
+import { Fragment, useEffect, useMemo } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 function stringToMultiline(value?: string): string[] {
-  return value ? value.split("##") : [];
+  return typeof value === "string" ? value.split("##") : [];
 }
 
 function toStringValue(formValue: string[]): string {
   return formValue.join("##");
 }
-
-type IdValue = {
-  id: number;
-  value: string;
-};
-
-const generateId = () => Math.floor(Math.random() * 1000);
 
 export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   name: string;
@@ -42,50 +35,51 @@ export const MultiLineInput = ({
   ...rest
 }: MultiLineInputProps) => {
   const { t } = useTranslation();
-  const { register, setValue, getValues } = useFormContext();
+  const { register, setValue, control } = useFormContext();
+  const value = useWatch({
+    name,
+    control,
+    defaultValue: defaultValue || "",
+  });
 
-  const [fields, setFields] = useState<IdValue[]>([]);
-
-  const remove = (index: number) => {
-    update([...fields.slice(0, index), ...fields.slice(index + 1)]);
-  };
-
-  const append = () => {
-    update([...fields, { id: generateId(), value: "" }]);
-  };
-
-  const updateValue = (index: number, value: string) => {
-    update([
-      ...fields.slice(0, index),
-      { ...fields[index], value },
-      ...fields.slice(index + 1),
-    ]);
-  };
-
-  const update = (values: IdValue[]) => {
-    setFields(values);
-    const fieldValue = values.flatMap((field) => field.value);
-    setValue(name, stringify ? toStringValue(fieldValue) : fieldValue);
-  };
-
-  useEffect(() => {
-    register(name);
-    let values = stringify
-      ? stringToMultiline(getValues(name))
-      : getValues(name);
+  const fields = useMemo<string[]>(() => {
+    let values = stringify ? stringToMultiline(value as string) : value;
 
     values =
       Array.isArray(values) && values.length !== 0
         ? values
         : defaultValue || [""];
 
-    setFields(values.map((value: string) => ({ value, id: generateId() })));
-  }, [register, getValues]);
+    return values;
+  }, [value]);
+
+  const remove = (index: number) => {
+    update([...fields.slice(0, index), ...fields.slice(index + 1)]);
+  };
+
+  const append = () => {
+    update([...fields, ""]);
+  };
+
+  const updateValue = (index: number, value: string) => {
+    update([...fields.slice(0, index), value, ...fields.slice(index + 1)]);
+  };
+
+  const update = (values: string[]) => {
+    const fieldValue = values.flatMap((field) => field);
+    setValue(name, stringify ? toStringValue(fieldValue) : fieldValue, {
+      shouldDirty: true,
+    });
+  };
+
+  useEffect(() => {
+    register(name);
+  }, [register]);
 
   return (
     <>
-      {fields.map(({ id, value }, index) => (
-        <Fragment key={id}>
+      {fields.map((value, index) => (
+        <Fragment key={index}>
           <InputGroup>
             <TextInput
               data-testid={name + index}
