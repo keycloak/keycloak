@@ -372,7 +372,7 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
         // metadata contributor to register the json type
-        properties.put("hibernate.metadata_builder_contributor", "org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbMetadataBuilderContributor");
+        properties.put("hibernate.metadata_builder_contributor", "org.keycloak.models.map.storage.jpa.hibernate.contributor.JsonbMetadataBuilderContributor");
         properties.put("javax.persistence.validation.mode", ValidationMode.NONE.name());
 
         logger.trace("Creating EntityManagerFactory");
