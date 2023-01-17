@@ -98,7 +98,6 @@ public class JpaMapStorageCockroachdb extends KeycloakModelParameters {
                 .config("user", COCKROACHDB_DB_USER)
                 .config("password", COCKROACHDB_DB_PASSWORD)
                 .config("driver", "org.postgresql.Driver")
-                .config("driverDialect", "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect")
                 .config("lockTimeout", "${" + LOCK_TIMEOUT_SYSTEM_PROPERTY + ":}");
 
         cf.spi(AuthenticationSessionSpi.PROVIDER_ID).provider(MapRootAuthenticationSessionProviderFactory.PROVIDER_ID)  .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
