@@ -3,10 +3,10 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>integration-arquillian-servers</artifactId>
+        <artifactId>integration-arquillian-servers-adapter-spi</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
         <version>999-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,7 +33,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak</groupId>
+            <groupId>org.keycloak.testsuite</groupId>
             <artifactId>keycloak-undertow-adapter-spi-jakarta</artifactId>
             <version>${project.version}</version>
         </dependency>
