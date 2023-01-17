@@ -2,17 +2,12 @@ package org.keycloak.testsuite.util;
 
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.logging.Logger;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
-import org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer;
+import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 import org.keycloak.utils.StringUtil;
-import org.wildfly.extras.creaper.core.online.CliException;
-import org.wildfly.extras.creaper.core.online.ModelNodeResult;
-import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -58,8 +53,8 @@ public class SpiProvidersSwitchingUtils {
                 getQuarkusContainer(container).setAdditionalBuildArgs(Collections.emptyList());
             }
 
-            private KeycloakQuarkusServerDeployableContainer getQuarkusContainer(Container container) {
-                return (KeycloakQuarkusServerDeployableContainer) container.getDeployableContainer();
+            private AbstractQuarkusDeployableContainer getQuarkusContainer(Container container) {
+                return (AbstractQuarkusDeployableContainer) container.getDeployableContainer();
             }
 
             /**

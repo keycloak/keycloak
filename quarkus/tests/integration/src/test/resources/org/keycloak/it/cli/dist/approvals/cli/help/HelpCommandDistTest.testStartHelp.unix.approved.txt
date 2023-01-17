@@ -170,7 +170,7 @@ Proxy:
 
 Vault:
 
---vault <provider>   Enables a vault provider. Possible values are: file, hashicorp.
+--vault <provider>   Enables a vault provider. Possible values are: file.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
 

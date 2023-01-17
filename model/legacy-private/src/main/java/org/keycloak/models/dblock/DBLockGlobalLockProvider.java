@@ -18,20 +18,24 @@
 package org.keycloak.models.dblock;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.locking.GlobalLock;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.locking.GlobalLockProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.time.Duration;
 import java.util.Objects;
 
-import static org.keycloak.models.locking.GlobalLock.Constants.KEYCLOAK_BOOT;
+import static org.keycloak.models.locking.GlobalLockProvider.Constants.KEYCLOAK_BOOT;
 
 public class DBLockGlobalLockProvider implements GlobalLockProvider {
 
     private static final Logger LOG = Logger.getLogger(DBLockGlobalLockProvider.class);
     public static final String DATABASE = "database";
+    private final KeycloakSession session;
     private final DBLockProvider dbLockProvider;
-    public DBLockGlobalLockProvider(DBLockProvider dbLockProvider) {
+    public DBLockGlobalLockProvider(KeycloakSession session, DBLockProvider dbLockProvider) {
+        this.session = session;
         this.dbLockProvider = dbLockProvider;
     }
 
@@ -46,15 +50,31 @@ public class DBLockGlobalLockProvider implements GlobalLockProvider {
         }
     }
 
+    /**
+     * Acquires a new non-reentrant global lock that is visible to all Keycloak nodes. If the lock was successfully
+     * acquired the method runs the {@code task} and return result to the caller.
+     * <p />
+     * See {@link GlobalLockProvider#withLock(String, Duration, KeycloakSessionTaskWithResult)} for more details.
+     * <p />
+     * This implementation does NOT meet all requirements from the JavaDoc of {@link GlobalLockProvider#withLock(String, Duration, KeycloakSessionTaskWithResult)}
+     * because {@link DBLockProvider} does not provide a way to lock and unlock in separate transactions.
+     * Also, the database schema update currently requires to be running in the same thread that initiated the update
+     * therefore the {@code task} is also running in the caller thread/transaction.
+     */
     @Override
-    public GlobalLock acquire(String lockName, Duration timeToWaitForLock) {
+    public <V> V withLock(String lockName, Duration timeToWaitForLock, KeycloakSessionTaskWithResult<V> task) {
         Objects.requireNonNull(lockName, "lockName cannot be null");
 
         if (timeToWaitForLock != null) {
             LOG.debug("DBLockGlobalLockProvider does not support setting timeToWaitForLock per lock.");
         }
-        dbLockProvider.waitForLock(stringToNamespace(lockName));
-        return () -> releaseLock(lockName);
+
+        try {
+            dbLockProvider.waitForLock(stringToNamespace(lockName));
+            return task.run(session);
+        } finally {
+            releaseLock(lockName);
+        }
     }
 
     private void releaseLock(String lockName) {

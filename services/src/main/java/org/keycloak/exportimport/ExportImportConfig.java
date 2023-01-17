@@ -39,6 +39,9 @@ public class ExportImportConfig {
     // used for "singleFile" provider
     public static final String FILE = PREFIX + "file";
 
+    // used for replacing placeholders
+    public static final String REPLACE_PLACEHOLDERS = PREFIX + "replace-placeholders";
+
     // How to export users when realm export is requested for "dir" provider
     public static final String USERS_EXPORT_STRATEGY = PREFIX + "usersExportStrategy";
     public static final UsersExportStrategy DEFAULT_USERS_EXPORT_STRATEGY = UsersExportStrategy.DIFFERENT_FILES;
@@ -116,5 +119,13 @@ public class ExportImportConfig {
     public static Strategy getStrategy() {
         String strategy = System.getProperty(STRATEGY, DEFAULT_STRATEGY.toString());
         return Enum.valueOf(Strategy.class, strategy);
+    }
+
+    public static boolean isReplacePlaceholders() {
+        return Boolean.getBoolean(REPLACE_PLACEHOLDERS);
+    }
+
+    public static void setReplacePlaceholders(boolean replacePlaceholders) {
+        System.setProperty(REPLACE_PLACEHOLDERS, String.valueOf(replacePlaceholders));
     }
 }

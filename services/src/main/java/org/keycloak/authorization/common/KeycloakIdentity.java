@@ -234,6 +234,9 @@ public class KeycloakIdentity implements Identity {
             }
 
             UserModel userSession = getUserFromToken();
+            if (userSession == null) {
+                throw new IllegalArgumentException("User from token not found");
+            }
 
             this.resourceServer = clientUser != null && userSession.getId().equals(clientUser.getId());
 

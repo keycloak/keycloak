@@ -22,13 +22,20 @@ import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.security.Key;
 
+import org.jboss.logging.Logger;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -69,6 +76,8 @@ import org.w3c.dom.Element;
  * @version $Revision: 1 $
  */
 public class SamlProtocolUtils {
+
+    private static final Logger logger = Logger.getLogger(SamlProtocolUtils.class);
 
     /**
      * Verifies a signature of the given SAML document using settings for the given client.
@@ -121,6 +130,22 @@ public class SamlProtocolUtils {
      */
     public static PublicKey getEncryptionKey(ClientModel client) throws VerificationException {
         return getPublicKey(client, SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE);
+    }
+
+    /**
+     * Returns private key used to decrypt SAML assertions encrypted by 3rd party SAML IDP
+     */
+    public static KeyManager.ActiveRsaKey getDecryptionKey(KeycloakSession session, RealmModel realm, SAMLIdentityProviderConfig idpConfig) {
+        String encryptionAlgorithm = idpConfig.getEncryptionAlgorithm();
+        if (encryptionAlgorithm != null && !encryptionAlgorithm.trim().isEmpty()) {
+            KeyWrapper kw = session.keys().getActiveKey(realm, KeyUse.ENC, encryptionAlgorithm);
+            return new KeyManager.ActiveRsaKey(kw);
+        } else {
+            // Backwards compatibility. Fallback to return default realm key (which is signature key, even if we're not signing anything, but decrypting stuff)
+            logger.debugf("Fallback to use default realm RSA key as a key for decrypt SAML documents. It is recommended to configure 'Encryption algorithm' on SAML IDP '%s' and configure encryption key of this algorithm in realm '%s'",
+                    idpConfig.getAlias(), realm.getName());
+            return session.keys().getActiveRsaKey(realm);
+        }
     }
 
     public static PublicKey getPublicKey(ClientModel client, String attribute) throws VerificationException {

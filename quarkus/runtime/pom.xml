@@ -96,11 +96,6 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron</artifactId>
         </dependency>
-       <!-- <dependency>
-            <groupId>io.quarkiverse.vault</groupId>
-            <artifactId>quarkus-vault</artifactId>
-            <version>${io.quarkiverse.vault.version}</version>
-        </dependency>-->
 
         <!-- CLI -->
         <dependency>
@@ -463,7 +458,6 @@
             <artifactId>infinispan-client-hotrod-jakarta</artifactId>
             <version>${infinispan.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-remote-query-client</artifactId>
