@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
 
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
@@ -120,8 +120,8 @@ export const ResourcesPolicySelect = ({
       name={name}
       defaultValue={preSelected ? [preSelected] : []}
       control={control}
-      rules={{ validate: (value) => !isRequired || value.length > 0 }}
-      render={({ onChange, value }) => (
+      rules={{ validate: (value) => !isRequired || value!.length > 0 }}
+      render={({ field }) => (
         <Select
           toggleId={name}
           variant={variant}
@@ -131,16 +131,16 @@ export const ResourcesPolicySelect = ({
             return toSelectOptions();
           }}
           onClear={() => {
-            onChange([]);
+            field.onChange([]);
             setSearch("");
           }}
-          selections={value}
+          selections={field.value}
           onSelect={(_, selectedValue) => {
             const option = selectedValue.toString();
-            const changedValue = value.find((p: string) => p === option)
-              ? value.filter((p: string) => p !== option)
-              : [...value, option];
-            onChange(changedValue);
+            const changedValue = field.value?.find((p: string) => p === option)
+              ? field.value.filter((p: string) => p !== option)
+              : [...field.value!, option];
+            field.onChange(changedValue);
             setSearch("");
           }}
           isOpen={open}

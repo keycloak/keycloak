@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useWatch,
+} from "react-hook-form-v7";
 import {
   Button,
   ButtonVariant,
@@ -28,7 +33,7 @@ export type ImportFile = {
   keystoreFormat: string;
   keyAlias: string;
   storePassword: string;
-  file: { value: File; filename: string };
+  file: { value?: string; filename: string };
 };
 
 export const ImportKeyDialog = ({
@@ -106,22 +111,22 @@ export const ImportKeyDialog = ({
             name="keystoreFormat"
             control={control}
             defaultValue={formats[0]}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 toggleId="archiveFormat"
                 onToggle={setOpenArchiveFormat}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value as string);
                   setOpenArchiveFormat(false);
                 }}
-                selections={value}
+                selections={field.value}
                 variant={SelectVariant.single}
                 aria-label={t("archiveFormat")}
                 isOpen={openArchiveFormat}
               >
                 {formats.map((option) => (
                   <SelectOption
-                    selected={option === value}
+                    selected={option === field.value}
                     key={option}
                     value={option}
                   />
@@ -139,13 +144,15 @@ export const ImportKeyDialog = ({
           <Controller
             name="file"
             control={control}
-            defaultValue=""
-            render={({ onChange, value }) => (
+            defaultValue={{ filename: "" }}
+            render={({ field }) => (
               <FileUpload
                 id="importFile"
-                value={value.value}
-                filename={value.filename}
-                onChange={(value, filename) => onChange({ value, filename })}
+                value={field.value.value}
+                filename={field.value.filename}
+                onChange={(value, filename) =>
+                  field.onChange({ value, filename })
+                }
               />
             )}
           />

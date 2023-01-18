@@ -10,7 +10,7 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
@@ -21,7 +21,7 @@ import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/def
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 
-import { ClientSelect } from "../../components/client/ClientSelect";
+import { ClientSelect } from "../../components/client/react-hook-v7/ClientSelect";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
@@ -213,7 +213,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                 control={control}
                 defaultValue={[]}
                 rules={{ validate: (value) => (value || "").length > 0 }}
-                render={(field) => (
+                render={({ field }) => (
                   <Select
                     placeholderText={t("selectARole")}
                     variant={SelectVariant.typeaheadMulti}
@@ -314,8 +314,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                   <KeycloakTextInput
                     id="alias"
                     data-testid="alias"
-                    name="alias"
-                    ref={register({ required: true })}
+                    {...register("alias", { required: true })}
                   />
                 </FormGroup>
                 <FormGroup
@@ -332,7 +331,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                     name="authScopes"
                     defaultValue={[]}
                     control={control}
-                    render={(field) => (
+                    render={({ field }) => (
                       <Select
                         toggleId="authScopes"
                         onToggle={setScopesDropdownOpen}

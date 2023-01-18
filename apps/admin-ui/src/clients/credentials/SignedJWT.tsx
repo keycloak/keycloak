@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import {
   FormGroup,
   Select,
@@ -11,6 +11,7 @@ import {
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { convertAttributeNameToForm, sortProviders } from "../../util";
+import { FormFields } from "../ClientDetails";
 
 export const SignedJWT = () => {
   const { control } = useFormContext();
@@ -32,32 +33,32 @@ export const SignedJWT = () => {
       }
     >
       <Controller
-        name={convertAttributeNameToForm(
+        name={convertAttributeNameToForm<FormFields>(
           "attributes.token.endpoint.auth.signing.alg"
         )}
         defaultValue=""
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Select
             maxHeight={200}
             toggleId="kc-signature-algorithm"
             onToggle={isOpen}
             onSelect={(_, value) => {
-              onChange(value.toString());
+              field.onChange(value.toString());
               isOpen(false);
             }}
-            selections={value || t("anyAlgorithm")}
+            selections={field.value || t("anyAlgorithm")}
             variant={SelectVariant.single}
             aria-label={t("signatureAlgorithm")}
             isOpen={open}
           >
-            <SelectOption selected={value === ""} key="any" value="">
+            <SelectOption selected={field.value === ""} key="any" value="">
               {t("anyAlgorithm")}
             </SelectOption>
             <>
               {providers.map((option) => (
                 <SelectOption
-                  selected={option === value}
+                  selected={option === field.value}
                   key={option}
                   value={option}
                 />

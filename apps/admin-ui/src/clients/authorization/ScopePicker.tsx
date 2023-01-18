@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import {
   FormGroup,
   Select,
@@ -64,7 +64,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
         name="scopes"
         defaultValue={[]}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Select
             toggleId="scopes"
             variant={SelectVariant.typeaheadMulti}
@@ -75,7 +75,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
             }}
             onToggle={setOpen}
             isOpen={open}
-            selections={value.map((o: Scope) => o.name)}
+            selections={field.value.map((o: Scope) => o.name)}
             onFilter={(_, value) => {
               setSearch(value);
               return renderScopes(scopes);
@@ -85,15 +85,17 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
                 typeof selectedValue === "string"
                   ? selectedValue
                   : (selectedValue as Scope).name;
-              const changedValue = value.find((o: Scope) => o.name === option)
-                ? value.filter((item: Scope) => item.name !== option)
-                : [...value, selectedValue];
-              onChange(changedValue);
+              const changedValue = field.value.find(
+                (o: Scope) => o.name === option
+              )
+                ? field.value.filter((item: Scope) => item.name !== option)
+                : [...field.value, selectedValue];
+              field.onChange(changedValue);
             }}
             onClear={(event) => {
               event.stopPropagation();
               setSearch("");
-              onChange([]);
+              field.onChange([]);
             }}
             aria-label={t("authorizationScopes")}
           >

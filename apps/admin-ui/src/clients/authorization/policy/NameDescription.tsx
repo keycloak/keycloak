@@ -37,10 +37,10 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         <KeycloakTextInput
           id="kc-name"
           data-testid="name"
-          {...register("name", { required: true })}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
+          {...register("name", { required: true })}
         />
       </FormGroup>
       <FormGroup
@@ -58,12 +58,6 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         helperTextInvalid={errors.description?.message}
       >
         <KeycloakTextArea
-          {...register("description", {
-            maxLength: {
-              value: 255,
-              message: t("common:maxLength", { length: 255 }),
-            },
-          })}
           id="kc-description"
           data-testid="description"
           validated={
@@ -71,6 +65,12 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
+          {...register("description", {
+            maxLength: {
+              value: 255,
+              message: t("common:maxLength", { length: 255 }),
+            },
+          })}
         />
       </FormGroup>
     </>

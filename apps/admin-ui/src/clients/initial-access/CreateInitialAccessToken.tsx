@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form-v7";
 import {
   ActionGroup,
   AlertVariant,
@@ -88,11 +88,11 @@ export default function CreateInitialAccessToken() {
               defaultValue={86400}
               control={control}
               rules={{ min: 1 }}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   data-testid="expiration"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value}
+                  onChange={field.onChange}
                   min={1}
                   validated={errors.expiration ? "error" : "default"}
                 />
@@ -113,20 +113,20 @@ export default function CreateInitialAccessToken() {
               name="count"
               defaultValue={1}
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <NumberInput
                   data-testid="count"
                   inputName="count"
                   inputAriaLabel={t("count")}
                   min={1}
-                  value={value}
-                  onPlus={() => onChange(value + 1)}
-                  onMinus={() => onChange(value - 1)}
+                  value={field.value}
+                  onPlus={() => field.onChange(field.value + 1)}
+                  onMinus={() => field.onChange(field.value - 1)}
                   onChange={(event) => {
                     const value = Number(
                       (event.target as HTMLInputElement).value
                     );
-                    onChange(value < 1 ? 1 : value);
+                    field.onChange(value < 1 ? 1 : value);
                   }}
                 />
               )}

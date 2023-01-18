@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import {
   SelectOption,
   FormGroup,
@@ -100,14 +100,14 @@ export const UserSelect = ({
             ? { required: true }
             : {}
         }
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Select
             toggleId={name!}
             variant={variant}
             placeholderText={t("selectAUser")}
             onToggle={toggleOpen}
             isOpen={open}
-            selections={value}
+            selections={field.value}
             onFilter={(_, value) => {
               debounceFn(value);
               return convert(users);
@@ -115,11 +115,13 @@ export const UserSelect = ({
             onSelect={(_, v) => {
               const option = v.toString();
               if (variant !== SelectVariant.typeaheadMulti) {
-                onChange([option]);
-              } else if (value.includes(option)) {
-                onChange(value.filter((item: string) => item !== option));
+                field.onChange([option]);
+              } else if (field.value.includes(option)) {
+                field.onChange(
+                  field.value.filter((item: string) => item !== option)
+                );
               } else {
-                onChange([...value, option]);
+                field.onChange([...field.value, option]);
               }
               toggleOpen();
             }}

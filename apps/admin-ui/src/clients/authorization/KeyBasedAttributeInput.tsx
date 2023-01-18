@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFieldArray, useFormContext } from "react-hook-form";
+import { Controller, useFieldArray, useFormContext } from "react-hook-form-v7";
 import {
   Button,
   Select,
@@ -106,7 +106,7 @@ const ValueInput = ({
           name={`${name}[${rowIndex}].value`}
           defaultValue={[]}
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               id={`${attribute.id}-value`}
               className="kc-attribute-value-selectable"
@@ -122,9 +122,9 @@ const ValueInput = ({
               variant={SelectVariant.typeahead}
               typeAheadAriaLabel={t("clients:selectOrTypeAKey")}
               placeholderText={t("clients:selectOrTypeAKey")}
-              selections={value}
+              selections={field.value}
               onSelect={(_, v) => {
-                onChange(v);
+                field.onChange(v);
 
                 toggleValueSelect(rowIndex, false);
               }}
@@ -137,10 +137,9 @@ const ValueInput = ({
         <KeycloakTextInput
           id={`${getMessageBundleKey(attribute.key)}-value`}
           className="value-input"
-          name={`${name}[${rowIndex}].value`}
-          ref={register()}
           defaultValue={attribute.value}
           data-testid="attribute-value-input"
+          {...register(`${name}.${rowIndex}.value`)}
         />
       )}
     </Td>
@@ -168,7 +167,7 @@ export const KeyBasedAttributeInput = ({
 
   useEffect(() => {
     if (!fields.length) {
-      append({ key: "", value: "" }, false);
+      append({ key: "", value: "" }, { shouldFocus: false });
     }
   }, [fields]);
 
@@ -197,9 +196,9 @@ export const KeyBasedAttributeInput = ({
             <Td>
               <Controller
                 name={`${name}[${rowIndex}].key`}
-                defaultValue={attribute.key}
+                defaultValue=""
                 control={control}
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <Select
                     id={`${name}[${rowIndex}].key`}
                     className="kc-attribute-key-selectable"
@@ -210,16 +209,16 @@ export const KeyBasedAttributeInput = ({
                     variant={SelectVariant.typeahead}
                     typeAheadAriaLabel={t("clients:selectOrTypeAKey")}
                     placeholderText={t("clients:selectOrTypeAKey")}
-                    selections={value}
+                    selections={field.value}
                     onSelect={(_, v) => {
-                      onChange(v.toString());
+                      field.onChange(v.toString());
 
                       toggleKeySelect(rowIndex, false);
                     }}
                   >
                     {selectableValues?.map((attribute) => (
                       <SelectOption
-                        selected={attribute.name === value}
+                        selected={attribute.name === field.value}
                         key={attribute.key}
                         value={resources ? attribute.name : attribute.key}
                       >

@@ -1,4 +1,4 @@
-import { UserSelect } from "../../../components/users/hook-form-v7/UserSelect";
+import { UserSelect } from "../../../components/users/UserSelect";
 
 export const User = () => (
   <UserSelect

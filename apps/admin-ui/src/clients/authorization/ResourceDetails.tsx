@@ -14,7 +14,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
 
@@ -23,10 +23,10 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
-import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
+import { KeyValueInput } from "../../components/key-value-form/hook-form-v7/KeyValueInput";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { MultiLineInput } from "../../components/multi-line-input/hook-form-v7/MultiLineInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -37,7 +37,10 @@ import { ScopePicker } from "./ScopePicker";
 
 import "./resource-details.css";
 
-type SubmittedResource = Omit<ResourceRepresentation, "attributes"> & {
+type SubmittedResource = Omit<
+  ResourceRepresentation,
+  "attributes" | "scopes"
+> & {
   attributes: KeyValueType[];
 };
 
@@ -55,7 +58,13 @@ export default function ResourceDetails() {
     shouldUnregister: false,
     mode: "onChange",
   });
-  const { register, errors, control, setValue, handleSubmit } = form;
+  const {
+    register,
+    formState: { errors },
+    control,
+    setValue,
+    handleSubmit,
+  } = form;
 
   const { id, resourceId, realm } = useParams<ResourceDetailsParams>();
   const navigate = useNavigate();
@@ -87,7 +96,7 @@ export default function ResourceDetails() {
     []
   );
 
-  const save = async (submitted: SubmittedResource) => {
+  const submit = async (submitted: SubmittedResource) => {
     const resource = convertFormValuesToObject<
       SubmittedResource,
       ResourceRepresentation
@@ -180,7 +189,7 @@ export default function ResourceDetails() {
             isHorizontal
             role="view-clients"
             className="keycloak__resource-details__form"
-            onSubmit={handleSubmit(save)}
+            onSubmit={handleSubmit(submit)}
           >
             <FormGroup
               label={t("owner")}
@@ -215,13 +224,12 @@ export default function ResourceDetails() {
             >
               <KeycloakTextInput
                 id="name"
-                name="name"
-                ref={register({ required: true })}
                 validated={
                   errors.name
                     ? ValidatedOptions.error
                     : ValidatedOptions.default
                 }
+                {...register("name", { required: true })}
               />
             </FormGroup>
             <FormGroup
@@ -234,7 +242,10 @@ export default function ResourceDetails() {
                 />
               }
             >
-              <KeycloakTextInput id="displayName" name="name" ref={register} />
+              <KeycloakTextInput
+                id="displayName"
+                {...register("displayName")}
+              />
             </FormGroup>
             <FormGroup
               label={t("type")}
@@ -243,7 +254,7 @@ export default function ResourceDetails() {
                 <HelpItem helpText="clients-help:type" fieldLabelId="type" />
               }
             >
-              <KeycloakTextInput id="type" name="type" ref={register} />
+              <KeycloakTextInput id="type" {...register("type")} />
             </FormGroup>
             <FormGroup
               label={t("uris")}
@@ -275,9 +286,8 @@ export default function ResourceDetails() {
             >
               <KeycloakTextInput
                 id="iconUri"
-                name="icon_uri"
                 type="url"
-                ref={register}
+                {...register("icon_uri")}
               />
             </FormGroup>
             <FormGroup
@@ -295,13 +305,13 @@ export default function ResourceDetails() {
                 name="ownerManagedAccess"
                 control={control}
                 defaultValue={false}
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <Switch
                     id="ownerManagedAccess"
                     label={t("common:on")}
                     labelOff={t("common:off")}
-                    isChecked={value}
-                    onChange={onChange}
+                    isChecked={field.value}
+                    onChange={field.onChange}
                     aria-label={t("ownerManagedAccess")}
                   />
                 )}

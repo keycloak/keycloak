@@ -1,4 +1,5 @@
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import { DecisionStrategy } from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -12,7 +13,12 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useWatch,
+} from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom-v5-compat";
 
@@ -36,16 +42,24 @@ import {
 import { ResourcesPolicySelect } from "./ResourcesPolicySelect";
 import { ScopeSelect } from "./ScopeSelect";
 
-const DECISION_STRATEGIES = ["UNANIMOUS", "AFFIRMATIVE", "CONSENSUS"] as const;
+type FormFields = PolicyRepresentation & {
+  resourceType: string;
+};
 
 export default function PermissionDetails() {
   const { t } = useTranslation("clients");
 
-  const form = useForm<PolicyRepresentation>({
+  const form = useForm<FormFields>({
     shouldUnregister: false,
     mode: "onChange",
   });
-  const { register, control, reset, errors, handleSubmit } = form;
+  const {
+    register,
+    control,
+    reset,
+    formState: { errors },
+    handleSubmit,
+  } = form;
 
   const navigate = useNavigate();
   const { id, realm, permissionType, permissionId, selectedId } = useParams<
@@ -159,7 +173,7 @@ export default function PermissionDetails() {
     },
   });
 
-  const resourcesIds = useWatch<PolicyRepresentation["resources"]>({
+  const resourcesIds = useWatch({
     control,
     name: "resources",
     defaultValue: [],
@@ -214,9 +228,8 @@ export default function PermissionDetails() {
             >
               <KeycloakTextInput
                 id="name"
-                name="name"
-                ref={register({ required: true })}
                 validated={errors.name ? "error" : "default"}
+                {...register("name", { required: true })}
               />
             </FormGroup>
             <FormGroup
@@ -233,14 +246,13 @@ export default function PermissionDetails() {
             >
               <KeycloakTextArea
                 id="description"
-                name="description"
-                ref={register({
+                validated={errors.description ? "error" : "default"}
+                {...register("description", {
                   maxLength: {
                     value: 255,
                     message: t("common:maxLength", { length: 255 }),
                   },
                 })}
-                validated={errors.description ? "error" : "default"}
               />
             </FormGroup>
             <FormGroup
@@ -277,8 +289,9 @@ export default function PermissionDetails() {
               >
                 <KeycloakTextInput
                   id="resourceType"
-                  name="resourceType"
-                  ref={register({ required: permissionType === "scope" })}
+                  {...register("resourceType", {
+                    required: permissionType === "scope",
+                  })}
                 />
               </FormGroup>
             ) : (
@@ -362,18 +375,18 @@ export default function PermissionDetails() {
               <Controller
                 name="decisionStrategy"
                 data-testid="decisionStrategy"
-                defaultValue={DECISION_STRATEGIES[0]}
+                defaultValue={DecisionStrategy.UNANIMOUS}
                 control={control}
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <>
-                    {DECISION_STRATEGIES.map((strategy) => (
+                    {Object.values(DecisionStrategy).map((strategy) => (
                       <Radio
                         id={strategy}
                         key={strategy}
                         data-testid={strategy}
-                        isChecked={value === strategy}
+                        isChecked={field.value === strategy}
                         name="decisionStrategies"
-                        onChange={() => onChange(strategy)}
+                        onChange={() => field.onChange(strategy)}
                         label={t(`decisionStrategies.${strategy}`)}
                         className="pf-u-mb-md"
                       />

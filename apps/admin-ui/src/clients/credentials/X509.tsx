@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form-v7";
 import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { convertAttributeNameToForm } from "../../util";
+import { beerify, convertAttributeNameToForm } from "../../util";
+import { FormFields } from "../ClientDetails";
 
 export const X509 = () => {
   const { t } = useTranslation("clients");
@@ -11,7 +12,7 @@ export const X509 = () => {
     register,
     control,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<FormFields>();
   return (
     <>
       <FormGroup
@@ -26,18 +27,18 @@ export const X509 = () => {
         hasNoPaddingTop
       >
         <Controller
-          name={convertAttributeNameToForm(
+          name={convertAttributeNameToForm<FormFields>(
             "attributes.x509.allow.regex.pattern.comparison"
           )}
           defaultValue="false"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="allowRegexComparison"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange(value.toString())}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange(value.toString())}
               aria-label={t("allowRegexComparison")}
             />
           )}
@@ -54,22 +55,24 @@ export const X509 = () => {
         }
         helperTextInvalid={t("common:required")}
         validated={
-          errors.attributes?.["x509.subjectdn"]
+          errors.attributes?.[beerify("x509.subjectdn")]
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
         isRequired
       >
         <KeycloakTextInput
-          ref={register({ required: true })}
           type="text"
           id="kc-subject"
-          name={convertAttributeNameToForm("attributes.x509.subjectdn")}
           validated={
-            errors.attributes?.["x509.subjectdn"]
+            errors.attributes?.[beerify("x509.subjectdn")]
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
+          {...register(
+            convertAttributeNameToForm("attributes.x509.subjectdn"),
+            { required: true }
+          )}
         />
       </FormGroup>
     </>
