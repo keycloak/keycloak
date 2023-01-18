@@ -8,9 +8,8 @@ import {
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
-import { omit } from "lodash-es";
 import { useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation, useMatch, useNavigate } from "react-router-dom-v5-compat";
 
@@ -30,6 +29,7 @@ import {
 import {
   arrayToKeyValue,
   keyValueToArray,
+  KeyValueType,
 } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
@@ -54,11 +54,10 @@ export default function RealmRoleTabs() {
   const form = useForm<AttributeForm>({
     mode: "onChange",
   });
-  const { setValue, reset } = form;
+  const { control, reset, setValue } = form;
   const navigate = useNavigate();
 
   const { adminClient } = useAdminClient();
-  const [role, setRole] = useState<AttributeForm>();
 
   const { id, clientId } = useParams<ClientRoleParams>();
   const { pathname } = useLocation();
@@ -66,12 +65,11 @@ export default function RealmRoleTabs() {
   const { realm: realmName } = useRealm();
 
   const [key, setKey] = useState(0);
+  const [attributes, setAttributes] = useState<KeyValueType[] | undefined>();
 
   const { profileInfo } = useServerInfo();
 
-  const refresh = () => {
-    setKey(key + 1);
-  };
+  const refresh = () => setKey(key + 1);
 
   const { addAlert, addError } = useAlerts();
 
@@ -83,6 +81,18 @@ export default function RealmRoleTabs() {
       ...rest,
     };
   };
+
+  const roleName = useWatch<string | undefined>({
+    control,
+    defaultValue: undefined,
+    name: "name",
+  });
+
+  const composites = useWatch<boolean>({
+    control,
+    defaultValue: false,
+    name: "composite",
+  });
 
   const [realm, setRealm] = useState<RealmRepresentation>();
 
@@ -103,36 +113,20 @@ export default function RealmRoleTabs() {
       const convertedRole = convert(role);
 
       reset(convertedRole);
+      setAttributes(convertedRole.attributes);
       setRealm(realm);
-      setRole(convertedRole);
     },
     [key]
   );
 
   const onSubmit: SubmitHandler<AttributeForm> = async (formValues) => {
     try {
-      if (
-        formValues.attributes &&
-        formValues.attributes[formValues.attributes.length - 1]?.key === ""
-      ) {
-        setValue(
-          "attributes",
-          formValues.attributes.slice(0, formValues.attributes.length - 1)
-        );
-      }
-
       const { attributes, ...rest } = formValues;
-      let roleRepresentation: RoleRepresentation = rest;
+      const roleRepresentation: RoleRepresentation = rest;
 
       roleRepresentation.name = roleRepresentation.name?.trim();
+      roleRepresentation.attributes = keyValueToArray(attributes);
 
-      if (attributes) {
-        roleRepresentation.attributes = keyValueToArray(attributes);
-      }
-      roleRepresentation = {
-        ...omit(role!, "attributes"),
-        ...roleRepresentation,
-      };
       if (!clientId) {
         await adminClient.roles.updateById({ id }, roleRepresentation);
       } else {
@@ -142,7 +136,7 @@ export default function RealmRoleTabs() {
         );
       }
 
-      setRole(convert(roleRepresentation));
+      setAttributes(attributes);
       addAlert(t("roleSaveSuccess"), AlertVariant.success);
     } catch (error) {
       addError("roles:roleSaveError", error);
@@ -201,7 +195,7 @@ export default function RealmRoleTabs() {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleDeleteConfirm",
     messageKey: t("roles:roleDeleteConfirmDialog", {
-      selectedRoleName: role?.name || t("createRole"),
+      selectedRoleName: roleName || t("createRole"),
     }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
@@ -212,7 +206,7 @@ export default function RealmRoleTabs() {
         } else {
           await adminClient.clients.delRole({
             id: clientId,
-            roleName: role!.name!,
+            roleName: roleName!,
           });
         }
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
@@ -266,14 +260,14 @@ export default function RealmRoleTabs() {
   ] = useConfirmDialog({
     titleKey: t("roles:removeAllAssociatedRoles") + "?",
     messageKey: t("roles:removeAllAssociatedRolesConfirmDialog", {
-      name: role?.name || t("createRole"),
+      name: roleName || t("createRole"),
     }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         const additionalRoles = await adminClient.roles.getCompositeRoles({
-          id: role!.id!,
+          id,
         });
         await adminClient.roles.delCompositeRoles({ id }, additionalRoles);
         addAlert(
@@ -296,7 +290,7 @@ export default function RealmRoleTabs() {
   const addComposites = async (composites: RoleRepresentation[]) => {
     try {
       await adminClient.roles.createComposite(
-        { roleId: role?.id!, realm: realm!.realm },
+        { roleId: id, realm: realm!.realm },
         composites
       );
       refresh();
@@ -307,9 +301,10 @@ export default function RealmRoleTabs() {
     }
   };
 
-  const isDefaultRole = (name: string) => realm?.defaultRole!.name === name;
+  const isDefaultRole = (name: string | undefined) =>
+    realm?.defaultRole!.name === name;
 
-  if (!realm || !role) {
+  if (!realm) {
     return <KeycloakSpinner />;
   }
 
@@ -321,17 +316,17 @@ export default function RealmRoleTabs() {
         <AddRoleMappingModal
           id={id}
           type="roles"
-          name={role.name}
+          name={roleName}
           onAssign={(rows) => addComposites(rows.map((r) => r.role))}
           onClose={() => setOpen(false)}
         />
       )}
       <ViewHeader
-        titleKey={role.name!}
+        titleKey={roleName!}
         badges={[
           {
             id: "composite-role-badge",
-            text: role.composite ? t("composite") : "",
+            text: composites ? t("composite") : "",
             readonly: true,
           },
         ]}
@@ -354,25 +349,25 @@ export default function RealmRoleTabs() {
                   ? toClient({ realm: realmName, clientId, tab: "roles" })
                   : toRealmRoles({ realm: realmName })
               }
-              editMode={true}
+              editMode
             />
           </Tab>
-          {role.composite && (
+          {composites && (
             <Tab
               data-testid="associatedRolesTab"
               title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
               {...associatedRolesTab}
             >
               <RoleMapping
-                name={role.name!}
-                id={role.id!}
+                name={roleName!}
+                id={id}
                 type="roles"
                 isManager
                 save={(rows) => addComposites(rows.map((r) => r.role))}
               />
             </Tab>
           )}
-          {!isDefaultRole(role.name!) && (
+          {!isDefaultRole(roleName) && (
             <Tab
               data-testid="attributesTab"
               className="kc-attributes-tab"
@@ -382,11 +377,13 @@ export default function RealmRoleTabs() {
               <AttributesForm
                 form={form}
                 save={onSubmit}
-                reset={() => reset(role)}
+                reset={() =>
+                  setValue("attributes", attributes, { shouldDirty: false })
+                }
               />
             </Tab>
           )}
-          {!isDefaultRole(role.name!) && (
+          {!isDefaultRole(roleName) && (
             <Tab
               title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
               {...usersInRoleTab}
@@ -401,7 +398,7 @@ export default function RealmRoleTabs() {
               title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
               {...permissionsTab}
             >
-              <PermissionsTab id={role.id} type="roles" />
+              <PermissionsTab id={id} type="roles" />
             </Tab>
           )}
         </RoutableTabs>

@@ -5,12 +5,12 @@ import {
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import type { SubmitHandler, UseFormMethods } from "react-hook-form";
+import { SubmitHandler, useWatch, UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, To } from "react-router-dom-v5-compat";
 
 import { FormAccess } from "../form-access/FormAccess";
-import type { AttributeForm } from "../key-value-form/AttributeForm";
+import { AttributeForm } from "../key-value-form/AttributeForm";
 import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../view-header/ViewHeader";
@@ -24,13 +24,19 @@ export type RoleFormProps = {
 };
 
 export const RoleForm = ({
-  form: { handleSubmit, errors, register, getValues },
+  form: { register, control, handleSubmit, errors },
   onSubmit,
   cancelLink,
   role,
   editMode,
 }: RoleFormProps) => {
   const { t } = useTranslation("roles");
+
+  const roleName = useWatch<string | undefined>({
+    control,
+    defaultValue: undefined,
+    name: "name",
+  });
 
   return (
     <>
@@ -86,7 +92,7 @@ export const RoleForm = ({
                   ? ValidatedOptions.error
                   : ValidatedOptions.default
               }
-              isDisabled={getValues().name?.includes("default-roles")}
+              isDisabled={roleName?.includes("default-roles")}
             />
           </FormGroup>
           <ActionGroup>
