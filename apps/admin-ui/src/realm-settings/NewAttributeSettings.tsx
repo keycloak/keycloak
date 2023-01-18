@@ -203,7 +203,7 @@ export default function NewAttributeSettings() {
           profileConfig.isRequired
             ? { required: profileConfig.required }
             : undefined,
-          profileConfig.group ? { group: profileConfig.group } : undefined
+          profileConfig.group ? { group: profileConfig.group } : { group: null }
         );
       });
 

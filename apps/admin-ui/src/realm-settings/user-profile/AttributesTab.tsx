@@ -53,7 +53,7 @@ export const AttributesTab = () => {
     config?.attributes!.splice(newIndex, 0, movedAttribute);
 
     save(
-      { attributes: config?.attributes! },
+      { attributes: config?.attributes!, groups: config?.groups },
       {
         successMessageKey: "realm-settings:updatedUserProfileSuccess",
         errorMessageKey: "realm-settings:updatedUserProfileError",
@@ -74,7 +74,7 @@ export const AttributesTab = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       save(
-        { attributes: updatedAttributes! },
+        { attributes: updatedAttributes!, groups: config?.groups },
         {
           successMessageKey: "realm-settings:deleteAttributeSuccess",
           errorMessageKey: "realm-settings:deleteAttributeError",
