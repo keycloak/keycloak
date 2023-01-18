@@ -44,6 +44,23 @@ This can be achieved by add the `auth-server-quarkus` profile when running the t
 Unlike the "development" setup described above, this requires re-build the whole distribution
 after doing any change in the code.
 
+### Running tests using an embedded server
+
+For test driven development, it is possible to run the Keycloak server deployed on real Quarkus server.
+This can be achieved by add the `auth-server-quarkus-embedded` profile when running the testsuite.
+
+    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-quarkus-embedded clean install -Dtest=LoginTest
+
+After running this command, you should also be able to run tests from your IDE. For that, make sure you have the `auth-server-quarkus-embedded` profile enabled.
+
+When running in embedded mode, the `build` phase happens every time the server is started, and it is based on the same configuration used during a full-distribution test run(e.g.: `auth-server-quarkus` profile is active).
+
+There are a few limitations when running tests. The well-known limitations are:
+
+* FIPS tests not working
+* Deploying script providers not working. Probably any test deploying JAR files.
+* Re-starting the server during a test execution is taking too much metaspace. Need more investigation.
+
 ## Debugging - tips & tricks
 
 ### Arquillian debugging
@@ -465,7 +482,6 @@ This is temporary and database configuration should be more integrated with the 
 
 Activate the following profiles:
 
-* `quarkus`
 * `auth-server-cluster-quarkus`
 
 Then run any cluster test as usual.
