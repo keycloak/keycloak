@@ -20,7 +20,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 
 import { getLastId } from "./groupIdUtils";
 import { useSubGroups } from "./SubGroupsContext";
-import { useLocation } from "react-router-dom-v5-compat";
+import { useLocation } from "react-router-dom";
 
 export const GroupAttributes = () => {
   const { t } = useTranslation("groups");

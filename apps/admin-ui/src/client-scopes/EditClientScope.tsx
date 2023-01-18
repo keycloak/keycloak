@@ -12,7 +12,7 @@ import {
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useNavigate } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 
 import {

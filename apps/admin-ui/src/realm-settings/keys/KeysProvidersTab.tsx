@@ -18,7 +18,7 @@ import {
 import { SearchIcon } from "@patternfly/react-icons";
 import { KeyboardEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom-v5-compat";
+import { Link } from "react-router-dom";
 
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useAlerts } from "../../components/alert/Alerts";

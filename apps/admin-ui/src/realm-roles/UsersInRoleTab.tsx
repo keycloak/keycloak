@@ -1,7 +1,7 @@
 import { Button, PageSection, Popover } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useNavigate } from "react-router-dom";
 
 import type { ClientRoleParams } from "../clients/routes/ClientRole";
 import { useHelp } from "../components/help-enabler/HelpHeader";

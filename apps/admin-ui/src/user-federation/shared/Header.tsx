@@ -5,7 +5,7 @@ import {
 } from "@patternfly/react-core";
 import { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom-v5-compat";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { Controller, useFormContext } from "react-hook-form";
 import { useAlerts } from "../../components/alert/Alerts";

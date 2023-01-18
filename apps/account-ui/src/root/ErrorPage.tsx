@@ -8,7 +8,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useRouteError } from "react-router";
+import { useRouteError } from "react-router-dom";
 
 export const ErrorPage = () => {
   const { t } = useTranslation();

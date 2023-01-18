@@ -13,7 +13,7 @@ import { cellWidth } from "@patternfly/react-table";
 import { capitalize } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom-v5-compat";
+import { Link } from "react-router-dom";
 
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";

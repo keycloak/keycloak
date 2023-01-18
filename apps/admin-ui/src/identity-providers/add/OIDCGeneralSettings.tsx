@@ -1,7 +1,7 @@
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom-v5-compat";
+import { useParams } from "react-router-dom";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";

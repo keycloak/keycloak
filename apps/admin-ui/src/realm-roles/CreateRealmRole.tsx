@@ -2,7 +2,7 @@ import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/ro
 import { AlertVariant } from "@patternfly/react-core";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useNavigate } from "react-router-dom";
 
 import { useAlerts } from "../components/alert/Alerts";
 import { AttributeForm } from "../components/key-value-form/AttributeForm";

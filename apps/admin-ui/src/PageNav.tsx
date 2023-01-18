@@ -1,5 +1,5 @@
 import { FormEvent, FunctionComponent } from "react";
-import { NavLink, useMatch, useNavigate } from "react-router-dom-v5-compat";
+import { NavLink, useMatch, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Nav,

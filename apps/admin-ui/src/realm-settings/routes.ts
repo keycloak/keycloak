@@ -11,14 +11,8 @@ import { AddExecutorRoute } from "./routes/AddExecutor";
 import { ExecutorRoute } from "./routes/Executor";
 import { AddClientPolicyRoute } from "./routes/AddClientPolicy";
 import { EditClientPolicyRoute } from "./routes/EditClientPolicy";
-import {
-  NewClientPolicyConditionRoute,
-  NewClientPolicyConditionWithPolicyNameRoute,
-} from "./routes/AddCondition";
-import {
-  EditClientPolicyConditionRoute,
-  EditClientPolicyConditionWithPolicyNameRoute,
-} from "./routes/EditCondition";
+import { NewClientPolicyConditionRoute } from "./routes/AddCondition";
+import { EditClientPolicyConditionRoute } from "./routes/EditCondition";
 import { UserProfileRoute } from "./routes/UserProfile";
 import { AddAttributeRoute } from "./routes/AddAttribute";
 import { KeysRoute } from "./routes/KeysTab";
@@ -39,9 +33,7 @@ const routes: RouteDef[] = [
   AddClientPolicyRoute,
   EditClientPolicyRoute,
   NewClientPolicyConditionRoute,
-  NewClientPolicyConditionWithPolicyNameRoute,
   EditClientPolicyConditionRoute,
-  EditClientPolicyConditionWithPolicyNameRoute,
   UserProfileRoute,
   AddAttributeRoute,
   AttributeRoute,

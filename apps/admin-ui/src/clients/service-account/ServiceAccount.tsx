@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom-v5-compat";
+import { Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import { AlertVariant, PageSection } from "@patternfly/react-core";
 import { InfoCircleIcon } from "@patternfly/react-icons";

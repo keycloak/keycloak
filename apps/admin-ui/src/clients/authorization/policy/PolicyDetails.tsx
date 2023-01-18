@@ -10,7 +10,7 @@ import {
 import { FunctionComponent, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";

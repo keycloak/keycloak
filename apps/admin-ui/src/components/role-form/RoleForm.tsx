@@ -7,7 +7,7 @@ import {
 } from "@patternfly/react-core";
 import { SubmitHandler, useWatch, UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, To } from "react-router-dom-v5-compat";
+import { Link, To } from "react-router-dom";
 
 import { FormAccess } from "../form-access/FormAccess";
 import { AttributeForm } from "../key-value-form/AttributeForm";

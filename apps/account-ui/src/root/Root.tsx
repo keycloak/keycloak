@@ -6,7 +6,7 @@ import {
 } from "keycloak-masthead";
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet } from "react-router";
+import { Outlet } from "react-router-dom";
 import { AlertProvider } from "../components/alerts/Alerts";
 
 import { environment } from "../environment";

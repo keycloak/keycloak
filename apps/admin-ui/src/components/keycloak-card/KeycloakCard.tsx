@@ -11,7 +11,7 @@ import {
   Label,
 } from "@patternfly/react-core";
 import { ReactElement, useState } from "react";
-import { To, useNavigate } from "react-router-dom-v5-compat";
+import { To, useNavigate } from "react-router-dom";
 import { ClickableCard } from "./ClickableCard";
 
 import "./keycloak-card.css";

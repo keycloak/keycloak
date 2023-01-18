@@ -1,29 +1,26 @@
-import { FunctionComponent, Suspense } from "react";
-import { Page } from "@patternfly/react-core";
-import { HashRouter as Router, Switch } from "react-router-dom";
-import { CompatRouter, CompatRoute } from "react-router-dom-v5-compat";
-import { ErrorBoundary } from "react-error-boundary";
-import type Keycloak from "keycloak-js";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import { Page } from "@patternfly/react-core";
+import type Keycloak from "keycloak-js";
+import { FunctionComponent, Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
+import { HashRouter as Router, Route, Routes } from "react-router-dom";
 
-import { Header } from "./PageHeader";
-import { PageNav } from "./PageNav";
-import { Help } from "./components/help-enabler/HelpHeader";
-
-import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
 import { AlertProvider } from "./components/alert/Alerts";
-
-import { AccessContextProvider, useAccess } from "./context/access/Access";
-import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
+import { ErrorRenderer } from "./components/error/ErrorRenderer";
+import { Help } from "./components/help-enabler/HelpHeader";
 import { KeycloakSpinner } from "./components/keycloak-spinner/KeycloakSpinner";
+import { AccessContextProvider, useAccess } from "./context/access/Access";
+import { AdminClientContext } from "./context/auth/AdminClient";
+import { RealmContextProvider } from "./context/realm-context/RealmContext";
+import { RealmsProvider } from "./context/RealmsContext";
+import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
+import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
 import { ForbiddenSection } from "./ForbiddenSection";
 import { SubGroups } from "./groups/SubGroupsContext";
-import { RealmsProvider } from "./context/RealmsContext";
-import { RealmContextProvider } from "./context/realm-context/RealmContext";
-import { ErrorRenderer } from "./components/error/ErrorRenderer";
-import { AdminClientContext } from "./context/auth/AdminClient";
-import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
+import { Header } from "./PageHeader";
+import { PageNav } from "./PageNav";
+import { RouteDef, routes } from "./route-config";
 
 export const mainPageContentId = "kc-main-content-page-container";
 
@@ -38,23 +35,21 @@ const AppContexts: FunctionComponent<AdminClientProps> = ({
   adminClient,
 }) => (
   <Router>
-    <CompatRouter>
-      <AdminClientContext.Provider value={{ keycloak, adminClient }}>
-        <WhoAmIContextProvider>
-          <RealmsProvider>
-            <RealmContextProvider>
-              <AccessContextProvider>
-                <Help>
-                  <AlertProvider>
-                    <SubGroups>{children}</SubGroups>
-                  </AlertProvider>
-                </Help>
-              </AccessContextProvider>
-            </RealmContextProvider>
-          </RealmsProvider>
-        </WhoAmIContextProvider>
-      </AdminClientContext.Provider>
-    </CompatRouter>
+    <AdminClientContext.Provider value={{ keycloak, adminClient }}>
+      <WhoAmIContextProvider>
+        <RealmsProvider>
+          <RealmContextProvider>
+            <AccessContextProvider>
+              <Help>
+                <AlertProvider>
+                  <SubGroups>{children}</SubGroups>
+                </AlertProvider>
+              </Help>
+            </AccessContextProvider>
+          </RealmContextProvider>
+        </RealmsProvider>
+      </WhoAmIContextProvider>
+    </AdminClientContext.Provider>
   </Router>
 );
 
@@ -96,17 +91,15 @@ export const App = ({ keycloak, adminClient }: AdminClientProps) => {
           }
         >
           <ServerInfoProvider>
-            <Switch>
+            <Routes>
               {routes.map((route, i) => (
-                <CompatRoute
+                <Route
                   key={i}
                   path={route.path}
-                  exact={route.matchOptions?.exact ?? true}
-                >
-                  <SecuredRoute route={route} />
-                </CompatRoute>
+                  element={<SecuredRoute route={route} />}
+                />
               ))}
-            </Switch>
+            </Routes>
           </ServerInfoProvider>
         </ErrorBoundary>
       </Page>

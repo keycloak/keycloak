@@ -3,7 +3,7 @@ import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/ro
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, To, useNavigate } from "react-router-dom-v5-compat";
+import { Link, To, useNavigate } from "react-router-dom";
 
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";

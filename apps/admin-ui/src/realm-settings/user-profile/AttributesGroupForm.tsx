@@ -10,7 +10,7 @@ import {
 import { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom-v5-compat";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";

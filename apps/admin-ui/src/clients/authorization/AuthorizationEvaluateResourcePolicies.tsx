@@ -11,7 +11,7 @@ import {
 import { ExpandableRowContent, Tbody, Td, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom-v5-compat";
+import { Link } from "react-router-dom";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useParams } from "../../utils/useParams";

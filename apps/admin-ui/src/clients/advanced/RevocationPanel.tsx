@@ -9,7 +9,7 @@ import {
 import { useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form-v7";
 import { Trans, useTranslation } from "react-i18next";
-import { Link } from "react-router-dom-v5-compat";
+import { Link } from "react-router-dom";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";

@@ -8,7 +8,7 @@ import {
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom-v5-compat";
+import { useParams } from "react-router-dom";
 
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";

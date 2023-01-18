@@ -12,7 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom-v5-compat";
+import { Link } from "react-router-dom";
 
 import { getProtocolName } from "../../clients/utils";
 import {

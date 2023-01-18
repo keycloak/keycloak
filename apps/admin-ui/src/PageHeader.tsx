@@ -14,7 +14,7 @@ import {
 import { HelpIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom-v5-compat";
+import { Link } from "react-router-dom";
 import { HelpHeader, useHelp } from "./components/help-enabler/HelpHeader";
 import { useAdminClient } from "./context/auth/AdminClient";
 import { useRealm } from "./context/realm-context/RealmContext";

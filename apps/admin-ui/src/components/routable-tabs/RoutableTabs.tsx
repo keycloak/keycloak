@@ -10,7 +10,7 @@ import {
   JSXElementConstructor,
   ReactElement,
 } from "react";
-import { Path, useHref, useLocation } from "react-router-dom-v5-compat";
+import { Path, useHref, useLocation } from "react-router-dom";
 
 // TODO: Remove the custom 'children' props and type once the following issue has been resolved:
 // https://github.com/patternfly/patternfly-react/issues/6766

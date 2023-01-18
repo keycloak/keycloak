@@ -1,5 +1,5 @@
 import { FunctionComponent, useEffect, useMemo } from "react";
-import { useMatch } from "react-router-dom-v5-compat";
+import { useMatch } from "react-router-dom";
 
 import { RecentUsed } from "../../components/realm-selector/recent-used";
 import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";

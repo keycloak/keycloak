@@ -13,7 +13,7 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useNavigate } from "react-router-dom";
 
 import { FormAccess } from "../components/form-access/FormAccess";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";

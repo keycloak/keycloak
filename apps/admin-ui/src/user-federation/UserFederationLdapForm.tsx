@@ -2,7 +2,7 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import { ActionGroup, Button, Form } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useNavigate } from "react-router-dom";
 
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { useRealm } from "../context/realm-context/RealmContext";

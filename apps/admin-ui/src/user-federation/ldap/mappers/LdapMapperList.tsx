@@ -7,7 +7,7 @@ import {
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, To, useNavigate, useParams } from "react-router-dom-v5-compat";
+import { Link, To, useNavigate, useParams } from "react-router-dom";
 
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";

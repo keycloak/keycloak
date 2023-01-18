@@ -6,7 +6,7 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom-v5-compat";
+import { Link, useNavigate } from "react-router-dom";
 
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
