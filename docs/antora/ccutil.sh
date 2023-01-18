@@ -4,9 +4,6 @@ mkdir -p build/ccutil
 cp -r build/assembler/guides-server build/ccutil
 cp -r ccutil/guides-server/* build/ccutil/guides-server
 
-sed -i '2 a\
-Keycloak Project' build/ccutil/guides-server/20.0/guides-keycloak-server.adoc
-
 # sed -i 's|xref:{page-version}@guides-server::\([^.]*\)|https://ahus1.github.io/keycloak-antora/guides-server/latest/\1|g' guides-operator/guides-operator/20.0/guides-keycloak-operator.adoc
 
 IMAGENAME='quay.io/ivanhorvath/ccutil:amazing'
@@ -18,8 +15,9 @@ else
     CRT=$(which docker)
 fi
 
-if ! ${CRT} inspect ccutil &>/dev/null;
+if ! ${CRT} exec ccutil true &>/dev/null;
 then
+    ${CRT} rm -f ccutil
     ${CRT} run --privileged --ulimit host -d -v $(pwd):/docs:rw --name ccutil ${IMAGENAME}
 fi
 

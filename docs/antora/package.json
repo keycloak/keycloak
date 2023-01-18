@@ -7,7 +7,7 @@
   "scripts": {
     "author": "antora --stacktrace --redirect-facility static antora-playbook-author.yml",
     "build": "antora --stacktrace --redirect-facility static antora-playbook.yml",
-    "serve-antora": "http-server _site -c-1 -p 5000 -a 127.0.0.1"
+    "serve": "http-server _site -c-1 -p 5000 -a 127.0.0.1"
   },
   "devDependencies": {
     "@antora/cli": "^3.1.1",

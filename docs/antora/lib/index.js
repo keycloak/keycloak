@@ -1,6 +1,6 @@
 'use strict'
 
-const convertDocumentToPdf = require('./convert-document-to-pdf')
+const convertDocumentToPdf = require('./convert-document-to-ccutil')
 const { assembleContent } = (() => {
   try {
     return require('@antora/assembler')

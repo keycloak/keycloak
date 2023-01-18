@@ -19,6 +19,8 @@ antora:
   extensions:
     - '@antora/lunr-extension'
     - '@antora/collector-extension'
+#   Enable the original pdf-extension to explore its behavior
+#    - '@antora/pdf-extension'
     - './lib/index.js'
 
 ui:
