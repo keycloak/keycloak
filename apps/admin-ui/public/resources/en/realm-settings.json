@@ -201,6 +201,7 @@
   "clientLoginTimeout": "Client Login Timeout",
   "userInitiatedActionLifespan": "User-Initiated Action Lifespan",
   "defaultAdminInitiated": "Default Admin-Initiated Action Lifespan",
+  "shortVerificationUri": "Short verification_uri in Device Authorization flow",
   "emailVerification": "Email Verification",
   "idpAccountEmailVerification": "IdP account email verification",
   "executeActions": "Execute actions",

@@ -19,6 +19,7 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import {
   TimeSelector,
   toHumanFormat,
@@ -135,6 +136,31 @@ export const RealmSettingsTokensTab = ({
                     ></SelectOption>
                   ))}
                 </Select>
+              )}
+            />
+          </FormGroup>
+
+          <FormGroup
+            label={t("shortVerificationUri")}
+            fieldId="shortVerificationUri"
+            labelIcon={
+              <HelpItem
+                helpText="realm-settings-help:shortVerificationUriTooltip"
+                fieldLabelId="realm-settings:shortVerificationUri"
+              />
+            }
+          >
+            <Controller
+              name="attributes.shortVerificationUri"
+              defaultValue=""
+              control={form.control}
+              render={({ onChange, value }) => (
+                <KeycloakTextInput
+                  id="shortVerificationUri"
+                  value={value}
+                  onChange={onChange}
+                  placeholder={t("shortVerificationUri")}
+                />
               )}
             />
           </FormGroup>
