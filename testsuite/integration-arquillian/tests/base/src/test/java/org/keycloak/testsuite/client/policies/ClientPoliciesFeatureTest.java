@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
  *
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.testsuite.client.policies;
 
 import java.util.Set;
 
@@ -37,6 +37,8 @@ import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.CLIENT_POLICIES;
 
 /**
+ * This test class is for enabling and disabling client policies by feature mechanism.
+ * 
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest  {

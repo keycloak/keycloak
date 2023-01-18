@@ -79,7 +79,12 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             case ACCOUNT_OLD:
             case ACCOUNT:
             case UPDATE_PROFILE:
+                if (realm.isRegistrationEmailAsUsername()) {
+                    return false;
+                }
                 return realm.isEditUsernameAllowed();
+            case UPDATE_EMAIL:
+                return realm.isRegistrationEmailAsUsername();
             case USER_API:
                 return true;
             default:
@@ -97,6 +102,9 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             case IDP_REVIEW:
                 return !realm.isRegistrationEmailAsUsername();
             case UPDATE_PROFILE:
+                if (realm.isRegistrationEmailAsUsername()) {
+                    return false;
+                }
                 return realm.isEditUsernameAllowed();
             case UPDATE_EMAIL:
                 return false;
@@ -110,6 +118,12 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     }
 
     private static boolean readEmailCondition(AttributeContext c) {
+        RealmModel realm = c.getSession().getContext().getRealm();
+
+        if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
+            return false;
+        }
+
         return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;
     }
 

@@ -22,9 +22,9 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Resteasy;
-import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportManager;
+import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -60,16 +60,11 @@ import javax.ws.rs.core.Application;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -220,7 +215,7 @@ public class KeycloakApplication extends Application {
         if (exportImportManager[0].isRunImport()) {
             exportImportManager[0].runImport();
         } else {
-            importRealms();
+            importRealms(exportImportManager[0]);
         }
 
         importAddUser();
@@ -262,32 +257,13 @@ public class KeycloakApplication extends Application {
         return singletons;
     }
 
-    public void importRealms() {
-        String files = System.getProperty("keycloak.import");
-        if (files != null) {
-            StringTokenizer tokenizer = new StringTokenizer(files, ",");
-            while (tokenizer.hasMoreTokens()) {
-                String file = tokenizer.nextToken().trim();
-                RealmRepresentation rep;
-                try {
-                    Path filePath = Paths.get(file);
-
-                    if (!(Files.exists(filePath) && Files.isRegularFile(filePath) && filePath.toString().endsWith(".json"))) {
-                        logger.debugf("Ignoring import file because it is not a valid file: %s", file);
-                        continue;
-                    }
-
-                    rep = JsonSerialization.readValue(StringPropertyReplacer.replaceProperties(
-                            new String(Files.readAllBytes(filePath), "UTF-8"), new StringPropertyReplacer.PropertyResolver() {
-                                @Override
-                                public String resolve(String property) {
-                                    return Optional.ofNullable(System.getenv(property)).orElse(null);
-                                }
-                            }), RealmRepresentation.class);
-                } catch (Exception cause) {
-                    throw new RuntimeException("Failed to parse realm configuration file: " + file, cause);
-                }
-                importRealm(rep, "file " + file);
+    public void importRealms(ExportImportManager exportImportManager) {
+        String dir = System.getProperty("keycloak.import");
+        if (dir != null) {
+            try {
+                exportImportManager.runImportAtStartup(dir, Strategy.IGNORE_EXISTING);
+            } catch (IOException cause) {
+                throw new RuntimeException("Failed to import realms", cause);
             }
         }
     }

@@ -92,6 +92,7 @@
 
         <auth.server.remote>false</auth.server.remote>
         <auth.server.quarkus>false</auth.server.quarkus>
+        <auth.server.quarkus.embedded>false</auth.server.quarkus.embedded>
 
         <auth.server.profile/>
         <auth.server.feature/>
@@ -569,6 +570,8 @@
 
                             <auth.server.remote>${auth.server.remote}</auth.server.remote>
                             <auth.server.quarkus>${auth.server.quarkus}</auth.server.quarkus>
+                            <auth.server.quarkus.embedded>${auth.server.quarkus.embedded}</auth.server.quarkus.embedded>
+                            <jboss.server.config.dir>${auth.server.config.dir}</jboss.server.config.dir>
 
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
                             <examples.home>${examples.home}</examples.home>
@@ -757,6 +760,20 @@
             <properties>
                 <auth.server>quarkus</auth.server>
                 <auth.server.quarkus>true</auth.server.quarkus>
+                <auth.server.jboss>false</auth.server.jboss>
+                <auth.server.undertow>false</auth.server.undertow>
+                <auth.server.config.dir>${auth.server.home}/conf</auth.server.config.dir>
+                <auth.server.quarkus.skip.unpack>false</auth.server.quarkus.skip.unpack>
+                <auth.server.undertow.skip.unpack>true</auth.server.undertow.skip.unpack>
+                <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>auth-server-quarkus-embedded</id>
+            <properties>
+                <auth.server>quarkus</auth.server>
+                <auth.server.quarkus.embedded>true</auth.server.quarkus.embedded>
                 <auth.server.jboss>false</auth.server.jboss>
                 <auth.server.undertow>false</auth.server.undertow>
                 <auth.server.config.dir>${auth.server.home}/conf</auth.server.config.dir>

@@ -127,6 +127,9 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
         if (isEnabled(session)) {
+            if (user != null && user.getServiceAccountClientLink() != null) {
+                return new LegacyAttributes(context, attributes, user, metadata, session);
+            }
             return new DefaultAttributes(context, attributes, user, metadata, session);
         }
         return new LegacyAttributes(context, attributes, user, metadata, session);

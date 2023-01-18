@@ -388,6 +388,14 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="shortVerificationUri">{{:: 'short-verification-uri' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" id="shortVerificationUri" type="text" ng-model="realm.attributes.shortVerificationUri" name="shortVerificationUri">
+            </div>
+            <kc-tooltip>{{:: 'short-verification-uri.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
                 <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>

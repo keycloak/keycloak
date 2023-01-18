@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.testsuite.client.policies;
 
 import org.junit.After;
 import org.junit.Test;
@@ -35,6 +35,8 @@ import java.util.List;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
+ * This test class is for testing client policies that are applied when importing and exporting a realm setting file.
+ * 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {

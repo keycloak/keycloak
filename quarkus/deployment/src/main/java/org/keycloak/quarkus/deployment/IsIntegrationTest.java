@@ -3,7 +3,7 @@ package org.keycloak.quarkus.deployment;
 import io.quarkus.deployment.IsTest;
 import io.quarkus.runtime.LaunchMode;
 
-import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
+import org.keycloak.quarkus.runtime.Environment;
 
 public class IsIntegrationTest extends IsTest {
 
@@ -13,7 +13,7 @@ public class IsIntegrationTest extends IsTest {
 
     @Override
     public boolean getAsBoolean() {
-        return super.getAsBoolean() && (System.getProperty(LAUNCH_MODE) != null && System.getProperty(LAUNCH_MODE).equals("test"));
+        return super.getAsBoolean() && Environment.isTestLaunchMode();
     }
 
 }
