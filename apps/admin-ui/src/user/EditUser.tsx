@@ -33,6 +33,10 @@ import { UserCredentials } from "./UserCredentials";
 import { BruteForced, UserForm } from "./UserForm";
 import { UserGroups } from "./UserGroups";
 import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
+import {
+  isUserProfileError,
+  userProfileErrorToString,
+} from "./UserProfileFields";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 
@@ -130,7 +134,11 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
       addAlert(t("userSaved"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("users:userCreateError", error);
+      if (isUserProfileError(error)) {
+        addError(userProfileErrorToString(error), error);
+      } else {
+        addError("users:userCreateError", error);
+      }
     }
   };
 

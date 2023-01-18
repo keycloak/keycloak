@@ -13,6 +13,10 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { toUser } from "./routes/User";
 import { UserForm } from "./UserForm";
+import {
+  isUserProfileError,
+  userProfileErrorToString,
+} from "./UserProfileFields";
 
 import "./user-section.css";
 
@@ -37,7 +41,11 @@ export default function CreateUser() {
       addAlert(t("userCreated"), AlertVariant.success);
       navigate(toUser({ id: createdUser.id, realm, tab: "settings" }));
     } catch (error) {
-      addError("users:userCreateError", error);
+      if (isUserProfileError(error)) {
+        addError(userProfileErrorToString(error), error);
+      } else {
+        addError("users:userCreateError", error);
+      }
     }
   };
 

@@ -1,6 +1,3 @@
-import { Fragment } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   Form,
   FormGroup,
@@ -8,13 +5,16 @@ import {
   SelectOption,
   Text,
 } from "@patternfly/react-core";
+import { Fragment } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import type {
   UserProfileAttribute,
   UserProfileAttributeRequired,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
 import useToggle from "../utils/useToggle";
 
@@ -24,6 +24,20 @@ const DEFAULT_ROLES = ["admin", "user"];
 type UserProfileFieldsProps = {
   roles?: string[];
 };
+
+export type UserProfileError = {
+  responseData: { errors?: { errorMessage: string }[] };
+};
+
+export function isUserProfileError(error: unknown): error is UserProfileError {
+  return !!(error as UserProfileError).responseData.errors;
+}
+
+export function userProfileErrorToString(error: UserProfileError) {
+  return (
+    error.responseData["errors"]?.map((e) => e["errorMessage"]).join("\n") || ""
+  );
+}
 
 export const UserProfileFields = ({
   roles = ["admin"],
