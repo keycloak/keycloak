@@ -26,7 +26,9 @@ import org.keycloak.testsuite.ui.AbstractUiTest;
 import org.keycloak.testsuite.ui.account2.page.PageNotFound;
 import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
@@ -36,7 +38,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
 @EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
 public abstract class AbstractAccountTest extends AbstractUiTest {
     public static final String ACCOUNT_THEME_NAME_KC = "keycloak.v2";
-    public static final String ACCOUNT_THEME_NAME_RHSSO = "rh-sso.v2";
+    public static final DateTimeFormatter DEFAULT_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMMM d, yyyy 'at' h:mm a", Locale.ENGLISH);
 
     @Page
     protected WelcomeScreen accountWelcomeScreen;
@@ -67,6 +69,6 @@ public abstract class AbstractAccountTest extends AbstractUiTest {
     }
 
     protected String getAccountThemeName() {
-        return getProjectName().equals(Profile.PRODUCT_NAME) ? ACCOUNT_THEME_NAME_RHSSO : ACCOUNT_THEME_NAME_KC;
+        return ACCOUNT_THEME_NAME_KC;
     }
 }

@@ -112,9 +112,8 @@ public class InternationalizationTest extends AbstractAccountTest {
         SigningInPage.UserCredential passwordCred =
                 passwordCredentialType.getUserCredential(testUserResource().credentials().get(0).getId());
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy, h:mm a", Locale.ENGLISH);
         try {
-            LocalDateTime.parse(passwordCred.getCreatedAtStr(), formatter);
+            LocalDateTime.parse(passwordCred.getCreatedAtStr(), DEFAULT_TIME_FORMATTER);
         } catch (DateTimeParseException e) {
             fail("Time was not formatted with the locale");
         }
@@ -124,7 +123,7 @@ public class InternationalizationTest extends AbstractAccountTest {
         loginPage.localeDropdown().selectAndAssert("Deutsch");
         loginPage.form().login(testUser);
 
-        DateTimeFormatter formatterDe = DateTimeFormatter.ofPattern("d. MMMM yyyy, H:mm", Locale.GERMAN);
+        DateTimeFormatter formatterDe = DateTimeFormatter.ofPattern("d. MMMM yyyy 'um' H:mm", Locale.GERMAN);
 
         try {
             LocalDateTime.parse(passwordCred.getCreatedAtStr(), formatterDe);
