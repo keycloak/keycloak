@@ -213,6 +213,12 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             transforms: [cellWidth(10)],
           },
           {
+            name: "use",
+            displayKey: "realm-settings:use",
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(10)],
+          },
+          {
             name: "provider",
             displayKey: "realm-settings:provider",
             cellRenderer: ProviderRenderer,

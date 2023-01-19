@@ -35,7 +35,9 @@ export const BooleanComponent = ({
             isDisabled={isDisabled}
             label={t("common:on")}
             labelOff={t("common:off")}
-            isChecked={value === "true" || value === true}
+            isChecked={
+              value === "true" || value === true || value[0] === "true"
+            }
             onChange={(value) => onChange("" + value)}
             data-testid={name}
             aria-label={t(label!)}

@@ -89,6 +89,7 @@
   "keyPassword": "Key password",
   "providers": "Providers",
   "algorithm": "Algorithm",
+  "use": "Use",
   "aesGenerated": "aes-generated",
   "ecdsaGenerated": "ecdsca-generated",
   "hmacGenerated": "hmac-generated",
