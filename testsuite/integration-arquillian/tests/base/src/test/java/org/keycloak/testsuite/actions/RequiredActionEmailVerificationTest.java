@@ -61,8 +61,8 @@ import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.MailUtils;
 
 import java.io.Closeable;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
