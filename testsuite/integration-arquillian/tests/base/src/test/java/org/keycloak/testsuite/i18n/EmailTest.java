@@ -20,8 +20,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.Arrays;
 import org.jboss.arquillian.graphene.page.Page;
