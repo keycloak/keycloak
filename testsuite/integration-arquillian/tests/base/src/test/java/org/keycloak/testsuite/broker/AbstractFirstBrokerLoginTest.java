@@ -2,7 +2,7 @@ package org.keycloak.testsuite.broker;
 
 import java.util.List;
 
-import jakarta.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 
 import com.google.common.collect.ImmutableMap;
