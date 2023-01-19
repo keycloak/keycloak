@@ -1,0 +1,17 @@
+.navbar {
+    font-size: unset;
+}
+
+html {
+    font-size: unset
+}
+
+@media screen and (min-width: 1024px) {
+    html {
+        font-size: unset
+    }
+}
+
+.navbar-brand {
+    all: unset;
+}

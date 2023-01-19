@@ -1,3 +1,27 @@
+.navbar {
+    height: unset;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 4;
+}
+
+.navbar .nav-item {
+    margin-top: 0;
+}
+
+.nav-link {
+    padding: 0;
+}
+
+body {
+    padding-top: 4.5rem;
+}
+
+.toolbar {
+    top: 4.5rem;
+}
+
 footer.footer {
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
