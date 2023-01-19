@@ -74,7 +74,12 @@ export default function UsersSection() {
   const refresh = () => setKey(key + 1);
 
   const { hasAccess } = useAccess();
-  const isManager = hasAccess("manage-users");
+
+  // Only needs query-users access to attempt add/delete of users.
+  // This is because the user could have fine-grained access to users
+  // of a group.  There is no way to know this without searching the
+  // permissions of every group.
+  const isManager = hasAccess("query-users");
 
   useFetch(
     async () => {
