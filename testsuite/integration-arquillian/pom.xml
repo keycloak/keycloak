@@ -223,6 +223,10 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-rest-admin-ui-ext</artifactId>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     
