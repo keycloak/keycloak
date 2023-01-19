@@ -32,7 +32,7 @@ import { FormFields } from "../ClientDetails";
 import { toClient } from "../routes/Client";
 import { toClients } from "../routes/Clients";
 
-const isXml = (text: string) => text.startsWith("<");
+const isXml = (text: string) => text.match(/(<.[^(><.)]+>)/g);
 
 export default function ImportForm() {
   const { t } = useTranslation("clients");
