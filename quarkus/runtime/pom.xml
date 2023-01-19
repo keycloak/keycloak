@@ -541,10 +541,15 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>jakarta.mail</groupId>
             <artifactId>jakarta.mail-api</artifactId>
             <version>${jakarta.mail.version}</version>
+        </dependency>-->
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>${com.sun.jakarta.mail.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.santuario</groupId>
