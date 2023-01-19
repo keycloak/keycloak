@@ -230,11 +230,10 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 
     @Test
     public void timesTests() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy, h:mm a", Locale.ENGLISH);
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime nowPlus1 = now.plusMinutes(1);
-        String nowStr = now.format(formatter);
-        String nowStrPlus1 = nowPlus1.format(formatter);
+        String nowStr = now.format(DEFAULT_TIME_FORMATTER);
+        String nowStrPlus1 = nowPlus1.format(DEFAULT_TIME_FORMATTER);
 
         String sessionId = createSession(Browsers.CHROME);
 
@@ -251,9 +250,9 @@ public class DeviceActivityTest extends BaseAccountPageTest {
         assertThat(session.isPresent(), is(true));
 
         String startedAtStr = session.get().getStarted();
-        LocalDateTime startedAt = LocalDateTime.parse(startedAtStr, formatter);
-        LocalDateTime lastAccessed = LocalDateTime.parse(session.get().getLastAccess(), formatter);
-        LocalDateTime expiresAt = LocalDateTime.parse(session.get().getExpires(), formatter);
+        LocalDateTime startedAt = LocalDateTime.parse(startedAtStr, DEFAULT_TIME_FORMATTER);
+        LocalDateTime lastAccessed = LocalDateTime.parse(session.get().getLastAccess(), DEFAULT_TIME_FORMATTER);
+        LocalDateTime expiresAt = LocalDateTime.parse(session.get().getExpires(), DEFAULT_TIME_FORMATTER);
 
         assertTrue("Last access should be after started at", lastAccessed.isAfter(startedAt));
         assertTrue("Expires at should be after last access", expiresAt.isAfter(lastAccessed));
@@ -276,7 +275,7 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 
         refreshPageAndWaitForLoad();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d. MMMM yyyy, H:mm", locale);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d. MMMM yyyy 'um' H:mm", locale);
         Optional<DeviceActivityPage.Session> session = deviceActivityPage.getSession(sessionId);
         assertThat(session.isPresent(), is(true));
         try {
