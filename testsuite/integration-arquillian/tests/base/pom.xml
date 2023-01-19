@@ -894,6 +894,8 @@
                                 <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
                                 <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
 
+                                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
+
                                 <keycloak.authorization.map.storage.provider>jpa</keycloak.authorization.map.storage.provider>
                                 <keycloak.authSession.map.storage.provider>jpa</keycloak.authSession.map.storage.provider>
                                 <keycloak.client.map.storage.provider>jpa</keycloak.client.map.storage.provider>
@@ -1073,6 +1075,8 @@
                                 <keycloak.map.storage.connectionsJpa.url>${keycloak.map.storage.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
                                 <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
                                 <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
+
+                                <keycloak.storage.connections.vendor>cockroach</keycloak.storage.connections.vendor>
 
                                 <keycloak.authorization.map.storage.provider>jpa</keycloak.authorization.map.storage.provider>
                                 <keycloak.authSession.map.storage.provider>jpa</keycloak.authSession.map.storage.provider>
