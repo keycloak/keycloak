@@ -303,6 +303,11 @@ final class StoragePropertyMappers {
                         .to("kc.spi-map-storage-file-dir")
                         .mapFrom("storage")
                         .paramLabel("dir")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_JPA_DB)
+                        .to("kc.spi-map-storage-jpa-db")
+                        .mapFrom("storage")
+                        .paramLabel("type")
                         .build()
         };
     }
