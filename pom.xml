@@ -61,8 +61,8 @@
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
         <aesh.version>2.4</aesh.version>
-        <apache.httpcomponents.version>4.5.13</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.4.14</apache.httpcomponents.httpcore.version>
+        <apache.httpcomponents.version>4.5.14</apache.httpcomponents.version>
+        <apache.httpcomponents.httpcore.version>4.4.16</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
         <bouncycastle.version>1.70</bouncycastle.version>
@@ -143,8 +143,8 @@
 
         <!-- Others -->
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.11</commons-lang3.version>
-        <commons-io.version>2.7</commons-io.version>
+        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <commons-io.version>2.11.0</commons-io.version>
         <apacheds.version>2.0.0.AM26</apacheds.version>
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
