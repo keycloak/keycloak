@@ -22,6 +22,27 @@ body {
     top: 4.5rem;
 }
 
+.nav-container {
+    top: 4.5rem;
+}
+
+.nav {
+    top: 4.5rem;
+    height: calc(100vh - 4.5rem)
+}
+
+@media screen and (max-width: 1023.5px) {
+    .navbar-menu {
+        max-height: calc(100vh - 4.5rem);
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    .nav {
+        top: 4.5rem;
+    }
+}
+
 footer.footer {
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
