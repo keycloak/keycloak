@@ -1,0 +1,113 @@
+.navbar-brand .navbar-item + .navbar-item {
+  /*flex-grow: 1;*/
+  /*justify-content: flex-end;*/
+}
+
+/*@media screen and (min-width: 1024px) {*/
+/*  .navbar-brand {*/
+/*    flex-grow: 1;*/
+/*  }*/
+
+/*  .navbar-menu {*/
+/*    flex-grow: 0;*/
+/*  }*/
+/*}*/
+
+#search-input {
+  color: #333;
+  font-family: inherit;
+  font-size: 0.95rem;
+  width: 150px;
+  border: 1px solid #dbdbdb;
+  border-radius: 0.1em;
+  line-height: 1.5;
+  padding: 0 0.25em;
+}
+
+@media screen and (min-width: 769px) {
+  #search-input {
+    width: 200px;
+  }
+}
+
+.search-result-dropdown-menu {
+  font-weight: initial;
+  position: absolute;
+  z-index: 100;
+  display: block;
+  right: 0;
+  left: inherit;
+  top: 100%;
+  border-radius: 4px;
+  margin: 6px 0 0;
+  padding: 0;
+  text-align: left;
+  height: auto;
+  background: transparent;
+  border: none;
+  max-width: 600px;
+  min-width: 500px;
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.2), 0 2px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+@media screen and (max-width: 768px) {
+  /*.navbar-brand .navbar-item + .navbar-item {*/
+  /*  padding-left: 0;*/
+  /*  padding-right: 0;*/
+  /*}*/
+
+  .search-result-dropdown-menu {
+    min-width: calc(100vw - 3.75rem);
+  }
+}
+
+.search-result-dataset {
+  position: relative;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 4px;
+  overflow: auto;
+  padding: 0 8px;
+  max-height: calc(100vh - 5.25rem);
+  line-height: 1.5;
+}
+
+.search-result-item {
+  display: flex;
+  margin: 0.5rem 0;
+}
+
+.search-result-document-title {
+  width: 33%;
+  border-right: 1px solid #ddd;
+  color: #02060c;
+  font-weight: 500;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.5rem 0.5rem 0;
+  text-align: right;
+  position: relative;
+  word-wrap: break-word;
+}
+
+.search-result-document-hit {
+  flex: 1;
+  font-size: 0.75rem;
+  color: #63676d;
+}
+
+.search-result-document-hit > a {
+  color: inherit;
+  display: block;
+  padding: 0.55rem 0.25rem 0.55rem 0.75rem;
+}
+
+.search-result-document-hit > a:hover {
+  background-color: rgba(69, 142, 225, 0.05);
+}
+
+.search-result-highlight {
+  color: #174d8c;
+  background: rgba(143, 187, 237, 0.1);
+  padding: 0.1em 0.05em;
+  font-weight: 500;
+}

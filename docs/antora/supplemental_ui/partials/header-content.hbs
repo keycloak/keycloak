@@ -23,6 +23,17 @@
         <li class="nav-item col-6 col-md-auto">
           <a class="nav-link " href="https://www.keycloak.org/blog">Blog</a>
         </li>
+          {{#if env.SITE_SEARCH_PROVIDER}}
+              <li class="nav-item col-6 col-md-auto">
+                  <div id="search-field" class="field nav-link">
+                      <input id="search-input" type="text" placeholder="Search the docs"{{#if page.home}} autofocus{{/if}}>
+                      <label class="filter checkbox">
+                          <input type="checkbox" data-facet-filter="component:{{page.component.name}}"> In this guide
+                      </label>
+                  </div>
+              </li>
+          {{/if}}
+
       </ul>
     </div>
 </nav>
