@@ -27,7 +27,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import jakarta.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;

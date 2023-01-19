@@ -48,7 +48,7 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.*;
 
-import jakarta.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMessage;
 import java.util.Arrays;
 import java.util.List;
 

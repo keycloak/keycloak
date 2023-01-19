@@ -63,8 +63,8 @@ import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 
 import java.io.Closeable;
 import java.io.IOException;
