@@ -1,7 +1,7 @@
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { Page } from "@patternfly/react-core";
 import type Keycloak from "keycloak-js";
-import { FunctionComponent, Suspense } from "react";
+import { PropsWithChildren, Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { HashRouter as Router, Route, Routes } from "react-router-dom";
 
@@ -29,11 +29,11 @@ export type AdminClientProps = {
   adminClient: KeycloakAdminClient;
 };
 
-const AppContexts: FunctionComponent<AdminClientProps> = ({
+const AppContexts = ({
   children,
   keycloak,
   adminClient,
-}) => (
+}: PropsWithChildren<AdminClientProps>) => (
   <Router>
     <AdminClientContext.Provider value={{ keycloak, adminClient }}>
       <WhoAmIContextProvider>

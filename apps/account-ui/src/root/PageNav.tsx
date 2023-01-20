@@ -7,8 +7,8 @@ import {
 } from "@patternfly/react-core";
 import { TFuncKey } from "i18next";
 import {
-  FunctionComponent,
   MouseEvent as ReactMouseEvent,
+  PropsWithChildren,
   useMemo,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -128,11 +128,11 @@ type NavLinkProps = {
   isActive: boolean;
 };
 
-const NavLink: FunctionComponent<NavLinkProps> = ({
+const NavLink = ({
   to,
   isActive,
   children,
-}) => {
+}: PropsWithChildren<NavLinkProps>) => {
   const href = useHref(to);
   const handleClick = useLinkClickHandler(to);
 

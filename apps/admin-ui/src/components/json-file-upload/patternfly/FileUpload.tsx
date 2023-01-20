@@ -1,3 +1,5 @@
+import { fromEvent } from "file-selector";
+import { PropsWithChildren } from "react";
 import {
   DropEvent,
   DropzoneInputProps,
@@ -5,9 +7,9 @@ import {
   FileRejection,
   useDropzone,
 } from "react-dropzone";
+
 import { FileUploadField, FileUploadFieldProps } from "./FileUploadField";
-import { readFile, fileReaderType } from "./fileUtils";
-import { fromEvent } from "file-selector";
+import { fileReaderType, readFile } from "./fileUtils";
 
 export interface FileUploadProps
   extends Omit<
@@ -94,7 +96,7 @@ export interface FileUploadProps
   onDataChange?: (data: string) => void;
 }
 
-export const FileUpload: React.FunctionComponent<FileUploadProps> = ({
+export const FileUpload = ({
   id,
   type,
   value = type === fileReaderType.text || type === fileReaderType.dataURL
@@ -113,7 +115,7 @@ export const FileUpload: React.FunctionComponent<FileUploadProps> = ({
   onDataChange,
   dropzoneProps = {},
   ...props
-}: FileUploadProps) => {
+}: PropsWithChildren<FileUploadProps>) => {
   const onDropAccepted = (acceptedFiles: File[], event: DropEvent) => {
     if (acceptedFiles.length > 0) {
       const fileHandle = acceptedFiles[0];

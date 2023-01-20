@@ -1,3 +1,5 @@
+import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
+import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   ActionGroup,
   Button,
@@ -23,20 +25,19 @@ import {
   TableHeader,
   TableVariant,
 } from "@patternfly/react-table";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
-import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
-import { FunctionComponent, useMemo, useState } from "react";
+import { pickBy } from "lodash-es";
+import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { pickBy } from "lodash-es";
+
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { prettyPrintJSON } from "../util";
+import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { CellResourceLinkRenderer } from "./ResourceLinks";
 
 import "./events.css";
@@ -70,11 +71,11 @@ const defaultValues: AdminEventSearchForm = {
   authIpAddress: "",
 };
 
-const DisplayDialog: FunctionComponent<DisplayDialogProps> = ({
+const DisplayDialog = ({
   titleKey,
   onClose,
   children,
-}) => {
+}: PropsWithChildren<DisplayDialogProps>) => {
   const { t } = useTranslation("events");
   return (
     <Modal

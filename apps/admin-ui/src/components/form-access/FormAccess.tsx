@@ -1,12 +1,4 @@
-import {
-  Children,
-  cloneElement,
-  FunctionComponent,
-  isValidElement,
-  ReactElement,
-  ReactNode,
-} from "react";
-import { Controller } from "react-hook-form";
+import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import {
   ActionGroup,
   ClipboardCopy,
@@ -19,7 +11,15 @@ import {
   StackItem,
   TextArea,
 } from "@patternfly/react-core";
-import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  PropsWithChildren,
+  ReactElement,
+  ReactNode,
+} from "react";
+import { Controller } from "react-hook-form";
 
 import { useAccess } from "../../context/access/Access";
 
@@ -52,14 +52,14 @@ export type FormAccessProps = FormProps & {
  * Use this in place of a patternfly Form component and add the `role` and `fineGrainedAccess` properties.
  * @param {FormAccessProps} param0 - all properties of Form + role and fineGrainedAccess
  */
-export const FormAccess: FunctionComponent<FormAccessProps> = ({
+export const FormAccess = ({
   children,
   role,
   fineGrainedAccess = false,
   isReadOnly = false,
   unWrap = false,
   ...rest
-}) => {
+}: PropsWithChildren<FormAccessProps>) => {
   const { hasAccess } = useAccess();
 
   const recursiveCloneChildren = (

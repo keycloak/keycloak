@@ -9,13 +9,13 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
-import { FunctionComponent, useState } from "react";
+import { PropsWithChildren, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useLocalStorage from "react-use-localstorage";
 
+import helpUrls from "../../help-urls";
 import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
-import helpUrls from "../../help-urls";
 
 import "./help-header.css";
 
@@ -31,7 +31,7 @@ export const HelpContext = createNamedContext<HelpContextProps | undefined>(
 
 export const useHelp = () => useRequiredContext(HelpContext);
 
-export const Help: FunctionComponent = ({ children }) => {
+export const Help = ({ children }: PropsWithChildren<unknown>) => {
   const [enabled, setHelp] = useLocalStorage("helpEnabled", "true");
 
   function toggleHelp() {

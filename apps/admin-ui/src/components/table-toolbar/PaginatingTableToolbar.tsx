@@ -1,9 +1,10 @@
-import { FunctionComponent, ReactNode } from "react";
 import {
   Pagination,
   ToggleTemplateProps,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { PropsWithChildren, ReactNode } from "react";
+
 import { TableToolbar } from "./TableToolbar";
 
 type TableToolbarProps = {
@@ -21,7 +22,7 @@ type TableToolbarProps = {
   inputGroupOnEnter?: (value: string) => void;
 };
 
-export const PaginatingTableToolbar: FunctionComponent<TableToolbarProps> = ({
+export const PaginatingTableToolbar = ({
   count,
   first,
   max,
@@ -35,7 +36,7 @@ export const PaginatingTableToolbar: FunctionComponent<TableToolbarProps> = ({
   inputGroupName,
   inputGroupPlaceholder,
   inputGroupOnEnter,
-}) => {
+}: PropsWithChildren<TableToolbarProps>) => {
   const page = Math.round(first / max);
   const KeycloakPagination = ({
     variant = "top",

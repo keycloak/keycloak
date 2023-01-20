@@ -1,16 +1,16 @@
 import { PageSection, Text, TextContent, Title } from "@patternfly/react-core";
-import { FunctionComponent } from "react";
+import { PropsWithChildren } from "react";
 
 type PageProps = {
   title: string;
   description: string;
 };
 
-export const Page: FunctionComponent<PageProps> = ({
+export const Page = ({
   title,
   description,
   children,
-}) => {
+}: PropsWithChildren<PageProps>) => {
   return (
     <>
       <PageSection variant="light">

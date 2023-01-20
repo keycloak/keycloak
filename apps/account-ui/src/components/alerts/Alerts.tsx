@@ -1,11 +1,11 @@
-import { createContext, FunctionComponent, useContext, useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Alert,
   AlertActionCloseButton,
   AlertGroup,
   AlertVariant,
 } from "@patternfly/react-core";
+import { createContext, PropsWithChildren, useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { TranslationKeys } from "../../react-i18next";
 
 export type AddAlertFunction = (
@@ -32,7 +32,7 @@ export type AlertType = {
   description?: string;
 };
 
-export const AlertProvider: FunctionComponent = ({ children }) => {
+export const AlertProvider = ({ children }: PropsWithChildren<unknown>) => {
   const { t } = useTranslation();
   const [alerts, setAlerts] = useState<AlertType[]>([]);
 

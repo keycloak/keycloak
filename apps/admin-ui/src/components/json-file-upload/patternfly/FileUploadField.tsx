@@ -1,5 +1,3 @@
-import styles from "@patternfly/react-styles/css/components/FileUpload/file-upload";
-import { css } from "@patternfly/react-styles";
 import {
   Button,
   ButtonVariant,
@@ -10,6 +8,10 @@ import {
   TextAreResizeOrientation,
   TextInput,
 } from "@patternfly/react-core";
+import { css } from "@patternfly/react-styles";
+import styles from "@patternfly/react-styles/css/components/FileUpload/file-upload";
+import { PropsWithChildren } from "react";
+
 import { fileReaderType } from "./fileUtils";
 
 export interface FileUploadFieldProps
@@ -91,7 +93,7 @@ export interface FileUploadFieldProps
   onTextChange?: (text: string) => void;
 }
 
-export const FileUploadField: React.FunctionComponent<FileUploadFieldProps> = ({
+export const FileUploadField = ({
   id,
   type,
   value = "",
@@ -121,7 +123,7 @@ export const FileUploadField: React.FunctionComponent<FileUploadFieldProps> = ({
   children = null,
 
   ...props
-}: FileUploadFieldProps) => {
+}: PropsWithChildren<FileUploadFieldProps>) => {
   const onTextAreaChange = (
     newValue: string,
     event: React.ChangeEvent<HTMLTextAreaElement>

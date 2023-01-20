@@ -7,7 +7,7 @@ import {
   DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
-import { FunctionComponent, useState } from "react";
+import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form-v7";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -45,7 +45,7 @@ type Policy = Omit<PolicyRepresentation, "roles"> & {
 };
 
 const COMPONENTS: {
-  [index: string]: FunctionComponent;
+  [index: string]: () => JSX.Element;
 } = {
   aggregate: Aggregate,
   client: Client,

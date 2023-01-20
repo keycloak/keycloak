@@ -1,10 +1,10 @@
-import { FunctionComponent, useState } from "react";
 import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import { PropsWithChildren, useState } from "react";
 
 import { sortProviders } from "../../util";
-import { useAdminClient, useFetch } from "../auth/AdminClient";
 import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
+import { useAdminClient, useFetch } from "../auth/AdminClient";
 
 export const ServerInfoContext = createNamedContext<
   ServerInfoRepresentation | undefined
@@ -15,7 +15,9 @@ export const useServerInfo = () => useRequiredContext(ServerInfoContext);
 export const useLoginProviders = () =>
   sortProviders(useServerInfo().providers!["login-protocol"].providers);
 
-export const ServerInfoProvider: FunctionComponent = ({ children }) => {
+export const ServerInfoProvider = ({
+  children,
+}: PropsWithChildren<unknown>) => {
   const { adminClient } = useAdminClient();
   const [serverInfo, setServerInfo] = useState<ServerInfoRepresentation>({});
 

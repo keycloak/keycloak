@@ -1,5 +1,5 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { FunctionComponent, useState } from "react";
+import { PropsWithChildren, useState } from "react";
 import { createNamedContext } from "../utils/createNamedContext";
 import useRequiredContext from "../utils/useRequiredContext";
 
@@ -16,7 +16,7 @@ const SubGroupsContext = createNamedContext<SubGroupsProps | undefined>(
   undefined
 );
 
-export const SubGroups: FunctionComponent = ({ children }) => {
+export const SubGroups = ({ children }: PropsWithChildren<unknown>) => {
   const [subGroups, setSubGroups] = useState<GroupRepresentation[]>([]);
 
   const clear = () => setSubGroups([]);

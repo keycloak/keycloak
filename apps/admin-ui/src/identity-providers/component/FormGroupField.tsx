@@ -1,16 +1,16 @@
-import { FunctionComponent } from "react";
-import { useTranslation } from "react-i18next";
 import { FormGroup } from "@patternfly/react-core";
+import { PropsWithChildren } from "react";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 export type FieldProps = { label: string; field: string; isReadOnly?: boolean };
 export type FormGroupFieldProps = { label: string };
 
-export const FormGroupField: FunctionComponent<FormGroupFieldProps> = ({
+export const FormGroupField = ({
   label,
   children,
-}) => {
+}: PropsWithChildren<FormGroupFieldProps>) => {
   const { t } = useTranslation("identity-providers");
   return (
     <FormGroup

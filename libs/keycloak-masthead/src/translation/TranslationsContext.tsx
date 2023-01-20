@@ -1,4 +1,4 @@
-import { createContext, FunctionComponent, useContext } from "react";
+import { createContext, PropsWithChildren, useContext } from "react";
 
 import type { Translations } from "./translations";
 import { defaultTranslations } from "./translations";
@@ -11,9 +11,10 @@ export type TranslationsProviderProps = {
   translations: Translations;
 };
 
-export const TranslationsProvider: FunctionComponent<
-  TranslationsProviderProps
-> = ({ translations, children }) => {
+export const TranslationsProvider = ({
+  translations,
+  children,
+}: PropsWithChildren<TranslationsProviderProps>) => {
   return (
     <TranslationsContext.Provider value={translations}>
       {children}

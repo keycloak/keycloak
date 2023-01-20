@@ -1,6 +1,6 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
 import { AlertVariant } from "@patternfly/react-core";
-import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { createNamedContext } from "../../utils/createNamedContext";
@@ -37,7 +37,7 @@ export type AlertEntry = {
   description?: string;
 };
 
-export const AlertProvider: FunctionComponent = ({ children }) => {
+export const AlertProvider = ({ children }: PropsWithChildren<unknown>) => {
   const { t } = useTranslation();
   const setTimeout = useSetTimeout();
   const [alerts, setAlerts] = useState<AlertEntry[]>([]);

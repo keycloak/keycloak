@@ -1,24 +1,24 @@
-import { FormEvent, FunctionComponent } from "react";
-import { NavLink, useMatch, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
+  Divider,
   Nav,
-  NavItem,
   NavGroup,
+  NavItem,
   NavList,
   PageSidebar,
-  Divider,
 } from "@patternfly/react-core";
+import { FormEvent } from "react";
+import { useTranslation } from "react-i18next";
+import { NavLink, useMatch, useNavigate } from "react-router-dom";
 
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
-import { useRealm } from "./context/realm-context/RealmContext";
 import { useAccess } from "./context/access/Access";
-import { routes } from "./route-config";
+import { useRealm } from "./context/realm-context/RealmContext";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
+import { routes } from "./route-config";
 
 import "./page-nav.css";
 
-export const PageNav: FunctionComponent = () => {
+export const PageNav = () => {
   const { t } = useTranslation("common");
   const { hasAccess, hasSomeAccess } = useAccess();
   const { realm } = useRealm();

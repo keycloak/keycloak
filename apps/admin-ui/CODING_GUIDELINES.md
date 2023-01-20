@@ -35,37 +35,6 @@ The way this plays out in our application is that we first prefer state to remai
  
 A good tutorial on this approach is found in [Kent Dodds’ blog](https://kentcdodds.com/blog/application-state-management-with-react).
 
-### Function Components
-
-This project uses function components and hooks over class components. When coding function components in typescript, a developer should include any specific props that they need.
-
-```javascript
-import { FunctionComponent } from "react";
-
-...
-
-export const ExampleComponent: FunctionComponent<ExampleComponentProps> = ({ message, children }: ExampleComponentProps) => (
-  <ReactFragment>
-    <div>{message}</div>
-    <div>{children}</div>
-  </<ReactFragment>>
-);
-```
-
-For components that do not have any additional props an empty object should be used instead:
-
-```javascript
-import { FunctionComponent } from "react";
-
-...
-
-export const ExampleNoPropsComponent: FunctionComponent<{}> = () => (
-  <div>Example Component with no props</div>
-);
-```
-
-Additional details around function components can be found [here](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/function_components).
-
 ### Hooks
 
 When using hooks with Typescript there are few recommendations that we follow below. Additional recommendations besides the ones mentioned in this document can be found [here](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks).

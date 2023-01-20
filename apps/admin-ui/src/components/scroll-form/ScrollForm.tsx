@@ -1,5 +1,3 @@
-import { Fragment, FunctionComponent, ReactNode, useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Grid,
   GridItem,
@@ -8,10 +6,12 @@ import {
   JumpLinksItem,
   PageSection,
 } from "@patternfly/react-core";
+import { Fragment, ReactNode, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import { mainPageContentId } from "../../App";
-import { ScrollPanel } from "./ScrollPanel";
 import { FormPanel } from "./FormPanel";
+import { ScrollPanel } from "./ScrollPanel";
 
 import "./scroll-form.css";
 
@@ -30,11 +30,11 @@ const spacesToHyphens = (string: string): string => {
   return string.replace(/\s+/g, "-");
 };
 
-export const ScrollForm: FunctionComponent<ScrollFormProps> = ({
+export const ScrollForm = ({
   sections,
   borders = false,
   ...rest
-}) => {
+}: ScrollFormProps) => {
   const { t } = useTranslation("common");
   const shownSections = useMemo(
     () => sections.filter(({ isHidden }) => !isHidden),

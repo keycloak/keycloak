@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useMemo } from "react";
+import { PropsWithChildren, useEffect, useMemo } from "react";
 import { useMatch } from "react-router-dom";
 
 import { RecentUsed } from "../../components/realm-selector/recent-used";
@@ -17,7 +17,9 @@ export const RealmContext = createNamedContext<RealmContextType | undefined>(
   undefined
 );
 
-export const RealmContextProvider: FunctionComponent = ({ children }) => {
+export const RealmContextProvider = ({
+  children,
+}: PropsWithChildren<unknown>) => {
   const { adminClient } = useAdminClient();
   const recentUsed = useMemo(() => new RecentUsed(), []);
   const routeMatch = useMatch({

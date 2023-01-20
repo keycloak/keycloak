@@ -1,4 +1,3 @@
-import { FunctionComponent } from "react";
 import {
   Card,
   CardBody,
@@ -6,6 +5,7 @@ import {
   CardTitle,
   Title,
 } from "@patternfly/react-core";
+import { PropsWithChildren } from "react";
 
 import "./form-panel.css";
 
@@ -15,12 +15,12 @@ type FormPanelProps = {
   className?: string;
 };
 
-export const FormPanel: FunctionComponent<FormPanelProps> = ({
+export const FormPanel = ({
   title,
   children,
   scrollId,
   className,
-}) => {
+}: PropsWithChildren<FormPanelProps>) => {
   return (
     <Card className={className} isFlat>
       <CardHeader className="kc-form-panel__header">
