@@ -80,6 +80,8 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
 
     protected static final Logger logger = Logger.getLogger(DeviceEndpoint.class);
 
+    public static final String SHORT_VERIFICATION_URI = "shortVerificationUri";
+
     private final HttpRequest request;
 
     private Cors cors;
@@ -168,7 +170,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         singleUseStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
 
         try {
-            String deviceUrl = DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName())
+            String deviceUrl = realm.getAttribute(SHORT_VERIFICATION_URI) != null ? realm.getAttribute(SHORT_VERIFICATION_URI) : DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName())
                 .toString();
 
             OAuth2DeviceAuthorizationResponse response = new OAuth2DeviceAuthorizationResponse();

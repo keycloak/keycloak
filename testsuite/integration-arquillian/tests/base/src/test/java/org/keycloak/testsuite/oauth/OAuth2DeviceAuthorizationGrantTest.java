@@ -33,6 +33,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -71,10 +72,11 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     private static String userId;
 
-    public static final String REALM_NAME = "test";
-    public static final String DEVICE_APP = "test-device";
-    public static final String DEVICE_APP_PUBLIC = "test-device-public";
-    public static final String DEVICE_APP_PUBLIC_CUSTOM_CONSENT = "test-device-public-custom-consent";
+    private static final String REALM_NAME = "test";
+    private static final String DEVICE_APP = "test-device";
+    private static final String DEVICE_APP_PUBLIC = "test-device-public";
+    private static final String DEVICE_APP_PUBLIC_CUSTOM_CONSENT = "test-device-public-custom-consent";
+    private static final String SHORT_DEVICE_FLOW_URL = "https://keycloak.org/device";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -215,6 +217,32 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         AccessToken token = oauth.verifyToken(tokenString);
 
         assertNotNull(token);
+    }
+
+
+    @Test
+    public void testCustomVerificationUri() throws Exception {
+        // Device Authorization Request from device
+        try {
+            RealmResource testRealm = adminClient.realm(REALM_NAME);
+            RealmRepresentation realmRep = testRealm.toRepresentation();
+            realmRep.getAttributes().put(DeviceEndpoint.SHORT_VERIFICATION_URI, SHORT_DEVICE_FLOW_URL);
+            testRealm.update(realmRep);
+            oauth.realm(REALM_NAME);
+            oauth.clientId(DEVICE_APP_PUBLIC);
+            OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP_PUBLIC, null);
+
+            Assert.assertEquals(200, response.getStatusCode());
+            assertNotNull(response.getDeviceCode());
+            assertNotNull(response.getUserCode());
+            Assert.assertEquals(SHORT_DEVICE_FLOW_URL,response.getVerificationUri());
+            Assert.assertEquals(SHORT_DEVICE_FLOW_URL + "?user_code=" + response.getUserCode(),response.getVerificationUriComplete());
+        } finally {
+            RealmResource testRealm = adminClient.realm(REALM_NAME);
+            RealmRepresentation realmRep = testRealm.toRepresentation();
+            realmRep.getAttributes().remove("shortVerificationUri");
+            testRealm.update(realmRep);
+        }
     }
 
     @Test
