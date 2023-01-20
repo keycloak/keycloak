@@ -7,6 +7,8 @@
 
 In this guide, you are going to understand the different approaches for importing and exporting realms using JSON files.
 
+NOTE: Export files from the Admin Console are not suitable for backups or data transfer between servers. Only boot-time exports are suitable for backups or data transfer between servers.
+
 == Exporting a Realm to a Directory
 
 To export a realm, you can use the `export` command. Your Keycloak server instance must not be started when invoking this command.
