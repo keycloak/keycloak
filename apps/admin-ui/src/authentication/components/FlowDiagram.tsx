@@ -9,7 +9,7 @@ import {
   DrawerPanelContent,
 } from "@patternfly/react-core";
 import { MouseEvent as ReactMouseEvent, useMemo, useState } from "react";
-import ReactFlow, {
+import {
   Background,
   Controls,
   Edge,
@@ -19,10 +19,11 @@ import ReactFlow, {
   NodeMouseHandler,
   NodeTypes,
   Position,
+  ReactFlow,
   ReactFlowInstance,
   useEdgesState,
   useNodesState,
-} from "react-flow-renderer";
+} from "reactflow";
 import { useUpdateEffect } from "../../utils/useUpdateEffect";
 
 import type { ExecutionList, ExpandableExecution } from "../execution-model";
@@ -32,6 +33,7 @@ import { ButtonEdge, ButtonEdges } from "./diagram/ButtonEdge";
 import { ConditionalNode } from "./diagram/ConditionalNode";
 import { EndSubFlowNode, StartSubFlowNode } from "./diagram/SubFlowNode";
 
+import "reactflow/dist/style.css";
 import "./flow-diagram.css";
 
 type FlowDiagramProps = {

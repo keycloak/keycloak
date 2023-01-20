@@ -1,12 +1,6 @@
 import { PlusIcon } from "@patternfly/react-icons";
 import { ComponentType, MouseEvent as ReactMouseEvent } from "react";
-import {
-  EdgeProps,
-  getBezierPath,
-  getEdgeCenter,
-  getMarkerEnd,
-  MarkerType,
-} from "react-flow-renderer";
+import { EdgeProps, getBezierPath, getMarkerEnd, MarkerType } from "reactflow";
 
 export type ButtonEdges = {
   [key: string]: ComponentType<ButtonEdgeProps>;
@@ -39,7 +33,7 @@ export const ButtonEdge = ({
   selected,
   data: { onEdgeClick },
 }: ButtonEdgeProps) => {
-  const edgePath = getBezierPath({
+  const [edgePath, edgeLabelX, edgeLabelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -48,12 +42,6 @@ export const ButtonEdge = ({
     targetPosition,
   });
   const markerEnd = getMarkerEnd(markerType, markerEndId);
-  const [edgeCenterX, edgeCenterY] = getEdgeCenter({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-  });
 
   return (
     <>
@@ -68,8 +56,8 @@ export const ButtonEdge = ({
         <foreignObject
           width={foreignObjectSize}
           height={foreignObjectSize}
-          x={edgeCenterX - foreignObjectSize / 2}
-          y={edgeCenterY - foreignObjectSize / 2}
+          x={edgeLabelX - foreignObjectSize / 2}
+          y={edgeLabelY - foreignObjectSize / 2}
           className="edgebutton-foreignobject"
           requiredExtensions="http://www.w3.org/1999/xhtml"
         >

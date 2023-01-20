@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Handle, Position } from "react-flow-renderer";
+import { Handle, Position } from "reactflow";
 
 type NodeProps = {
   data: { label: string };
