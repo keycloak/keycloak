@@ -103,7 +103,7 @@
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
     "vite": "^3.2.5",
-    "vite-plugin-checker": "^0.5.3",
+    "vite-plugin-checker": "^0.5.4",
     "vitest": "^0.25.8",
     "webpack": "^5.75.0"
   }
