@@ -243,10 +243,12 @@ export function KeycloakDataTable<T>({
             cells: renderCell(columns, value),
           },
         ];
-        if (isDetailColumnsEnabled(value)) {
+        if (detailColumns) {
           row.push({
             parent: index * 2,
-            cells: renderCell(detailColumns!, value),
+            cells: isDetailColumnsEnabled(value)
+              ? renderCell(detailColumns!, value)
+              : [],
           } as SubRow<T>);
         }
         return row;

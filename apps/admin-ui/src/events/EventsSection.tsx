@@ -83,12 +83,13 @@ const StatusRow = (event: EventRepresentation) =>
 
 const DetailCell = (event: EventRepresentation) => (
   <DescriptionList isHorizontal className="keycloak_eventsection_details">
-    {Object.entries(event.details!).map(([key, value]) => (
-      <DescriptionListGroup key={key}>
-        <DescriptionListTerm>{key}</DescriptionListTerm>
-        <DescriptionListDescription>{value}</DescriptionListDescription>
-      </DescriptionListGroup>
-    ))}
+    {event.details &&
+      Object.entries(event.details).map(([key, value]) => (
+        <DescriptionListGroup key={key}>
+          <DescriptionListTerm>{key}</DescriptionListTerm>
+          <DescriptionListDescription>{value}</DescriptionListDescription>
+        </DescriptionListGroup>
+      ))}
   </DescriptionList>
 );
 
