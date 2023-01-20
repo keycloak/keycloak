@@ -1,25 +1,20 @@
-import { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
 import { PlusIcon } from "@patternfly/react-icons";
+import { ComponentType, MouseEvent as ReactMouseEvent } from "react";
 import {
-  ArrowHeadType,
+  EdgeProps,
   getBezierPath,
   getEdgeCenter,
   getMarkerEnd,
-  Position,
+  MarkerType,
 } from "react-flow-renderer";
 
-type ButtonEdgeProps = {
-  id: string;
-  sourceX: number;
-  sourceY: number;
-  sourcePosition?: Position;
-  targetX: number;
-  targetY: number;
-  targetPosition?: Position;
-  style: CSSProperties;
-  arrowHeadType?: ArrowHeadType;
-  markerEndId: string;
-  selected: boolean;
+export type ButtonEdges = {
+  [key: string]: ComponentType<ButtonEdgeProps>;
+};
+
+export type ButtonEdgeProps = EdgeProps & {
+  markerType?: MarkerType;
+  markerEndId?: string;
   data: {
     onEdgeClick: (
       evt: ReactMouseEvent<HTMLButtonElement, MouseEvent>,
@@ -39,7 +34,7 @@ export const ButtonEdge = ({
   sourcePosition,
   targetPosition,
   style = {},
-  arrowHeadType,
+  markerType,
   markerEndId,
   selected,
   data: { onEdgeClick },
@@ -52,7 +47,7 @@ export const ButtonEdge = ({
     targetY,
     targetPosition,
   });
-  const markerEnd = getMarkerEnd(arrowHeadType, markerEndId);
+  const markerEnd = getMarkerEnd(markerType, markerEndId);
   const [edgeCenterX, edgeCenterY] = getEdgeCenter({
     sourceX,
     sourceY,
