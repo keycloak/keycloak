@@ -153,7 +153,7 @@ export const GroupTree = ({ refresh: viewRefresh }: GroupTreeProps) => {
     () =>
       fetchAdminUI<GroupRepresentation[]>(
         adminClient,
-        "admin-ui-groups",
+        "ui-ext/groups",
         Object.assign(
           {
             first: `${first}`,

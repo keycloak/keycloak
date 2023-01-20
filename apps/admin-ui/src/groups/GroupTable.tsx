@@ -71,7 +71,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
     } else {
       groupsData = await fetchAdminUI<GroupRepresentation[]>(
         adminClient,
-        "admin-ui-groups",
+        "ui-ext/groups",
         {
           ...params,
           global: "false",

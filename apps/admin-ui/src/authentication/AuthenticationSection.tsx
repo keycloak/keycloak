@@ -72,7 +72,7 @@ export default function AuthenticationSection() {
     const flowsRequest = await fetch(
       `${addTrailingSlash(
         adminClient.baseUrl
-      )}admin/realms/${realm}/admin-ui-authentication-management/flows`,
+      )}admin/realms/${realm}/ui-ext/authentication-management/flows`,
       {
         method: "GET",
         headers: getAuthorizationHeaders(await adminClient.getAccessToken()),

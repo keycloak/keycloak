@@ -44,7 +44,7 @@ export default class GroupPage extends PageObject {
 
   protected search(searchField: string, searchValue: string, wait: boolean) {
     if (wait) {
-      const searchUrl = `/admin/realms/master/*${searchValue}*`;
+      const searchUrl = `/admin/realms/master/**/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
     }
 

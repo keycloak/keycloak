@@ -41,7 +41,7 @@ const fetchEndpoint = async ({
   search,
   endpoint,
 }: Query): Promise<any> =>
-  fetchAdminUI(adminClient, `/admin-ui-${endpoint}/${type}/${id}`, {
+  fetchAdminUI(adminClient, `/ui-ext/${endpoint}/${type}/${id}`, {
     first: (first || 0).toString(),
     max: (max || 10).toString(),
     search: search || "",
@@ -81,7 +81,7 @@ export const findUsers = ({
 }: UserQuery): Promise<BruteUser[]> =>
   fetchAdminUI(
     adminClient,
-    "admin-ui-brute-force-user",
+    "ui-ext/brute-force-user",
     query as Record<string, string>
   );
 
