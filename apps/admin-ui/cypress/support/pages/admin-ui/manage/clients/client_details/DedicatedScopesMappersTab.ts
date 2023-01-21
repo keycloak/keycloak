@@ -29,9 +29,7 @@ export default class DedicatedScopesMappersTab extends CommonPage {
 
   addPredefinedMapper() {
     this.emptyState().checkIfExists(true);
-    cy.findByTestId(this.addPredefinedMapperEmptyStateBtn).click({
-      force: true,
-    });
+    cy.findByTestId(this.addPredefinedMapperEmptyStateBtn).click();
     return this;
   }
 
