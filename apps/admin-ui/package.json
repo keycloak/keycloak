@@ -99,7 +99,7 @@
     "@vitejs/plugin-react": "^2.2.0",
     "cypress": "^11.2.0",
     "del": "^7.0.0",
-    "jsdom": "^21.0.0",
+    "jsdom": "^21.1.0",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
     "vite": "^3.2.5",
