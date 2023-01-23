@@ -18,8 +18,10 @@
 package org.keycloak.models.jpa.converter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import jakarta.persistence.AttributeConverter;
+import org.hibernate.type.descriptor.java.MutableMutabilityPlan;
 import org.jboss.logging.Logger;
 import org.keycloak.util.JsonSerialization;
 
@@ -45,4 +47,19 @@ public class MapStringConverter implements AttributeConverter<Map<String, String
             return null;
         }
     }
+
+    /**
+     * Mutability plan for this property. Needed in Hibernate 6 as it doesn't assume mutability by default
+     * in contrast to Hibernate 5.
+     * This is tracked in the upstream project in <a href="https://hibernate.atlassian.net/browse/HHH-16081">HHH-16081</a>
+     */
+    public static class MapStringConverterMutabilityPlan extends MutableMutabilityPlan<Map<String, String>> {
+
+        @Override
+        protected Map<String, String> deepCopyNotNull(Map<String, String> value) {
+            return new HashMap<>(value);
+        }
+    }
+
+
 }
