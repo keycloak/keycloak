@@ -35,6 +35,22 @@ export enum ClientAuthentication {
   jwtPrivKey = "Client secret sent as post",
 }
 
+export enum ClientAssertionSigningAlg {
+  algorithmNotSpecified = "Algorithm not specified",
+  es256 = "ES256",
+  es384 = "ES384",
+  es512 = "ES512",
+  hs256 = "HS256",
+  hs384 = "HS384",
+  hs512 = "HS512",
+  ps256 = "PS256",
+  ps384 = "PS384",
+  ps512 = "PS512",
+  rs256 = "RS256",
+  rs384 = "RS384",
+  rs512 = "RS512",
+}
+
 export default class ProviderBaseGeneralSettingsPage extends PageObject {
   private scopesInput = "#scopes";
   private storeTokensSwitch = "#storeTokens";
@@ -63,6 +79,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   private pkceSwitch = "#pkceEnabled";
   private pkceMethod = "#pkceMethod";
   private clientAuth = "#clientAuthentication";
+  private clientAssertionSigningAlg = "#clientAssertionSigningAlg";
 
   public clickSaveBtn() {
     cy.findByTestId(this.saveBtn).click();
@@ -126,6 +143,17 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     super.clickSelectMenuItem(
       loginFlowOption,
       cy.get(".pf-c-select__menu-item").contains(loginFlowOption)
+    );
+    return this;
+  }
+
+  public selectClientAssertSignAlg(
+    clientAssertionSigningAlg: ClientAssertionSigningAlg
+  ) {
+    cy.get(this.clientAssertionSigningAlg).click();
+    super.clickSelectMenuItem(
+      clientAssertionSigningAlg,
+      cy.get(".pf-c-select__menu-item").contains(clientAssertionSigningAlg)
     );
     return this;
   }
@@ -221,6 +249,16 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     return this;
   }
 
+  public assertClientAssertSigAlgSelectOptionEqual(
+    clientAssertionSigningAlg: ClientAssertionSigningAlg
+  ) {
+    cy.get(this.clientAssertionSigningAlg).should(
+      "have.text",
+      clientAssertionSigningAlg
+    );
+    return this;
+  }
+
   public assertOIDCUrl(url: string) {
     cy.findByTestId("jump-link-openid-connect-settings").click();
     cy.findByTestId(url + "Url")
@@ -272,6 +310,16 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
       .click()
       .get(".pf-c-select__menu-item")
       .contains(option)
+      .click();
+    return this;
+  }
+
+  public assertOIDCClientAuthSignAlg(alg: string) {
+    cy.findByTestId("jump-link-openid-connect-settings").click();
+    cy.get(this.clientAssertionSigningAlg)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(alg)
       .click();
     return this;
   }
@@ -331,6 +379,9 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     );
     this.assertPostLoginFlowSelectOptionEqual(LoginFlowOption.none);
     this.assertSyncModeSelectOptionEqual(SyncModeOption.import);
+    this.assertClientAssertSigAlgSelectOptionEqual(
+      ClientAssertionSigningAlg.algorithmNotSpecified
+    );
     return this;
   }
 }

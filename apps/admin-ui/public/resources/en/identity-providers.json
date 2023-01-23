@@ -117,6 +117,8 @@
     "client_secret_jwt": "Client secret as jwt",
     "private_key_jwt": "JWT signed with private key"
   },
+  "clientAssertionSigningAlg": "Client asserion signature algorithm",
+  "algorithmNotSpecified": "Algorithm not specified",
   "acceptsPromptNone": "Accepts prompt=none forward from client",
   "validateSignature": "Validate Signatures",
   "useJwksUrl": "Use JWKS URL",

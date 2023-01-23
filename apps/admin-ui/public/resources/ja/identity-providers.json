@@ -39,11 +39,13 @@
   },
   "clientAuthentication": "クライアント認証",
   "clientAuthentications": {
-    "clientAuth_post": "POSTで送信されたクライアント・シークレット",
-    "clientAuth_basic": "基本認証で送信されたクライアント・シークレット",
-    "clientAuth_secret_jwt": "JWTでクライアント・シークレット",
-    "clientAuth_privatekey_jwt": "秘密鍵で署名されたJWT"
+    "client_secret_post": "POSTで送信されたクライアント・シークレット",
+    "client_secret_basic": "基本認証で送信されたクライアント・シークレット",
+    "client_secret_jwt": "JWTでクライアント・シークレット",
+    "private_key_jwt": "秘密鍵で署名されたJWT"
   },
+  "clientAssertionSigningAlg": "クライアントアサーション署名アルゴリズム",
+  "algorithmNotSpecified": "アルゴリズムの指定なし",
   "acceptsPromptNone": "クライアントから転送されるprompt=noneを受け入れる",
   "validateSignature": "署名検証",
   "useJwksUrl": "JWKS URLの使用",

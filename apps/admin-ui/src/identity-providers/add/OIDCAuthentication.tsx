@@ -10,6 +10,8 @@ import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { ClientIdSecret } from "../component/ClientIdSecret";
+import { sortProviders } from "../../util";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 const clientAuthentications = [
   "client_secret_post",
@@ -19,10 +21,12 @@ const clientAuthentications = [
 ];
 
 export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
+  const providers = useServerInfo().providers!.clientSignature.providers;
   const { t } = useTranslation("identity-providers");
 
   const { control } = useFormContext();
   const [openClientAuth, setOpenClientAuth] = useState(false);
+  const [openClientAuthSigAlg, setOpenClientAuthSigAlg] = useState(false);
 
   const clientAuthMethod = useWatch({
     control: control,
@@ -76,6 +80,49 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         secretRequired={clientAuthMethod !== "private_key_jwt"}
         create={create}
       />
+      <FormGroup
+        label={t("clientAssertionSigningAlg")}
+        labelIcon={
+          <HelpItem
+            helpText="identity-providers-help:clientAssertionSigningAlg"
+            fieldLabelId="identity-providers:clientAssertionSigningAlg"
+          />
+        }
+        fieldId="clientAssertionSigningAlg"
+      >
+        <Controller
+          name="config.clientAssertionSigningAlg"
+          defaultValue=""
+          control={control}
+          render={({ field }) => (
+            <Select
+              maxHeight={200}
+              toggleId="clientAssertionSigningAlg"
+              onToggle={() => setOpenClientAuthSigAlg(!openClientAuthSigAlg)}
+              onSelect={(_, value) => {
+                field.onChange(value.toString());
+                setOpenClientAuthSigAlg(false);
+              }}
+              selections={field.value || t("algorithmNotSpecified")}
+              variant={SelectVariant.single}
+              isOpen={openClientAuthSigAlg}
+            >
+              {[
+                <SelectOption selected={field.value === ""} key="" value="">
+                  {t("algorithmNotSpecified")}
+                </SelectOption>,
+                ...sortProviders(providers).map((option) => (
+                  <SelectOption
+                    selected={option === field.value}
+                    key={option}
+                    value={option}
+                  />
+                )),
+              ]}
+            </Select>
+          )}
+        />
+      </FormGroup>
     </>
   );
 };

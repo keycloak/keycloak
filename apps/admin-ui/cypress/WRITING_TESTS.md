@@ -84,4 +84,4 @@ If there were no calls and you still get this error, try using `{force: true}`, 
 
 * [Moises document](https://docs.google.com/document/d/11sm1IpEvVLHO59JEVmwgNOUD0zoP4YMvInIU4v5iVNk/edit)
 * [Cypress blog do not get too detached](https://www.cypress.io/blog/2020/07/22/do-not-get-too-detached/)
-* [See the clients_test.spec as an example](./cypress/integration/clients_test.spec.ts)
+* [See the clients_test.spec as an example](./cypress/e2e/clients_test.spec.ts)

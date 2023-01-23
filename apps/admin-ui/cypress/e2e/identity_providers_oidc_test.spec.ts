@@ -8,6 +8,7 @@ import ModalUtils from "../support/util/ModalUtils";
 import AddMapperPage from "../support/pages/admin-ui/manage/identity_providers/AddMapperPage";
 import ProviderBaseGeneralSettingsPage from "../support/pages/admin-ui/manage/identity_providers/ProviderBaseGeneralSettingsPage";
 import ProviderBaseAdvancedSettingsPage, {
+  ClientAssertionSigningAlg,
   ClientAuthentication,
   PromptSelect,
 } from "../support/pages/admin-ui/manage/identity_providers/ProviderBaseAdvancedSettingsPage";
@@ -91,6 +92,10 @@ describe("OIDC identity provider test", () => {
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
         ClientAuthentication.post
       );
+      //Client assertion signature algorithm
+      Object.entries(ClientAssertionSigningAlg).forEach(([, value]) => {
+        providerBaseAdvancedSettingsPage.assertOIDCClientAuthSignAlg(value);
+      });
       //OIDC Advanced Settings
       providerBaseAdvancedSettingsPage.assertOIDCSettingsAdvancedSwitches();
       providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.none);

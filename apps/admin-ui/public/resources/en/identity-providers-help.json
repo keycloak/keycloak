@@ -30,6 +30,7 @@
   "attributeConsumingServiceName": "Name of the Attribute Consuming Service profile to advertise in the SP metadata.",
   "forwardParameters": "Non OpenID Connect/OAuth standard query parameters to be forwarded to external IDP from the initial application request to Authorization Endpoint. Multiple parameters can be entered, separated by comma (,).",
   "clientAuthentication": "The client authentication method (cfr. https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication). In case of JWT signed with private key, the realm private key is used.",
+  "clientAssertionSigningAlg": "Signature algorithm to create JWT assertion as client authentication. In the case of JWT signed with private key or Client secret as jwt, it is required. If no algorithm is specified, the following algorithm is adapted. RS256 is adapted in the case of JWT signed with private key. HS256 is adapted in the case of Client secret as jwt.",
   "storeTokens": "Enable/disable if tokens must be stored after authenticating users.",
   "storedTokensReadable": "Enable/disable if new users can read any stored tokens. This assigns the broker.read-token role.",
   "trustEmail": "If enabled, email provided by this provider is not verified even if verification is enabled for the realm.",
