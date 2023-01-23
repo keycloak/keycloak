@@ -1084,9 +1084,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             entity.setRealmId(realm.getId());
             entity.setLocale(locale);
             entity.setTexts(new HashMap<>());
+            em.persist(entity);
         }
         entity.getTexts().put(key, text);
-        em.persist(entity);
     }
 
     @Override
