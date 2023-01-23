@@ -27,6 +27,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 
+import org.hibernate.annotations.Mutability;
 import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.jpa.converter.MapStringConverter;
 
@@ -80,6 +81,12 @@ public class RealmLocalizationTextsEntity {
     @Nationalized
     @Column(name = "TEXTS")
     @Convert(converter = MapStringConverter.class)
+    /*
+     * @Mutability annotation needed in Hibernate 6 as it doesn't assume mutability by default
+     * in contrast to Hibernate 5.
+     * This is tracked in the upstream project in https://hibernate.atlassian.net/browse/HHH-16081
+     */
+    @Mutability(MapStringConverter.MapStringConverterMutabilityPlan.class)
     private Map<String,String> texts;
 
     public Map<String,String> getTexts() {
