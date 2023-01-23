@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import java.util.Arrays;
@@ -143,11 +144,37 @@ public class GroupSearchTest extends AbstractGroupTest {
         }
     }
 
+    @Test
+    public void testNestedGroupQuerySearchNoHierarchy() throws Exception {
+        configureSearchableAttributes(ATTR_URL_NAME, ATTR_ORG_NAME, ATTR_QUOTES_NAME);
+        try (Creator<GroupResource> parentGroupCreator = Creator.create(testRealmResource(), parentGroup)) {
+            parentGroupCreator.resource().subGroup(childGroup);
+
+            GroupRepresentation testGroup = new GroupRepresentation();
+            testGroup.setName("test_child");
+            parentGroupCreator.resource().subGroup(testGroup);
+
+            // query for the child group by org name
+            GroupsResource search = testRealmResource().groups();
+            String searchQuery = String.format("%s:%s", ATTR_ORG_NAME, "childOrg");
+            List<GroupRepresentation> found = search.query(searchQuery, false);
+
+            assertThat(found.size(), is(1));
+            assertThat(found.get(0).getName(), is(equalTo(CHILD_GROUP)));
+
+            String path = found.get(0).getPath();
+            assertThat(path, is(String.format("/%s/%s", PARENT_GROUP, CHILD_GROUP)));
+        } finally {
+            resetSearchableAttributes();
+        }
+    }
+
     private void search(String searchQuery, String... expectedGroupIds) {
         GroupsResource search = testRealmResource().groups();
         List<String> found = search.query(searchQuery).stream()
                 .map(GroupRepresentation::getName)
                 .collect(Collectors.toList());
+        assertThat(found, hasSize(expectedGroupIds.length));
         assertThat(found, containsInAnyOrder(expectedGroupIds));
     }
 
