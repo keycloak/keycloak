@@ -37,6 +37,8 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     useState(false);
   const [signatureAlgorithmDropdownOpen, setSignatureAlgorithmDropdownOpen] =
     useState(false);
+  const [encryptionAlgorithmDropdownOpen, setEncryptionAlgorithmDropdownOpen] =
+    useState(false);
   const [
     samlSignatureKeyNameDropdownOpen,
     setSamlSignatureKeyNameDropdownOpen,
@@ -370,6 +372,41 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
                   <SelectOption value="RSA_SHA512" />
                   <SelectOption value="RSA_SHA512_MGF1" />
                   <SelectOption value="DSA_SHA1" />
+                </Select>
+              )}
+            ></Controller>
+          </FormGroup>
+          <FormGroup
+            label={t("encryptionAlgorithm")}
+            labelIcon={
+              <HelpItem
+                helpText={th("encryptionAlgorithm")}
+                fieldLabelId="identity-provider:encryptionAlgorithm"
+              />
+            }
+            fieldId="kc-encryptionAlgorithm"
+          >
+            <Controller
+              name="config.encryptionAlgorithm"
+              defaultValue="RSA-OAEP"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  toggleId="kc-encryptionAlgorithm"
+                  onToggle={(isExpanded) =>
+                    setEncryptionAlgorithmDropdownOpen(isExpanded)
+                  }
+                  isOpen={encryptionAlgorithmDropdownOpen}
+                  onSelect={(_, value) => {
+                    field.onChange(value.toString());
+                    setEncryptionAlgorithmDropdownOpen(false);
+                  }}
+                  selections={field.value}
+                  variant={SelectVariant.single}
+                  isDisabled={readOnly}
+                >
+                  <SelectOption value="RSA-OAEP" />
+                  <SelectOption value="RSA1_5" />
                 </Select>
               )}
             ></Controller>

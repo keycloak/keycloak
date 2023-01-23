@@ -53,6 +53,7 @@
   "httpPostBindingLogout": "Indicates whether to respond to requests using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used.",
   "wantAuthnRequestsSigned": "Indicates whether the identity provider expects a signed AuthnRequest.",
   "signatureAlgorithm": "The signature algorithm to use to sign documents. Note that 'SHA1' based algorithms are deprecated and can be removed in the future. It is recommended to stick to some more secure algorithm instead of '*_SHA1'",
+  "encryptionAlgorithm": "Encryption algorithm, which is used by SAML IDP for encryption of SAML documents, assertions or IDs. The corresponding decryption key for decrypt SAML document parts will be chosen based on this configured algorithm and should be available in realm keys for the encryption (ENC) usage. If algorithm is not configured, then any supported algorithm is allowed and decryption key will be chosen based on the algorithm configured in SAML document itself.",
   "samlSignatureKeyName": "Signed SAML documents contain identification of signing key in KeyName element. For Keycloak / RH-SSO counter-party, use KEY_ID, for MS AD FS use CERT_SUBJECT, for others check and use NONE if no other option works.",
   "wantAssertionsSigned": "Indicates whether this service provider expects a signed Assertion.",
   "wantAssertionsEncrypted": "Indicates whether this service provider expects an encrypted Assertion.",

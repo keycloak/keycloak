@@ -75,6 +75,7 @@
   "httpPostBindingLogout": "HTTP-POST binding logout",
   "wantAuthnRequestsSigned": "Want AuthnRequests signed",
   "signatureAlgorithm": "Signature algorithm",
+  "encryptionAlgorithm": "Encryption Algorithm",
   "samlSignatureKeyName": "SAML signature key name",
   "wantAssertionsSigned": "Want Assertions signed",
   "wantAssertionsEncrypted": "Want Assertions encrypted",
