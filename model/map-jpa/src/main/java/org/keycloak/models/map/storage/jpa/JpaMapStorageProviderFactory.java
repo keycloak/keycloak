@@ -81,6 +81,7 @@ import org.keycloak.models.locking.GlobalLockProvider;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.lock.MapLockEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntityImpl;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
@@ -127,6 +128,8 @@ import org.keycloak.models.map.storage.jpa.event.auth.JpaAuthEventMapKeycloakTra
 import org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity;
 import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
+import org.keycloak.models.map.storage.jpa.lock.JpaLockMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.lock.entity.JpaLockEntity;
 import org.keycloak.models.map.storage.jpa.loginFailure.JpaUserLoginFailureMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity;
 import org.keycloak.models.map.storage.jpa.realm.JpaRealmMapKeycloakTransaction;
@@ -224,6 +227,8 @@ public class JpaMapStorageProviderFactory implements
         //user/client session
         .constructor(JpaClientSessionEntity.class,              JpaClientSessionEntity::new)
         .constructor(JpaUserSessionEntity.class,                JpaUserSessionEntity::new)
+        //lock
+        .constructor(JpaLockEntity.class,                       JpaLockEntity::new)
         .build();
 
     private static final Map<Class<?>, BiFunction<KeycloakSession, EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
@@ -257,6 +262,8 @@ public class JpaMapStorageProviderFactory implements
         MODEL_TO_TX.put(UserModel.class,                        JpaUserMapKeycloakTransaction::new);
         //sessions
         MODEL_TO_TX.put(UserSessionModel.class,                 JpaUserSessionMapKeycloakTransaction::new);
+        //locks
+        MODEL_TO_TX.put(MapLockEntity.class,                    JpaLockMapKeycloakTransaction::new);
     }
 
     private boolean jtaEnabled;
@@ -539,10 +546,15 @@ public class JpaMapStorageProviderFactory implements
     }
 
     private void update(Class<?> modelType, Connection connection, KeycloakSession session) {
-        session.getProvider(GlobalLockProvider.class).withLock(modelType.getName(), lockedSession -> {
-            lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
-            return null;
-        });
+        if (modelType == MapLockEntity.class) {
+            // as the MapLockEntity is used by the MapGlobalLockProvider itself, don't create a global lock for creating that schema
+            session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
+        } else {
+            session.getProvider(GlobalLockProvider.class).withLock(modelType.getName(), lockedSession -> {
+                lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
+                return null;
+            });
+        }
     }
 
     @Override
