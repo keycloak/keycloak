@@ -25,6 +25,7 @@ import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
+import org.keycloak.models.locking.GlobalLockProviderSpi;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderFactory;
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
@@ -39,6 +40,7 @@ import org.keycloak.models.map.role.MapRoleProviderFactory;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
+import org.keycloak.models.map.lock.MapGlobalLockProviderFactory;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.models.map.storage.jpa.liquibase.connection.MapLiquibaseConnectionProviderFactory;
 import org.keycloak.models.map.storage.jpa.liquibase.connection.MapLiquibaseConnectionSpi;
@@ -79,6 +81,7 @@ public class JpaMapStorage extends KeycloakModelParameters {
             .add(JpaMapStorageProviderFactory.class)
             .add(MapJpaUpdaterProviderFactory.class)
             .add(MapLiquibaseConnectionProviderFactory.class)
+            .add(MapGlobalLockProviderFactory.class)
             .build();
 
     public JpaMapStorage() {
@@ -114,7 +117,9 @@ public class JpaMapStorage extends KeycloakModelParameters {
           .spi("publicKeyStorage").provider(MapPublicKeyStorageProviderFactory.PROVIDER_ID)                             .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi(EventStoreSpi.NAME).provider(MapEventStoreProviderFactory.PROVIDER_ID)                                   .config("storage-admin-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
-                                                                                                                        .config("storage-auth-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID);
+                                                                                                                        .config("storage-auth-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
+          .spi(GlobalLockProviderSpi.GLOBAL_LOCK)                                                                       .config("provider", MapGlobalLockProviderFactory.PROVIDER_ID)
+          .spi(GlobalLockProviderSpi.GLOBAL_LOCK).provider(MapGlobalLockProviderFactory.PROVIDER_ID)                    .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID);
     }
 
     @Override
