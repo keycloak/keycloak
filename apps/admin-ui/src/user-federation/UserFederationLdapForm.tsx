@@ -14,6 +14,7 @@ import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
 import { LdapSettingsSynchronization } from "./ldap/LdapSettingsSynchronization";
 import { toUserFederation } from "./routes/UserFederation";
 import { SettingsCache } from "./shared/SettingsCache";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 export type LdapComponentRepresentation = ComponentRepresentation & {
   config?: {
@@ -35,6 +36,8 @@ export const UserFederationLdapForm = ({
   const form = useFormContext<LdapComponentRepresentation>();
   const navigate = useNavigate();
   const { realm } = useRealm();
+  const kerberosDisabled =
+    useServerInfo().profileInfo?.disabledFeatures?.includes("KERBEROS");
 
   return (
     <>
@@ -59,6 +62,7 @@ export const UserFederationLdapForm = ({
           {
             title: t("kerberosIntegration"),
             panel: <LdapSettingsKerberosIntegration form={form} />,
+            isHidden: kerberosDisabled,
           },
           { title: t("cacheSettings"), panel: <SettingsCache form={form} /> },
           {
