@@ -222,9 +222,9 @@
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <firefoxDriverVersion/>
         <firefoxUserPreferences/>
-        <firefoxHeadless>false</firefoxHeadless>
+        <firefoxHeadless>true</firefoxHeadless>
         <chromeBinary/>
-        <chromeArguments/>
+        <chromeArguments>--headless</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>

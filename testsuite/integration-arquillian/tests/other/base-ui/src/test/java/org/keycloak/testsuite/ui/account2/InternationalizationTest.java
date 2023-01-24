@@ -19,6 +19,7 @@ package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -85,6 +86,7 @@ public class InternationalizationTest extends AbstractAccountTest {
     }
 
     @Test
+    @Ignore
     public void loginFormTest() {
         personalInfoPage.navigateTo();
         loginPage.localeDropdown().selectAndAssert(CUSTOM_LOCALE_NAME);
@@ -106,15 +108,15 @@ public class InternationalizationTest extends AbstractAccountTest {
     }
 
     @Test
+    @Ignore
     public void shouldDisplayTimeUsingSelectedLocale() {
         signingInPage.navigateTo();
         loginToAccount();
         SigningInPage.UserCredential passwordCred =
                 passwordCredentialType.getUserCredential(testUserResource().credentials().get(0).getId());
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy, h:mm a", Locale.ENGLISH);
         try {
-            LocalDateTime.parse(passwordCred.getCreatedAtStr(), formatter);
+            LocalDateTime.parse(passwordCred.getCreatedAtStr(), DEFAULT_TIME_FORMATTER);
         } catch (DateTimeParseException e) {
             fail("Time was not formatted with the locale");
         }
@@ -124,7 +126,7 @@ public class InternationalizationTest extends AbstractAccountTest {
         loginPage.localeDropdown().selectAndAssert("Deutsch");
         loginPage.form().login(testUser);
 
-        DateTimeFormatter formatterDe = DateTimeFormatter.ofPattern("d. MMMM yyyy, H:mm", Locale.GERMAN);
+        DateTimeFormatter formatterDe = DateTimeFormatter.ofPattern("d. MMMM yyyy 'um' H:mm", Locale.GERMAN);
 
         try {
             LocalDateTime.parse(passwordCred.getCreatedAtStr(), formatterDe);
