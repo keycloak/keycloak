@@ -222,9 +222,9 @@
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <firefoxDriverVersion/>
         <firefoxUserPreferences/>
-        <firefoxHeadless>false</firefoxHeadless>
+        <firefoxHeadless>true</firefoxHeadless>
         <chromeBinary/>
-        <chromeArguments/>
+        <chromeArguments>--headless</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>
@@ -265,6 +265,7 @@
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <auth.server.fips.mode>disabled</auth.server.fips.mode>
         <auth.server.supported.keystore.types>JKS,PKCS12,BCFKS</auth.server.supported.keystore.types>
+        <auth.server.supported.rsa.key.sizes>1024,2048,4096</auth.server.supported.rsa.key.sizes>
     </properties>
 
     <build>
@@ -690,6 +691,7 @@
                             <auth.server.fips.mode>${auth.server.fips.mode}</auth.server.fips.mode>
                             <auth.server.fips.keystore.type>${auth.server.fips.keystore.type}</auth.server.fips.keystore.type>
                             <auth.server.supported.keystore.types>${auth.server.supported.keystore.types}</auth.server.supported.keystore.types>
+                            <auth.server.supported.rsa.key.sizes>${auth.server.supported.rsa.key.sizes}</auth.server.supported.rsa.key.sizes>
 
                             <!--
                               ~ Used for Wildfly Elytron 1.13.0.CR3+ RESTEasy client SSL truststore configuration.

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -37,8 +38,10 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -223,7 +226,10 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals("Bearer", response.getTokenType());
 
-        String expectedKid = oauth.doCertsRequest("test").getKeys()[0].getKeyId();
+        String expectedKid = Stream.of(oauth.doCertsRequest("test").getKeys())
+                .filter(jwk -> KeyUse.SIG.getSpecName().equals(jwk.getPublicKeyUse()))
+                .map(JWK::getKeyId)
+                .findFirst().orElseThrow(() -> new AssertionError("Was not able to find key with usage SIG in the 'test' realm keys"));
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         assertEquals("RS256", header.getAlgorithm().name());

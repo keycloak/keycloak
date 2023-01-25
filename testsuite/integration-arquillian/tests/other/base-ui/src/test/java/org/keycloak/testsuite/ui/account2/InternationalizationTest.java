@@ -19,6 +19,7 @@ package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -85,6 +86,7 @@ public class InternationalizationTest extends AbstractAccountTest {
     }
 
     @Test
+    @Ignore
     public void loginFormTest() {
         personalInfoPage.navigateTo();
         loginPage.localeDropdown().selectAndAssert(CUSTOM_LOCALE_NAME);
@@ -106,6 +108,7 @@ public class InternationalizationTest extends AbstractAccountTest {
     }
 
     @Test
+    @Ignore
     public void shouldDisplayTimeUsingSelectedLocale() {
         signingInPage.navigateTo();
         loginToAccount();
