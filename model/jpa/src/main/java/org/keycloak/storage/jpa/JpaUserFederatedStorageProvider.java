@@ -551,7 +551,7 @@ public class JpaUserFederatedStorageProvider implements
         entity.setType(cred.getType());
         entity.setCredentialData(cred.getCredentialData());
         entity.setSecretData(cred.getSecretData());
-        cred.setUserLabel(entity.getUserLabel());
+        entity.setUserLabel(cred.getUserLabel());
     }
 
     @Override
