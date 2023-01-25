@@ -112,9 +112,12 @@ import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -130,6 +133,7 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
 
     private static final Map<SearchableModelField<AuthenticatedClientSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<Object, AbstractEntity, AuthenticatedClientSessionModel>> clientSessionPredicates = MapFieldPredicates.basePredicates(HotRodAuthenticatedClientSessionEntity.ID);
 
+    private Long lockTimeout;
     private final static DeepCloner CLONER = new DeepCloner.Builder()
             .constructor(MapRootAuthenticationSessionEntity.class,  HotRodRootAuthenticationSessionEntityDelegate::new)
             .constructor(MapAuthenticationSessionEntity.class,      HotRodAuthenticationSessionEntityDelegate::new)
@@ -218,12 +222,12 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
         HotRodEntityDescriptor<E, V> entityDescriptor = (HotRodEntityDescriptor<E, V>) getEntityDescriptor(modelType);
 
         if (modelType == SingleUseObjectValueModel.class) {
-            return (HotRodMapStorage) new SingleUseObjectHotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, (HotRodEntityDescriptor<HotRodSingleUseObjectEntity, HotRodSingleUseObjectEntityDelegate>) getEntityDescriptor(modelType), CLONER, txWrapper);
+            return (HotRodMapStorage) new SingleUseObjectHotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, (HotRodEntityDescriptor<HotRodSingleUseObjectEntity, HotRodSingleUseObjectEntityDelegate>) getEntityDescriptor(modelType), CLONER, txWrapper, lockTimeout);
         } if (modelType == AuthenticatedClientSessionModel.class) {
-            return new HotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+            return new HotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
                     StringKeyConverter.StringKey.INSTANCE,
                     entityDescriptor,
-                    CLONER, txWrapper) {
+                    CLONER, txWrapper, lockTimeout) {
                 @Override
                 protected MapKeycloakTransaction createTransactionInternal(KeycloakSession session) {
                     return new ConcurrentHashMapKeycloakTransaction(this, keyConverter, cloner, clientSessionPredicates);
@@ -233,11 +237,10 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
             // Precompute client session storage to avoid recursive initialization
             HotRodMapStorage clientSessionStore = getHotRodStorage(session, AuthenticatedClientSessionModel.class, txWrapper);
             clientSessionStore.createTransaction(session);
-
-            return new HotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+            return new HotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
                     StringKeyConverter.StringKey.INSTANCE,
                     entityDescriptor,
-                    CLONER, txWrapper) {
+                    CLONER, txWrapper, lockTimeout) {
                 @Override
                 protected MapKeycloakTransaction createTransactionInternal(KeycloakSession session) {
                     Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<String, MapUserSessionEntity, UserSessionModel>> fieldPredicates = MapFieldPredicates.getPredicates((Class<UserSessionModel>) storedEntityDescriptor.getModelTypeClass());
@@ -245,12 +248,12 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
                 }
             };
         }
-        return new HotRodMapStorage<>(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER, txWrapper);
+        return new HotRodMapStorage<>(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER, txWrapper, lockTimeout);
     }
 
     @Override
     public void init(Config.Scope config) {
-
+        this.lockTimeout = config.getLong("lockTimeout", 10000L);
     }
 
     @Override
@@ -272,5 +275,16 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
     @Override
     public String getHelpText() {
         return "HotRod map storage";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("lockTimeout")
+                .type("long")
+                .defaultValue(10000L)
+                .helpText("The maximum time to wait in milliseconds when waiting for acquiring a pessimistic read lock. If set to negative there is no timeout configured.")
+                .add().build();
     }
 }

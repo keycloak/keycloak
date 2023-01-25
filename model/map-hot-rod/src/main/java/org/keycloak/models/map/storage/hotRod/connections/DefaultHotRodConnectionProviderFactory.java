@@ -137,7 +137,7 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
         // Acquire initial phase lock to avoid concurrent schema update
         RemoteCache<String, String> locksCache = remoteCacheManager.getCache(HOT_ROD_LOCKS_CACHE_NAME);
         try {
-            HotRodLocksUtils.repeatPutIfAbsent(locksCache, HOT_ROD_INIT_LOCK_NAME, Duration.ofMillis(900), 50);
+            HotRodLocksUtils.repeatPutIfAbsent(locksCache, HOT_ROD_INIT_LOCK_NAME, Duration.ofMillis(900), 50, false);
 
             Set<String> remoteCaches = ENTITY_DESCRIPTOR_MAP.values().stream()
                     .map(HotRodEntityDescriptor::getCacheName).collect(Collectors.toSet());

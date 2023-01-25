@@ -24,26 +24,33 @@ import org.infinispan.query.dsl.Query;
 import org.infinispan.query.dsl.QueryFactory;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.ExpirableEntity;
-import org.keycloak.models.map.storage.ModelEntityUtil;
-import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
-import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
-import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
-import org.keycloak.models.map.storage.hotRod.transaction.NoActionHotRodTransactionWrapper;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
+import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
+import org.keycloak.models.map.storage.hotRod.locking.HotRodLocksUtils;
 import org.keycloak.models.map.storage.hotRod.transaction.AllAreasHotRodTransactionsWrapper;
+import org.keycloak.models.map.storage.hotRod.transaction.NoActionHotRodTransactionWrapper;
 import org.keycloak.storage.SearchableModelField;
+import org.keycloak.utils.LockObjectsForModification;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterators;
@@ -53,6 +60,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.storage.hotRod.common.HotRodUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -60,6 +68,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
 
     private static final Logger LOG = Logger.getLogger(HotRodMapStorage.class);
 
+    private final KeycloakSession session;
     private final RemoteCache<K, E> remoteCache;
     protected final StringKeyConverter<K> keyConverter;
     protected final HotRodEntityDescriptor<E, V> storedEntityDescriptor;
@@ -67,8 +76,12 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
     protected final DeepCloner cloner;
     protected boolean isExpirableEntity;
     private final AllAreasHotRodTransactionsWrapper txWrapper;
+    private final Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    private final Long lockTimeout;
+    private final RemoteCache<String, String> locksCache;
 
-    public HotRodMapStorage(RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner, AllAreasHotRodTransactionsWrapper txWrapper) {
+    public HotRodMapStorage(KeycloakSession session, RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner, AllAreasHotRodTransactionsWrapper txWrapper, Long lockTimeout) {
+        this.session = session;
         this.remoteCache = remoteCache;
         this.keyConverter = keyConverter;
         this.storedEntityDescriptor = storedEntityDescriptor;
@@ -76,6 +89,10 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
         this.delegateProducer = storedEntityDescriptor.getHotRodDelegateProvider();
         this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(ModelEntityUtil.getEntityType(storedEntityDescriptor.getModelTypeClass()));
         this.txWrapper = txWrapper;
+        this.fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
+        this.lockTimeout = lockTimeout;
+        HotRodConnectionProvider cacheProvider = session.getProvider(HotRodConnectionProvider.class);
+        this.locksCache = cacheProvider.getRemoteCache(DefaultHotRodConnectionProviderFactory.HOT_ROD_LOCKS_CACHE_NAME);
     }
 
     @Override
@@ -102,10 +119,31 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
         return value;
     }
 
+    private String getLockName(String key) {
+        return storedEntityDescriptor.getModelTypeClass().getName() + "_" + key;
+    }
+
     @Override
     public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
         K k = keyConverter.fromStringSafe(key);
+
+        if (LockObjectsForModification.isEnabled(session, storedEntityDescriptor.getModelTypeClass())) {
+            String lockName = getLockName(key);
+            HotRodLocksUtils.repeatPutIfAbsent(locksCache, lockName, Duration.ofMillis(lockTimeout), 50, true);
+
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    HotRodLocksUtils.removeWithInstanceIdentifier(locksCache, lockName);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    HotRodLocksUtils.removeWithInstanceIdentifier(locksCache, lockName);
+                }
+            });
+        }
 
         // Obtain value from Infinispan
         E hotRodEntity = remoteCache.get(k);
@@ -152,29 +190,74 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
 
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
-                .flashToModelCriteriaBuilder(createCriteriaBuilder());
-        String queryString = iqmcb.getIckleQuery();
-
-        if (!queryParameters.getOrderBy().isEmpty()) {
-            queryString += " ORDER BY " + queryParameters.getOrderBy().stream().map(HotRodMapStorage::toOrderString)
-                                            .collect(Collectors.joining(", "));
+        if (LockObjectsForModification.isEnabled(session, storedEntityDescriptor.getModelTypeClass())) {
+            return pessimisticQueryRead(queryParameters);
         }
 
-        LOG.tracef("Executing read Ickle query: %s", queryString);
-
-        QueryFactory queryFactory = Search.getQueryFactory(remoteCache);
-
-        Query<E> query = paginateQuery(queryFactory.create(queryString), queryParameters.getOffset(),
-                queryParameters.getLimit());
-
-        query.setParameters(iqmcb.getParameters());
-
-        CloseableIterator<E> iterator = query.iterator();
+        Query<E> query = prepareQueryWithPrefixAndParameters(null, queryParameters);
+        CloseableIterator<E> iterator = paginateQuery(query, queryParameters.getOffset(),
+                queryParameters.getLimit()).iterator();
         return closing(StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false))
                 .onClose(iterator::close)
                 .filter(Objects::nonNull) // see https://github.com/keycloak/keycloak/issues/9271
                 .map(this.delegateProducer);
+    }
+
+    private Stream<V> pessimisticQueryRead(QueryParameters<M> queryParameters) {
+        DefaultModelCriteria<M> dmc = queryParameters.getModelCriteriaBuilder();
+
+        // Optimization if the criteria contains only one id
+        String id = (String) dmc.getSingleRestrictionArgument("id");
+
+        if (id != null) {
+            // We have a criteria that contains "id EQ 'some_key'". We can change this to reading only some_key using read method and then apply the rest of criteria.
+            MapModelCriteriaBuilder<K,V,M> mapMcb = dmc.flashToModelCriteriaBuilder(new MapModelCriteriaBuilder<>(keyConverter, fieldPredicates));
+            V entity = read(id);
+            if (entity == null) {
+                return Stream.empty();
+            }
+            boolean fulfillsQueryCriteria = mapMcb.getKeyFilter().test(keyConverter.fromString(id)) && mapMcb.getEntityFilter().test(entity);
+            if (!fulfillsQueryCriteria) {
+                // entity does not fulfill whole criteria, we can release lock now
+                HotRodLocksUtils.removeWithInstanceIdentifier(locksCache, getLockName(id));
+                return Stream.empty();
+            }
+
+            return Stream.of(entity);
+        }
+
+        // Criteria does not contain only one id, we need to read ids non-pessimistically and then read entities one by one pessimistically
+        Query<Object[]> query = prepareQueryWithPrefixAndParameters("SELECT id ", queryParameters);
+        CloseableIterator<Object[]> iterator = paginateQuery(query, queryParameters.getOffset(),
+                queryParameters.getLimit()).iterator();
+
+        return closing(StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false))
+                .onClose(iterator::close)
+                // Extract ids from the result
+                .map(a -> a[0])
+                .map(String.class::cast)
+                // Pessimistically read
+                .map(this::read)
+                // Entity can be removed in the meanwhile, we need to check for null
+                .filter(Objects::nonNull);
+
+    }
+
+    private <T> Query<T> prepareQueryWithPrefixAndParameters(String prefix, QueryParameters<M> queryParameters) {
+        IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
+                .flashToModelCriteriaBuilder(createCriteriaBuilder());
+        String queryString = (prefix != null ? prefix : "") + iqmcb.getIckleQuery();
+
+        if (!queryParameters.getOrderBy().isEmpty()) {
+            queryString += " ORDER BY " + queryParameters.getOrderBy().stream().map(HotRodMapStorage::toOrderString)
+                    .collect(Collectors.joining(", "));
+        }
+        LOG.tracef("Preparing Ickle query: '%s'%s", queryString, getShortStackTrace());
+        QueryFactory queryFactory = Search.getQueryFactory(remoteCache);
+        Query<T> query = queryFactory.create(queryString);
+
+        query.setParameters(iqmcb.getParameters());
+        return query;
     }
 
     @Override
@@ -195,26 +278,11 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
 
     @Override
     public long delete(QueryParameters<M> queryParameters) {
-        IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
-                .flashToModelCriteriaBuilder(createCriteriaBuilder());
-        String queryString = "DELETE " + iqmcb.getIckleQuery();
-
-        if (!queryParameters.getOrderBy().isEmpty()) {
-            queryString += " ORDER BY " + queryParameters.getOrderBy().stream().map(HotRodMapStorage::toOrderString)
-                    .collect(Collectors.joining(", "));
-        }
-
-        LOG.tracef("Executing delete Ickle query: %s", queryString);
-
-        QueryFactory queryFactory = Search.getQueryFactory(remoteCache);
-
         if (queryParameters.getLimit() != null || queryParameters.getOffset() != null) {
             throw new IllegalArgumentException("HotRod storage does not support pagination for delete query");
         }
-        Query<Object[]> query = queryFactory.create(queryString);
 
-        query.setParameters(iqmcb.getParameters());
-
+        Query<Object[]> query = prepareQueryWithPrefixAndParameters("DELETE ", queryParameters);
         return query.executeStatement();
     }
 
@@ -239,7 +307,6 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
     }
 
     protected MapKeycloakTransaction<V, M> createTransactionInternal(KeycloakSession session) {
-        Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
         return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
     }
 
