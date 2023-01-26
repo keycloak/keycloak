@@ -32,5 +32,5 @@ Algorithms `RSA_SHA1` and `DSA_SHA1`, which can be configured as `Signature algo
 alternatives based on `SHA256` or `SHA512`. Also, verifying signatures on signed SAML documents or assertions with these
 algorithms do not work on Java 17 or higher. If you use this algorithm and the other party consuming your SAML documents is running on Java 17 or higher, verifying signatures will not work.
 
-The possible workaround is to remove algorithms such as `http://www.w3.org/2000/09/xmldsig#rsa-sha1` or `http://www.w3.org/2000/09/xmldsig#dsa-sha1` from the list
+The possible workaround is to remove algorithms such as `++http://www.w3.org/2000/09/xmldsig#rsa-sha1++` or `++http://www.w3.org/2000/09/xmldsig#dsa-sha1++` from the list
 of "disallowed algorithms" configured on property `jdk.xml.dsig.secureValidationPolicy` in the file `$JAVA_HOME/conf/security/java.security`.
