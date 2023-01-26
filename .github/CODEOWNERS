@@ -1,0 +1,50 @@
+###################################################################################################
+# Overview
+#
+# Pattern used to match files follows most of the same rules as used in gitignore files. Order is
+# important; the last matching pattern takes precendence.
+#
+# For more info see:
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+###################################################################################################
+
+
+###################################################################################################
+# Global (@keycloak/maintainers)
+###################################################################################################
+
+/**                                                         @keycloak/maintainers
+
+###################################################################################################
+# Testing (@keycloak/testing-maintainers)
+###################################################################################################
+
+/testsuite/**                                               @keycloak/testing-maintainers
+
+###################################################################################################
+# Core (@keycloak/core-maintainers)
+###################################################################################################
+
+
+###################################################################################################
+# Cloud Native (@keycloak/cloud-native-maintainers)
+###################################################################################################
+
+/operator/**                                                @keycloak/cloud-native-maintainers
+/quarkus/**                                                 @keycloak/cloud-native-maintainers
+
+###################################################################################################
+# Store (@keycloak/store-maintainers)
+###################################################################################################
+
+/model/**                                                   @keycloak/store-maintainers
+/testsuite/model/**                                         @keycloak/store-maintainers
+
+###################################################################################################
+# UI (@keycloak/ui-maintainers)
+###################################################################################################
+
+/js/**                                                      @keycloak/ui-maintainers
+/adapters/oidc/js/**                                        @keycloak/ui-maintainers
+/rest/admin-ui-ext/**                                       @keycloak/ui-maintainers
+/themes/src/main/resources/theme/keycloak.v2/account/**     @keycloak/ui-maintainers
