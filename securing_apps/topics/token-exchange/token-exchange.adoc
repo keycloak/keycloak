@@ -126,7 +126,7 @@ an external realm or identity provider as an _external_ token.
 === Internal token to internal token exchange
 
 With an internal token to token exchange you have an existing token minted to a specific client and you want to exchange
-this token for a new one minted for a different target client.  Why would you want to do this?  This generally happens+
+this token for a new one minted for a different target client.  Why would you want to do this?  This generally happens
 when a client has a token minted for itself, and needs to make additional requests to other applications that require different
 claims and permissions within the access token.  Other reasons this type of exchange might be required is if you
 need to perform a "permission downgrade" where your app needs to invoke on a less trusted app and you don't want
