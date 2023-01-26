@@ -133,10 +133,10 @@ public class JPAScopeStore implements ScopeStore {
     @Override
     public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<ScopeEntity> querybuilder = builder.createQuery(ScopeEntity.class);
+        CriteriaQuery<String> querybuilder = builder.createQuery(String.class);
         Root<ScopeEntity> root = querybuilder.from(ScopeEntity.class);
         querybuilder.select(root.get("id"));
-        List<Predicate> predicates = new ArrayList();
+        List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServer.getId()));
 
@@ -153,14 +153,14 @@ public class JPAScopeStore implements ScopeStore {
             }
         });
 
-        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
+        querybuilder.where(predicates.toArray(new Predicate[0])).orderBy(builder.asc(root.get("name")));
 
-        TypedQuery query = entityManager.createQuery(querybuilder);
+        TypedQuery<String> query = entityManager.createQuery(querybuilder);
 
-        List result = paginateQuery(query, firstResult, maxResults).getResultList();
+        List<String> result = paginateQuery(query, firstResult, maxResults).getResultList();
         List<Scope> list = new LinkedList<>();
-        for (Object id : result) {
-            list.add(provider.getStoreFactory().getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, (String)id));
+        for (String id : result) {
+            list.add(provider.getStoreFactory().getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id));
         }
         return list;
 
