@@ -74,7 +74,7 @@
     "react-error-boundary": "^3.1.4",
     "react-hook-form": "^7.42.1",
     "react-i18next": "^12.1.4",
-    "react-router-dom": "^6.6.2",
+    "react-router-dom": "6.6.2",
     "react-use-localstorage": "^3.5.3",
     "reactflow": "^11.5.1",
     "use-react-router-breadcrumbs": "^4.0.1"
