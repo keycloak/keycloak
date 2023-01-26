@@ -76,7 +76,7 @@
     "react-i18next": "^12.1.4",
     "react-router-dom": "^6.6.2",
     "react-use-localstorage": "^3.5.3",
-    "reactflow": "^11.4.2",
+    "reactflow": "^11.5.1",
     "use-react-router-breadcrumbs": "^4.0.1"
   },
   "devDependencies": {
