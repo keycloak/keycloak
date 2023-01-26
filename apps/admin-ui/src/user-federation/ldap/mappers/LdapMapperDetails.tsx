@@ -209,11 +209,9 @@ export default function LdapMapperDetails() {
             <FormGroup label={t("common:id")} fieldId="kc-ldap-mapper-id">
               <KeycloakTextInput
                 isDisabled
-                type="text"
                 id="kc-ldap-mapper-id"
                 data-testid="ldap-mapper-id"
-                name="id"
-                ref={form.register}
+                {...form.register("id")}
               />
             </FormGroup>
           )}
@@ -231,34 +229,28 @@ export default function LdapMapperDetails() {
             <KeycloakTextInput
               isDisabled={!isNew}
               isRequired
-              type="text"
               id="kc-ldap-mapper-name"
               data-testid="ldap-mapper-name"
-              name="name"
-              ref={form.register({ required: true })}
               validated={
-                form.errors.name
+                form.formState.errors.name
                   ? ValidatedOptions.error
                   : ValidatedOptions.default
               }
+              {...form.register("name", { required: true })}
             />
             <KeycloakTextInput
               hidden
               defaultValue={isNew ? id : mapping ? mapping.parentId : ""}
-              type="text"
               id="kc-ldap-parentId"
               data-testid="ldap-mapper-parentId"
-              name="parentId"
-              ref={form.register}
+              {...form.register("parentId")}
             />
             <KeycloakTextInput
               hidden
               defaultValue="org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
-              type="text"
               id="kc-ldap-provider-type"
               data-testid="ldap-mapper-provider-type"
-              name="providerType"
-              ref={form.register}
+              {...form.register("providerType")}
             />
           </FormGroup>
           {!isNew ? (
@@ -280,11 +272,9 @@ export default function LdapMapperDetails() {
               <KeycloakTextInput
                 isDisabled={!isNew}
                 isRequired
-                type="text"
                 id="kc-ldap-mapper-type"
                 data-testid="ldap-mapper-type-fld"
-                name="providerId"
-                ref={form.register}
+                {...form.register("providerId")}
               />
             </FormGroup>
           ) : (
@@ -308,7 +298,7 @@ export default function LdapMapperDetails() {
                 defaultValue=""
                 control={form.control}
                 data-testid="ldap-mapper-type-select"
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <Select
                     toggleId="kc-providerId"
                     required
@@ -317,10 +307,10 @@ export default function LdapMapperDetails() {
                     }
                     isOpen={isMapperDropdownOpen}
                     onSelect={(_, value) => {
-                      onChange(value as string);
+                      field.onChange(value as string);
                       setIsMapperDropdownOpen(false);
                     }}
-                    selections={value}
+                    selections={field.value}
                     variant={SelectVariant.typeahead}
                   >
                     {components.map((c) => (

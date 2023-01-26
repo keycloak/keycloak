@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form-v7";
+import { Controller, useFormContext } from "react-hook-form";
 import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
 
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";

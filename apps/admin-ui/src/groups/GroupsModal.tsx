@@ -96,7 +96,7 @@ export const GroupsModal = ({
         <FormGroup
           name="create-modal-group"
           label={t("common:name")}
-          fieldId="group-id"
+          fieldId="create-group-name"
           helperTextInvalid={t("common:required")}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
@@ -105,15 +105,12 @@ export const GroupsModal = ({
         >
           <KeycloakTextInput
             data-testid="groupNameInput"
-            aria-label="group name input"
-            ref={register({ required: true })}
             autoFocus
-            type="text"
             id="create-group-name"
-            name="name"
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
+            {...register("name", { required: true })}
           />
         </FormGroup>
       </Form>

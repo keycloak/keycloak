@@ -11,7 +11,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form-v7";
+import { useForm } from "react-hook-form";
 
 import { emailRegexPattern } from "../util";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";

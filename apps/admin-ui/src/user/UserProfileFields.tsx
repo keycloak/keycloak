@@ -1,3 +1,7 @@
+import type {
+  UserProfileAttribute,
+  UserProfileAttributeRequired,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import {
   Form,
   FormGroup,
@@ -9,10 +13,6 @@ import { Fragment } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import type {
-  UserProfileAttribute,
-  UserProfileAttributeRequired,
-} from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
@@ -76,7 +76,11 @@ type FormFieldProps = {
 
 const FormField = ({ attribute, roles }: FormFieldProps) => {
   const { t } = useTranslation("users");
-  const { errors, register, control } = useFormContext();
+  const {
+    formState: { errors },
+    register,
+    control,
+  } = useFormContext();
   const [open, toggle] = useToggle();
 
   const isBundleKey = (displayName?: string) => displayName?.includes("${");
@@ -112,15 +116,15 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
           name={fieldName(attribute)}
           defaultValue=""
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId={attribute.name}
               onToggle={toggle}
               onSelect={(_, value) => {
-                onChange(value.toString());
+                field.onChange(value.toString());
                 toggle();
               }}
-              selections={value}
+              selections={field.value}
               variant="single"
               aria-label={t("common:selectOne")}
               isOpen={open}
@@ -138,7 +142,7 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
                   attribute.validations?.options as { options: string[] }
                 ).options.map((option) => (
                   <SelectOption
-                    selected={value === option}
+                    selected={field.value === option}
                     key={option}
                     value={option}
                   >
@@ -151,14 +155,13 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
         />
       ) : (
         <KeycloakTextInput
-          ref={register()}
           id={attribute.name}
-          name={fieldName(attribute)}
           isDisabled={
             !(attribute.permissions?.edit || DEFAULT_ROLES).some((r) =>
               roles.includes(r)
             )
           }
+          {...register(fieldName(attribute))}
         />
       )}
     </FormGroup>

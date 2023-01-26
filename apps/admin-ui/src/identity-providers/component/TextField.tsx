@@ -1,4 +1,4 @@
-import { useFormContext } from "react-hook-form-v7";
+import { useFormContext } from "react-hook-form";
 
 import { FieldProps, FormGroupField } from "./FormGroupField";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";

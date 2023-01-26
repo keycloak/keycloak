@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useFormContext, Controller } from "react-hook-form-v7";
+import { useFormContext, Controller } from "react-hook-form";
 import { FormGroup, Button, Checkbox } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import {

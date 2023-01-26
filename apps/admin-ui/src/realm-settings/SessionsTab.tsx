@@ -1,6 +1,4 @@
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   ActionGroup,
   Button,
@@ -8,8 +6,10 @@ import {
   PageSection,
   Switch,
 } from "@patternfly/react-core";
+import { useEffect } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
@@ -30,9 +30,7 @@ export const RealmSettingsSessionsTab = ({
   const { t } = useTranslation("realm-settings");
 
   const { setValue, control, handleSubmit, formState } =
-    useForm<RealmRepresentation>({
-      shouldUnregister: false,
-    });
+    useForm<RealmRepresentation>();
 
   const offlineSessionMaxEnabled = useWatch({
     control,
@@ -70,13 +68,12 @@ export const RealmSettingsSessionsTab = ({
               name="ssoSessionIdleTimeout"
               defaultValue={realm.ssoSessionIdleTimeout}
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   className="kc-sso-session-idle"
                   data-testid="sso-session-idle-input"
-                  aria-label="sso-session-idle-input"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value!}
+                  onChange={field.onChange}
                   units={["minute", "hour", "day"]}
                 />
               )}
@@ -95,15 +92,13 @@ export const RealmSettingsSessionsTab = ({
           >
             <Controller
               name="ssoSessionMaxLifespan"
-              defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   className="kc-sso-session-max"
                   data-testid="sso-session-max-input"
-                  aria-label="sso-session-max-input"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value!}
+                  onChange={field.onChange}
                   units={["minute", "hour", "day"]}
                 />
               )}
@@ -122,15 +117,13 @@ export const RealmSettingsSessionsTab = ({
           >
             <Controller
               name="ssoSessionIdleTimeoutRememberMe"
-              defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   className="kc-sso-session-idle-remember-me"
                   data-testid="sso-session-idle-remember-me-input"
-                  aria-label="sso-session-idle-remember-me-input"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value!}
+                  onChange={field.onChange}
                   units={["minute", "hour", "day"]}
                 />
               )}
@@ -149,15 +142,13 @@ export const RealmSettingsSessionsTab = ({
           >
             <Controller
               name="ssoSessionMaxLifespanRememberMe"
-              defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   className="kc-sso-session-max-remember-me"
-                  aria-label="sso-session-max-remember-me-input"
                   data-testid="sso-session-max-remember-me-input"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value!}
+                  onChange={field.onChange}
                   units={["minute", "hour", "day"]}
                 />
               )}
@@ -187,15 +178,13 @@ export const RealmSettingsSessionsTab = ({
           >
             <Controller
               name="clientSessionIdleTimeout"
-              defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   className="kc-client-session-idle"
                   data-testid="client-session-idle-input"
-                  aria-label="client-session-idle-input"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value!}
+                  onChange={field.onChange}
                   units={["minute", "hour", "day"]}
                 />
               )}
@@ -214,15 +203,13 @@ export const RealmSettingsSessionsTab = ({
           >
             <Controller
               name="clientSessionMaxLifespan"
-              defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   className="kc-client-session-max"
                   data-testid="client-session-max-input"
-                  aria-label="client-session-max-input"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value!}
+                  onChange={field.onChange}
                   units={["minute", "hour", "day"]}
                 />
               )}
@@ -252,15 +239,14 @@ export const RealmSettingsSessionsTab = ({
           >
             <Controller
               name="offlineSessionIdleTimeout"
-              defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   className="kc-offline-session-idle"
                   data-testid="offline-session-idle-input"
                   aria-label="offline-session-idle-input"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value!}
+                  onChange={field.onChange}
                   units={["minute", "hour", "day"]}
                 />
               )}
@@ -282,15 +268,15 @@ export const RealmSettingsSessionsTab = ({
               name="offlineSessionMaxLifespanEnabled"
               control={control}
               defaultValue={false}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Switch
                   id="kc-offline-session-max"
                   data-testid="offline-session-max-switch"
                   aria-label={t("offlineSessionMaxLimited")}
                   label={t("common:enabled")}
                   labelOff={t("common:disabled")}
-                  isChecked={value}
-                  onChange={onChange}
+                  isChecked={field.value}
+                  onChange={field.onChange}
                 />
               )}
             />
@@ -310,13 +296,12 @@ export const RealmSettingsSessionsTab = ({
               <Controller
                 name="offlineSessionMaxLifespan"
                 control={control}
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <TimeSelector
                     className="kc-offline-session-max"
                     data-testid="offline-session-max-input"
-                    aria-label="offline-session-max-input"
-                    value={value}
-                    onChange={onChange}
+                    value={field.value!}
+                    onChange={field.onChange}
                     units={["minute", "hour", "day"]}
                   />
                 )}
@@ -348,15 +333,14 @@ export const RealmSettingsSessionsTab = ({
           >
             <Controller
               name="accessCodeLifespanLogin"
-              defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   className="kc-login-timeout"
                   data-testid="login-timeout-input"
                   aria-label="login-timeout-input"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value!}
+                  onChange={field.onChange}
                   units={["minute", "hour", "day"]}
                 />
               )}
@@ -375,15 +359,13 @@ export const RealmSettingsSessionsTab = ({
           >
             <Controller
               name="accessCodeLifespanUserAction"
-              defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <TimeSelector
                   className="kc-login-action-timeout"
                   data-testid="login-action-timeout-input"
-                  aria-label="login-action-timeout-input"
-                  value={value}
-                  onChange={onChange}
+                  value={field.value!}
+                  onChange={field.onChange}
                   units={["minute", "hour", "day"]}
                 />
               )}

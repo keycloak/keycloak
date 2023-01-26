@@ -29,7 +29,7 @@ import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth, expandable } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form-v7";
+import { Controller, useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 

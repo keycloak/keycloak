@@ -1,5 +1,4 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
@@ -8,16 +7,17 @@ import {
   Switch,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
+import { useAlerts } from "../../components/alert/Alerts";
 import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../../components/confirm-dialog/ConfirmDialog";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
-import { useAlerts } from "../../components/alert/Alerts";
 import useToggle from "../../utils/useToggle";
 
 type ResetPasswordDialogProps = {
@@ -55,7 +55,6 @@ export const ResetPasswordDialog = ({
   } = useForm<CredentialsForm>({
     defaultValues: credFormDefaultValues,
     mode: "onChange",
-    shouldUnregister: false,
   });
 
   const [confirm, toggle] = useToggle(true);
@@ -158,9 +157,8 @@ export const ResetPasswordDialog = ({
           >
             <PasswordInput
               data-testid="passwordField"
-              name="password"
-              aria-label="password"
-              ref={register({ required: true })}
+              id="password"
+              {...register("password", { required: true })}
             />
           </FormGroup>
           <FormGroup
@@ -181,9 +179,8 @@ export const ResetPasswordDialog = ({
           >
             <PasswordInput
               data-testid="passwordConfirmationField"
-              name="passwordConfirmation"
-              aria-label="passwordConfirm"
-              ref={register({
+              id="passwordConfirmation"
+              {...register("passwordConfirmation", {
                 required: true,
                 validate: (value) =>
                   value === password ||
@@ -205,11 +202,11 @@ export const ResetPasswordDialog = ({
               name="temporaryPassword"
               defaultValue={true}
               control={control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Switch
                   className="kc-temporaryPassword"
-                  onChange={onChange}
-                  isChecked={value}
+                  onChange={field.onChange}
+                  isChecked={field.value}
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   aria-label={t("common:temporaryPassword")}

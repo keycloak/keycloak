@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import { PencilAltIcon } from "@patternfly/react-icons";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form-v7";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";

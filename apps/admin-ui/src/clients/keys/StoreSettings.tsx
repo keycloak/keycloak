@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form-v7";
+import { useFormContext } from "react-hook-form";
 import { FormGroup } from "@patternfly/react-core";
 
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";

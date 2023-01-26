@@ -1,9 +1,9 @@
+import { FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormGroup, Switch } from "@patternfly/react-core";
 
-import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
+import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
 export const BooleanComponent = ({
@@ -29,16 +29,18 @@ export const BooleanComponent = ({
         data-testid={name}
         defaultValue={false}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Switch
             id={name!}
             isDisabled={isDisabled}
             label={t("common:on")}
             labelOff={t("common:off")}
             isChecked={
-              value === "true" || value === true || value[0] === "true"
+              field.value === "true" ||
+              field.value === true ||
+              field.value[0] === "true"
             }
-            onChange={(value) => onChange("" + value)}
+            onChange={(value) => field.onChange("" + value)}
             data-testid={name}
             aria-label={t(label!)}
           />

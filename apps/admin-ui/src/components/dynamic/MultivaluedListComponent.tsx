@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   FormGroup,
   Select,
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
@@ -36,7 +36,7 @@ export const MultiValuedListComponent = ({
         name={convertToName(name!)}
         control={control}
         defaultValue={defaultValue ? [defaultValue] : []}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Select
             toggleId={name}
             data-testid={name}
@@ -49,18 +49,20 @@ export const MultiValuedListComponent = ({
             variant={SelectVariant.typeaheadMulti}
             typeAheadAriaLabel="Select"
             onToggle={(isOpen) => setOpen(isOpen)}
-            selections={value}
+            selections={field.value}
             onSelect={(_, v) => {
               const option = v.toString();
-              if (value.includes(option)) {
-                onChange(value.filter((item: string) => item !== option));
+              if (field.value.includes(option)) {
+                field.onChange(
+                  field.value.filter((item: string) => item !== option)
+                );
               } else {
-                onChange([...value, option]);
+                field.onChange([...field.value, option]);
               }
             }}
             onClear={(event) => {
               event.stopPropagation();
-              onChange([]);
+              field.onChange([]);
             }}
             isOpen={open}
             aria-label={t(label!)}

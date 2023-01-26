@@ -1,7 +1,4 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Controller, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
@@ -12,44 +9,45 @@ import {
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-
+import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useRealms } from "../context/RealmsContext";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useRealms } from "../context/RealmsContext";
+import { toDashboard } from "../dashboard/routes/Dashboard";
+import environment from "../environment";
+import helpUrls from "../help-urls";
 import { convertFormValuesToObject, convertToFormValues } from "../util";
-
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { EventsTab } from "./event-config/EventsTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
+import { KeysTab } from "./keys/KeysTab";
+import { LocalizationTab } from "./LocalizationTab";
 import { RealmSettingsLoginTab } from "./LoginTab";
+import { PartialExportDialog } from "./PartialExport";
+import { PartialImportDialog } from "./PartialImport";
+import { PoliciesTab } from "./PoliciesTab";
+import ProfilesTab from "./ProfilesTab";
+import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
+import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
 import { SecurityDefenses } from "./security-defences/SecurityDefenses";
 import { RealmSettingsSessionsTab } from "./SessionsTab";
 import { RealmSettingsThemesTab } from "./ThemesTab";
 import { RealmSettingsTokensTab } from "./TokensTab";
-import ProfilesTab from "./ProfilesTab";
-import { PoliciesTab } from "./PoliciesTab";
-import { PartialImportDialog } from "./PartialImport";
-import { PartialExportDialog } from "./PartialExport";
-import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
-import { LocalizationTab } from "./LocalizationTab";
-import { UserRegistration } from "./UserRegistration";
-import { toDashboard } from "../dashboard/routes/Dashboard";
-import environment from "../environment";
-import helpUrls from "../help-urls";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
-import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
-import { KeysTab } from "./keys/KeysTab";
-import type { KeyValueType } from "../components/key-value-form/key-value-convert";
+import { UserRegistration } from "./UserRegistration";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -174,7 +172,6 @@ export const RealmSettingsTabs = ({
 
   const { control, setValue, getValues } = useForm({
     mode: "onChange",
-    shouldUnregister: false,
   });
   const [key, setKey] = useState(0);
 
@@ -259,10 +256,10 @@ export const RealmSettingsTabs = ({
         name="enabled"
         defaultValue={true}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <RealmSettingsHeader
-            value={value}
-            onChange={onChange}
+            value={field.value}
+            onChange={field.onChange}
             realmName={realmName}
             refresh={refreshHeader}
             save={() => save(getValues())}

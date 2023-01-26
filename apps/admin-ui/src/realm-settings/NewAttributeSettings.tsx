@@ -31,12 +31,12 @@ import "./realm-settings-section.css";
 
 type IndexedAnnotations = {
   key: string;
-  value: unknown;
+  value?: Record<string, unknown>;
 };
 
 export type IndexedValidations = {
   key: string;
-  value?: Record<string, unknown>[];
+  value?: Record<string, unknown>;
 };
 
 type UserProfileAttributeType = Omit<
@@ -121,7 +121,7 @@ const CreateAttributeFormContent = ({
 export default function NewAttributeSettings() {
   const { realm, attributeName } = useParams<AttributeParams>();
   const { adminClient } = useAdminClient();
-  const form = useForm<UserProfileConfig>({ shouldUnregister: false });
+  const form = useForm<UserProfileAttributeType>();
   const { t } = useTranslation("realm-settings");
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
@@ -146,7 +146,7 @@ export default function NewAttributeSettings() {
       convertToFormValues(values, form.setValue);
       Object.entries(
         flatten<any, any>({ permissions, selector, required }, { safe: true })
-      ).map(([key, value]) => form.setValue(key, value));
+      ).map(([key, value]) => form.setValue(key as any, value));
       form.setValue(
         "annotations",
         Object.entries(annotations || {}).map(([key, value]) => ({

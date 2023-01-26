@@ -1,5 +1,5 @@
 import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
-import { Controller, useFormContext } from "react-hook-form-v7";
+import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";

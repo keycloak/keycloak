@@ -1,11 +1,6 @@
 import { saveAs } from "file-saver";
 import { cloneDeep } from "lodash-es";
-import {
-  FieldValues,
-  Path,
-  PathValue,
-  UseFormSetValue,
-} from "react-hook-form-v7";
+import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
 import { flatten } from "flat";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";

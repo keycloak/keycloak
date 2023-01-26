@@ -82,13 +82,13 @@ export default function RealmRoleTabs() {
     };
   };
 
-  const roleName = useWatch<string | undefined>({
+  const roleName = useWatch({
     control,
     defaultValue: undefined,
     name: "name",
   });
 
-  const composites = useWatch<boolean>({
+  const composites = useWatch({
     control,
     defaultValue: false,
     name: "composite",

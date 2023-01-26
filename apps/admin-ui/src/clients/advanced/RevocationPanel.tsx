@@ -7,7 +7,7 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { useEffect, useRef } from "react";
-import { useFormContext } from "react-hook-form-v7";
+import { useFormContext } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 

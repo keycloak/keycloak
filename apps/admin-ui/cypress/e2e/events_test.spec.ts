@@ -274,7 +274,7 @@ describe("Events tests", () => {
         .goToEventsTab()
         .goToAdminEventsSettingsSubTab()
         .disableSaveEvents()
-        .save()
+        .save({ waitForRealm: false, waitForConfig: true })
         .clearAdminEvents();
 
       sidebarPage.goToEvents();
@@ -300,7 +300,7 @@ describe("Events tests", () => {
         .goToEventsTab()
         .goToAdminEventsSettingsSubTab()
         .enableSaveEvents()
-        .save();
+        .save({ waitForRealm: false, waitForConfig: true });
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
       adminEventsTab
@@ -373,7 +373,7 @@ describe("Events tests", () => {
         .goToEventsTab()
         .goToAdminEventsSettingsSubTab()
         .disableSaveEvents()
-        .save();
+        .save({ waitForRealm: false, waitForConfig: true });
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
       adminEventsTab

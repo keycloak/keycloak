@@ -34,16 +34,14 @@ export default function CustomProviderSettings() {
   const { id, providerId } = useParams<CustomUserFederationRouteParams>();
   const navigate = useNavigate();
   const form = useForm<ComponentRepresentation>({
-    shouldUnregister: false,
     mode: "onChange",
   });
   const {
     register,
-    errors,
     reset,
     setValue,
     handleSubmit,
-    formState: { isDirty },
+    formState: { errors, isDirty },
   } = form;
 
   const { adminClient } = useAdminClient();
@@ -136,14 +134,12 @@ export default function CustomProviderSettings() {
           >
             <KeycloakTextInput
               isRequired
-              type="text"
               id="kc-ui-display-name"
-              name="name"
-              ref={register({
-                required: true,
-              })}
               data-testid="ui-name"
               validated={errors.name ? "error" : "default"}
+              {...register("name", {
+                required: true,
+              })}
             />
           </FormGroup>
           <FormProvider {...form}>

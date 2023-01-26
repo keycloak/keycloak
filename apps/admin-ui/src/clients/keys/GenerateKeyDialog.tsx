@@ -5,7 +5,7 @@ import {
   FormProvider,
   useForm,
   useFormContext,
-} from "react-hook-form-v7";
+} from "react-hook-form";
 import {
   Button,
   ButtonVariant,

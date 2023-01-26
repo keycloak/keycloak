@@ -27,7 +27,7 @@ export const EditTheResource = ({
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
-  const form = useForm<FormValues>({ shouldUnregister: false });
+  const form = useForm<FormValues>();
   const { control, register, reset, handleSubmit } = form;
 
   const { fields } = useFieldArray<FormValues>({

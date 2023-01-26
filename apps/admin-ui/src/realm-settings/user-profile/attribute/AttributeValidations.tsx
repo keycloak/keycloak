@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   Button,
   ButtonVariant,
@@ -6,9 +5,7 @@ import {
   Text,
   TextVariants,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
 import { PlusCircleIcon } from "@patternfly/react-icons";
-import { AddValidatorDialog } from "../attribute/AddValidatorDialog";
 import {
   TableComposable,
   Tbody,
@@ -17,11 +14,14 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { useEffect, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type { IndexedValidations } from "../../NewAttributeSettings";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import useToggle from "../../../utils/useToggle";
-import { useFormContext, useWatch } from "react-hook-form";
+import type { IndexedValidations } from "../../NewAttributeSettings";
+import { AddValidatorDialog } from "../attribute/AddValidatorDialog";
 
 import "../../realm-settings-section.css";
 
@@ -31,7 +31,7 @@ export const AttributeValidations = () => {
   const [validatorToDelete, setValidatorToDelete] = useState<string>();
   const { setValue, control, register } = useFormContext();
 
-  const validators = useWatch<IndexedValidations[]>({
+  const validators: IndexedValidations[] = useWatch({
     name: "validations",
     control,
     defaultValue: [],

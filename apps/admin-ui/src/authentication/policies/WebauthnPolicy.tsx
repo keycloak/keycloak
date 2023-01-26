@@ -20,7 +20,7 @@ import {
   FormProvider,
   useForm,
   useFormContext,
-} from "react-hook-form-v7";
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
@@ -29,7 +29,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { useHelp } from "../../components/help-enabler/HelpHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { MultiLineInput } from "../../components/multi-line-input/hook-form-v7/MultiLineInput";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -163,7 +163,7 @@ export const WebauthnPolicy = ({
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const { enabled } = useHelp();
-  const form = useForm({ mode: "onChange", shouldUnregister: false });
+  const form = useForm({ mode: "onChange" });
   const {
     control,
     register,

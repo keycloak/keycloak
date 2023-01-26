@@ -9,13 +9,13 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form-v7";
+import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { KeyValueInput } from "../../components/key-value-form/hook-form-v7/KeyValueInput";
-import { MultiLineInput } from "../../components/multi-line-input/hook-form-v7/MultiLineInput";
+import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";

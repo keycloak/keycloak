@@ -5,7 +5,7 @@ import {
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { SubmitHandler, useWatch, UseFormMethods } from "react-hook-form";
+import { SubmitHandler, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, To } from "react-router-dom";
 
@@ -16,7 +16,7 @@ import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../view-header/ViewHeader";
 
 export type RoleFormProps = {
-  form: UseFormMethods<AttributeForm>;
+  form: UseFormReturn<AttributeForm>;
   onSubmit: SubmitHandler<AttributeForm>;
   cancelLink: To;
   role: "manage-realm" | "manage-clients";
@@ -24,7 +24,12 @@ export type RoleFormProps = {
 };
 
 export const RoleForm = ({
-  form: { register, control, handleSubmit, errors },
+  form: {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  },
   onSubmit,
   cancelLink,
   role,
@@ -32,7 +37,7 @@ export const RoleForm = ({
 }: RoleFormProps) => {
   const { t } = useTranslation("roles");
 
-  const roleName = useWatch<string | undefined>({
+  const roleName = useWatch({
     control,
     defaultValue: undefined,
     name: "name",
@@ -59,13 +64,15 @@ export const RoleForm = ({
           >
             <KeycloakTextInput
               id="kc-name"
-              name="name"
-              ref={register({
-                required: !editMode,
-                validate: (value: string) =>
-                  !!value.trim() || t("common:required").toString(),
-              })}
               isReadOnly={editMode}
+              {...register("name", {
+                required: !editMode,
+                validate: (value) => {
+                  if (!value?.trim()) {
+                    return t("common:required").toString();
+                  }
+                },
+              })}
             />
           </FormGroup>
           <FormGroup
@@ -80,19 +87,18 @@ export const RoleForm = ({
           >
             <KeycloakTextArea
               id="kc-description"
-              name="description"
-              ref={register({
-                maxLength: {
-                  value: 255,
-                  message: t("common:maxLength", { length: 255 }),
-                },
-              })}
               validated={
                 errors.description
                   ? ValidatedOptions.error
                   : ValidatedOptions.default
               }
               isDisabled={roleName?.includes("default-roles")}
+              {...register("description", {
+                maxLength: {
+                  value: 255,
+                  message: t("common:maxLength", { length: 255 }),
+                },
+              })}
             />
           </FormGroup>
           <ActionGroup>

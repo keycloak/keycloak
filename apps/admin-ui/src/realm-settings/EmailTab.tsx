@@ -27,9 +27,9 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emailRegexPattern } from "../util";
 import { useCurrentUser } from "../utils/useCurrentUser";
+import useToggle from "../utils/useToggle";
 
 import "./realm-settings-section.css";
-import useToggle from "../utils/useToggle";
 
 type RealmSettingsEmailTabProps = {
   realm: RealmRepresentation;
@@ -133,13 +133,12 @@ export const RealmSettingsEmailTab = ({
               type="email"
               id="kc-sender-email-address"
               data-testid="sender-email-address"
-              name="smtpServer.from"
-              ref={register({
+              placeholder="Sender email address"
+              validated={errors.smtpServer?.from ? "error" : "default"}
+              {...register("smtpServer.from", {
                 pattern: emailRegexPattern,
                 required: true,
               })}
-              placeholder="Sender email address"
-              validated={errors.smtpServer?.from ? "error" : "default"}
             />
           </FormGroup>
           <FormGroup
@@ -153,12 +152,10 @@ export const RealmSettingsEmailTab = ({
             }
           >
             <KeycloakTextInput
-              type="text"
               id="kc-from-display-name"
               data-testid="from-display-name"
-              name="smtpServer.fromDisplayName"
-              ref={register}
               placeholder="Display name for Sender email address"
+              {...register("smtpServer.fromDisplayName")}
             />
           </FormGroup>
           <FormGroup
@@ -170,12 +167,11 @@ export const RealmSettingsEmailTab = ({
             <KeycloakTextInput
               type="email"
               id="kc-reply-to"
-              name="smtpServer.replyTo"
-              ref={register({
-                pattern: emailRegexPattern,
-              })}
               placeholder="Reply to email address"
               validated={errors.smtpServer?.replyTo ? "error" : "default"}
+              {...register("smtpServer.replyTo", {
+                pattern: emailRegexPattern,
+              })}
             />
           </FormGroup>
           <FormGroup
@@ -189,11 +185,9 @@ export const RealmSettingsEmailTab = ({
             }
           >
             <KeycloakTextInput
-              type="text"
               id="kc-reply-to-display-name"
-              name="smtpServer.replyToDisplayName"
-              ref={register}
               placeholder='Display name for "reply to" email address'
+              {...register("smtpServer.replyToDisplayName")}
             />
           </FormGroup>
           <FormGroup
@@ -207,11 +201,9 @@ export const RealmSettingsEmailTab = ({
             }
           >
             <KeycloakTextInput
-              type="text"
               id="kc-envelope-from"
-              name="smtpServer.envelopeFrom"
-              ref={register}
               placeholder="Sender envelope email address"
+              {...register("smtpServer.envelopeFrom")}
             />
           </FormGroup>
         </FormAccess>
@@ -234,21 +226,17 @@ export const RealmSettingsEmailTab = ({
             helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
-              type="text"
               id="kc-host"
-              name="smtpServer.host"
-              ref={register({ required: true })}
               placeholder="SMTP host"
               validated={errors.smtpServer?.host ? "error" : "default"}
+              {...register("smtpServer.host", { required: true })}
             />
           </FormGroup>
           <FormGroup label={t("port")} fieldId="kc-port">
             <KeycloakTextInput
-              type="text"
               id="kc-port"
-              name="smtpServer.port"
-              ref={register}
               placeholder="SMTP port (defaults to 25)"
+              {...register("smtpServer.port")}
             />
           </FormGroup>
           <FormGroup label={t("encryption")} fieldId="kc-html-display-name">
@@ -256,14 +244,13 @@ export const RealmSettingsEmailTab = ({
               name="smtpServer.ssl"
               control={control}
               defaultValue="false"
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Checkbox
                   id="kc-enable-ssl"
                   data-testid="enable-ssl"
                   label={t("enableSSL")}
-                  ref={register}
-                  isChecked={value === "true"}
-                  onChange={(value) => onChange("" + value)}
+                  isChecked={field.value === "true"}
+                  onChange={(value) => field.onChange("" + value)}
                 />
               )}
             />
@@ -271,14 +258,13 @@ export const RealmSettingsEmailTab = ({
               name="smtpServer.starttls"
               control={control}
               defaultValue="false"
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Checkbox
                   id="kc-enable-start-tls"
                   data-testid="enable-start-tls"
                   label={t("enableStartTLS")}
-                  ref={register}
-                  isChecked={value === "true"}
-                  onChange={(value) => onChange("" + value)}
+                  isChecked={field.value === "true"}
+                  onChange={(value) => field.onChange("" + value)}
                 />
               )}
             />
@@ -292,15 +278,15 @@ export const RealmSettingsEmailTab = ({
               name="smtpServer.auth"
               control={control}
               defaultValue=""
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Switch
                   id="kc-authentication-switch"
                   data-testid="email-authentication-switch"
                   label={t("common:enabled")}
                   labelOff={t("common:disabled")}
-                  isChecked={value === "true"}
+                  isChecked={field.value === "true"}
                   onChange={(value) => {
-                    onChange("" + value);
+                    field.onChange("" + value);
                   }}
                   aria-label={t("authentication")}
                 />
@@ -317,13 +303,11 @@ export const RealmSettingsEmailTab = ({
                 helperTextInvalid={t("common:required")}
               >
                 <KeycloakTextInput
-                  type="text"
                   id="kc-username"
                   data-testid="username-input"
-                  name="smtpServer.user"
-                  ref={register({ required: true })}
                   placeholder="Login username"
                   validated={errors.smtpServer?.user ? "error" : "default"}
+                  {...register("smtpServer.user", { required: true })}
                 />
               </FormGroup>
               <FormGroup
@@ -342,10 +326,9 @@ export const RealmSettingsEmailTab = ({
                 <PasswordInput
                   id="kc-password"
                   data-testid="password-input"
-                  name="smtpServer.password"
                   aria-label={t("password")}
                   validated={errors.smtpServer?.password ? "error" : "default"}
-                  ref={register({ required: true })}
+                  {...register("smtpServer.password", { required: true })}
                 />
               </FormGroup>
             </>

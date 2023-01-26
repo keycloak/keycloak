@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
+import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   AlertVariant,
   Button,
@@ -12,24 +13,22 @@ import {
   Title,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
 
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { prettyPrintJSON } from "../util";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
-import { Link, useNavigate } from "react-router-dom";
-import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { useAlerts } from "../components/alert/Alerts";
-
 import { useRealm } from "../context/realm-context/RealmContext";
+import { prettyPrintJSON } from "../util";
 import { toAddClientPolicy } from "./routes/AddClientPolicy";
-import { toEditClientPolicy } from "./routes/EditClientPolicy";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { Controller, useForm } from "react-hook-form";
 import { toClientPolicies } from "./routes/ClientPolicies";
+import { toEditClientPolicy } from "./routes/EditClientPolicy";
 
 import "./realm-settings-section.css";
 
@@ -118,16 +117,16 @@ export const PoliciesTab = () => {
           data-testid={`${clientPolicy.name!}-switch`}
           defaultValue={clientPolicy.enabled}
           control={form.control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               label={t("common:enabled")}
               labelOff={t("common:disabled")}
-              isChecked={value}
+              isChecked={field.value}
               onChange={(value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {
-                  onChange(value);
+                  field.onChange(value);
                   saveStatus();
                 }
               }}

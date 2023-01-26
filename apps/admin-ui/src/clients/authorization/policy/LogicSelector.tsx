@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form-v7";
+import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup, Radio } from "@patternfly/react-core";
 
 import { HelpItem } from "../../../components/help-enabler/HelpItem";

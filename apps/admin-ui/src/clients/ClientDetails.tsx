@@ -13,12 +13,7 @@ import {
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import { cloneDeep, sortBy } from "lodash-es";
 import { useMemo, useState } from "react";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useWatch,
-} from "react-hook-form-v7";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -210,7 +205,7 @@ export default function ClientDetails() {
   const [downloadDialogOpen, toggleDownloadDialogOpen] = useToggle();
   const [changeAuthenticatorOpen, toggleChangeAuthenticatorOpen] = useToggle();
 
-  const form = useForm<FormFields>({ shouldUnregister: false });
+  const form = useForm<FormFields>();
   const { clientId } = useParams<ClientParams>();
   const [key, setKey] = useState(0);
 

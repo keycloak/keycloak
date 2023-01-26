@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { saveAs } from "file-saver";
 import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form-v7";
+import { FormProvider, useForm } from "react-hook-form";
 import {
   AlertVariant,
   Button,

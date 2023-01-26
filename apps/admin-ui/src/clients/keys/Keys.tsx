@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { Controller, useFormContext, useWatch } from "react-hook-form-v7";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";

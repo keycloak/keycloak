@@ -5,7 +5,7 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form-v7";
+import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";

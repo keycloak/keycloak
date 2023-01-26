@@ -1,4 +1,7 @@
-import { useState } from "react";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -11,27 +14,24 @@ import {
   SelectOption,
   Switch,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
-import { FormAccess } from "../components/form-access/FormAccess";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { HelpItem } from "../components/help-enabler/HelpItem";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
+import { FormAccess } from "../components/form-access/FormAccess";
+import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
+import { HelpItem } from "../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { useAccess } from "../context/access/Access";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
 import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
-import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
-import { useAccess } from "../context/access/Access";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
-import { UserProfileFields } from "./UserProfileFields";
 import { FederatedUserLink } from "./FederatedUserLink";
+import { UserProfileFields } from "./UserProfileFields";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -64,12 +64,12 @@ const EmailVerified = () => {
         name="emailVerified"
         defaultValue={false}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Switch
             data-testid="email-verified-switch"
             id="kc-user-email-verified"
-            onChange={(value) => onChange(value)}
-            isChecked={value}
+            onChange={(value) => field.onChange(value)}
+            isChecked={field.value}
             label={t("common:yes")}
             labelOff={t("common:no")}
           />
@@ -248,9 +248,8 @@ export const UserForm = ({
         <Controller
           name="requiredActions"
           defaultValue={[]}
-          typeAheadAriaLabel="Select an action"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               data-testid="required-actions-select"
               placeholderText="Select action"
@@ -261,13 +260,15 @@ export const UserForm = ({
                 )
               }
               isOpen={isRequiredUserActionsDropdownOpen}
-              selections={value}
+              selections={field.value}
               onSelect={(_, v) => {
                 const option = v as string;
-                if (value.includes(option)) {
-                  onChange(value.filter((item: string) => item !== option));
+                if (field.value.includes(option)) {
+                  field.onChange(
+                    field.value.filter((item: string) => item !== option)
+                  );
                 } else {
-                  onChange([...value, option]);
+                  field.onChange([...field.value, option]);
                 }
               }}
               onClear={clearSelection}
@@ -308,15 +309,13 @@ export const UserForm = ({
               helperTextInvalid={t("common:required")}
             >
               <KeycloakTextInput
-                ref={register()}
                 id="kc-username"
-                aria-label={t("username")}
-                name="username"
                 isReadOnly={
                   !!user?.id &&
                   !realm?.editUsernameAllowed &&
                   realm?.editUsernameAllowed !== undefined
                 }
+                {...register("username")}
               />
             </FormGroup>
           )}
@@ -327,14 +326,12 @@ export const UserForm = ({
             helperTextInvalid={t("users:emailInvalid")}
           >
             <KeycloakTextInput
-              ref={register({
-                pattern: emailRegexPattern,
-              })}
               type="email"
               id="kc-email"
-              name="email"
               data-testid="email-input"
-              aria-label={t("emailInput")}
+              {...register("email", {
+                pattern: emailRegexPattern,
+              })}
             />
           </FormGroup>
           <EmailVerified />
@@ -345,10 +342,9 @@ export const UserForm = ({
             helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
-              ref={register()}
               data-testid="firstName-input"
               id="kc-firstname"
-              name="firstName"
+              {...register("firstName")}
             />
           </FormGroup>
           <FormGroup
@@ -357,10 +353,9 @@ export const UserForm = ({
             validated={errors.lastName ? "error" : "default"}
           >
             <KeycloakTextInput
-              ref={register()}
               data-testid="lastName-input"
               id="kc-lastname"
-              name="lastName"
+              {...register("lastName")}
             />
           </FormGroup>
         </>
@@ -403,7 +398,6 @@ export const UserForm = ({
           <Controller
             name="groups"
             defaultValue={[]}
-            typeAheadAriaLabel="Select an action"
             control={control}
             render={() => (
               <InputGroup>

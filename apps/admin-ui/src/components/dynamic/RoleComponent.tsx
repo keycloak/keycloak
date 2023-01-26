@@ -1,5 +1,3 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   Button,
   Chip,
@@ -7,12 +5,14 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type { ComponentProps } from "./components";
-import { HelpItem } from "../help-enabler/HelpItem";
 import useToggle from "../../utils/useToggle";
+import { HelpItem } from "../help-enabler/HelpItem";
 import { AddRoleMappingModal } from "../role-mapping/AddRoleMappingModal";
-import { ServiceRole, Row } from "../role-mapping/RoleMapping";
+import { Row, ServiceRole } from "../role-mapping/RoleMapping";
+import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
 const parseValue = (value: any) =>
@@ -33,7 +33,10 @@ export const RoleComponent = ({
   const { t } = useTranslation("dynamic");
 
   const [openModal, toggleModal] = useToggle();
-  const { control, errors } = useFormContext();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
 
   const fieldName = convertToName(name!);
 
@@ -50,27 +53,26 @@ export const RoleComponent = ({
       <Controller
         name={fieldName}
         defaultValue={defaultValue || ""}
-        typeAheadAriaLabel="Select an action"
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Split>
             {openModal && (
               <AddRoleMappingModal
                 id="id"
                 type="roles"
                 name={name}
-                onAssign={(rows) => onChange(parseRow(rows[0]))}
+                onAssign={(rows) => field.onChange(parseRow(rows[0]))}
                 onClose={toggleModal}
                 isRadio
               />
             )}
 
-            {value !== "" && (
+            {field.value !== "" && (
               <SplitItem>
-                <Chip textMaxWidth="500px" onClick={() => onChange("")}>
+                <Chip textMaxWidth="500px" onClick={() => field.onChange("")}>
                   <ServiceRole
-                    role={{ name: parseValue(value)[1] }}
-                    client={{ clientId: parseValue(value)[0] }}
+                    role={{ name: parseValue(field.value)[1] }}
+                    client={{ clientId: parseValue(field.value)[0] }}
                   />
                 </Chip>
               </SplitItem>

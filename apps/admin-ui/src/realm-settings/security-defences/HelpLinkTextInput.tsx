@@ -1,10 +1,10 @@
-import { Trans, useTranslation } from "react-i18next";
 import { FormGroup } from "@patternfly/react-core";
-
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { FormattedLink } from "../../components/external-link/FormattedLink";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useFormContext } from "react-hook-form";
+import { Trans, useTranslation } from "react-i18next";
+
+import { FormattedLink } from "../../components/external-link/FormattedLink";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type HelpLinkTextInputProps = {
   fieldName: string;
@@ -34,12 +34,7 @@ export const HelpLinkTextInput = ({
         />
       }
     >
-      <KeycloakTextInput
-        type="text"
-        id={name}
-        name={fieldName}
-        ref={register}
-      />
+      <KeycloakTextInput id={name} {...register(fieldName)} />
     </FormGroup>
   );
 };

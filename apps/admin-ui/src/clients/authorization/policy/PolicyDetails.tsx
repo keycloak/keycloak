@@ -8,7 +8,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { FormProvider, useForm } from "react-hook-form-v7";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -64,7 +64,7 @@ export default function PolicyDetails() {
   const { t } = useTranslation("clients");
   const { id, realm, policyId, policyType } = useParams<PolicyDetailsParams>();
   const navigate = useNavigate();
-  const form = useForm({ shouldUnregister: false });
+  const form = useForm();
   const { reset, handleSubmit } = form;
 
   const { adminClient } = useAdminClient();

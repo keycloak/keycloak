@@ -12,7 +12,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form-v7";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../../components/help-enabler/HelpItem";

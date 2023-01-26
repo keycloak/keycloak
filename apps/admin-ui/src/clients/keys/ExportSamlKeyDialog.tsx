@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form-v7";
+import { FormProvider, useForm } from "react-hook-form";
 import { Button, Modal, Form } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 

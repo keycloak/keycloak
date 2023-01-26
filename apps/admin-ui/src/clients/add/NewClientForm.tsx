@@ -7,7 +7,7 @@ import {
   WizardFooter,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { FormProvider, useForm } from "react-hook-form-v7";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 

@@ -1,18 +1,18 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   FormGroup,
   Select,
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "../dynamic/components";
+import { HelpItem } from "../help-enabler/HelpItem";
 
 type ClientSelectProps = ComponentProps & {
   namespace: string;
@@ -29,7 +29,10 @@ export const ClientSelect = ({
   required = false,
 }: ClientSelectProps) => {
   const { t } = useTranslation(namespace);
-  const { control, errors } = useFormContext();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
 
   const [open, setOpen] = useState(false);
   const [clients, setClients] = useState<ClientRepresentation[]>([]);
@@ -80,20 +83,20 @@ export const ClientSelect = ({
         defaultValue={defaultValue || ""}
         control={control}
         rules={required ? { required: true } : {}}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Select
             toggleId={name}
             variant={SelectVariant.typeahead}
             onToggle={(open) => setOpen(open)}
             isOpen={open}
             isDisabled={isDisabled}
-            selections={value}
+            selections={field.value}
             onFilter={(_, value) => {
               setSearch(value);
               return convert(clients);
             }}
             onSelect={(_, value) => {
-              onChange(value.toString());
+              field.onChange(value.toString());
               setOpen(false);
             }}
             aria-label={t(label!)}

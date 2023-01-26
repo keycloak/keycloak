@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { FormProvider, useFormContext } from "react-hook-form-v7";
+import { FormProvider, useFormContext } from "react-hook-form";
 import { AlertVariant } from "@patternfly/react-core";
 
 import type { KeyTypes } from "./SamlKeys";

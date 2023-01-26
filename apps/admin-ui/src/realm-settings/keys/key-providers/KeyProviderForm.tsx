@@ -43,10 +43,15 @@ export const KeyProviderForm = ({
     serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
 
   const form = useForm<ComponentRepresentation>({
-    shouldUnregister: false,
     mode: "onChange",
   });
-  const { register, control, handleSubmit, errors, reset } = form;
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = form;
 
   const save = async (component: ComponentRepresentation) => {
     if (component.config)
@@ -106,13 +111,10 @@ export const KeyProviderForm = ({
           isRequired
         >
           <KeycloakTextInput
-            ref={register}
-            id="id"
-            type="text"
-            name="id"
-            isReadOnly
-            aria-label={t("providerId")}
+            id="providerId"
             data-testid="providerId-input"
+            isReadOnly
+            {...register("id")}
           />
         </FormGroup>
       )}
@@ -136,13 +138,11 @@ export const KeyProviderForm = ({
           control={control}
           rules={{ required: true }}
           defaultValue={providerType}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <TextInput
               id="name"
-              type="text"
-              aria-label={t("common:name")}
-              value={value}
-              onChange={onChange}
+              value={field.value}
+              onChange={field.onChange}
               data-testid="name-input"
             />
           )}

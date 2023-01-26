@@ -1,4 +1,3 @@
-import type ClientPolicyExecutorRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyExecutorRepresentation";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import type ClientProfilesRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfilesRepresentation";
 import {
@@ -69,11 +68,10 @@ export default function ClientProfileForm() {
     mode: "onChange",
   });
 
-  const { fields: profileExecutors, remove } =
-    useFieldArray<ClientPolicyExecutorRepresentation>({
-      name: "executors",
-      control,
-    });
+  const { fields: profileExecutors, remove } = useFieldArray({
+    name: "executors",
+    control,
+  });
 
   const { addAlert, addError } = useAlerts();
   const { adminClient } = useAdminClient();
@@ -109,12 +107,15 @@ export default function ClientProfileForm() {
       );
       const profile = profiles.profiles?.find((p) => p.name === profileName);
       setIsGlobalProfile(globalProfile !== undefined);
-      setValue("name", globalProfile?.name ?? profile?.name);
+      setValue("name", globalProfile?.name ?? profile?.name ?? "");
       setValue(
         "description",
-        globalProfile?.description ?? profile?.description
+        globalProfile?.description ?? profile?.description ?? ""
       );
-      setValue("executors", globalProfile?.executors ?? profile?.executors);
+      setValue(
+        "executors",
+        globalProfile?.executors ?? profile?.executors ?? []
+      );
     },
     [key]
   );
@@ -233,24 +234,18 @@ export default function ClientProfileForm() {
             }
           >
             <KeycloakTextInput
-              ref={register({ required: true })}
-              name="name"
-              type="text"
-              id="name"
-              aria-label={t("name")}
+              id="kc-name"
               data-testid="client-profile-name"
               isReadOnly={isGlobalProfile}
+              {...register("name", { required: true })}
             />
           </FormGroup>
           <FormGroup label={t("common:description")} fieldId="kc-description">
             <KeycloakTextArea
-              ref={register()}
-              name="description"
-              type="text"
-              id="description"
-              aria-label={t("description")}
+              id="kc-description"
               data-testid="client-profile-description"
               isReadOnly={isGlobalProfile}
+              {...register("description")}
             />
           </FormGroup>
           <ActionGroup>

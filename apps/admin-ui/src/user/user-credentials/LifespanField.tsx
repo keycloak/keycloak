@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
@@ -23,11 +23,11 @@ export const LifespanField = () => {
         name="lifespan"
         defaultValue={credResetFormDefaultValues.lifespan}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <TimeSelector
-            value={value}
+            value={field.value}
             units={["minute", "hour", "day"]}
-            onChange={onChange}
+            onChange={field.onChange}
             menuAppendTo="parent"
           />
         )}

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form-v7";
+import { useFormContext } from "react-hook-form";
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 
 import { HelpItem } from "../../../components/help-enabler/HelpItem";

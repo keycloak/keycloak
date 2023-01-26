@@ -1,16 +1,16 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { Controller, useFormContext } from "react-hook-form";
+import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import {
   FormGroup,
   Select,
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 export const CredentialsResetActionMultiSelect = () => {
   const { t } = useTranslation("users");
@@ -44,7 +44,7 @@ export const CredentialsResetActionMultiSelect = () => {
         name="actions"
         defaultValue={[]}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Select
             toggleId="actions"
             variant={SelectVariant.typeaheadMulti}
@@ -54,17 +54,17 @@ export const CredentialsResetActionMultiSelect = () => {
             menuAppendTo="parent"
             onToggle={(open) => setOpen(open)}
             isOpen={open}
-            selections={value}
+            selections={field.value}
             onSelect={(_, selectedValue) =>
-              onChange(
-                value.find((o: string) => o === selectedValue)
-                  ? value.filter((item: string) => item !== selectedValue)
-                  : [...value, selectedValue]
+              field.onChange(
+                field.value.find((o: string) => o === selectedValue)
+                  ? field.value.filter((item: string) => item !== selectedValue)
+                  : [...field.value, selectedValue]
               )
             }
             onClear={(event) => {
               event.stopPropagation();
-              onChange([]);
+              field.onChange([]);
             }}
             typeAheadAriaLabel={t("resetActions")}
           >

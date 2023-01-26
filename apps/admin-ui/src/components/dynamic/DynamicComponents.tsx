@@ -26,5 +26,5 @@ export const DynamicComponents = ({
   </>
 );
 
-export const convertToName = (name: string) =>
+export const convertToName = (name: string): string =>
   convertAttributeNameToForm(`config.${name}`);

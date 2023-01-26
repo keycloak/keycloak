@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
 import { FormGroup } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../help-enabler/HelpItem";
 import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
@@ -29,9 +29,8 @@ export const TextComponent = ({
         id={name!}
         data-testid={name}
         isDisabled={isDisabled}
-        ref={register()}
-        name={convertToName(name!)}
         defaultValue={defaultValue?.toString()}
+        {...register(convertToName(name!))}
       />
     </FormGroup>
   );

@@ -81,24 +81,22 @@ export const AttributeGeneralSettings = () => {
         }
         fieldId="kc-attribute-name"
         isRequired
-        validated={form.errors.name ? "error" : "default"}
-        helperTextInvalid={form.errors.name?.message}
+        validated={form.formState.errors.name ? "error" : "default"}
+        helperTextInvalid={form.formState.errors.name?.message}
       >
         <KeycloakTextInput
           isRequired
-          type="text"
           id="kc-attribute-name"
-          name="name"
           defaultValue=""
-          ref={form.register({
+          data-testid="attribute-name"
+          isDisabled={editMode}
+          validated={form.formState.errors.name ? "error" : "default"}
+          {...form.register("name", {
             required: {
               value: true,
               message: t("validateName"),
             },
           })}
-          data-testid="attribute-name"
-          isDisabled={editMode}
-          validated={form.errors.name ? "error" : "default"}
         />
       </FormGroup>
       <FormGroup
@@ -112,12 +110,10 @@ export const AttributeGeneralSettings = () => {
         fieldId="kc-attribute-display-name"
       >
         <KeycloakTextInput
-          type="text"
           id="kc-attribute-display-name"
-          name="displayName"
           defaultValue=""
-          ref={form.register}
           data-testid="attribute-display-name"
+          {...form.register("displayName")}
         />
       </FormGroup>
       <FormGroup
@@ -134,7 +130,7 @@ export const AttributeGeneralSettings = () => {
           name="group"
           defaultValue=""
           control={form.control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="kc-attributeGroup"
               onToggle={() =>
@@ -142,10 +138,10 @@ export const AttributeGeneralSettings = () => {
               }
               isOpen={isAttributeGroupDropdownOpen}
               onSelect={(_, value) => {
-                onChange(value.toString());
+                field.onChange(value.toString());
                 setIsAttributeGroupDropdownOpen(false);
               }}
-              selections={[value || t("common:none")]}
+              selections={[field.value || t("common:none")]}
               variant={SelectVariant.single}
             >
               {[
@@ -212,7 +208,7 @@ export const AttributeGeneralSettings = () => {
               name="selector.scopes"
               control={form.control}
               defaultValue={clientScopes.map((s) => s.name)}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Select
                   name="scopes"
                   data-testid="enabled-when-scope-field"
@@ -224,23 +220,23 @@ export const AttributeGeneralSettings = () => {
                     collapsedText: t("common:showRemaining"),
                   }}
                   onToggle={(isOpen) => setSelectEnabledWhenOpen(isOpen)}
-                  selections={value}
+                  selections={field.value}
                   onSelect={(_, selectedValue) => {
                     const option = selectedValue.toString();
                     let changedValue = [""];
-                    if (value) {
-                      changedValue = value.includes(option)
-                        ? value.filter((item: string) => item !== option)
-                        : [...value, option];
+                    if (field.value) {
+                      changedValue = field.value.includes(option)
+                        ? field.value.filter((item: string) => item !== option)
+                        : [...field.value, option];
                     } else {
                       changedValue = [option];
                     }
 
-                    onChange(changedValue);
+                    field.onChange(changedValue);
                   }}
                   onClear={(selectedValues) => {
                     selectedValues.stopPropagation();
-                    onChange([]);
+                    field.onChange([]);
                   }}
                   isOpen={selectEnabledWhenOpen}
                   isDisabled={selectedScopes.length === clientScopes.length}
@@ -271,11 +267,11 @@ export const AttributeGeneralSettings = () => {
               data-testid="required"
               defaultValue={false}
               control={form.control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Switch
                   id={"kc-required"}
-                  onChange={onChange}
-                  isChecked={value}
+                  onChange={field.onChange}
+                  isChecked={field.value}
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   aria-label={t("required")}
@@ -295,17 +291,17 @@ export const AttributeGeneralSettings = () => {
                   data-testid="requiredFor"
                   defaultValue={REQUIRED_FOR[0].value}
                   control={form.control}
-                  render={({ onChange, value }) => (
+                  render={({ field }) => (
                     <div className="kc-requiredFor">
                       {REQUIRED_FOR.map((option) => (
                         <Radio
                           id={option.label}
                           key={option.label}
                           data-testid={option.label}
-                          isChecked={isEqual(value, option.value)}
+                          isChecked={isEqual(field.value, option.value)}
                           name="roles"
                           onChange={() => {
-                            onChange(option.value);
+                            field.onChange(option.value);
                           }}
                           label={t(option.label)}
                           className="kc-requiredFor-option"
@@ -362,7 +358,7 @@ export const AttributeGeneralSettings = () => {
                   name="required.scopes"
                   control={form.control}
                   defaultValue={[]}
-                  render={({ onChange, value }) => (
+                  render={({ field }) => (
                     <Select
                       name="scopeRequired"
                       data-testid="required-when-scope-field"
@@ -374,22 +370,24 @@ export const AttributeGeneralSettings = () => {
                         collapsedText: t("common:showRemaining"),
                       }}
                       onToggle={(isOpen) => setSelectRequiredForOpen(isOpen)}
-                      selections={value}
+                      selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString();
                         let changedValue = [""];
-                        if (value) {
-                          changedValue = value.includes(option)
-                            ? value.filter((item: string) => item !== option)
-                            : [...value, option];
+                        if (field.value) {
+                          changedValue = field.value.includes(option)
+                            ? field.value.filter(
+                                (item: string) => item !== option
+                              )
+                            : [...field.value, option];
                         } else {
                           changedValue = [option];
                         }
-                        onChange(changedValue);
+                        field.onChange(changedValue);
                       }}
                       onClear={(selectedValues) => {
                         selectedValues.stopPropagation();
-                        onChange([]);
+                        field.onChange([]);
                       }}
                       isOpen={selectRequiredForOpen}
                       isDisabled={requiredScopes.length === clientScopes.length}

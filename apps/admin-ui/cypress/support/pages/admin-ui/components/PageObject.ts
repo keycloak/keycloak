@@ -197,7 +197,9 @@ export default class PageObject {
     itemName: string,
     element?: Cypress.Chainable<JQuery>
   ) {
-    element = element ?? cy.get(this.selectMenuItem).contains(itemName);
+    element =
+      element ??
+      cy.get(this.selectMenuItem).contains(new RegExp(`^${itemName}$`));
     return this.clickDropdownMenuItem(itemName, element);
   }
 

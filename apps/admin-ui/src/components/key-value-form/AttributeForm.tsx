@@ -1,18 +1,18 @@
-import { useTranslation } from "react-i18next";
-import { FormProvider, UseFormMethods } from "react-hook-form";
-import { ActionGroup, Button } from "@patternfly/react-core";
-
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { ActionGroup, Button } from "@patternfly/react-core";
+import { FormProvider, UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import { FormAccess } from "../form-access/FormAccess";
 import type { KeyValueType } from "./key-value-convert";
 import { KeyValueInput } from "./KeyValueInput";
-import { FormAccess } from "../form-access/FormAccess";
 
 export type AttributeForm = Omit<RoleRepresentation, "attributes"> & {
   attributes?: KeyValueType[];
 };
 
 export type AttributesFormProps = {
-  form: UseFormMethods<AttributeForm>;
+  form: UseFormReturn<AttributeForm>;
   save?: (model: AttributeForm) => void;
   reset?: () => void;
   fineGrainedAccess?: boolean;

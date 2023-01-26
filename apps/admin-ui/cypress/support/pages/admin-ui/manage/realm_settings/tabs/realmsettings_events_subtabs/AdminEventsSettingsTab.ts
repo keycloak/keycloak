@@ -36,10 +36,21 @@ export default class AdminEventsSettingsTab extends PageObject {
     return this;
   }
 
-  save() {
-    cy.intercept("/admin/realms/master").as("saveRealm");
+  save(
+    { waitForRealm, waitForConfig } = {
+      waitForRealm: true,
+      waitForConfig: false,
+    }
+  ) {
+    waitForRealm && cy.intercept("/admin/realms/master").as("saveRealm");
+    waitForConfig &&
+      cy.intercept("/admin/realms/master/events/config").as("saveConfig");
+
     cy.get(this.saveBtn).click();
-    cy.wait("@saveRealm");
+
+    waitForRealm && cy.wait("@saveRealm");
+    waitForConfig && cy.wait("@saveConfig");
+
     return this;
   }
 }

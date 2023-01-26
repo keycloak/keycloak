@@ -1,10 +1,10 @@
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
 import { FormGroup } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { PasswordInput } from "../password-input/PasswordInput";
+import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
 export const PasswordComponent = ({
@@ -29,9 +29,8 @@ export const PasswordComponent = ({
         id={name!}
         data-testid={name}
         isDisabled={isDisabled}
-        ref={register()}
-        name={convertToName(name!)}
         defaultValue={defaultValue?.toString()}
+        {...register(convertToName(name!))}
       />
     </FormGroup>
   );

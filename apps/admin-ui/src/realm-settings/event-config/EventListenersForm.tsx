@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, UseFormMethods } from "react-hook-form";
 import {
   ActionGroup,
   Button,
@@ -9,12 +6,15 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 type EventListenersFormProps = {
-  form: UseFormMethods;
+  form: UseFormReturn;
   reset: () => void;
 };
 
@@ -49,13 +49,7 @@ export const EventListenersForm = ({
           name="eventsListeners"
           defaultValue=""
           control={control}
-          render={({
-            onChange,
-            value,
-          }: {
-            onChange: (newValue: string[]) => void;
-            value: string[];
-          }) => (
+          render={({ field }) => (
             <Select
               name="eventsListeners"
               className="kc_eventListeners_select"
@@ -68,17 +62,17 @@ export const EventListenersForm = ({
               variant={SelectVariant.typeaheadMulti}
               typeAheadAriaLabel="Select"
               onToggle={(isOpen) => setSelectEventListenerOpen(isOpen)}
-              selections={value}
+              selections={field.value}
               onSelect={(_, selectedValue) => {
                 const option = selectedValue.toString();
-                const changedValue = value.includes(option)
-                  ? value.filter((item) => item !== option)
-                  : [...value, option];
-                onChange(changedValue);
+                const changedValue = field.value.includes(option)
+                  ? field.value.filter((item: string) => item !== option)
+                  : [...field.value, option];
+                field.onChange(changedValue);
               }}
               onClear={(operation) => {
                 operation.stopPropagation();
-                onChange([]);
+                field.onChange([]);
               }}
               isOpen={selectEventListenerOpen}
               aria-labelledby={"eventsListeners"}

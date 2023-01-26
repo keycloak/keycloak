@@ -35,8 +35,8 @@ export const ResetCredentialDialog = ({
   });
   const { handleSubmit, control } = form;
 
-  const resetActionWatcher = useWatch<CredentialResetForm["actions"]>({
-    control: control,
+  const resetActionWatcher = useWatch({
+    control,
     name: "actions",
   });
   const resetIsNotDisabled = !isEmpty(resetActionWatcher);

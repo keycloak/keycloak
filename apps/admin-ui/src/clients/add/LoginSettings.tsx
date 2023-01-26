@@ -1,10 +1,10 @@
 import { FormGroup } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form-v7";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { MultiLineInput } from "../../components/multi-line-input/hook-form-v7/MultiLineInput";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";
 import { convertAttributeNameToForm } from "../../util";

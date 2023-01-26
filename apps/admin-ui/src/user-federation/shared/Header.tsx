@@ -4,10 +4,10 @@ import {
   DropdownItem,
 } from "@patternfly/react-core";
 import { ReactElement } from "react";
+import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { Controller, useFormContext } from "react-hook-form";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
@@ -73,7 +73,7 @@ export const Header = ({
         name="config.enabled[0]"
         defaultValue={["true"][0]}
         control={control}
-        render={({ onChange, value }) =>
+        render={({ field }) =>
           !id ? (
             <ViewHeader
               titleKey={t("addProvider", {
@@ -95,12 +95,12 @@ export const Header = ({
                   {t("deleteProvider")}
                 </DropdownItem>,
               ]}
-              isEnabled={value === "true"}
+              isEnabled={field.value === "true"}
               onToggle={(value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {
-                  onChange(value.toString());
+                  field.onChange(value.toString());
                   save();
                 }
               }}

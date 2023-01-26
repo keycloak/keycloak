@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, UseFormMethods } from "react-hook-form";
+import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
+import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperTypeRepresentation";
 import {
   FormGroup,
   Select,
@@ -8,12 +7,13 @@ import {
   SelectVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperTypeRepresentation";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
-import type { IdPMapperRepresentationWithAttributes } from "./AddMapper";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import type { IdPMapperRepresentationWithAttributes } from "./AddMapper";
 
 type AddMapperFormProps = {
   mapperTypes: IdentityProviderMapperRepresentation[];
@@ -22,7 +22,7 @@ type AddMapperFormProps = {
   updateMapperType: (
     mapperType: IdentityProviderMapperTypeRepresentation
   ) => void;
-  form: UseFormMethods<IdPMapperRepresentationWithAttributes>;
+  form: UseFormReturn<IdPMapperRepresentationWithAttributes>;
 };
 
 export const AddMapperForm = ({
@@ -34,7 +34,11 @@ export const AddMapperForm = ({
 }: AddMapperFormProps) => {
   const { t } = useTranslation("identity-providers");
 
-  const { control, register, errors } = form;
+  const {
+    control,
+    register,
+    formState: { errors },
+  } = form;
 
   const [mapperTypeOpen, setMapperTypeOpen] = useState(false);
 
@@ -59,15 +63,12 @@ export const AddMapperForm = ({
         helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
-          ref={register({ required: true })}
-          type="text"
-          datatest-id="name-input"
           id="kc-name"
-          name="name"
           isDisabled={!!id}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
+          {...register("name", { required: true })}
         />
       </FormGroup>
       <FormGroup
@@ -85,7 +86,7 @@ export const AddMapperForm = ({
           name="config.syncMode"
           defaultValue={syncModes[0].toUpperCase()}
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="syncMode"
               datatest-id="syncmode-select"
@@ -93,17 +94,17 @@ export const AddMapperForm = ({
               direction="down"
               onToggle={() => setSyncModeOpen(!syncModeOpen)}
               onSelect={(_, value) => {
-                onChange(value.toString().toUpperCase());
+                field.onChange(value.toString().toUpperCase());
                 setSyncModeOpen(false);
               }}
-              selections={t(`syncModes.${value.toLowerCase()}`)}
+              selections={t(`syncModes.${field.value.toLowerCase()}`)}
               variant={SelectVariant.single}
               aria-label={t("syncMode")}
               isOpen={syncModeOpen}
             >
               {syncModes.map((option) => (
                 <SelectOption
-                  selected={option === value}
+                  selected={option === field.value}
                   key={option}
                   data-testid={option}
                   value={option.toUpperCase()}
@@ -129,7 +130,7 @@ export const AddMapperForm = ({
           name="identityProviderMapper"
           defaultValue={mapperTypes[0].id}
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="identityProviderMapper"
               data-testid="idp-mapper-select"
@@ -140,7 +141,7 @@ export const AddMapperForm = ({
                 const mapperType =
                   value as IdentityProviderMapperTypeRepresentation;
                 updateMapperType(mapperType);
-                onChange(mapperType.id);
+                field.onChange(mapperType.id);
                 setMapperTypeOpen(false);
               }}
               selections={mapperType.name}
@@ -150,7 +151,7 @@ export const AddMapperForm = ({
             >
               {mapperTypes.map((option) => (
                 <SelectOption
-                  selected={option === value}
+                  selected={option === field.value}
                   datatest-id={option.id}
                   key={option.name}
                   value={option}

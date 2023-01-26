@@ -1,6 +1,3 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
 import {
   ActionList,
   ActionListItem,
@@ -11,11 +8,14 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
+import { useEffect, useState } from "react";
+import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
-import { convertToName } from "./DynamicComponents";
 import { KeyValueType } from "../key-value-form/key-value-convert";
+import type { ComponentProps } from "./components";
+import { convertToName } from "./DynamicComponents";
 
 type IdKeyValueType = KeyValueType & {
   id: number;

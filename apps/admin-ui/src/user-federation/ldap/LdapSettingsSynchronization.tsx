@@ -1,14 +1,14 @@
 import { FormGroup, Switch } from "@patternfly/react-core";
+import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { UseFormMethods, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsSynchronizationProps = {
-  form: UseFormMethods;
+  form: UseFormReturn;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
 };
@@ -49,15 +49,15 @@ export const LdapSettingsSynchronization = ({
             name="config.importEnabled"
             defaultValue={["true"]}
             control={form.control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Switch
                 id="kc-import-users"
                 data-testid="import-users"
                 name="importEnabled"
                 label={t("common:on")}
                 labelOff={t("common:off")}
-                onChange={(value) => onChange([`${value}`])}
-                isChecked={value[0] === "true"}
+                onChange={(value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
                 isDisabled={false}
                 aria-label={t("importUsers")}
               />
@@ -79,14 +79,14 @@ export const LdapSettingsSynchronization = ({
             name="config.syncRegistrations"
             defaultValue={["true"]}
             control={form.control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Switch
                 id="syncRegistrations"
                 data-testid="syncRegistrations"
                 label={t("common:on")}
                 labelOff={t("common:off")}
-                onChange={(value) => onChange([`${value}`])}
-                isChecked={value[0] === "true"}
+                onChange={(value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
                 aria-label={t("syncRegistrations")}
               />
             )}
@@ -107,8 +107,7 @@ export const LdapSettingsSynchronization = ({
             min={0}
             id="kc-batch-size"
             data-testid="batch-size"
-            name="config.batchSizeForSync[0]"
-            ref={form.register}
+            {...form.register("config.batchSizeForSync.0")}
           />
         </FormGroup>
         <FormGroup
@@ -126,16 +125,15 @@ export const LdapSettingsSynchronization = ({
             name="config.periodicFullSync"
             defaultValue={false}
             control={form.control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Switch
                 id="kc-periodic-full-sync"
                 data-testid="periodic-full-sync"
                 isDisabled={false}
-                onChange={(value) => onChange(value)}
-                isChecked={value === true}
+                onChange={(value) => field.onChange(value)}
+                isChecked={field.value === true}
                 label={t("common:on")}
                 labelOff={t("common:off")}
-                ref={form.register}
                 aria-label={t("periodicFullSync")}
               />
             )}
@@ -159,8 +157,7 @@ export const LdapSettingsSynchronization = ({
               defaultValue={604800}
               id="kc-full-sync-period"
               data-testid="full-sync-period"
-              name="config.fullSyncPeriod[0]"
-              ref={form.register}
+              {...form.register("config.fullSyncPeriod.0")}
             />
           </FormGroup>
         )}
@@ -179,16 +176,15 @@ export const LdapSettingsSynchronization = ({
             name="config.periodicChangedUsersSync"
             defaultValue={false}
             control={form.control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Switch
                 id="kc-periodic-changed-users-sync"
                 data-testid="periodic-changed-users-sync"
                 isDisabled={false}
-                onChange={(value) => onChange(value)}
-                isChecked={value === true}
+                onChange={(value) => field.onChange(value)}
+                isChecked={field.value === true}
                 label={t("common:on")}
                 labelOff={t("common:off")}
-                ref={form.register}
                 aria-label={t("periodicChangedUsersSync")}
               />
             )}
@@ -212,8 +208,7 @@ export const LdapSettingsSynchronization = ({
               defaultValue={86400}
               id="kc-changed-users-sync-period"
               data-testid="changed-users-sync-period"
-              name="config.changedSyncPeriod[0]"
-              ref={form.register}
+              {...form.register("config.changedSyncPeriod.0")}
             />
           </FormGroup>
         )}

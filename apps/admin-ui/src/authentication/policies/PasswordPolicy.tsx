@@ -18,7 +18,7 @@ import {
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form-v7";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type PasswordPolicyTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/passwordPolicyTypeRepresentation";
@@ -94,7 +94,6 @@ export const PasswordPolicy = ({
 
   const form = useForm<SubmittedValues>({
     defaultValues: {},
-    shouldUnregister: false,
   });
   const {
     handleSubmit,

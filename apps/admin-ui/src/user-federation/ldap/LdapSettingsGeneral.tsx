@@ -4,19 +4,19 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { UseFormMethods, Controller } from "react-hook-form";
+import { Controller, UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
-import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-
 export type LdapSettingsGeneralProps = {
-  form: UseFormMethods;
+  form: UseFormReturn;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
   vendorEdit?: boolean;
@@ -113,48 +113,40 @@ export const LdapSettingsGeneral = ({
           }
           fieldId="kc-ui-display-name"
           isRequired
-          validated={form.errors.name ? "error" : "default"}
-          helperTextInvalid={form.errors.name?.message}
+          validated={form.formState.errors.name ? "error" : "default"}
+          helperTextInvalid={form.formState.errors.name?.message}
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
           <KeycloakTextInput
             hidden
-            type="text"
             id="kc-ui-provider-id"
-            name="providerId"
             defaultValue="ldap"
-            ref={form.register}
+            {...form.register("providerId")}
           />
           <KeycloakTextInput
             hidden
-            type="text"
             id="kc-ui-provider-type"
-            name="providerType"
             defaultValue="org.keycloak.storage.UserStorageProvider"
-            ref={form.register}
+            {...form.register("providerType")}
           />
           <KeycloakTextInput
             hidden
-            type="text"
             id="kc-ui-parentId"
-            name="parentId"
             defaultValue={realm}
-            ref={form.register}
+            {...form.register("parentId")}
           />
           <KeycloakTextInput
             isRequired
-            type="text"
             id="kc-ui-display-name"
-            name="name"
             defaultValue="ldap"
-            ref={form.register({
+            data-testid="ldap-name"
+            validated={form.formState.errors.name ? "error" : "default"}
+            {...form.register("name", {
               required: {
                 value: true,
                 message: `${t("validateName")}`,
               },
             })}
-            data-testid="ldap-name"
-            validated={form.errors.name ? "error" : "default"}
           />
         </FormGroup>
         <FormGroup
@@ -172,7 +164,7 @@ export const LdapSettingsGeneral = ({
             name="config.vendor[0]"
             defaultValue="ad"
             control={form.control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 isDisabled={!!vendorEdit}
                 toggleId="kc-vendor"
@@ -180,11 +172,11 @@ export const LdapSettingsGeneral = ({
                 onToggle={() => setIsVendorDropdownOpen(!isVendorDropdownOpen)}
                 isOpen={isVendorDropdownOpen}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value as string);
                   setIsVendorDropdownOpen(false);
                   setVendorDefaultValues();
                 }}
-                selections={value}
+                selections={field.value}
                 variant={SelectVariant.single}
               >
                 <SelectOption key={0} value="ad" isPlaceholder>

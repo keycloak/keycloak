@@ -40,7 +40,12 @@ export default function MappingDetails() {
 
   const { id, mapperId } = useParams<MapperParams>();
   const form = useForm();
-  const { register, setValue, errors, handleSubmit } = form;
+  const {
+    register,
+    setValue,
+    formState: { errors },
+    handleSubmit,
+  } = form;
   const [mapping, setMapping] = useState<ProtocolMapperTypeRepresentation>();
   const [config, setConfig] = useState<{
     protocol?: string;
@@ -228,14 +233,12 @@ export default function MappingDetails() {
             helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
-              ref={register({ required: true })}
-              type="text"
               id="name"
-              name="name"
               isReadOnly={isUpdating}
               validated={
                 errors.name ? ValidatedOptions.error : ValidatedOptions.default
               }
+              {...register("name", { required: true })}
             />
           </FormGroup>
           <FormProvider {...form}>

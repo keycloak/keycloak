@@ -5,23 +5,23 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { isEqual } from "lodash-es";
+import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { UseFormMethods, useWatch, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { isEqual } from "lodash-es";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import useToggle from "../../utils/useToggle";
 
 export type SettingsCacheProps = {
-  form: UseFormMethods;
+  form: UseFormReturn;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
   unWrap?: boolean;
 };
 
-const CacheFields = ({ form }: { form: UseFormMethods }) => {
+const CacheFields = ({ form }: { form: UseFormReturn }) => {
   const { t } = useTranslation("user-federation");
 
   const [isCachePolicyOpen, toggleCachePolicy] = useToggle();
@@ -89,17 +89,17 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
           name="config.cachePolicy"
           defaultValue={["DEFAULT"]}
           control={form.control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Select
               toggleId="kc-cache-policy"
               required
               onToggle={toggleCachePolicy}
               isOpen={isCachePolicyOpen}
               onSelect={(_, value) => {
-                onChange(value as string);
+                field.onChange(value as string);
                 toggleCachePolicy();
               }}
-              selections={value}
+              selections={field.value}
               variant={SelectVariant.single}
               data-testid="kerberos-cache-policy"
             >
@@ -128,7 +128,7 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
             name="config.evictionDay[0]"
             defaultValue={"1"}
             control={form.control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 data-testid="cache-day"
                 toggleId="kc-eviction-day"
@@ -136,10 +136,10 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
                 onToggle={toggleEvictionDay}
                 isOpen={isEvictionDayOpen}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value as string);
                   toggleEvictionDay();
                 }}
-                selections={value}
+                selections={field.value}
                 variant={SelectVariant.single}
               >
                 <SelectOption key={0} value="1" isPlaceholder>
@@ -186,16 +186,16 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
               name="config.evictionHour"
               defaultValue={["0"]}
               control={form.control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Select
                   toggleId="kc-eviction-hour"
                   onToggle={toggleEvictionHour}
                   isOpen={isEvictionHourOpen}
                   onSelect={(_, value) => {
-                    onChange(value as string);
+                    field.onChange(value as string);
                     toggleEvictionHour();
                   }}
-                  selections={value}
+                  selections={field.value}
                   variant={SelectVariant.single}
                 >
                   {hourOptions}
@@ -218,16 +218,16 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
               name="config.evictionMinute"
               defaultValue={["0"]}
               control={form.control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Select
                   toggleId="kc-eviction-minute"
                   onToggle={toggleEvictionMinute}
                   isOpen={isEvictionMinuteOpen}
                   onSelect={(_, value) => {
-                    onChange(value as string);
+                    field.onChange(value as string);
                     toggleEvictionMinute();
                   }}
-                  selections={value}
+                  selections={field.value}
                   variant={SelectVariant.single}
                 >
                   {minuteOptions}
@@ -252,21 +252,21 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
             name="config.maxLifespan[0]"
             defaultValue={0}
             control={form.control}
-            render={({ onChange, value }) => {
+            render={({ field }) => {
               const MIN_VALUE = 0;
               const setValue = (newValue: number) =>
-                onChange(Math.max(newValue, MIN_VALUE));
+                field.onChange(Math.max(newValue, MIN_VALUE));
 
               return (
                 <NumberInput
                   id="kc-max-lifespan"
                   data-testid="kerberos-cache-lifespan"
-                  value={value}
+                  value={field.value}
                   min={MIN_VALUE}
                   unit={t("ms")}
                   type="text"
-                  onPlus={() => onChange(Number(value) + 1)}
-                  onMinus={() => onChange(Number(value) - 1)}
+                  onPlus={() => field.onChange(Number(field.value) + 1)}
+                  onMinus={() => field.onChange(Number(field.value) - 1)}
                   onChange={(event) => {
                     const newValue = Number(event.currentTarget.value);
                     setValue(!isNaN(newValue) ? newValue : 0);

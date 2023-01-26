@@ -1,5 +1,5 @@
 import { FormGroup, Title } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form-v7";
+import { useFormContext } from "react-hook-form";
 
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useTranslation } from "react-i18next";

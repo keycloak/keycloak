@@ -37,6 +37,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useParams } from "../utils/useParams";
 import { AddClientProfileModal } from "./AddClientProfileModal";
 import { toNewClientPolicyCondition } from "./routes/AddCondition";
 import { toClientPolicies } from "./routes/ClientPolicies";
@@ -47,7 +48,6 @@ import {
 } from "./routes/EditClientPolicy";
 import { toEditClientPolicyCondition } from "./routes/EditCondition";
 
-import { useParams } from "../utils/useParams";
 import "./realm-settings-section.css";
 
 type NewClientPolicyForm = Required<ClientPolicyRepresentation>;
@@ -203,10 +203,7 @@ export default function NewClientPolicyForm() {
   );
 
   const setupForm = (policy: ClientPolicyRepresentation) => {
-    form.reset();
-    Object.entries(policy).map(([key, value]) => {
-      form.setValue(key, value);
-    });
+    form.reset(policy);
   };
 
   const policy = (policies || []).filter(
@@ -382,8 +379,13 @@ export default function NewClientPolicyForm() {
   });
 
   const reset = () => {
-    form.setValue("name", currentPolicy?.name);
-    form.setValue("description", currentPolicy?.description);
+    if (currentPolicy?.name !== undefined) {
+      form.setValue("name", currentPolicy.name);
+    }
+
+    if (currentPolicy?.description !== undefined) {
+      form.setValue("description", currentPolicy.description);
+    }
   };
 
   const toggleModal = () => {
@@ -442,10 +444,10 @@ export default function NewClientPolicyForm() {
         name="enabled"
         defaultValue={true}
         control={form.control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <ClientPoliciesHeader
-            value={value}
-            onChange={onChange}
+            value={field.value}
+            onChange={field.onChange}
             realmName={realm}
             save={save}
           />
@@ -462,40 +464,36 @@ export default function NewClientPolicyForm() {
             label={t("common:name")}
             fieldId="kc-client-profile-name"
             isRequired
-            helperTextInvalid={form.errors.name?.message}
+            helperTextInvalid={form.formState.errors.name?.message}
             validated={
-              form.errors.name
+              form.formState.errors.name
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
           >
             <KeycloakTextInput
-              ref={form.register({
+              id="kc-client-profile-name"
+              data-testid="client-policy-name"
+              validated={
+                form.formState.errors.name
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
+              {...form.register("name", {
                 required: { value: true, message: t("common:required") },
                 validate: (value) =>
                   policies?.some((policy) => policy.name === value)
                     ? t("createClientProfileNameHelperText").toString()
                     : true,
               })}
-              type="text"
-              id="kc-client-profile-name"
-              name="name"
-              data-testid="client-policy-name"
-              validated={
-                form.errors.name
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
             />
           </FormGroup>
           <FormGroup label={t("common:description")} fieldId="kc-description">
             <KeycloakTextArea
-              name="description"
               aria-label={t("description")}
-              ref={form.register()}
-              type="text"
               id="kc-client-policy-description"
               data-testid="client-policy-description"
+              {...form.register("description")}
             />
           </FormGroup>
           <ActionGroup>

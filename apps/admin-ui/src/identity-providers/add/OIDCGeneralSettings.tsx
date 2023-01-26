@@ -1,5 +1,5 @@
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form-v7";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 

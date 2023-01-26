@@ -1,6 +1,4 @@
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   ActionGroup,
   Button,
@@ -8,12 +6,14 @@ import {
   NumberInput,
   Switch,
 } from "@patternfly/react-core";
+import { useEffect } from "react";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { Time } from "./Time";
 import { convertToFormValues } from "../../util";
+import { Time } from "./Time";
 
 type BruteForceDetectionProps = {
   realm: RealmRepresentation;
@@ -25,7 +25,7 @@ export const BruteForceDetection = ({
   save,
 }: BruteForceDetectionProps) => {
   const { t } = useTranslation("realm-settings");
-  const form = useForm({ shouldUnregister: false });
+  const form = useForm();
   const {
     setValue,
     handleSubmit,
@@ -62,14 +62,13 @@ export const BruteForceDetection = ({
             name="bruteForceProtected"
             defaultValue={false}
             control={control}
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Switch
                 id="bruteForceProtected"
                 label={t("common:on")}
                 labelOff={t("common:off")}
-                isChecked={value}
-                onChange={onChange}
-                aria-label={t("common:enabled")}
+                isChecked={field.value}
+                onChange={field.onChange}
               />
             )}
           />
@@ -91,15 +90,17 @@ export const BruteForceDetection = ({
                 defaultValue={0}
                 control={control}
                 rules={{ required: true }}
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <NumberInput
                     type="text"
                     id="failureFactor"
-                    value={value}
-                    onPlus={() => onChange(value + 1)}
-                    onMinus={() => onChange(value - 1)}
+                    value={field.value}
+                    onPlus={() => field.onChange(field.value + 1)}
+                    onMinus={() => field.onChange(field.value - 1)}
                     onChange={(event) =>
-                      onChange(Number((event.target as HTMLInputElement).value))
+                      field.onChange(
+                        Number((event.target as HTMLInputElement).value)
+                      )
                     }
                   />
                 )}
@@ -114,13 +115,13 @@ export const BruteForceDetection = ({
                 name="permanentLockout"
                 defaultValue={false}
                 control={control}
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <Switch
                     id="permanentLockout"
                     label={t("common:on")}
                     labelOff={t("common:off")}
-                    isChecked={value}
-                    onChange={onChange}
+                    isChecked={field.value}
+                    onChange={field.onChange}
                     aria-label={t("permanentLockout")}
                   />
                 )}
@@ -149,15 +150,17 @@ export const BruteForceDetection = ({
                 name="quickLoginCheckMilliSeconds"
                 defaultValue={0}
                 control={control}
-                render={({ onChange, value }) => (
+                render={({ field }) => (
                   <NumberInput
                     type="text"
                     id="quickLoginCheckMilliSeconds"
-                    value={value}
-                    onPlus={() => onChange(value + 1)}
-                    onMinus={() => onChange(value - 1)}
+                    value={field.value}
+                    onPlus={() => field.onChange(field.value + 1)}
+                    onMinus={() => field.onChange(field.value - 1)}
                     onChange={(event) =>
-                      onChange(Number((event.target as HTMLInputElement).value))
+                      field.onChange(
+                        Number((event.target as HTMLInputElement).value)
+                      )
                     }
                   />
                 )}

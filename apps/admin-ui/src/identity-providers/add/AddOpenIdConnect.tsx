@@ -5,7 +5,7 @@ import {
   Button,
   PageSection,
 } from "@patternfly/react-core";
-import { FormProvider, useForm } from "react-hook-form-v7";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 

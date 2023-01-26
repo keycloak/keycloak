@@ -10,7 +10,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { useForm } from "react-hook-form-v7";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 

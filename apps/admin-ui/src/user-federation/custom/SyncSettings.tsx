@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup, Switch } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
@@ -28,14 +28,14 @@ export const SyncSettings = () => {
           name="config.fullSyncPeriod"
           defaultValue="-1"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="kc-periodic-full-sync"
               data-testid="periodic-full-sync"
               onChange={(value) => {
-                onChange(value ? "604800" : "-1");
+                field.onChange(value ? "604800" : "-1");
               }}
-              isChecked={value !== "-1"}
+              isChecked={field.value !== "-1"}
               label={t("common:on")}
               labelOff={t("common:off")}
               aria-label={t("periodicFullSync")}
@@ -61,8 +61,7 @@ export const SyncSettings = () => {
             defaultValue="604800"
             id="kc-full-sync-period"
             data-testid="full-sync-period"
-            name="config.fullSyncPeriod"
-            ref={register}
+            {...register("config.fullSyncPeriod")}
           />
         </FormGroup>
       )}
@@ -81,14 +80,14 @@ export const SyncSettings = () => {
           name="config.changedSyncPeriod"
           defaultValue="-1"
           control={control}
-          render={({ onChange, value }) => (
+          render={({ field }) => (
             <Switch
               id="kc-periodic-changed-users-sync"
               data-testid="periodic-changed-users-sync"
               onChange={(value) => {
-                onChange(value ? "86400" : "-1");
+                field.onChange(value ? "86400" : "-1");
               }}
-              isChecked={value !== "-1"}
+              isChecked={field.value !== "-1"}
               label={t("common:on")}
               labelOff={t("common:off")}
               aria-label={t("periodicChangedUsersSync")}
@@ -114,8 +113,7 @@ export const SyncSettings = () => {
             defaultValue="86400"
             id="kc-changed-users-sync-period"
             data-testid="changed-users-sync-period"
-            name="config.changedSyncPeriod"
-            ref={register}
+            {...register("config.changedSyncPeriod")}
           />
         </FormGroup>
       )}

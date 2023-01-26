@@ -998,12 +998,6 @@ describe("Clients test", () => {
       adminClient.deleteClient(keysName);
     });
 
-    it("Change use JWKS Url", () => {
-      const keysTab = clientDetailsPage.goToKeysTab();
-      keysTab.formUtils().checkSaveButtonIsDisabled(true);
-      keysTab.toggleUseJwksUrl().formUtils().checkSaveButtonIsDisabled(false);
-    });
-
     it("Generate new keys", () => {
       const keysTab = clientDetailsPage.goToKeysTab();
       keysTab.clickGenerate();

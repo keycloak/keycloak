@@ -8,7 +8,7 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 import { useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form-v7";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { useAlerts } from "../components/alert/Alerts";

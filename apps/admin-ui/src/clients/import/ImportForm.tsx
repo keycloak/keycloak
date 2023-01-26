@@ -7,7 +7,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { FormProvider, useForm } from "react-hook-form-v7";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -39,7 +39,7 @@ export default function ImportForm() {
   const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
-  const form = useForm<FormFields>({ shouldUnregister: false });
+  const form = useForm<FormFields>();
   const { register, handleSubmit, setValue } = form;
   const [imported, setImported] = useState<ClientRepresentation>({});
 

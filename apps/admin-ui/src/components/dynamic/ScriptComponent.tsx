@@ -1,7 +1,7 @@
+import { CodeEditor, Language } from "@patternfly/react-code-editor";
+import { FormGroup } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormGroup } from "@patternfly/react-core";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
 
 import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
@@ -32,14 +32,14 @@ export const ScriptComponent = ({
         name={convertToName(name!)}
         defaultValue={defaultValue}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <CodeEditor
             id={name!}
             data-testid={name}
             isReadOnly={isDisabled}
             type="text"
-            onChange={onChange}
-            code={value}
+            onChange={field.onChange}
+            code={field.value}
             height="600px"
             language={Language.javascript}
           />

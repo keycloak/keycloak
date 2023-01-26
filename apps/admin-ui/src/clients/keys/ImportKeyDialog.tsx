@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useWatch,
-} from "react-hook-form-v7";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import {
   Button,
   ButtonVariant,

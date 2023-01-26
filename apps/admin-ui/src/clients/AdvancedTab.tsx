@@ -1,6 +1,6 @@
 import { AlertVariant, PageSection, Text } from "@patternfly/react-core";
 import type { TFunction } from "i18next";
-import { useFormContext } from "react-hook-form-v7";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";

@@ -6,7 +6,7 @@ import {
   InputGroup,
   Switch,
 } from "@patternfly/react-core";
-import { Controller, useFormContext } from "react-hook-form-v7";
+import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";

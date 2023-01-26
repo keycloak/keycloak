@@ -1,6 +1,3 @@
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import {
   ActionList,
   ActionListItem,
@@ -9,9 +6,12 @@ import {
   FlexItem,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
+import { useEffect } from "react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type { KeyValueType } from "./key-value-convert";
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
+import { KeyValueType } from "./key-value-convert";
 
 type KeyValueInputProps = {
   name: string;
@@ -20,25 +20,28 @@ type KeyValueInputProps = {
 export const KeyValueInput = ({ name }: KeyValueInputProps) => {
   const { t } = useTranslation("common");
   const { control, register } = useFormContext();
-  const { fields, append, remove } = useFieldArray<KeyValueType>({
-    control: control,
-    name,
-  });
-
-  const watchFields = useWatch<KeyValueType[]>({
+  const { fields, append, remove } = useFieldArray({
     control,
     name,
-    defaultValue: [],
   });
 
-  const isValid = watchFields.every(
-    ({ key, value }) =>
-      key && key.trim().length !== 0 && value && value.trim().length !== 0
-  );
+  const watchFields = useWatch({
+    control,
+    name,
+    defaultValue: [{ key: "", value: "" }],
+  });
+
+  const isValid =
+    Array.isArray(watchFields) &&
+    watchFields.every(
+      ({ key, value }: KeyValueType) =>
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        key?.trim().length !== 0 && value?.trim().length !== 0
+    );
 
   useEffect(() => {
     if (!fields.length) {
-      append({ key: "", value: "" }, false);
+      append({ key: "", value: "" }, { shouldFocus: false });
     }
   }, [fields]);
 
@@ -60,12 +63,11 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
           <Flex key={attribute.id} data-testid="row">
             <FlexItem grow={{ default: "grow" }}>
               <KeycloakTextInput
-                name={`${name}[${index}].key`}
-                ref={register()}
                 placeholder={t("keyPlaceholder")}
                 aria-label={t("key")}
-                defaultValue={attribute.key}
+                defaultValue=""
                 data-testid={`${name}[${index}].key`}
+                {...register(`${name}[${index}].key`)}
               />
             </FlexItem>
             <FlexItem
@@ -73,12 +75,11 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
               spacer={{ default: "spacerNone" }}
             >
               <KeycloakTextInput
-                name={`${name}[${index}].value`}
-                ref={register()}
                 placeholder={t("valuePlaceholder")}
                 aria-label={t("value")}
-                defaultValue={attribute.value}
+                defaultValue=""
                 data-testid={`${name}[${index}].value`}
+                {...register(`${name}[${index}].value`)}
               />
             </FlexItem>
             <FlexItem>

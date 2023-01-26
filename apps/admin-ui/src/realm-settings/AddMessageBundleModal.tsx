@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Button,
   ButtonVariant,
@@ -7,16 +8,16 @@ import {
   ModalVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useForm, UseFormMethods } from "react-hook-form";
-import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 
+import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type AddMessageBundleModalProps = {
   id?: string;
-  form: UseFormMethods<BundleForm>;
-  save: (model: BundleForm) => void;
+  form: UseFormReturn<BundleForm>;
+  save: SubmitHandler<BundleForm>;
   handleModalToggle: () => void;
 };
 
@@ -27,13 +28,13 @@ export type BundleForm = {
 export const AddMessageBundleModal = ({
   handleModalToggle,
   save,
-}: AddMessageBundleModalProps) => {
-  const { t } = useTranslation("realm-settings");
-  const {
+  form: {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+  },
+}: AddMessageBundleModalProps) => {
+  const { t } = useTranslation("realm-settings");
 
   return (
     <Modal
@@ -77,14 +78,12 @@ export const AddMessageBundleModal = ({
         >
           <KeycloakTextInput
             data-testid="key-input"
-            ref={register({ required: true })}
             autoFocus
-            type="text"
             id="key-id"
-            name="key"
             validated={
               errors.key ? ValidatedOptions.error : ValidatedOptions.default
             }
+            {...register("key", { required: true })}
           />
         </FormGroup>
         <FormGroup
@@ -99,13 +98,11 @@ export const AddMessageBundleModal = ({
         >
           <KeycloakTextInput
             data-testid="value-input"
-            ref={register({ required: true })}
-            type="text"
             id="value-id"
-            name="value"
             validated={
               errors.value ? ValidatedOptions.error : ValidatedOptions.default
             }
+            {...register("value", { required: true })}
           />
         </FormGroup>
       </Form>

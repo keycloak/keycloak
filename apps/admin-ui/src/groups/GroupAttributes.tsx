@@ -28,7 +28,6 @@ export const GroupAttributes = () => {
   const { addAlert, addError } = useAlerts();
   const form = useForm<AttributeForm>({
     mode: "onChange",
-    shouldUnregister: false,
   });
 
   const location = useLocation();

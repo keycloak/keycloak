@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   ActionGroup,
   Button,
@@ -10,8 +8,10 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -63,15 +63,15 @@ export const RealmSettingsThemesTab = ({
             name="loginTheme"
             control={control}
             defaultValue=""
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 toggleId="kc-login-theme"
                 onToggle={() => setLoginThemeOpen(!loginThemeOpen)}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value as string);
                   setLoginThemeOpen(false);
                 }}
-                selections={value}
+                selections={field.value}
                 variant={SelectVariant.single}
                 aria-label={t("loginTheme")}
                 isOpen={loginThemeOpen}
@@ -80,7 +80,7 @@ export const RealmSettingsThemesTab = ({
               >
                 {themeTypes.login.map((theme, idx) => (
                   <SelectOption
-                    selected={theme.name === value}
+                    selected={theme.name === field.value}
                     key={`login-theme-${idx}`}
                     value={theme.name}
                   >
@@ -105,15 +105,15 @@ export const RealmSettingsThemesTab = ({
             name="accountTheme"
             control={control}
             defaultValue=""
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 toggleId="kc-account-theme"
                 onToggle={() => setAccountThemeOpen(!accountThemeOpen)}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value as string);
                   setAccountThemeOpen(false);
                 }}
-                selections={value}
+                selections={field.value}
                 variant={SelectVariant.single}
                 aria-label={t("accountTheme")}
                 isOpen={accountThemeOpen}
@@ -122,7 +122,7 @@ export const RealmSettingsThemesTab = ({
               >
                 {themeTypes.account.map((theme, idx) => (
                   <SelectOption
-                    selected={theme.name === value}
+                    selected={theme.name === field.value}
                     key={`account-theme-${idx}`}
                     value={theme.name}
                   >
@@ -147,15 +147,15 @@ export const RealmSettingsThemesTab = ({
             name="adminTheme"
             control={control}
             defaultValue=""
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 toggleId="kc-admin-ui-theme"
                 onToggle={() => setAdminUIThemeOpen(!adminUIThemeOpen)}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value as string);
                   setAdminUIThemeOpen(false);
                 }}
-                selections={value}
+                selections={field.value}
                 variant={SelectVariant.single}
                 aria-label={t("adminUITheme")}
                 isOpen={adminUIThemeOpen}
@@ -164,7 +164,7 @@ export const RealmSettingsThemesTab = ({
               >
                 {themeTypes.admin.map((theme, idx) => (
                   <SelectOption
-                    selected={theme.name === value}
+                    selected={theme.name === field.value}
                     key={`admin-theme-${idx}`}
                     value={theme.name}
                   >
@@ -189,15 +189,15 @@ export const RealmSettingsThemesTab = ({
             name="emailTheme"
             control={control}
             defaultValue=""
-            render={({ onChange, value }) => (
+            render={({ field }) => (
               <Select
                 toggleId="kc-email-theme"
                 onToggle={() => setEmailThemeOpen(!emailThemeOpen)}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  field.onChange(value as string);
                   setEmailThemeOpen(false);
                 }}
-                selections={value}
+                selections={field.value}
                 variant={SelectVariant.single}
                 aria-label={t("emailTheme")}
                 isOpen={emailThemeOpen}
@@ -206,7 +206,7 @@ export const RealmSettingsThemesTab = ({
               >
                 {themeTypes.email.map((theme, idx) => (
                   <SelectOption
-                    selected={theme.name === value}
+                    selected={theme.name === field.value}
                     key={`email-theme-${idx}`}
                     value={theme.name}
                   >

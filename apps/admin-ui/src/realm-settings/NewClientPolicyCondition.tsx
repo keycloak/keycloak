@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
+import type ClientPolicyConditionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyConditionRepresentation";
+import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
+import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -11,27 +12,27 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
-
-import { FormAccess } from "../components/form-access/FormAccess";
-import { FormPanel } from "../components/scroll-form/FormPanel";
-import { HelpItem } from "../components/help-enabler/HelpItem";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
 import { camelCase } from "lodash-es";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useState } from "react";
+import { Controller, FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "react-router-dom";
+
 import { useAlerts } from "../components/alert/Alerts";
-import { useParams, useNavigate } from "react-router-dom";
-import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
+import { DynamicComponents } from "../components/dynamic/DynamicComponents";
+import { FormAccess } from "../components/form-access/FormAccess";
+import { HelpItem } from "../components/help-enabler/HelpItem";
+import { FormPanel } from "../components/scroll-form/FormPanel";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
-import type ClientPolicyConditionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyConditionRepresentation";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { toEditClientPolicy } from "./routes/EditClientPolicy";
 import type { EditClientPolicyConditionParams } from "./routes/EditCondition";
-import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 
 export type ItemType = { value: string };
 
 type ConfigProperty = ConfigPropertyRepresentation & {
+  conditions: any;
   config: any;
 };
 
@@ -58,9 +59,7 @@ export default function NewClientPolicyCondition() {
     useParams<EditClientPolicyConditionParams>();
 
   const serverInfo = useServerInfo();
-  const form = useForm({
-    shouldUnregister: false,
-  });
+  const form = useForm<ConfigProperty>();
 
   const conditionTypes =
     serverInfo.componentTypes?.[
@@ -203,7 +202,7 @@ export default function NewClientPolicyCondition() {
               name="conditions"
               defaultValue={"any-client"}
               control={form.control}
-              render={({ onChange, value }) => (
+              render={({ field }) => (
                 <Select
                   placeholderText={t("selectACondition")}
                   className="kc-conditionType-select"
@@ -212,7 +211,7 @@ export default function NewClientPolicyCondition() {
                   isDisabled={!!conditionName}
                   onToggle={(toggle) => setOpenConditionType(toggle)}
                   onSelect={(_, value) => {
-                    onChange(value);
+                    field.onChange(value);
                     setConditionProperties(
                       (value as ComponentTypeRepresentation).properties
                     );
@@ -231,7 +230,7 @@ export default function NewClientPolicyCondition() {
                 >
                   {conditionTypes?.map((condition) => (
                     <SelectOption
-                      selected={condition.id === value}
+                      selected={condition.id === field.value}
                       description={t(
                         `realm-settings-help:${camelCase(
                           condition.id.replace(/-/g, " ")

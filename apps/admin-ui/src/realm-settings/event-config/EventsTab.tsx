@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
@@ -9,19 +8,21 @@ import {
   Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
+import { isEqual } from "lodash-es";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
-import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
-import { EventConfigForm, EventsType } from "./EventConfigForm";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { EventsTypeTable, EventType } from "./EventsTypeTable";
-import { AddEventTypesDialog } from "./AddEventTypesDialog";
-import { EventListenersForm } from "./EventListenersForm";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertToFormValues } from "../../util";
+import { AddEventTypesDialog } from "./AddEventTypesDialog";
+import { EventConfigForm, EventsType } from "./EventConfigForm";
+import { EventListenersForm } from "./EventListenersForm";
+import { EventsTypeTable, EventType } from "./EventsTypeTable";
 
 type EventsTabProps = {
   realm: RealmRepresentation;
@@ -95,8 +96,10 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
   );
 
   const save = async (config: EventsConfigForm) => {
-    const updatedEventListener =
-      events?.eventsListeners !== config.eventsListeners;
+    const updatedEventListener = !isEqual(
+      events?.eventsListeners,
+      config.eventsListeners
+    );
 
     const { adminEventsExpiration, ...eventConfig } = config;
     if (realm.attributes?.adminEventsExpiration !== adminEventsExpiration) {

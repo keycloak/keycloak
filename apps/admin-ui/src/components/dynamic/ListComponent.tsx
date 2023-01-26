@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   FormGroup,
   Select,
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
+import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
 export const ListComponent = ({
@@ -37,23 +37,23 @@ export const ListComponent = ({
         data-testid={name}
         defaultValue={defaultValue || ""}
         control={control}
-        render={({ onChange, value }) => (
+        render={({ field }) => (
           <Select
             toggleId={name}
             isDisabled={isDisabled}
             onToggle={(toggle) => setOpen(toggle)}
             onSelect={(_, value) => {
-              onChange(value as string);
+              field.onChange(value as string);
               setOpen(false);
             }}
-            selections={value}
+            selections={field.value}
             variant={SelectVariant.single}
             aria-label={t(label!)}
             isOpen={open}
           >
             {options?.map((option) => (
               <SelectOption
-                selected={option === value}
+                selected={option === field.value}
                 key={option}
                 value={option}
               />
