@@ -1834,7 +1834,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.infinispan</groupId>
-                    <artifactId>infinispan-core</artifactId>
+                    <artifactId>infinispan-core-jakarta</artifactId>
                 </dependency>
 
                 <dependency>
