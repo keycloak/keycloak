@@ -16,10 +16,10 @@
  */
 package org.keycloak.models.map.storage.file.yaml;
 
-import org.keycloak.models.map.storage.file.common.YamlContext;
-import org.keycloak.models.map.storage.file.common.YamlContext.DefaultListContext;
-import org.keycloak.models.map.storage.file.common.YamlContext.DefaultMapContext;
-import org.keycloak.models.map.storage.file.common.YamlContext.DefaultObjectContext;
+import org.keycloak.models.map.storage.file.common.BlockContextStack;
+import org.keycloak.models.map.storage.file.common.BlockContext.DefaultListContext;
+import org.keycloak.models.map.storage.file.common.BlockContext.DefaultMapContext;
+import org.keycloak.models.map.storage.file.common.BlockContext.DefaultObjectContext;
 import java.io.InputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,6 +44,7 @@ import org.snakeyaml.engine.v2.parser.ParserImpl;
 import org.snakeyaml.engine.v2.resolver.JsonScalarResolver;
 import org.snakeyaml.engine.v2.resolver.ScalarResolver;
 import org.snakeyaml.engine.v2.scanner.StreamReader;
+import org.keycloak.models.map.storage.file.common.BlockContext;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 
@@ -51,14 +52,14 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
  *
  * @author hmlnarik
  */
-public class YamlContextAwareParser<E> {
+public class YamlParser<E> {
 
-    private static final Logger LOG = Logger.getLogger(YamlContextAwareParser.class);
+    private static final Logger LOG = Logger.getLogger(YamlParser.class);
     public static final String ARRAY_CONTEXT = "$@[]@$";
 
     private static final ScalarResolver RESOLVER = new JsonScalarResolver();
     private final Parser parser;
-    private final YamlContextStack contextStack;
+    private final BlockContextStack contextStack;
 
     // Leverage SnakeYaml's translation of primitive values
     private static final class MiniConstructor extends StandardConstructor {
@@ -83,7 +84,7 @@ public class YamlContextAwareParser<E> {
       .setParseComments(false)
       .build();
 
-    public static <E> E parse(Path path, YamlContext<E> initialContext) {
+    public static <E> E parse(Path path, BlockContext<E> initialContext) {
         LOG.tracef("parse(%s,%s)%s", path, initialContext, getShortStackTrace());
 
         Objects.requireNonNull(path, "Path invalid");
@@ -92,16 +93,16 @@ public class YamlContextAwareParser<E> {
                 return null;
             }
             Parser p = new ParserImpl(SETTINGS, new StreamReader(SETTINGS, new YamlUnicodeReader(is)));
-            return new YamlContextAwareParser<>(p, initialContext).parse();
+            return new YamlParser<>(p, initialContext).parse();
         } catch (IOException ex) {
             LOG.warn(ex);
             return null;
         }
     }
 
-    protected YamlContextAwareParser(Parser p, YamlContext<E> initialContext) {
+    protected YamlParser(Parser p, BlockContext<E> initialContext) {
         this.parser = p;
-        this.contextStack = new YamlContextStack(initialContext);
+        this.contextStack = new BlockContextStack(initialContext);
     }
 
     @SuppressWarnings("unchecked")
@@ -158,7 +159,7 @@ public class YamlContextAwareParser<E> {
      */
     protected Object parseSequence() {
         LOG.tracef("Parsing sequence");
-        YamlContext context = contextStack.peek();
+        BlockContext context = contextStack.peek();
         while (! parser.checkEvent(Event.ID.SequenceEnd)) {
             context.add(parseNodeInFreshContext(ARRAY_CONTEXT));
         }
@@ -173,7 +174,7 @@ public class YamlContextAwareParser<E> {
      */
     protected Object parseMapping() {
         LOG.tracef("Parsing mapping");
-        YamlContext context = contextStack.peek();
+        BlockContext context = contextStack.peek();
         while (! parser.checkEvent(Event.ID.MappingEnd)) {
             Object key = parseNodeInFreshContext();
             LOG.tracef("Parsed mapping key: %s", key);
@@ -193,7 +194,7 @@ public class YamlContextAwareParser<E> {
      * @return
      */
     protected Object parseScalar(Tag nodeTag, ScalarEvent se) {
-        YamlContext context = contextStack.peek();
+        BlockContext context = contextStack.peek();
 //        System.out.println("value: " + se.getValue() + ", context: " + context + ", type: " + nodeTag.getClassName());
         ScalarNode node = new ScalarNode(nodeTag, true, se.getValue(), se.getScalarStyle(), se.getStartMark(), se.getEndMark());
         final Object value = MiniConstructor.INSTANCE.constructStandardJavaInstance(node);
@@ -201,7 +202,7 @@ public class YamlContextAwareParser<E> {
         return context.getResult();
     }
 
-    private static final EnumMap<Event.ID, Supplier<YamlContext<?>>> CONTEXT_CONSTRUCTORS = new EnumMap<>(Event.ID.class);
+    private static final EnumMap<Event.ID, Supplier<BlockContext<?>>> CONTEXT_CONSTRUCTORS = new EnumMap<>(Event.ID.class);
     static {
         CONTEXT_CONSTRUCTORS.put(ID.Scalar, DefaultObjectContext::new);
         CONTEXT_CONSTRUCTORS.put(ID.SequenceStart, DefaultListContext::newDefaultListContext);
@@ -233,7 +234,7 @@ public class YamlContextAwareParser<E> {
      * @throws IllegalStateException
      */
     private Object parseNodeInFreshContext(String key) throws IllegalStateException {
-        Supplier<YamlContext<?>> cc = CONTEXT_CONSTRUCTORS.get(parser.peekEvent().getEventId());
+        Supplier<BlockContext<?>> cc = CONTEXT_CONSTRUCTORS.get(parser.peekEvent().getEventId());
         if (cc == null) {
             throw new IllegalStateException("Invalid value in map with key " + key);
         }

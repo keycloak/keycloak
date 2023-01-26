@@ -22,8 +22,8 @@ import org.keycloak.models.map.common.EntityField;
 import org.keycloak.models.map.common.UndefinedValuesUtils;
 import org.keycloak.models.map.role.MapRoleEntityFields;
 import org.keycloak.models.map.storage.ModelEntityUtil;
-import org.keycloak.models.map.storage.file.common.YamlContext.DefaultListContext;
-import org.keycloak.models.map.storage.file.common.YamlContext.DefaultMapContext;
+import org.keycloak.models.map.storage.file.common.BlockContext.DefaultListContext;
+import org.keycloak.models.map.storage.file.common.BlockContext.DefaultMapContext;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -38,41 +38,42 @@ import org.jboss.logging.Logger;
 import static org.keycloak.models.map.common.CastUtils.cast;
 
 /**
- * {@link YamlContext} which handles any entity accompanied with {@link EntityField} field getters and setters,
+ * {@link BlockContext} which handles any entity accompanied with {@link EntityField} field getters and setters,
  * namely {@code Map*Entity} classes.
  * @author hmlnarik
  */
-public class MapEntityYamlContext<T> implements YamlContext<T> {
+public class MapEntityContext<T> implements BlockContext<T> {
 
-    private static final Logger LOG = Logger.getLogger(MapEntityYamlContext.class);
+    private static final Logger LOG = Logger.getLogger(MapEntityContext.class);
     
     private final Map<String, EntityField<?>> nameToEntityField;
-    private final Map<String, Supplier<? extends YamlContext<?>>> contextCreators;
+    private final Map<String, Supplier<? extends BlockContext<?>>> contextCreators;
 
     protected final T result;
     private static final Map<Class, Map<String, EntityField<?>>> CACHE_FIELD_TO_EF = new IdentityHashMap<>();
-    private static final Map<Class, Map<String, Supplier<? extends YamlContext<?>>>> CACHE_CLASS_TO_CC = new IdentityHashMap<>();
+    private static final Map<Class, Map<String, Supplier<? extends BlockContext<?>>>> CACHE_CLASS_TO_CC = new IdentityHashMap<>();
     private final boolean topContext;
     private boolean alreadyReadProperty = false;
 
-    public MapEntityYamlContext(Class<T> clazz) {
+    public static final String SCHEMA_VERSION = "schemaVersion";
+
+    public MapEntityContext(Class<T> clazz) {
         this(clazz, true);
     }
 
     @SuppressWarnings("unchecked")
-    public MapEntityYamlContext(Class<T> clazz, boolean topContext) {
-        this(
-          clazz,
-          CACHE_FIELD_TO_EF.computeIfAbsent(clazz, MapEntityYamlContext::fieldsToEntityField),
-          CACHE_CLASS_TO_CC.computeIfAbsent(clazz, MapEntityYamlContext::fieldsToContextCreators),
+    public MapEntityContext(Class<T> clazz, boolean topContext) {
+        this(clazz,
+          CACHE_FIELD_TO_EF.computeIfAbsent(clazz, MapEntityContext::fieldsToEntityField),
+          CACHE_CLASS_TO_CC.computeIfAbsent(clazz, MapEntityContext::fieldsToContextCreators),
           topContext
         );
     }
 
-    protected MapEntityYamlContext(
+    protected MapEntityContext(
       Class<T> clazz,
       Map<String, EntityField<?>> nameToEntityField,
-      Map<String, Supplier<? extends YamlContext<?>>> contextCreators,
+      Map<String, Supplier<? extends BlockContext<?>>> contextCreators,
       boolean topContext) {
         this.result = DeepCloner.DUMB_CLONER.newInstance(clazz);
         this.nameToEntityField = nameToEntityField;
@@ -80,7 +81,7 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
         this.topContext = topContext;
     }
 
-    protected static <T> Map<String, Supplier<? extends YamlContext<?>>> fieldsToContextCreators(Class<T> type) {
+    protected static <T> Map<String, Supplier<? extends BlockContext<?>>> fieldsToContextCreators(Class<T> type) {
         if (! ModelEntityUtil.entityFieldsKnown(type)) {
             return Collections.emptyMap();
         }
@@ -91,7 +92,7 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
           .collect(Collectors.toMap(me -> me.getKey().getNameCamelCase(), me -> me.getValue().get()));
     }
 
-    private static <T> Supplier<? extends YamlContext<?>> getDefaultContextCreator(EntityField<? super T> ef) {
+    private static <T> Supplier<? extends BlockContext<?>> getDefaultContextCreator(EntityField<? super T> ef) {
         final Class<?> collectionElementClass = ef.getCollectionElementClass();
         if (collectionElementClass != Void.class) {
             if (ModelEntityUtil.entityFieldsKnown(collectionElementClass)) {
@@ -104,7 +105,7 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
             if (ModelEntityUtil.entityFieldsKnown(mapValueClass)) {
                 return () -> new MapEntityMappingYamlContext<>(mapValueClass);
             } else if (ATTRIBUTES_NAME.equals(ef.getName())) {
-                return AttributesLikeYamlContext::new;
+                return StringListMapContext::new;
             }
         }
 
@@ -161,7 +162,7 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
     }
 
     @Override
-    public YamlContext<?> getContext(String nameOfSubcontext) {
+    public BlockContext<?> getContext(String nameOfSubcontext) {
         if (topContext && nameOfSubcontext.equals(SCHEMA_VERSION)) {
             if (alreadyReadProperty) {
                 LOG.warnf("%s must be the first property in the object YAML representation", SCHEMA_VERSION);
@@ -170,7 +171,7 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
         }
 
         alreadyReadProperty = true;
-        Supplier<? extends YamlContext<?>> cc = contextCreators.get(nameOfSubcontext);
+        Supplier<? extends BlockContext<?>> cc = contextCreators.get(nameOfSubcontext);
         if (cc != null) {
             return cc.get();
         }
@@ -180,18 +181,18 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
                 return contextFor(ef.getCollectionElementClass(), MapEntitySequenceYamlContext::new, () -> new DefaultListContext<>(Object.class));
             } else if (ef.getMapValueClass() != Void.class) {
                 if (ef.getMapValueClass() == List.class || Collection.class.isAssignableFrom(ef.getMapValueClass())) {
-                    return new AttributesLikeYamlContext();
+                    return new StringListMapContext();
                 }
                 return contextFor(ef.getMapValueClass(), MapEntityMappingYamlContext::new, DefaultMapContext::new);
             }
-            return contextFor(ef.getFieldClass(), MapEntityYamlContext::new, DefaultObjectContext::new);
+            return contextFor(ef.getFieldClass(), MapEntityContext::new, DefaultObjectContext::new);
         }
 
         LOG.warnf("No special context set for field %s", nameOfSubcontext);
         return null;
     }
 
-    private static <T> YamlContext<?> contextFor(Class<T> clazz, Function<Class<T>, YamlContext<?>> mapContextCreator, Supplier<YamlContext<?>> defaultCreator) {
+    private static <T> BlockContext<?> contextFor(Class<T> clazz, Function<Class<T>, BlockContext<?>> mapContextCreator, Supplier<BlockContext<?>> defaultCreator) {
         return ModelEntityUtil.entityFieldsKnown(clazz)
           ? mapContextCreator.apply(clazz)
           : defaultCreator.get();
@@ -203,7 +204,7 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
 
         mech.writeMapping(() -> {
             if (topContext) {
-                mech.writePair(SCHEMA_VERSION, () -> mech.writeObject(1));
+                mech.writePair(SCHEMA_VERSION, () -> mech.writeObject("1.0.Alpha1"));
             }
 
             TreeSet<String> contextNames = new TreeSet<>(nameToEntityField.keySet());
@@ -222,7 +223,7 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
 
                 Object fieldVal = ef.get(entity);
                 if (fieldVal != null) {
-                    YamlContext context = getContext(contextName);
+                    BlockContext context = getContext(contextName);
                     if (context != null) {
                         mech.writePair(contextName, () -> context.writeValue(fieldVal, mech));
                     }
@@ -230,7 +231,6 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
             }
         });
     }
-    protected static final String SCHEMA_VERSION = "schemaVersion";
 
     public static class MapEntitySequenceYamlContext<T> extends DefaultListContext<T> {
 
@@ -239,9 +239,9 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
         }
 
         @Override
-        public YamlContext<?> getContext(String nameOfSubcontext) {
+        public BlockContext<?> getContext(String nameOfSubcontext) {
             return ModelEntityUtil.entityFieldsKnown(itemClass)
-              ? new MapEntityYamlContext<>(itemClass, false)
+              ? new MapEntityContext<>(itemClass, false)
               : null;
         }
 
@@ -265,9 +265,9 @@ public class MapEntityYamlContext<T> implements YamlContext<T> {
         }
 
         @Override
-        public YamlContext<?> getContext(String nameOfSubcontext) {
+        public BlockContext<?> getContext(String nameOfSubcontext) {
             return ModelEntityUtil.entityFieldsKnown(mapValueClass)
-              ? new MapEntityYamlContext<>(mapValueClass, false)
+              ? new MapEntityContext<>(mapValueClass, false)
               : null;
         }
     }

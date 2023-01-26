@@ -26,7 +26,6 @@ import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.StringKeyConverter.StringKey;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelEntityUtil;
@@ -35,10 +34,10 @@ import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
-import org.keycloak.models.map.storage.file.yaml.YamlContextAwareParser;
-import org.keycloak.models.map.storage.file.common.MapEntityYamlContext;
-import org.keycloak.models.map.storage.file.yaml.writer.PathWriter;
-import org.keycloak.models.map.storage.file.yaml.writer.YamlWritingMechanism;
+import org.keycloak.models.map.storage.file.yaml.YamlParser;
+import org.keycloak.models.map.storage.file.common.MapEntityContext;
+import org.keycloak.models.map.storage.file.yaml.PathWriter;
+import org.keycloak.models.map.storage.file.yaml.YamlWritingMechanism;
 import org.keycloak.storage.SearchableModelField;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -207,7 +206,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
         }
 
         protected V parse(Path fileName) {
-            final V parsedObject = YamlContextAwareParser.parse(fileName, new MapEntityYamlContext<>(entityClass));
+            final V parsedObject = YamlParser.parse(fileName, new MapEntityContext<>(entityClass));
             if (parsedObject == null) {
                 return null;
             }
@@ -397,7 +396,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
             try (PathWriter w = new PathWriter(tempSp)) {
                 final Emitter emitter = new Emitter(DUMP_SETTINGS, w);
                 try (YamlWritingMechanism mech = new YamlWritingMechanism(emitter::emit)) {
-                    new MapEntityYamlContext<>(entityClass).writeValue(value, mech);
+                    new MapEntityContext<>(entityClass).writeValue(value, mech);
                 }
                 registerRenameOnCommit(tempSp, sp);
             } catch (IOException ex) {

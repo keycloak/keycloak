@@ -21,17 +21,18 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeMap;
 import org.keycloak.models.map.common.UndefinedValuesUtils;
-import org.keycloak.models.map.storage.file.common.YamlContext.DefaultListContext;
-import org.keycloak.models.map.storage.file.common.YamlContext.DefaultMapContext;
-import org.keycloak.models.map.storage.file.yaml.YamlContextAwareParser;
+import org.keycloak.models.map.storage.file.common.BlockContext.DefaultListContext;
+import org.keycloak.models.map.storage.file.common.BlockContext.DefaultMapContext;
+import org.keycloak.models.map.storage.file.yaml.YamlParser;
 
 /**
- * YAML parser context which suitable for properties stored in a {@code Map<String, List<String>>}
- * which accepts
+ * Block context which suitable for properties stored in a {@code Map<String, List<String>>}
+ * which accepts string mapping key, and entry value is recognized both as a plain value
+ * (converted to string) or a list of values
  *
  * @author hmlnarik
  */
-public class AttributesLikeYamlContext extends DefaultMapContext {
+public class StringListMapContext extends DefaultMapContext {
 
     /**
      * Returns a YAML attribute-like context where key of each element
@@ -41,7 +42,7 @@ public class AttributesLikeYamlContext extends DefaultMapContext {
      * @param prefix
      * @return
      */
-    public static AttributesLikeYamlContext prefixed(String prefix) {
+    public static StringListMapContext prefixed(String prefix) {
         return new Prefixed(prefix);
     }
 
@@ -59,7 +60,7 @@ public class AttributesLikeYamlContext extends DefaultMapContext {
     public void writeValue(Map<String, Object> value, WritingMechanism mech) {
         if (UndefinedValuesUtils.isUndefined(value)) return;
         mech.writeMapping(() -> {
-            AttributeValueYamlContext c = getContext(YamlContextAwareParser.ARRAY_CONTEXT);
+            AttributeValueYamlContext c = getContext(YamlParser.ARRAY_CONTEXT);
             for (Map.Entry<String, Object> entry : new TreeMap<>(value).entrySet()) {
                 @SuppressWarnings("unchecked")
                 Collection<String> attrValues = (Collection<String>) entry.getValue();
@@ -68,7 +69,7 @@ public class AttributesLikeYamlContext extends DefaultMapContext {
         });
     }
 
-    private static class Prefixed extends AttributesLikeYamlContext {
+    private static class Prefixed extends StringListMapContext {
 
         protected final String prefix;
 

@@ -17,7 +17,7 @@
 package org.keycloak.models.map.storage.file.common;
 
 import org.keycloak.models.map.common.UndefinedValuesUtils;
-import org.keycloak.models.map.storage.file.yaml.YamlContextAwareParser;
+import org.keycloak.models.map.storage.file.yaml.YamlParser;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -27,24 +27,21 @@ import java.util.TreeMap;
 import static org.keycloak.models.map.common.CastUtils.cast;
 
 /**
- * A class implementing a {@code YamlContext} interface represents a transformer
+ * A class implementing a {@code BlockContext} interface represents a transformer
  * from a primitive value / sequence / mapping representation as declared in YAML
  * format into a Java object of type {@code V}, with ability to produce
  * the {@link #getResult() resulting instance} of parsing.
  *
  * <p>
- * NOTE: In the future, this transformer might also cover the other direction:
- * conversion from Java object into YAML primitive value / sequence / mapping representation.
- *
- * <p>
- * This transformer handles only a single nesting level in YAML file. The root level
- * is at the beginning of YAML document. Every mapping key and every sequence then
- * represents next level of nesting.
+ * This transformer handles only a values of a single node in structured file, i.e.
+ * single value (a primitive value, sequence or mapping). The root level
+ * is at the beginning of e.g. YAML or JSON document.
+ * Every mapping key and every sequence value then represents next level of nesting.
  *
  * @author hmlnarik
  * @param <V> Type of the result
  */
-public interface YamlContext<V> {
+public interface BlockContext<V> {
 
     /**
      * Writes the given value using {@link WritingMechanism}.
@@ -69,7 +66,7 @@ public interface YamlContext<V> {
      * @see DefaultListContext
      * @see DefaultMapContext
      */
-    YamlContext<?> getContext(String nameOfSubcontext);
+    BlockContext<?> getContext(String nameOfSubcontext);
 
     /**
      * Modifies the {@link #getResult() result returned} from within this context by
@@ -106,7 +103,7 @@ public interface YamlContext<V> {
      */
     V getResult();
 
-    public static class DefaultObjectContext implements YamlContext<Object> {
+    public static class DefaultObjectContext implements BlockContext<Object> {
         private Object result;
 
         @Override
@@ -126,12 +123,12 @@ public interface YamlContext<V> {
         }
 
         @Override
-        public YamlContext<?> getContext(String nameOfSubcontext) {
+        public BlockContext<?> getContext(String nameOfSubcontext) {
             return null;
         }
     }
 
-    public static class DefaultListContext<T> implements YamlContext<Collection<T>> {
+    public static class DefaultListContext<T> implements BlockContext<Collection<T>> {
         private final List<T> result = new LinkedList<>();
 
         protected final Class<T> itemClass;
@@ -162,12 +159,12 @@ public interface YamlContext<V> {
         }
 
         @Override
-        public YamlContext<?> getContext(String nameOfSubcontext) {
+        public BlockContext<?> getContext(String nameOfSubcontext) {
             return null;
         }
 
-        private YamlContext getContextByValue(Object value) {
-            YamlContext res = getContext(YamlContextAwareParser.ARRAY_CONTEXT);
+        private BlockContext getContextByValue(Object value) {
+            BlockContext res = getContext(YamlParser.ARRAY_CONTEXT);
             if (res != null) {
                 return res;
             }
@@ -181,7 +178,7 @@ public interface YamlContext<V> {
         }
     }
 
-    public static class DefaultMapContext implements YamlContext<Map<String, Object>> {
+    public static class DefaultMapContext implements BlockContext<Map<String, Object>> {
         private final Map<String, Object> result = new LinkedHashMap<>();
 
         @Override
@@ -209,12 +206,12 @@ public interface YamlContext<V> {
         }
 
         @Override
-        public YamlContext getContext(String nameOfSubcontext) {
+        public BlockContext getContext(String nameOfSubcontext) {
             return null;
         }
 
-        private YamlContext getContext(String nameOfSubcontext, Object value) {
-            YamlContext res = getContext(nameOfSubcontext);
+        private BlockContext getContext(String nameOfSubcontext, Object value) {
+            BlockContext res = getContext(nameOfSubcontext);
             if (res != null) {
                 return res;
             }

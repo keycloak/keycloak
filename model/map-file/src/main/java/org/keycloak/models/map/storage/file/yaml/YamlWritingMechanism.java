@@ -1,4 +1,4 @@
-package org.keycloak.models.map.storage.file.yaml.writer;
+package org.keycloak.models.map.storage.file.yaml;
 
 import org.keycloak.models.map.storage.file.common.WritingMechanism;
 import java.io.Closeable;
