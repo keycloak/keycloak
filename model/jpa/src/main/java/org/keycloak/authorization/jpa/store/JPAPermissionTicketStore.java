@@ -64,16 +64,16 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     @Override
     public long count(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Long> querybuilder = builder.createQuery(Long.class);
+        CriteriaQuery<String> querybuilder = builder.createQuery(String.class);
         Root<PermissionTicketEntity> root = querybuilder.from(PermissionTicketEntity.class);
 
         querybuilder.select(root.get("id"));
 
         List<Predicate> predicates = getPredicates(builder, root, resourceServer, attributes);
 
-        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("id")));
+        querybuilder.where(predicates.toArray(new Predicate[0])).orderBy(builder.asc(root.get("id")));
 
-        TypedQuery query = entityManager.createQuery(querybuilder);
+        TypedQuery<String> query = entityManager.createQuery(querybuilder);
 
         return closing(query.getResultStream()).count();
     }
