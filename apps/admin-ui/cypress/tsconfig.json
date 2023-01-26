@@ -1,6 +1,6 @@
 {
   "extends": "../tsconfig.json",
-  "include": ["**/*"],
+  "include": ["**/*", "../src/i18next.d.ts"],
   "compilerOptions": {
     "types": ["node", "cypress", "@testing-library/cypress", "@4tw/cypress-drag-drop"],
     "module": "ES2015",

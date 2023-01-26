@@ -35,7 +35,7 @@ export const InitialAccessTokenList = () => {
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clients:tokenDeleteConfirmTitle",
-    messageKey: t("tokenDeleteConfirm", token),
+    messageKey: t("tokenDeleteConfirm", { id: token?.id }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {

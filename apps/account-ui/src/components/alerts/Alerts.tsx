@@ -6,7 +6,7 @@ import {
 } from "@patternfly/react-core";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { TranslationKeys } from "../../react-i18next";
+import { TranslationKeys } from "../../i18next";
 
 export type AddAlertFunction = (
   message: TranslationKeys,

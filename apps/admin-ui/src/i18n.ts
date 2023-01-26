@@ -28,6 +28,7 @@ const initOptions = async (
   };
 
   return {
+    returnNull: false,
     defaultNS: "common",
     fallbackLng: DEFAULT_LOCALE,
     preload: [DEFAULT_LOCALE],
