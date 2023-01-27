@@ -20,6 +20,8 @@ package org.keycloak.common.util;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
+import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 
 import javax.security.auth.Subject;
@@ -31,9 +33,11 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,6 +48,8 @@ import java.util.Set;
  */
 public abstract class KerberosJdkProvider {
 
+    private static final Logger logger = Logger.getLogger(KerberosJdkProvider.class);
+
     public abstract Configuration createJaasConfigurationForServer(String keytab, String serverPrincipal, boolean debug);
     public abstract Configuration createJaasConfigurationForUsernamePasswordLogin(boolean debug);
 
@@ -53,6 +59,20 @@ public abstract class KerberosJdkProvider {
 
     public GSSCredential kerberosTicketToGSSCredential(KerberosTicket kerberosTicket) {
         return kerberosTicketToGSSCredential(kerberosTicket, GSSCredential.DEFAULT_LIFETIME, GSSCredential.INITIATE_ONLY);
+    }
+
+    /**
+     * @return true if Kerberos (GSS API) is available in underlying JDK and it is possible to use it. False otherwise
+     */
+    public boolean isKerberosAvailable() {
+        GSSManager gssManager = GSSManager.getInstance();
+        List<Oid> supportedMechs = Arrays.asList(gssManager.getMechs());
+        if (supportedMechs.contains(KerberosConstants.KRB5_OID)) {
+            return true;
+        } else {
+            logger.warnf("Kerberos feature not supported by JDK. Check security providers for your JDK in java.security. Supported mechanisms: %s", supportedMechs);
+            return false;
+        }
     }
 
     // Actually can use same on both JDKs

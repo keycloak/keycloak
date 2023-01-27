@@ -18,16 +18,14 @@
 package org.keycloak.testsuite.keys;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.TokenVerifier;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -36,11 +34,8 @@ import org.keycloak.testsuite.util.OAuthClient;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
@@ -68,7 +63,7 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
         String realmId = realmsResouce().realm("test").toRepresentation().getId();
 
         List<ComponentRepresentation> providers = realmsResouce().realm("test").components().query(realmId, "org.keycloak.keys.KeyProvider");
-        assertEquals(3, providers.size());
+        assertEquals(4, providers.size());
 
         for (ComponentRepresentation p : providers) {
             realmsResouce().realm("test").components().component(p.getId()).remove();
@@ -121,7 +116,8 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
         List<ComponentRepresentation> providers = realmsResouce().realm("test").components().query(realmId, "org.keycloak.keys.KeyProvider");
 
         List<String> expected = new LinkedList<>();
-        expected.add("rsa");
+        expected.add("rsa-generated");
+        expected.add("rsa-enc-generated");
         expected.add("hmac-generated");
         expected.add("aes-generated");
 
@@ -138,13 +134,7 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
     }
 
     private void assertProviders(List<ComponentRepresentation> providers, String... expected) {
-        List<String> names = new LinkedList<>();
-        for (ComponentRepresentation p : providers) {
-            names.add(p.getName());
-        }
-
-        assertThat(names, hasSize(expected.length));
-        assertThat(names, containsInAnyOrder(expected));
+        Assert.assertNames(providers, expected);
     }
 }
 

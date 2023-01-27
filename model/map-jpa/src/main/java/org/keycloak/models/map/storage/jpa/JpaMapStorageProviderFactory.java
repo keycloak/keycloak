@@ -21,6 +21,7 @@ import static org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -165,6 +166,7 @@ public class JpaMapStorageProviderFactory implements
     private Config.Scope config;
     private final String sessionProviderKey;
     private final String sessionTxKey;
+    private String databaseShortName;
 
     // Object instances for each single JpaMapStorageProviderFactory instance per model type.
     // Used to synchronize on when validating the model type area.
@@ -278,7 +280,23 @@ public class JpaMapStorageProviderFactory implements
     }
 
     protected EntityManager getEntityManager() {
-        return emf.createEntityManager();
+        EntityManager em = emf.createEntityManager();
+
+        // This is a workaround for Hibernate not supporting javax.persistence.lock.timeout
+        //   config option for Postgresql/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16071
+        if ("postgresql".equals(databaseShortName) || "cockroachdb".equals(databaseShortName)) {
+            Long lockTimeout = config.getLong("lockTimeout");
+            if (lockTimeout != null) {
+                em.unwrap(SessionImpl.class)
+                        .doWork(connection -> {
+                            PreparedStatement preparedStatement = connection.prepareStatement("SET LOCAL lock_timeout = '" + lockTimeout + "';");
+                            preparedStatement.execute();
+                        });
+            } else {
+                logger.warnf("Database %s used without lockTimeout option configured. This can result in deadlock where one connection waits for a pessimistic write lock forever.", databaseShortName);
+            }
+        }
+        return em;
     }
 
     @Override
@@ -370,6 +388,11 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
+        Integer lockTimeout = config.getInt("lockTimeout");
+        if (lockTimeout != null) {
+            // This property does not work for PostgreSQL/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16071
+            properties.put("javax.persistence.lock.timeout", lockTimeout);
+        }
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
@@ -416,6 +439,7 @@ public class JpaMapStorageProviderFactory implements
 
                             MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
                             MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
+                            databaseShortName = updater.getDatabaseShortName();
 
                             if (!status.equals(VALID)) {
                                 update(modelType, connection, session);

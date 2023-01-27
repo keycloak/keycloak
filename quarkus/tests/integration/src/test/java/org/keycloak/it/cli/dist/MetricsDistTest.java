@@ -25,11 +25,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 
 @DistributionTest(keepAlive =true)
+@LegacyStore
 public class MetricsDistTest {
 
     @Test
@@ -46,7 +48,8 @@ public class MetricsDistTest {
     void testMetricsEndpoint() {
         when().get("/metrics").then()
                 .statusCode(200)
-                .body(containsString("jvm_gc_"));
+                .body(containsString("jvm_gc_"))
+                .body(containsString("vendor_cache_manager_keycloak_cache_realms_"));
     }
 
     @Test

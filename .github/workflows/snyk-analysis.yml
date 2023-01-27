@@ -34,7 +34,9 @@ jobs:
           sarif_file: quarkus-report.sarif
 
       - name: Check for vulnerabilities in Operator
-        run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=operator-report.sarif operator
+        run: |
+          mvn -Poperator -pl operator -am -DskipTests clean install
+          snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=operator-report.sarif operator
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
