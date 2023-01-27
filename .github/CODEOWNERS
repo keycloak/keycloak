@@ -16,10 +16,10 @@
 *                                                           @keycloak/maintainers
 
 ###################################################################################################
-# Testing (@keycloak/testing-maintainers)
+# Testsuite
 ###################################################################################################
 
-/testsuite/                                                 @keycloak/testing-maintainers
+/testsuite/                                                 @keycloak/core-maintainers @keycloak/cloud-native-maintainers @keycloak/store-maintainers
 
 ###################################################################################################
 # Core (@keycloak/core-maintainers)

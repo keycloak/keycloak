@@ -6,8 +6,8 @@ Before merging a PR the PR should follow these rules:
 * There is an associated GitHub Issue linked to the PR
   * A GitHub Issue is not required if the PR is not introducing a new feature or enhancement to Keycloak, or is resolving a bug where released versions of Keycloak are not affected
 * There is sufficient test coverage
-* Required documentation is included in the PR or an associated PR
-* There are no negative reviews, or unresolved comments
+* Required documentation is included in the PR or an associated PR. Including updates to release notes and upgrade guide if applicable
+* There are no unresolved negative reviews, or unresolved comments
 * The PR does not contain changes not relevant to the GitHub Issue
 * PRs has been reviewed by the relevant team, and approved by either a global maintainer or a team maintainer
 * All required status checks have passed successfully
