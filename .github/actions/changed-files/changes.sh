@@ -36,6 +36,8 @@ cat .github/actions/changed-files/conditions | grep '=' | grep -v '#' | while re
 
   if [ "$GITHUB_OUTPUT" != "" ]; then
     echo "$KEY=$CHANGED" >> $GITHUB_OUTPUT
+  else
+    echo "Not running in GitHub Actions"
   fi
 done
 
