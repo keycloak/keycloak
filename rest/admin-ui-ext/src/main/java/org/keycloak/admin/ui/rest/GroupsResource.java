@@ -76,10 +76,13 @@ public class GroupsResource {
                 groupMatchesSearchOrIsPathElement(
                         g, search
                 )
-        ).map(subGroup ->
-                ModelToRepresentation.toGroupHierarchy(
-                        subGroup, true, search, exact
-                )
+        ).map(subGroup -> {
+                    final GroupRepresentation subRep = ModelToRepresentation.toGroupHierarchy(
+                            subGroup, true, search, exact
+                    );
+                    subRep.setAccess(auth.groups().getAccess(subGroup));
+                    return subRep;
+                }
         ).collect(Collectors.toList()));
 
         return rep;
