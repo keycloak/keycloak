@@ -14,10 +14,8 @@ import org.keycloak.credential.CredentialProvider;
 import org.keycloak.events.Details;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
-import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import javax.ws.rs.core.MultivaluedMap;

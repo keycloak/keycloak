@@ -92,6 +92,7 @@
 
         <auth.server.remote>false</auth.server.remote>
         <auth.server.quarkus>false</auth.server.quarkus>
+        <auth.server.quarkus.embedded>false</auth.server.quarkus.embedded>
 
         <auth.server.profile/>
         <auth.server.feature/>
@@ -221,9 +222,9 @@
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <firefoxDriverVersion/>
         <firefoxUserPreferences/>
-        <firefoxHeadless>false</firefoxHeadless>
+        <firefoxHeadless>true</firefoxHeadless>
         <chromeBinary/>
-        <chromeArguments/>
+        <chromeArguments>--headless</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>
@@ -264,6 +265,8 @@
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <auth.server.fips.mode>disabled</auth.server.fips.mode>
         <auth.server.supported.keystore.types>JKS,PKCS12,BCFKS</auth.server.supported.keystore.types>
+        <auth.server.supported.rsa.key.sizes>1024,2048,4096</auth.server.supported.rsa.key.sizes>
+        <auth.server.kerberos.supported>true</auth.server.kerberos.supported>
     </properties>
 
     <build>
@@ -569,6 +572,8 @@
 
                             <auth.server.remote>${auth.server.remote}</auth.server.remote>
                             <auth.server.quarkus>${auth.server.quarkus}</auth.server.quarkus>
+                            <auth.server.quarkus.embedded>${auth.server.quarkus.embedded}</auth.server.quarkus.embedded>
+                            <jboss.server.config.dir>${auth.server.config.dir}</jboss.server.config.dir>
 
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
                             <examples.home>${examples.home}</examples.home>
@@ -687,6 +692,8 @@
                             <auth.server.fips.mode>${auth.server.fips.mode}</auth.server.fips.mode>
                             <auth.server.fips.keystore.type>${auth.server.fips.keystore.type}</auth.server.fips.keystore.type>
                             <auth.server.supported.keystore.types>${auth.server.supported.keystore.types}</auth.server.supported.keystore.types>
+                            <auth.server.supported.rsa.key.sizes>${auth.server.supported.rsa.key.sizes}</auth.server.supported.rsa.key.sizes>
+                            <auth.server.kerberos.supported>${auth.server.kerberos.supported}</auth.server.kerberos.supported>
 
                             <!--
                               ~ Used for Wildfly Elytron 1.13.0.CR3+ RESTEasy client SSL truststore configuration.
@@ -757,6 +764,20 @@
             <properties>
                 <auth.server>quarkus</auth.server>
                 <auth.server.quarkus>true</auth.server.quarkus>
+                <auth.server.jboss>false</auth.server.jboss>
+                <auth.server.undertow>false</auth.server.undertow>
+                <auth.server.config.dir>${auth.server.home}/conf</auth.server.config.dir>
+                <auth.server.quarkus.skip.unpack>false</auth.server.quarkus.skip.unpack>
+                <auth.server.undertow.skip.unpack>true</auth.server.undertow.skip.unpack>
+                <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>auth-server-quarkus-embedded</id>
+            <properties>
+                <auth.server>quarkus</auth.server>
+                <auth.server.quarkus.embedded>true</auth.server.quarkus.embedded>
                 <auth.server.jboss>false</auth.server.jboss>
                 <auth.server.undertow>false</auth.server.undertow>
                 <auth.server.config.dir>${auth.server.home}/conf</auth.server.config.dir>
@@ -1346,45 +1367,6 @@
         </profile>
 
         <profile>
-            <id>map-storage-hot-rod</id>
-            <properties>
-                <keycloak.testsuite.start-hotrod-container>true</keycloak.testsuite.start-hotrod-container>
-                <auth.server.quarkus.mapStorage.profile.config>hotrod</auth.server.quarkus.mapStorage.profile.config>
-            </properties>
-            <build>
-                <plugins>
-                </plugins>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <systemPropertyVariables>
-                                    <keycloak.authSession.map.storage.provider>hotrod</keycloak.authSession.map.storage.provider>
-                                    <keycloak.client.map.storage.provider>hotrod</keycloak.client.map.storage.provider>
-                                    <keycloak.clientScope.map.storage.provider>hotrod</keycloak.clientScope.map.storage.provider>
-                                    <keycloak.group.map.storage.provider>hotrod</keycloak.group.map.storage.provider>
-                                    <keycloak.role.map.storage.provider>hotrod</keycloak.role.map.storage.provider>
-                                    <keycloak.user.map.storage.provider>hotrod</keycloak.user.map.storage.provider>
-                                    <keycloak.loginFailure.map.storage.provider>hotrod</keycloak.loginFailure.map.storage.provider>
-                                    <keycloak.realm.map.storage.provider>hotrod</keycloak.realm.map.storage.provider>
-                                    <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
-                                    <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
-                                    <keycloak.eventStore.map.storage.provider>hotrod</keycloak.eventStore.map.storage.provider>
-                                    <keycloak.singleUseObject.map.storage.provider>hotrod</keycloak.singleUseObject.map.storage.provider>
-                                    <infinispan.version>${infinispan.version}</infinispan.version>
-                                    <keycloak.testsuite.start-hotrod-container>${keycloak.testsuite.start-hotrod-container}</keycloak.testsuite.start-hotrod-container>
-                                </systemPropertyVariables>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
-
-        <profile>
             <id>auth-server-profile</id>
             <activation>
                 <property>
@@ -1590,6 +1572,7 @@
                 <auth.server.fips.mode>enabled</auth.server.fips.mode>
 
                 <auth.server.supported.keystore.types>PKCS12,BCFKS</auth.server.supported.keystore.types>
+                <auth.server.kerberos.supported>false</auth.server.kerberos.supported>
 
                 <auth.server.keystore.type>pkcs12</auth.server.keystore.type>
                 <auth.server.keystore>${auth.server.config.dir}/keycloak-fips.keystore.${auth.server.keystore.type}</auth.server.keystore>
@@ -1729,7 +1712,7 @@
                 <dependency>
                     <groupId>org.apache.ant</groupId>
                     <artifactId>ant</artifactId>
-                    <version>1.9.15</version>
+                    <version>1.10.11</version>
                     <type>jar</type>
                 </dependency>
 
@@ -1864,6 +1847,12 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-client-cli-dist</artifactId>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.keycloak</groupId>
+                            <artifactId>keycloak-crypto-fips1402</artifactId>
+                        </exclusion>
+                    </exclusions>
                     <type>zip</type>
                 </dependency>
 

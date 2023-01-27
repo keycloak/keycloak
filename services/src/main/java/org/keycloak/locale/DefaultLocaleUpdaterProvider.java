@@ -55,7 +55,7 @@ public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
         UriInfo uriInfo = session.getContext().getUri();
 
         boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
-        CookieHelper.addCookie(LocaleSelectorProvider.LOCALE_COOKIE, locale, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, secure, true);
+        CookieHelper.addCookie(LocaleSelectorProvider.LOCALE_COOKIE, locale, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, secure, true, session);
         logger.debugv("Updating locale cookie to {0}", locale);
     }
 
@@ -65,7 +65,7 @@ public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
         UriInfo uriInfo = session.getContext().getUri();
 
         boolean secure = realm.getSslRequired().isRequired(session.getContext().getConnection());
-        CookieHelper.addCookie(LocaleSelectorProvider.LOCALE_COOKIE, "", AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, "Expiring cookie", 0, secure, true);
+        CookieHelper.addCookie(LocaleSelectorProvider.LOCALE_COOKIE, "", AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, "Expiring cookie", 0, secure, true, session);
     }
 
     @Override

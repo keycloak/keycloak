@@ -5,6 +5,7 @@ import org.keycloak.storage.SearchableModelField;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 
@@ -145,6 +146,19 @@ public class QueryParameters<M> {
 
         public Order getOrder() {
             return order;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            OrderBy<?> orderBy = (OrderBy<?>) o;
+            return Objects.equals(modelField, orderBy.modelField) && order == orderBy.order;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(modelField, order);
         }
     }
 }

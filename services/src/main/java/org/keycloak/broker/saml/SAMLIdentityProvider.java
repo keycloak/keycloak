@@ -28,6 +28,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -94,6 +95,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Pedro Igor
@@ -254,7 +257,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
-        return Response.ok(identity.getToken()).build();
+        return Response.ok(identity.getToken()).type(MediaType.TEXT_PLAIN_TYPE).build();
     }
 
     @Override
@@ -360,27 +363,16 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
 
-            List<Element> signingKeys = new LinkedList<>();
-            List<Element> encryptionKeys = new LinkedList<>();
+            List<Element> signingKeys = streamForExport(session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256), false)
+                    .collect(Collectors.toList());
 
-            session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
-                    .filter(Objects::nonNull)
-                    .filter(key -> key.getCertificate() != null)
-                    .sorted(SamlService::compareKeys)
-                    .forEach(key -> {
-                        try {
-                            Element element = SPMetadataDescriptor
-                                    .buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
-                            signingKeys.add(element);
-
-                            if (key.getStatus() == KeyStatus.ACTIVE) {
-                                encryptionKeys.add(element);
-                            }
-                        } catch (ParserConfigurationException e) {
-                            logger.warn("Failed to export SAML SP Metadata!", e);
-                            throw new RuntimeException(e);
-                        }
-                    });
+            // See also SamlProtocolUtils.getDecryptionKey
+            String encAlg = getConfig().getEncryptionAlgorithm();
+            Stream<KeyWrapper> encryptionKeyWrappers = (encAlg != null && !encAlg.trim().isEmpty())
+                    ? session.keys().getKeysStream(realm, KeyUse.ENC, encAlg)
+                    : session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256);
+            List<Element> encryptionKeys = streamForExport(encryptionKeyWrappers, true)
+                    .collect(Collectors.toList());
 
             // Prepare the metadata descriptor model
             StringWriter sw = new StringWriter();
@@ -460,6 +452,23 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             logger.warn("Failed to export SAML SP Metadata!", e);
             throw new RuntimeException(e);
         }
+    }
+
+    private Stream<Element> streamForExport(Stream<KeyWrapper> keys, boolean checkActive) {
+        return keys.filter(Objects::nonNull)
+                .filter(key -> key.getCertificate() != null)
+                .filter(key -> !checkActive || key.getStatus() == KeyStatus.ACTIVE)
+                .sorted(SamlService::compareKeys)
+                .map(key -> {
+                    try {
+                        Element element = SPMetadataDescriptor
+                                .buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
+                        return element;
+                    } catch (ParserConfigurationException e) {
+                        logger.warn("Failed to export SAML SP Metadata!", e);
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     public SignatureAlgorithm getSignatureAlgorithm() {

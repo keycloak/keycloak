@@ -11,6 +11,7 @@ import org.keycloak.client.registration.cli.aesh.AeshEnhancer;
 import org.keycloak.client.registration.cli.aesh.ValveInputStream;
 import org.keycloak.client.registration.cli.aesh.Globals;
 import org.keycloak.client.registration.cli.commands.KcRegCmd;
+import org.keycloak.client.registration.cli.util.ClassLoaderUtil;
 import org.keycloak.common.crypto.CryptoIntegration;
 
 import java.util.ArrayList;
@@ -22,8 +23,14 @@ import java.util.Arrays;
 public class KcRegMain {
 
     public static void main(String [] args) {
+        String libDir = System.getProperty("kc.lib.dir");
+        if (libDir == null) {
+            throw new RuntimeException("System property kc.lib.dir needs to be set");
+        }
+        ClassLoader cl = ClassLoaderUtil.resolveClassLoader(libDir);
+        Thread.currentThread().setContextClassLoader(cl);
 
-        CryptoIntegration.init(KcRegMain.class.getClassLoader());
+        CryptoIntegration.init(cl);
 
         Globals.stdin = new ValveInputStream();
 

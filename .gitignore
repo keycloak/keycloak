@@ -83,3 +83,6 @@ quarkus/data/*.db
 
 # Git ephemeral files
 *.versionsBackup
+
+# Node.js for frontend-maven-plugin #
+node

@@ -51,24 +51,6 @@ public class QuarkusJpaMapStorageProviderFactory extends JpaMapStorageProviderFa
     }
 
     @Override
-    protected EntityManager getEntityManager() {
-        EntityManager em = super.getEntityManager();
-        em.unwrap(SessionImpl.class).doWork(connection -> {
-            // In the Undertow setup, Hibernate sets the connection to non-autocommit, and in the Quarkus setup the XA transaction manager does this.
-            // For the Quarkus setup without a XA transaction manager, we didn't find a way to have this setup automatically.
-            // There is also no known option to configure this in the Agroal DB connection pool in a Quarkus setup:
-            // While the connection pool supports it, it hasn't been exposed as a Quarkus configuration option.
-            // At the same time, disabling autocommit is essential to keep the transactional boundaries of the application.
-            // The failure we've seen is the failed unique constraints that are usually deferred (for example, for client attributes).
-            // A follow-up issue to track this is here: https://github.com/keycloak/keycloak/issues/13222
-            if (connection.getAutoCommit()) {
-                connection.setAutoCommit(false);
-            }
-        });
-        return em;
-    }
-
-    @Override
     protected Connection getConnection() {
         SessionFactoryImpl entityManagerFactory = getEntityManagerFactory().unwrap(SessionFactoryImpl.class);
         try {

@@ -4,7 +4,7 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer;
+import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import java.net.URI;
@@ -33,7 +33,7 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
                     "keycloak.hostname.fixed.alwaysHttps");
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
-            KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             container.resetConfiguration();
             configureDefault(OAuthClient.AUTH_SERVER_ROOT, false, null);
             container.restartServer();
@@ -58,7 +58,7 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
-            KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             List<String> additionalArgs = new ArrayList<>();
             URI frontendUri = URI.create(frontendUrl);
             // enable proxy so that we can check headers are taken into account when building urls

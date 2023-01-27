@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.jpa;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,7 +26,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
-import javax.persistence.Parameter;
+import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
@@ -37,11 +38,9 @@ import javax.persistence.criteria.Selection;
 
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
-import org.hibernate.query.spi.QueryImplementor;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
@@ -133,6 +132,26 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     @Override
     @SuppressWarnings("unchecked")
     public Stream<E> read(QueryParameters<M> queryParameters) {
+        Map<QueryCacheKey, List<RE>> cache = getQueryCache();
+        QueryCacheKey queryCacheKey = new QueryCacheKey(queryParameters, modelType);
+        if (!LockObjectsForModification.isEnabled(this.session, modelType)) {
+            List<RE> previousResult = cache.get(queryCacheKey);
+            SessionImpl session = (SessionImpl) em.unwrap(Session.class);
+            // only do dirty checking if there is a previously cached result that would match the query
+            if (previousResult != null) {
+                // if the session is dirty, data has been modified, and the cache must not be used
+                // check if there are queued actions already, as this allows us to skip the expensive dirty check
+                if (!session.getActionQueue().areInsertionsOrDeletionsQueued() && session.getActionQueue().numberOfUpdates() == 0 && session.getActionQueue().numberOfCollectionUpdates() == 0 &&
+                        !session.isDirty()) {
+                    logger.tracef("tx %d: cache hit for %s/%s%s", hashCode(), queryParameters, queryCacheKey, getShortStackTrace());
+                    return closing(previousResult.stream()).map(this::mapToEntityDelegateUnique);
+                } else {
+                    logger.tracef("tx %d: cache ignored due to dirty session", hashCode());
+                }
+            }
+        }
+        logger.tracef("tx %d: cache miss for %s/%s%s", hashCode(), queryParameters, queryCacheKey, getShortStackTrace());
+
         JpaModelCriteriaBuilder mcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createJpaModelCriteriaBuilder());
 
@@ -169,45 +188,28 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
 
         TypedQuery<RE> emQuery = paginateQuery(em.createQuery(query), queryParameters.getOffset(), queryParameters.getLimit());
 
-        Map<QueryCacheKey, List<RE>> cache = getQueryCache();
-        QueryCacheKey queryCacheKey = new QueryCacheKey(emQuery, modelType);
-        if (!LockObjectsForModification.isEnabled(this.session, modelType)) {
-            List<RE> previousResult = cache.get(queryCacheKey);
-            //noinspection resource
-            SessionImpl session = (SessionImpl) em.unwrap(Session.class);
-            // only do dirty checking if there is a previously cached result that would match the query
-            if (previousResult != null) {
-                // if the session is dirty, data has been modified, and the cache must not be used
-                // check if there are queued actions already, as this allows us to skip the expensive dirty check
-                if (!session.getActionQueue().areInsertionsOrDeletionsQueued() && session.getActionQueue().numberOfUpdates() == 0 && session.getActionQueue().numberOfCollectionUpdates() == 0 &&
-                        !session.isDirty()) {
-                    logger.tracef("tx %d: cache hit for %s/%s%s", hashCode(), queryParameters, queryCacheKey, getShortStackTrace());
-                    return closing(previousResult.stream()).map(this::mapToEntityDelegateUnique);
-                } else {
-                    logger.tracef("tx %d: cache ignored due to dirty session", hashCode());
-                }
-            }
-        }
-        logger.tracef("tx %d: cache miss for %s/%s%s", hashCode(), queryParameters, queryCacheKey, getShortStackTrace());
-
         if (LockObjectsForModification.isEnabled(session, modelType)) {
             emQuery = emQuery.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         }
 
-        // In order to cache the result, the full result needs to be retrieved.
-        // There is also no difference to that in Hibernate, as Hibernate will first retrieve all elements from the ResultSet.
-        List<RE> resultList = emQuery.getResultList();
-        cache.put(queryCacheKey, resultList);
+        try {
+            // In order to cache the result, the full result needs to be retrieved.
+            // There is also no difference to that in Hibernate, as Hibernate will first retrieve all elements from the ResultSet.
+            List<RE> resultList = emQuery.getResultList();
+            cache.put(queryCacheKey, resultList);
 
-        return closing(resultList.stream()).map(this::mapToEntityDelegateUnique);
+            return closing(resultList.stream()).map(this::mapToEntityDelegateUnique);
+        } catch (PersistenceException pe) {
+            // handle exception that could occur on auto-flush when the query is executed
+            throw PersistenceExceptionConverter.convert(pe.getCause() != null ? pe.getCause() : pe);
+        }
     }
 
     private Map<QueryCacheKey, List<RE>> getQueryCache() {
-        //noinspection resource,unchecked
+        //noinspection unchecked
         Map<QueryCacheKey, List<RE>> cache = (Map<QueryCacheKey, List<RE>>) em.unwrap(Session.class).getProperties().get(JPA_MAP_CACHE);
         if (cache == null) {
             cache = new HashMap<>();
-            //noinspection resource
             em.unwrap(Session.class).setProperty(JPA_MAP_CACHE, cache);
         }
         return cache;
@@ -238,7 +240,12 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         JpaPredicateFunction<RE> predicateFunc = mcb.getPredicateFunc();
         if (predicateFunc != null) countQuery.where(predicateFunc.apply(cb, countQuery::subquery, root));
 
-        return em.createQuery(countQuery).getSingleResult();
+        try {
+            return em.createQuery(countQuery).getSingleResult();
+        } catch (PersistenceException pe) {
+            // handle exception that could occur on auto-flush when the query is executed
+            throw PersistenceExceptionConverter.convert(pe.getCause() != null ? pe.getCause() : pe);
+        }
     }
 
     @Override
@@ -285,7 +292,12 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         JpaPredicateFunction<RE> predicateFunc = mcb.getPredicateFunc();
         if (predicateFunc != null) deleteQuery.where(predicateFunc.apply(cb, deleteQuery::subquery, root));
 
-        return em.createQuery(deleteQuery).executeUpdate() + removed[0];
+        try {
+            return em.createQuery(deleteQuery).executeUpdate() + removed[0];
+        } catch (PersistenceException pe) {
+            // handle exception that could occur on auto-flush when the query is executed
+            throw PersistenceExceptionConverter.convert(pe.getCause() != null ? pe.getCause() : pe);
+        }
     }
 
     private MapModelCriteriaBuilder<String, E, M> createCriteriaBuilderMap() {
@@ -329,24 +341,17 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
 
     private static class QueryCacheKey {
         private final String queryString;
-        private final Integer queryMaxResults;
-        private final Integer queryFirstResult;
-        private final HashMap<String, Object> queryParameters;
+        private final Integer queryLimit;
+        private final Integer queryOffset;
         private final Class<?> modelType;
+        private final List<? extends QueryParameters.OrderBy<?>> queryOrderBy;
 
-        public QueryCacheKey(TypedQuery<?> emQuery, Class<?> modelType) {
+        public QueryCacheKey(QueryParameters<?> query, Class<?> modelType) {
             // copy over all fields from the query that relevant for caching
-            QueryImplementor<?> query = emQuery.unwrap(QueryImplementor.class);
-            this.queryString = query.getQueryString();
-            this.queryParameters = new HashMap<>();
-            for (Parameter<?> parameter : query.getParameters()) {
-                if (parameter.getName() == null) {
-                    throw new ModelException("Can't prepare query for caching as parameter doesn't have a name");
-                }
-                this.queryParameters.put(parameter.getName(), query.getParameterValue(parameter.getName()));
-            }
-            this.queryMaxResults = emQuery.getMaxResults();
-            this.queryFirstResult = emQuery.getFirstResult();
+            this.queryString = query.getModelCriteriaBuilder().toString();
+            this.queryLimit = query.getLimit();
+            this.queryOffset = query.getOffset();
+            this.queryOrderBy = new ArrayList<>(query.getOrderBy());
             this.modelType = modelType;
         }
 
@@ -356,24 +361,24 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
             if (o == null || getClass() != o.getClass()) return false;
             QueryCacheKey that = (QueryCacheKey) o;
             return Objects.equals(queryString, that.queryString)
-                    && Objects.equals(queryMaxResults, that.queryMaxResults)
-                    && Objects.equals(queryFirstResult, that.queryFirstResult)
-                    && Objects.equals(queryParameters, that.queryParameters)
+                    && Objects.equals(queryLimit, that.queryLimit)
+                    && Objects.equals(queryOffset, that.queryOffset)
+                    && Objects.equals(queryOrderBy, that.queryOrderBy)
                     && Objects.equals(modelType, that.modelType);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(queryString, queryMaxResults, queryFirstResult, queryParameters, modelType);
+            return Objects.hash(queryString, queryLimit, queryOffset, queryOrderBy, modelType);
         }
 
         @Override
         public String toString() {
             return "QueryCacheKey{" +
                     "queryString='" + queryString + '\'' +
-                    ", queryMaxResults=" + queryMaxResults +
-                    ", queryFirstResult=" + queryFirstResult +
-                    ", queryParameters=" + queryParameters +
+                    ", queryMaxResults=" + queryLimit +
+                    ", queryFirstResult=" + queryOffset +
+                    ", queryOrderBy=" + queryOrderBy +
                     ", modelType=" + modelType.getName() +
                     '}';
         }

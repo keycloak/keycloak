@@ -123,6 +123,7 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
+import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
 import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
 import static org.keycloak.models.utils.RepresentationToModel.createGroups;
@@ -1138,11 +1139,7 @@ public class MapExportImportManager implements ExportImportManager {
         }
         if (userRep.getRequiredActions() != null) {
             for (String requiredAction : userRep.getRequiredActions()) {
-                try {
-                    user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
-                } catch (IllegalArgumentException iae) {
-                    user.addRequiredAction(requiredAction);
-                }
+                user.addRequiredAction(getDefaultRequiredActionCaseInsensitively(requiredAction));
             }
         }
         createCredentials(userRep, session, newRealm, user, false);

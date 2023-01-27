@@ -19,7 +19,7 @@ package org.keycloak.protocol.oidc;
 
 import java.util.HashMap;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
@@ -356,13 +356,10 @@ public class TokenManager {
 
         // Fallback to lookup user based on username (preferred_username claim)
         if (token.getPreferredUsername() != null) {
-            user = session.users().getUserByUsername(realm, token.getPreferredUsername());
-            if (user != null) {
-                return user;
-            }
+            return session.users().getUserByUsername(realm, token.getPreferredUsername());
         }
 
-        return user;
+        return null;
     }
 
 
@@ -1335,7 +1332,7 @@ public class TokenManager {
     /**
      * Check if access token was revoked with OAuth revocation endpoint
      */
-    public static class TokenRevocationCheck implements TokenVerifier.Predicate<AccessToken> {
+    public static class TokenRevocationCheck implements TokenVerifier.Predicate<JsonWebToken> {
 
         private final KeycloakSession session;
 
@@ -1344,7 +1341,7 @@ public class TokenManager {
         }
 
         @Override
-        public boolean test(AccessToken token) {
+        public boolean test(JsonWebToken token) {
             SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
             return !singleUseStore.contains(token.getId() + SingleUseObjectProvider.REVOKED_KEY);
         }

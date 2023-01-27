@@ -44,6 +44,23 @@ This can be achieved by add the `auth-server-quarkus` profile when running the t
 Unlike the "development" setup described above, this requires re-build the whole distribution
 after doing any change in the code.
 
+### Running tests using an embedded server
+
+For test driven development, it is possible to run the Keycloak server deployed on real Quarkus server.
+This can be achieved by add the `auth-server-quarkus-embedded` profile when running the testsuite.
+
+    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-quarkus-embedded clean install -Dtest=LoginTest
+
+After running this command, you should also be able to run tests from your IDE. For that, make sure you have the `auth-server-quarkus-embedded` profile enabled.
+
+When running in embedded mode, the `build` phase happens every time the server is started, and it is based on the same configuration used during a full-distribution test run(e.g.: `auth-server-quarkus` profile is active).
+
+There are a few limitations when running tests. The well-known limitations are:
+
+* FIPS tests not working
+* Deploying script providers not working. Probably any test deploying JAR files.
+* Re-starting the server during a test execution is taking too much metaspace. Need more investigation.
+
 ## Debugging - tips & tricks
 
 ### Arquillian debugging
@@ -465,7 +482,6 @@ This is temporary and database configuration should be more integrated with the 
 
 Activate the following profiles:
 
-* `quarkus`
 * `auth-server-cluster-quarkus`
 
 Then run any cluster test as usual.
@@ -832,19 +848,24 @@ we rely on [nip.io](https://nip.io) for DNS switching, so tests will work everyw
 To run base testsuite with new storage run the following command (this will execute testsuite with ConcurrentHashMap storage):
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pauth-server-quarkus -Pmap-storage
+                  -Pauth-server-quarkus -Pmap-storage-chm
 ```
 
 ### Running tests with JPA Map storage
 
-By default tests with `map-storage-jpa` profile spawns a new Postgres container
-with each test execution. Default image used is "postgres:alpine". To spawn different 
-version, it can be used "keycloak.map.storage.postgres.docker.image" system property.
+By default, testing with the profile `map-storage-jpa-postgres` spawns a new Postgres container
+with each test execution. The default image used is `postgres:alpine`. To spawn a different
+version, use the system property `keycloak.map.storage.postgres.docker.image`.
+
+In a similar way the profile `map-storage-jpa-cockroach` spawns a new CockroachDB container
+with each test execution. It uses the official CockroachDB image in the version stated in the
+class `CockroachdbContainerTestEnricher`. To spawn a different
+version, use the system property `keycloak.map.storage.cockroachdb.docker.image`.
 
 Execute tests:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pmap-storage,map-storage-jpa
+                  -Pmap-storage-jpa-postgres
 ```
 
 It's also possible to configure tests to connect to an external database, it might be useful 
@@ -859,7 +880,7 @@ podman run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_US
 To run the tests without spawning the container for you, execute tests with the following command:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-  -Pmap-storage,map-storage-jpa \
+  -Pmap-storage-jpa-postgres \
   -Dpostgres.start-container=false \
   -Dkeycloak.map.storage.connectionsJpa.url=<jdbc_url> \
   -Dkeycloak.map.storage.connectionsJpa.user=<user> \
@@ -872,7 +893,7 @@ By default, Base testsuite with `map-storage-hotrod` profile spawn a new Infinis
 with each test execution. To run the tests execute:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pmap-storage,map-storage-hotrod
+                  -Pmap-storage-hotrod
 ```
 Note: For running Infinispan server we are using Testcontainer, see section 
 _Usage of Testcontainers_ for details on how to set up your container engine.
@@ -882,7 +903,7 @@ connect to an external instance of Infinispan. To do so, execute tests with
 the following command:
 ```shell
 mvn clean install -f testsuite/integration-arquillian/tests/base \
-                  -Pmap-storage,map-storage-hotrod
+                  -Pmap-storage-hotrod
                   -Dkeycloak.testsuite.start-hotrod-container=false \
                   -Dkeycloak.connectionsHotRod.host=<host> \
                   -Dkeycloak.connectionsHotRod.port=<port> \
@@ -962,4 +983,18 @@ there should be messages similar to those:
  BCFIPS version 1.000203 - class org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider, 
  BCJSSE version 1.001202 - class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider,
 ]
+```
+
+### BCFIPS approved mode
+
+For running testsuite with server using BCFIPS approved mode, those additional properties should be added when running tests:
+```
+-Dauth.server.fips.mode=strict \
+-Dauth.server.supported.keystore.types=BCFKS \
+-Dauth.server.keystore.type=bcfks \
+-Dauth.server.supported.rsa.key.sizes=2048,4096
+```
+The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
+```
+KC(BCFIPS version 1.000203 Approved Mode) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
 ```

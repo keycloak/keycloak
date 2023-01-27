@@ -22,6 +22,8 @@ import java.io.File;
 import org.keycloak.Config;
 
 public interface PlatformProvider {
+
+    String name();
     
     void onStartup(Runnable runnable);
 

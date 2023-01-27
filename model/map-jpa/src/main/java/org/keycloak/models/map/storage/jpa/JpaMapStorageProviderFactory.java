@@ -21,13 +21,13 @@ import static org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -35,9 +35,18 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.spi.PersistenceUnitTransactionType;
 import javax.sql.DataSource;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.InvalidTransactionException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
 
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.internal.SessionImpl;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
@@ -54,6 +63,7 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -65,7 +75,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.locking.GlobalLock;
 import org.keycloak.models.locking.GlobalLockProvider;
 import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
@@ -136,9 +145,9 @@ import org.keycloak.models.map.storage.jpa.user.entity.JpaUserEntity;
 import org.keycloak.models.map.storage.jpa.user.entity.JpaUserFederatedIdentityEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 public class JpaMapStorageProviderFactory implements 
         AmphibianProviderFactory<MapStorageProvider>,
@@ -157,6 +166,7 @@ public class JpaMapStorageProviderFactory implements
     private Config.Scope config;
     private final String sessionProviderKey;
     private final String sessionTxKey;
+    private String databaseShortName;
 
     // Object instances for each single JpaMapStorageProviderFactory instance per model type.
     // Used to synchronize on when validating the model type area.
@@ -244,6 +254,9 @@ public class JpaMapStorageProviderFactory implements
         MODEL_TO_TX.put(UserSessionModel.class,                 JpaUserSessionMapKeycloakTransaction::new);
     }
 
+    private boolean jtaEnabled;
+    private JtaTransactionManagerLookup jtaLookup;
+
     public JpaMapStorageProviderFactory() {
         int index = ENUMERATOR.getAndIncrement();
         this.sessionProviderKey = PROVIDER_ID + "-" + index;
@@ -260,14 +273,30 @@ public class JpaMapStorageProviderFactory implements
         // check the session for a cached provider before creating a new one.
         JpaMapStorageProvider provider = session.getAttribute(this.sessionProviderKey, JpaMapStorageProvider.class);
         if (provider == null) {
-            provider = new JpaMapStorageProvider(this, session, getEntityManager(), this.sessionTxKey);
+            provider = new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), this.sessionTxKey, this.jtaEnabled);
             session.setAttribute(this.sessionProviderKey, provider);
         }
         return provider;
     }
 
     protected EntityManager getEntityManager() {
-        return emf.createEntityManager();
+        EntityManager em = emf.createEntityManager();
+
+        // This is a workaround for Hibernate not supporting javax.persistence.lock.timeout
+        //   config option for Postgresql/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16071
+        if ("postgresql".equals(databaseShortName) || "cockroachdb".equals(databaseShortName)) {
+            Long lockTimeout = config.getLong("lockTimeout");
+            if (lockTimeout != null) {
+                em.unwrap(SessionImpl.class)
+                        .doWork(connection -> {
+                            PreparedStatement preparedStatement = connection.prepareStatement("SET LOCAL lock_timeout = '" + lockTimeout + "';");
+                            preparedStatement.execute();
+                        });
+            } else {
+                logger.warnf("Database %s used without lockTimeout option configured. This can result in deadlock where one connection waits for a pessimistic write lock forever.", databaseShortName);
+            }
+        }
+        return em;
     }
 
     @Override
@@ -277,6 +306,8 @@ public class JpaMapStorageProviderFactory implements
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        jtaLookup = (JtaTransactionManagerLookup) factory.getProviderFactory(JtaTransactionManagerLookup.class);
+        jtaEnabled = jtaLookup != null && jtaLookup.getTransactionManager() != null;
     }
 
     @Override
@@ -308,6 +339,20 @@ public class JpaMapStorageProviderFactory implements
                 if (emf == null) {
                     this.emf = createEntityManagerFactory();
                     JpaMapUtils.addSpecificNamedQueries(emf);
+
+                    // consistency check for transaction handling, as this would lead to data-inconsistencies as changes wouldn't commit when expected
+                    if (jtaEnabled && !this.emf.getProperties().get(AvailableSettings.JPA_TRANSACTION_TYPE).equals(PersistenceUnitTransactionType.JTA.name())) {
+                        throw new ModelException("Consistency check failed: If Keycloak is run with JTA, the Entity Manager for JPA map storage should be run with JTA as well.");
+                    }
+
+                    // consistency check for auto-commit, as this would lead to data-inconsistencies as changes wouldn't roll back when expected
+                    EntityManager em = getEntityManager();
+                    em.unwrap(SessionImpl.class).doWork(connection -> {
+                        if (connection.getAutoCommit()) {
+                            throw new ModelException("The database connection must not use auto-commit. For Quarkus, auto-commit was off once JTA was enabled for the EntityManager.");
+                        }
+                    });
+                    em.close();
                 }
             }
         }
@@ -343,6 +388,11 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
+        Integer lockTimeout = config.getInt("lockTimeout");
+        if (lockTimeout != null) {
+            // This property does not work for PostgreSQL/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16071
+            properties.put("javax.persistence.lock.timeout", lockTimeout);
+        }
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
@@ -376,22 +426,53 @@ public class JpaMapStorageProviderFactory implements
         if (!this.validatedModels.contains(modelType)) {
             synchronized (SYNC_MODELS.computeIfAbsent(modelType, mc -> new Object())) {
                 if (!this.validatedModels.contains(modelType)) {
-                    Connection connection = getConnection();
+                    Transaction suspended = null;
                     try {
-                        if (logger.isDebugEnabled()) printOperationalInfo(connection);
-
-                        MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
-                        MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
-
-                        if (!status.equals(VALID)) {
-                            update(modelType, connection, session);
+                        if (jtaEnabled) {
+                            suspended = jtaLookup.getTransactionManager().suspend();
+                            jtaLookup.getTransactionManager().begin();
                         }
-                    } finally {
-                        if (connection != null) {
+
+                        Connection connection = getConnection();
+                        try {
+                            if (logger.isDebugEnabled()) printOperationalInfo(connection);
+
+                            MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
+                            MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
+                            databaseShortName = updater.getDatabaseShortName();
+
+                            if (!status.equals(VALID)) {
+                                update(modelType, connection, session);
+                            }
+                        } finally {
+                            if (connection != null) {
+                                try {
+                                    connection.close();
+                                } catch (SQLException e) {
+                                    logger.warn("Can't close connection", e);
+                                }
+                            }
+                        }
+
+                        if (jtaEnabled) {
+                            jtaLookup.getTransactionManager().commit();
+                        }
+                    } catch (SystemException | NotSupportedException | RollbackException | HeuristicMixedException |
+                             HeuristicRollbackException e) {
+                        if (jtaEnabled) {
                             try {
-                                connection.close();
-                            } catch (SQLException e) {
-                                logger.warn("Can't close connection", e);
+                                jtaLookup.getTransactionManager().rollback();
+                            } catch (SystemException ex) {
+                                logger.error("Unable to roll back JTA transaction, e");
+                            }
+                        }
+                        throw new RuntimeException(e);
+                    } finally {
+                        if (suspended != null) {
+                            try {
+                                jtaLookup.getTransactionManager().resume(suspended);
+                            } catch (InvalidTransactionException | SystemException e) {
+                                throw new RuntimeException(e);
                             }
                         }
                     }
@@ -435,13 +516,13 @@ public class JpaMapStorageProviderFactory implements
     }
 
     private void update(Class<?> modelType, Connection connection, KeycloakSession session) {
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession lockSession) -> {
-            GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
-            try (GlobalLock l = globalLock.acquireLock(modelType.getName())) {
-                session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
-            } catch (LockAcquiringTimeoutException e) {
+        try {
+            session.getProvider(GlobalLockProvider.class).withLock(modelType.getName(), lockedSession -> {
+                lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
+                return null;
+            });
+        } catch (LockAcquiringTimeoutException e) {
                 throw new RuntimeException("Acquiring " + modelType.getName() + " failed.", e);
-            }
-        });
+        }
     }
 }

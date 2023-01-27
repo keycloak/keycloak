@@ -52,6 +52,7 @@ import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 public class JpaMapStorage extends KeycloakModelParameters {
 
@@ -59,7 +60,7 @@ public class JpaMapStorage extends KeycloakModelParameters {
 
     private static final Boolean START_CONTAINER = Boolean.valueOf(System.getProperty("postgres.start-container", "true"));
     private static final String POSTGRES_DOCKER_IMAGE_NAME = System.getProperty("keycloak.map.storage.postgres.docker.image", "postgres:alpine");
-    private static final PostgreSQLContainer POSTGRES_CONTAINER = new PostgreSQLContainer(POSTGRES_DOCKER_IMAGE_NAME);
+    private static final PostgreSQLContainer POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_DOCKER_IMAGE_NAME).asCompatibleSubstituteFor("postgres"));
     private static final String POSTGRES_DB_DEFAULT_NAME = System.getProperty("keycloak.map.storage.connectionsJpa.databaseName", "keycloak");
     private static final String POSTGRES_DB_USER = System.getProperty("keycloak.map.storage.connectionsJpa.user", "keycloak");
     private static final String POSTGRES_DB_PASSWORD = System.getProperty("keycloak.map.storage.connectionsJpa.password", "pass");
@@ -94,7 +95,8 @@ public class JpaMapStorage extends KeycloakModelParameters {
                 .config("user", POSTGRES_DB_USER)
                 .config("password", POSTGRES_DB_PASSWORD)
                 .config("driver", "org.postgresql.Driver")
-                .config("driverDialect", "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
+                .config("driverDialect", "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect")
+                .config("lockTimeout", "1000");
 
         cf.spi(AuthenticationSessionSpi.PROVIDER_ID).provider(MapRootAuthenticationSessionProviderFactory.PROVIDER_ID)  .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("client").provider(MapClientProviderFactory.PROVIDER_ID)                                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)

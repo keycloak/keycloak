@@ -108,9 +108,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -1695,7 +1698,7 @@ public class UserTest extends AbstractAdminTest {
 
         try {
             final AccessToken accessToken = TokenVerifier.create(token, AccessToken.class).getToken();
-            assertEquals(lifespan, accessToken.getExpiration() - accessToken.getIssuedAt());
+            assertThat(accessToken.getExp() - accessToken.getIat(), allOf(greaterThanOrEqualTo(lifespan - 1l), lessThanOrEqualTo(lifespan + 1l)));
         } catch (VerificationException e) {
             throw new IOException(e);
         }

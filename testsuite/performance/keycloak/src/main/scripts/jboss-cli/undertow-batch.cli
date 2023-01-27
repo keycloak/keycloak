@@ -1,2 +1,0 @@
-/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=proxy-address-forwarding, value=${env.PROXY_ADDRESS_FORWARDING})
-/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-connections,value=${env.HTTP_MAX_CONNECTIONS:50000})

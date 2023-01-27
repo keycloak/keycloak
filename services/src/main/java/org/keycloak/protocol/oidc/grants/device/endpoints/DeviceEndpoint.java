@@ -18,7 +18,7 @@
 package org.keycloak.protocol.oidc.grants.device.endpoints;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
@@ -80,13 +80,15 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
 
     protected static final Logger logger = Logger.getLogger(DeviceEndpoint.class);
 
+    public static final String SHORT_VERIFICATION_URI = "shortVerificationUri";
+
     private final HttpRequest request;
 
     private Cors cors;
 
     public DeviceEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.request = session.getContext().getHttpRequest();
     }
 
     /**
@@ -123,7 +125,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         }
 
         // So back button doesn't work
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
 
         if (!realm.getOAuth2DeviceConfig().isOAuth2DeviceAuthorizationGrantEnabled(client)) {
             event.error(Errors.NOT_ALLOWED);
@@ -168,7 +170,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         singleUseStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
 
         try {
-            String deviceUrl = DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName())
+            String deviceUrl = realm.getAttribute(SHORT_VERIFICATION_URI) != null ? realm.getAttribute(SHORT_VERIFICATION_URI) : DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName())
                 .toString();
 
             OAuth2DeviceAuthorizationResponse response = new OAuth2DeviceAuthorizationResponse();
@@ -207,7 +209,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         checkRealm();
 
         // So back button doesn't work
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
 
         // code is not known, we can infer the client neither. ask the user to provide the code.
         if (StringUtil.isNullOrEmpty(userCode)) {

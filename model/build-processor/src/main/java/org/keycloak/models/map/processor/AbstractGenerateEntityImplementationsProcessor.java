@@ -32,6 +32,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -276,6 +277,10 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Could not determine return type for the field " + fieldName, methods.iterator().next());
         }
         return res;
+    }
+
+    protected void generatedAnnotation(final PrintWriter pw) {
+        pw.println("@javax.annotation.processing.Generated(\"" + getClass().getName() + "\")");
     }
 
     protected static class NameFirstComparator implements Comparator<String> {

@@ -17,6 +17,7 @@
 
 package org.keycloak.models.utils;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -40,7 +41,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
@@ -89,6 +89,8 @@ import static org.keycloak.models.Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE_D
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public final class KeycloakModelUtils {
+
+    private static final Logger logger = Logger.getLogger(KeycloakModelUtils.class);
 
     public static final String AUTH_TYPE_CLIENT_SECRET = "client-secret";
     public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
@@ -260,27 +262,15 @@ public final class KeycloakModelUtils {
      * Wrap a given callable job into a KeycloakTransaction.
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
-        KeycloakSession session = factory.create();
-        KeycloakTransaction tx = session.getTransactionManager();
         V result;
-        try {
-            tx.begin();
-            result = callable.run(session);
-
-            if (tx.isActive()) {
-                if (tx.getRollbackOnly()) {
-                    tx.rollback();
-                } else {
-                    tx.commit();
-                }
+        try (KeycloakSession session = factory.create()) {
+            session.getTransactionManager().begin();
+            try {
+                result = callable.run(session);
+            } catch (Throwable t) {
+                session.getTransactionManager().setRollbackOnly();
+                throw t;
             }
-        } catch (RuntimeException re) {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
-            throw re;
-        } finally {
-            session.close();
         }
         return result;
     }
@@ -303,28 +293,15 @@ public final class KeycloakModelUtils {
                                                      final int attemptsCount, final int retryIntervalMillis) {
         int retryCount = 0;
         Random rand = new Random();
-        V result;
         while (true) {
-            KeycloakSession session = factory.create();
-            KeycloakTransaction tx = session.getTransactionManager();
-            try {
-                tx.begin();
-                result = callable.run(session);
-                if (tx.isActive()) {
-                    if (tx.getRollbackOnly()) {
-                        tx.rollback();
-                    } else {
-                        tx.commit();
-                    }
-                }
-                break;
+            try (KeycloakSession session = factory.create()) {
+                session.getTransactionManager().begin();
+                return callable.run(session);
             } catch (RuntimeException re) {
-                if (tx.isActive()) {
-                    tx.rollback();
-                }
                 if (isExceptionRetriable(re) && ++retryCount < attemptsCount) {
                     int delay = Math.min(retryIntervalMillis * attemptsCount, (1 << retryCount) * retryIntervalMillis)
                             + rand.nextInt(retryIntervalMillis);
+                    logger.debugf("Caught retriable exception, retrying request. Retry count = %s, retry delay = %s", retryCount, delay);
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException ie) {
@@ -332,13 +309,13 @@ public final class KeycloakModelUtils {
                         throw new RuntimeException(ie);
                     }
                 } else {
+                    if (retryCount == attemptsCount) {
+                        logger.debug("Exhausted all retry attempts for request.");
+                    }
                     throw re;
                 }
-            } finally {
-                session.close();
             }
         }
-        return result;
     }
 
     /**
@@ -349,13 +326,19 @@ public final class KeycloakModelUtils {
      * @param exception the exception to be checked.
      * @return {@code true} if the exception is retriable; {@code false} otherwise.
      */
-    public static boolean isExceptionRetriable(final Exception exception) {
+    public static boolean isExceptionRetriable(final Throwable exception) {
         Objects.requireNonNull(exception);
         // first find the root cause and check if it is a SQLException
         Throwable rootCause = exception;
         while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
             rootCause = rootCause.getCause();
         }
+        // JTA transaction handler might add multiple suppressed exceptions to the root cause, evaluate each of those
+        for (Throwable suppressed : rootCause.getSuppressed()) {
+            if (isExceptionRetriable(suppressed)) {
+                return true;
+            }
+        };
         if (rootCause instanceof SQLException) {
             // check if the exception state is a recoverable one (40001)
             return "40001".equals(((SQLException) rootCause).getSQLState());

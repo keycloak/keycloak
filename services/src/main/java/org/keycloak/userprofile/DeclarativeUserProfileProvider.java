@@ -27,10 +27,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -61,7 +61,6 @@ import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
-import org.keycloak.validate.validators.EmailValidator;
 
 /**
  * {@link UserProfileProvider} loading configuration from the changeable JSON file stored in component config. Parsed
@@ -128,6 +127,9 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
         if (isEnabled(session)) {
+            if (user != null && user.getServiceAccountClientLink() != null) {
+                return new LegacyAttributes(context, attributes, user, metadata, session);
+            }
             return new DefaultAttributes(context, attributes, user, metadata, session);
         }
         return new LegacyAttributes(context, attributes, user, metadata, session);
@@ -154,7 +156,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
         // not cached, create a note with cache
         if (metadataMap == null) {
-            metadataMap = new HashMap<>();
+            metadataMap = new ConcurrentHashMap<>();
             model.setNote(PARSED_CONFIG_COMPONENT_KEY, metadataMap);
         }
 
@@ -295,7 +297,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             }
 
             Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
-            if (rc != null && !isUsernameOrEmailAttribute(attributeName)) {
+            if (rc != null) {
                 if (rc.isAlways() || UPConfigUtils.isRoleForContext(context, rc.getRoles())) {
                     required = AttributeMetadata.ALWAYS_TRUE;
                 } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
@@ -327,7 +329,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
             Predicate<AttributeContext> selector = AttributeMetadata.ALWAYS_TRUE;
             UPAttributeSelector sc = attrConfig.getSelector();
-            if (sc != null && !isUsernameOrEmailAttribute(attributeName) && UPConfigUtils.canBeAuthFlowContext(context) && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
+            if (sc != null && !isBuiltInAttribute(attributeName) && UPConfigUtils.canBeAuthFlowContext(context) && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
                 // for contexts executed from auth flow and with configured scopes selector
                 // we have to create correct predicate
                 selector = (c) -> requestedScopePredicate(c, sc.getScopes());
@@ -337,48 +339,46 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             String attributeGroup = attrConfig.getGroup();
             AttributeGroupMetadata groupMetadata = toAttributeGroupMeta(groupsByName.get(attributeGroup));
 
-            if (isUsernameOrEmailAttribute(attributeName)) {
+            guiOrder++;
+
+            if (isBuiltInAttribute(attributeName)) {
                 // make sure username and email are writable if permissions are not set
                 if (permissions == null || permissions.isEmpty()) {
                     writeAllowed = AttributeMetadata.ALWAYS_TRUE;
                     readAllowed = AttributeMetadata.ALWAYS_TRUE;
                 }
 
-                List<AttributeMetadata> atts = decoratedMetadata.getAttribute(attributeName);
+                if (UserModel.USERNAME.equals(attributeName)) {
+                    required = AttributeMetadata.ALWAYS_TRUE;
+                }
 
                 // Add ImmutableAttributeValidator to ensure that attributes that are configured
                 // as read-only are marked as such.
                 // Skip this for username in realms with username = email to allow change of email
                 // address on initial login with profile via idp
-                if (!realm.isRegistrationEmailAsUsername() || !UserModel.USERNAME.equals(attributeName)) {
+                if (!realm.isRegistrationEmailAsUsername() && UserModel.EMAIL.equals(attributeName)) {
                     validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
                 }
 
-                if (atts.isEmpty()) {
-                    // attribute metadata doesn't exist so we have to add it. We keep it optional as Abstract base
-                    // doesn't require it.
-                    decoratedMetadata.addAttribute(attributeName, guiOrder++, writeAllowed, validators)
-                            .addAnnotations(annotations)
-                            .setAttributeDisplayName(attrConfig.getDisplayName())
-                            .setAttributeGroupMetadata(groupMetadata);
-                } else {
-                    final int localGuiOrder = guiOrder++;
-                    Predicate<AttributeContext> readAllowedFinal = readAllowed;
-                    Predicate<AttributeContext> writeAllowedFinal = writeAllowed;
+                List<AttributeMetadata> existingMetadata = decoratedMetadata.getAttribute(attributeName);
 
-                    // add configured validators and annotations to existing attribute metadata
-                    atts.stream().forEach(c -> c.addValidator(validators)
-                                        .addAnnotations(annotations)
-                                        .setAttributeDisplayName(attrConfig.getDisplayName())
-                                        .setGuiOrder(localGuiOrder)
-                                        .setAttributeGroupMetadata(groupMetadata)
-                                        .addReadCondition(readAllowedFinal)
-                                        .addWriteCondition(writeAllowedFinal));
+                if (existingMetadata.isEmpty()) {
+                    throw new IllegalStateException("Attribute " + attributeName + " not defined in the context.");
+                }
+
+                for (AttributeMetadata metadata : existingMetadata) {
+                    metadata.addAnnotations(annotations)
+                            .setAttributeDisplayName(attrConfig.getDisplayName())
+                            .setGuiOrder(guiOrder)
+                            .setAttributeGroupMetadata(groupMetadata)
+                            .addReadCondition(readAllowed)
+                            .addWriteCondition(writeAllowed)
+                            .addValidators(validators)
+                            .setRequired(required);
                 }
             } else {
-                // always add validation for immutable/read-only attributes
                 validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
-                decoratedMetadata.addAttribute(attributeName, guiOrder++, validators, selector, writeAllowed, required, readAllowed)
+                decoratedMetadata.addAttribute(attributeName, guiOrder, validators, selector, writeAllowed, required, readAllowed)
                         .addAnnotations(annotations)
                         .setAttributeDisplayName(attrConfig.getDisplayName())
                         .setAttributeGroupMetadata(groupMetadata);
@@ -400,7 +400,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         return new AttributeGroupMetadata(group.getName(), group.getDisplayHeader(), group.getDisplayDescription(), group.getAnnotations());
     }
 
-    private boolean isUsernameOrEmailAttribute(String attributeName) {
+    private boolean isBuiltInAttribute(String attributeName) {
         return UserModel.USERNAME.equals(attributeName) || UserModel.EMAIL.equals(attributeName);
     }
 

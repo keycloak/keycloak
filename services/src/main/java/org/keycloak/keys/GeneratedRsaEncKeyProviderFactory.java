@@ -37,11 +37,6 @@ public class GeneratedRsaEncKeyProviderFactory extends AbstractGeneratedRsaKeyPr
 
     private static final String HELP_TEXT = "Generates RSA keys for key encryption and creates a self-signed certificate";
 
-    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractGeneratedRsaKeyProviderFactory.rsaKeyConfigurationBuilder()
-            .property(Attributes.KEY_SIZE_PROPERTY)
-            .property(Attributes.RS_ENC_ALGORITHM_PROPERTY)
-            .build();
-
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
         model.put(Attributes.KEY_USE, KeyUse.ENC.name());
@@ -55,7 +50,10 @@ public class GeneratedRsaEncKeyProviderFactory extends AbstractGeneratedRsaKeyPr
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return CONFIG_PROPERTIES;
+        return AbstractGeneratedRsaKeyProviderFactory.rsaKeyConfigurationBuilder()
+                .property(Attributes.KEY_SIZE_PROPERTY.get())
+                .property(Attributes.RS_ENC_ALGORITHM_PROPERTY)
+                .build();
     }
 
     @Override

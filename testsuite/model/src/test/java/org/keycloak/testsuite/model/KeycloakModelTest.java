@@ -118,6 +118,7 @@ import org.keycloak.models.DeploymentStateProviderFactory;
  * @author hmlnarik
  */
 public abstract class KeycloakModelTest {
+    public static final String KEYCLOAK_MODELTESTS_RETRY_TRANSACTIONS = "keycloak.modeltests.retry-transactions";
 
     private static final Logger LOG = Logger.getLogger(KeycloakModelParameters.class);
     private static final AtomicInteger FACTORY_COUNT = new AtomicInteger();
@@ -135,9 +136,7 @@ public abstract class KeycloakModelTest {
                 testClass = testClass.getSuperclass();
             }
             List<Class<? extends Provider>> notFound = st
-              .filter(rp -> rp.only().length == 0 
-                ? getFactory().getProviderFactory(rp.value()) == null
-                : Stream.of(rp.only()).allMatch(provider -> getFactory().getProviderFactory(rp.value(), provider) == null))
+              .filter(KeycloakModelTest::checkProviderAvailability)
               .map(RequireProvider::value)
               .collect(Collectors.toList());
             Assume.assumeThat("Some required providers not found", notFound, Matchers.empty());
@@ -149,6 +148,25 @@ public abstract class KeycloakModelTest {
             return res;
         }
     };
+
+    // Returns true if annotation requirement is not met
+    private static boolean checkProviderAvailability(RequireProvider annotation) {
+        Set<String> allFactories = getFactory().getProviderFactoriesStream(annotation.value()).map(ProviderFactory::getId).collect(Collectors.toSet());
+        List<String> only = Arrays.asList(annotation.only());
+        List<String> exclude = Arrays.asList(annotation.exclude());
+
+        // There is no factory for required provider
+        if (allFactories.isEmpty()) return true;
+
+        // Remove excluded ids
+        allFactories.removeIf(exclude::contains);
+
+        // Remove not matching only
+        allFactories.removeIf(id -> !only.isEmpty() && !only.contains(id));
+
+        // If there is no factory return true
+        return allFactories.isEmpty();
+    }
 
     @Rule
     public final TestRule guaranteeRequiredFactoryOnMethod = new TestRule() {
@@ -528,12 +546,13 @@ public abstract class KeycloakModelTest {
     }
 
     protected <T> void inRolledBackTransaction(T parameter, BiConsumer<KeycloakSession, T> what) {
-        KeycloakSession session = getFactory().create();
-        session.getTransactionManager().begin();
+        try (KeycloakSession session = getFactory().create()) {
+            session.getTransactionManager().begin();
 
-        what.accept(session, parameter);
+            what.accept(session, parameter);
 
-        session.getTransactionManager().rollback();
+            session.getTransactionManager().rollback();
+        }
     }
 
     protected <T, R> R inComittedTransaction(T parameter, BiFunction<KeycloakSession, T, R> what) {
@@ -549,22 +568,37 @@ public abstract class KeycloakModelTest {
     }
 
     protected <T, R> R inComittedTransaction(T parameter, BiFunction<KeycloakSession, T, R> what, BiConsumer<KeycloakSession, T> onCommit, BiConsumer<KeycloakSession, T> onRollback) {
-        AtomicReference<R> res = new AtomicReference<>();
-        KeycloakModelUtils.runJobInTransaction(getFactory(), session -> {
-            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
-                @Override
-                protected void commitImpl() {
-                    if (onCommit != null) { onCommit.accept(session, parameter); }
-                }
+        if (Boolean.parseBoolean(System.getProperty(KEYCLOAK_MODELTESTS_RETRY_TRANSACTIONS, "false"))) {
+            return KeycloakModelUtils.runJobInRetriableTransaction(getFactory(), session -> {
+                session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                    @Override
+                    protected void commitImpl() {
+                        if (onCommit != null) { onCommit.accept(session, parameter); }
+                    }
 
-                @Override
-                protected void rollbackImpl() {
-                    if (onRollback != null) { onRollback.accept(session, parameter); }
-                }
+                    @Override
+                    protected void rollbackImpl() {
+                        if (onRollback != null) { onRollback.accept(session, parameter); }
+                    }
+                });
+                return what.apply(session, parameter);
+            }, 5, 100);
+        } else {
+            return KeycloakModelUtils.runJobInTransactionWithResult(getFactory(), session -> {
+                session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                    @Override
+                    protected void commitImpl() {
+                        if (onCommit != null) { onCommit.accept(session, parameter); }
+                    }
+
+                    @Override
+                    protected void rollbackImpl() {
+                        if (onRollback != null) { onRollback.accept(session, parameter); }
+                    }
+                });
+                return what.apply(session, parameter);
             });
-            res.set(what.apply(session, parameter));
-        });
-        return res.get();
+        }
     }
 
     /**
@@ -591,6 +625,16 @@ public abstract class KeycloakModelTest {
             Thread.currentThread().interrupt();
             throw new RuntimeException(ex);
         }
+    }
+
+    protected static RealmModel createRealm(KeycloakSession s, String name) {
+        RealmModel realm = s.realms().getRealmByName(name);
+        if (realm != null) {
+            // The previous test didn't clean up the realm for some reason, cleanup now
+            s.realms().removeRealm(realm.getId());
+        }
+        realm = s.realms().createRealm(name);
+        return realm;
     }
 
 }

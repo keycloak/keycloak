@@ -68,4 +68,8 @@ public interface MapJpaUpdaterProvider extends Provider {
      */
     void export(Class<?> modelType, Connection connection, String defaultSchema, File file);
 
+    /**
+     * Returns an all-lower-case short name of the used database.
+     */
+    String getDatabaseShortName();
 }

@@ -30,6 +30,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +69,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.validators.EmailValidator;
@@ -184,7 +186,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testAttributeValidation);
     }
 
-    private static void failValidationWhenEmptyAttributes(KeycloakSession session) {
+    private static void failValidationWhenEmptyAttributes(KeycloakSession session) throws IOException {
         Map<String, Object> attributes = new HashMap<>();
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         provider.setConfiguration(null);
@@ -226,6 +228,14 @@ public class UserProfileTest extends AbstractUserProfileTest {
             // we should probably avoid this kind of logic and make the test reset the realm to original state
             realm.setRegistrationEmailAsUsername(false);
         }
+
+        UPConfig config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+
+        UPAttribute email = config.getAttribute("email");
+
+        email.setRequired(null);
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
 
         attributes.clear();
         attributes.put(UserModel.USERNAME, "profile-user");
@@ -438,6 +448,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
 
         attributes.put(UserModel.USERNAME, userName);
+        attributes.put(UserModel.EMAIL, "user@keycloak.org");
         attributes.put(UserModel.FIRST_NAME, "Joe");
         attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put("address", "fixed-address");
@@ -457,6 +468,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, String> attributesUpdatedOldValues = new HashMap<>();
         attributesUpdatedOldValues.put(UserModel.FIRST_NAME, "Joe");
         attributesUpdatedOldValues.put(UserModel.LAST_NAME, "Doe");
+        attributesUpdatedOldValues.put(UserModel.EMAIL, "user@keycloak.org");
         
         profile.update((attributeName, userModel, oldValue) -> {
             assertTrue(attributesUpdated.add(attributeName)); 
@@ -856,8 +868,52 @@ public class UserProfileTest extends AbstractUserProfileTest {
         provider.setConfiguration(null);
 
         attributes.put(UserModel.USERNAME, "user");
+        attributes.put(UserModel.EMAIL, "user@keycloak.org");
         attributes.put(UserModel.FIRST_NAME, "Joe");
         attributes.put(UserModel.LAST_NAME, "Doe");
+
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+
+        profile.validate();
+    }
+
+    @Test
+    public void testRemoveDefaultValidationFromUsername() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRemoveDefaultValidationFromUsername);
+    }
+
+    private static void testRemoveDefaultValidationFromUsername(KeycloakSession session) throws IOException {
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        // reset configuration to default
+        provider.setConfiguration(null);
+
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, "你好世界");
+        attributes.put(UserModel.EMAIL, "test@keycloak.org");
+        attributes.put(UserModel.FIRST_NAME, "Foo");
+        attributes.put(UserModel.LAST_NAME, "Bar");
+
+        UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+
+        try {
+            profile.validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.hasError(Messages.INVALID_USERNAME));
+        }
+
+        UPConfig config = UPConfigUtils.readConfig(new ByteArrayInputStream(provider.getConfiguration().getBytes()));
+
+        for (UPAttribute attribute : config.getAttributes()) {
+            if (UserModel.USERNAME.equals(attribute.getName())) {
+                attribute.getValidations().remove(UsernameIDNHomographValidator.ID);
+                break;
+            }
+        }
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
 
         profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
 

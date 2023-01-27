@@ -18,7 +18,7 @@
 package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.common.ClientConnection;
@@ -795,7 +795,7 @@ public class AuthenticationProcessor {
                         .setSession(session)
                         .setUriInfo(uriInfo)
                         .setRequest(request);
-                CacheControlUtil.noBackButtonCacheControlHeader();
+                CacheControlUtil.noBackButtonCacheControlHeader(session);
                 return processor.authenticate();
 
             } else if (e.getError() == AuthenticationFlowError.DISPLAY_NOT_SUPPORTED) {

@@ -30,6 +30,7 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
@@ -65,7 +66,7 @@ public class MapRoleProvider implements RoleProvider {
 
         LOG.tracef("addRealmRole(%s, %s, %s)%s", realm, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntityImpl();
+        MapRoleEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapRoleEntity.class);
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setName(name);
@@ -122,7 +123,7 @@ public class MapRoleProvider implements RoleProvider {
 
         LOG.tracef("addClientRole(%s, %s, %s)%s", client, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntityImpl();
+        MapRoleEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapRoleEntity.class);
         entity.setId(id);
         entity.setRealmId(client.getRealm().getId());
         entity.setName(name);

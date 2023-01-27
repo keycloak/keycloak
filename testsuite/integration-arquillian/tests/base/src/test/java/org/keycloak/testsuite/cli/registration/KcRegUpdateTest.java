@@ -100,7 +100,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
             exe = execute("update my_client --config '" + configFile.getName() + "' -o -s enabled=true -e oidc");
 
             assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-            Assert.assertEquals("error message", "Failed to set attribute 'enabled' on document type 'oidc'", exe.stderrLines().get(0));
+            Assert.assertEquals("error message", "Failed to set attribute 'enabled' on document type 'oidc'", exe.stderrLines().get(exe.stderrLines().size() - 1));
 
 
 

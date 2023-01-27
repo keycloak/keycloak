@@ -18,7 +18,7 @@
 package org.keycloak.authentication.authenticators.browser;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
@@ -43,7 +43,6 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator{
-    public static final String KERBEROS_DISABLED = "kerberos_disabled";
     private static final Logger logger = Logger.getLogger(SpnegoAuthenticator.class);
 
     @Override

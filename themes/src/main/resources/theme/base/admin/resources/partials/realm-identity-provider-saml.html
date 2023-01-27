@@ -255,6 +255,18 @@
                 </div>
                 <kc-tooltip>{{:: 'signature-algorithm.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="encryptionAlgorithm">{{:: 'saml-encryption-algorithm' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select id="encryptionAlgorithm"
+                                ng-model="identityProvider.config.encryptionAlgorithm"
+                                ng-options="alg for alg in serverInfo.listProviderIds('cekmanagement')">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'saml-encryption-algorithm.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="identityProvider.config.wantAuthnRequestsSigned == 'true'">
                 <label class="col-md-2 control-label" for="samlSigKeyNameTranformer">{{:: 'saml-signature-keyName-transformer' | translate}}</label>
                 <div class="col-md-6">
