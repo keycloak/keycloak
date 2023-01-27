@@ -10,5 +10,3 @@ operator=*/pom.xml */src/main/ */src/test/
 codeql-java=*.java
 codeql-themes=themes/
 codeql-js_adapter=adapters/oidc/js/
-
-# END (don't remove!)
