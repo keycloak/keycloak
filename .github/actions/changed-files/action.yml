@@ -19,5 +19,5 @@ runs:
       name: Find changes
       shell: bash
       # language=bash
-      run: changes.sh origin ${{ github.base_ref }}
+      run: .github/actions/changed-files/changes.sh origin ${{ github.base_ref }}
 
