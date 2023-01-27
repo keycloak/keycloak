@@ -42,7 +42,9 @@ export const ResourceToolbar = ({
             placeholder={t("filterByName")}
             aria-label={t("filterByName")}
             value={nameFilter}
-            onChange={setNameFilter}
+            onChange={(_, value) => {
+              setNameFilter(value);
+            }}
             onSearch={() => onFilter(nameFilter)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {

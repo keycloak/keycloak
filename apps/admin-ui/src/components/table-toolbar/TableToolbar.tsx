@@ -61,7 +61,9 @@ export const TableToolbar = ({
                     placeholder={inputGroupPlaceholder}
                     aria-label={t("search")}
                     value={searchValue}
-                    onChange={setSearchValue}
+                    onChange={(_, value) => {
+                      setSearchValue(value);
+                    }}
                     onSearch={onSearch}
                     onKeyDown={handleKeyDown}
                     onClear={() => {

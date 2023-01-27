@@ -160,7 +160,9 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                 data-testid="group-search"
                 placeholder={t("filterGroups")}
                 value={search}
-                onChange={setSearch}
+                onChange={(_, value) => {
+                  setSearch(value);
+                }}
                 onSearch={refresh}
                 onClear={() => {
                   setSearch("");

@@ -71,7 +71,7 @@ const DateTime = ({ name }: { name: string }) => {
             <SplitItem>
               <DatePicker
                 value={dateTime[1]}
-                onChange={(_, date) => {
+                onChange={(event, value, date) => {
                   field.onChange(parseDate(field.value, date));
                 }}
               />
@@ -79,7 +79,7 @@ const DateTime = ({ name }: { name: string }) => {
             <SplitItem>
               <TimePicker
                 time={`${dateTime[2]}:${dateTime[3]}`}
-                onChange={(_, hour, minute) =>
+                onChange={(event, time, hour, minute) =>
                   field.onChange(parseTime(field.value, hour, minute))
                 }
                 is24Hour

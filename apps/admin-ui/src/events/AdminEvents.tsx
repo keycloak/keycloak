@@ -406,7 +406,7 @@ export const AdminEvents = () => {
                     <DatePicker
                       className="pf-u-w-100"
                       value={field.value}
-                      onChange={(value) => field.onChange(value)}
+                      onChange={(_, value) => field.onChange(value)}
                       inputProps={{ id: "kc-dateFrom" }}
                     />
                   )}
@@ -424,7 +424,7 @@ export const AdminEvents = () => {
                     <DatePicker
                       className="pf-u-w-100"
                       value={field.value}
-                      onChange={(value) => field.onChange(value)}
+                      onChange={(_, value) => field.onChange(value)}
                       inputProps={{ id: "kc-dateTo" }}
                     />
                   )}
