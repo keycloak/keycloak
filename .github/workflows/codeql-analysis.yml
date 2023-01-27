@@ -35,7 +35,9 @@ jobs:
       - id: changes
         uses: ./.github/actions/changed-files
 
-      - run: echo ${{ steps.changes.outputs.codeql-java }}
+      - run: |
+          echo ${{ steps.changes.outputs.codeql-java }}
+          echo ${{ steps.changes.outputs.foo }}
 
   test:
     name: Test output
