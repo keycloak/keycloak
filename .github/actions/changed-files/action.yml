@@ -20,5 +20,5 @@ runs:
       shell: bash
       # language=bash
       run: |
-        .github/actions/changed-files/changes.sh origin ${{ github.base_ref }}
+        #.github/actions/changed-files/changes.sh origin ${{ github.base_ref }}
         echo "foo=bar" >> $GITHUB_OUTPUT
