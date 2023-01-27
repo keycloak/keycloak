@@ -48,7 +48,7 @@ export const RealmSettingsGeneralTab = ({
     control,
     handleSubmit,
     setValue,
-    formState: { isDirty },
+    formState: { isDirty, errors },
   } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
   const [open, setOpen] = useState(false);
@@ -79,10 +79,23 @@ export const RealmSettingsGeneralTab = ({
         className="pf-u-mt-lg"
         onSubmit={handleSubmit(save)}
       >
-        <FormGroup label={t("realmId")} fieldId="kc-realm-id" isRequired>
+        <FormGroup
+          label={t("realmId")}
+          fieldId="kc-realm-id"
+          isRequired
+          validated={errors.realm ? "error" : "default"}
+          helperTextInvalid={errors.realm?.message}
+        >
           <Controller
             name="realm"
             control={control}
+            rules={{
+              required: { value: true, message: t("common:required") },
+              pattern: {
+                value: /^[a-zA-Z0-9-_]+$/,
+                message: t("realm:invalidRealmName"),
+              },
+            }}
             defaultValue=""
             render={({ field }) => (
               <ClipboardCopy data-testid="realmName" onChange={field.onChange}>
