@@ -649,7 +649,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         }
     }
 
-    private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(1024);
+    private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(org.keycloak.testsuite.util.KeyUtils.getLowestSupportedRsaKeySize());
     private static final String NEW_KEY_PRIVATE_KEY_PEM = PemUtils.encodeKey(NEW_KEY_PAIR.getPrivate());
 
     private PublicKey createKeys(String priority) throws Exception {

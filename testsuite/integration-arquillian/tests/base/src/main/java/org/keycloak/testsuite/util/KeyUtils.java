@@ -15,6 +15,9 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.List;
+
+import static org.junit.Assert.fail;
 
 /**
  * @author mhajas
@@ -57,6 +60,25 @@ public class KeyUtils {
             }
         }
         throw new RuntimeException("Active key not found");
+    }
+
+    /**
+     * @return key sizes, which are expected to be supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory} and {@link org.keycloak.keys.GeneratedRsaEncKeyProviderFactory}.
+     */
+    public static String[] getExpectedSupportedRsaKeySizes() {
+        String expectedKeySizes = System.getProperty("auth.server.supported.rsa.key.sizes");
+        if (expectedKeySizes == null || expectedKeySizes.trim().isEmpty()) {
+            fail("System property 'auth.server.supported.rsa.key.sizes' should be set");
+        }
+        return expectedKeySizes.split(",");
+    }
+
+    /**
+     * @return Lowest key size supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory}.
+     * It is usually 1024, but can be 2048 in some environments (typically in FIPS environments)
+     */
+    public static int getLowestSupportedRsaKeySize() {
+        return Integer.parseInt(getExpectedSupportedRsaKeySizes()[0]);
     }
 
 }
