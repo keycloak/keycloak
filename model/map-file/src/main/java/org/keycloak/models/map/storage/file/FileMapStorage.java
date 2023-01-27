@@ -26,6 +26,7 @@ import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.StringKeyConverter.StringKey;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelEntityUtil;
@@ -34,26 +35,25 @@ import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
-import org.keycloak.models.map.storage.file.yaml.parser.YamlContextAwareParser;
-import org.keycloak.models.map.storage.file.yaml.parser.map.MapEntityYamlContext;
+import org.keycloak.models.map.storage.file.yaml.YamlContextAwareParser;
+import org.keycloak.models.map.storage.file.common.MapEntityYamlContext;
+import org.keycloak.models.map.storage.file.yaml.writer.PathWriter;
+import org.keycloak.models.map.storage.file.yaml.writer.YamlWritingMechanism;
 import org.keycloak.storage.SearchableModelField;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
+import java.io.UncheckedIOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.jboss.logging.Logger;
 import org.snakeyaml.engine.v2.api.DumpSettings;
 import org.snakeyaml.engine.v2.emitter.Emitter;
@@ -72,16 +72,22 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
     private static final String SEARCHABLE_FIELD_REALM_ID_FIELD_NAME = ClientModel.SearchableFields.REALM_ID.getName();
     private static final String FILE_SUFFIX = ".yaml";
 
+    private final static DumpSettings DUMP_SETTINGS = DumpSettings.builder()
+      .setIndent(4)
+      .setIndicatorIndent(2)
+      .setIndentWithIndicator(false)
+      .build();
+
     private final Class<V> entityClass;
-    private final Crud crud = new Crud();
     private final Function<String, Path> dataDirectoryFunc;
+    private final Function<V, String[]> suggestedPath;
     private final boolean isExpirableEntity;
     private final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<String, V, M>> fieldPredicates;
 
-    // TODO: Add auxiliary directory for indices etc.
+    // TODO: Add auxiliary directory for indices, locks etc.
     // private final String auxiliaryFilesDirectory;
 
-    public FileMapStorage(Class<V> entityClass, Function<String, Path> dataDirectoryFunc) {
+    public FileMapStorage(Class<V> entityClass, Function<V, String[]> uniqueHumanReadableField, Function<String, Path> dataDirectoryFunc) {
         this.entityClass = entityClass;
         this.fieldPredicates = new IdentityHashMap<>(MapFieldPredicates.getPredicates(ModelEntityUtil.getModelType(entityClass)));
         this.fieldPredicates.keySet().stream()   // Ignore realmId since this is treated in reading differently
@@ -89,6 +95,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
           .findAny()
           .ifPresent(key -> this.fieldPredicates.replace(key, (builder, op, params) -> builder));
         this.dataDirectoryFunc = dataDirectoryFunc;
+        this.suggestedPath = uniqueHumanReadableField == null ? v -> v.getId() == null ? null : new String[] { v.getId() } : uniqueHumanReadableField;
         this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(entityClass);
     }
 
@@ -104,8 +111,8 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
         return sessionTransaction;
     }
 
-    public MapKeycloakTransaction<V, M> createTransactionInternal(KeycloakSession session) {
-        return new FileMapKeycloakTransaction<>(entityClass, crud);
+    public FileMapKeycloakTransaction<V, M> createTransactionInternal(KeycloakSession session) {
+        return FileMapKeycloakTransaction.newInstance(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity, fieldPredicates);
     }
 
     private static boolean canParseFile(Path p) {
@@ -121,9 +128,27 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
         }
     }
 
-    private class Crud implements ConcurrentHashMapCrudOperations<V, M>, HasRealmId {
+    public static abstract class Crud<V extends AbstractEntity & UpdatableEntity, M> implements ConcurrentHashMapCrudOperations<V, M>, HasRealmId {
 
         private String defaultRealmId;
+        private final Class<V> entityClass;
+        private final Function<String, Path> dataDirectoryFunc;
+        private final Function<V, String[]> suggestedPath;
+        private final boolean isExpirableEntity;
+        private final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<String, V, M>> fieldPredicates;
+
+        public Crud(Class<V> entityClass, Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath, boolean isExpirableEntity, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<String, V, M>> fieldPredicates) {
+            this.entityClass = entityClass;
+            this.dataDirectoryFunc = dataDirectoryFunc;
+            this.suggestedPath = suggestedPath;
+            this.isExpirableEntity = isExpirableEntity;
+
+            this.fieldPredicates = new IdentityHashMap<>(fieldPredicates);
+            this.fieldPredicates.keySet().stream()   // Ignore realmId since this is treated in reading differently
+              .filter(f -> Objects.equals(SEARCHABLE_FIELD_REALM_ID_FIELD_NAME, f.getName()))
+              .findAny()
+              .ifPresent(key -> this.fieldPredicates.replace(key, (builder, op, params) -> builder));
+        }
 
         protected Path getPathForSanitizedId(Path sanitizedIdPath) {
             final Path dataDirectory = getDataDirectory();
@@ -205,14 +230,63 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
 
         @Override
         public V create(V value) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            // TODO: Lock realm directory for changes (e.g. on realm deletion)
+            // TODO: Sanitize ID
+            String sanitizedId = sanitizeId(value.getId());
+
+            writeYamlContents(getPathForSanitizedId(sanitizedId), value);
+
+            return value;
+        }
+
+        @Override
+        public String determineKeyFromValue(V value, boolean forCreate) {
+            final boolean randomId;
+            String[] proposedId = suggestedPath.apply(value);
+
+            if (! forCreate) {
+                return proposedId == null ? null : String.join("/", proposedId);
+            }
+
+            if (proposedId == null || proposedId.length == 0) {
+                randomId = value.getId() == null;
+                proposedId = new String[] { value.getId() == null ? StringKey.INSTANCE.yieldNewUniqueKey() : value.getId() };
+            } else {
+                randomId = false;
+            }
+
+            Path sanitizedId = Path.of(
+              sanitizeId(proposedId[0]),
+              Stream.of(proposedId).skip(1).map(this::sanitizeId).toArray(String[]::new)
+            );
+
+            Path sp = getPathForSanitizedId(sanitizedId);
+            for (int counter = 0; counter < 100; counter++) {
+                LOG.tracef("Attempting to create file %s", sp);
+                try {
+                    touch(sp);
+                    return String.join("/", proposedId);
+                } catch (FileAlreadyExistsException ex) {
+                    if (! randomId) {
+                        throw new ModelDuplicateException("File " + sp + " already exists!");
+                    }
+                    final String lastComponent = StringKey.INSTANCE.yieldNewUniqueKey();
+                    proposedId[proposedId.length - 1] = lastComponent;
+                    sanitizedId = sanitizedId.resolveSibling(sanitizeId(lastComponent));
+                    sp = getPathForSanitizedId(sanitizedId);
+                } catch (IOException ex) {
+                    throw new IllegalStateException("Could not create file " + sp, ex);
+                }
+            }
+
+            return null;
         }
 
         @Override
         public V read(String key) {
             return Optional.ofNullable(sanitizeId(key))
               .map(this::getPathForSanitizedId)
-              .filter(Files::exists)
+              .filter(Files::isReadable)
               .map(this::parse)
               .orElse(null);
         }
@@ -239,8 +313,8 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
                 // The paths list has to be materialized first, otherwise "dirStream" would be closed
                 // before the resulting stream would be read and would return empty result
                 paths = dirStream.collect(Collectors.toList());
-            } catch (IOException ex) {
-                LOG.warnf(ex, "Error listing %s", getDataDirectory());
+            } catch (IOException | UncheckedIOException ex) {
+                LOG.warnf(ex, "Error listing %s", dataDirectory);
                 return Stream.empty();
             }
             Stream<V> res = paths.stream()
@@ -269,7 +343,17 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
 
         @Override
         public V update(V value) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            String proposedId = value.getId();
+            String sanitizedId = sanitizeId(proposedId);
+
+            Path sp = getPathForSanitizedId(sanitizedId);
+
+            // TODO: improve locking
+            synchronized (FileMapStorageProviderFactory.class) {
+                writeYamlContents(sp, value);
+            }
+
+            return value;
         }
 
         @Override
@@ -286,12 +370,12 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
 
         @Override
         public long delete(QueryParameters<M> queryParameters) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return read(queryParameters).map(AbstractEntity::getId).map(this::delete).filter(a -> a).count();
         }
 
         @Override
         public long getCount(QueryParameters<M> queryParameters) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return read(queryParameters).count();
         }
 
         @Override
@@ -305,8 +389,27 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
         }
 
         private Path getDataDirectory() {
-            return dataDirectoryFunc.apply(defaultRealmId);
+            return dataDirectoryFunc.apply(defaultRealmId == null ? null : sanitizeId(defaultRealmId));
         }
+
+        private void writeYamlContents(Path sp, V value) {
+            Path tempSp = sp.resolveSibling("." + getTxId() + "-" + sp.getFileName());
+            try (PathWriter w = new PathWriter(tempSp)) {
+                final Emitter emitter = new Emitter(DUMP_SETTINGS, w);
+                try (YamlWritingMechanism mech = new YamlWritingMechanism(emitter::emit)) {
+                    new MapEntityYamlContext<>(entityClass).writeValue(value, mech);
+                }
+                registerRenameOnCommit(tempSp, sp);
+            } catch (IOException ex) {
+                throw new IllegalStateException("Cannot write " + sp, ex);
+            }
+        }
+
+        protected abstract void touch(Path sp) throws IOException;
+
+        protected abstract void registerRenameOnCommit(Path tempSp, Path sp);
+
+        protected abstract String getTxId();
 
     }
 

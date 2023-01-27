@@ -14,8 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.file.yaml.parser;
+package org.keycloak.models.map.storage.file.yaml;
 
+import org.keycloak.models.map.storage.file.common.YamlContext;
 import java.util.LinkedList;
 import java.util.function.Supplier;
 

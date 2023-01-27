@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.file.yaml.parser;
+package org.keycloak.models.map.storage.file.yaml;
 
-import org.keycloak.models.map.storage.file.yaml.parser.YamlContext.DefaultListContext;
-import org.keycloak.models.map.storage.file.yaml.parser.YamlContext.DefaultMapContext;
-import org.keycloak.models.map.storage.file.yaml.parser.YamlContext.DefaultObjectContext;
-
-import java.io.IOException;
+import org.keycloak.models.map.storage.file.common.YamlContext;
+import org.keycloak.models.map.storage.file.common.YamlContext.DefaultListContext;
+import org.keycloak.models.map.storage.file.common.YamlContext.DefaultMapContext;
+import org.keycloak.models.map.storage.file.common.YamlContext.DefaultObjectContext;
 import java.io.InputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumMap;
@@ -104,6 +104,7 @@ public class YamlContextAwareParser<E> {
         this.contextStack = new YamlContextStack(initialContext);
     }
 
+    @SuppressWarnings("unchecked")
     protected <E> E parse() {
         consumeEvent(Event.ID.StreamStart, "Expected a stream");
 
@@ -203,7 +204,7 @@ public class YamlContextAwareParser<E> {
     private static final EnumMap<Event.ID, Supplier<YamlContext<?>>> CONTEXT_CONSTRUCTORS = new EnumMap<>(Event.ID.class);
     static {
         CONTEXT_CONSTRUCTORS.put(ID.Scalar, DefaultObjectContext::new);
-        CONTEXT_CONSTRUCTORS.put(ID.SequenceStart, DefaultListContext::new);
+        CONTEXT_CONSTRUCTORS.put(ID.SequenceStart, DefaultListContext::newDefaultListContext);
         CONTEXT_CONSTRUCTORS.put(ID.MappingStart, DefaultMapContext::new);
     }
 

@@ -14,12 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.file.yaml.parser.map;
+package org.keycloak.models.map.storage.file.common;
 
-import org.keycloak.models.map.storage.file.yaml.parser.YamlContext;
-import org.keycloak.models.map.storage.file.yaml.parser.YamlContext.DefaultListContext;
-import org.keycloak.models.map.storage.file.yaml.parser.YamlContext.DefaultMapContext;
+import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.TreeMap;
+import org.keycloak.models.map.common.UndefinedValuesUtils;
+import org.keycloak.models.map.storage.file.common.YamlContext.DefaultListContext;
+import org.keycloak.models.map.storage.file.common.YamlContext.DefaultMapContext;
+import org.keycloak.models.map.storage.file.yaml.YamlContextAwareParser;
 
 /**
  * YAML parser context which suitable for properties stored in a {@code Map<String, List<String>>}
@@ -46,9 +50,22 @@ public class AttributesLikeYamlContext extends DefaultMapContext {
     }
 
     @Override
-    public YamlContext<?> getContext(String nameOfSubcontext) {
+    public AttributeValueYamlContext getContext(String nameOfSubcontext) {
         // regardless of the key name, the values need to be converted into Set<String> which is the purpose of AttributeValueYamlContext
         return new AttributeValueYamlContext();
+    }
+
+    @Override
+    public void writeValue(Map<String, Object> value, WritingMechanism mech) {
+        if (UndefinedValuesUtils.isUndefined(value)) return;
+        mech.writeMapping(() -> {
+            AttributeValueYamlContext c = getContext(YamlContextAwareParser.ARRAY_CONTEXT);
+            for (Map.Entry<String, Object> entry : new TreeMap<>(value).entrySet()) {
+                @SuppressWarnings("unchecked")
+                Collection<String> attrValues = (Collection<String>) entry.getValue();
+                mech.writePair(entry.getKey(), () -> c.writeValue(attrValues, mech));
+            }
+        });
     }
 
     private static class Prefixed extends AttributesLikeYamlContext {
@@ -82,7 +99,22 @@ public class AttributesLikeYamlContext extends DefaultMapContext {
         }
     }
 
-    public static class AttributeValueYamlContext extends DefaultListContext {
+    public static class AttributeValueYamlContext extends DefaultListContext<String> {
+
+        public AttributeValueYamlContext() {
+            super(String.class);
+        }
+
+        @Override
+        public void writeValue(Collection<String> value, WritingMechanism mech) {
+            if (UndefinedValuesUtils.isUndefined(value)) return;
+            if (value.size() == 1) {
+                mech.writeObject(value.iterator().next());
+            } else {
+                //sequence
+                super.writeValue(value, mech);
+            }
+        }
 
         @Override
         public void add(Object value) {

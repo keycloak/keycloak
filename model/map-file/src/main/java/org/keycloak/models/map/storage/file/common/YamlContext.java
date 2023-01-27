@@ -14,12 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.file.yaml.parser;
+package org.keycloak.models.map.storage.file.common;
 
+import org.keycloak.models.map.common.UndefinedValuesUtils;
+import org.keycloak.models.map.storage.file.yaml.YamlContextAwareParser;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import static org.keycloak.models.map.common.CastUtils.cast;
 
 /**
  * A class implementing a {@code YamlContext} interface represents a transformer
@@ -36,13 +41,18 @@ import java.util.Map;
  * is at the beginning of YAML document. Every mapping key and every sequence then
  * represents next level of nesting.
  *
- * <h3>Examples</h3>
- *
- *
  * @author hmlnarik
  * @param <V> Type of the result
  */
 public interface YamlContext<V> {
+
+    /**
+     * Writes the given value using {@link WritingMechanism}.
+     *
+     * @param value
+     * @param mech
+     */
+    void writeValue(V value, WritingMechanism mech);
 
     /**
      * Called after reading a key of map entry in YAML file and before reading its value.
@@ -59,9 +69,7 @@ public interface YamlContext<V> {
      * @see DefaultListContext
      * @see DefaultMapContext
      */
-    default YamlContext<?> getContext(String nameOfSubcontext) {
-        return null;
-    }
+    YamlContext<?> getContext(String nameOfSubcontext);
 
     /**
      * Modifies the {@link #getResult() result returned} from within this context by
@@ -111,21 +119,66 @@ public interface YamlContext<V> {
             return result;
         }
 
+        @Override
+        public void writeValue(Object value, WritingMechanism mech) {
+            if (UndefinedValuesUtils.isUndefined(value)) return;
+            mech.writeObject(value);
+        }
+
+        @Override
+        public YamlContext<?> getContext(String nameOfSubcontext) {
+            return null;
+        }
     }
 
-    public static class DefaultListContext implements YamlContext<List<Object>> {
-        private final List<Object> result = new LinkedList<>();
+    public static class DefaultListContext<T> implements YamlContext<Collection<T>> {
+        private final List<T> result = new LinkedList<>();
+
+        protected final Class<T> itemClass;
+
+        public static DefaultListContext<Object> newDefaultListContext() {
+            return new DefaultListContext<>(Object.class);
+        }
+
+        public DefaultListContext(Class<T> itemClass) {
+            this.itemClass = itemClass;
+        }
 
         @Override
         public void add(Object value) {
-            result.add(value);
+            result.add(cast(value, itemClass));
         }
 
         @Override
-        public List<Object> getResult() {
+        public List<T> getResult() {
             return result;
         }
 
+        @Override
+        @SuppressWarnings("unchecked")
+        public void writeValue(Collection<T> value, WritingMechanism mech) {
+            if (UndefinedValuesUtils.isUndefined(value)) return;
+            mech.writeSequence(() -> value.forEach(v -> getContextByValue(v).writeValue(v, mech)));
+        }
+
+        @Override
+        public YamlContext<?> getContext(String nameOfSubcontext) {
+            return null;
+        }
+
+        private YamlContext getContextByValue(Object value) {
+            YamlContext res = getContext(YamlContextAwareParser.ARRAY_CONTEXT);
+            if (res != null) {
+                return res;
+            }
+            if (value instanceof Collection) {
+                return new DefaultListContext<>(Object.class);
+            } else if (value instanceof Map) {
+                return new DefaultMapContext();
+            } else {
+                return new DefaultObjectContext();
+            }
+        }
     }
 
     public static class DefaultMapContext implements YamlContext<Map<String, Object>> {
@@ -141,6 +194,38 @@ public interface YamlContext<V> {
             return result;
         }
 
+        @Override
+        public void writeValue(Map<String, Object> value, WritingMechanism mech) {
+            if (UndefinedValuesUtils.isUndefined(value)) return;
+            mech.writeMapping(() -> {
+                final TreeMap<String, Object> sortedMap = new TreeMap<>(value);
+                sortedMap.forEach(
+                  (key, val) -> mech.writePair(
+                                  key,
+                                  () -> getContext(key, val).writeValue(val, mech)
+                                )
+                );
+            });
+        }
+
+        @Override
+        public YamlContext getContext(String nameOfSubcontext) {
+            return null;
+        }
+
+        private YamlContext getContext(String nameOfSubcontext, Object value) {
+            YamlContext res = getContext(nameOfSubcontext);
+            if (res != null) {
+                return res;
+            }
+            if (value instanceof Collection) {
+                return new DefaultListContext<>(Object.class);
+            } else if (value instanceof Map) {
+                return new DefaultMapContext();
+            } else {
+                return new DefaultObjectContext();
+            }
+        }
     }
 
 }
