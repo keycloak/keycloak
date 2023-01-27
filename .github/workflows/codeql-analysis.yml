@@ -21,25 +21,25 @@ defaults:
 
 jobs:
 
-  changes:
-    name: Check changes
+  conditional:
+    name: Check conditional workflows and jobs
     if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
-      java: ${{ steps.changes.outputs.java }}
-      themes: ${{ steps.changes.outputs.themes }}
-      js-adapter: ${{ steps.changes.outputs.js-adapter }}
+      java: ${{ steps.conditional.outputs.codeql-java }}
+      themes: ${{ steps.conditional.outputs.codeql-themes }}
+      js-adapter: ${{ steps.conditional.outputs.codeql-js_adapter }}
     steps:
       - uses: actions/checkout@v3
 
-      - id: changes
-        uses: ./.github/actions/changed-files
+      - id: conditional
+        uses: ./.github/actions/conditional
 
   java:
     name: CodeQL Java
-    needs: changes
+    needs: conditional
     runs-on: ubuntu-latest
-    if: needs.changes.outputs.java == 'true'
+    if: needs.conditional.outputs.java == 'true'
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}
 
@@ -66,9 +66,9 @@ jobs:
 
   js-adapter:
     name: CodeQL JavaScript Adapter
-    needs: changes
+    needs: conditional
     runs-on: ubuntu-latest
-    if: needs.changes.outputs.js-adapter == 'true'
+    if: needs.conditional.outputs.js-adapter == 'true'
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}
 
@@ -95,9 +95,9 @@ jobs:
 
   themes:
     name: CodeQL Themes
-    needs: changes
+    needs: conditional
     runs-on: ubuntu-latest
-    if: needs.changes.outputs.themes == 'true'
+    if: needs.conditional.outputs.themes == 'true'
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}
 
@@ -125,7 +125,7 @@ jobs:
   check:
     name: Status Check - CodeQL
     if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
-    needs: [changes, java, js-adapter, themes]
+    needs: [conditional, java, js-adapter, themes]
     runs-on: ubuntu-latest
 
     steps:
@@ -134,17 +134,17 @@ jobs:
       - name: CodeQL Java
         uses: ./.github/actions/checks-job-pass
         with:
-          required: ${{ needs.changes.outputs.java }}
+          required: ${{ needs.conditional.outputs.java }}
           conclusion: ${{ needs.java.outputs.conclusion }}
 
       - name: CodeQL JavaScript Adapter
         uses: ./.github/actions/checks-job-pass
         with:
-          required: ${{ needs.changes.outputs.js-adapter }}
+          required: ${{ needs.conditional.outputs.js-adapter }}
           conclusion: ${{ needs.js-adapter.outputs.conclusion }}
 
       - name: CodeQL Themes
         uses: ./.github/actions/checks-job-pass
         with:
-          required: ${{ needs.changes.outputs.themes }}
+          required: ${{ needs.conditional.outputs.themes }}
           conclusion: ${{ needs.themes.outputs.conclusion }}
