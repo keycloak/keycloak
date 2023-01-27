@@ -40,7 +40,7 @@ jobs:
 
   build:
     name: Build
-    if: needs.conditional.outputs.java == 'true'
+    if: needs.conditional.outputs.ci == 'true'
     runs-on: ubuntu-latest
     needs: conditional
     steps:
