@@ -328,7 +328,6 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 AbstractUserProfileProvider::editUsernameCondition,
                 AbstractUserProfileProvider::readUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
-                new AttributeValidatorMetadata(UsernameIDNHomographValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
                 new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
 

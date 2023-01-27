@@ -15,7 +15,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.crypto.Cipher;
@@ -124,4 +123,11 @@ public interface CryptoProvider {
      * @return decorated factory
      */
     SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate);
+
+    /**
+     * @return Allowed key sizes of RSA key modulus, which this cryptoProvider supports
+     */
+    default String[] getSupportedRsaKeySizes() {
+        return new String[] {"1024", "2048", "4096"};
+    }
 }

@@ -312,7 +312,7 @@
             </div>
         </fieldset>
 
-        <fieldset>
+        <fieldset data-ng-show="serverInfo.featureEnabled('KERBEROS')">
             <legend id="kerberosIntegrationHeader" collapsed><span class="text">{{:: 'kerberos-integration' | translate}}</span></legend>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="allowKerberosAuthentication">{{:: 'allow-kerberos-authentication' | translate}} </label>

@@ -27,7 +27,10 @@ import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import org.infinispan.commons.util.FileLookupFactory;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
 
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
@@ -69,7 +72,7 @@ public class CacheBuildSteps {
                         .scope(ApplicationScoped.class)
                         .unremovable()
                         .setRuntimeInit()
-                        .runtimeValue(recorder.createCacheInitializer(config, shutdownContext)).done());
+                        .runtimeValue(recorder.createCacheInitializer(config, isMetricsEnabled(), shutdownContext)).done());
             } catch (Exception cause) {
                 throw new RuntimeException("Failed to read clustering configuration from [" + url + "]", cause);
             }
@@ -78,4 +81,7 @@ public class CacheBuildSteps {
         }
     }
 
+    private boolean isMetricsEnabled() {
+        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat(MetricsOptions.METRICS_ENABLED.getKey())).orElse(false);
+    }
 }

@@ -108,7 +108,7 @@ To set the logging format for a logged line, perform these steps:
 . Build your desired format template using the preceding table.
 . Enter the following command:
 +
-<@kc.start parameters="--log-format=\"\'<format>\'\""/>
+<@kc.start parameters="--log-console-format=\"\'<format>\'\""/>
 
 Note that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI. Therefore, consider setting it in the configuration file instead.
 
