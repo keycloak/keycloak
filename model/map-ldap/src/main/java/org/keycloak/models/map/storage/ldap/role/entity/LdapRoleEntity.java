@@ -332,4 +332,19 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
         return consumer.apply(this);
     }
 
+    @Override
+    public <K, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> Object mapGet(EF field, K key) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <K, T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> void mapPut(EF field, K key, T value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <K, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> Object mapRemove(EF field, K key) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
 }
