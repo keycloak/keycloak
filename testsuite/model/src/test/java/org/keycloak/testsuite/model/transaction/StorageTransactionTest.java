@@ -30,8 +30,8 @@ import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.util.TransactionController;
 import org.keycloak.utils.LockObjectsForModification;
 
-import javax.persistence.OptimisticLockException;
-import javax.persistence.PessimisticLockException;
+import jakarta.persistence.OptimisticLockException;
+import jakarta.persistence.PessimisticLockException;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.equalTo;
