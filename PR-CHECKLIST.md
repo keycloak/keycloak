@@ -17,4 +17,4 @@ Merging a PR:
 
 * In most cases a PR should be merged by a team maintainer in the affected area
 * Global maintainers can merge any PRs, but this is considered a fallback
-* If a PR affects multiple areas it can be merged by any of the affected team maintainers
+* If a PR affects multiple areas it can be merged by any of the affected team maintainers as long as someone from each affected team has completed a review.
