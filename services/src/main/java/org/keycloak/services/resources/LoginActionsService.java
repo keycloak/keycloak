@@ -826,11 +826,11 @@ public class LoginActionsService {
             protected Response authenticationComplete() {
                 if (firstBrokerLogin) {
                     authSession.setAuthNote(AbstractIdpAuthenticator.FIRST_BROKER_LOGIN_SUCCESS, identityProviderAlias);
-                    event.success();
                 } else {
                     String authStateNoteKey = PostBrokerLoginConstants.PBL_AUTH_STATE_PREFIX + identityProviderAlias;
                     authSession.setAuthNote(authStateNoteKey, "true");
                 }
+                event.success();
 
                 return redirectToAfterBrokerLoginEndpoint(authSession, firstBrokerLogin);
             }
