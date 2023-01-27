@@ -5,6 +5,7 @@
 :guide-title: ${title}
 :guide-summary: ${summary}
 :guide-priority: ${priority}
+:version: ${version}
 
 [[${id}]]
 = ${title}

@@ -1,0 +1,10 @@
+## Login to account console
+
+Let's now try to login to the account console to verify the user is configured correctly.
+
+. Open the {links-account-console}
+. Login with `myuser` and the password you created earlier
+
+You should now be logged-in to the account console where users can manage their accounts.
+
+image::account-console.png[Keycloak Account Console]
