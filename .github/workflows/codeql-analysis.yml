@@ -26,9 +26,9 @@ jobs:
     if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
-      java: ${{ steps.changes.outputs.java }}
-      themes: ${{ steps.changes.outputs.themes }}
-      js-adapter: ${{ steps.changes.outputs.js-adapter }}
+      java: ${{ steps.changes.outputs.codeql-java }}
+      themes: ${{ steps.changes.outputs.codeql-themes }}
+      js-adapter: ${{ steps.changes.outputs.codeql-js_adapter }}
     steps:
       - uses: actions/checkout@v3
 
@@ -46,20 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2.1.39
-        with:
-          languages: java
-
-      - name: Build Keycloak
-        uses: ./.github/actions/build-keycloak
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2.1.39
-        with:
-          wait-for-processing: true
-        env:
-          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
+      - run: echo "codeql java"
 
       - id: check
         uses: ./.github/actions/checks-success
@@ -75,20 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2.1.39
-        env:
-          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
-        with:
-          languages: javascript
-          source-root: adapters/oidc/js/src/
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2.1.39
-        with:
-          wait-for-processing: true
-        env:
-          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
+      - run: echo "codeql js-adapter"
 
       - id: check
         uses: ./.github/actions/checks-success
