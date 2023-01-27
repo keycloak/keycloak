@@ -21,9 +21,23 @@ import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import java.io.File;
+import java.nio.file.Path;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelName;
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelNames;
 
 /**
  * A {@link MapStorageProviderFactory} that creates file-based {@link MapStorageProvider}s.
@@ -35,11 +49,13 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
         EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "file";
-    private Config.Scope config;
+    private Path rootRealmsDirectory;
+    private final Map<String, Function<String, Path>> rootAreaDirectories = new HashMap<>();    // Function: (realmId) -> path
+    private final Map<Class<?>, FileMapStorage<?, ?>> storages = new HashMap<>();
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return new FileMapStorageProvider();
+        return new FileMapStorageProvider(this);
     }
 
     @Override
@@ -54,7 +70,40 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
 
     @Override
     public void init(Config.Scope config) {
-        this.config = config;
+        final String dir = config.get("dir");
+        rootRealmsDirectory = dir == null ? null : Path.of(dir);
+        getModelNames().stream()
+          .filter(n -> ! Objects.equals(n, getModelName(RealmModel.class)))
+          .forEach(n -> rootAreaDirectories.put(n, getRootDir(rootRealmsDirectory, n, config.get("dir." + n))));
+
+        if (rootAreaDirectories != null) {
+            rootAreaDirectories.put(getModelName(RealmModel.class), realmId -> rootRealmsDirectory);
+        }
+    }
+
+    private static final Pattern FORBIDDEN_CHARACTERS = Pattern.compile("[\\.\\" + File.separator + "]");
+
+    private static Function<String, Path> getRootDir(Path rootRealmsDirectory, String areaName, String dirFromConfig) {
+        if (dirFromConfig != null) {
+            if (rootRealmsDirectory == null) {
+                return p -> { throw new IllegalStateException("Directory for " + areaName + " area not configured."); };
+            }
+
+            Path p = Path.of(dirFromConfig);
+            return realmId -> p;
+        } else {
+            return realmId -> {
+              if (realmId == null || FORBIDDEN_CHARACTERS.matcher(realmId).find()) {
+                  throw new IllegalArgumentException("Realm needed for constructing the path to " + areaName + " but not known");
+              }
+
+              final Path path = rootRealmsDirectory
+                .resolve(realmId)
+                .resolve(areaName);
+
+              return path;
+            };
+        }
     }
 
     @Override
@@ -64,5 +113,19 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    public <V extends AbstractEntity & UpdatableEntity, M> FileMapStorage<V, M> initFileStorage(Class<M> modelType) {
+        String name = getModelName(modelType, modelType.getSimpleName());
+        FileMapStorage<V, M> res = new FileMapStorage<>(ModelEntityUtil.getEntityType(modelType), rootAreaDirectories.get(name));
+        return res;
+    }
+
+    <M> FileMapStorage getStorage(Class<M> modelType, Flag[] flags) {
+        try {
+            return storages.computeIfAbsent(modelType, n -> initFileStorage(modelType));
+        } catch (ConcurrentModificationException ex) {
+            return storages.get(modelType);
+        }
     }
 }
