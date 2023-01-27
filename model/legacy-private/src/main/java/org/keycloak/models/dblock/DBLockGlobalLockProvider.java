@@ -21,7 +21,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.locking.GlobalLockProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.time.Duration;
 import java.util.Objects;
@@ -69,8 +68,12 @@ public class DBLockGlobalLockProvider implements GlobalLockProvider {
             LOG.debug("DBLockGlobalLockProvider does not support setting timeToWaitForLock per lock.");
         }
 
+        if (dbLockProvider.getCurrentLock() != null) {
+            throw new IllegalStateException("this lock is not reentrant, already locked for " + dbLockProvider.getCurrentLock());
+        }
+
+        dbLockProvider.waitForLock(stringToNamespace(lockName));
         try {
-            dbLockProvider.waitForLock(stringToNamespace(lockName));
             return task.run(session);
         } finally {
             releaseLock(lockName);

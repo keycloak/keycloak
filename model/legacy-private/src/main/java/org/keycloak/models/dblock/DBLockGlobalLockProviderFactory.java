@@ -28,15 +28,11 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 public class DBLockGlobalLockProviderFactory implements GlobalLockProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "dblock";
-    private DBLockManager dbLockManager;
 
     @Override
     public GlobalLockProvider create(KeycloakSession session) {
-        if (dbLockManager == null) {
-            dbLockManager = new DBLockManager(session);
-            dbLockManager.checkForcedUnlock();
-        }
-
+        DBLockManager dbLockManager = new DBLockManager(session);
+        dbLockManager.checkForcedUnlock();
         return new DBLockGlobalLockProvider(session, dbLockManager.getDBLock());
     }
 
