@@ -41,7 +41,7 @@ jobs:
 
   test:
     name: Test output
-    needs: changes
+    needs: conditional
     runs-on: ubuntu-latest
     steps:
       - run: echo ${{needs.conditional.outputs.java}}
