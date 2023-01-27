@@ -17,7 +17,7 @@ echo "--------------------------------------------------------------------------
 echo "Run conditions"
 echo "--------------------------------------------------------------------------------"
 
-cat .github/actions/changed-files/conditions | grep '=' | grep -v '#' | while read c; do
+cat .github/actions/conditional/conditions | grep '=' | grep -v '#' | while read c; do
   KEY=`echo $c | cut -d '=' -f 1`
   PATTERN=`echo $c | cut -d '=' -f 2`
 

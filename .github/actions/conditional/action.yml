@@ -21,4 +21,4 @@ runs:
     - id: changes
       name: Find changes
       shell: bash
-      run: .github/actions/changed-files/conditional.sh origin ${{ github.base_ref }}
+      run: .github/actions/conditional/conditional.sh origin ${{ github.base_ref }}
