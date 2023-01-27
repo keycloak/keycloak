@@ -26,7 +26,6 @@ jobs:
     if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
-      ci: ${{ steps.conditional.outputs.ci }}
       java: ${{ steps.conditional.outputs.codeql-java }}
       themes: ${{ steps.conditional.outputs.codeql-themes }}
       js-adapter: ${{ steps.conditional.outputs.codeql-js_adapter }}
@@ -35,9 +34,6 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
-
-      - run: |
-          echo ${{ steps.conditional.outputs.codeql-java }}
 
   test:
     name: Test output
