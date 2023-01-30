@@ -443,6 +443,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       ["USER", t("common:users")],
       ["CLIENT_ROLE", t("common:clientRoles")],
       ["IDP", t("common:identityProviders")],
+      ["GROUP", t("common:groups")],
     ]);
 
     return <span>{typeMap.get(importRecord.resourceType)}</span>;
