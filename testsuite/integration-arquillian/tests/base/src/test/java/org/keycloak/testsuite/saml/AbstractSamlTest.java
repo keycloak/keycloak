@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.saml;
 
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
@@ -17,8 +20,10 @@ import javax.ws.rs.core.UriBuilderException;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import java.net.URI;
 import java.security.KeyFactory;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
@@ -39,9 +44,11 @@ import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 public abstract class AbstractSamlTest extends AbstractAuthTest {
 
     public static final String REALM_NAME = "demo";
-    public static final String REALM_PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=";
-    public static final String REALM_PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
-    public static final String REALM_SIGNING_CERTIFICATE = "MIIBkTCB+wIGAUkZB1wLMA0GCSqGSIb3DQEBCwUAMA8xDTALBgNVBAMTBGRlbW8wHhcNMTQxMDE2MTI1NDEzWhcNMjQxMDE2MTI1NTUzWjAPMQ0wCwYDVQQDEwRkZW1vMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABMA0GCSqGSIb3DQEBCwUAA4GBAI9moVwZxiEvzfvyL0zqyzRP4qnEdYQ/l/Nl78OAed25hdKpVpNv8i7DwM1QscWQhrtfGImD0480eoOUfe1rU9k6gNdNpR6kYAz17A/OsovpTFF0cIQE7HPqumpHfdbeW0jEjLNT2Od/PXdaIijVOdbJn8iF//nnItrwPbNUBU75";
+
+    // From testsaml.json
+    public static final String REALM_PRIVATE_KEY = "MIIEpQIBAAKCAQEA3wAQl0VcOVlT7JIttt0cVpksLDjASjfI9zl0c7U5eMWAt0SCOT1EIMjPjtrjO8eyudi7ckwP3NcEHL3QKoNEzwxHpccW7Y2RwVfsFHXkSRvWaxFtxHGNd1NRF4RNMGsCdtCyaybhknItTnOWjRy4jsgHmxDN8rwOWCF0RfnNwXWGefUcF1fe5vpNj+1u2diIUgaR9GC4zpzaDNT68fhzSt92F6ZaU4/niRdfBOoBxHW25HSqqsDKS/xMhlBB19UFUsKTraPsJjQTEpi0vqdpx88a2NjzKRaShHa/p08SyY5cZtgU99TjW7+uvWD0ka4Wf+BziyJSU0xCyFxek5z95QIDAQABAoIBABDt66na8CdtFVFOalNe8eR5IxYFsO4cJ2ZCtwkvEY/jno6gkCpRm7cex53BbE2A2ZwA939ehY3EcmF5ijDQCmHq6BLjzGUjFupQscbT3w2AeYS4rAFP2ueGLGUr/BgtkjWm869CzQ6AcIQWLlsZemwMhNdMLUu85HHjCEq6WNko3fnZ3z0vigSeV7u5LpYVlSQ6dQnjBU51iL7lmeTRZjzIQ8RSpuwi/7K+JKeHFaUSatb40lQRSnAa/ZJgtIKgmVl21wPuCmQALSB/orY6jMuXFpyAOZE3CuNQr18E3o3hPyPiuAR9vq4DYQbRE0QmsLe/eFpl2lxay+EDb9KcxnkCgYEA9QcldhmzqKJMNOw8s/dwUIiJEWTpbi3WyMtY9vIDbBjVmeuX1YerBRfX3KhaHovgcw4Boc6LQ7Kuz7J/1OJ0PvMwF3y17ufq6V3WAXbzivTSCRgd1/53waPdrYiRAeAhTWVjL+8FvUbT1YlWSMYbXTdK8LZWm0WTMcNb9xuwIPMCgYEA6PxoETNRuJNaAKiVNBQr4p+goaUKC4m/a1iwff4Sk7B8eI/AsNWsowe9157QUOmdiVTwuIvkX8ymEsvgQxM7l5TVly6TuQNtf/oDMgj3h+23Wy50v4ErLTxYTnk4YGvAbhGEeRcxtVd3GP74avgID/pUiWyS8Ii052LR6l1PW8cCgYEAz987McFGQKdHvZI5QXiHKVtb5YzV2Go9EGYrWH0i2B8Nf6J2UmnhddWvhPyyT73dMd7NFaezUECTu5K0jjd75TfNMe/ULRVFnqvD9cQjg1yFn798+hRhJr9NPn5gftXViuKbzjuag+RFrJ/xupWO+3sAMcyPFvVkldAmAjLULm8CgYEAkDacW/k+HlfnH/05zbCmsXJJRYUYwKeU+uc859/6s7xMb3vbtBmu8IL8OZkuLMdOIhGXp0PAKqRML9pOiHZBLsSLqTbFbYH3p32juLbgMR0tn50T2u4jQa7WokxaXySTSg5Bx4pZ1Hu9VpWMQvogU3OKHD4+ffDAuXDrqnvzgUUCgYEAvoWI1az7E/LP59Fg6xPDSDnbl9PlQvHY8G7ppJXYzSvVWlk7Wm1VoTA4wFonD24okJ8jgRw6EBTRkM0Y8dg2dKvynJw3oUJdhmHL4mnb6bOhMbFU03cg9cm/YR1Vb/1eJXqrFYdnrMXx9T9udUT6OAKCkER+/uRv8gARRSzOYIE=";
+    public static final String REALM_PUBLIC_KEY;
+    public static final String REALM_SIGNING_CERTIFICATE;
 
     public static final String SAML_ASSERTION_CONSUMER_URL_SALES_POST = AUTH_SERVER_SCHEME + "://localhost:" + (AUTH_SERVER_SSL_REQUIRED ? AUTH_SERVER_PORT : 8080) + "/sales-post/saml";
     public static final String SAML_CLIENT_ID_SALES_POST = "http://localhost:8280/sales-post/";
@@ -69,6 +76,12 @@ public abstract class AbstractSamlTest extends AbstractAuthTest {
             KeyFactory kfRsa = KeyFactory.getInstance("RSA");
             SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY_PK = kfRsa.generatePrivate(new PKCS8EncodedKeySpec(Base64.getDecoder().decode(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY)));
             SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY_PK = kfRsa.generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)));
+
+            PrivateKey privateK = PemUtils.decodePrivateKey(REALM_PRIVATE_KEY);
+            PublicKey publicK = KeyUtils.extractPublicKey(privateK);
+            REALM_PUBLIC_KEY = PemUtils.encodeKey(publicK);
+            Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(new KeyPair(publicK, privateK), "demo");
+            REALM_SIGNING_CERTIFICATE = PemUtils.encodeCertificate(certificate);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

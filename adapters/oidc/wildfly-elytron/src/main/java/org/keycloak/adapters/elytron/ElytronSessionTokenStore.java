@@ -220,35 +220,41 @@ public class ElytronSessionTokenStore implements ElytronTokeStore, UserSessionMa
         HttpServerExchange exchange = ProtectedHttpServerExchange.class.cast(httpFacade.getScope(Scope.EXCHANGE).getAttachment(UNDERTOW_EXCHANGE)).getExchange();
         ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         SessionManager sessionManager = servletRequestContext.getDeployment().getSessionManager();
+        final boolean isDistributableSessionManager = sessionManager.getClass().getName().equals("org.wildfly.clustering.web.undertow.session.DistributableSessionManager");
 
         for (String id : ids) {
             // TODO: Workaround for WFLY-3345. Remove this once we fix KEYCLOAK-733. Same applies to legacy wildfly adapter.
-            Session session = sessionManager.getSession(null, new SessionConfig() {
+            Session session;
+            if (isDistributableSessionManager) {
+                session = sessionManager.getSession(exchange, new SessionConfig() {
 
-                @Override
-                public void setSessionId(HttpServerExchange exchange, String sessionId) {
-                }
+                    @Override
+                    public void setSessionId(HttpServerExchange exchange, String sessionId) {
+                    }
 
-                @Override
-                public void clearSession(HttpServerExchange exchange, String sessionId) {
-                }
+                    @Override
+                    public void clearSession(HttpServerExchange exchange, String sessionId) {
+                    }
 
-                @Override
-                public String findSessionId(HttpServerExchange exchange) {
-                    return id;
-                }
+                    @Override
+                    public String findSessionId(HttpServerExchange exchange) {
+                        return id;
+                    }
 
-                @Override
-                public SessionCookieSource sessionCookieSource(HttpServerExchange exchange) {
-                    return null;
-                }
+                    @Override
+                    public SessionCookieSource sessionCookieSource(HttpServerExchange exchange) {
+                        return null;
+                    }
 
-                @Override
-                public String rewriteUrl(String originalUrl, String sessionId) {
-                    return null;
-                }
+                    @Override
+                    public String rewriteUrl(String originalUrl, String sessionId) {
+                        return null;
+                    }
 
-            });
+                });
+            } else {
+                session = sessionManager.getSession(id);
+            }
 
             if (session != null) {
                 session.invalidate(exchange);

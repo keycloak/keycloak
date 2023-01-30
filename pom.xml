@@ -278,6 +278,7 @@
         <module>themes</module>
         <module>model</module>
         <module>util</module>
+        <module>rest</module>
         <module>integration</module>
         <module>adapters</module>
         <module>authz</module>
@@ -1449,6 +1450,11 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-ui</artifactId>
                 <version>${keycloak.admin-ui.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-rest-admin-ui-ext</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <!-- Openshift -->
