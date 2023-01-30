@@ -1,0 +1,12 @@
+# File patterns used to decide what workflows/jobs to execute for a given PR
+#
+# To test a pattern run '.github/actions/conditional/conditional.sh <remote name> <branch>'
+# Alternatively, run 'git diff <remote name>/<branch> <pattern>' (from the root directory)
+
+ci=*/pom.xml */src/main/ */src/test/
+
+operator=*/pom.xml */src/main/ */src/test/
+
+codeql-java=*.java
+codeql-themes=themes/
+codeql-js_adapter=adapters/oidc/js/
