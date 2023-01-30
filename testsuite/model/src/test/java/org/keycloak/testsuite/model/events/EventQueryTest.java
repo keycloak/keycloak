@@ -90,6 +90,7 @@ public class EventQueryTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             assertThat(eventStore.createQuery()
+                            .realm(realmId)
                             .firstResult(2)
                             .getResultStream()
                             .collect(Collectors.counting()),
@@ -166,6 +167,7 @@ public class EventQueryTest extends KeycloakModelTest {
                 EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
                 Set<Event> events = eventStore.createQuery()
+                        .realm(realmId)
                         .getResultStream().collect(Collectors.toSet());
 
                 assertThat(events, hasSize(1));
@@ -201,8 +203,8 @@ public class EventQueryTest extends KeycloakModelTest {
         // Check if events were created
         inComittedTransaction(session -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            assertThat(eventStore.createQuery().getResultStream().count(), is(1L));
-            assertThat(eventStore.createAdminQuery().getResultStream().count(), is(1L));
+            assertThat(eventStore.createQuery().realm(newRealmId).getResultStream().count(), is(1L));
+            assertThat(eventStore.createAdminQuery().realm(newRealmId).getResultStream().count(), is(1L));
         });
 
         // Remove realm
@@ -211,8 +213,8 @@ public class EventQueryTest extends KeycloakModelTest {
         // Check events were removed
         inComittedTransaction(session -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            assertThat(eventStore.createQuery().getResultStream().count(), is(0L));
-            assertThat(eventStore.createAdminQuery().getResultStream().count(), is(0L));
+            assertThat(eventStore.createQuery().realm(newRealmId).getResultStream().count(), is(0L));
+            assertThat(eventStore.createAdminQuery().realm(newRealmId).getResultStream().count(), is(0L));
         });
     }
 
