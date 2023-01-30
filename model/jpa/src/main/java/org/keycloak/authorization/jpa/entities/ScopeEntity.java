@@ -69,10 +69,6 @@ public class ScopeEntity {
     @JoinColumn(name = "RESOURCE_SERVER_ID")
     private ResourceServerEntity resourceServer;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
-    @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "SCOPE_ID"), inverseJoinColumns = @JoinColumn(name = "POLICY_ID"))
-    private List<PolicyEntity> policies;
-
     public String getId() {
         return id;
     }
@@ -111,17 +107,6 @@ public class ScopeEntity {
 
     public ResourceServerEntity getResourceServer() {
         return resourceServer;
-    }
-
-    public List<PolicyEntity> getPolicies() {
-        if (policies == null) {
-            policies = new LinkedList<>();
-        }
-        return policies;
-    }
-
-    public void setPolicies(List<PolicyEntity> policies) {
-        this.policies = policies;
     }
 
     public void setResourceServer(final ResourceServerEntity resourceServer) {
