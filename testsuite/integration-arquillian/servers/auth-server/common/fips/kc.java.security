@@ -54,6 +54,6 @@ fips.ssl.TrustManagerFactory.algorithm=PKIX
 # JKS keystore type supports loading only JKS keystore files and the PKCS12
 # keystore type supports loading only PKCS12 keystore files.
 #
-# This is set to false as BCFIPS providers don't support JKS
-keystore.type.compat=false
-fips.keystore.type.compat=false
+# This is set to true as when set to false on OpenJDK 17 and PKCS12 is default keystore type, loading of default truststore (from java cacerts) fails.
+#keystore.type.compat=false
+#fips.keystore.type.compat=false
