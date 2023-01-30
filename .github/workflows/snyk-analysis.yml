@@ -32,6 +32,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2.1.39
         with:
           sarif_file: quarkus-report.sarif
+          category: snyk-quarkus-report
 
       - name: Check for vulnerabilities in Operator
         run: |
@@ -45,3 +46,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2.1.39
         with:
           sarif_file: operator-report.sarif
+          category: snyk-operator-report
