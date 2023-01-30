@@ -71,6 +71,7 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.junit.BeforeClass;
 
@@ -130,6 +131,11 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     @BeforeClass
     public static void checkNotMapStorage() {
         ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
+    }
+
+    @BeforeClass
+    public static void checkKerberosSupportedByAuthServer() {
+        KerberosUtils.assumeKerberosSupportExpected();
     }
 
     @Before

@@ -13,6 +13,7 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -112,7 +113,9 @@ public class ProfileTest {
 
         Path profileProperties = tempDirectory.resolve("profile.properties");
 
-        properties.store(new FileOutputStream(profileProperties.toFile()), "");
+        try(OutputStream out = Files.newOutputStream(profileProperties.toFile().toPath())) {
+            properties.store(out, "");
+        }
 
         Profile.configure(new PropertiesFileProfileConfigResolver());
 
@@ -169,7 +172,9 @@ public class ProfileTest {
 
         Path profileProperties = tempDirectory.resolve("profile.properties");
 
-        properties.store(new FileOutputStream(profileProperties.toFile()), "");
+        try(OutputStream out = Files.newOutputStream(profileProperties.toFile().toPath())) {
+            properties.store(out, "");
+        }
 
         Profile.configure(new PropertiesFileProfileConfigResolver());
 
