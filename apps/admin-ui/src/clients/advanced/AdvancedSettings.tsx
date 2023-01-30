@@ -250,6 +250,7 @@ export const AdvancedSettings = ({
             }
           >
             <MultiLineInput
+              id="defaultACRValues"
               name={convertAttributeNameToForm("attributes.default.acr.values")}
               stringify
             />
