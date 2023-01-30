@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.storage.hotRod.connections;
 
-import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
@@ -29,7 +28,6 @@ import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.storage.hotRod.locking.HotRodLocksUtils;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
@@ -155,8 +153,6 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
             }
 
             LOG.infof("HotRod client configuration was successful.");
-        } catch (LockAcquiringTimeoutException e) {
-            throw new RuntimeException(e);
         } finally {
             if (!HotRodLocksUtils.removeWithInstanceIdentifier(locksCache, HOT_ROD_INIT_LOCK_NAME)) {
                 throw new RuntimeException("Cannot release HotRod init lock");

@@ -67,26 +67,22 @@ public class GlobalLocksTest extends KeycloakModelTest {
             GlobalLockProvider lockProvider = s.getProvider(GlobalLockProvider.class);
             LOG.infof("Iteration %d entered session", index);
 
-            try {
-                lockProvider.withLock(LOCK_NAME, Duration.ofSeconds(60), innerSession -> {
-                    LOG.infof("Iteration %d entered locked block", index);
+            lockProvider.withLock(LOCK_NAME, Duration.ofSeconds(60), innerSession -> {
+                LOG.infof("Iteration %d entered locked block", index);
 
-                    // Locked block
-                    int c = counter.getAndIncrement();
+                // Locked block
+                int c = counter.getAndIncrement();
 
-                    try {
-                        Thread.sleep(rand.nextInt(100));
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
-                    }
+                try {
+                    Thread.sleep(rand.nextInt(100));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
+                }
 
-                    resultingList.add(c);
-                    return null;
-                });
-            } catch (LockAcquiringTimeoutException e) {
-                throw new RuntimeException(e);
-            }
+                resultingList.add(c);
+                return null;
+            });
         }));
 
         assertThat(resultingList, hasSize(numIterations));
@@ -145,20 +141,16 @@ public class GlobalLocksTest extends KeycloakModelTest {
                         .forEach(i ->
                                 inComittedTransaction(s -> {
                                     GlobalLockProvider lockProvider = s.getProvider(GlobalLockProvider.class);
-                                    try {
-                                        lockProvider.withLock("LOCK_" + i, session -> {
-                                            locksAcquired.countDown();
-                                            try {
-                                                testFinished.await();
-                                            } catch (InterruptedException e) {
-                                                Thread.currentThread().interrupt();
-                                                throw new RuntimeException(e);
-                                            }
-                                            return null;
-                                        });
-                                    } catch (LockAcquiringTimeoutException e) {
-                                        throw new RuntimeException(e);
-                                    }
+                                    lockProvider.withLock("LOCK_" + i, session -> {
+                                        locksAcquired.countDown();
+                                        try {
+                                            testFinished.await();
+                                        } catch (InterruptedException e) {
+                                            Thread.currentThread().interrupt();
+                                            throw new RuntimeException(e);
+                                        }
+                                        return null;
+                                    });
                                 })
                         );
             });

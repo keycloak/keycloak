@@ -76,7 +76,6 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.locking.GlobalLockProvider;
-import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
@@ -516,13 +515,9 @@ public class JpaMapStorageProviderFactory implements
     }
 
     private void update(Class<?> modelType, Connection connection, KeycloakSession session) {
-        try {
-            session.getProvider(GlobalLockProvider.class).withLock(modelType.getName(), lockedSession -> {
-                lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
-                return null;
-            });
-        } catch (LockAcquiringTimeoutException e) {
-                throw new RuntimeException("Acquiring " + modelType.getName() + " failed.", e);
-        }
+        session.getProvider(GlobalLockProvider.class).withLock(modelType.getName(), lockedSession -> {
+            lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
+            return null;
+        });
     }
 }
