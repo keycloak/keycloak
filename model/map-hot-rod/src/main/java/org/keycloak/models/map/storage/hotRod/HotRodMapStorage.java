@@ -205,6 +205,14 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
         return query.executeStatement();
     }
 
+    @Override
+    public boolean exists(String key) {
+        Objects.requireNonNull(key, "Key must be non-null");
+        K k = keyConverter.fromStringSafe(key);
+
+        return remoteCache.containsKey(k);
+    }
+
     public IckleQueryMapModelCriteriaBuilder<E, M> createCriteriaBuilder() {
         return new IckleQueryMapModelCriteriaBuilder<>(storedEntityDescriptor.getEntityTypeClass());
     }

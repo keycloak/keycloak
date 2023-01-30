@@ -84,7 +84,7 @@ public class MapPolicyStore implements PolicyStore {
         DefaultModelCriteria<Policy> mcb = forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.NAME, Operator.EQ, representation.getName());
 
-        if (tx.getCount(withCriteria(mcb)) > 0) {
+        if (tx.exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("Policy with name '" + representation.getName() + "' for " + resourceServer.getId() + " already exists");
         }
 

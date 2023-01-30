@@ -110,7 +110,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
             mcb = mcb.compare(SearchableFields.SCOPE_ID, Operator.EQ, scope.getId());
         }
 
-        if (tx.getCount(withCriteria(mcb)) > 0) {
+        if (tx.exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("Permission ticket for resource server: '" + resourceServer.getId()
                     + ", Resource: " + resource + ", owner: " + owner + ", scopeId: " + scope + " already exists.");
         }
