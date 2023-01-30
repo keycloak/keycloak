@@ -148,7 +148,7 @@ public class MapClientProvider implements ClientProvider {
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
         LOG.tracef("addClient(%s, %s, %s)%s", realm, id, clientId, getShortStackTrace());
 
-        if (id != null && tx.read(id) != null) {
+        if (id != null && tx.exists(id)) {
             throw new ModelDuplicateException("Client with same id exists: " + id);
         }
         if (clientId != null && getClientByClientId(realm, clientId) != null) {

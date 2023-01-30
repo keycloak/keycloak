@@ -84,11 +84,11 @@ public class MapClientScopeProvider implements ClientScopeProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
             .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        if (tx.getCount(withCriteria(mcb)) > 0) {
+        if (tx.exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("Client scope with name '" + name + "' in realm " + realm.getName());
         }
 
-        if (id != null && tx.read(id) != null) {
+        if (id != null && tx.exists(id)) {
             throw new ModelDuplicateException("Client scope exists: " + id);
         }
 

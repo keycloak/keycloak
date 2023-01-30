@@ -158,7 +158,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
             }
             transientUserSessions.put(entity.getId(), entity);
         } else {
-            if (id != null && userSessionTx.read(id) != null) {
+            if (id != null && userSessionTx.exists(id)) {
                 throw new ModelDuplicateException("User session exists: " + id);
             }
             entity = userSessionTx.create(entity);

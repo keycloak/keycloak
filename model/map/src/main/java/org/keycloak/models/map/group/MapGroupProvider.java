@@ -218,7 +218,7 @@ public class MapGroupProvider implements GroupProvider {
                 mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS) : 
                 mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, toParent.getId());
 
-        if (tx.getCount(withCriteria(mcb)) > 0) {
+        if (tx.exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("Group with name '" + name + "' in realm " + realm.getName() + " already exists for requested parent" );
         }
 
@@ -227,7 +227,7 @@ public class MapGroupProvider implements GroupProvider {
         entity.setRealmId(realm.getId());
         entity.setName(name);
         entity.setParentId(toParent == null ? null : toParent.getId());
-        if (id != null && tx.read(id) != null) {
+        if (id != null && tx.exists(id)) {
             throw new ModelDuplicateException("Group exists: " + id);
         }
         entity = tx.create(entity);

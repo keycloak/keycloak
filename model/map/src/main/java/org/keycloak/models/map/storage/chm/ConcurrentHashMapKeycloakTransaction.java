@@ -277,6 +277,23 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         return res + bdo.getCount();
     }
 
+    @Override
+    public boolean exists(String key) {
+        if (tasks.containsKey(key)) {
+            MapTaskWithValue o = tasks.get(key);
+            return o.getValue() != null;
+        }
+
+        // Check if there is a bulk delete operation in which case read the full entity
+        for (MapTaskWithValue val : tasks.values()) {
+            if (val instanceof ConcurrentHashMapKeycloakTransaction.BulkDeleteOperation) {
+                return read(key) != null;
+            }
+        }
+
+        return map.exists(key);
+    }
+
     private Stream<V> createdValuesStream(Predicate<? super K> keyFilter, Predicate<? super V> entityFilter) {
         return this.tasks.entrySet().stream()
           .filter(me -> keyFilter.test(keyConverter.fromStringSafe(me.getKey())))

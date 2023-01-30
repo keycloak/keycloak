@@ -63,7 +63,7 @@ public class MapEventStoreProvider implements EventStoreProvider {
         LOG.tracef("onEvent(%s)%s", event, getShortStackTrace());
         String id = event.getId();
 
-        if (id != null && authEventsTX.read(id) != null) {
+        if (id != null && authEventsTX.exists(id)) {
             throw new ModelDuplicateException("Event already exists: " + id);
         }
 
@@ -132,7 +132,7 @@ public class MapEventStoreProvider implements EventStoreProvider {
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
         LOG.tracef("clear(%s, %s)%s", event, includeRepresentation, getShortStackTrace());
         String id = event.getId();
-        if (id != null && authEventsTX.read(id) != null) {
+        if (id != null && authEventsTX.exists(id)) {
             throw new ModelDuplicateException("Event already exists: " + id);
         }
         String realmId = event.getRealmId();
