@@ -105,7 +105,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         int authSessionLifespanSeconds = getAuthSessionLifespan(realm);
         entity.setExpiration(timestamp + TimeAdapter.fromSecondsToMilliseconds(authSessionLifespanSeconds));
 
-        if (id != null && tx.read(id) != null) {
+        if (id != null && tx.exists(id)) {
             throw new ModelDuplicateException("Root authentication session exists: " + entity.getId());
         }
 

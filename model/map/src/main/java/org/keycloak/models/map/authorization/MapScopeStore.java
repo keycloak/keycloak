@@ -81,7 +81,7 @@ public class MapScopeStore implements ScopeStore {
         DefaultModelCriteria<Scope> mcb = forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        if (tx.getCount(withCriteria(mcb)) > 0) {
+        if (tx.exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("Scope with name '" + name + "' for " + resourceServer.getId() + " already exists");
         }
 

@@ -85,7 +85,7 @@ public class MapResourceStore implements ResourceStore {
                 .compare(SearchableFields.NAME, Operator.EQ, name)
                 .compare(SearchableFields.OWNER, Operator.EQ, owner);
 
-        if (tx.getCount(withCriteria(mcb)) > 0) {
+        if (tx.exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("Resource with name '" + name + "' for " + resourceServer.getId() + " already exists for request owner " + owner);
         }
 
