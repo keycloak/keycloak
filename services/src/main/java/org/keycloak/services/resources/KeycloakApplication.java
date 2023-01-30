@@ -33,7 +33,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.locking.GlobalLockProvider;
-import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -143,11 +142,7 @@ public class KeycloakApplication extends Application {
             @Override
             public void run(KeycloakSession session) {
                 GlobalLockProvider locks = session.getProvider(GlobalLockProvider.class);
-                try {
-                    exportImportManager[0] = locks.withLock(GlobalLockProvider.Constants.KEYCLOAK_BOOT, innerSession -> bootstrap());
-                } catch (LockAcquiringTimeoutException e) {
-                    throw new RuntimeException("Acquiring keycloak-boot lock failed.", e);
-                }
+                exportImportManager[0] = locks.withLock(GlobalLockProvider.Constants.KEYCLOAK_BOOT, innerSession -> bootstrap());
             }
         });
 
