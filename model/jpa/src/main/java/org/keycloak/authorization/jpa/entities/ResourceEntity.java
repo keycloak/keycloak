@@ -108,10 +108,6 @@ public class ResourceEntity {
     @BatchSize(size = 20)
     private List<ScopeEntity> scopes;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
-    @JoinTable(name = "RESOURCE_POLICY", joinColumns = @JoinColumn(name = "RESOURCE_ID"), inverseJoinColumns = @JoinColumn(name = "POLICY_ID"))
-    private List<PolicyEntity> policies;
-
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="resource", fetch = FetchType.LAZY)
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
@@ -197,18 +193,6 @@ public class ResourceEntity {
 
     public boolean isOwnerManagedAccess() {
         return ownerManagedAccess;
-    }
-
-    public List<PolicyEntity> getPolicies() {
-        if (policies == null) {
-            policies = new LinkedList<>();
-        }
-        return this.policies;
-    }
-
-
-    public void setPolicies(List<PolicyEntity> policies) {
-        this.policies = policies;
     }
 
     public Collection<ResourceAttributeEntity> getAttributes() {
