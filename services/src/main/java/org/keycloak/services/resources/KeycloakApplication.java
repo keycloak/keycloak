@@ -82,7 +82,7 @@ public class KeycloakApplication extends Application {
     protected Set<Object> singletons = new HashSet<>();
     protected Set<Class<?>> classes = new HashSet<>();
 
-    protected static KeycloakSessionFactory sessionFactory;
+    private static KeycloakSessionFactory sessionFactory;
 
     public KeycloakApplication() {
 
@@ -237,7 +237,7 @@ public class KeycloakApplication extends Application {
 
     }
 
-    public static KeycloakSessionFactory createSessionFactory() {
+    protected KeycloakSessionFactory createSessionFactory() {
         DefaultKeycloakSessionFactory factory = new DefaultKeycloakSessionFactory();
         factory.init();
         return factory;
