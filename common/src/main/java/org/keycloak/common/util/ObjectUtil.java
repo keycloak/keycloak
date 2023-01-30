@@ -17,9 +17,6 @@
 
 package org.keycloak.common.util;
 
-import java.util.Arrays;
-import java.util.Collection;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -78,29 +75,5 @@ public class ObjectUtil {
             }
         }
         return true;
-    }
-
-    /**
-     * Calling:
-     * <pre>joinValuesWithLogicalCondition("or", Arrays.asList("foo", "bar", "baz", "caz" ))</pre>
-     * will return "foo, bar, baz or caz"
-     *
-     * @param conditionText condition
-     * @param values values to be joined with the condition at the end
-     * @return see above
-     */
-    public static String joinValuesWithLogicalCondition(String conditionText, Collection<String> values) {
-        StringBuilder options = new StringBuilder();
-        int i = 1;
-        for (String o : values) {
-            if (i == values.size()) {
-                options.append(" " + conditionText + " ");
-            } else if (i > 1) {
-                options.append(", ");
-            }
-            options.append(o);
-            i++;
-        }
-        return options.toString();
     }
 }

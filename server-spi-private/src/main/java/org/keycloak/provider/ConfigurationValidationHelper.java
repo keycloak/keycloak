@@ -17,9 +17,9 @@
 
 package org.keycloak.provider;
 
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.utils.StringUtil;
 
 import java.util.List;
 
@@ -47,7 +47,7 @@ public class ConfigurationValidationHelper {
 
         String value = model.getConfig().getFirst(property.getName());
         if (value != null && !property.getOptions().contains(value)) {
-            String options = ObjectUtil.joinValuesWithLogicalCondition("or", property.getOptions());
+            String options = StringUtil.joinValuesWithLogicalCondition("or", property.getOptions());
             throw new ComponentValidationException("''{0}'' should be {1}", property.getLabel(), options);
         }
 
