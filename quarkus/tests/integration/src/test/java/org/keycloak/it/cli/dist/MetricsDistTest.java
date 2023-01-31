@@ -53,14 +53,6 @@ public class MetricsDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--http-relative-path=/auth", "--metrics-enabled=true" })
-    void testMetricsEndpointUsingRelativePath() {
-        when().get("/auth/metrics").then()
-                .statusCode(200)
-                .body(containsString("jvm_gc_"));
-    }
-
-    @Test
     @Launch({ "start-dev", "--metrics-enabled=true" })
     void testMetricsEndpointDoesNotEnableHealth() {
         when().get("/health").then()
@@ -69,7 +61,7 @@ public class MetricsDistTest {
 
     @Test
     void testUsingRelativePath(KeycloakDistribution distribution) {
-        for (String relativePath : List.of("/auth", "/auth/")) {
+        for (String relativePath : List.of("/auth", "/auth/", "auth")) {
             distribution.run("start-dev", "--metrics-enabled=true", "--http-relative-path=" + relativePath);
             if (!relativePath.endsWith("/")) {
                 relativePath = relativePath + "/";
@@ -81,7 +73,7 @@ public class MetricsDistTest {
 
     @Test
     void testMultipleRequests(KeycloakDistribution distribution) throws Exception {
-        for (String relativePath : List.of("/", "/auth/")) {
+        for (String relativePath : List.of("/", "/auth/", "auth")) {
             distribution.run("start-dev", "--metrics-enabled=true", "--http-relative-path=" + relativePath);
             CompletableFuture future = CompletableFuture.completedFuture(null);
 
@@ -90,7 +82,13 @@ public class MetricsDistTest {
                     @Override
                     public void run() {
                         for (int i = 0; i < 200; i++) {
-                            when().get(relativePath + "metrics").then().statusCode(200);
+                            String metricsPath = "metrics";
+
+                            if (!relativePath.endsWith("/")) {
+                                metricsPath = "/" + metricsPath;
+                            }
+
+                            when().get(relativePath + metricsPath).then().statusCode(200);
                         }
                     }
                 }), future);
