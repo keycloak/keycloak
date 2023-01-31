@@ -39,6 +39,11 @@ cat .github/actions/conditional/conditions | grep '=' | grep -v '#' | while read
     CHANGED=true
   fi
 
+  # Temporarily always run ci and operator as there's some issues with conditions
+  if [ "$KEY" == "ci" ] || [ "$KEY" == "operator" ]; then
+    CHANGED=true
+  fi
+
   echo "$KEY=$CHANGED"
 
   if [ "$GITHUB_OUTPUT" != "" ]; then
