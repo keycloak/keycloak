@@ -1,7 +1,8 @@
 #!/bin/bash -e
 
 REMOTE=$1
-BASE_REF=$2
+# BASE_REF=$2
+BASE_REF=""
 
 if [ "$BASE_REF" != "" ]; then
   if [ "$GITHUB_OUTPUT" != "" ]; then
