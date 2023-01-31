@@ -19,13 +19,18 @@ package org.keycloak.it.cli.dist;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.LegacyStore;
+import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -49,7 +54,17 @@ public class MetricsDistTest {
         when().get("/metrics").then()
                 .statusCode(200)
                 .body(containsString("jvm_gc_"))
-                .body(containsString("vendor_cache_manager_keycloak_cache_realms_"));
+                .body(not(containsString("vendor_cache_manager_keycloak_cache_realms_")));
+    }
+
+    @Test
+    @Launch({ "start-dev", "--metrics-enabled=true", "--cache-config-file=cache-local.xml" })
+    @BeforeStartDistribution(EnableCachingStatistics.class)
+    @RawDistOnly(reason = "No support mounting files to containers. Testing raw dist is enough.")
+    void testExposeCachingMetrics() {
+        when().get("/metrics").then()
+                .statusCode(200)
+                .body(containsString("vendor_cache_manager_keycloak_cache_"));
     }
 
     @Test
@@ -99,6 +114,13 @@ public class MetricsDistTest {
             future.get(5, TimeUnit.MINUTES);
 
             distribution.stop();
+        }
+    }
+
+    public static class EnableCachingStatistics implements Consumer<KeycloakDistribution> {
+        @Override
+        public void accept(KeycloakDistribution dist) {
+            dist.copyOrReplaceFileFromClasspath("/cache-local.xml", Paths.get("conf", "cache-local.xml"));
         }
     }
 }
