@@ -1,7 +1,8 @@
 #!/bin/bash -e
 
 REMOTE=$1
-BASE_REF=$2
+# Temporarily disable conditional workflows as they are not working properly
+#BASE_REF=$2
 
 if [ "$BASE_REF" != "" ]; then
   if [ "$GITHUB_OUTPUT" != "" ]; then
