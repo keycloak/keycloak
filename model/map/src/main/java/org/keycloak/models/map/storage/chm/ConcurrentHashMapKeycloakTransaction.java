@@ -309,7 +309,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     private MapTaskWithValue merge(MapTaskWithValue oldValue, MapTaskWithValue newValue) {
         switch (newValue.getOperation()) {
             case DELETE:
-                return oldValue.containsCreate() ? null : newValue;
+                return newValue;
             default:
                 return new MapTaskCompose(oldValue, newValue);
         }
