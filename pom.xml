@@ -116,6 +116,7 @@
         <sun.istack.version>3.0.10</sun.istack.version>
         <sun.saaj.version>2.0.1</sun.saaj.version>
         <sun.xml.bind.version>2.3.3-b02</sun.xml.bind.version>
+        <sun.xml.ws.version>4.0.0</sun.xml.ws.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
@@ -356,6 +357,29 @@
                 <groupId>com.sun.xml.bind.external</groupId>
                 <artifactId>rngom</artifactId>
                 <version>${sun.xml.bind.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>rt</artifactId>
+                <version>${sun.xml.ws.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.woodstox</groupId>
+                        <artifactId>woodstox-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jaxb</groupId>
+                        <artifactId>txw2</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.ha</groupId>
+                        <artifactId>ha-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.sun.xml.messaging.saaj</groupId>
+                        <artifactId>saaj-impl</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
