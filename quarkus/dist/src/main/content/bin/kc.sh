@@ -90,6 +90,14 @@ else
    echo "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
 fi
 
+# See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
+if [ "x$JAVA_ADD_OPENS" = "x" ]; then
+   JAVA_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+else
+   echo "JAVA_ADD_OPENS already set in environment; overriding default settings with values: $JAVA_ADD_OPENS"
+fi
+JAVA_OPTS="$JAVA_OPTS $JAVA_ADD_OPENS"
+
 if [ "x$JAVA_OPTS_APPEND" != "x" ]; then
   echo "Appending additional Java properties to JAVA_OPTS: $JAVA_OPTS_APPEND"
   JAVA_OPTS="$JAVA_OPTS $JAVA_OPTS_APPEND"
