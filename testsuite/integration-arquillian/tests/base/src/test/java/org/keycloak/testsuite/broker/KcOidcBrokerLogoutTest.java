@@ -3,11 +3,13 @@ package org.keycloak.testsuite.broker;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.OAuthClient;
 
@@ -20,6 +22,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 
+@EnableFeature(value = Profile.Feature.LEGACY_COOKIES, skipRestart = true)
 public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
 
     @Rule

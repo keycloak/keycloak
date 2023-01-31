@@ -58,6 +58,9 @@ public class Profile {
 
         IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
 
+        @Deprecated
+        LEGACY_COOKIES("Allow cookies without 'SameSite=None' for older browsers.", Type.DEPRECATED),
+
         OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),

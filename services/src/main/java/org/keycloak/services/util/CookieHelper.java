@@ -22,6 +22,7 @@ import org.keycloak.http.HttpResponse;
 import org.jboss.resteasy.util.CookieParser;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.ServerCookie;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.core.Cookie;
@@ -73,7 +74,7 @@ public class CookieHelper {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie);
 
         // a workaround for browser in older Apple OSs – browsers ignore cookies with SameSite=None
-        if (sameSiteParam == SameSiteAttributeValue.NONE) {
+        if (Profile.isFeatureEnabled(Profile.Feature.LEGACY_COOKIES) && sameSiteParam == SameSiteAttributeValue.NONE) {
             addCookie(name + LEGACY_COOKIE, value, path, domain, comment, maxAge, secure, httpOnly, null, session);
         }
     }
@@ -96,7 +97,7 @@ public class CookieHelper {
 
     public static Set<String> getCookieValue(KeycloakSession session, String name) {
         Set<String> ret = getInternalCookieValue(session, name);
-        if (ret.size() == 0) {
+        if (Profile.isFeatureEnabled(Profile.Feature.LEGACY_COOKIES) && ret.size() == 0) {
             String legacy = name + LEGACY_COOKIE;
             logger.debugv("Could not find any cookies with name '{0}', trying '{1}'", name, legacy);
             ret = getInternalCookieValue(session, legacy);
@@ -142,7 +143,7 @@ public class CookieHelper {
 
     public static Cookie getCookie(Map<String, Cookie> cookies, String name) {
         Cookie cookie = cookies.get(name);
-        if (cookie != null) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.LEGACY_COOKIES) || cookie != null) {
             return cookie;
         }
         else {
