@@ -16,9 +16,11 @@
  */
 package org.keycloak.testsuite.migration;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -33,6 +35,12 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrationTest {
+
+    @BeforeClass
+    public static void checkKerberosSupportedByAuthServer() {
+        // Requires 'KERBEROS' feature on the server, due some kerberos provider present in the JSON
+        KerberosUtils.assumeKerberosSupportExpected();
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

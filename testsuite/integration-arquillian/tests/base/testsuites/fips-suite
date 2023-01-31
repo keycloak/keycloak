@@ -21,3 +21,4 @@ KcSamlEncryptedIdTest
 KcSamlSignedBrokerTest
 KcSamlSpDescriptorTest
 KerberosLdapTest
+TrustStoreEmailTest
