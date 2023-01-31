@@ -114,10 +114,9 @@
         <slf4j-api.version>1.7.30</slf4j-api.version>
         <slf4j.version>1.7.30</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
+        <sun.saaj.version>2.0.1</sun.saaj.version>
         <sun.xml.bind.version>2.3.3-b02</sun.xml.bind.version>
-        <javax.xml.bind.jaxb.version>2.4.0-b180830.0359</javax.xml.bind.jaxb.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-        <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.2.22.Final</undertow.version>
@@ -364,9 +363,9 @@
                 <version>${sun.istack.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${javax.xml.bind.jaxb.version}</version>
+                <groupId>com.sun.xml.messaging.saaj</groupId>
+                <artifactId>saaj-impl</artifactId>
+                <version>${sun.saaj.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind.external</groupId>
