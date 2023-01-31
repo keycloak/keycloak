@@ -4,51 +4,64 @@ REMOTE=$1
 BASE_REF=$2
 
 if [ "$BASE_REF" != "" ]; then
+  # Fetch ref if running in GitHub Actions
   if [ "$GITHUB_OUTPUT" != "" ]; then
-    echo "--------------------------------------------------------------------------------"
+    echo "========================================================================================"
     echo "Fetching '$BASE_REF' in '`git remote get-url $REMOTE`'"
     echo "--------------------------------------------------------------------------------"
     git fetch --depth 1 $REMOTE $BASE_REF
   fi
 
-  echo "--------------------------------------------------------------------------------"
+  echo "========================================================================================"
   echo "Changes compared to '$BASE_REF' in '`git remote get-url $REMOTE`'"
-  echo "--------------------------------------------------------------------------------"
-  git diff $REMOTE/$BASE_REF --name-only
+  echo "----------------------------------------------------------------------------------------"
+  CHANGES=`git diff $REMOTE/$BASE_REF --name-only`
+  echo "$CHANGES"
+fi
+
+echo "========================================================================================"
+if [ "$BASE_REF" != "" ]; then
+  echo "Patterns"
+  echo "----------------------------------------------------------------------------------------"
 else
-  echo "--------------------------------------------------------------------------------"
   echo "Not a pull request, marking everything as changed"
 fi
 
-echo "--------------------------------------------------------------------------------"
-echo "Run conditions"
-echo "--------------------------------------------------------------------------------"
+declare -A CHANGED
+readarray -t CONDITIONS <<< `cat ".github/actions/conditional/conditions" | grep -v '^[ ]*#' | grep -v '^[ ]*$'`
 
-cat .github/actions/conditional/conditions | grep '=' | grep -v '#' | while read c; do
-  KEY=`echo $c | cut -d '=' -f 1`
-  PATTERN=`echo $c | cut -d '=' -f 2`
+for CONDITION in "${CONDITIONS[@]}"; do
+  read -a SPLIT <<< "$CONDITION"
 
   if [ "$BASE_REF" != "" ]; then
-    DIFF=`echo $PATTERN | xargs git diff $REMOTE/$BASE_REF --name-only`
-    if [ "$DIFF" != "" ]; then
-      CHANGED=true
+    PATTERN=`echo "${SPLIT[0]}" | sed 's|\.|[.]|g' | sed 's|/$|/.*|g' | sed 's|^*|.*|g'`
+    echo "$CHANGES" | grep -q "^$PATTERN$" && MATCH=true || MATCH=false
+    if [ "$MATCH" == true ]; then
+      echo "*  $PATTERN"
     else
-      CHANGED=false
+      echo "   $PATTERN"
     fi
   else
-    CHANGED=true
+    MATCH=true
   fi
 
-  # Temporarily always run ci and operator as there's some issues with conditions
-  if [ "$KEY" == "ci" ] || [ "$KEY" == "operator" ]; then
-    CHANGED=true
-  fi
+  for ((i = 1; i < ${#SPLIT[@]}; i++)); do
+    KEY=${SPLIT[$i]}
+    if [ "${CHANGED[$KEY]}" != true ]; then
+      CHANGED[$KEY]=$MATCH
+    fi
+  done
 
-  echo "$KEY=$CHANGED"
-
-  if [ "$GITHUB_OUTPUT" != "" ]; then
-    echo "$KEY=$CHANGED" >> $GITHUB_OUTPUT
-  fi
 done
 
-echo "--------------------------------------------------------------------------------"
+echo "========================================================================================"
+echo "Running workflows/jobs"
+echo "----------------------------------------------------------------------------------------"
+
+for KEY in "${!CHANGED[@]}"
+do
+  echo "$KEY=${CHANGED[$KEY]}"
+  if [ "$GITHUB_OUTPUT" != "" ]; then
+      echo "$KEY=${CHANGED[$KEY]}" >> $GITHUB_OUTPUT
+  fi
+done
