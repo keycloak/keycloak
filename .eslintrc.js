@@ -53,6 +53,9 @@ module.exports = {
     "react/prop-types": "off",
     // Prevent fragments from being added that have only a single child.
     "react/jsx-no-useless-fragment": "error",
+    // Ban nesting components, as this will cause unintended re-mounting of components.
+    // TODO: All issues should be fixed and this rule should be set to "error".
+    "react/no-unstable-nested-components": ["warn", { allowAsProps: true }],
     "prefer-arrow-callback": "error",
     "prettier/prettier": [
       "error",
