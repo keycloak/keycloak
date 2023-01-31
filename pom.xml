@@ -120,6 +120,8 @@
         <google.guava.version>30.1-jre</google.guava.version>
         <xstream.version>1.4.20</xstream.version>
         <okhttp.version>4.10.0</okhttp.version>
+        <!-- Override of SnakeYAML to fix multiple CVEs -->
+        <org.yaml.snakeyaml.version>1.33</org.yaml.snakeyaml.version>
 
         <!-- Openshift -->
         <version.com.openshift.openshift-restclient-java>9.0.5.Final</version.com.openshift.openshift-restclient-java>
@@ -314,6 +316,11 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>logging-interceptor</artifactId>
                 <version>${okhttp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${org.yaml.snakeyaml.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>
