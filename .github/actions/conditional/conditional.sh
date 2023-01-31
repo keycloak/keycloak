@@ -1,67 +1,86 @@
 #!/bin/bash -e
 
-REMOTE=$1
-BASE_REF=$2
+REMOTE="$1"
+BASE_REF="$2"
 
-if [ "$BASE_REF" != "" ]; then
-  # Fetch ref if running in GitHub Actions
-  if [ "$GITHUB_OUTPUT" != "" ]; then
+CONDITIONS_FILE=".github/actions/conditional/conditions"
+
+[ "$BASE_REF" != "" ] && IS_PR=true || IS_PR=false
+[ "$GITHUB_OUTPUT" != "" ] && IS_GITHUB_ACTIONS=true || IS_GITHUB_ACTIONS=false
+
+if [ "$IS_PR" == true ]; then
+  # Fetch remote if running on GitHub Actions
+  if [ "$IS_GITHUB_ACTIONS" == true ]; then
     echo "========================================================================================"
-    echo "Fetching '$BASE_REF' in '`git remote get-url $REMOTE`'"
+    echo "Fetching '$BASE_REF' in '$(git remote get-url "$REMOTE")'"
     echo "--------------------------------------------------------------------------------"
-    git fetch --depth 1 $REMOTE $BASE_REF
+    git fetch --depth 1 "$REMOTE" "$BASE_REF"
   fi
 
+  # Get list of changes files
   echo "========================================================================================"
-  echo "Changes compared to '$BASE_REF' in '`git remote get-url $REMOTE`'"
+  echo "Changes compared to '$BASE_REF' in '$(git remote get-url "$REMOTE")'"
   echo "----------------------------------------------------------------------------------------"
-  CHANGES=`git diff $REMOTE/$BASE_REF --name-only`
-  echo "$CHANGES"
+  CHANGED_FILES=$(git diff "$REMOTE/$BASE_REF" --name-only)
+  echo "$CHANGED_FILES"
 fi
 
 echo "========================================================================================"
-if [ "$BASE_REF" != "" ]; then
-  echo "Patterns"
+if [ "$IS_PR" == true ]; then
+  echo "Matching regex"
   echo "----------------------------------------------------------------------------------------"
 else
   echo "Not a pull request, marking everything as changed"
 fi
 
-declare -A CHANGED
-readarray -t CONDITIONS <<< `cat ".github/actions/conditional/conditions" | grep -v '^[ ]*#' | grep -v '^[ ]*$'`
+declare -A JOB_CONDITIONS
 
-for CONDITION in "${CONDITIONS[@]}"; do
-  read -a SPLIT <<< "$CONDITION"
+readarray -t CONDITIONS <<< "$(cat "$CONDITIONS_FILE" | grep -v '^[ ]*#' | grep -v '^[ ]*$')"
 
-  if [ "$BASE_REF" != "" ]; then
-    PATTERN=`echo "${SPLIT[0]}" | sed 's|\.|[.]|g' | sed 's|/$|/.*|g' | sed 's|^*|.*|g'`
-    echo "$CHANGES" | grep -q "^$PATTERN$" && MATCH=true || MATCH=false
-    if [ "$MATCH" == true ]; then
-      echo "*  $PATTERN"
+for C in "${CONDITIONS[@]}"; do
+  read -r -a CONDITION <<< "$C"
+
+  if [ "$IS_PR" == true ]; then
+    PATTERN="${CONDITION[0]}"
+
+    # Convert pattern to regex
+    REGEX=$(echo "$PATTERN" | sed 's|\.|[.]|g' | sed 's|/$|/.*|g' | sed 's|^*|.*|g')
+
+    # Check if changed files matches regex
+    if ( echo "$CHANGED_FILES" | grep -q "^$REGEX$"); then
+      RUN_JOB=true
+      echo "*  $REGEX"
     else
-      echo "   $PATTERN"
+      RUN_JOB=false
+      echo "   $REGEX"
     fi
   else
-    MATCH=true
+    # Always run job if not a PR
+    RUN_JOB=true
   fi
 
-  for ((i = 1; i < ${#SPLIT[@]}; i++)); do
-    KEY=${SPLIT[$i]}
-    if [ "${CHANGED[$KEY]}" != true ]; then
-      CHANGED[$KEY]=$MATCH
+  # Set what jobs should run for the regex
+  for ((i = 1; i < ${#CONDITION[@]}; i++)); do
+    JOB=${CONDITION[$i]}
+
+    # If already set to run, ignore
+    if [ "${JOB_CONDITIONS[$JOB]}" != true ]; then
+      JOB_CONDITIONS[$JOB]=$RUN_JOB
     fi
   done
-
 done
 
 echo "========================================================================================"
-echo "Running workflows/jobs"
+echo "Run workflows/jobs"
 echo "----------------------------------------------------------------------------------------"
 
-for KEY in "${!CHANGED[@]}"
+# List all jobs and if they should run or not
+for JOB in "${!JOB_CONDITIONS[@]}"
 do
-  echo "$KEY=${CHANGED[$KEY]}"
-  if [ "$GITHUB_OUTPUT" != "" ]; then
-      echo "$KEY=${CHANGED[$KEY]}" >> $GITHUB_OUTPUT
+  echo "$JOB=${JOB_CONDITIONS[$JOB]}"
+
+  # Set output for GitHub job
+  if [ "$IS_GITHUB_ACTIONS" == true ]; then
+      echo "$JOB=${JOB_CONDITIONS[$JOB]}" >> $GITHUB_OUTPUT
   fi
 done
