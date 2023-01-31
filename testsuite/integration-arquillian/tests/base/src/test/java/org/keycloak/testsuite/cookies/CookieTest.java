@@ -52,7 +52,6 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE;
 import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_SESSION_COOKIE;
 import static org.keycloak.services.managers.AuthenticationSessionManager.AUTH_SESSION_ID;
-import static org.keycloak.services.util.CookieHelper.LEGACY_COOKIE;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
@@ -84,11 +83,6 @@ public class CookieTest extends AbstractKeycloakTest {
     @Test
     public void testCookieValue() throws Exception {
         testCookieValue(KEYCLOAK_IDENTITY_COOKIE);
-    }
-
-    @Test
-    public void testLegacyCookieValue() throws Exception {
-        testCookieValue(KEYCLOAK_IDENTITY_COOKIE + LEGACY_COOKIE);
     }
 
     private void testCookieValue(String cookieName) throws Exception {
@@ -163,27 +157,6 @@ public class CookieTest extends AbstractKeycloakTest {
                 assertThat(pageContent, containsString("Forgot Password?"));
             }
         }
-    }
-
-    @Test
-    public void legacyCookiesTest() {
-        ContainerAssume.assumeAuthServerSSL();
-
-        accountPage.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(accountPage);
-
-        loginPage.login("test-user@localhost", "password");
-
-        Cookie sameSiteIdentityCookie = driver.manage().getCookieNamed(KEYCLOAK_IDENTITY_COOKIE);
-        Cookie legacyIdentityCookie = driver.manage().getCookieNamed(KEYCLOAK_IDENTITY_COOKIE + LEGACY_COOKIE);
-        Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
-        Cookie legacySessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE + LEGACY_COOKIE);
-        Cookie sameSiteAuthSessionIdCookie = driver.manage().getCookieNamed(AUTH_SESSION_ID);
-        Cookie legacyAuthSessionIdCookie = driver.manage().getCookieNamed(AUTH_SESSION_ID + LEGACY_COOKIE);
-
-        assertSameSiteCookies(sameSiteIdentityCookie, legacyIdentityCookie);
-        assertSameSiteCookies(sameSiteSessionCookie, legacySessionCookie);
-        assertSameSiteCookies(sameSiteAuthSessionIdCookie, legacyAuthSessionIdCookie);
     }
 
     private void assertSameSiteCookies(Cookie sameSiteCookie, Cookie legacyCookie) {

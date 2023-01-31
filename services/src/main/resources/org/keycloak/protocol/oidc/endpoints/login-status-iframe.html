@@ -67,11 +67,7 @@
       }
 
       function getCookie() {
-        var cookie = getCookieByName("KEYCLOAK_SESSION");
-        if (cookie === null) {
-          return getCookieByName("KEYCLOAK_SESSION_LEGACY");
-        }
-        return cookie;
+        return getCookieByName("KEYCLOAK_SESSION");
       }
 
       function getCookieByName(name) {

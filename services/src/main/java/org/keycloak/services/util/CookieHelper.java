@@ -40,8 +40,6 @@ import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
  */
 public class CookieHelper {
 
-    public static final String LEGACY_COOKIE = "_LEGACY";
-
     private static final Logger logger = Logger.getLogger(CookieHelper.class);
 
     /**
@@ -71,11 +69,6 @@ public class CookieHelper {
         ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure_sameSite, httpOnly, sameSite);
         String cookie = cookieBuf.toString();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie);
-
-        // a workaround for browser in older Apple OSs – browsers ignore cookies with SameSite=None
-        if (sameSiteParam == SameSiteAttributeValue.NONE) {
-            addCookie(name + LEGACY_COOKIE, value, path, domain, comment, maxAge, secure, httpOnly, null, session);
-        }
     }
 
     /**
@@ -95,16 +88,6 @@ public class CookieHelper {
 
 
     public static Set<String> getCookieValue(KeycloakSession session, String name) {
-        Set<String> ret = getInternalCookieValue(session, name);
-        if (ret.size() == 0) {
-            String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Could not find any cookies with name '{0}', trying '{1}'", name, legacy);
-            ret = getInternalCookieValue(session, legacy);
-        }
-        return ret;
-    }
-
-    private static Set<String> getInternalCookieValue(KeycloakSession session, String name) {
         HttpHeaders headers = session.getContext().getHttpRequest().getHttpHeaders();
         Set<String> cookiesVal = new HashSet<>();
 
@@ -121,7 +104,6 @@ public class CookieHelper {
 
         return cookiesVal;
     }
-
 
     public static Set<String> parseCookie(String header, String name) {
         if (header == null || name == null) {
@@ -141,14 +123,6 @@ public class CookieHelper {
     }
 
     public static Cookie getCookie(Map<String, Cookie> cookies, String name) {
-        Cookie cookie = cookies.get(name);
-        if (cookie != null) {
-            return cookie;
-        }
-        else {
-            String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Could not find cookie {0}, trying {1}", name, legacy);
-            return cookies.get(legacy);
-        }
+        return cookies.get(name);
     }
 }
