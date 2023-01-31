@@ -110,7 +110,7 @@ public class HttpRequestImpl implements HttpRequest {
         if (delegate == null) {
             return null;
         }
-        return (X509Certificate[]) delegate.getAttribute("javax.servlet.request.X509Certificate");
+        return (X509Certificate[]) delegate.getAttribute("jakarta.servlet.request.X509Certificate");
     }
 
     @Override
