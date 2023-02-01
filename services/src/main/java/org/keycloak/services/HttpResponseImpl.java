@@ -21,7 +21,7 @@ import org.keycloak.http.HttpResponse;
 
 public class HttpResponseImpl implements HttpResponse {
 
-    private org.jboss.resteasy.spi.HttpResponse delegate;
+    private final org.jboss.resteasy.spi.HttpResponse delegate;
 
     public HttpResponseImpl(org.jboss.resteasy.spi.HttpResponse delegate) {
         this.delegate = delegate;
@@ -34,11 +34,25 @@ public class HttpResponseImpl implements HttpResponse {
 
     @Override
     public void addHeader(String name, String value) {
+        checkCommitted();
         delegate.getOutputHeaders().add(name, value);
     }
 
     @Override
     public void setHeader(String name, String value) {
+        checkCommitted();
         delegate.getOutputHeaders().putSingle(name, value);
     }
+
+    /**
+     * Validate that the response has not been committed.
+     * If the response is already committed, the headers and part of the response have been sent already.
+     * Therefore, additional headers including cookies won't be delivered to the caller.
+     */
+    private void checkCommitted() {
+        if (delegate.isCommitted()) {
+            throw new IllegalStateException("response already committed, can't be changed");
+        }
+    }
+
 }
