@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.model.session;
 
 import org.junit.Test;
+import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -33,6 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @RequireProvider(value = UserSessionProvider.class, only = MapUserSessionProviderFactory.PROVIDER_ID)
 @RequireProvider(RealmProvider.class)
+@RequireProvider(DeviceRepresentationProvider.class)
 public class UserSessionExpirationTest extends KeycloakModelTest {
 
     private String realmId;

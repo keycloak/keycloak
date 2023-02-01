@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.model.session;
 
 import org.junit.Test;
+import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -53,6 +54,7 @@ import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForM
 
 
 @RequireProvider(UserSessionProvider.class)
+@RequireProvider(DeviceRepresentationProvider.class)
 public class UserSessionConcurrencyTest extends KeycloakModelTest {
 
     private String realmId;
