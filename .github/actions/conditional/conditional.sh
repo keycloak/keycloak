@@ -44,10 +44,28 @@ for C in "${CONDITIONS[@]}"; do
     PATTERN="${CONDITION[0]}"
 
     # Convert pattern to regex
-    REGEX=$(echo "$PATTERN" | sed 's|\.|[.]|g' | sed 's|/$|/.*|g' | sed 's|^*|.*|g')
+    REGEX="$PATTERN"
+    #REGEX=$(echo "$PATTERN" | sed 's|\.|\\.|g' | sed 's|/$|/.*|g' | sed 's|^*|.*|g')
+
+    # Escape '/' characters
+    REGEX=$(echo "$REGEX" | sed 's|\/|\\/|g')
+
+    # Escape '.' to make it match the '.' character only
+    REGEX=$(echo "$REGEX" | sed 's|\.|\\.|g')
+
+    # Convert '*' to match anything
+    REGEX=$(echo "$REGEX" | sed 's|\*|.*|g')
+
+    # If ends with directory seperator, allow anything within
+    REGEX=$(echo "$REGEX" | sed 's|/$|/.*|g')
+
+    # If no directory separators allow any directory structure before
+    if ( echo "$REGEX" | grep -v -E '\/' &>/dev/null ); then
+      REGEX="(.*\/)?$REGEX"
+    fi
 
     # Check if changed files matches regex
-    if ( echo "$CHANGED_FILES" | grep -q "^$REGEX$"); then
+    if ( echo "$CHANGED_FILES" | grep -q -E "^$REGEX$"); then
       RUN_JOB=true
       echo "*  $REGEX"
     else
