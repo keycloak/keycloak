@@ -121,7 +121,8 @@
         <okhttp.version>4.10.0</okhttp.version>
         <!-- Override of SnakeYAML to fix multiple CVEs -->
         <org.yaml.snakeyaml.version>1.33</org.yaml.snakeyaml.version>
-
+        <!-- Override sshd-common to fix CVE-2022-45047 -->
+        <org.apache.sshd.version>2.9.2</org.apache.sshd.version>
         <!-- Openshift -->
         <version.com.openshift.openshift-restclient-java>9.0.5.Final</version.com.openshift.openshift-restclient-java>
 
@@ -300,6 +301,11 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${org.yaml.snakeyaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.sshd</groupId>
+                <artifactId>sshd-common</artifactId>
+                <version>${org.apache.sshd.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
