@@ -299,7 +299,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.33</version>
+                <version>${org.yaml.snakeyaml.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -316,11 +316,6 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>logging-interceptor</artifactId>
                 <version>${okhttp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${org.yaml.snakeyaml.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>
