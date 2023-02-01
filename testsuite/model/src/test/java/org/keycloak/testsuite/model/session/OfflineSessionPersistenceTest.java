@@ -18,6 +18,7 @@ package org.keycloak.testsuite.model.session;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.CacheException;
+import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -65,6 +66,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
 @RequireProvider(UserSessionProvider.class)
+@RequireProvider(DeviceRepresentationProvider.class)
 public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     private static final int USER_COUNT = 50;
