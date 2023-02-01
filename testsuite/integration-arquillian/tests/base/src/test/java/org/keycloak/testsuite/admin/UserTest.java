@@ -1553,7 +1553,25 @@ public class UserTest extends AbstractAdminTest {
             userRep.setEnabled(true);
             updateUser(user, userRep);
 
-            user.executeActionsEmail("invalidClientId", "invalidUri", actions);
+            user.executeActionsEmail(Arrays.asList(
+                    UserModel.RequiredAction.UPDATE_PASSWORD.name(),
+                    "invalid\"<img src=\"alert(0)\">")
+            );
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Provided invalid required actions", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
+        }
+
+        try {
+            user.executeActionsEmail(
+                    "invalidClientId",
+                    "invalidUri",
+                    Collections.singletonList(UserModel.RequiredAction.UPDATE_PASSWORD.name())
+            );
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(400, e.getResponse().getStatus());
