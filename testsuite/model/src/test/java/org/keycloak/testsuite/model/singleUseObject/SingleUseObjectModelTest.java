@@ -101,9 +101,13 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             Map<String, String> notes = singleUseObjectProvider.get(key.serializeKey());
             Assert.assertNotNull(notes);
             Assert.assertEquals("bar", notes.get("foo"));
+        });
 
-            setTimeOffset(70);
+        setTimeOffset(70);
 
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseObjectProvider = session.getProvider(SingleUseObjectProvider.class);
+            Map<String, String> notes = singleUseObjectProvider.get(key.serializeKey());
             notes = singleUseObjectProvider.get(key.serializeKey());
             Assert.assertNull(notes);
         });
@@ -152,9 +156,12 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
             Map<String, String> actualNotes = singleUseStore.get(key);
             assertThat(actualNotes, Matchers.anEmptyMap());
+        });
 
-            setTimeOffset(70);
+        setTimeOffset(70);
 
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
             Assert.assertNull(singleUseStore.get(key));
         });
     }

@@ -22,7 +22,9 @@ import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
 import org.infinispan.client.hotrod.configuration.ClientIntelligence;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.configuration.NearCacheMode;
+import org.infinispan.client.hotrod.configuration.TransactionMode;
 import org.infinispan.commons.marshall.ProtoStreamMarshaller;
+import org.infinispan.commons.tx.lookup.TransactionManagerLookup;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.jboss.logging.Logger;
@@ -33,6 +35,7 @@ import org.keycloak.models.map.storage.hotRod.locking.HotRodLocksUtils;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodVersionUtils;
+import org.keycloak.models.map.storage.hotRod.transaction.HotRodTransactionManagerLookup;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.net.URI;
@@ -63,12 +66,14 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
 
     private volatile RemoteCacheManager remoteCacheManager;
 
+    private TransactionManagerLookup transactionManagerLookup;
+
     @Override
     public HotRodConnectionProvider create(KeycloakSession session) {
         if (remoteCacheManager == null) {
             synchronized (this) {
                 if (remoteCacheManager == null) {
-                    lazyInit();
+                    lazyInit(session);
                 }
             }
         }
@@ -98,8 +103,10 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
         this.config = config;
     }
 
-    public void lazyInit() {
+    public void lazyInit(KeycloakSession session) {
         LOG.debugf("Initializing HotRod client connection to Infinispan server.");
+        transactionManagerLookup = new HotRodTransactionManagerLookup(session);
+
         ConfigurationBuilder remoteBuilder = new ConfigurationBuilder();
         remoteBuilder.addServer()
                 .host(config.get("host", "localhost"))
@@ -265,6 +272,8 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
             LOG.debugf("Configuring cache %s", cacheName);
             builder.remoteCache(cacheName)
                     .configurationURI(getCacheConfigUri(cacheName))
+                    .transactionMode(TransactionMode.FULL_XA)
+                    .transactionManagerLookup(transactionManagerLookup)
                     .nearCacheMode(config.scope(cacheName).getBoolean("nearCacheEnabled", config.getBoolean("nearCacheEnabled", true)) ? NearCacheMode.INVALIDATED : NearCacheMode.DISABLED)
                     .nearCacheMaxEntries(config.scope(cacheName).getInt("nearCacheMaxEntries", config.getInt("nearCacheMaxEntries", 10000)))
                     .nearCacheUseBloomFilter(config.scope(cacheName).getBoolean("nearCacheBloomFilter", config.getBoolean("nearCacheBloomFilter", false)));
