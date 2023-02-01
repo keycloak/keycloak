@@ -202,6 +202,8 @@
   "clientLoginTimeout": "Client Login Timeout",
   "userInitiatedActionLifespan": "User-Initiated Action Lifespan",
   "defaultAdminInitiated": "Default Admin-Initiated Action Lifespan",
+  "oAuthDeviceCodeLifespan": "OAuth 2.0 Device Code Lifespan",
+  "oAuthDevicePollingInterval": "OAuth 2.0 Device Polling Interval",
   "shortVerificationUri": "Short verification_uri in Device Authorization flow",
   "emailVerification": "Email Verification",
   "idpAccountEmailVerification": "IdP account email verification",

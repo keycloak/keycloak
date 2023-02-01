@@ -141,6 +141,61 @@ export const RealmSettingsTokensTab = ({
           </FormGroup>
 
           <FormGroup
+            label={t("oAuthDeviceCodeLifespan")}
+            fieldId="oAuthDeviceCodeLifespan"
+            labelIcon={
+              <HelpItem
+                helpText="realm-settings-help:oAuthDeviceCodeLifespan"
+                fieldLabelId="realm-settings:oAuthDeviceCodeLifespan"
+              />
+            }
+          >
+            <Controller
+              name="oauth2DeviceCodeLifespan"
+              defaultValue={0}
+              control={form.control}
+              render={({ field }) => (
+                <TimeSelector
+                  id="oAuthDeviceCodeLifespan"
+                  data-testid="oAuthDeviceCodeLifespan"
+                  value={field.value || 0}
+                  onChange={field.onChange}
+                  units={["minute", "hour", "day"]}
+                />
+              )}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("oAuthDevicePollingInterval")}
+            fieldId="oAuthDevicePollingInterval"
+            labelIcon={
+              <HelpItem
+                helpText="realm-settings-help:oAuthDevicePollingInterval"
+                fieldLabelId="realm-settings:oAuthDevicePollingInterval"
+              />
+            }
+          >
+            <Controller
+              name="oauth2DevicePollingInterval"
+              defaultValue={0}
+              control={form.control}
+              render={({ field }) => (
+                <NumberInput
+                  id="oAuthDevicePollingInterval"
+                  value={field.value}
+                  min={0}
+                  onPlus={() => field.onChange(field.value || 0 + 1)}
+                  onMinus={() => field.onChange(field.value || 0 - 1)}
+                  onChange={(event) => {
+                    const newValue = Number(event.currentTarget.value);
+                    field.onChange(!isNaN(newValue) ? newValue : 0);
+                  }}
+                  placeholder={t("oAuthDevicePollingInterval")}
+                />
+              )}
+            />
+          </FormGroup>
+          <FormGroup
             label={t("shortVerificationUri")}
             fieldId="shortVerificationUri"
             labelIcon={
@@ -150,18 +205,10 @@ export const RealmSettingsTokensTab = ({
               />
             }
           >
-            <Controller
-              name="attributes.shortVerificationUri"
-              defaultValue=""
-              control={form.control}
-              render={({ field }) => (
-                <KeycloakTextInput
-                  id="shortVerificationUri"
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder={t("shortVerificationUri")}
-                />
-              )}
+            <KeycloakTextInput
+              id="shortVerificationUri"
+              placeholder={t("shortVerificationUri")}
+              {...form.register("attributes.shortVerificationUri")}
             />
           </FormGroup>
         </FormAccess>
