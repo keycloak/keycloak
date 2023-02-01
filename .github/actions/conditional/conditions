@@ -10,7 +10,7 @@
 
 */src/main/                                 ci operator
 */src/test/                                 ci operator
-*/pom.xml                                   ci operator
+pom.xml                                     ci operator
 
 *.java                                      codeql-java
 themes/                                     codeql-themes
