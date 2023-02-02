@@ -90,6 +90,7 @@ export const MultiLineInput = ({
               {...rest}
             />
             <Button
+              data-testid={"remove" + index}
               variant={ButtonVariant.link}
               onClick={() => remove(index)}
               tabIndex={-1}
