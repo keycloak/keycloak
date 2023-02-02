@@ -12,30 +12,7 @@ concurrency:
 env:
   NODE_VERSION: 18
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-
-      - name: Set up Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          check-latest: true
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Cache setup
-        uses: actions/cache@v3
-        with:
-          path: ./*
-          key: ${{ github.sha }}
-
   run:
-    needs: setup
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -48,8 +25,8 @@ jobs:
           - workspace: admin-ui
             command: build
           - workspace: admin-ui
-            # Account UI
             command: cy:check-types
+          # Account UI
           - workspace: account-ui
             command: lint
           - workspace: account-ui
@@ -65,11 +42,18 @@ jobs:
           - workspace: keycloak-masthead
             command: build
     steps:
-      - name: Restore setup
-        uses: actions/cache@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
         with:
-          path: ./*
-          key: ${{ github.sha }}
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: true
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Set up Node
         uses: actions/setup-node@v3
