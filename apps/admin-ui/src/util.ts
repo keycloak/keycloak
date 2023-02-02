@@ -135,10 +135,9 @@ export function convertFormValuesToObject<T extends Record<string, any>, G = T>(
       result[key] = keyValueToArray(value as KeyValueType[]);
     } else if (key === "config" || key === "attributes") {
       result[key] = Object.fromEntries(
-        Object.entries(value as Record<string, unknown>).map(([k, v]) => [
-          debeerify(k),
-          v,
-        ])
+        Object.entries(
+          (value as Record<string, unknown> | undefined) || {}
+        ).map(([k, v]) => [debeerify(k), v])
       );
     } else {
       result[key] = value;

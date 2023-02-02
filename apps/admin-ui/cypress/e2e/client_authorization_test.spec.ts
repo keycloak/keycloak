@@ -9,6 +9,7 @@ import ModalUtils from "../support/util/ModalUtils";
 import ClientDetailsPage from "../support/pages/admin-ui/manage/clients/client_details/ClientDetailsPage";
 import PoliciesTab from "../support/pages/admin-ui/manage/clients/client_details/tabs/authorization_subtabs/PoliciesTab";
 import PermissionsTab from "../support/pages/admin-ui/manage/clients/client_details/tabs/authorization_subtabs/PermissionsTab";
+import CreateResourcePage from "../support/pages/admin-ui/manage/clients/client_details/CreateResourcePage";
 
 describe("Client authentication subtab", () => {
   const loginPage = new LoginPage();
@@ -64,6 +65,22 @@ describe("Client authentication subtab", () => {
       .formUtils()
       .save();
     masthead.checkNotificationMessage("Resource created successfully", true);
+    sidebarPage.waitForPageLoad();
+    authenticationTab.formUtils().cancel();
+  });
+
+  it("Edit a resource", () => {
+    authenticationTab.goToResourcesSubTab();
+    listingPage.goToItemDetails("Resource");
+
+    new CreateResourcePage()
+      .fillResourceForm({
+        displayName: "updated",
+      })
+      .formUtils()
+      .save();
+
+    masthead.checkNotificationMessage("Resource successfully updated");
     sidebarPage.waitForPageLoad();
     authenticationTab.formUtils().cancel();
   });

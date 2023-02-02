@@ -49,7 +49,7 @@ export const AdvancedSettings = ({
     []
   );
 
-  const { control, register } = useFormContext();
+  const { control } = useFormContext();
   return (
     <FormAccess
       role="manage-realm"
@@ -234,9 +234,7 @@ export const AdvancedSettings = ({
             }
           >
             <KeyValueInput
-              {...register(
-                convertAttributeNameToForm("attributes.acr.loa.map")
-              )}
+              name={convertAttributeNameToForm("attributes.acr.loa.map")}
             />
           </FormGroup>
           <FormGroup
