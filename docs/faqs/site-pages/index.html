@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>document.getElementsByTagName("html")[0].className += " js";</script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            // $('#divCategoriesMenuPage').load("faq01-categories-menu.html");
+            $('#divQuestionsCategorie01Page').load("faq01-questions-categorie-01.html");
+            $('#divQuestionsCategorie02Page').load("faq01-questions-categorie-02.html");
+            $('#divQuestionsCategorie03Page').load("faq01-questions-categorie-03.html");
+            $('#divQuestionsCategorie04Page').load("faq01-questions-categorie-04.html");
+            $('#divQuestionsCategorie05Page').load("faq01-questions-categorie-05.html");
+            $('#divQuestionsCategorie06Page').load("faq01-questions-categorie-06.html");
+
+        });
+    </script>
+
+    <link rel="stylesheet" href="assets/css/style.css">
+    <title>Keycloak FAQ</title>
+</head>
+<body>
+<header class="cd-header flex flex-column flex-center">
+    <div class="text-component text-center">
+        <h1>Keycloak FAQ</h1>
+        <p>👈 List of the commons questions and the respective tip or the link
+            to answers in the <a class="cd-article-link" href="https://www.keycloak.org/guides">official
+                Keycloak Guides</a>, solved GitHub Issues and Keycloak Mail lists
+            threads .</p>
+    </div>
+</header>
+
+<section class="cd-faq js-cd-faq container max-width-md margin-top-lg margin-bottom-lg">
+
+    <ul class="cd-faq__categories">
+        <li><a class="cd-faq__category cd-faq__category-selected truncate" href="#faq-content-categorie-01">Start up options</a></li>
+        <li><a class="cd-faq__category truncate" href="#faq-content-categorie-02">Enabling HTTS / TLS Certificates</a></li>
+        <li><a class="cd-faq__category truncate" href="#faq-content-categorie-03">Hostname and Path Settings</a></li>
+        <li><a class="cd-faq__category truncate" href="#faq-content-categorie-04">Reverse Proxy Settings</a></li>
+        <li><a class="cd-faq__category truncate" href="#faq-content-categorie-05">Admin Console is not loading</a></li>
+        <li><a class="cd-faq__category truncate" href="#faq-content-categorie-06">Keycloak Operator Deployment</a></li>
+    </ul>
+    <!-- cd-faq__categories -->
+    <div class="cd-faq__items">
+
+        <div id="divQuestionsCategorie01Page"></div>
+
+        <div id="divQuestionsCategorie02Page"></div>
+
+        <div id="divQuestionsCategorie03Page"></div>
+
+        <div id="divQuestionsCategorie04Page"></div>
+
+        <div id="divQuestionsCategorie05Page"></div>
+
+        <div id="divQuestionsCategorie06Page"></div>
+
+        <!-- cd-faq__group --> </div>
+    <!-- cd-faq__items --> <a href="#0" class="cd-faq__close-panel text-replace">Close</a>
+    <div class="cd-faq__overlay" aria-hidden="true"></div>
+</section>
+<!-- cd-faq -->
+<script src="assets/js/util.js"></script>
+<!-- util functions included in the CodyHouse framework -->
+<script src="assets/js/main.js"></script>
+</body>
+</html>
