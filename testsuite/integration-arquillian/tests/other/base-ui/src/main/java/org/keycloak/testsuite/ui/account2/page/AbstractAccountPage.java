@@ -19,7 +19,7 @@ package org.keycloak.testsuite.ui.account2.page;
 
 import org.keycloak.testsuite.auth.page.AuthRealm;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.List;
 
 /**
