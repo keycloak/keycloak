@@ -29,6 +29,7 @@ import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.storage.SearchableModelField;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -80,7 +81,7 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
     @Override
     public void commit() {
         super.commit();
-        renameOnCommit.forEach(FileMapKeycloakTransaction::silentMove);
+        this.renameOnCommit.forEach(FileMapKeycloakTransaction::silentMove);
         this.touchedPaths.forEach(FileMapKeycloakTransaction::silentDelete);
     }
 
@@ -88,7 +89,7 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
         try {
             Files.move(from, to, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {
-            // Swallow the exception
+            throw new UncheckedIOException(ex);
         }
     }
 
