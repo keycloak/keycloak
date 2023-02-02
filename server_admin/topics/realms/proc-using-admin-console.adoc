@@ -29,3 +29,5 @@ image:images/admin-console.png[Admin Console]
 +
 * Hover over a question mark *?* icon to show a tooltip text that describes that field. The image above shows the tooltip in action.
 * Click a question mark *?* icon to show a tooltip text that describes that field. The image above shows the tooltip in action.
+
+NOTE: Export files from the Admin Console are not suitable for backups or data transfer between servers. Only boot-time exports are suitable for backups or data transfer between servers.
