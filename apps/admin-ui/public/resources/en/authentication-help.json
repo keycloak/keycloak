@@ -42,5 +42,9 @@
     "digits": "The number of numerical digits required in the password string.",
     "hashAlgorithm": "Applies a hashing algorithm to passwords, so they are not stored in clear text.",
     "maxLength": "The maximum number of characters allowed in the password."
-  }
+  },
+  "cibaBackchannelTokenDeliveryMode": "Specifies how the CD (Consumption Device) gets the authentication result and related tokens. This mode will be used by default for the CIBA clients, which do not have other mode explicitly set.",
+  "cibaExpiresIn": "The expiration time of the \"auth_req_id\" in seconds since the authentication request was received.",
+  "cibaInterval": "The minimum amount of time in seconds that the CD (Consumption Device) must wait between polling requests to the token endpoint. If set to 0, the CD must use 5 as the default value according to the CIBA specification.",
+  "cibaAuthRequestedUserHint": "The way of identifying the end-user for whom authentication is being requested. Currently only \"login_hint\" is supported."
 }

@@ -1,14 +1,15 @@
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { PasswordPolicy } from "./PasswordPolicy";
+import { CibaPolicy } from "./CibaPolicy";
 import { OtpPolicy } from "./OtpPolicy";
+import { PasswordPolicy } from "./PasswordPolicy";
 import { WebauthnPolicy } from "./WebauthnPolicy";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 
 export const Policies = () => {
   const { t } = useTranslation("authentication");
@@ -69,6 +70,13 @@ export const Policies = () => {
         title={<TabTitleText>{t("webauthnPasswordlessPolicy")}</TabTitleText>}
       >
         <WebauthnPolicy realm={realm} realmUpdated={setRealm} isPasswordLess />
+      </Tab>
+      <Tab
+        id="cibaPolicy"
+        eventKey={5}
+        title={<TabTitleText>{t("cibaPolicy")}</TabTitleText>}
+      >
+        <CibaPolicy realm={realm} realmUpdated={setRealm} />
       </Tab>
     </Tabs>
   );

@@ -143,6 +143,8 @@
   "details": "Details",
   "required": "Required field",
   "maxLength": "Max length {{length}}",
+  "lessThan": "Must be less than {{value}}",
+  "greaterThan": "Must be greater than {{value}}",
   "createRealm": "Create Realm",
   "recent": "Recent",
   "jumpToSection": "Jump to section",
