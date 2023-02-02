@@ -146,7 +146,7 @@ public class WelcomeScreenTest extends AbstractAccountTest {
         Retry.execute(() -> accountWelcomeScreen.assertMyResourcesCardVisible(true), 10, 500);
         accountWelcomeScreen.clickMyResourcesLink();
         loginToAccount();
-        myResourcesPage.assertCurrent();
+        Retry.execute(() -> myResourcesPage.assertCurrent(), 10, 500);
         // no need to disable user managed access
     }
 }
