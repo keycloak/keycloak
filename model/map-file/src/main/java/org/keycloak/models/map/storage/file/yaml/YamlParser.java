@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -125,7 +125,6 @@ public class YamlParser<E> {
             throw new IllegalStateException("Aliases are not handled at this moment");
         }
         Event ev = parser.next();
-//        System.out.println("  Parsing " + ev);
         if (!(ev instanceof NodeEvent)) {
             throw new IllegalArgumentException("Invalid event " + ev);
         }
@@ -195,7 +194,6 @@ public class YamlParser<E> {
      */
     protected Object parseScalar(Tag nodeTag, ScalarEvent se) {
         BlockContext context = contextStack.peek();
-//        System.out.println("value: " + se.getValue() + ", context: " + context + ", type: " + nodeTag.getClassName());
         ScalarNode node = new ScalarNode(nodeTag, true, se.getValue(), se.getScalarStyle(), se.getStartMark(), se.getEndMark());
         final Object value = MiniConstructor.INSTANCE.constructStandardJavaInstance(node);
         context.add(value);
@@ -238,7 +236,7 @@ public class YamlParser<E> {
         if (cc == null) {
             throw new IllegalStateException("Invalid value in map with key " + key);
         }
-        contextStack.push((String) key, cc);
+        contextStack.push(key, cc);
         Object value = parseNode();
         contextStack.pop();
         return value;

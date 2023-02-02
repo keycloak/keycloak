@@ -20,16 +20,31 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
+ * This class contains utility classes for type conversion.
  *
  * @author hmlnarik
  */
 public class CastUtils {
-    
+
+    /**
+     * Converts value to destination class (if it can).
+     * @param value Value to convert
+     * @param toClass Class to convert value to
+     * @return Value converted to the given class
+     * @throws IllegalStateException if the value cannot be converted to the requested class
+     */
     @SuppressWarnings("unchecked")
     public static <T> T cast(Object value, Class<T> toClass) {
-        return value == null ? null : (T) ((Function) getCastFunc(value.getClass(), toClass)).apply(value);
+        return value == null ? null : ((Function<Object, T>) getCastFunc(value.getClass(), toClass)).apply(value);
     }
 
+    /**
+     * Provides a function to convert value of a given class to destination class (if it can).
+     * @param fromClass Class to convert value from
+     * @param toClass Class to convert value to
+     * @return Function {@code fromClass -> toClass} converting values from the {@code fromClass} to the {@code toClass}
+     * @throws IllegalStateException if the value cannot be converted to the requested class
+     */
     public static <E extends Enum<E>> Function<?, ?> getCastFunc(Class<?> fromClass, Class<?> toClass) {
         if (fromClass == toClass || toClass.isAssignableFrom(fromClass)) {
             return Function.identity();
@@ -39,11 +54,11 @@ public class CastUtils {
         }
         if (fromClass == String.class) {
             if (toClass == Integer.class) {
-                return (String s) -> Integer.valueOf(s);
+                return (Function<String, ?>) Integer::valueOf;
             } else if (toClass == Long.class) {
-                return (String s) -> Long.valueOf(s);
+                return (Function<String, ?>) Long::valueOf;
             } else if (toClass == Boolean.class) {
-                return (String s) -> Boolean.valueOf(s);
+                return (Function<String, ?>) Boolean::valueOf;
             } else if (toClass.isEnum()) {
                 @SuppressWarnings("unchecked")
                 Class<E> enumClass = (Class<E>) toClass;
@@ -52,12 +67,12 @@ public class CastUtils {
         }
         if (fromClass == Long.class) {
             if (toClass == Integer.class) {
-                return (Long l) -> l.intValue();
+                return (Function<Long, ?>) Long::intValue;
             }
         }
         if (fromClass == Integer.class) {
             if (toClass == Long.class) {
-                return (Integer l) -> l.longValue();
+                return (Function<Integer, ?>) Integer::longValue;
             }
         }
 

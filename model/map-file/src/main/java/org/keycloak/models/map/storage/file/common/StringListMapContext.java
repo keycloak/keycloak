@@ -94,6 +94,7 @@ public class StringListMapContext extends DefaultMapContext {
         @Override
         public void add(Object value) {
             if (value != null) {
+                @SuppressWarnings("unchecked")
                 LinkedList<String> stringList = (LinkedList<String>) getResult().computeIfAbsent(key, s -> new LinkedList<>());
                 stringList.add(String.valueOf(value));
             }

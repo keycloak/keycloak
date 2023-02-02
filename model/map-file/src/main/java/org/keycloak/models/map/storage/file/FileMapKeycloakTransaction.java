@@ -61,7 +61,7 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
         return tx;
     }
 
-    private FileMapKeycloakTransaction(Class<V> entityClass, Crud crud) {
+    private FileMapKeycloakTransaction(Class<V> entityClass, Crud<V, M> crud) {
         super(
           crud,
           StringKeyConverter.StringKey.INSTANCE,
