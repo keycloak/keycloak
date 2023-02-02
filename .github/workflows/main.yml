@@ -26,7 +26,9 @@ jobs:
             command: build
           - workspace: admin-ui
             command: cy:check-types
-          # Account UI
+          - workspace: admin-ui
+            command: cy:run-component
+            # Account UI
           - workspace: account-ui
             command: lint
           - workspace: account-ui
