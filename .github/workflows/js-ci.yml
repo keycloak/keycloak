@@ -37,6 +37,7 @@ jobs:
 
   npm-run:
     needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
