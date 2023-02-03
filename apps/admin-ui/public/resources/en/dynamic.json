@@ -156,5 +156,33 @@
   "client-updater-source-roles": {
     "label": "Updating entity role",
     "tooltip": "The condition is checked during client registration/update requests and it evaluates to true if the entity (usually user), who is creating/updating client is member of the specified role. For reference the realm role, you can use the realm role name like 'my_realm_role' . For reference client role, you can use the client_id.role_name for example 'my_client.my_client_role' will refer to client role 'my_client_role' of client 'my_client'."
+  },
+  "allowed-client-scopes": {
+    "label": "Allowed Client Scopes",
+    "tooltip": "Whitelist of the client scopes, which can be used on a newly registered client. Attempt to register client with some client scope, which is not whitelisted, will be rejected. By default, the whitelist is either empty or contains just realm default client scopes (based on 'Allow Default Scopes' configuration property)"
+  },
+  "allow-default-scopes": {
+    "label": "Allow Default Scopes",
+    "tooltip": "If on, newly registered clients will be allowed to have client scopes mentioned in realm default client scopes or realm optional client scopes"
+  },
+  "allowed-protocol-mappers": {
+    "label": "Allowed Protocol Mappers",
+    "tooltip": "Whitelist of allowed protocol mapper providers. If there is an attempt to register client, which contains some protocol mappers, which were not whitelisted, registration request will be rejected."
+  },
+  "max-clients": {
+    "label": "Max Clients Per Realm",
+    "tooltip": "It will not be allowed to register a new client if count of existing clients in realm is same or bigger than the configured limit."
+  },
+  "trusted-hosts": {
+    "label": "Trusted Hosts",
+    "tooltip": "List of Hosts, which are trusted and are allowed to invoke Client Registration Service and/or be used as values of Client URIs. You can use hostnames or IP addresses. If you use star at the beginning (for example '*.example.com' ) then whole domain example.com will be trusted."
+  },
+  "host-sending-registration-request-must-match": {
+    "label": "Host Sending Client Registration Request Must Match",
+    "tooltip": "If on, any request to Client Registration Service is allowed just if it was sent from some trusted host or domain."
+  },
+  "client-uris-must-match": {
+    "label": "Client URIs Must Match",
+    "tooltip": "If on, all Client URIs (Redirect URIs and others) are allowed just if they match some trusted host or domain."
   }
 }

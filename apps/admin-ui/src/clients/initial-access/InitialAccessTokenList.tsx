@@ -47,7 +47,7 @@ export const InitialAccessTokenList = () => {
         addAlert(t("tokenDeleteSuccess"), AlertVariant.success);
         setToken(undefined);
       } catch (error) {
-        addError("tokenDeleteError", error);
+        addError("clients:tokenDeleteError", error);
       }
     },
   });

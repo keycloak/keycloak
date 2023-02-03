@@ -38,6 +38,7 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ClientsTab, toClients } from "./routes/Clients";
+import { ClientRegistration } from "./registration/ClientRegistration";
 
 export default function ClientsSection() {
   const { t } = useTranslation("clients");
@@ -69,6 +70,7 @@ export default function ClientsSection() {
 
   const listTab = useTab("list");
   const initialAccessTokenTab = useTab("initial-access-token");
+  const clientRegistrationTab = useTab("client-registration");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("clientDelete", { clientId: selectedClient?.clientId }),
@@ -242,6 +244,13 @@ export default function ClientsSection() {
             {...initialAccessTokenTab}
           >
             <InitialAccessTokenList />
+          </Tab>
+          <Tab
+            data-testid="registration"
+            title={<TabTitleText>{t("clientRegistration")}</TabTitleText>}
+            {...clientRegistrationTab}
+          >
+            <ClientRegistration />
           </Tab>
         </RoutableTabs>
       </PageSection>
