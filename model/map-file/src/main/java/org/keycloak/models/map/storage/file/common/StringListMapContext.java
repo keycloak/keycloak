@@ -52,7 +52,7 @@ public class StringListMapContext extends DefaultMapContext {
 
     @Override
     public AttributeValueYamlContext getContext(String nameOfSubcontext) {
-        // regardless of the key name, the values need to be converted into Set<String> which is the purpose of AttributeValueYamlContext
+        // regardless of the key name, the values need to be converted into List<String> which is the purpose of AttributeValueYamlContext
         return new AttributeValueYamlContext();
     }
 
