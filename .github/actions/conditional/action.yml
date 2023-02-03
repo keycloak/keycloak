@@ -5,6 +5,12 @@ outputs:
   ci:
     description: Should "ci.yml" execute
     value: ${{ steps.changes.outputs.ci }}
+  operator:
+    description: Should "operator-ci.yml" execute
+    value: ${{ steps.changes.outputs.operator }}
+  js:
+    description: Should "js-ci.yml" execute
+    value: ${{ steps.changes.outputs.js }}
   codeql-java:
     description: Should "codeql-analysis.yml / java" execute
     value: ${{ steps.changes.outputs.codeql-java }}
@@ -14,9 +20,6 @@ outputs:
   codeql-js_adapter:
     description: Should "codeql-analysis.yml / js-adapter" execute
     value: ${{ steps.changes.outputs.codeql-js_adapter }}
-  operator:
-    description: Should "operator-ci.yml" execute
-    value: ${{ steps.changes.outputs.operator }}
 
 runs:
   using: composite

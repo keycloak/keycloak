@@ -1,0 +1,96 @@
+name: Keycloak JavaScript CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+  pull_request:
+  schedule:
+    - cron: 0 20,23,2,5 * * *
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: 18
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: js-ci-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  conditional:
+    name: Check conditional workflows and jobs
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
+    runs-on: ubuntu-latest
+    outputs:
+      js-ci: ${{ steps.conditional.outputs.js }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+
+  npm-run:
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Keycloak Admin Client
+          - workspace: "@keycloak/keycloak-admin-client"
+            command: lint
+          - workspace: "@keycloak/keycloak-admin-client"
+            command: build
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: true
+          cache: npm
+          cache-dependency-path: js/package-lock.json
+
+      - name: Install dependencies
+        working-directory: js
+        run: npm ci
+
+      - name: Run ${{ matrix.command }} task
+        working-directory: js
+        run: npm run ${{ matrix.command }} --workspace=${{ matrix.workspace }}
+
+  check-set-status:
+    name: Set check conclusion
+    needs:
+      - npm-run
+    runs-on: ubuntu-latest
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: check
+        uses: ./.github/actions/checks-success
+
+  check:
+    name: Status Check - Keycloak JavaScript CI
+    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    needs:
+      - conditional
+      - check-set-status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check status
+        uses: ./.github/actions/checks-job-pass
+        with:
+          required: ${{ needs.conditional.outputs.ci }}
+          conclusion: ${{ needs.check-set-status.outputs.conclusion }}
