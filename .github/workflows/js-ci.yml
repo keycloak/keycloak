@@ -92,5 +92,5 @@ jobs:
       - name: Check status
         uses: ./.github/actions/checks-job-pass
         with:
-          required: ${{ needs.conditional.outputs.ci }}
+          required: ${{ needs.conditional.outputs.js-ci }}
           conclusion: ${{ needs.check-set-status.outputs.conclusion }}
