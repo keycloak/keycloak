@@ -141,7 +141,7 @@
         <pax.web.version>7.1.0</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
-        <twitter4j.version>4.0.7</twitter4j.version>
+        <twitter4j.version>4.1.2</twitter4j.version>
         <jna.version>4.1.0</jna.version>
 
         <!-- Databases -->

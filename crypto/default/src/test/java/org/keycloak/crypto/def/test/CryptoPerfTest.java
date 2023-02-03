@@ -35,6 +35,9 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
+import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
+import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.rule.CryptoInitRule;
@@ -63,8 +66,12 @@ public class CryptoPerfTest {
     }
 
     private void perfTest(Runnable runnable, String testName) {
+        perfTest(runnable, testName, COUNT_ITERATIONS);
+    }
+
+    private void perfTest(Runnable runnable, String testName, int count) {
         long start = Time.currentTimeMillis();
-        for (int i=0 ; i<COUNT_ITERATIONS ; i++) {
+        for (int i=0 ; i<count ; i++) {
             runnable.run();
         }
         long took = Time.currentTimeMillis() - start;
@@ -102,6 +109,39 @@ public class CryptoPerfTest {
         perfTest(() -> testTokenSignAndVerify(keyPair), "testSignAndVerifyTokens2048");
     }
 
+    @Test
+    public void testPbkdf256() {
+        int iterations = 600 * 1000;
+        int derivedKeySize = 256;
+        String providerId = Pbkdf2Sha256PasswordHashProviderFactory.ID;
+        String algorithm = Pbkdf2Sha256PasswordHashProviderFactory.PBKDF2_ALGORITHM;
+        perfTestPasswordHashins(iterations, derivedKeySize, providerId, algorithm);
+    }
+
+    @Test
+    public void testPbkdf512() {
+        int iterations = 210 * 1000;
+        int derivedKeySize = 512;
+        String providerId = Pbkdf2Sha512PasswordHashProviderFactory.ID;
+        String algorithm = Pbkdf2Sha512PasswordHashProviderFactory.PBKDF2_ALGORITHM;
+        perfTestPasswordHashins(iterations, derivedKeySize, providerId, algorithm);
+    }
+
+    private void perfTestPasswordHashins(int iterations, int derivedKeySize, String providerId, String algorithm) {
+        Pbkdf2PasswordHashProvider provider = new Pbkdf2PasswordHashProvider(
+                providerId,
+                algorithm,
+                iterations,
+                0,
+                derivedKeySize);
+
+        perfTest(new Runnable() {
+            @Override
+            public void run() {
+                provider.encode("password", -1);
+            }
+        }, "testPbkdf512", 1);
+    }
 
     private KeyPair generateKeys(int size) {
         KeyPair keyPair;
