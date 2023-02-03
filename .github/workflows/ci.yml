@@ -417,6 +417,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      matrix:
+        mode: [non-strict, strict]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
 
@@ -429,9 +433,12 @@ jobs:
 
       - name: Run base tests
         run: |
+          declare -A PARAMS
+          PARAMS["non-strict"]=""
+          PARAMS["strict"]="-Dauth.server.fips.mode=strict -Dauth.server.supported.keystore.types=BCFKS -Dauth.server.keystore.type=bcfks -Dauth.server.supported.rsa.key.sizes=2048,4096"          
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 ${PARAMS["${{ matrix.mode }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
