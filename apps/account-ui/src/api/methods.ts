@@ -1,5 +1,9 @@
 import { parseResponse } from "./parse-response";
-import { Permission, UserRepresentation } from "./representations";
+import {
+  ClientRepresentation,
+  Permission,
+  UserRepresentation,
+} from "./representations";
 import { request } from "./request";
 
 export type CallOptions = {
@@ -28,4 +32,15 @@ export async function getPermissionRequests(
   );
 
   return parseResponse<Permission[]>(response);
+}
+
+export async function getApplications({ signal }: CallOptions = {}): Promise<
+  ClientRepresentation[]
+> {
+  const response = await request("/applications", { signal });
+  return parseResponse<ClientRepresentation[]>(response);
+}
+
+export async function deleteConsent(id: string) {
+  return request(`/applications/${id}/consent`, { method: "DELETE" });
 }
