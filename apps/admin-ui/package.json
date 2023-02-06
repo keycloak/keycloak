@@ -8,7 +8,7 @@
     "test": "wireit",
     "cy:open": "cypress open --e2e --browser chrome",
     "cy:run": "cypress run --browser chrome",
-    "cy:run-component": "cypress run --browser chrome --component",
+    "cy:run-component": "wireit",
     "cy:check-types": "wireit",
     "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json"
   },
@@ -45,6 +45,12 @@
       "command": "vitest",
       "dependencies": [
         "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "cy:run-component": {
+      "command": "cypress run --browser chrome --component",
+      "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]
     },
