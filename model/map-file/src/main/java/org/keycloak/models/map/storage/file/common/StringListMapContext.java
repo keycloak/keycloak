@@ -24,6 +24,7 @@ import org.keycloak.models.map.common.UndefinedValuesUtils;
 import org.keycloak.models.map.storage.file.common.BlockContext.DefaultListContext;
 import org.keycloak.models.map.storage.file.common.BlockContext.DefaultMapContext;
 import org.keycloak.models.map.storage.file.yaml.YamlParser;
+import java.util.List;
 
 /**
  * Block context which suitable for properties stored in a {@code Map<String, List<String>>}
@@ -32,7 +33,12 @@ import org.keycloak.models.map.storage.file.yaml.YamlParser;
  *
  * @author hmlnarik
  */
-public class StringListMapContext extends DefaultMapContext {
+public class StringListMapContext extends DefaultMapContext<Collection<String>> {
+
+    @SuppressWarnings("unchecked")
+    public StringListMapContext() {
+        super((Class) Collection.class);
+    }
 
     /**
      * Returns a YAML attribute-like context where key of each element
@@ -46,10 +52,6 @@ public class StringListMapContext extends DefaultMapContext {
         return new Prefixed(prefix);
     }
 
-    public static DefaultMapContext singletonAttributesMap(String key) {
-        return new SingletonAttributesMapYamlContext(key);
-    }
-
     @Override
     public AttributeValueYamlContext getContext(String nameOfSubcontext) {
         // regardless of the key name, the values need to be converted into List<String> which is the purpose of AttributeValueYamlContext
@@ -57,13 +59,12 @@ public class StringListMapContext extends DefaultMapContext {
     }
 
     @Override
-    public void writeValue(Map<String, Object> value, WritingMechanism mech) {
+    public void writeValue(Map<String, Collection<String>> value, WritingMechanism mech) {
         if (UndefinedValuesUtils.isUndefined(value)) return;
         mech.writeMapping(() -> {
             AttributeValueYamlContext c = getContext(YamlParser.ARRAY_CONTEXT);
-            for (Map.Entry<String, Object> entry : new TreeMap<>(value).entrySet()) {
-                @SuppressWarnings("unchecked")
-                Collection<String> attrValues = (Collection<String>) entry.getValue();
+            for (Map.Entry<String, Collection<String>> entry : new TreeMap<>(value).entrySet()) {
+                Collection<String> attrValues = entry.getValue();
                 mech.writePair(entry.getKey(), () -> c.writeValue(attrValues, mech));
             }
         });
@@ -80,24 +81,6 @@ public class StringListMapContext extends DefaultMapContext {
         @Override
         public void add(String name, Object value) {
             super.add(prefix + name, value);
-        }
-    }
-
-    private static class SingletonAttributesMapYamlContext extends DefaultMapContext {
-
-        protected final String key;
-
-        public SingletonAttributesMapYamlContext(String key) {
-            this.key = key;
-        }
-
-        @Override
-        public void add(Object value) {
-            if (value != null) {
-                @SuppressWarnings("unchecked")
-                LinkedList<String> stringList = (LinkedList<String>) getResult().computeIfAbsent(key, s -> new LinkedList<>());
-                stringList.add(String.valueOf(value));
-            }
         }
     }
 

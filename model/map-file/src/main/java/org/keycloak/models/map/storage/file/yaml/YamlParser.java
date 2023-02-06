@@ -135,10 +135,7 @@ public class YamlParser<E> {
 //        try {
         switch (ev.getEventId()) {
             case Scalar:
-                ScalarEvent se = (ScalarEvent) ev;
-                boolean implicit = se.getImplicit().canOmitTagInPlainScalar();
-                Tag nodeTag = constructTag(se.getTag(), se.getValue(), implicit);
-                return parseScalar(nodeTag, se);
+                return parseScalar((ScalarEvent) ev);
             case SequenceStart:
                 return parseSequence();
             case MappingStart:
@@ -192,8 +189,14 @@ public class YamlParser<E> {
      * Parses a scalar node inside the current context.
      * @return
      */
-    protected Object parseScalar(Tag nodeTag, ScalarEvent se) {
+    protected Object parseScalar(ScalarEvent se) {
         BlockContext context = contextStack.peek();
+
+        boolean implicit = se.getImplicit().canOmitTagInPlainScalar();
+        final Tag nodeTag;
+        Class ot = context.getScalarType();
+        nodeTag = constructTag(se.getTag(), se.getValue(), implicit, ot);
+
         ScalarNode node = new ScalarNode(nodeTag, true, se.getValue(), se.getScalarStyle(), se.getStartMark(), se.getEndMark());
         final Object value = MiniConstructor.INSTANCE.constructStandardJavaInstance(node);
         context.add(value);
@@ -202,9 +205,9 @@ public class YamlParser<E> {
 
     private static final EnumMap<Event.ID, Supplier<BlockContext<?>>> CONTEXT_CONSTRUCTORS = new EnumMap<>(Event.ID.class);
     static {
-        CONTEXT_CONSTRUCTORS.put(ID.Scalar, DefaultObjectContext::new);
+        CONTEXT_CONSTRUCTORS.put(ID.Scalar, DefaultObjectContext::newDefaultObjectContext);
         CONTEXT_CONSTRUCTORS.put(ID.SequenceStart, DefaultListContext::newDefaultListContext);
-        CONTEXT_CONSTRUCTORS.put(ID.MappingStart, DefaultMapContext::new);
+        CONTEXT_CONSTRUCTORS.put(ID.MappingStart, DefaultMapContext::newDefaultMapContext);
     }
 
     /**
@@ -223,6 +226,14 @@ public class YamlParser<E> {
         return tag.filter(t -> ! "!".equals(t))
           .map(Tag::new)
           .orElseGet(() -> RESOLVER.resolve(value, implicit));
+    }
+
+    private Tag constructTag(Optional<String> tag, String value, boolean implicit, Class<?> ot) {
+        if (ot == String.class) {
+            return Tag.STR;
+        } else {
+            return constructTag(tag, value, implicit);
+        }
     }
 
     /**
@@ -248,7 +259,7 @@ public class YamlParser<E> {
      * @throws IllegalStateException
      */
     private Object parseNodeInFreshContext() throws IllegalStateException {
-        contextStack.push(new DefaultObjectContext());
+        contextStack.push(DefaultObjectContext.newDefaultObjectContext());
         Object value = parseNode();
         contextStack.pop();
         return value;

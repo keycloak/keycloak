@@ -49,6 +49,7 @@ public class MapEntityContext<T> implements BlockContext<T> {
     private final Map<String, EntityField<?>> nameToEntityField;
     private final Map<String, Supplier<? extends BlockContext<?>>> contextCreators;
 
+    protected final Class<T> objectClass;
     protected final T result;
     private static final Map<Class, Map<String, EntityField<?>>> CACHE_FIELD_TO_EF = new IdentityHashMap<>();
     private static final Map<Class, Map<String, Supplier<? extends BlockContext<?>>>> CACHE_CLASS_TO_CC = new IdentityHashMap<>();
@@ -75,6 +76,7 @@ public class MapEntityContext<T> implements BlockContext<T> {
       Map<String, EntityField<?>> nameToEntityField,
       Map<String, Supplier<? extends BlockContext<?>>> contextCreators,
       boolean topContext) {
+        this.objectClass = clazz;
         this.result = DeepCloner.DUMB_CLONER.newInstance(clazz);
         this.nameToEntityField = nameToEntityField;
         this.contextCreators = contextCreators;
@@ -125,19 +127,23 @@ public class MapEntityContext<T> implements BlockContext<T> {
             return false;
         }
 
-        if (ef.getCollectionElementClass() != Void.class && value instanceof Collection) {
-            Class<?> collectionElementClass = ef.getCollectionElementClass();
-            ((Collection) value).forEach(v -> ef.collectionAdd(result, cast(v, collectionElementClass)));
-        } else if (ef.getMapKeyClass() != Void.class && value instanceof Map) {
-            Class<?> mapKeyClass = ef.getMapKeyClass();
-            Class<?> mapValueClass = ef.getMapValueClass();
-            ((Map) value).forEach((k, v) -> ef.mapPut(result, cast(k, mapKeyClass), cast(v, mapValueClass)));
-        } else {
-            final Object origValue = ef.get(result);
-            if (origValue != null) {
-                LOG.warnf("Overwriting value of %s field", ef.getNameCamelCase());
+        try {
+            if (ef.getCollectionElementClass() != Void.class && value instanceof Collection) {
+                Class<?> collectionElementClass = ef.getCollectionElementClass();
+                ((Collection) value).forEach(v -> ef.collectionAdd(result, cast(v, collectionElementClass)));
+            } else if (ef.getMapKeyClass() != Void.class && value instanceof Map) {
+                Class<?> mapKeyClass = ef.getMapKeyClass();
+                Class<?> mapValueClass = ef.getMapValueClass();
+                ((Map) value).forEach((k, v) -> ef.mapPut(result, cast(k, mapKeyClass), cast(v, mapValueClass)));
+            } else {
+                final Object origValue = ef.get(result);
+                if (origValue != null) {
+                    LOG.warnf("Overwriting value of %s field", ef.getNameCamelCase());
+                }
+                ef.set(result, cast(value, ef.getFieldClass()));
             }
-            ef.set(result, cast(value, ef.getFieldClass()));
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Exception thrown while setting " + ef + " field", ex);
         }
         return true;
     }
@@ -154,6 +160,11 @@ public class MapEntityContext<T> implements BlockContext<T> {
         if (! setEntityField(result, ef, value)) {
             LOG.warnf("Ignoring field %s", name);
         }
+    }
+
+    @Override
+    public Class<T> getScalarType() {
+        return this.objectClass;
     }
 
     @Override
@@ -178,7 +189,7 @@ public class MapEntityContext<T> implements BlockContext<T> {
         EntityField<?> ef = nameToEntityField.get(nameOfSubcontext);
         if (ef != null) {
             if (ef.getCollectionElementClass() != Void.class) {
-                return contextFor(ef.getCollectionElementClass(), MapEntitySequenceYamlContext::new, () -> new DefaultListContext<>(Object.class));
+                return contextFor(ef.getCollectionElementClass(), MapEntitySequenceYamlContext::new, DefaultListContext::new);
             } else if (ef.getMapValueClass() != Void.class) {
                 if (ef.getMapValueClass() == List.class || Collection.class.isAssignableFrom(ef.getMapValueClass())) {
                     return new StringListMapContext();
@@ -192,10 +203,10 @@ public class MapEntityContext<T> implements BlockContext<T> {
         return null;
     }
 
-    private static <T> BlockContext<?> contextFor(Class<T> clazz, Function<Class<T>, BlockContext<?>> mapContextCreator, Supplier<BlockContext<?>> defaultCreator) {
+    private static <T> BlockContext<?> contextFor(Class<T> clazz, Function<Class<T>, BlockContext<?>> mapContextCreator, Function<Class<T>, BlockContext<?>> defaultCreator) {
         return ModelEntityUtil.entityFieldsKnown(clazz)
           ? mapContextCreator.apply(clazz)
-          : defaultCreator.get();
+          : defaultCreator.apply(clazz);
     }
 
     @Override
@@ -256,19 +267,17 @@ public class MapEntityContext<T> implements BlockContext<T> {
         }
     }
 
-    public static class MapEntityMappingYamlContext<T> extends DefaultMapContext {
-
-        private final Class<T> mapValueClass;
+    public static class MapEntityMappingYamlContext<T> extends DefaultMapContext<T> {
 
         public MapEntityMappingYamlContext(Class<T> mapValueClass) {
-            this.mapValueClass = mapValueClass;
+            super(mapValueClass);
         }
 
         @Override
-        public BlockContext<?> getContext(String nameOfSubcontext) {
-            return ModelEntityUtil.entityFieldsKnown(mapValueClass)
-              ? new MapEntityContext<>(mapValueClass, false)
-              : null;
+        public BlockContext<T> getContext(String nameOfSubcontext) {
+            return ModelEntityUtil.entityFieldsKnown(itemClass)
+              ? new MapEntityContext<>(itemClass, false)
+              : super.getContext(nameOfSubcontext);
         }
     }
 

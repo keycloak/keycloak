@@ -103,16 +103,33 @@ public interface BlockContext<V> {
      */
     V getResult();
 
-    public static class DefaultObjectContext implements BlockContext<Object> {
-        private Object result;
+    Class<?> getScalarType();
 
-        @Override
-        public void add(Object value) {
-            result = value;
+    public static class DefaultObjectContext<T> implements BlockContext<T> {
+        
+        private final Class<T> objectType;
+        private T result;
+
+        public DefaultObjectContext(Class<T> objectType) {
+            this.objectType = objectType;
+        }
+
+        public static DefaultObjectContext<Object> newDefaultObjectContext() {
+            return new DefaultObjectContext<>(Object.class);
         }
 
         @Override
-        public Object getResult() {
+        public Class<T> getScalarType() {
+            return objectType;
+        }
+
+        @Override
+        public void add(Object value) {
+            result = (T) value;
+        }
+
+        @Override
+        public T getResult() {
             return result;
         }
 
@@ -139,6 +156,11 @@ public interface BlockContext<V> {
 
         public DefaultListContext(Class<T> itemClass) {
             this.itemClass = itemClass;
+        }
+
+        @Override
+        public Class<T> getScalarType() {
+            return itemClass;
         }
 
         @Override
@@ -169,30 +191,46 @@ public interface BlockContext<V> {
                 return res;
             }
             if (value instanceof Collection) {
-                return new DefaultListContext<>(Object.class);
+                return new DefaultListContext<>(itemClass);
             } else if (value instanceof Map) {
-                return new DefaultMapContext();
+                return DefaultMapContext.newDefaultMapContext();
             } else {
-                return new DefaultObjectContext();
+                return new DefaultObjectContext<>(itemClass);
             }
         }
     }
 
-    public static class DefaultMapContext implements BlockContext<Map<String, Object>> {
-        private final Map<String, Object> result = new LinkedHashMap<>();
+    public static class DefaultMapContext<T> implements BlockContext<Map<String, T>> {
+        private final Map<String, T> result = new LinkedHashMap<>();
 
-        @Override
-        public void add(String name, Object value) {
-            result.put(name, value);
+        protected final Class<T> itemClass;
+
+        public static DefaultMapContext<Object> newDefaultMapContext() {
+            return new DefaultMapContext<>(Object.class);
+        }
+
+        public DefaultMapContext(Class<T> itemClass) {
+            this.itemClass = itemClass;
         }
 
         @Override
-        public Map<String, Object> getResult() {
+        public Class<T> getScalarType() {
+            return itemClass;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void add(String name, Object value) {
+            result.put(name, (T) value);
+        }
+
+        @Override
+        public Map<String, T> getResult() {
             return result;
         }
 
         @Override
-        public void writeValue(Map<String, Object> value, WritingMechanism mech) {
+        public void writeValue(Map<String, T> value, WritingMechanism mech) {
             if (UndefinedValuesUtils.isUndefined(value)) return;
             mech.writeMapping(() -> {
                 final TreeMap<String, Object> sortedMap = new TreeMap<>(value);
@@ -206,7 +244,7 @@ public interface BlockContext<V> {
         }
 
         @Override
-        public BlockContext getContext(String nameOfSubcontext) {
+        public BlockContext<T> getContext(String nameOfSubcontext) {
             return null;
         }
 
@@ -216,11 +254,11 @@ public interface BlockContext<V> {
                 return res;
             }
             if (value instanceof Collection) {
-                return new DefaultListContext<>(Object.class);
+                return new DefaultListContext<>(itemClass);
             } else if (value instanceof Map) {
-                return new DefaultMapContext();
+                return DefaultMapContext.newDefaultMapContext();
             } else {
-                return new DefaultObjectContext();
+                return new DefaultObjectContext<>(itemClass);
             }
         }
     }
