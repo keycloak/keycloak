@@ -20,8 +20,9 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
-import io.fabric8.kubernetes.api.model.ExecActionBuilder;
+import io.fabric8.kubernetes.api.model.HTTPGetActionBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -399,26 +400,23 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         var tlsConfigured = isTlsConfigured(keycloakCR);
         var userRelativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY);
         var kcRelativePath = (userRelativePath == null) ? "" : userRelativePath;
-        var protocol = !tlsConfigured ? "http" : "https";
+        var protocol = !tlsConfigured ? "HTTP" : "HTTPS";
         var kcPort = KeycloakService.getServicePort(keycloakCR);
 
-        var baseProbe = new ArrayList<>(List.of("curl", "--head", "--fail", "--silent"));
-
-        if (tlsConfigured) {
-            baseProbe.add("--insecure");
-        }
-
-        var readyProbe = new ArrayList<>(baseProbe);
-        readyProbe.add(protocol + "://127.0.0.1:" + kcPort + kcRelativePath + "/health/ready");
-        var liveProbe = new ArrayList<>(baseProbe);
-        liveProbe.add(protocol + "://127.0.0.1:" + kcPort + kcRelativePath + "/health/live");
-
-        container
-                .getReadinessProbe()
-                .setExec(new ExecActionBuilder().withCommand(readyProbe).build());
-        container
-                .getLivenessProbe()
-                .setExec(new ExecActionBuilder().withCommand(liveProbe).build());
+        container.getReadinessProbe().setHttpGet(
+            new HTTPGetActionBuilder()
+                .withScheme(protocol)
+                .withPort(new IntOrString(kcPort))
+                .withPath(kcRelativePath + "/health/ready")
+                .build()
+        );
+        container.getLivenessProbe().setHttpGet(
+            new HTTPGetActionBuilder()
+                .withScheme(protocol)
+                .withPort(new IntOrString(kcPort))
+                .withPath(kcRelativePath + "/health/live")
+                .build()
+        );
 
         return baseDeployment;
     }

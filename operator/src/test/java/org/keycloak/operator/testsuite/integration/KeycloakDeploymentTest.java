@@ -493,7 +493,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .list()
                     .getItems();
 
-            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getExec().getCommand().stream().collect(Collectors.joining()).contains("foobar"));
+            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPath().contains("foobar"));
         } catch (Exception e) {
             savePodLogs();
             throw e;
@@ -529,7 +529,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .list()
                     .getItems();
 
-            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getExec().getCommand().stream().collect(Collectors.joining()).contains("barfoo"));
+            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPath().contains("barfoo"));
         } catch (Exception e) {
             savePodLogs();
             throw e;
