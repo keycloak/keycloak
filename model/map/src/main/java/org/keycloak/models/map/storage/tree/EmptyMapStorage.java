@@ -19,7 +19,6 @@ package org.keycloak.models.map.storage.tree;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.QueryParameters;
 import java.util.stream.Stream;
 
@@ -27,18 +26,10 @@ import java.util.stream.Stream;
  *
  * @author hmlnarik
  */
-public class EmptyMapStorage<V extends AbstractEntity, M> implements MapStorage<V, M> {
+public class EmptyMapStorage {
 
-    private static final EmptyMapStorage<?, ?> INSTANCE = new EmptyMapStorage<>();
-
-    @SuppressWarnings("unchecked")
-    public static <V extends AbstractEntity, M> EmptyMapStorage<V, M> getInstance() {
-        return (EmptyMapStorage<V, M>) INSTANCE;
-    }
-
-    @Override
-    public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        return new MapKeycloakTransaction<V, M>() {
+    public static <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getInstance() {
+        return new MapKeycloakTransaction<>() {
             @Override
             public V create(V value) {
                 return null;
@@ -70,5 +61,4 @@ public class EmptyMapStorage<V extends AbstractEntity, M> implements MapStorage<
             }
         };
     }
-
 }

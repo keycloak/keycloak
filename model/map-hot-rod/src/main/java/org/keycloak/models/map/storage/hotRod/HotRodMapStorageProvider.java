@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
@@ -31,16 +30,14 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
+import org.keycloak.models.map.storage.chm.SingleUseObjectKeycloakTransaction;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
-import org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntity;
-import org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.transaction.AllAreasHotRodTransactionsWrapper;
 import org.keycloak.models.map.storage.hotRod.transaction.HotRodRemoteTransactionWrapper;
 import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionTransaction;
-import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Map;
@@ -52,17 +49,15 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
 
     private final KeycloakSession session;
     private final HotRodMapStorageProviderFactory factory;
-    private final int factoryId;
     private final boolean jtaEnabled;
     private final long lockTimeout;
     private AllAreasHotRodTransactionsWrapper txWrapper;
-    
 
-    public HotRodMapStorageProvider(KeycloakSession session, HotRodMapStorageProviderFactory factory, int factoryId, boolean jtaEnabled, long lockTimeout) {
+
+    public HotRodMapStorageProvider(KeycloakSession session, HotRodMapStorageProviderFactory factory, boolean jtaEnabled, long lockTimeout) {
         this.session = session;
         this.factory = factory;
         this.jtaEnabled = jtaEnabled;
-        this.factoryId = factoryId;
         this.lockTimeout = lockTimeout;
     }
 
@@ -73,19 +68,16 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
         // We need to preload client session store before we load user session store to avoid recursive update of storages map
         if (modelType == UserSessionModel.class) getEnlistedTransaction(AuthenticatedClientSessionModel.class, flags);
 
-        return (MapKeycloakTransaction<V, M>) SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> {
-            ConcurrentHashMapKeycloakTransaction<Object, ? extends HotRodEntityDelegate<AbstractHotRodEntity>, M> hotRodTransaction = getHotRodTransaction(session, modelType, flags);
-            session.getTransactionManager().enlist(hotRodTransaction);
-            return hotRodTransaction;
-        });
+        return (MapKeycloakTransaction<V, M>) txWrapper.getOrCreateTxForModel(modelType, () -> createHotRodTransaction(session, modelType, flags));
     }
-    
+
     private void initializeTransactionWrapper(Class<?> modelType) {
         txWrapper = new AllAreasHotRodTransactionsWrapper();
 
         // Enlist the wrapper into prepare phase so it is executed before HotRod client provided transaction
         session.getTransactionManager().enlistPrepare(txWrapper);
 
+        // If JTA is enabled, the HotRod client provided transaction is automatically enlisted into JTA and we don't need to do anything here
         if (!jtaEnabled) {
             // If there is no JTA transaction enabled control HotRod client provided transaction manually using
             //  HotRodRemoteTransactionWrapper
@@ -96,40 +88,28 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
         }
     }
 
-    public <K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> ConcurrentHashMapKeycloakTransaction<K, V, M> getHotRodTransaction(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
-        HotRodMapStorage<String, E, V, M> hotRodStorage = createHotRodStorage(session, modelType, flags);
-        return (ConcurrentHashMapKeycloakTransaction<K, V, M>) hotRodStorage.createTransaction(session);
-    }
-
-    private <E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> HotRodMapStorage<String, E, V, M> createHotRodStorage(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
+    private <K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> ConcurrentHashMapKeycloakTransaction<K, V, M> createHotRodTransaction(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
         HotRodConnectionProvider connectionProvider = session.getProvider(HotRodConnectionProvider.class);
         HotRodEntityDescriptor<E, V> entityDescriptor = (HotRodEntityDescriptor<E, V>) factory.getEntityDescriptor(modelType);
+        Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<String, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) entityDescriptor.getModelTypeClass());
+        StringKeyConverter<String> kc = StringKeyConverter.StringKey.INSTANCE;
 
+        // TODO: This is messy, we should refactor this so we don't need to pass kc, entityDescriptor, CLONER to both MapStorage and transaction
         if (modelType == SingleUseObjectValueModel.class) {
-            return (HotRodMapStorage) new SingleUseObjectHotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, (HotRodEntityDescriptor) entityDescriptor, CLONER, txWrapper, lockTimeout);
+            return new SingleUseObjectKeycloakTransaction(new SingleUseObjectHotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, (HotRodEntityDescriptor) entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
         } if (modelType == AuthenticatedClientSessionModel.class) {
-            return new HotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
-                    StringKeyConverter.StringKey.INSTANCE,
+            return new ConcurrentHashMapKeycloakTransaction(new HotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+                    kc,
                     entityDescriptor,
-                    CLONER, txWrapper, lockTimeout) {
-                @Override
-                public MapKeycloakTransaction createTransaction(KeycloakSession session) {
-                    return new ConcurrentHashMapKeycloakTransaction(this, keyConverter, cloner, CLIENT_SESSION_PREDICATES);
-                }
-            };
+                    CLONER, lockTimeout), kc, CLONER, CLIENT_SESSION_PREDICATES);
         } if (modelType == UserSessionModel.class) {
-            return new HotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
-                    StringKeyConverter.StringKey.INSTANCE,
+            return new HotRodUserSessionTransaction(new HotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+                    kc,
                     entityDescriptor,
-                    CLONER, txWrapper, lockTimeout) {
-                @Override
-                public MapKeycloakTransaction createTransaction(KeycloakSession session) {
-                    Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<String, MapUserSessionEntity, UserSessionModel>> fieldPredicates = MapFieldPredicates.getPredicates((Class<UserSessionModel>) storedEntityDescriptor.getModelTypeClass());
-                    return new HotRodUserSessionTransaction(this, keyConverter, cloner, fieldPredicates, getHotRodTransaction(session, AuthenticatedClientSessionModel.class));
-                }
-            };
+                    CLONER, lockTimeout), kc, CLONER, fieldPredicates, txWrapper.getOrCreateTxForModel(AuthenticatedClientSessionModel.class, () -> createHotRodTransaction(session, AuthenticatedClientSessionModel.class, flags)));
+        } else {
+            return new ConcurrentHashMapKeycloakTransaction(new HotRodMapStorage<>(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
         }
-        return new HotRodMapStorage<>(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER, txWrapper, lockTimeout);
     }
 
     @Override

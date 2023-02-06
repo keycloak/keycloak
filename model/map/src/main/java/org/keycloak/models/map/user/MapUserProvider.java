@@ -52,7 +52,6 @@ import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.credential.MapUserCredentialManager;
 import org.keycloak.models.map.storage.MapKeycloakTransactionWithAuth;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;

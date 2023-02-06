@@ -32,12 +32,9 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -47,7 +44,6 @@ import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
 import org.keycloak.models.map.storage.hotRod.locking.HotRodLocksUtils;
-import org.keycloak.models.map.storage.hotRod.transaction.AllAreasHotRodTransactionsWrapper;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.utils.LockObjectsForModification;
 
@@ -67,7 +63,7 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.storage.hotRod.common.HotRodUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends AbstractEntity & HotRodEntityDelegate<E>, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
+public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends AbstractEntity & HotRodEntityDelegate<E>, M> implements ConcurrentHashMapCrudOperations<V, M> {
 
     private static final Logger LOG = Logger.getLogger(HotRodMapStorage.class);
 
@@ -78,13 +74,12 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
     private final Function<E, V> delegateProducer;
     protected final DeepCloner cloner;
     protected boolean isExpirableEntity;
-    private final AllAreasHotRodTransactionsWrapper txWrapper;
     private final Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates;
     private final Long lockTimeout;
     private final RemoteCache<String, String> locksCache;
     private final Map<K, Long> entityVersionCache = new HashMap<>();
 
-    public HotRodMapStorage(KeycloakSession session, RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner, AllAreasHotRodTransactionsWrapper txWrapper, Long lockTimeout) {
+    public HotRodMapStorage(KeycloakSession session, RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner, Long lockTimeout) {
         this.session = session;
         this.remoteCache = remoteCache;
         this.keyConverter = keyConverter;
@@ -92,7 +87,6 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
         this.cloner = cloner;
         this.delegateProducer = storedEntityDescriptor.getHotRodDelegateProvider();
         this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(ModelEntityUtil.getEntityType(storedEntityDescriptor.getModelTypeClass()));
-        this.txWrapper = txWrapper;
         this.fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
         this.lockTimeout = lockTimeout;
         HotRodConnectionProvider cacheProvider = session.getProvider(HotRodConnectionProvider.class);
@@ -319,15 +313,6 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
 
     public IckleQueryMapModelCriteriaBuilder<E, M> createCriteriaBuilder() {
         return new IckleQueryMapModelCriteriaBuilder<>(storedEntityDescriptor.getEntityTypeClass());
-    }
-
-    @Override
-    public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        return (MapKeycloakTransaction<V, M>) txWrapper.getOrCreateTxForModel(storedEntityDescriptor.getModelTypeClass(), this::createTransactionInternal);
-    }
-
-    protected ConcurrentHashMapKeycloakTransaction<K, V, M> createTransactionInternal() {
-        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
     }
 
     // V must be an instance of ExpirableEntity

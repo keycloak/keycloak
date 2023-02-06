@@ -22,20 +22,13 @@ import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
-import org.keycloak.models.map.storage.chm.SingleUseObjectKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
-import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.SingleUseObjectModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntity;
 import org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntityDelegate;
-import org.keycloak.models.map.storage.hotRod.transaction.AllAreasHotRodTransactionsWrapper;
-import org.keycloak.storage.SearchableModelField;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 
@@ -45,24 +38,10 @@ import java.util.stream.Stream;
 public class SingleUseObjectHotRodMapStorage
         extends HotRodMapStorage<String, HotRodSingleUseObjectEntity, HotRodSingleUseObjectEntityDelegate, SingleUseObjectValueModel> {
 
-    private final StringKeyConverter<String> keyConverter;
-    private final HotRodEntityDescriptor<HotRodSingleUseObjectEntity, HotRodSingleUseObjectEntityDelegate> storedEntityDescriptor;
-    private final DeepCloner cloner;
-
     public SingleUseObjectHotRodMapStorage(KeycloakSession session, RemoteCache<String, HotRodSingleUseObjectEntity> remoteCache, StringKeyConverter<String> keyConverter,
                                            HotRodEntityDescriptor<HotRodSingleUseObjectEntity, HotRodSingleUseObjectEntityDelegate> storedEntityDescriptor,
-                                           DeepCloner cloner, AllAreasHotRodTransactionsWrapper txWrapper, Long lockTimeout) {
-        super(session, remoteCache, keyConverter, storedEntityDescriptor, cloner, txWrapper, lockTimeout);
-        this.keyConverter = keyConverter;
-        this.storedEntityDescriptor = storedEntityDescriptor;
-        this.cloner = cloner;
-    }
-
-    @Override
-    public MapKeycloakTransaction<HotRodSingleUseObjectEntityDelegate, SingleUseObjectValueModel> createTransaction(KeycloakSession session) {
-        Map<SearchableModelField<? super SingleUseObjectValueModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<String, HotRodSingleUseObjectEntityDelegate, SingleUseObjectValueModel>> fieldPredicates =
-                MapFieldPredicates.getPredicates((Class<SingleUseObjectValueModel>) storedEntityDescriptor.getModelTypeClass());
-       return new SingleUseObjectKeycloakTransaction(this, keyConverter, cloner, fieldPredicates);
+                                           DeepCloner cloner, Long lockTimeout) {
+        super(session, remoteCache, keyConverter, storedEntityDescriptor, cloner, lockTimeout);
     }
 
     @Override

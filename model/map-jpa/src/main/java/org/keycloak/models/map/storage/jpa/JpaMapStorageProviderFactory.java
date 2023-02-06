@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 import javax.naming.InitialContext;
@@ -277,7 +276,7 @@ public class JpaMapStorageProviderFactory implements
         lazyInit();
 
         return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, JpaMapStorageProvider.class,
-                session1 -> new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), factoryId, this.jtaEnabled));
+                session1 -> new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), this.jtaEnabled));
     }
 
     protected EntityManager getEntityManager() {

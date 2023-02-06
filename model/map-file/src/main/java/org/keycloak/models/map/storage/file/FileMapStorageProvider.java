@@ -46,7 +46,7 @@ public class FileMapStorageProvider implements MapStorageProvider {
     public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
         FileMapStorage storage = factory.getStorage(modelType, flags);
         return SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> {
-            ConcurrentHashMapKeycloakTransaction transaction = (ConcurrentHashMapKeycloakTransaction) storage.createTransaction(session);
+            ConcurrentHashMapKeycloakTransaction transaction = storage.createTransaction();
             session.getTransactionManager().enlist(transaction);
             return transaction;
         });

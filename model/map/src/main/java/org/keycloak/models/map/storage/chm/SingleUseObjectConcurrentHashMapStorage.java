@@ -39,12 +39,6 @@ public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public MapKeycloakTransaction<MapSingleUseObjectEntity, SingleUseObjectValueModel> createTransaction(KeycloakSession session) {
-        return new SingleUseObjectKeycloakTransaction(this, keyConverter, cloner, fieldPredicates);
-    }
-
-    @Override
     public MapSingleUseObjectEntity create(MapSingleUseObjectEntity value) {
         if (value.getId() == null) {
             if (value.getObjectKey() != null) {

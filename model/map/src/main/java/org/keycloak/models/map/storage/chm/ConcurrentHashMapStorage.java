@@ -19,12 +19,9 @@ package org.keycloak.models.map.storage.chm;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.ExpirationUtils;
 import org.keycloak.models.map.common.StringKeyConverter;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -53,7 +50,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  *
  * @author hmlnarik
  */
-public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
+public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements ConcurrentHashMapCrudOperations<V, M> {
 
     protected final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
@@ -132,12 +129,6 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
                 .forEach(store::remove);
 
         return res.get();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
     }
 
     public MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {

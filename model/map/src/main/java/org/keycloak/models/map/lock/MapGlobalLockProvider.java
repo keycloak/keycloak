@@ -25,7 +25,6 @@ import org.keycloak.models.locking.GlobalLockProvider;
 import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;

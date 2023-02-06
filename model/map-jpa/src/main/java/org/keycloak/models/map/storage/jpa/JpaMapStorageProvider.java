@@ -31,7 +31,7 @@ public class JpaMapStorageProvider implements MapStorageProvider {
     private final KeycloakSession session;
     private final EntityManager em;
 
-    public JpaMapStorageProvider(JpaMapStorageProviderFactory factory, KeycloakSession session, EntityManager em, int factoryId, boolean jtaEnabled) {
+    public JpaMapStorageProvider(JpaMapStorageProviderFactory factory, KeycloakSession session, EntityManager em, boolean jtaEnabled) {
         this.factory = factory;
         this.session = session;
         this.em = em;

@@ -28,10 +28,10 @@ import org.keycloak.models.map.common.StringKeyConverter.StringKey;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
@@ -68,7 +68,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M> {
+public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> {
 
     private static final Logger LOG = Logger.getLogger(FileMapStorage.class);
 
@@ -103,19 +103,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
         this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(entityClass);
     }
 
-    @Override
-    public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        @SuppressWarnings("unchecked")
-        MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("file-map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-
-        if (sessionTransaction == null) {
-            sessionTransaction = createTransactionInternal(session);
-            session.setAttribute("file-map-transaction-" + hashCode(), sessionTransaction);
-        }
-        return sessionTransaction;
-    }
-
-    public FileMapKeycloakTransaction<V, M> createTransactionInternal(KeycloakSession session) {
+    public ConcurrentHashMapKeycloakTransaction<String, V, M> createTransaction() {
         return FileMapKeycloakTransaction.newInstance(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity, fieldPredicates);
     }
 

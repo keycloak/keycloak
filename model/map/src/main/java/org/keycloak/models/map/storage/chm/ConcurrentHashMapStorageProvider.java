@@ -46,9 +46,8 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
     @Override
     @SuppressWarnings("unchecked")
     public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, Flag... flags) {
-        ConcurrentHashMapStorage storage = factory.getStorage(modelType, flags);
         return SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> {
-            ConcurrentHashMapKeycloakTransaction transaction = (ConcurrentHashMapKeycloakTransaction) storage.createTransaction(session);
+            ConcurrentHashMapKeycloakTransaction transaction = factory.getStorage(modelType, flags);
             session.getTransactionManager().enlist(transaction);
             return transaction;
         });
