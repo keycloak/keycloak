@@ -275,17 +275,17 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
 
             {!applyToResourceType ? (
               <FormGroup
-                label={t("resourcesAndAuthScopes")}
-                id="resourcesAndAuthScopes"
+                label={t("resourcesAndScopes")}
+                id="resourcesAndScopes"
                 isRequired
                 labelIcon={
                   <HelpItem
                     helpText={t("clients-help:contextualAttributes")}
-                    fieldLabelId={`resourcesAndAuthScopes`}
+                    fieldLabelId={`resourcesAndScopes`}
                   />
                 }
                 helperTextInvalid={t("common:required")}
-                fieldId="resourcesAndAuthScopes"
+                fieldId="resourcesAndScopes"
               >
                 <KeyBasedAttributeInput
                   selectableValues={resources.map<AttributeType>((item) => ({
