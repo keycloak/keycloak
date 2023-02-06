@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2.1.39
+        uses: github/codeql-action/init@v2.2.1
         with:
           languages: java
 
@@ -55,7 +55,7 @@ jobs:
         uses: ./.github/actions/build-keycloak
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2.1.39
+        uses: github/codeql-action/analyze@v2.2.1
         with:
           wait-for-processing: true
         env:
@@ -76,7 +76,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2.1.39
+        uses: github/codeql-action/init@v2.2.1
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
         with:
@@ -84,7 +84,7 @@ jobs:
           source-root: adapters/oidc/js/src/
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2.1.39
+        uses: github/codeql-action/analyze@v2.2.1
         with:
           wait-for-processing: true
         env:
@@ -105,7 +105,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2.1.39
+        uses: github/codeql-action/init@v2.2.1
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
         with:
@@ -113,7 +113,7 @@ jobs:
           source-root: themes/src/main/
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2.1.39
+        uses: github/codeql-action/analyze@v2.2.1
         with:
           wait-for-processing: true
         env:
