@@ -19,10 +19,7 @@ export default class UserDetailsPage extends PageObject {
     this.cancelBtn = "cancel-create-user";
     this.emailInput = "email-input";
     this.emailValue = () =>
-      "example" +
-      "_" +
-      (Math.random() + 1).toString(36).substring(7) +
-      "@example.com";
+      "example" + "_" + crypto.randomUUID() + "@example.com";
     this.firstNameInput = "firstName-input";
     this.firstNameValue = "firstname";
     this.lastNameInput = "lastName-input";

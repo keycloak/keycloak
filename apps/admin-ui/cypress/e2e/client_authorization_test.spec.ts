@@ -20,8 +20,7 @@ describe("Client authentication subtab", () => {
   const clientDetailsPage = new ClientDetailsPage();
   const policiesSubTab = new PoliciesTab();
   const permissionsSubTab = new PermissionsTab();
-  const clientId =
-    "client-authentication-" + (Math.random() + 1).toString(36).substring(7);
+  const clientId = "client-authentication-" + crypto.randomUUID();
 
   before(() => {
     keycloakBefore();

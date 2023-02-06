@@ -12,7 +12,7 @@ const modalUtils = new ModalUtils();
 const masthead = new Masthead();
 
 describe("Realm settings client policies tab tests", () => {
-  const realmName = "Realm_" + (Math.random() + 1).toString(36).substring(7);
+  const realmName = "Realm_" + crypto.randomUUID();
   const realmSettingsPage = new RealmSettingsPage(realmName);
 
   beforeEach(() => {

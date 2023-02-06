@@ -46,7 +46,7 @@ describe("Realm roles test", () => {
   });
 
   it("Realm role CRUD test", () => {
-    itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+    itemId += "_" + crypto.randomUUID();
 
     // Create
     listingPage.itemExist(itemId, false).goToCreateItem();
@@ -69,7 +69,7 @@ describe("Realm roles test", () => {
   });
 
   it("should delete role from details action", () => {
-    itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+    itemId += "_" + crypto.randomUUID();
     listingPage.goToCreateItem();
     createRealmRolePage.fillRealmRoleData(itemId).save();
     masthead.checkNotificationMessage("Role created", true);
@@ -89,7 +89,7 @@ describe("Realm roles test", () => {
   });
 
   it("Add associated roles test", () => {
-    itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+    itemId += "_" + crypto.randomUUID();
 
     // Create
     listingPage.itemExist(itemId, false).goToCreateItem();
@@ -183,7 +183,7 @@ describe("Realm roles test", () => {
 
   it("Should delete associated roles from list test", () => {
     itemId = "realm_role_crud";
-    itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+    itemId += "_" + crypto.randomUUID();
 
     // Create
     listingPage.itemExist(itemId, false).goToCreateItem();

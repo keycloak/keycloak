@@ -23,7 +23,7 @@ const clickCreateAttributeButton = () =>
   userProfileTab.createAttributeButtonClick();
 
 describe("User profile tabs", () => {
-  const realmName = "Realm_" + (Math.random() + 1).toString(36).substring(7);
+  const realmName = "Realm_" + crypto.randomUUID();
   const attributeName = "Test";
 
   before(() => {

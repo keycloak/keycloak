@@ -14,7 +14,7 @@ const masthead = new Masthead();
 describe("Realm settings client profiles tab tests", () => {
   const profileName = "Test";
   const editedProfileName = "Edit";
-  const realmName = "Realm_" + (Math.random() + 1).toString(36).substring(7);
+  const realmName = "Realm_" + crypto.randomUUID();
   const realmSettingsPage = new RealmSettingsPage(realmName);
 
   beforeEach(() => {

@@ -316,7 +316,7 @@ describe("Clients test", () => {
     });
 
     it("Client CRUD test", () => {
-      itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+      itemId += "_" + crypto.randomUUID();
 
       // Create
       commonPage.tableUtils().checkRowItemExists(itemId, false);
@@ -491,7 +491,7 @@ describe("Clients test", () => {
       loginPage.logIn();
       commonPage.sidebar().goToClients();
 
-      client = "client_" + (Math.random() + 1).toString(36).substring(7);
+      client = "client_" + crypto.randomUUID();
 
       commonPage.tableToolbarUtils().createClient();
 
@@ -703,7 +703,7 @@ describe("Clients test", () => {
 
     beforeEach(() => {
       commonPage.sidebar().goToClients();
-      client = "client_" + (Math.random() + 1).toString(36).substring(7);
+      client = "client_" + crypto.randomUUID();
       commonPage.tableToolbarUtils().createClient();
       createClientPage
         .selectClientType("openid-connect")

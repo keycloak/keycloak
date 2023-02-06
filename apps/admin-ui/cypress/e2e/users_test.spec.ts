@@ -37,7 +37,7 @@ describe("User creation", () => {
 
   before(() => {
     for (let i = 0; i <= 2; i++) {
-      groupName += "_" + (Math.random() + 1).toString(36).substring(7);
+      groupName += "_" + crypto.randomUUID();
       adminClient.createGroup(groupName);
       groupsList = [...groupsList, groupName];
     }
@@ -63,7 +63,7 @@ describe("User creation", () => {
   });
 
   it("Create user test", () => {
-    itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+    itemId += "_" + crypto.randomUUID();
     // Create
     createUserPage.goToCreateUser();
 
@@ -75,7 +75,7 @@ describe("User creation", () => {
   });
 
   it("Create user with groups test", () => {
-    itemIdWithGroups += (Math.random() + 1).toString(36).substring(7);
+    itemIdWithGroups += crypto.randomUUID();
     // Add user from search bar
     createUserPage.goToCreateUser();
 
@@ -97,7 +97,7 @@ describe("User creation", () => {
   });
 
   it("Create user with credentials test", () => {
-    itemIdWithCred += "_" + (Math.random() + 1).toString(36).substring(7);
+    itemIdWithCred += "_" + crypto.randomUUID();
 
     // Add user from search bar
     createUserPage.goToCreateUser();

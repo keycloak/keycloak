@@ -14,12 +14,9 @@ const createRealmPage = new CreateRealmPage();
 const realmSettings = new RealmSettings();
 const modalUtils = new ModalUtils();
 
-const testRealmName =
-  "Test-realm-" + (Math.random() + 1).toString(36).substring(7);
-const newRealmName =
-  "New-Test-realm-" + (Math.random() + 1).toString(36).substring(7);
-const editedRealmName =
-  "Edited-Test-realm-" + (Math.random() + 1).toString(36).substring(7);
+const testRealmName = "Test-realm-" + crypto.randomUUID();
+const newRealmName = "New-Test-realm-" + crypto.randomUUID();
+const editedRealmName = "Edited-Test-realm-" + crypto.randomUUID();
 const testDisabledName = "Test-Disabled";
 
 describe("Realm tests", () => {

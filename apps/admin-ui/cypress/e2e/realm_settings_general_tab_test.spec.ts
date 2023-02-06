@@ -11,7 +11,7 @@ const masthead = new Masthead();
 const realmSettingsPage = new RealmSettingsPage();
 
 describe("Realm settings general tab tests", () => {
-  const realmName = "Realm_" + (Math.random() + 1).toString(36).substring(7);
+  const realmName = "Realm_" + crypto.randomUUID();
 
   beforeEach(() => {
     keycloakBefore();

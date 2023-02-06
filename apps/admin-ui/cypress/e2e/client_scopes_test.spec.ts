@@ -299,7 +299,7 @@ describe("Client Scopes test", () => {
     });
 
     it("Client scope CRUD test", () => {
-      itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+      itemId += "_" + crypto.randomUUID();
 
       // Create
       listingPage.itemExist(itemId, false).goToCreateItem();

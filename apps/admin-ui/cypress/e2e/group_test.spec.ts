@@ -55,7 +55,7 @@ describe("Group test", () => {
     keycloakBefore();
     loginPage.logIn();
     sidebarPage.goToGroups();
-    groupName = groupNamePrefix + (Math.random() + 1).toString(36).substring(7);
+    groupName = groupNamePrefix + crypto.randomUUID();
     groupNames.push(groupName);
   });
 

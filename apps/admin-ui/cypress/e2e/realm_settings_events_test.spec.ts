@@ -14,7 +14,7 @@ const modalUtils = new ModalUtils();
 const realmSettingsPage = new RealmSettingsPage();
 
 describe("Realm settings events tab tests", () => {
-  const realmName = "Realm_" + (Math.random() + 1).toString(36).substring(7);
+  const realmName = "Realm_" + crypto.randomUUID();
   const listingPage = new ListingPage();
 
   beforeEach(() => {
@@ -88,8 +88,8 @@ describe("Realm settings events tab tests", () => {
 
   const addBundle = () => {
     realmSettingsPage.addKeyValuePair(
-      "key_" + (Math.random() + 1).toString(36).substring(7),
-      "value_" + (Math.random() + 1).toString(36).substring(7)
+      "key_" + crypto.randomUUID(),
+      "value_" + crypto.randomUUID()
     );
 
     return this;
