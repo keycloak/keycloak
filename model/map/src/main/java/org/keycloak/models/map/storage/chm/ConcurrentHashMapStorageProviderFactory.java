@@ -160,7 +160,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, ConcurrentHashMapStorageProvider.class, session1 -> new ConcurrentHashMapStorageProvider(session, this, factoryId));
+        return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, ConcurrentHashMapStorageProvider.class, session1 -> new ConcurrentHashMapStorageProvider(session, this, factoryId));
     }
 
 

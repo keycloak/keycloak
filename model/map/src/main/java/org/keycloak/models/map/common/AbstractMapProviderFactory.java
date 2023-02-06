@@ -94,7 +94,7 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
      */
     @Override
     public T create(KeycloakSession session) {
-        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, providerType, this::createNew);
+        return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, providerType, this::createNew);
     }
 
     @Override

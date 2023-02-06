@@ -48,7 +48,6 @@ import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectio
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
 import org.keycloak.models.map.storage.hotRod.locking.HotRodLocksUtils;
 import org.keycloak.models.map.storage.hotRod.transaction.AllAreasHotRodTransactionsWrapper;
-import org.keycloak.models.map.storage.hotRod.transaction.NoActionHotRodTransactionWrapper;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.utils.LockObjectsForModification;
 
@@ -324,13 +323,10 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
 
     @Override
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        // Here we return transaction that has no action because the returned transaction is enlisted to different
-        //  phase than we need. Instead of tx returned by this method txWrapper is enlisted and executes all changes
-        //  performed by the returned transaction.
-        return new NoActionHotRodTransactionWrapper<>((ConcurrentHashMapKeycloakTransaction<K, V, M>) txWrapper.getOrCreateTxForModel(storedEntityDescriptor.getModelTypeClass(), () -> createTransactionInternal(session)));
+        return (MapKeycloakTransaction<V, M>) txWrapper.getOrCreateTxForModel(storedEntityDescriptor.getModelTypeClass(), this::createTransactionInternal);
     }
 
-    protected MapKeycloakTransaction<V, M> createTransactionInternal(KeycloakSession session) {
+    protected ConcurrentHashMapKeycloakTransaction<K, V, M> createTransactionInternal() {
         return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
     }
 

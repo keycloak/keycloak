@@ -56,10 +56,10 @@ public class SessionAttributesUtils {
      * @return an instance of the provider either from session attributes or freshly created.
      * @param <T> type of the provider
      */
-    public static <T extends Provider>  T getOrCreateProvider(KeycloakSession session,
-                                                              int factoryIdentifier,
-                                                              Class<T> providerClass,
-                                                              Function<KeycloakSession, T> createNew) {
+    public static <T extends Provider>  T createProviderIfAbsent(KeycloakSession session,
+                                                                 int factoryIdentifier,
+                                                                 Class<T> providerClass,
+                                                                 Function<KeycloakSession, T> createNew) {
         String uniqueKey = providerClass.getName() + factoryIdentifier;
         T provider = session.getAttribute(uniqueKey, providerClass);
 
@@ -73,8 +73,8 @@ public class SessionAttributesUtils {
     }
 
     /**
-     * Used for creating and enlisting a transaction instance only once within
-     * one KeycloakSession.
+     * Used for creating a transaction instance only once within one
+     * KeycloakSession.
      * <p />
      * Checks whether there already is a transaction within session attributes
      * for given {@code providerClass}, {@code modelType} and
@@ -95,7 +95,7 @@ public class SessionAttributesUtils {
      * @param <M> model type
      * @param <T> transaction type
      */
-    public static <V extends AbstractEntity, M, T extends MapKeycloakTransaction<V, M>> T getOrCreateTransaction(
+    public static <V extends AbstractEntity & UpdatableEntity, M, T extends MapKeycloakTransaction<V, M>> T createTransactionIfAbsent(
             KeycloakSession session,
             Class<? extends MapStorageProvider> providerType,
             Class<M> modelType,
@@ -106,8 +106,6 @@ public class SessionAttributesUtils {
         T sessionTransaction = (T) session.getAttribute(sessionAttributeName, MapKeycloakTransaction.class);
         if (sessionTransaction == null) {
             sessionTransaction = createNew.get();
-            session.getTransactionManager().enlist(sessionTransaction);
-
             session.setAttribute(sessionAttributeName, sessionTransaction);
         }
 

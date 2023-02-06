@@ -73,7 +73,11 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
         // We need to preload client session store before we load user session store to avoid recursive update of storages map
         if (modelType == UserSessionModel.class) getEnlistedTransaction(AuthenticatedClientSessionModel.class, flags);
 
-        return (MapKeycloakTransaction<V, M>) SessionAttributesUtils.getOrCreateTransaction(session, getClass(), modelType, factoryId, () -> getHotRodTransaction(session, modelType, flags));
+        return (MapKeycloakTransaction<V, M>) SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> {
+            ConcurrentHashMapKeycloakTransaction<Object, ? extends HotRodEntityDelegate<AbstractHotRodEntity>, M> hotRodTransaction = getHotRodTransaction(session, modelType, flags);
+            session.getTransactionManager().enlist(hotRodTransaction);
+            return hotRodTransaction;
+        });
     }
     
     private void initializeTransactionWrapper(Class<?> modelType) {
@@ -92,10 +96,9 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
         }
     }
 
-    public <E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> MapKeycloakTransaction<V, M> getHotRodTransaction(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
+    public <K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> ConcurrentHashMapKeycloakTransaction<K, V, M> getHotRodTransaction(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
         HotRodMapStorage<String, E, V, M> hotRodStorage = createHotRodStorage(session, modelType, flags);
-        MapKeycloakTransaction<V, M> transaction = hotRodStorage.createTransaction(session);
-        return transaction;
+        return (ConcurrentHashMapKeycloakTransaction<K, V, M>) hotRodStorage.createTransaction(session);
     }
 
     private <E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> HotRodMapStorage<String, E, V, M> createHotRodStorage(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {

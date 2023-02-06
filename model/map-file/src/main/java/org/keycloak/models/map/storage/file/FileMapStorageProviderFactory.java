@@ -90,7 +90,7 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, FileMapStorageProvider.class, session1 -> new FileMapStorageProvider(session1, this, factoryId));
+        return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, FileMapStorageProvider.class, session1 -> new FileMapStorageProvider(session1, this, factoryId));
     }
 
     @Override

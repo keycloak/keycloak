@@ -276,7 +276,7 @@ public class JpaMapStorageProviderFactory implements
     public MapStorageProvider create(KeycloakSession session) {
         lazyInit();
 
-        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, JpaMapStorageProvider.class,
+        return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, JpaMapStorageProvider.class,
                 session1 -> new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), factoryId, this.jtaEnabled));
     }
 

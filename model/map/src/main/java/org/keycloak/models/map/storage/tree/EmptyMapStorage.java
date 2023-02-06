@@ -68,32 +68,6 @@ public class EmptyMapStorage<V extends AbstractEntity, M> implements MapStorage<
             public long delete(QueryParameters<M> queryParameters) {
                 return 0;
             }
-
-            @Override
-            public void begin() {
-            }
-
-            @Override
-            public void commit() {
-            }
-
-            @Override
-            public void rollback() {
-            }
-
-            @Override
-            public void setRollbackOnly() {
-            }
-
-            @Override
-            public boolean getRollbackOnly() {
-                return false;
-            }
-
-            @Override
-            public boolean isActive() {
-                return true;
-            }
         };
     }
 

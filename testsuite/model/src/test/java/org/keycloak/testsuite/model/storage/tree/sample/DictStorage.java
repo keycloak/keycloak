@@ -81,35 +81,6 @@ public class DictStorage<V extends AbstractEntity, M> implements MapStorage<V, M
         public long delete(QueryParameters<M> queryParameters) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
-
-        @Override
-        public void begin() {
-        }
-
-        @Override
-        public void commit() {
-        }
-
-        @Override
-        public void rollback() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void setRollbackOnly() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public boolean getRollbackOnly() {
-            return false;
-        }
-
-        @Override
-        public boolean isActive() {
-            return true;
-        }
-
     }
 
     @Override

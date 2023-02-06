@@ -22,6 +22,7 @@ import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 
 /**
  * File-based {@link MapStorageProvider} implementation.
@@ -44,7 +45,11 @@ public class FileMapStorageProvider implements MapStorageProvider {
     @SuppressWarnings("unchecked")
     public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
         FileMapStorage storage = factory.getStorage(modelType, flags);
-        return SessionAttributesUtils.getOrCreateTransaction(session, getClass(), modelType, factoryId, () -> storage.createTransaction(session));
+        return SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> {
+            ConcurrentHashMapKeycloakTransaction transaction = (ConcurrentHashMapKeycloakTransaction) storage.createTransaction(session);
+            session.getTransactionManager().enlist(transaction);
+            return transaction;
+        });
     }
 
     @Override

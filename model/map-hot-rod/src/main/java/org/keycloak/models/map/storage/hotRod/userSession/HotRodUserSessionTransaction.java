@@ -46,13 +46,13 @@ import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.IN;
 
 public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTransaction<K, MapUserSessionEntity, UserSessionModel> {
 
-    private final MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction;
+    private final ConcurrentHashMapKeycloakTransaction<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction;
 
     public HotRodUserSessionTransaction(ConcurrentHashMapCrudOperations<MapUserSessionEntity, UserSessionModel> map,
                                         StringKeyConverter<K> keyConverter,
                                         DeepCloner cloner,
                                         Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapUserSessionEntity, UserSessionModel>> fieldPredicates,
-                                        MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction
+                                        ConcurrentHashMapKeycloakTransaction<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction
     ) {
         super(map, keyConverter, cloner, fieldPredicates);
         this.clientSessionTransaction = clientSessionTransaction;

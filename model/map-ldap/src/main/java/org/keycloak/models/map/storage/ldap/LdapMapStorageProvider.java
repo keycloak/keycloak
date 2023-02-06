@@ -41,7 +41,11 @@ public class LdapMapStorageProvider implements MapStorageProvider {
 
     @Override
     public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, Flag... flags) {
-        return SessionAttributesUtils.getOrCreateTransaction(session, getClass(), modelType, factoryId, () -> factory.createTransaction(session, modelType));
+        return SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> {
+            LdapMapKeycloakTransaction transaction = (LdapMapKeycloakTransaction) factory.createTransaction(session, modelType);
+            session.getTransactionManager().enlist(transaction);
+            return transaction;
+        });
     }
 
 }

@@ -304,36 +304,6 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         return new MapModelCriteriaBuilder<>(StringKeyConverter.StringKey.INSTANCE, MapFieldPredicates.getPredicates(modelType));
     }
 
-    @Override
-    public void begin() {
-        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
-    }
-
-    @Override
-    public void commit() {
-        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
-    }
-
-    @Override
-    public void rollback() {
-        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
-    }
-
-    @Override
-    public void setRollbackOnly() {
-        em.getTransaction().setRollbackOnly();
-    }
-
-    @Override
-    public boolean getRollbackOnly() {
-        return  em.getTransaction().getRollbackOnly();
-    }
-
-    @Override
-    public boolean isActive() {
-        return em.getTransaction().isActive();
-    }
-
     private Predicate notExpired(final CriteriaBuilder cb, final JpaSubqueryProvider query, final Root<RE> root) {
         return cb.or(cb.greaterThan(root.get("expiration"), Time.currentTimeMillis()),
                     cb.isNull(root.get("expiration")));

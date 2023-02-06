@@ -170,7 +170,7 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, HotRodMapStorageProvider.class, session1 -> new HotRodMapStorageProvider(session1, this, factoryId, jtaEnabled, lockTimeout));
+        return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, HotRodMapStorageProvider.class, session1 -> new HotRodMapStorageProvider(session1, this, factoryId, jtaEnabled, lockTimeout));
     }
 
     public HotRodEntityDescriptor<?, ?> getEntityDescriptor(Class<?> c) {

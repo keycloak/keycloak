@@ -16,12 +16,11 @@
  */
 package org.keycloak.models.map.storage;
 
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
 
 import java.util.stream.Stream;
 
-public interface MapKeycloakTransaction<V extends AbstractEntity, M> extends KeycloakTransaction {
+public interface MapKeycloakTransaction<V extends AbstractEntity, M> {
 
     /**
      * Instructs this transaction to add a new value into the underlying store on commit.

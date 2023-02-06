@@ -57,7 +57,7 @@ public class LdapMapStorageProviderFactory implements
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, LdapMapStorageProvider.class, session1 -> new LdapMapStorageProvider(session1, this, factoryId));
+        return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, LdapMapStorageProvider.class, session1 -> new LdapMapStorageProvider(session1, this, factoryId));
     }
 
     @Override
