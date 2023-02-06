@@ -583,7 +583,7 @@ public class MapExportImportManager implements ExportImportManager {
 
     private static <P extends Provider, E extends AbstractEntity, M> MapKeycloakTransaction<E, M> getTransaction(KeycloakSession session, Class<P> provider) {
         ProviderFactory<P> factoryChm = session.getKeycloakSessionFactory().getProviderFactory(provider);
-        return ((AbstractMapProviderFactory<P, E, M>) factoryChm).getStorage(session).createTransaction(session);
+        return ((AbstractMapProviderFactory<P, E, M>) factoryChm).getEnlistedTransaction(session);
     }
 
     private <P extends Provider, M> void copyEntities(String realmId, KeycloakSession sessionChm, Class<P> provider, Class<M> model, SearchableModelField<M> field) {

@@ -30,7 +30,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -50,13 +49,10 @@ public class MapEventStoreProvider implements EventStoreProvider {
     private final boolean adminTxHasRealmId;
     private final boolean authTxHasRealmId;
 
-    public MapEventStoreProvider(KeycloakSession session, MapStorage<MapAuthEventEntity, Event> loginEventsStore, MapStorage<MapAdminEventEntity, AdminEvent> adminEventsStore) {
+    public MapEventStoreProvider(KeycloakSession session, MapKeycloakTransaction<MapAuthEventEntity, Event> loginEventsStore, MapKeycloakTransaction<MapAdminEventEntity, AdminEvent> adminEventsStore) {
         this.session = session;
-        this.authEventsTX = loginEventsStore.createTransaction(session);
-        this.adminEventsTX = adminEventsStore.createTransaction(session);
-
-        session.getTransactionManager().enlistAfterCompletion(this.authEventsTX);
-        session.getTransactionManager().enlistAfterCompletion(this.adminEventsTX);
+        this.authEventsTX = loginEventsStore;
+        this.adminEventsTX = adminEventsStore;
         this.authTxHasRealmId = this.authEventsTX instanceof HasRealmId;
         this.adminTxHasRealmId = this.adminEventsTX instanceof HasRealmId;
     }

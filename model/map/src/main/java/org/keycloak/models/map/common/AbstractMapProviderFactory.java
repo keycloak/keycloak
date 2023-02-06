@@ -21,7 +21,7 @@ import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -31,6 +31,8 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import java.util.Objects;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.models.map.common.SessionAttributesUtils.grabNewFactoryIdentifier;
 
 /**
  *
@@ -45,7 +47,7 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
     protected final Logger LOG = Logger.getLogger(getClass());
 
     public static final AtomicInteger uniqueCounter = new AtomicInteger();
-    private final String uniqueKey = getClass().getName() + uniqueCounter.incrementAndGet();
+    private final int factoryId = grabNewFactoryIdentifier();
 
     protected final Class<M> modelType;
     private final Class<T> providerType;
@@ -92,13 +94,7 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
      */
     @Override
     public T create(KeycloakSession session) {
-        T provider = session.getAttribute(uniqueKey, providerType);
-        if (provider != null) {
-            return provider;
-        }
-        provider = createNew(session);
-        session.setAttribute(uniqueKey, provider);
-        return provider;
+        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, providerType, this::createNew);
     }
 
     @Override
@@ -106,11 +102,11 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
         return PROVIDER_ID;
     }
 
-    public MapStorage<V, M> getStorage(KeycloakSession session) {
+    public MapKeycloakTransaction<V, M> getEnlistedTransaction(KeycloakSession session) {
         ProviderFactory<MapStorageProvider> storageProviderFactory = getProviderFactoryOrComponentFactory(session, storageConfigScope);
         final MapStorageProvider factory = storageProviderFactory.create(session);
         session.enlistForClose(factory);
-        return factory.getStorage(modelType);
+        return factory.getEnlistedTransaction(modelType);
     }
 
     public static ProviderFactory<MapStorageProvider> getProviderFactoryOrComponentFactory(KeycloakSession session, Scope storageConfigScope) {

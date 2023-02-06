@@ -44,7 +44,6 @@ import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -62,11 +61,10 @@ public class MapClientProvider implements ClientProvider {
     private final ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore;
     private final boolean txHasRealmId;
 
-    public MapClientProvider(KeycloakSession session, MapStorage<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore) {
+    public MapClientProvider(KeycloakSession session, MapKeycloakTransaction<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore) {
         this.session = session;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
-        this.tx = clientStore.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
+        this.tx = clientStore;
         this.txHasRealmId = tx instanceof HasRealmId;
     }
 

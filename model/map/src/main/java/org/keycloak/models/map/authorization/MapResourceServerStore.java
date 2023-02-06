@@ -23,7 +23,6 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.ResourceServer.SearchableFields;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -32,7 +31,6 @@ import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.StorageId;
@@ -53,10 +51,9 @@ public class MapResourceServerStore implements ResourceServerStore {
     final MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> tx;
     private final boolean txHasRealmId;
 
-    public MapResourceServerStore(KeycloakSession session, MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
-        this.tx = resourceServerStore.createTransaction(session);
+    public MapResourceServerStore(MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
-        session.getTransactionManager().enlist(tx);
+        this.tx = resourceServerStore;
         this.txHasRealmId = tx instanceof HasRealmId;
     }
 

@@ -31,6 +31,7 @@ import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
@@ -41,7 +42,6 @@ import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import java.io.File;
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -66,6 +66,7 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
     private Path rootRealmsDirectory;
     private final Map<String, Function<String, Path>> rootAreaDirectories = new HashMap<>();    // Function: (realmId) -> path
     private final Map<Class<?>, FileMapStorage<?, ?>> storages = new HashMap<>();
+    private final int factoryId = SessionAttributesUtils.grabNewFactoryIdentifier();
 
     private static final Map<Class<?>, Function<?, String[]>> UNIQUE_HUMAN_READABLE_NAME_FIELD = Map.ofEntries(
       entry(MapClientEntity.class,          ((Function<MapClientEntity, String[]>) v -> new String[] { v.getClientId() })),
@@ -89,7 +90,7 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return new FileMapStorageProvider(this);
+        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, FileMapStorageProvider.class, session1 -> new FileMapStorageProvider(session1, this, factoryId));
     }
 
     @Override

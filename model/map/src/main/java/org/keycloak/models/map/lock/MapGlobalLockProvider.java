@@ -59,9 +59,9 @@ public class MapGlobalLockProvider implements GlobalLockProvider {
      * The lockStoreSupplier allows the store to be initialized lazily and only when needed: As this provider is initialized
      * for both the outer and the inner transactions, and the store is needed only for the inner transactions.
      */
-    private final Supplier<MapStorage<MapLockEntity, MapLockEntity>> lockStoreSupplier;
+    private final Supplier<MapKeycloakTransaction<MapLockEntity, MapLockEntity>> lockStoreSupplier;
 
-    public MapGlobalLockProvider(KeycloakSession session, long defaultTimeoutMilliseconds, Supplier<MapStorage<MapLockEntity, MapLockEntity>> lockStoreSupplier) {
+    public MapGlobalLockProvider(KeycloakSession session, long defaultTimeoutMilliseconds, Supplier<MapKeycloakTransaction<MapLockEntity, MapLockEntity>> lockStoreSupplier) {
         this.defaultTimeoutMilliseconds = defaultTimeoutMilliseconds;
         this.session = session;
         this.lockStoreSupplier = lockStoreSupplier;
@@ -121,8 +121,7 @@ public class MapGlobalLockProvider implements GlobalLockProvider {
 
     private void prepareTx() {
         if (tx == null) {
-            this.tx = lockStoreSupplier.get().createTransaction(session);
-            session.getTransactionManager().enlist(tx);
+            this.tx = lockStoreSupplier.get();
         }
     }
 

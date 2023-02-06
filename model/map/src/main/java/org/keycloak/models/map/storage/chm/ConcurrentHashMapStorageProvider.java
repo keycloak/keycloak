@@ -16,8 +16,10 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.common.SessionAttributesUtils;
+import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 
@@ -27,10 +29,14 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
  */
 public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
 
+    private final KeycloakSession session;
     private final ConcurrentHashMapStorageProviderFactory factory;
+    private final int factoryId;
 
-    public ConcurrentHashMapStorageProvider(ConcurrentHashMapStorageProviderFactory factory) {
+    public ConcurrentHashMapStorageProvider(KeycloakSession session, ConcurrentHashMapStorageProviderFactory factory, int factoryId) {
+        this.session = session;
         this.factory = factory;
+        this.factoryId = factoryId;
     }
 
     @Override
@@ -39,8 +45,8 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags) {
+    public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, Flag... flags) {
         ConcurrentHashMapStorage storage = factory.getStorage(modelType, flags);
-        return (MapStorage<V, M>) storage;
+        return SessionAttributesUtils.getOrCreateTransaction(session, getClass(), modelType, factoryId, () -> storage.createTransaction(session));
     }
 }

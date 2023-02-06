@@ -82,6 +82,7 @@ import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.lock.MapLockEntity;
+import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntityImpl;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
@@ -161,8 +162,6 @@ public class JpaMapStorageProviderFactory implements
         EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "jpa";
-    private static final String SESSION_TX_PREFIX = "jpa-map-tx-";
-    private static final AtomicInteger ENUMERATOR = new AtomicInteger(0);
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
 
     public static final String HIBERNATE_DEFAULT_SCHEMA = "hibernate.default_schema";
@@ -172,8 +171,8 @@ public class JpaMapStorageProviderFactory implements
     private volatile EntityManagerFactory emf;
     private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
     private Config.Scope config;
-    private final String sessionProviderKey;
-    private final String sessionTxKey;
+
+    private final int factoryId = SessionAttributesUtils.grabNewFactoryIdentifier();
     private String databaseShortName;
 
     // Object instances for each single JpaMapStorageProviderFactory instance per model type.
@@ -269,19 +268,6 @@ public class JpaMapStorageProviderFactory implements
     private boolean jtaEnabled;
     private JtaTransactionManagerLookup jtaLookup;
 
-    public JpaMapStorageProviderFactory() {
-        int index = ENUMERATOR.getAndIncrement();
-        // this identifier is used to create HotRodMapProvider only once per session per factory instance
-        this.sessionProviderKey = PROVIDER_ID + "-" + index;
-
-        // When there are more JPA configurations available in Keycloak (for example, global/realm1/realm2 etc.)
-        // there will be more instances of this factory created where each holds one configuration.
-        // The following identifier can be used to uniquely identify instance of this factory.
-        // This can be later used, for example, to store provider/transaction instances inside session
-        // attributes without collisions between several configurations
-        this.sessionTxKey = SESSION_TX_PREFIX + index;
-    }
-
     public MapKeycloakTransaction createTransaction(KeycloakSession session, Class<?> modelType, EntityManager em) {
         return MODEL_TO_TX.get(modelType).apply(session, em);
     }
@@ -289,13 +275,9 @@ public class JpaMapStorageProviderFactory implements
     @Override
     public MapStorageProvider create(KeycloakSession session) {
         lazyInit();
-        // check the session for a cached provider before creating a new one.
-        JpaMapStorageProvider provider = session.getAttribute(this.sessionProviderKey, JpaMapStorageProvider.class);
-        if (provider == null) {
-            provider = new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), this.sessionTxKey, this.jtaEnabled);
-            session.setAttribute(this.sessionProviderKey, provider);
-        }
-        return provider;
+
+        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, JpaMapStorageProvider.class,
+                session1 -> new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), factoryId, this.jtaEnabled));
     }
 
     protected EntityManager getEntityManager() {

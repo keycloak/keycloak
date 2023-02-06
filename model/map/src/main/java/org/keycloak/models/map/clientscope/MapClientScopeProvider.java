@@ -32,7 +32,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -51,10 +50,9 @@ public class MapClientScopeProvider implements ClientScopeProvider {
     private final MapKeycloakTransaction<MapClientScopeEntity, ClientScopeModel> tx;
     private final boolean txHasRealmId;
 
-    public MapClientScopeProvider(KeycloakSession session, MapStorage<MapClientScopeEntity, ClientScopeModel> clientScopeStore) {
+    public MapClientScopeProvider(KeycloakSession session, MapKeycloakTransaction<MapClientScopeEntity, ClientScopeModel> clientScopeStore) {
         this.session = session;
-        this.tx = clientScopeStore.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
+        this.tx = clientScopeStore;
         this.txHasRealmId = tx instanceof HasRealmId;
     }
 

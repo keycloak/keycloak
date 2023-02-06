@@ -25,7 +25,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.adapter.MapPolicyAdapter;
@@ -33,7 +32,6 @@ import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -57,10 +55,9 @@ public class MapPolicyStore implements PolicyStore {
     final MapKeycloakTransaction<MapPolicyEntity, Policy> tx;
     private final boolean txHasRealmId;
 
-    public MapPolicyStore(KeycloakSession session, MapStorage<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
+    public MapPolicyStore(MapKeycloakTransaction<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
-        this.tx = policyStore.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
+        this.tx = policyStore;
         this.txHasRealmId = tx instanceof HasRealmId;
     }
 

@@ -28,7 +28,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.QueryParameters;
@@ -56,10 +55,9 @@ public class MapGroupProvider implements GroupProvider {
     final MapKeycloakTransaction<MapGroupEntity, GroupModel> tx;
     private final boolean txHasRealmId;
 
-    public MapGroupProvider(KeycloakSession session, MapStorage<MapGroupEntity, GroupModel> groupStore) {
+    public MapGroupProvider(KeycloakSession session, MapKeycloakTransaction<MapGroupEntity, GroupModel> groupStore) {
         this.session = session;
-        this.tx = groupStore.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
+        this.tx = groupStore;
         this.txHasRealmId = tx instanceof HasRealmId;
     }
 

@@ -27,6 +27,7 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
@@ -40,9 +41,7 @@ public class LdapMapStorageProviderFactory implements
         EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "ldap-map-storage";
-    private static final AtomicInteger SESSION_TX_PREFIX_ENUMERATOR = new AtomicInteger(0);
-    private static final String SESSION_TX_PREFIX = "ldap-map-tx-";
-    private final String sessionTxPrefixForFactoryInstance;
+    private final int factoryId = SessionAttributesUtils.grabNewFactoryIdentifier();
 
     private Config.Scope config;
 
@@ -52,17 +51,13 @@ public class LdapMapStorageProviderFactory implements
         MODEL_TO_TX.put(RoleModel.class,            LdapRoleMapKeycloakTransaction::new);
     }
 
-    public LdapMapStorageProviderFactory() {
-        sessionTxPrefixForFactoryInstance = SESSION_TX_PREFIX + SESSION_TX_PREFIX_ENUMERATOR.getAndIncrement() + "-";
-    }
-
     public <M, V extends AbstractEntity> MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session, Class<M> modelType) {
         return MODEL_TO_TX.get(modelType).apply(session, config);
     }
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return new LdapMapStorageProvider(this, sessionTxPrefixForFactoryInstance);
+        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, LdapMapStorageProvider.class, session1 -> new LdapMapStorageProvider(session1, this, factoryId));
     }
 
     @Override

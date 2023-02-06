@@ -36,7 +36,7 @@ import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
@@ -64,13 +64,13 @@ public class MapAuthorizationStoreFactory implements AmphibianProviderFactory<St
         final MapStorageProvider mapStorageProvider = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScope).create(session);
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
 
-        MapStorage<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore = mapStorageProvider.getStorage(PermissionTicket.class);
-        MapStorage<MapPolicyEntity, Policy> policyStore = mapStorageProvider.getStorage(Policy.class);
-        MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore = mapStorageProvider.getStorage(ResourceServer.class);
-        MapStorage<MapResourceEntity, Resource> resourceStore = mapStorageProvider.getStorage(Resource.class);
-        MapStorage<MapScopeEntity, Scope> scopeStore = mapStorageProvider.getStorage(Scope.class);
+        MapKeycloakTransaction<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore = mapStorageProvider.getEnlistedTransaction(PermissionTicket.class);
+        MapKeycloakTransaction<MapPolicyEntity, Policy> policyStore = mapStorageProvider.getEnlistedTransaction(Policy.class);
+        MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> resourceServerStore = mapStorageProvider.getEnlistedTransaction(ResourceServer.class);
+        MapKeycloakTransaction<MapResourceEntity, Resource> resourceStore = mapStorageProvider.getEnlistedTransaction(Resource.class);
+        MapKeycloakTransaction<MapScopeEntity, Scope> scopeStore = mapStorageProvider.getEnlistedTransaction(Scope.class);
 
-        authzStore = new MapAuthorizationStore(session,
+        authzStore = new MapAuthorizationStore(
             permissionTicketStore,
             policyStore,
             resourceServerStore,

@@ -27,7 +27,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.map.common.DeepCloner;
@@ -49,10 +48,9 @@ public class MapRoleProvider implements RoleProvider {
     final MapKeycloakTransaction<MapRoleEntity, RoleModel> tx;
     private final boolean txHasRealmId;
 
-    public MapRoleProvider(KeycloakSession session, MapStorage<MapRoleEntity, RoleModel> roleStore) {
+    public MapRoleProvider(KeycloakSession session, MapKeycloakTransaction<MapRoleEntity, RoleModel> roleStore) {
         this.session = session;
-        this.tx = roleStore.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
+        this.tx = roleStore;
         this.txHasRealmId = tx instanceof HasRealmId;
     }
 

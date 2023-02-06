@@ -17,6 +17,7 @@
 package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.models.SingleUseObjectValueModel;
+import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntityImpl;
@@ -84,6 +85,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import static org.keycloak.models.map.common.SessionAttributesUtils.grabNewFactoryIdentifier;
 import static org.keycloak.models.map.storage.ModelEntityUtil.getModelName;
 import static org.keycloak.models.map.storage.ModelEntityUtil.getModelNames;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
@@ -108,6 +110,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     private String suffix;
 
     private StringKeyConverter defaultKeyConverter;
+
+    private final int factoryId = grabNewFactoryIdentifier();
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
       .genericCloner(Serialization::from)
@@ -156,7 +160,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return new ConcurrentHashMapStorageProvider(this);
+        return SessionAttributesUtils.getOrCreateProvider(session, factoryId, ConcurrentHashMapStorageProvider.class, session1 -> new ConcurrentHashMapStorageProvider(session, this, factoryId));
     }
 
 

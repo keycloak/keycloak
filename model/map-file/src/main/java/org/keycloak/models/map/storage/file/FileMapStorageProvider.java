@@ -16,8 +16,10 @@
  */
 package org.keycloak.models.map.storage.file;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.common.SessionAttributesUtils;
+import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 
@@ -28,17 +30,21 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
  */
 public class FileMapStorageProvider implements MapStorageProvider {
 
+    private final KeycloakSession session;
     private final FileMapStorageProviderFactory factory;
+    private final int factoryId;
 
-    public FileMapStorageProvider(FileMapStorageProviderFactory factory) {
+    public FileMapStorageProvider(KeycloakSession session, FileMapStorageProviderFactory factory, int factoryId) {
+        this.session = session;
         this.factory = factory;
+        this.factoryId = factoryId;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
+    public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
         FileMapStorage storage = factory.getStorage(modelType, flags);
-        return (MapStorage<V, M>) storage;
+        return SessionAttributesUtils.getOrCreateTransaction(session, getClass(), modelType, factoryId, () -> storage.createTransaction(session));
     }
 
     @Override

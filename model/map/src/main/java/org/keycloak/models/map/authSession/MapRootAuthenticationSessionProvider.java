@@ -26,7 +26,6 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
@@ -58,13 +57,11 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     private final boolean txHasRealmId;
 
     public MapRootAuthenticationSessionProvider(KeycloakSession session,
-                                                MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore,
+                                                MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore,
                                                 int authSessionsLimit) {
         this.session = session;
-        this.tx = sessionStore.createTransaction(session);
+        this.tx = sessionStore;
         this.authSessionsLimit = authSessionsLimit;
-
-        session.getTransactionManager().enlistAfterCompletion(tx);
         this.txHasRealmId = tx instanceof HasRealmId;
     }
 

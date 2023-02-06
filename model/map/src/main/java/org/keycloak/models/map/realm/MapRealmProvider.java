@@ -33,7 +33,6 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -51,10 +50,9 @@ public class MapRealmProvider implements RealmProvider {
     private final KeycloakSession session;
     final MapKeycloakTransaction<MapRealmEntity, RealmModel> tx;
 
-    public MapRealmProvider(KeycloakSession session, MapStorage<MapRealmEntity, RealmModel> realmStore) {
+    public MapRealmProvider(KeycloakSession session, MapKeycloakTransaction<MapRealmEntity, RealmModel> realmStore) {
         this.session = session;
-        this.tx = realmStore.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
+        this.tx = realmStore;
     }
 
     private RealmModel entityToAdapter(MapRealmEntity entity) {

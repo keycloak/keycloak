@@ -91,10 +91,9 @@ public class MapUserProvider implements UserProvider {
     final MapKeycloakTransaction<MapUserEntity, UserModel> tx;
     private final boolean txHasRealmId;
 
-    public MapUserProvider(KeycloakSession session, MapStorage<MapUserEntity, UserModel> store) {
+    public MapUserProvider(KeycloakSession session, MapKeycloakTransaction<MapUserEntity, UserModel> store) {
         this.session = session;
-        this.tx = store.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
+        this.tx = store;
         this.txHasRealmId = tx instanceof HasRealmId;
     }
 

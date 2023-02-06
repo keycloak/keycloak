@@ -137,13 +137,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     @Override
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-
-        if (sessionTransaction == null) {
-            sessionTransaction = new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
-            session.setAttribute("map-transaction-" + hashCode(), sessionTransaction);
-        }
-        return sessionTransaction;
+        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
     }
 
     public MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {

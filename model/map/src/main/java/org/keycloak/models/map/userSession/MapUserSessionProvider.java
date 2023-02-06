@@ -72,11 +72,9 @@ public class MapUserSessionProvider implements UserSessionProvider {
     private final Map<String, MapUserSessionEntity> transientUserSessions = new HashMap<>();
     private final boolean txHasRealmId;
 
-    public MapUserSessionProvider(KeycloakSession session, MapStorage<MapUserSessionEntity, UserSessionModel> userSessionStore) {
+    public MapUserSessionProvider(KeycloakSession session, MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> userSessionStore) {
         this.session = session;
-        userSessionTx = userSessionStore.createTransaction(session);
-
-        session.getTransactionManager().enlistAfterCompletion(userSessionTx);
+        this.userSessionTx = userSessionStore;
         this.txHasRealmId = userSessionTx instanceof HasRealmId;
     }
 

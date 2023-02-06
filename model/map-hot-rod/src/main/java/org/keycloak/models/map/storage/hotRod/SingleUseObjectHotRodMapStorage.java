@@ -59,7 +59,7 @@ public class SingleUseObjectHotRodMapStorage
     }
 
     @Override
-    protected MapKeycloakTransaction<HotRodSingleUseObjectEntityDelegate, SingleUseObjectValueModel> createTransactionInternal(KeycloakSession session) {
+    public MapKeycloakTransaction<HotRodSingleUseObjectEntityDelegate, SingleUseObjectValueModel> createTransaction(KeycloakSession session) {
         Map<SearchableModelField<? super SingleUseObjectValueModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<String, HotRodSingleUseObjectEntityDelegate, SingleUseObjectValueModel>> fieldPredicates =
                 MapFieldPredicates.getPredicates((Class<SingleUseObjectValueModel>) storedEntityDescriptor.getModelTypeClass());
        return new SingleUseObjectKeycloakTransaction(this, keyConverter, cloner, fieldPredicates);
