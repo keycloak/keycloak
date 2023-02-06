@@ -145,7 +145,7 @@
         <apacheds.version>2.0.0.AM26</apacheds.version>
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
-        <freemarker.version>2.3.31</freemarker.version>
+        <freemarker.version>2.3.32</freemarker.version>
         <javaparser.version>3.24.2</javaparser.version>
 
         <jetty9.version>${jetty94.version}</jetty9.version>
