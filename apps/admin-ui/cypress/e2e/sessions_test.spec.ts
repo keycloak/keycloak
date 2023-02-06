@@ -76,11 +76,4 @@ describe("Sessions test", () => {
         );
     });
   });
-
-  describe("logout all sessions", () => {
-    it("logout all sessions", () => {
-      sessionsPage.logoutAllSessions();
-      cy.get("#kc-page-title").contains("Sign in to your account");
-    });
-  });
 });
