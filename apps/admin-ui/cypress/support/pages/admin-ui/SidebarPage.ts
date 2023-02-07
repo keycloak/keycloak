@@ -44,8 +44,8 @@ export default class SidebarPage extends CommonElements {
 
   goToCreateRealm() {
     this.waitForPageLoad();
-    cy.findByTestId(this.realmsDrpDwn).click({ force: true });
-    cy.findByTestId(this.createRealmBtn).click({ force: true });
+    cy.findByTestId(this.realmsDrpDwn).click();
+    cy.findByTestId(this.createRealmBtn).click();
     this.waitForPageLoad();
 
     return this;
