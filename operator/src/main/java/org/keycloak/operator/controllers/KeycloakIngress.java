@@ -45,7 +45,7 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
     protected Optional<HasMetadata> getReconciledResource() {
         IngressSpec ingressSpec = keycloak.getSpec().getIngressSpec();
         if (ingressSpec != null && !ingressSpec.isIngressEnabled()) {
-            if (existingIngress != null) {
+            if (existingIngress != null && isExistingIngressFromSameOwnerReference()) {
                 deleteExistingIngress();
             }
             return Optional.empty();
@@ -112,6 +112,16 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
 
     protected void deleteExistingIngress() {
         client.network().v1().ingresses().inNamespace(getNamespace()).delete(existingIngress);
+    }
+
+    private boolean isExistingIngressFromSameOwnerReference() {
+
+        return existingIngress
+                .getMetadata()
+                .getOwnerReferences()
+                .stream()
+                .anyMatch(oneOwnerRef -> oneOwnerRef.getUid().equalsIgnoreCase(keycloak.getMetadata().getUid()));
+
     }
 
     protected Ingress fetchExistingIngress() {
