@@ -1,4 +1,5 @@
 import "@patternfly/react-core/dist/styles/base.css";
+import "@patternfly/patternfly/patternfly-addons.css";
 
 import { StrictMode } from "react";
 import { render } from "react-dom";
