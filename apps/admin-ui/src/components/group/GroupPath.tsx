@@ -8,20 +8,6 @@ type GroupPathProps = TableTextProps & {
   group: GroupRepresentation;
 };
 
-const MAX_LENGTH = 20;
-const PART = 10;
-
-const truncatePath = (path?: string) => {
-  if (path && path.length >= MAX_LENGTH) {
-    return (
-      path.substr(0, PART) +
-      "..." +
-      path.substr(path.length - PART, path.length)
-    );
-  }
-  return path;
-};
-
 export const GroupPath = ({
   group: { path },
   onMouseEnter: onMouseEnterProp,
@@ -34,7 +20,7 @@ export const GroupPath = ({
   };
   const text = (
     <span onMouseEnter={onMouseEnter} {...props}>
-      {truncatePath(path)}
+      {path}
     </span>
   );
 

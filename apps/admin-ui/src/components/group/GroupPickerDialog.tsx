@@ -22,6 +22,8 @@ import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";
 import { GroupPath } from "./GroupPath";
 
+import "./group-picker-dialog.css";
+
 export type GroupPickerDialogProps = {
   id?: string;
   type: "selectOne" | "selectMany";
@@ -129,7 +131,7 @@ export const GroupPickerDialog = ({
 
   return (
     <Modal
-      variant={ModalVariant.small}
+      variant={filter ? ModalVariant.medium : ModalVariant.small}
       title={t(text.title, {
         group1: filterGroups?.[0]?.name,
         group2: navigation.length ? currentGroup().name : t("root"),
@@ -265,7 +267,10 @@ export const GroupPickerDialog = ({
 
                 <DataListItemCells
                   dataListCells={[
-                    <DataListCell key={`name-${group.id}`}>
+                    <DataListCell
+                      key={`name-${group.id}`}
+                      className="keycloak-groups-group-path"
+                    >
                       {filter === "" ? (
                         <span id={`select-${group.name}`}>{group.name}</span>
                       ) : (
