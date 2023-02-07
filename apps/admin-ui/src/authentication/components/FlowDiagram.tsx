@@ -1,13 +1,4 @@
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
-import {
-  Drawer,
-  DrawerActions,
-  DrawerCloseButton,
-  DrawerContent,
-  DrawerContentBody,
-  DrawerHead,
-  DrawerPanelContent,
-} from "@patternfly/react-core";
 import { MouseEvent as ReactMouseEvent, useMemo, useState } from "react";
 import {
   Background,
@@ -289,37 +280,20 @@ export const FlowDiagram = ({
   };
 
   return (
-    <Drawer isExpanded={expandDrawer} onExpand={() => setExpandDrawer(true)}>
-      <DrawerContent
-        panelContent={
-          <DrawerPanelContent>
-            <DrawerHead>
-              <span tabIndex={expandDrawer ? 0 : -1}>drawer-panel</span>
-              <DrawerActions>
-                <DrawerCloseButton onClick={() => setExpandDrawer(false)} />
-              </DrawerActions>
-            </DrawerHead>
-          </DrawerPanelContent>
-        }
-      >
-        <DrawerContentBody>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onInit={onInit}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes as EdgeTypes}
-            onNodeClick={onNodeClick}
-            nodesConnectable={false}
-          >
-            <MiniMap />
-            <Controls />
-            <Background />
-          </ReactFlow>
-        </DrawerContentBody>
-      </DrawerContent>
-    </Drawer>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onInit={onInit}
+      nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes as EdgeTypes}
+      onNodeClick={onNodeClick}
+      nodesConnectable={false}
+    >
+      <MiniMap />
+      <Controls />
+      <Background />
+    </ReactFlow>
   );
 };
