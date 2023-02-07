@@ -18,16 +18,15 @@ import {
   Title,
 } from "@patternfly/react-core";
 import { TFuncKey } from "i18next";
-import { useState, CSSProperties } from "react";
-import { useTranslation, Trans } from "react-i18next";
+import { CSSProperties, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { ContinueCancelModal, useAlerts } from "ui-shared";
 import { deleteCredentials, getCredentials } from "../api/methods";
 import {
   CredentialContainer,
   CredentialMetadataRepresentation,
   CredentialRepresentation,
 } from "../api/representations";
-import { useAlerts } from "../components/alerts/Alerts";
-import { ContinueCancelModal } from "../components/continue-cancel/ContinueCancelModel";
 import useFormatter from "../components/format/format-date";
 import { Page } from "../components/page/Page";
 import { keycloak } from "../keycloak";
