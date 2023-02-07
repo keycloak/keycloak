@@ -101,7 +101,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     private static final Logger LOG = Logger.getLogger(ConcurrentHashMapStorageProviderFactory.class);
 
-    private final ConcurrentHashMap<String, ConcurrentHashMapKeycloakTransaction<?,?,?>> storages = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ConcurrentHashMapStorage<?,?,?>> storages = new ConcurrentHashMap<>();
 
     private final Map<String, StringKeyConverter> keyConverters = new HashMap<>();
 
@@ -113,7 +113,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     private final int factoryId = grabNewFactoryIdentifier();
 
-    private final static DeepCloner CLONER = new DeepCloner.Builder()
+    protected final static DeepCloner CLONER = new DeepCloner.Builder()
       .genericCloner(Serialization::from)
       .constructor(MapClientEntityImpl.class,                       MapClientEntityImpl::new)
       .constructor(MapProtocolMapperEntity.class,                   MapProtocolMapperEntityImpl::new)
@@ -217,7 +217,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     }
 
     @SuppressWarnings("unchecked")
-    private void storeMap(String mapName, ConcurrentHashMapKeycloakTransaction<?, ?, ?> store) {
+    private void storeMap(String mapName, ConcurrentHashMapStorage<?, ?, ?> store) {
         if (mapName != null) {
             File f = getFile(mapName);
             try {
@@ -235,7 +235,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     }
 
     @SuppressWarnings("unchecked")
-    private <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapKeycloakTransaction<K, V, M> loadMap(String mapName,
+    private <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> loadMap(String mapName,
       Class<M> modelType, EnumSet<Flag> flags) {
         final StringKeyConverter kc = keyConverters.getOrDefault(mapName, defaultKeyConverter);
         Class<?> valueType = ModelEntityUtil.getEntityType(modelType);
@@ -277,7 +277,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
             }
         }
 
-        return new ConcurrentHashMapKeycloakTransaction<>(store, kc, CLONER, MapFieldPredicates.getPredicates(modelType));
+        return store;
     }
 
     @Override
@@ -286,7 +286,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     }
 
     @SuppressWarnings("unchecked")
-    public <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapKeycloakTransaction<K, V, M> getStorage(
+    public <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapCrudOperations<V, M> getStorage(
       Class<M> modelType, Flag... flags) {
         EnumSet<Flag> f = flags == null || flags.length == 0 ? EnumSet.noneOf(Flag.class) : EnumSet.of(flags[0], flags);
         String name = getModelName(modelType, modelType.getSimpleName());
@@ -294,7 +294,12 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
          *
          *   "... the computation [...] must not attempt to update any other mappings of this map."
          */
-        return (ConcurrentHashMapKeycloakTransaction<K, V, M>) storages.computeIfAbsent(name, n -> loadMap(name, modelType, f));
+
+        return (ConcurrentHashMapCrudOperations<V, M>) storages.computeIfAbsent(name, n -> loadMap(name, modelType, f));
+    }
+
+    public StringKeyConverter<?> getKeyConverter(Class<?> modelType) {
+        return keyConverters.getOrDefault(getModelName(modelType, modelType.getSimpleName()), defaultKeyConverter);
     }
 
     private File getFile(String fileName) {
