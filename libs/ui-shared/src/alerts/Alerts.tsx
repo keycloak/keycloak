@@ -6,17 +6,16 @@ import {
 } from "@patternfly/react-core";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { TranslationKeys } from "../../i18next";
 
 export type AddAlertFunction = (
-  message: TranslationKeys,
+  message: string,
   variant?: AlertVariant,
   description?: string
 ) => void;
 
-export type AddErrorFunction = (message: TranslationKeys, error: any) => void;
+export type AddErrorFunction = (message: string, error: any) => void;
 
-type AlertProps = {
+export type AlertProps = {
   addAlert: AddAlertFunction;
   addError: AddErrorFunction;
 };
@@ -41,7 +40,7 @@ export const AlertProvider = ({ children }: PropsWithChildren<unknown>) => {
   };
 
   const addAlert = (
-    message: TranslationKeys,
+    message: string,
     variant: AlertVariant = AlertVariant.success,
     description?: string
   ) => {
@@ -57,7 +56,7 @@ export const AlertProvider = ({ children }: PropsWithChildren<unknown>) => {
     ]);
   };
 
-  const addError = (message: TranslationKeys, error: Error | string) => {
+  const addError = (message: string, error: Error | string) => {
     addAlert(
       //@ts-ignore
       t(message, {

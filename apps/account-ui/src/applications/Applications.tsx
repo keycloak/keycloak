@@ -25,8 +25,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { deleteConsent, getApplications } from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
-import { useAlerts } from "../components/alerts/Alerts";
-import { ContinueCancelModal } from "../components/continue-cancel/ContinueCancelModel";
+import { useAlerts, ContinueCancelModal } from "ui-shared";
 import { Page } from "../components/page/Page";
 import { usePromise } from "../utils/usePromise";
 

@@ -9,7 +9,7 @@ import {
 
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 
-type TextControlProps<
+export type TextControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>
 > = UseControllerProps<T, P> & {

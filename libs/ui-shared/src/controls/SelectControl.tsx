@@ -20,7 +20,7 @@ type Option = {
   value: string;
 };
 
-type SelectControlProps<
+export type SelectControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>
 > = Omit<

@@ -1,6 +1,7 @@
 {
   "name": "keycloak-ui",
   "workspaces": [
+    "libs/ui-shared",
     "libs/keycloak-admin-client",
     "libs/keycloak-js",
     "libs/keycloak-masthead",

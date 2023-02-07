@@ -1,17 +1,16 @@
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, ButtonProps, Modal, ModalProps } from "@patternfly/react-core";
-import { TranslationKeys } from "../../i18next";
 
-type ContinueCancelModalProps = Omit<ModalProps, "ref" | "children"> & {
-  modalTitle: TranslationKeys;
+export type ContinueCancelModalProps = Omit<ModalProps, "ref" | "children"> & {
+  modalTitle: string;
   modalMessage?: string;
-  buttonTitle: TranslationKeys | ReactNode;
+  buttonTitle: string | ReactNode;
   buttonVariant?: ButtonProps["variant"];
   isDisabled?: boolean;
   onContinue: () => void;
-  continueLabel?: TranslationKeys;
-  cancelLabel?: TranslationKeys;
+  continueLabel?: string;
+  cancelLabel?: string;
   component?: React.ElementType<any> | React.ComponentType<any>;
   children?: ReactNode;
 };

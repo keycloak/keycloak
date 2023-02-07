@@ -7,7 +7,7 @@ import {
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router-dom";
-import { AlertProvider } from "../components/alerts/Alerts";
+import { AlertProvider } from "ui-shared";
 
 import { environment } from "../environment";
 import { keycloak } from "../keycloak";

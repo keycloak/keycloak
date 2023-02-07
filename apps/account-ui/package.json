@@ -18,7 +18,8 @@
     "react-dom": "^17.0.2",
     "react-hook-form": "^7.38.0",
     "react-i18next": "^12.1.5",
-    "react-router-dom": "6.8.0"
+    "react-router-dom": "6.8.0",
+    "ui-shared": "999.0.0-dev"
   },
   "devDependencies": {
     "@types/react": "^17.0.53",
@@ -31,6 +32,7 @@
     "dev": {
       "command": "vite --host",
       "dependencies": [
+        "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
         "../../libs/keycloak-js:build"
       ]
@@ -38,6 +40,7 @@
     "preview": {
       "command": "vite preview",
       "dependencies": [
+        "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
         "../../libs/keycloak-js:build"
       ]
@@ -45,6 +48,7 @@
     "build": {
       "command": "vite build",
       "dependencies": [
+        "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
         "../../libs/keycloak-js:build"
       ]
@@ -52,6 +56,7 @@
     "lint": {
       "command": "eslint . --ext js,jsx,mjs,ts,tsx",
       "dependencies": [
+        "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
         "../../libs/keycloak-js:build"
       ]

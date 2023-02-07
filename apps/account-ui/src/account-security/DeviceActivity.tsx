@@ -31,8 +31,7 @@ import {
   SessionRepresentation,
   ClientRepresentation,
 } from "../api/representations";
-import { useAlerts } from "../components/alerts/Alerts";
-import { ContinueCancelModal } from "../components/continue-cancel/ContinueCancelModel";
+import { useAlerts, ContinueCancelModal } from "ui-shared";
 import useFormatter from "../components/formatter/format-date";
 import { Page } from "../components/page/Page";
 import { keycloak } from "../keycloak";

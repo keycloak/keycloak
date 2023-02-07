@@ -19,9 +19,7 @@ import { useTranslation } from "react-i18next";
 
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
-import { useAlerts } from "../components/alerts/Alerts";
-import { SelectControl } from "../components/controls/SelectControl";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { useAlerts, SelectControl, KeycloakTextInput } from "ui-shared";
 import { SharedWith } from "./SharedWith";
 
 type ShareTheResourceProps = {

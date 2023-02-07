@@ -3,11 +3,9 @@ import { Fragment, useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { KeycloakTextInput, SelectControl, useAlerts } from "ui-shared";
 import { updatePermissions } from "../api";
 import type { Permission, Resource } from "../api/representations";
-import { useAlerts } from "../components/alerts/Alerts";
-import { SelectControl } from "../components/controls/SelectControl";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type EditTheResourceProps = {
   resource: Resource;

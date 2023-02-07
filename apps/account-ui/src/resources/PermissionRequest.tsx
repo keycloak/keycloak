@@ -18,9 +18,9 @@ import {
 } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAlerts } from "ui-shared";
 import { fetchPermission, updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
-import { useAlerts } from "../components/alerts/Alerts";
 
 type PermissionRequestProps = {
   resource: Resource;
