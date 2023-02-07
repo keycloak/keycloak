@@ -357,14 +357,10 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
 
         @Override
         public boolean delete(String key) {
-            Optional<Path> fileName = Optional.ofNullable(sanitizeId(key))
-              .map(this::getPathForSanitizedId);
-            try {
-                return fileName.isPresent() ? Files.deleteIfExists(fileName.get()) : false;
-            } catch (IOException ex) {
-                LOG.warnf(ex, "Could not delete file: %s", fileName);
-                return false;
-            }
+            return Optional.ofNullable(sanitizeId(key))
+              .map(this::getPathForSanitizedId)
+              .map(this::removeIfExists)
+              .orElse(false);
         }
 
         @Override
@@ -405,6 +401,8 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
         }
 
         protected abstract void touch(Path sp) throws IOException;
+
+        protected abstract boolean removeIfExists(Path sp);
 
         protected abstract void registerRenameOnCommit(Path tempSp, Path sp);
 

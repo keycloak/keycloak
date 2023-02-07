@@ -48,7 +48,7 @@ import java.util.function.Function;
 public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEntity, M>
   extends ConcurrentHashMapKeycloakTransaction<String, V, M> {
 
-    private final List<Path> touchedPaths = new LinkedList<>();
+    private final List<Path> pathsToDelete = new LinkedList<>();
     private Map<Path, Path> renameOnCommit = new IdentityHashMap<>();
 
     private final String txId = StringKey.INSTANCE.yieldNewUniqueKey();
@@ -74,7 +74,8 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
 
     @Override
     public void rollback() {
-        this.touchedPaths.forEach(FileMapKeycloakTransaction::silentDelete);
+        this.renameOnCommit.keySet().forEach(FileMapKeycloakTransaction::silentDelete);
+        this.pathsToDelete.forEach(FileMapKeycloakTransaction::silentDelete);
         super.rollback();
     }
 
@@ -82,7 +83,7 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
     public void commit() {
         super.commit();
         this.renameOnCommit.forEach(FileMapKeycloakTransaction::silentMove);
-        this.touchedPaths.forEach(FileMapKeycloakTransaction::silentDelete);
+        this.pathsToDelete.forEach(FileMapKeycloakTransaction::silentDelete);
     }
 
     private static void silentMove(Path from, Path to) {
@@ -95,7 +96,7 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
 
     private static void silentDelete(Path p) {
         try {
-            if (Files.exists(p) && Files.size(p) == 0) {
+            if (Files.exists(p)) {
                 Files.delete(p);
             }
         } catch (IOException e) {
@@ -105,12 +106,19 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
 
     public void touch(Path path) throws FileAlreadyExistsException, IOException {
         Files.createFile(path);
-        touchedPaths.add(path);
+        pathsToDelete.add(path);
+    }
+
+    public boolean removeIfExists(Path path) {
+        final boolean res = ! pathsToDelete.contains(path) && Files.exists(path);
+        pathsToDelete.add(path);
+        return res;
     }
 
     void registerRenameOnCommit(Path from, Path to) {
         this.renameOnCommit.put(from, to);
-        this.touchedPaths.add(from);
+        this.pathsToDelete.remove(to);
+        this.pathsToDelete.add(from);
     }
 
     private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileMapStorage.Crud<V, M> {
@@ -129,6 +137,11 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
         @Override
         protected void registerRenameOnCommit(Path from, Path to) {
             tx.registerRenameOnCommit(from, to);
+        }
+
+        @Override
+        protected boolean removeIfExists(Path sp) {
+            return tx.removeIfExists(sp);
         }
 
         @Override
