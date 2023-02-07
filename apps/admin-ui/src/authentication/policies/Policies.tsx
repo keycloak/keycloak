@@ -72,7 +72,7 @@ export const Policies = () => {
         <WebauthnPolicy realm={realm} realmUpdated={setRealm} isPasswordLess />
       </Tab>
       <Tab
-        id="cibaPolicy"
+        data-testid="tab-ciba-policy"
         eventKey={5}
         title={<TabTitleText>{t("cibaPolicy")}</TabTitleText>}
       >
