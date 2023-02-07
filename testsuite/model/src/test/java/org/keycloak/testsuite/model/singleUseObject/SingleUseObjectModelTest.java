@@ -26,7 +26,10 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.SingleUseObjectProviderFactory;
+import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectProviderFactory;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
@@ -161,11 +164,11 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
     @Test
     public void testCluster() throws InterruptedException {
-        // Skip the test if MapUserSessionProvider == CHM
-        String usProvider = CONFIG.getConfig().get("userSessions.provider");
-        String usMapStorageProvider = CONFIG.getConfig().get("userSessions.map.storage.provider");
-        assumeFalse(MapUserSessionProviderFactory.PROVIDER_ID.equals(usProvider) &&
-                (usMapStorageProvider == null || ConcurrentHashMapStorageProviderFactory.PROVIDER_ID.equals(usMapStorageProvider)));
+        // Skip the test if SingleUseObjectProvider == CHM
+        String suProvider = CONFIG.getConfig().get(SingleUseObjectSpi.NAME + ".provider");
+        String suMapStorageProvider = CONFIG.getConfig().get(SingleUseObjectSpi.NAME + ".map.storage.provider");
+        assumeFalse(MapSingleUseObjectProviderFactory.PROVIDER_ID.equals(suProvider) &&
+                (suMapStorageProvider == null || ConcurrentHashMapStorageProviderFactory.PROVIDER_ID.equals(suMapStorageProvider)));
 
         AtomicInteger index = new AtomicInteger();
         CountDownLatch afterFirstNodeLatch = new CountDownLatch(1);
