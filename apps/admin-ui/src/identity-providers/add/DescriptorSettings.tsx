@@ -13,9 +13,10 @@ import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
-import { TextField } from "../component/TextField";
 
 import "./discovery-settings.css";
 
@@ -473,12 +474,14 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         isReadOnly={readOnly}
       />
       {validateSignature === "true" && (
-        <TextField
-          field="config.signingCertificate"
-          label="validatingX509Certs"
-          data-testid="validatingX509Certs"
-          isReadOnly={readOnly}
-        />
+        <FormGroupField label="validatingX509Certs">
+          <KeycloakTextArea
+            id="validatingX509Certs"
+            data-testid="validatingX509Certs"
+            isReadOnly={readOnly}
+            {...register("config.signingCertificate")}
+          ></KeycloakTextArea>
+        </FormGroupField>
       )}
       <SwitchField
         field="config.signSpMetadata"
