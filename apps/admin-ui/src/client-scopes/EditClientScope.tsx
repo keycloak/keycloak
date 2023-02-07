@@ -3,6 +3,7 @@ import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/l
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
+  Alert,
   AlertVariant,
   ButtonVariant,
   DropdownItem,
@@ -22,6 +23,7 @@ import {
   ClientScopeDefaultOptionalType,
 } from "../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useHelp } from "../components/help-enabler/HelpHeader";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
 import {
@@ -49,6 +51,7 @@ export default function EditClientScope() {
   const { adminClient } = useAdminClient();
   const { id } = useParams<ClientScopeParams>();
   const { addAlert, addError } = useAlerts();
+  const { enabled } = useHelp();
   const [clientScope, setClientScope] =
     useState<ClientScopeDefaultOptionalType>();
   const [key, setKey] = useState(0);
@@ -262,6 +265,15 @@ export default function EditClientScope() {
             title={<TabTitleText>{t("scope")}</TabTitleText>}
             {...scopeTab}
           >
+            {enabled && (
+              <PageSection>
+                <Alert
+                  variant="info"
+                  isInline
+                  title={t("client-scopes-help:rolesScope")}
+                />
+              </PageSection>
+            )}
             <RoleMapping
               id={clientScope.id!}
               name={clientScope.name!}
