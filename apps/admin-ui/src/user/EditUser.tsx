@@ -247,13 +247,15 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
               >
                 <UserRoleMapping id={user.id!} name={user.username!} />
               </Tab>
-              <Tab
-                data-testid="user-groups-tab"
-                title={<TabTitleText>{t("common:groups")}</TabTitleText>}
-                {...groupsTab}
-              >
-                <UserGroups user={user} />
-              </Tab>
+              {hasAccess("query-groups") && (
+                <Tab
+                  data-testid="user-groups-tab"
+                  title={<TabTitleText>{t("common:groups")}</TabTitleText>}
+                  {...groupsTab}
+                >
+                  <UserGroups user={user} />
+                </Tab>
+              )}
               <Tab
                 data-testid="user-consents-tab"
                 title={<TabTitleText>{t("consents")}</TabTitleText>}
