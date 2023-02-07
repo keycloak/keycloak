@@ -223,6 +223,12 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "custom-callback-authenticator", "Custom callback Factory",
                 "Used for testing purposes of Callback factory");
 
+        addProviderInfo(result, "auth-force-loa", "Force Level of Authentication (LoA)",
+                "This authenticator forces the minimum level of authentication (LoA) if a client does not request a LoA or the requested LoA is less than the configured LoA.");
+
+        addProviderInfo(result, "conditional-client-id", "Condition - Client id",
+                "Flow is executed only if client id matches configured ids");
+
         return result;
     }
 
