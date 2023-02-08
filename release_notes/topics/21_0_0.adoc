@@ -1,3 +1,8 @@
+= Old Admin Console removed
+
+In Keycloak 19 the new admin console was graduated to the new default admin console, and the old admin console was
+deprecated. In this release the old admin console has been removed completely.
+
 = Keycloak uses Micrometer for metrics
 
 Keycloak provides an optional a metrics endpoint which exports metrics in the Prometheus format.
