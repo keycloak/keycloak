@@ -1,26 +1,10 @@
 ## Building from source
 
-Ensure you have JDK 11 (or newer), Maven 3.5.4 (or newer) and Git installed
+Make sure you have JDK 11 (or newer), Maven 3.8.6 (or newer) and Git installed.
 
     java -version
     mvn -version
     git --version
-
-**NOTE**
-
-If you use Maven 3.8.1 or newer, please add the following mirror to your local
-`~/.m2/settings.xml` to avoid build errors:
-```
-<mirrors>
-  <mirror>
-    <id>jboss-public-repository-group-https</id>
-    <mirrorOf>jboss-public-repository-group</mirrorOf>
-    <name>Jboss public https</name>
-    <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-  </mirror>
-</mirrors>
-```
-See [KEYCLOAK-17812](https://issues.redhat.com/browse/KEYCLOAK-17812) for more details.
 
 ---    
 First clone the Keycloak repository:
@@ -30,19 +14,13 @@ First clone the Keycloak repository:
     
 To build Keycloak run:
 
-    mvn clean install
+    mvn clean install -DskipTests=true -DskipTestsuite
     
-This will build all modules and run the testsuite. 
+This will build all modules. The build of the Keycloak server is then available in the archive under the directory `quarkus/dist/target`.
 
-To build the ZIP distribution run:
+To build only the current Keycloak server run:
 
-    mvn clean install -Pdistribution
-    
-Once completed you will find distribution archives in `distribution`.
-
-To build only the server run:
-
-    mvn -Pdistribution -pl distribution/server-dist -am -Dmaven.test.skip clean install
+    mvn -pl quarkus/dist -am -DskipTests clean install  
 
 ---
 **NOTE**
@@ -65,9 +43,9 @@ When running testsuite, by default an account with username `admin` and password
 
 To start Keycloak from the server distribution first build the distribution it as specified above, then run:
 
-    tar xfz distribution/server-dist/target/keycloak-<VERSION>.tar.gz
+    tar xfz quarkus/dist/target/keycloak-<VERSION>.tar.gz
     cd keycloak-<VERSION>
-    bin/standalone.sh
+    bin/kc.sh start-dev
     
 To stop the server press `Ctrl + C`.
 
