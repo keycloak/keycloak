@@ -26,8 +26,6 @@ public class Config {
     private List<String> ignoredVariables;
     private List<String> ignoredLinks;
 
-    private boolean community;
-
     private Map<String, String> documentAttributes;
     private String docBaseUrl;
 
@@ -46,13 +44,7 @@ public class Config {
         ignoredVariables = loadConfig("/ignored-variables");
         ignoredLinks = loadConfig("/ignored-links");
 
-        community = !System.getProperties().containsKey("product");
-
-        if (community) {
-            guideDirToFragment = loadConfigMap("/guide-url-fragments-community");
-        } else {
-            guideDirToFragment = loadConfigMap("/guide-url-fragments-product");
-        }
+        guideDirToFragment = loadConfigMap("/guide-url-fragments");
 
         guideFragmentToDir = new HashMap<>();
         for (Map.Entry<String, String> e : guideDirToFragment.entrySet()) {
@@ -75,8 +67,6 @@ public class Config {
             String apiDocsLink = documentAttributes.get("apidocs_link");
             ignoredLinks.add(apiDocsLink);
         }
-
-        log.info("Testing " + (community ? "community" : "product") + " documentation");
     }
 
     public File getVerifiedLinksCache() {
@@ -101,10 +91,6 @@ public class Config {
 
     public boolean isLoadFromFiles() {
         return guideBaseUrl == null;
-    }
-
-    public boolean isCommunity() {
-        return community;
     }
 
     public Map<String, String> getDocumentAttributes() {
@@ -132,7 +118,7 @@ public class Config {
     }
 
     public File getGuideHtmlFile(String guideDirName) {
-        return new File(getGuideDir(guideDirName), community ? "index.html" : "master.html");
+        return new File(getGuideDir(guideDirName), "index.html");
     }
 
     private File findDocsRoot() {
@@ -145,12 +131,7 @@ public class Config {
 
     private Map<String, String> loadDocumentAttributes() {
         try {
-            File f;
-            if (community) {
-                f = new File(docsRootDir, "/topics/templates/document-attributes-community.adoc");
-            } else {
-                f = new File(docsRootDir, "/topics/templates/document-attributes-product.adoc");
-            }
+            File f = new File(docsRootDir, "/topics/templates/document-attributes.adoc");
 
             String buildType = System.getProperty("latest") != null ? "latest" : "archive";
 

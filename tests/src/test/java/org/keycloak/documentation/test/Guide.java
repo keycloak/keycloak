@@ -59,7 +59,7 @@ public class Guide {
     private String rewriteLinksToGuides(Config config, String body) throws MalformedURLException {
         if (config.isLoadFromFiles()) {
             for (Map.Entry<String, String> e : config.getGuideFragmentToDir().entrySet()) {
-                String originalUrl = config.getDocBaseUrl() + "/" + e.getKey() + "/" + (config.isCommunity() ? "" : "(\\w*)?");
+                String originalUrl = config.getDocBaseUrl() + "/" + e.getKey() + "/";
                 String replacementUrl = config.getGuideHtmlFile(e.getValue()).toURI().toURL().toString();
 
                 body = body.replace("href=\"" + originalUrl, "href=\"" + replacementUrl);

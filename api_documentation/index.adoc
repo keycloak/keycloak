@@ -1,4 +1,4 @@
-include::topics/templates/document-attributes-community.adoc[]
+include::topics/templates/document-attributes.adoc[]
 
 :api_documentation:
 :linkattrs:

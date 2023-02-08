@@ -1,3 +1,3 @@
 #!/bin/bash -e
 
-awk '/:project_version:/ { print $2 }' topics/templates/document-attributes-community.adoc
+awk '/:project_version:/ { print $2 }' topics/templates/document-attributes.adoc

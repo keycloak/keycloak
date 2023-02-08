@@ -44,18 +44,6 @@
 
     <profiles>
         <profile>
-            <id>product</id>
-            <activation>
-                <property>
-                    <name>product</name>
-                </property>
-            </activation>
-            <properties>
-                <masterFile>master</masterFile>
-                <imagesDir>rhsso-images</imagesDir>
-            </properties>
-        </profile>
-        <profile>
             <id>tests</id>
             <activation>
                 <property>

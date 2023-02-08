@@ -43,29 +43,6 @@ By default, an archive version of the documentation is built. To build the lates
 You can then view the documentation by opening GUIDE_DIR/target/generated-docs/index.html.
 
 
-Building RH-SSO Documentation
------------------------------
-
-Keycloak is the basis of [Red Hat Single Sign-On](https://access.redhat.com/products/red-hat-single-sign-on). The same documentation sources are used, but they are built slightly differently.
-
-To build the documentation for RH-SSO run:
-
-    mvn clean install -Dproduct
-
-Or to build a specific guide run:
-
-    mvn clean install -Dproduct -f GUIDE_DIR
-
-You can then view the documentation by opening GUIDE_DIR/target/generated-docs/master.html.
-
-If you have ccutil installed you can build the guides with:
-
-    ./build-product.sh
-
-Or individual guides with:
-
-    ./build-product.sh GUIDE_DIR
-
 License
 -------
 

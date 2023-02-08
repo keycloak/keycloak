@@ -3,5 +3,4 @@
 :idseparator: -
 :project_buildType: latest
 ifndef::asciidoctorconfigdir[:asciidoctorconfigdir: .]
-include::{asciidoctorconfigdir}/topics/templates/document-attributes-community.adoc[]
-// include::{asciidoctorconfigdir}/topics/templates/document-attributes-product.adoc[]
+include::{asciidoctorconfigdir}/topics/templates/document-attributes.adoc[]

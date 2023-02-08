@@ -3,7 +3,7 @@
 :numbered:
 :linkattrs:
 
-include::topics/templates/document-attributes-community.adoc[]
+include::topics/templates/document-attributes.adoc[]
 
 :secure_applications_and_services_guide:
 
