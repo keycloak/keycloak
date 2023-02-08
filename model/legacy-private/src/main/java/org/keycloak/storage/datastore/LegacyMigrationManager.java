@@ -34,6 +34,7 @@ import org.keycloak.migration.migrators.MigrateTo1_7_0;
 import org.keycloak.migration.migrators.MigrateTo1_8_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_2;
+import org.keycloak.migration.migrators.MigrateTo21_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_1_0;
 import org.keycloak.migration.migrators.MigrateTo2_2_0;
@@ -106,7 +107,8 @@ public class LegacyMigrationManager implements MigrationManager {
             new MigrateTo12_0_0(),
             new MigrateTo14_0_0(),
             new MigrateTo18_0_0(),
-            new MigrateTo20_0_0()
+            new MigrateTo20_0_0(),
+            new MigrateTo21_0_0()
     };
 
     private final KeycloakSession session;
