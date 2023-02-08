@@ -279,14 +279,16 @@ export function KeycloakDataTable<T>({
     () =>
       search === "" || isPaginated
         ? undefined
-        : convertToColumns(unPaginatedData || []).filter((row) =>
-            row.cells.some(
-              (cell) =>
-                cell &&
-                getNodeText(cell).toLowerCase().includes(search.toLowerCase())
+        : convertToColumns(unPaginatedData || [])
+            .filter((row) =>
+              row.cells.some(
+                (cell) =>
+                  cell &&
+                  getNodeText(cell).toLowerCase().includes(search.toLowerCase())
+              )
             )
-          ),
-    [search]
+            .slice(first, first + max + 1),
+    [search, first, max]
   );
 
   useEffect(() => {
