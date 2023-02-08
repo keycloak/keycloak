@@ -1,13 +1,5 @@
-import {
-  ComponentClass,
-  isValidElement,
-  ReactNode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { useTranslation } from "react-i18next";
+import { ButtonVariant } from "@patternfly/react-core";
+import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import {
   IAction,
   IActions,
@@ -20,15 +12,23 @@ import {
   TableProps,
   TableVariant,
 } from "@patternfly/react-table";
-import { get, cloneDeep, differenceBy } from "lodash-es";
-import useLocalStorage from "react-use-localstorage";
+import { cloneDeep, differenceBy, get } from "lodash-es";
+import {
+  ComponentClass,
+  isValidElement,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useTranslation } from "react-i18next";
 
-import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
-import { ListEmptyState } from "../list-empty-state/ListEmptyState";
-import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { useFetch } from "../../context/auth/AdminClient";
-import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
-import { ButtonVariant } from "@patternfly/react-core";
+import { useStoredState } from "../../utils/useStoredState";
+import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
+import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 
 type TitleCell = { title: JSX.Element };
 type Cell<T> = keyof T | JSX.Element | TitleCell;
@@ -206,11 +206,13 @@ export function KeycloakDataTable<T>({
   const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
   const [loading, setLoading] = useState(false);
 
-  const [defaultPageSize, setDefaultPageSize] = useLocalStorage(
+  const [defaultPageSize, setDefaultPageSize] = useStoredState(
+    localStorage,
     "pageSize",
-    "10"
+    10
   );
-  const [max, setMax] = useState(parseInt(defaultPageSize));
+
+  const [max, setMax] = useState(defaultPageSize);
   const [first, setFirst] = useState(0);
   const [search, setSearch] = useState<string>("");
   const prevSearch = useRef<string>();
@@ -410,7 +412,7 @@ export function KeycloakDataTable<T>({
           onPerPageSelect={(first, max) => {
             setFirst(first);
             setMax(max);
-            setDefaultPageSize(`${max}`);
+            setDefaultPageSize(max);
           }}
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
