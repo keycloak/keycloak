@@ -2,6 +2,7 @@ import {
   Button,
   ContextSelector,
   ContextSelectorItem,
+  ContextSelectorItemProps,
   Divider,
   Dropdown,
   DropdownItem,
@@ -12,9 +13,9 @@ import {
   SplitItem,
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
-import { Fragment, ReactElement, useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, To, useHref } from "react-router-dom";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useRealms } from "../../context/RealmsContext";
@@ -22,11 +23,14 @@ import { useRecentRealms } from "../../context/RecentRealms";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { toAddRealm } from "../../realm/routes/AddRealm";
-import { useUpdateEffect } from "../../utils/useUpdateEffect";
 
 import "./realm-selector.css";
 
-const AddRealm = () => {
+type AddRealmProps = {
+  onClick: () => void;
+};
+
+const AddRealm = ({ onClick }: AddRealmProps) => {
   const { realm } = useRealm();
   const { t } = useTranslation("common");
 
@@ -34,6 +38,7 @@ const AddRealm = () => {
     <Button
       data-testid="add-realm"
       component={(props) => <Link {...props} to={toAddRealm({ realm })} />}
+      onClick={onClick}
       isBlock
     >
       {t("createRealm")}
@@ -56,14 +61,29 @@ const RealmText = ({ value }: RealmTextProps) => {
   );
 };
 
+// We need to make all these props partial because of a bug in PatternFly.
+// See: https://github.com/patternfly/patternfly-react/pull/8670
+// TODO: Remove this partial when a fix has been released.
+type ContextSelectorItemLinkProps = Partial<
+  Omit<ContextSelectorItemProps, "href">
+> & {
+  to: To;
+};
+
+const ContextSelectorItemLink = ({
+  to,
+  ...props
+}: ContextSelectorItemLinkProps) => {
+  const href = useHref(to);
+  return <ContextSelectorItem {...props} href={href} />;
+};
+
 export const RealmSelector = () => {
   const { realm } = useRealm();
   const { realms, refresh } = useRealms();
   const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const navigate = useNavigate();
-  const location = useLocation();
   const { t } = useTranslation("common");
   const recentRealms = useRecentRealms();
 
@@ -85,15 +105,16 @@ export const RealmSelector = () => {
       ? undefined
       : all.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
 
-  useUpdateEffect(() => setOpen(false), [location]);
-
   const dropdownItems =
     realms.length !== 0
       ? realms.map((r) => (
           <DropdownItem
             key={`realm-dropdown-item-${r.realm}`}
             component={
-              <Link to={toDashboard({ realm: r.realm! })}>
+              <Link
+                to={toDashboard({ realm: r.realm! })}
+                onClick={() => setOpen(false)}
+              >
                 <RealmText value={r.realm!} />
               </Link>
             }
@@ -112,34 +133,26 @@ export const RealmSelector = () => {
       isOpen={open}
       screenReaderLabel={realm}
       onToggle={() => setOpen(!open)}
-      onSelect={(_, r) => {
-        let element: ReactElement;
-        if (Array.isArray(r)) {
-          element = (r as ReactElement[])[0];
-        } else {
-          element = r as ReactElement;
-        }
-        const value = element.props.value;
-        if (value) {
-          navigate(toDashboard({ realm: value }));
-        }
-      }}
       searchInputValue={search}
       onSearchInputChange={(value) => setSearch(value)}
       className="keycloak__realm_selector__context_selector"
       footer={
         whoAmI.canCreateRealm() && (
           <ContextSelectorItem key="add">
-            <AddRealm />
+            <AddRealm onClick={() => setOpen(false)} />
           </ContextSelectorItem>
         )
       }
     >
       {(filteredItems || all).map((item) => (
-        <ContextSelectorItem key={item.name}>
+        <ContextSelectorItemLink
+          key={item.name}
+          to={toDashboard({ realm: item.name })}
+          onClick={() => setOpen(false)}
+        >
           <RealmText value={item.name} />{" "}
           {item.used && <Label>{t("recent")}</Label>}
-        </ContextSelectorItem>
+        </ContextSelectorItemLink>
       ))}
     </ContextSelector>
   ) : (
@@ -167,7 +180,7 @@ export const RealmSelector = () => {
             <>
               <Divider key="divider" />
               <DropdownItem key="add">
-                <AddRealm />
+                <AddRealm onClick={() => setOpen(false)} />
               </DropdownItem>
             </>
           )}
