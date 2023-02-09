@@ -200,13 +200,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
               <EventsTypeTable
                 key={tableKey}
                 addTypes={() => setAddEventType(true)}
-                loader={() =>
-                  Promise.resolve(
-                    events.enabledEventTypes?.map((id) => {
-                      return { id };
-                    }) || []
-                  )
-                }
+                eventTypes={events.enabledEventTypes || []}
                 onDelete={(value) => {
                   const enabledEventTypes = events.enabledEventTypes?.filter(
                     (e) => e !== value.id

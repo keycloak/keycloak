@@ -40,6 +40,34 @@ import {
 import { ClientsTab, toClients } from "./routes/Clients";
 import { ClientRegistration } from "./registration/ClientRegistration";
 
+const ClientDetailLink = (client: ClientRepresentation) => {
+  const { t } = useTranslation("clients");
+  const { realm } = useRealm();
+  return (
+    <Link
+      key={client.id}
+      to={toClient({ realm, clientId: client.id!, tab: "settings" })}
+    >
+      {client.clientId}
+      {!client.enabled && (
+        <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
+          {t("common:disabled")}
+        </Badge>
+      )}
+    </Link>
+  );
+};
+
+const ClientName = (client: ClientRepresentation) => (
+  <TableText wrapModifier="truncate">{emptyFormatter()(client.name)}</TableText>
+);
+
+const ClientDescription = (client: ClientRepresentation) => (
+  <TableText wrapModifier="truncate">
+    {emptyFormatter()(client.description)}
+  </TableText>
+);
+
 export default function ClientsSection() {
   const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
@@ -89,32 +117,6 @@ export default function ClientsSection() {
       }
     },
   });
-
-  const ClientDetailLink = (client: ClientRepresentation) => (
-    <Link
-      key={client.id}
-      to={toClient({ realm, clientId: client.id!, tab: "settings" })}
-    >
-      {client.clientId}
-      {!client.enabled && (
-        <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
-          {t("common:disabled")}
-        </Badge>
-      )}
-    </Link>
-  );
-
-  const ClientName = (client: ClientRepresentation) => (
-    <TableText wrapModifier="truncate">
-      {emptyFormatter()(client.name)}
-    </TableText>
-  );
-
-  const ClientDescription = (client: ClientRepresentation) => (
-    <TableText wrapModifier="truncate">
-      {emptyFormatter()(client.description)}
-    </TableText>
-  );
 
   const ToolbarItems = () => {
     if (!isManager) return <span />;
@@ -233,7 +235,7 @@ export default function ClientsSection() {
                   transforms: [cellWidth(20)],
                   cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
                   cellRenderer: (c) =>
-                    convertClientToUrl(c, adminClient.baseUrl),
+                    convertClientToUrl(c, adminClient.baseUrl) || "",
                 },
               ]}
             />

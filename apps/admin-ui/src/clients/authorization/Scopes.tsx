@@ -49,6 +49,17 @@ type ExpandableRow = {
   isExpanded: boolean;
 };
 
+const PermissionsRenderer = ({
+  row,
+}: {
+  row: PermissionScopeRepresentation;
+}) => (
+  <>
+    {row.permissions?.[0]?.name ? row.permissions[0]?.name : "—"}{" "}
+    <MoreLabel array={row.permissions} />
+  </>
+);
+
 export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
   const { t } = useTranslation("clients");
   const navigate = useNavigate();
@@ -140,17 +151,6 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       setScopes(result);
     },
     [collapsed]
-  );
-
-  const PermissionsRenderer = ({
-    row,
-  }: {
-    row: PermissionScopeRepresentation;
-  }) => (
-    <>
-      {row.permissions?.[0]?.name ? row.permissions[0]?.name : "—"}{" "}
-      <MoreLabel array={row.permissions} />
-    </>
   );
 
   if (!scopes) {

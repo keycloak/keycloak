@@ -57,6 +57,51 @@ export type Row = ClientScopeRepresentation & {
 
 const DEDICATED_ROW = "dedicated";
 
+type TypeSelectorProps = Row & {
+  clientId: string;
+  fineGrainedAccess?: boolean;
+  refresh: () => void;
+};
+
+const TypeSelector = ({
+  clientId,
+  refresh,
+  fineGrainedAccess,
+  ...scope
+}: TypeSelectorProps) => {
+  const { t } = useTranslation("clients");
+  const { adminClient } = useAdminClient();
+  const { addAlert, addError } = useAlerts();
+
+  const { hasAccess } = useAccess();
+
+  const isDedicatedRow = (value: Row) => value.id === DEDICATED_ROW;
+  const isManager = hasAccess("manage-clients") || fineGrainedAccess;
+
+  return (
+    <CellDropdown
+      isDisabled={isDedicatedRow(scope) || !isManager}
+      clientScope={scope}
+      type={scope.type}
+      onSelect={async (value) => {
+        try {
+          await changeClientScope(
+            adminClient,
+            clientId,
+            scope,
+            scope.type,
+            value as ClientScope
+          );
+          addAlert(t("clientScopeSuccess"), AlertVariant.success);
+          refresh();
+        } catch (error) {
+          addError("clients:clientScopeError", error);
+        }
+      }}
+    />
+  );
+};
+
 export const ClientScopes = ({
   clientId,
   protocol,
@@ -81,6 +126,7 @@ export const ClientScopes = ({
   const [selectedRows, setSelectedRowState] = useState<Row[]>([]);
   const setSelectedRows = (rows: Row[]) =>
     setSelectedRowState(rows.filter(({ id }) => id !== DEDICATED_ROW));
+  const [kebabOpen, setKebabOpen] = useState(false);
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -148,29 +194,6 @@ export const ClientScopes = ({
     return page;
   };
 
-  const TypeSelector = (scope: Row) => (
-    <CellDropdown
-      isDisabled={isDedicatedRow(scope) || !isManager}
-      clientScope={scope}
-      type={scope.type}
-      onSelect={async (value) => {
-        try {
-          await changeClientScope(
-            adminClient,
-            clientId,
-            scope,
-            scope.type,
-            value as ClientScope
-          );
-          addAlert(t("clientScopeSuccess"), AlertVariant.success);
-          refresh();
-        } catch (error) {
-          addError("clients:clientScopeError", error);
-        }
-      }}
-    />
-  );
-
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("client-scopes:deleteClientScope", {
       count: selectedRows.length,
@@ -194,66 +217,6 @@ export const ClientScopes = ({
       }
     },
   });
-
-  const ManagerToolbarItems = () => {
-    const [kebabOpen, setKebabOpen] = useState(false);
-
-    if (!isManager) return <span />;
-
-    return (
-      <>
-        <DeleteConfirm />
-        <ToolbarItem>
-          <Button onClick={() => setAddDialogOpen(true)}>
-            {t("addClientScope")}
-          </Button>
-        </ToolbarItem>
-        <ToolbarItem>
-          <ChangeTypeDropdown
-            clientId={clientId}
-            selectedRows={selectedRows}
-            refresh={refresh}
-          />
-        </ToolbarItem>
-        <ToolbarItem>
-          <Dropdown
-            toggle={<KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />}
-            isOpen={kebabOpen}
-            isPlain
-            dropdownItems={[
-              <DropdownItem
-                key="deleteAll"
-                isDisabled={selectedRows.length === 0}
-                onClick={async () => {
-                  try {
-                    await Promise.all(
-                      selectedRows.map((row) =>
-                        removeClientScope(
-                          adminClient,
-                          clientId,
-                          { ...row },
-                          row.type as ClientScope
-                        )
-                      )
-                    );
-
-                    setKebabOpen(false);
-                    setSelectedRows([]);
-                    addAlert(t("clients:clientScopeRemoveSuccess"));
-                    refresh();
-                  } catch (error) {
-                    addError("clients:clientScopeRemoveError", error);
-                  }
-                }}
-              >
-                {t("common:remove")}
-              </DropdownItem>,
-            ]}
-          />
-        </ToolbarItem>
-      </>
-    );
-  };
 
   return (
     <>
@@ -313,7 +276,61 @@ export const ClientScopes = ({
                 refresh();
               }}
             />
-            <ManagerToolbarItems />
+            {isManager && (
+              <>
+                <DeleteConfirm />
+                <ToolbarItem>
+                  <Button onClick={() => setAddDialogOpen(true)}>
+                    {t("addClientScope")}
+                  </Button>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <ChangeTypeDropdown
+                    clientId={clientId}
+                    selectedRows={selectedRows}
+                    refresh={refresh}
+                  />
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Dropdown
+                    toggle={
+                      <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
+                    }
+                    isOpen={kebabOpen}
+                    isPlain
+                    dropdownItems={[
+                      <DropdownItem
+                        key="deleteAll"
+                        isDisabled={selectedRows.length === 0}
+                        onClick={async () => {
+                          try {
+                            await Promise.all(
+                              selectedRows.map((row) =>
+                                removeClientScope(
+                                  adminClient,
+                                  clientId,
+                                  { ...row },
+                                  row.type as ClientScope
+                                )
+                              )
+                            );
+
+                            setKebabOpen(false);
+                            setSelectedRows([]);
+                            addAlert(t("clients:clientScopeRemoveSuccess"));
+                            refresh();
+                          } catch (error) {
+                            addError("clients:clientScopeRemoveError", error);
+                          }
+                        }}
+                      >
+                        {t("common:remove")}
+                      </DropdownItem>,
+                    ]}
+                  />
+                </ToolbarItem>
+              </>
+            )}
           </>
         }
         columns={[
@@ -328,13 +345,15 @@ export const ClientScopes = ({
                   </Link>
                 );
               }
-              return row.name;
+              return row.name!;
             },
           },
           {
             name: "type",
             displayKey: "clients:assignedType",
-            cellRenderer: TypeSelector,
+            cellRenderer: (row) => (
+              <TypeSelector clientId={clientId} refresh={refresh} {...row} />
+            ),
           },
           { name: "description" },
         ]}

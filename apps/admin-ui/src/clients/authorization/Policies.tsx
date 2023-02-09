@@ -47,6 +47,19 @@ type ExpandablePolicyRepresentation = PolicyRepresentation & {
   isExpanded: boolean;
 };
 
+const DependentPoliciesRenderer = ({
+  row,
+}: {
+  row: ExpandablePolicyRepresentation;
+}) => {
+  return (
+    <>
+      {row.dependentPolicies?.[0]?.name}{" "}
+      <MoreLabel array={row.dependentPolicies} />
+    </>
+  );
+};
+
 export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
   const { t } = useTranslation("clients");
   const { adminClient } = useAdminClient();
@@ -103,19 +116,6 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
     },
     [key, search, first, max]
   );
-
-  const DependentPoliciesRenderer = ({
-    row,
-  }: {
-    row: ExpandablePolicyRepresentation;
-  }) => {
-    return (
-      <>
-        {row.dependentPolicies?.[0]?.name}{" "}
-        <MoreLabel array={row.dependentPolicies} />
-      </>
-    );
-  };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clients:deletePolicy",

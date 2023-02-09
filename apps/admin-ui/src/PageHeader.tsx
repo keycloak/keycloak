@@ -22,12 +22,10 @@ import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { toDashboard } from "./dashboard/routes/Dashboard";
 import environment from "./environment";
 
-export const Header = () => {
-  const { realm } = useRealm();
+const ManageAccountDropdownItem = () => {
   const { keycloak } = useAdminClient();
   const { t } = useTranslation();
-
-  const ManageAccountDropdownItem = () => (
+  return (
     <DropdownItem
       key="manage account"
       id="manage-account"
@@ -36,8 +34,12 @@ export const Header = () => {
       {t("manageAccount")}
     </DropdownItem>
   );
+};
 
-  const SignOutDropdownItem = () => (
+const SignOutDropdownItem = () => {
+  const { keycloak } = useAdminClient();
+  const { t } = useTranslation();
+  return (
     <DropdownItem
       id="sign-out"
       key="sign out"
@@ -46,47 +48,86 @@ export const Header = () => {
       {t("signOut")}
     </DropdownItem>
   );
+};
 
-  const ServerInfoDropdownItem = () => {
-    const { realm } = useRealm();
-    const { t } = useTranslation();
+const ServerInfoDropdownItem = () => {
+  const { realm } = useRealm();
+  const { t } = useTranslation();
 
-    return (
-      <DropdownItem
-        key="server info"
-        component={(props: any) => (
-          <Link {...props} to={toDashboard({ realm })} />
-        )}
-      >
-        {t("realmInfo")}
-      </DropdownItem>
-    );
-  };
+  return (
+    <DropdownItem
+      key="server info"
+      component={(props: any) => (
+        <Link {...props} to={toDashboard({ realm })} />
+      )}
+    >
+      {t("realmInfo")}
+    </DropdownItem>
+  );
+};
 
-  const HelpDropdownItem = () => {
-    const { t } = useTranslation();
-    const { enabled, toggleHelp } = useHelp();
-    return (
-      <DropdownItem icon={<HelpIcon />} onClick={toggleHelp}>
-        {enabled ? t("helpEnabled") : t("helpDisabled")}
-      </DropdownItem>
-    );
-  };
+const HelpDropdownItem = () => {
+  const { t } = useTranslation();
+  const { enabled, toggleHelp } = useHelp();
+  return (
+    <DropdownItem icon={<HelpIcon />} onClick={toggleHelp}>
+      {enabled ? t("helpEnabled") : t("helpDisabled")}
+    </DropdownItem>
+  );
+};
 
-  const kebabDropdownItems = [
-    <ManageAccountDropdownItem key="kebab Manage Account" />,
-    <ServerInfoDropdownItem key="kebab Server Info" />,
-    <HelpDropdownItem key="kebab Help" />,
-    <DropdownSeparator key="kebab sign out separator" />,
-    <SignOutDropdownItem key="kebab Sign out" />,
-  ];
+const kebabDropdownItems = [
+  <ManageAccountDropdownItem key="kebab Manage Account" />,
+  <ServerInfoDropdownItem key="kebab Server Info" />,
+  <HelpDropdownItem key="kebab Help" />,
+  <DropdownSeparator key="kebab sign out separator" />,
+  <SignOutDropdownItem key="kebab Sign out" />,
+];
 
-  const userDropdownItems = [
-    <ManageAccountDropdownItem key="Manage Account" />,
-    <ServerInfoDropdownItem key="Server info" />,
-    <DropdownSeparator key="sign out separator" />,
-    <SignOutDropdownItem key="Sign out" />,
-  ];
+const userDropdownItems = [
+  <ManageAccountDropdownItem key="Manage Account" />,
+  <ServerInfoDropdownItem key="Server info" />,
+  <DropdownSeparator key="sign out separator" />,
+  <SignOutDropdownItem key="Sign out" />,
+];
+
+const KebabDropdown = () => {
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
+
+  return (
+    <Dropdown
+      id="user-dropdown-kebab"
+      isPlain
+      position="right"
+      toggle={<KebabToggle onToggle={setDropdownOpen} />}
+      isOpen={isDropdownOpen}
+      dropdownItems={kebabDropdownItems}
+    />
+  );
+};
+
+const UserDropdown = () => {
+  const { whoAmI } = useWhoAmI();
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
+
+  return (
+    <Dropdown
+      isPlain
+      position="right"
+      id="user-dropdown"
+      isOpen={isDropdownOpen}
+      toggle={
+        <DropdownToggle onToggle={setDropdownOpen}>
+          {whoAmI.getDisplayName()}
+        </DropdownToggle>
+      }
+      dropdownItems={userDropdownItems}
+    />
+  );
+};
+
+export const Header = () => {
+  const { realm } = useRealm();
 
   const headerTools = () => {
     const adminClient = useAdminClient();
@@ -126,41 +167,6 @@ export const Header = () => {
           alt="Avatar image"
         />
       </PageHeaderTools>
-    );
-  };
-
-  const KebabDropdown = () => {
-    const [isDropdownOpen, setDropdownOpen] = useState(false);
-
-    return (
-      <Dropdown
-        id="user-dropdown-kebab"
-        isPlain
-        position="right"
-        toggle={<KebabToggle onToggle={setDropdownOpen} />}
-        isOpen={isDropdownOpen}
-        dropdownItems={kebabDropdownItems}
-      />
-    );
-  };
-
-  const UserDropdown = () => {
-    const { whoAmI } = useWhoAmI();
-    const [isDropdownOpen, setDropdownOpen] = useState(false);
-
-    return (
-      <Dropdown
-        isPlain
-        position="right"
-        id="user-dropdown"
-        isOpen={isDropdownOpen}
-        toggle={
-          <DropdownToggle onToggle={setDropdownOpen}>
-            {whoAmI.getDisplayName()}
-          </DropdownToggle>
-        }
-        dropdownItems={userDropdownItems}
-      />
     );
   };
 

@@ -30,6 +30,14 @@ type Row = ProtocolMapperRepresentation & {
   priority: number;
 };
 
+type MapperLinkProps = Row & {
+  detailLink: (id: string) => Partial<Path>;
+};
+
+const MapperLink = ({ id, name, detailLink }: MapperLinkProps) => (
+  <Link to={detailLink(id!)}>{name}</Link>
+);
+
 export const MapperList = ({
   model,
   onAdd,
@@ -80,10 +88,6 @@ export const MapperList = ({
 
     return list.sort((a, b) => a.priority - b.priority);
   };
-
-  const MapperLink = ({ id, name }: Row) => (
-    <Link to={detailLink(id!)}>{name}</Link>
-  );
 
   return (
     <>
@@ -139,7 +143,9 @@ export const MapperList = ({
         columns={[
           {
             name: "name",
-            cellRenderer: MapperLink,
+            cellRenderer: (row) => (
+              <MapperLink {...row} detailLink={detailLink} />
+            ),
           },
           { name: "category" },
           {

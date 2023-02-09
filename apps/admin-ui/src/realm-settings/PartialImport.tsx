@@ -433,6 +433,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
             {t("overwritten")}
           </Label>
         );
+      default:
+        return "";
     }
   };
 

@@ -42,6 +42,12 @@ type ExpandableResourceRepresentation = ResourceRepresentation & {
   isExpanded: boolean;
 };
 
+const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
+  <>
+    {row.uris?.[0]} <MoreLabel array={row.uris} />
+  </>
+);
+
 export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   const { t } = useTranslation("clients");
   const navigate = useNavigate();
@@ -81,12 +87,6 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
         resources.map((resource) => ({ ...resource, isExpanded: false }))
       ),
     [key, search, first, max]
-  );
-
-  const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
-    <>
-      {row.uris?.[0]} <MoreLabel array={row.uris} />
-    </>
   );
 
   const fetchPermissions = async (id: string) => {

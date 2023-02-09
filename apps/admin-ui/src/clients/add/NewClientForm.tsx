@@ -95,41 +95,6 @@ export default function NewClientForm() {
     }
   };
 
-  const Footer = () => (
-    <WizardFooter>
-      <WizardContextConsumer>
-        {({ activeStep, onNext, onBack, onClose }) => (
-          <>
-            <Button
-              variant="primary"
-              data-testid={isFinalStep() ? "save" : "next"}
-              type="submit"
-              onClick={() => {
-                forward(onNext);
-              }}
-            >
-              {isFinalStep() ? t("common:save") : t("common:next")}
-            </Button>
-            <Button
-              variant="secondary"
-              data-testid="back"
-              onClick={() => {
-                back();
-                onBack();
-              }}
-              isDisabled={activeStep.name === t("generalSettings")}
-            >
-              {t("common:back")}
-            </Button>
-            <Button data-testid="cancel" variant="link" onClick={onClose}>
-              {t("common:cancel")}
-            </Button>
-          </>
-        )}
-      </WizardContextConsumer>
-    </WizardFooter>
-  );
-
   const title = t("createClient");
   return (
     <>
@@ -170,7 +135,44 @@ export default function NewClientForm() {
                 canJumpTo: step >= 1,
               },
             ]}
-            footer={<Footer />}
+            footer={
+              <WizardFooter>
+                <WizardContextConsumer>
+                  {({ activeStep, onNext, onBack, onClose }) => (
+                    <>
+                      <Button
+                        variant="primary"
+                        data-testid={isFinalStep() ? "save" : "next"}
+                        type="submit"
+                        onClick={() => {
+                          forward(onNext);
+                        }}
+                      >
+                        {isFinalStep() ? t("common:save") : t("common:next")}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        data-testid="back"
+                        onClick={() => {
+                          back();
+                          onBack();
+                        }}
+                        isDisabled={activeStep.name === t("generalSettings")}
+                      >
+                        {t("common:back")}
+                      </Button>
+                      <Button
+                        data-testid="cancel"
+                        variant="link"
+                        onClick={onClose}
+                      >
+                        {t("common:cancel")}
+                      </Button>
+                    </>
+                  )}
+                </WizardContextConsumer>
+              </WizardFooter>
+            }
             onSave={save}
             onGoToStep={onGoToStep}
           />

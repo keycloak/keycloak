@@ -56,6 +56,32 @@ export const REALM_FLOWS = new Map<string, string>([
   ["dockerAuthenticationFlow", "docker auth"],
 ]);
 
+const UsedByRenderer = (authType: AuthenticationType) => (
+  <UsedBy authType={authType} />
+);
+
+const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
+  const { t } = useTranslation("authentication");
+  const { realm } = useRealm();
+
+  return (
+    <>
+      <Link
+        to={toFlow({
+          realm,
+          id: id!,
+          usedBy: usedBy?.type || "notInUse",
+          builtIn: builtIn ? "builtIn" : undefined,
+        })}
+        key={`link-${id}`}
+      >
+        {alias}
+      </Link>{" "}
+      {builtIn && <Label key={`label-${id}`}>{t("buildIn")}</Label>}
+    </>
+  );
+};
+
 export default function AuthenticationSection() {
   const { t } = useTranslation("authentication");
   const { adminClient } = useAdminClient();
@@ -119,32 +145,6 @@ export default function AuthenticationSection() {
       }
     },
   });
-
-  const UsedByRenderer = (authType: AuthenticationType) => (
-    <UsedBy authType={authType} />
-  );
-
-  const AliasRenderer = ({
-    id,
-    alias,
-    usedBy,
-    builtIn,
-  }: AuthenticationType) => (
-    <>
-      <Link
-        to={toFlow({
-          realm,
-          id: id!,
-          usedBy: usedBy?.type || "notInUse",
-          builtIn: builtIn ? "builtIn" : undefined,
-        })}
-        key={`link-${id}`}
-      >
-        {alias}
-      </Link>{" "}
-      {builtIn && <Label key={`label-${id}`}>{t("buildIn")}</Label>}
-    </>
-  );
 
   return (
     <>
@@ -236,12 +236,12 @@ export default function AuthenticationSection() {
                 {
                   name: "alias",
                   displayKey: "authentication:flowName",
-                  cellRenderer: AliasRenderer,
+                  cellRenderer: (row) => <AliasRenderer {...row} />,
                 },
                 {
                   name: "usedBy",
                   displayKey: "authentication:usedBy",
-                  cellRenderer: UsedByRenderer,
+                  cellRenderer: (row) => <UsedByRenderer {...row} />,
                 },
                 {
                   name: "description",

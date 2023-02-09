@@ -111,13 +111,13 @@ export type Field<T> = {
   displayKey?: string;
   cellFormatters?: IFormatter[];
   transforms?: ITransform[];
-  cellRenderer?: (row: T) => ReactNode;
+  cellRenderer?: (row: T) => JSX.Element | string;
 };
 
 export type DetailField<T> = {
   name: string;
   enabled?: (row: T) => boolean;
-  cellRenderer?: (row: T) => ReactNode;
+  cellRenderer?: (row: T) => JSX.Element | string;
 };
 
 export type Action<T> = IAction & {
@@ -223,7 +223,9 @@ export function KeycloakDataTable<T>({
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
       if (col.cellRenderer) {
-        return { title: col.cellRenderer(value) };
+        const Component = col.cellRenderer;
+        //@ts-ignore
+        return { title: <Component {...value} /> };
       }
       return get(value, col.name);
     });
@@ -268,8 +270,8 @@ export function KeycloakDataTable<T>({
     if (typeof node === "object") {
       return getNodeText(
         isValidElement((node as TitleCell).title)
-          ? (node as TitleCell).title.props?.children
-          : (node as JSX.Element).props?.children
+          ? (node as TitleCell).title.props
+          : Object.values(node)
       );
     }
     return "";
@@ -355,8 +357,6 @@ export function KeycloakDataTable<T>({
       };
       return action;
     });
-
-  const Loading = () => <KeycloakSpinner />;
 
   const _onSelect = (isSelected: boolean, rowIndex: number) => {
     const data = filteredData || rows;
@@ -460,7 +460,7 @@ export function KeycloakDataTable<T>({
               }
             />
           )}
-          {loading && <Loading />}
+          {loading && <KeycloakSpinner />}
         </PaginatingTableToolbar>
       )}
       {!loading && noData && !searching && emptyState}

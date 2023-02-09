@@ -168,8 +168,6 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
     refresh();
   }, [isDirectMembership]);
 
-  const AliasRenderer = (group: GroupRepresentation) => group.name;
-
   const toggleModal = () => {
     setOpen(!open);
   };
@@ -209,25 +207,6 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
     toggleDeleteDialog();
   };
 
-  const LeaveButtonRenderer = (group: GroupRepresentation) => {
-    const canLeaveGroup =
-      directMembershipList.some((item) => item.id === group.id) ||
-      directMembershipList.length === 0 ||
-      isDirectMembership;
-    return (
-      canLeaveGroup && (
-        <Button
-          data-testid={`leave-${group.name}`}
-          onClick={() => leave([group])}
-          variant="link"
-          isDisabled={!user.access?.manageGroupMembership}
-        >
-          {t("leave")}
-        </Button>
-      )
-    );
-  };
-
   const addGroups = async (groups: GroupRepresentation[]): Promise<void> => {
     const newGroups = groups;
 
@@ -244,8 +223,6 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
       }
     });
   };
-
-  const Path = (group: GroupRepresentation) => <GroupPath group={group} />;
 
   return (
     <>
@@ -335,20 +312,39 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           {
             name: "groupMembership",
             displayKey: "users:groupMembership",
-            cellRenderer: AliasRenderer,
+            cellRenderer: (group: GroupRepresentation) => group.name || "",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(40)],
           },
           {
             name: "path",
             displayKey: "users:path",
-            cellRenderer: Path,
+            cellRenderer: (group: GroupRepresentation) => (
+              <GroupPath group={group} />
+            ),
             transforms: [cellWidth(45)],
           },
 
           {
             name: "",
-            cellRenderer: LeaveButtonRenderer,
+            cellRenderer: (group: GroupRepresentation) => {
+              const canLeaveGroup =
+                directMembershipList.some((item) => item.id === group.id) ||
+                directMembershipList.length === 0 ||
+                isDirectMembership;
+              return canLeaveGroup ? (
+                <Button
+                  data-testid={`leave-${group.name}`}
+                  onClick={() => leave([group])}
+                  variant="link"
+                  isDisabled={!user.access?.manageGroupMembership}
+                >
+                  {t("leave")}
+                </Button>
+              ) : (
+                ""
+              );
+            },
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(20)],
           },

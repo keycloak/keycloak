@@ -49,6 +49,44 @@ import helpUrls from "../help-urls";
 
 import "./client-scope.css";
 
+type TypeSelectorProps = ClientScopeDefaultOptionalType & {
+  refresh: () => void;
+};
+
+const TypeSelector = (scope: TypeSelectorProps) => {
+  const { t } = useTranslation("client-scopes");
+  const { adminClient } = useAdminClient();
+  const { addAlert, addError } = useAlerts();
+  return (
+    <CellDropdown
+      clientScope={scope}
+      type={scope.type}
+      all
+      onSelect={async (value) => {
+        try {
+          await changeScope(adminClient, scope, value as AllClientScopeType);
+          addAlert(t("clientScopeSuccess"), AlertVariant.success);
+          scope.refresh();
+        } catch (error) {
+          addError("client-scopes:clientScopeError", error);
+        }
+      }}
+    />
+  );
+};
+
+const ClientScopeDetailLink = ({
+  id,
+  name,
+}: ClientScopeDefaultOptionalType) => {
+  const { realm } = useRealm();
+  return (
+    <Link key={id} to={toClientScope({ realm, id: id!, tab: "settings" })}>
+      {name}
+    </Link>
+  );
+};
+
 export default function ClientScopesSection() {
   const { realm } = useRealm();
   const { t } = useTranslation("client-scopes");
@@ -141,31 +179,6 @@ export default function ClientScopesSection() {
     },
   });
 
-  const TypeSelector = (scope: ClientScopeDefaultOptionalType) => (
-    <CellDropdown
-      clientScope={scope}
-      type={scope.type}
-      all
-      onSelect={async (value) => {
-        try {
-          await changeScope(adminClient, scope, value as AllClientScopeType);
-          addAlert(t("clientScopeSuccess"), AlertVariant.success);
-          refresh();
-        } catch (error) {
-          addError("client-scopes:clientScopeError", error);
-        }
-      }}
-    />
-  );
-
-  const ClientScopeDetailLink = ({
-    id,
-    name,
-  }: ClientScopeDefaultOptionalType) => (
-    <Link key={id} to={toClientScope({ realm, id: id!, tab: "settings" })}>
-      {name}
-    </Link>
-  );
   return (
     <>
       <DeleteConfirm />
@@ -271,7 +284,9 @@ export default function ClientScopesSection() {
             {
               name: "type",
               displayKey: "client-scopes:assignedType",
-              cellRenderer: TypeSelector,
+              cellRenderer: (row) => (
+                <TypeSelector {...row} refresh={refresh} />
+              ),
             },
             {
               name: "protocol",

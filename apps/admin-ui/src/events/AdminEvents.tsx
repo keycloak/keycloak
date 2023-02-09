@@ -582,7 +582,7 @@ export const AdminEvents = () => {
           {
             name: "",
             displayKey: "events:user",
-            cellRenderer: (event) => event.authDetails?.userId,
+            cellRenderer: (event) => event.authDetails?.userId || "",
           },
         ]}
         emptyState={

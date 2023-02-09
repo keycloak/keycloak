@@ -47,15 +47,9 @@ export const AddEventTypesDialog = ({
     >
       <EventsTypeTable
         onSelect={(selected) => setSelectedTypes(selected)}
-        loader={() =>
-          Promise.resolve(
-            enums!["eventType"]
-              .filter((type) => !configured.includes(type))
-              .map((id) => {
-                return { id };
-              })
-          )
-        }
+        eventTypes={enums!["eventType"].filter(
+          (type) => !configured.includes(type)
+        )}
       />
     </Modal>
   );

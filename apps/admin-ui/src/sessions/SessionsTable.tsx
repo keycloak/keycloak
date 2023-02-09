@@ -35,6 +35,30 @@ export type SessionsTableProps = {
   logoutUser?: string;
 };
 
+const UsernameCell = (row: UserSessionRepresentation) => {
+  const { realm } = useRealm();
+  return (
+    <Link to={toUser({ realm, id: row.userId!, tab: "sessions" })}>
+      {row.username}
+    </Link>
+  );
+};
+
+const ClientsCell = (row: UserSessionRepresentation) => {
+  const { realm } = useRealm();
+  return (
+    <List variant={ListVariant.inline}>
+      {Object.entries(row.clients!).map(([clientId, client]) => (
+        <ListItem key={clientId}>
+          <Link to={toClient({ realm, clientId, tab: "sessions" })}>
+            {client}
+          </Link>
+        </ListItem>
+      ))}
+    </List>
+  );
+};
+
 export default function SessionsTable({
   loader,
   hiddenColumns = [],
@@ -51,24 +75,6 @@ export default function SessionsTable({
   const refresh = () => setKey((value) => value + 1);
 
   const columns = useMemo(() => {
-    const UsernameCell = (row: UserSessionRepresentation) => (
-      <Link to={toUser({ realm, id: row.userId!, tab: "sessions" })}>
-        {row.username}
-      </Link>
-    );
-
-    const ClientsCell = (row: UserSessionRepresentation) => (
-      <List variant={ListVariant.inline}>
-        {Object.entries(row.clients!).map(([clientId, client]) => (
-          <ListItem key={clientId}>
-            <Link to={toClient({ realm, clientId, tab: "sessions" })}>
-              {client}
-            </Link>
-          </ListItem>
-        ))}
-      </List>
-    );
-
     const defaultColumns: Field<UserSessionRepresentation>[] = [
       {
         name: "username",

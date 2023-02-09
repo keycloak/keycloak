@@ -18,10 +18,45 @@ import { routes } from "./route-config";
 
 import "./page-nav.css";
 
+type LeftNavProps = { title: string; path: string };
+
+const LeftNav = ({ title, path }: LeftNavProps) => {
+  const { t } = useTranslation("common");
+  const { hasAccess } = useAccess();
+  const { realm } = useRealm();
+  const route = routes.find(
+    (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path
+  );
+
+  const accessAllowed =
+    route &&
+    (route.access instanceof Array
+      ? hasAccess(...route.access)
+      : hasAccess(route.access));
+
+  if (!accessAllowed) {
+    return null;
+  }
+
+  return (
+    <li>
+      <NavLink
+        id={"nav-item" + path.replace("/", "-")}
+        to={`/${realm}${path}`}
+        className={({ isActive }) =>
+          `pf-c-nav__link${isActive ? " pf-m-current" : ""}`
+        }
+      >
+        {t(title)}
+      </NavLink>
+    </li>
+  );
+};
+
 export const PageNav = () => {
   const { t } = useTranslation("common");
-  const { hasAccess, hasSomeAccess } = useAccess();
-  const { realm } = useRealm();
+  const { hasSomeAccess } = useAccess();
+
   const navigate = useNavigate();
 
   type SelectedItem = {
@@ -34,37 +69,6 @@ export const PageNav = () => {
   const onSelect = (item: SelectedItem) => {
     navigate(item.to);
     item.event.preventDefault();
-  };
-
-  type LeftNavProps = { title: string; path: string };
-  const LeftNav = ({ title, path }: LeftNavProps) => {
-    const route = routes.find(
-      (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path
-    );
-
-    const accessAllowed =
-      route &&
-      (route.access instanceof Array
-        ? hasAccess(...route.access)
-        : hasAccess(route.access));
-
-    if (!accessAllowed) {
-      return null;
-    }
-
-    return (
-      <li>
-        <NavLink
-          id={"nav-item" + path.replace("/", "-")}
-          to={`/${realm}${path}`}
-          className={({ isActive }) =>
-            `pf-c-nav__link${isActive ? " pf-m-current" : ""}`
-          }
-        >
-          {t(title)}
-        </NavLink>
-      </li>
-    );
   };
 
   const showManage = hasSomeAccess(
