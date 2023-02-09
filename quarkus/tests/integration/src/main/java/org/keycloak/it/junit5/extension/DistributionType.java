@@ -42,8 +42,7 @@ public enum DistributionType {
                 config.keepAlive(),
                 config.enableTls(),
                 !DistributionTest.ReInstall.NEVER.equals(config.reInstall()),
-                config.removeBuildOptionsAfterBuild(),
-                config.createAdminUser());
+                config.removeBuildOptionsAfterBuild());
     }
 
     private final Function<DistributionTest, KeycloakDistribution> factory;

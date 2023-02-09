@@ -1,6 +1,7 @@
 package org.keycloak.config;
 
 import java.io.File;
+import org.keycloak.common.crypto.FipsMode;
 
 public class HttpOptions {
 
@@ -79,10 +80,11 @@ public class HttpOptions {
             .defaultValue("password")
             .build();
 
-    public static final Option HTTPS_KEY_STORE_TYPE = new OptionBuilder<>("https-key-store-type", String.class)
+    public static final Option<String> HTTPS_KEY_STORE_TYPE = new OptionBuilder<>("https-key-store-type", String.class)
             .category(OptionCategory.HTTP)
             .description("The type of the key store file. " +
-                    "If not given, the type is automatically detected based on the file name.")
+                    "If not given, the type is automatically detected based on the file name. " +
+                    "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.strict.name() + "' and no value is set, it defaults to 'BCFKS'.")
             .build();
 
     public static final Option HTTPS_TRUST_STORE_FILE = new OptionBuilder<>("https-trust-store-file", File.class)

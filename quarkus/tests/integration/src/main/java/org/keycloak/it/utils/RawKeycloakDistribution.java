@@ -91,24 +91,22 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean inited = false;
     private Map<String, String> envVars = new HashMap<>();
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild,
-            boolean createAdminUser) {
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.enableTls = enableTls;
         this.reCreate = reCreate;
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
-        this.createAdminUser = createAdminUser;
         this.distPath = prepareDistribution();
     }
 
     @Override
     public CLIResult run(List<String> arguments) {
-        reset();
+        stop();
         if (manualStop && isRunning()) {
             throw new IllegalStateException("Server already running. You should manually stop the server before starting it again.");
         }
-        stop();
+        reset();
         try {
             configureServer();
             startServer(arguments);
@@ -265,6 +263,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
                 throw new IllegalStateException(
                         "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
+            }
+
+            if (!keycloak.isAlive()) {
+                return;
             }
 
             try {
@@ -434,11 +436,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private void startServer(List<String> arguments) throws Exception {
         ProcessBuilder pb = new ProcessBuilder(getCliArgs(arguments));
         ProcessBuilder builder = pb.directory(distPath.resolve("bin").toFile());
-
-        if (createAdminUser) {
-            builder.environment().put("KEYCLOAK_ADMIN", "admin");
-            builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
-        }
 
         if (debug) {
             builder.environment().put("DEBUG_SUSPEND", "y");

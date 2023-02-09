@@ -233,7 +233,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     }
 
     private KeycloakDistribution createDistribution(DistributionTest config, LegacyStore legacyStoreConfig, WithDatabase databaseConfig) {
-        return new KeycloakDistributionDecorator(legacyStoreConfig, databaseConfig, DistributionType.getCurrent().orElse(RAW).newInstance(config));
+        return new KeycloakDistributionDecorator(legacyStoreConfig, databaseConfig, config, DistributionType.getCurrent().orElse(RAW).newInstance(config));
     }
 
     @Override
