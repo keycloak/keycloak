@@ -1,4 +1,6 @@
-org.keycloak.testsuite.forms.**
+LoginTest
+LoginTotpTest
+PasswordHashingTest
 ClientAuthSignedJWTTest
 CredentialsTest
 JavaKeystoreKeyProviderTest

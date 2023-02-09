@@ -339,6 +339,14 @@
         </profile>
 
         <profile>
+            <id>file</id>
+            <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                <keycloak.model.parameters>Map,FileMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
             <id>hot-rod</id>
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>

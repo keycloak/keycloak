@@ -553,7 +553,7 @@ public abstract class KeycloakModelTest {
 
             what.accept(session, parameter);
 
-            session.getTransactionManager().rollback();
+            session.getTransactionManager().setRollbackOnly();
         }
     }
 

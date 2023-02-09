@@ -123,6 +123,8 @@
         <org.yaml.snakeyaml.version>1.33</org.yaml.snakeyaml.version>
         <!-- Override sshd-common to fix CVE-2022-45047 -->
         <org.apache.sshd.version>2.9.2</org.apache.sshd.version>
+        <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
+
         <!-- Openshift -->
         <version.com.openshift.openshift-restclient-java>9.0.5.Final</version.com.openshift.openshift-restclient-java>
 
@@ -306,6 +308,11 @@
                 <groupId>org.apache.sshd</groupId>
                 <artifactId>sshd-common</artifactId>
                 <version>${org.apache.sshd.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.snakeyaml</groupId>
+                <artifactId>snakeyaml-engine</artifactId>
+                <version>${org.snakeyaml.snakeyaml-engine.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>

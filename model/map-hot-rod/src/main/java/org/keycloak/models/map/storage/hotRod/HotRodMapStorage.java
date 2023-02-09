@@ -40,6 +40,8 @@ import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
+import org.keycloak.models.map.storage.hotRod.transaction.NoActionHotRodTransactionWrapper;
+import org.keycloak.models.map.storage.hotRod.transaction.AllAreasHotRodTransactionsWrapper;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Map;
@@ -64,14 +66,16 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
     private final Function<E, V> delegateProducer;
     protected final DeepCloner cloner;
     protected boolean isExpirableEntity;
+    private final AllAreasHotRodTransactionsWrapper txWrapper;
 
-    public HotRodMapStorage(RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner) {
+    public HotRodMapStorage(RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner, AllAreasHotRodTransactionsWrapper txWrapper) {
         this.remoteCache = remoteCache;
         this.keyConverter = keyConverter;
         this.storedEntityDescriptor = storedEntityDescriptor;
         this.cloner = cloner;
         this.delegateProducer = storedEntityDescriptor.getHotRodDelegateProvider();
         this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(ModelEntityUtil.getEntityType(storedEntityDescriptor.getModelTypeClass()));
+        this.txWrapper = txWrapper;
     }
 
     @Override
@@ -228,13 +232,10 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
 
     @Override
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-
-        if (sessionTransaction == null) {
-            sessionTransaction = createTransactionInternal(session);
-            session.setAttribute("map-transaction-" + hashCode(), sessionTransaction);
-        }
-        return sessionTransaction;
+        // Here we return transaction that has no action because the returned transaction is enlisted to different
+        //  phase than we need. Instead of tx returned by this method txWrapper is enlisted and executes all changes
+        //  performed by the returned transaction.
+        return new NoActionHotRodTransactionWrapper<>((ConcurrentHashMapKeycloakTransaction<K, V, M>) txWrapper.getOrCreateTxForModel(storedEntityDescriptor.getModelTypeClass(), () -> createTransactionInternal(session)));
     }
 
     protected MapKeycloakTransaction<V, M> createTransactionInternal(KeycloakSession session) {

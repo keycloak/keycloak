@@ -61,6 +61,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 import com.google.common.collect.ImmutableMap;
 
+@EnableFeatures({ @EnableFeature(Profile.Feature.TOKEN_EXCHANGE), @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) })
 public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBrokerTest {
 
     @Override
@@ -69,7 +70,6 @@ public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBase
     }
 
     @Test
-    @EnableFeatures({ @EnableFeature(Profile.Feature.TOKEN_EXCHANGE), @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) })
     public void testExternalInternalTokenExchange() throws Exception {
         RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = providerRealm.clients();

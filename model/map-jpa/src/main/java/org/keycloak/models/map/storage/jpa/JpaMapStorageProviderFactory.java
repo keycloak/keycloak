@@ -259,7 +259,14 @@ public class JpaMapStorageProviderFactory implements
 
     public JpaMapStorageProviderFactory() {
         int index = ENUMERATOR.getAndIncrement();
+        // this identifier is used to create HotRodMapProvider only once per session per factory instance
         this.sessionProviderKey = PROVIDER_ID + "-" + index;
+
+        // When there are more JPA configurations available in Keycloak (for example, global/realm1/realm2 etc.)
+        // there will be more instances of this factory created where each holds one configuration.
+        // The following identifier can be used to uniquely identify instance of this factory.
+        // This can be later used, for example, to store provider/transaction instances inside session
+        // attributes without collisions between several configurations
         this.sessionTxKey = SESSION_TX_PREFIX + index;
     }
 

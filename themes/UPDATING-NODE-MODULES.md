@@ -2,7 +2,7 @@
 
 The dependencies will be downloaded at build time, based on the contents of `package-lock.json`. You should verify the new set of packages don't break anything before committing the new `package-lock.json`.
 
-## For login, admin console, and old account console
+## For login and old account console
 
 ```bash
 cd src/main/resources/theme/keycloak/common/resources
