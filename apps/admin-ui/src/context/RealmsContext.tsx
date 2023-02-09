@@ -1,13 +1,7 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { sortBy } from "lodash-es";
-import {
-  PropsWithChildren,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 
 import { createNamedContext } from "../utils/createNamedContext";
 import useRequiredContext from "../utils/useRequiredContext";
@@ -28,7 +22,7 @@ export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
 export const RealmsProvider = ({ children }: PropsWithChildren<unknown>) => {
   const { keycloak, adminClient } = useAdminClient();
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
-  const firstRender = useRef(0);
+  const [refreshCount, setRefreshCount] = useState(0);
 
   function updateRealms(realms: RealmRepresentation[]) {
     setRealms(sortBy(realms, "realm"));
@@ -36,10 +30,11 @@ export const RealmsProvider = ({ children }: PropsWithChildren<unknown>) => {
 
   useFetch(
     async () => {
-      if (firstRender.current === 0) {
-        firstRender.current = 1;
+      // We don't want to fetch until the user has requested it, so let's ignore the initial mount.
+      if (refreshCount === 0) {
         return [];
       }
+
       try {
         return await adminClient.realms.find({ briefRepresentation: true });
       } catch (error) {
@@ -51,14 +46,14 @@ export const RealmsProvider = ({ children }: PropsWithChildren<unknown>) => {
       }
     },
     (realms) => updateRealms(realms),
-    []
+    [refreshCount]
   );
 
   const refresh = useCallback(async () => {
     //this is needed otherwise the realm find function will not return
     //new or renamed realms because of the cached realms in the token (perhaps?)
     await keycloak.updateToken(Number.MAX_VALUE);
-    updateRealms(await adminClient.realms.find({ briefRepresentation: true }));
+    setRefreshCount((count) => count + 1);
   }, []);
 
   const value = useMemo<RealmsContextProps>(
