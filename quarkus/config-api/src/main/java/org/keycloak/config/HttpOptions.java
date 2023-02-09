@@ -23,13 +23,13 @@ public class HttpOptions {
             .buildTime(true)
             .build();
 
-    public static final Option HTTP_PORT = new OptionBuilder<>("http-port", Integer.class)
+    public static final Option<Integer> HTTP_PORT = new OptionBuilder<>("http-port", Integer.class)
             .category(OptionCategory.HTTP)
             .description("The used HTTP port.")
             .defaultValue(8080)
             .build();
 
-    public static final Option HTTPS_PORT = new OptionBuilder<>("https-port", Integer.class)
+    public static final Option<Integer> HTTPS_PORT = new OptionBuilder<>("https-port", Integer.class)
             .category(OptionCategory.HTTP)
             .description("The used HTTPS port.")
             .defaultValue(8443)
