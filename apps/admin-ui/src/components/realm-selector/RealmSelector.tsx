@@ -13,7 +13,7 @@ import {
   SplitItem,
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
-import { Fragment, useState } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useHref } from "react-router-dom";
 
@@ -87,44 +87,34 @@ export const RealmSelector = () => {
   const { t } = useTranslation("common");
   const recentRealms = useRecentRealms();
 
-  const all = recentRealms
-    .filter((r) => r !== realm)
-    .map((name) => {
-      return { name, used: true };
-    })
-    .concat(
-      realms
-        .filter((r) => !recentRealms.includes(r.realm!) || r.realm === realm)
-        .map((r) => {
-          return { name: r.realm!, used: false };
+  const all = useMemo(
+    () =>
+      recentRealms
+        .filter((r) => r !== realm)
+        .map((name) => {
+          return { name, used: true };
         })
-    );
+        .concat(
+          realms
+            .filter(
+              (r) => !recentRealms.includes(r.realm!) || r.realm === realm
+            )
+            .map((r) => {
+              return { name: r.realm!, used: false };
+            })
+        ),
+    [recentRealms, realm, realms]
+  );
 
-  const filteredItems =
-    search === ""
-      ? undefined
-      : all.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
-
-  const dropdownItems =
-    realms.length !== 0
-      ? realms.map((r) => (
-          <DropdownItem
-            key={`realm-dropdown-item-${r.realm}`}
-            component={
-              <Link
-                to={toDashboard({ realm: r.realm! })}
-                onClick={() => setOpen(false)}
-              >
-                <RealmText value={r.realm!} />
-              </Link>
-            }
-          />
-        ))
-      : [
-          <DropdownItem key="load">
-            Loading <Spinner size="sm" />
-          </DropdownItem>,
-        ];
+  const filteredItems = useMemo(
+    () =>
+      search.trim() === ""
+        ? all
+        : all.filter((r) =>
+            r.name.toLowerCase().includes(search.toLowerCase())
+          ),
+    [search, all]
+  );
 
   return realms.length > 5 ? (
     <ContextSelector
@@ -144,7 +134,7 @@ export const RealmSelector = () => {
         )
       }
     >
-      {(filteredItems || all).map((item) => (
+      {filteredItems.map((item) => (
         <ContextSelectorItemLink
           key={item.name}
           to={toDashboard({ realm: item.name })}
@@ -173,8 +163,26 @@ export const RealmSelector = () => {
           {realm}
         </DropdownToggle>
       }
-      dropdownItems={[
-        ...dropdownItems,
+      dropdownItems={(realms.length !== 0
+        ? realms.map((r) => (
+            <DropdownItem
+              key={r.realm}
+              component={
+                <Link
+                  to={toDashboard({ realm: r.realm! })}
+                  onClick={() => setOpen(false)}
+                >
+                  <RealmText value={r.realm!} />
+                </Link>
+              }
+            />
+          ))
+        : [
+            <DropdownItem key="loader">
+              <Spinner size="sm" /> {t("loadingRealms")}
+            </DropdownItem>,
+          ]
+      ).concat([
         <Fragment key="add-realm">
           {whoAmI.canCreateRealm() && (
             <>
@@ -185,7 +193,7 @@ export const RealmSelector = () => {
             </>
           )}
         </Fragment>,
-      ]}
+      ])}
     />
   );
 };
