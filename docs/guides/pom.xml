@@ -52,7 +52,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${basedir}/target/generated-docs/images</outputDirectory>
+                            <outputDirectory>${basedir}/src/main/images</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${basedir}/target/generated-guides/images</directory>
