@@ -1,7 +1,6 @@
 import { PropsWithChildren, useEffect, useMemo } from "react";
 import { useMatch } from "react-router-dom";
 
-import { RecentUsed } from "../../components/realm-selector/recent-used";
 import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";
 import environment from "../../environment";
 import { createNamedContext } from "../../utils/createNamedContext";
@@ -21,7 +20,6 @@ export const RealmContextProvider = ({
   children,
 }: PropsWithChildren<unknown>) => {
   const { adminClient } = useAdminClient();
-  const recentUsed = useMemo(() => new RecentUsed(), []);
   const routeMatch = useMatch({
     path: DashboardRouteWithRealm.path,
     end: false,
@@ -35,9 +33,6 @@ export const RealmContextProvider = ({
 
   // Configure admin client to use selected realm when it changes.
   useEffect(() => adminClient.setConfig({ realmName: realm }), [realm]);
-
-  // Keep track of recently used realms when selected realm changes.
-  useEffect(() => recentUsed.setRecentUsed(realm), [realm]);
 
   const value = useMemo(() => ({ realm }), [realm]);
 

@@ -18,11 +18,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useRealms } from "../../context/RealmsContext";
+import { useRecentRealms } from "../../context/RecentRealms";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { toAddRealm } from "../../realm/routes/AddRealm";
 import { useUpdateEffect } from "../../utils/useUpdateEffect";
-import { RecentUsed } from "./recent-used";
 
 import "./realm-selector.css";
 
@@ -65,16 +65,16 @@ export const RealmSelector = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation("common");
+  const recentRealms = useRecentRealms();
 
-  const recentUsed = new RecentUsed();
-  const all = recentUsed.used
+  const all = recentRealms
     .filter((r) => r !== realm)
     .map((name) => {
       return { name, used: true };
     })
     .concat(
       realms
-        .filter((r) => !recentUsed.used.includes(r.realm!) || r.realm === realm)
+        .filter((r) => !recentRealms.includes(r.realm!) || r.realm === realm)
         .map((r) => {
           return { name: r.realm!, used: false };
         })

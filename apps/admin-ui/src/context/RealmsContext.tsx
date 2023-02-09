@@ -9,7 +9,6 @@ import {
   useState,
 } from "react";
 
-import { RecentUsed } from "../components/realm-selector/recent-used";
 import { createNamedContext } from "../utils/createNamedContext";
 import useRequiredContext from "../utils/useRequiredContext";
 import { useAdminClient, useFetch } from "./auth/AdminClient";
@@ -29,12 +28,10 @@ export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
 export const RealmsProvider = ({ children }: PropsWithChildren<unknown>) => {
   const { keycloak, adminClient } = useAdminClient();
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
-  const recentUsed = useMemo(() => new RecentUsed(), []);
   const firstRender = useRef(0);
 
   function updateRealms(realms: RealmRepresentation[]) {
     setRealms(sortBy(realms, "realm"));
-    recentUsed.clean(realms.map(({ realm }) => realm!));
   }
 
   useFetch(

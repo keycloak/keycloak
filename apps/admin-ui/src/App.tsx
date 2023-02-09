@@ -14,6 +14,7 @@ import { AccessContextProvider, useAccess } from "./context/access/Access";
 import { AdminClientContext } from "./context/auth/AdminClient";
 import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { RealmsProvider } from "./context/RealmsContext";
+import { RecentRealmsProvider } from "./context/RecentRealms";
 import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
 import { ForbiddenSection } from "./ForbiddenSection";
@@ -39,13 +40,15 @@ const AppContexts = ({
       <WhoAmIContextProvider>
         <RealmsProvider>
           <RealmContextProvider>
-            <AccessContextProvider>
-              <Help>
-                <AlertProvider>
-                  <SubGroups>{children}</SubGroups>
-                </AlertProvider>
-              </Help>
-            </AccessContextProvider>
+            <RecentRealmsProvider>
+              <AccessContextProvider>
+                <Help>
+                  <AlertProvider>
+                    <SubGroups>{children}</SubGroups>
+                  </AlertProvider>
+                </Help>
+              </AccessContextProvider>
+            </RecentRealmsProvider>
           </RealmContextProvider>
         </RealmsProvider>
       </WhoAmIContextProvider>

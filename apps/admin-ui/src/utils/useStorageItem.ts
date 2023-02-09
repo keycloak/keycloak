@@ -19,17 +19,11 @@ export function useStorageItem(
 
   const setValue = useCallback((newValue: string) => {
     setInnerValue(newValue);
-
-    // If the new value the same as the default value we can remove the item from storage.
-    if (newValue === defaultValue) {
-      storageArea.removeItem(keyName);
-    } else {
-      storageArea.setItem(keyName, newValue);
-    }
+    storageArea.setItem(keyName, newValue);
   }, []);
 
   useEffect(() => {
-    // If the key name, storage area or default value has changed, we want to update the value.
+    // If the key name or storage area has changed, we want to update the value.
     // React will only set state if it actually changed, so no need to worry about re-renders.
     setInnerValue(storageArea.getItem(keyName) ?? defaultValue);
 
@@ -46,12 +40,12 @@ export function useStorageItem(
       // If the event key is null then it means all storage was cleared.
       // Therefore we're interested in keys that are, or that match the key name.
       if (event.key === null || event.key === keyName) {
-        setValue(event.newValue ?? defaultValue);
+        setInnerValue(event.newValue ?? defaultValue);
       }
     }
 
     return () => window.removeEventListener("storage", handleStorage);
-  }, [storageArea, keyName, defaultValue]);
+  }, [storageArea, keyName]);
 
   return [value, setValue];
 }
