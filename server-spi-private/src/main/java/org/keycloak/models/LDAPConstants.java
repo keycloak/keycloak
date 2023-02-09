@@ -125,6 +125,7 @@ public class LDAPConstants {
     public static final String EMPTY_MEMBER_ATTRIBUTE_VALUE = "cn=empty-membership-placeholder";
 
     public static final String ENABLED = "enabled";
+    public static final String ENABLED_AD_USER_ON_REGISTRATION = "enableAdUser";
 
 
     public static final String CUSTOM_ATTRIBUTE_CREATE_DATE = "createDate";

@@ -17,6 +17,8 @@
 
 package org.keycloak.storage.ldap;
 
+import java.security.SecureRandom;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -297,7 +299,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapObject.getUuid());
             user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapObject.getDn().toString());
         });
-
+        
         // Add the user to the default groups and add default required actions
         UserModel proxy = proxy(realm, user, ldapUser, true);
         proxy.grantRole(realm.getDefaultRole());
@@ -310,6 +312,14 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .map(RequiredActionProviderModel::getAlias)
                 .forEachOrdered(proxy::addRequiredAction);
 
+        // If Active Directory and enable user by default is set, give it a random password
+        if (ldapIdentityStore.getConfig().isEnableAdUser()){
+            LDAPOperationDecorator operationDecorator = null;
+            ldapIdentityStore.updatePassword(ldapUser, getRandomValue(), operationDecorator);
+            ldapUser.setSingleAttribute(LDAPConstants.USER_ACCOUNT_CONTROL,"512");
+            ldapIdentityStore.update(ldapUser);
+        }
+        
         return proxy;
     }
 
@@ -838,6 +848,19 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             return ldapQuery.getFirstResult();
         }
+    }
+    
+    private static final String CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVW1234567890%$!@*^-_";
+
+    // Generate random character of length 30. 
+    protected String getRandomValue() {
+        SecureRandom r = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 25; i++) {
+            char c = CHARS.charAt(r.nextInt(CHARS.length()));
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
 }

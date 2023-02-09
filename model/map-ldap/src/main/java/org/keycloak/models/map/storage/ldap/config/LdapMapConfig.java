@@ -139,6 +139,11 @@ public class LdapMapConfig {
         return vendor != null && vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
     }
 
+    public boolean isEnableAdUser() {
+        String enableAdUser = config.getFirst(LDAPConstants.ENABLED_AD_USER_ON_REGISTRATION);
+        return Boolean.parseBoolean(enableAdUser);
+    }
+
     public boolean isValidatePasswordPolicy() {
         String validatePPolicy = config.getFirst(LDAPConstants.VALIDATE_PASSWORD_POLICY);
         return Boolean.parseBoolean(validatePPolicy);

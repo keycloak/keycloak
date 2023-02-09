@@ -112,6 +112,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .property().name(LDAPConstants.VENDOR)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
+                .property().name(LDAPConstants.ENABLED_AD_USER_ON_REGISTRATION)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
                 .property().name(LDAPConstants.USE_PASSWORD_MODIFY_EXTENDED_OP)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .add()
@@ -288,12 +292,24 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             throw new ComponentValidationException("ldapErrorEditModeMandatory");
         }
 
-        // validatePasswordPolicy applicable only for WRITABLE mode
+        // validatePasswordPolicy and enableAdUser applicable only for WRITABLE mode
         if (cfg.getEditMode() != UserStorageProvider.EditMode.WRITABLE) {
             if (cfg.isValidatePasswordPolicy()) {
                 throw new ComponentValidationException("ldapErrorValidatePasswordPolicyAvailableForWritableOnly");
             }
+            if (cfg.isEnableAdUser()){
+                throw new ComponentValidationException("ldapErrorEnableAdUserAvalaibleForWritableOnly");
+            }
         }
+        
+        // Enable AD User only available for vendor Active Directory
+        if (!cfg.isActiveDirectory()){
+            if (cfg.isEnableAdUser()){
+                throw new ComponentValidationException("ldapErrorEnableAdUserAvalaibleForAdOnly");
+            }
+            
+        }
+        
 
         if (!userStorageModel.isImportEnabled() && cfg.getEditMode() == UserStorageProvider.EditMode.UNSYNCED) {
             throw new ComponentValidationException("ldapErrorCantEnableUnsyncedAndImportOff");
