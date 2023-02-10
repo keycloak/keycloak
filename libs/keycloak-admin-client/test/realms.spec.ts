@@ -374,6 +374,13 @@ describe("Realms", () => {
       currentRealmName = created.realmName;
     });
 
+    it("gets client session stats", async () => {
+      const sessionStats = await kcAdminClient.realms.getClientSessionStats({
+        realm: currentRealmName,
+      });
+      expect(sessionStats).to.be.ok;
+    });
+
     it("push revocation", async () => {
       const push = await kcAdminClient.realms.pushRevocation({
         realm: currentRealmName,

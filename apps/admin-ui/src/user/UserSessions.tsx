@@ -19,7 +19,7 @@ export const UserSessions = () => {
     <PageSection variant="light" className="pf-u-p-0">
       <SessionsTable
         loader={loader}
-        hiddenColumns={["username"]}
+        hiddenColumns={["username", "type"]}
         emptyInstructions={t("noSessionsForUser")}
         logoutUser={id}
       />

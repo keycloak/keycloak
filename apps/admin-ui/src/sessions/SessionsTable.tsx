@@ -7,7 +7,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { CubesIcon } from "@patternfly/react-icons";
-import { useMemo, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -26,13 +26,19 @@ import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { toUser } from "../user/routes/User";
 import useFormatDate from "../utils/useFormatDate";
 
-export type ColumnName = "username" | "start" | "lastAccess" | "clients";
+export type ColumnName =
+  | "username"
+  | "start"
+  | "lastAccess"
+  | "clients"
+  | "type";
 
 export type SessionsTableProps = {
   loader: LoaderFunction<UserSessionRepresentation>;
   hiddenColumns?: ColumnName[];
   emptyInstructions?: string;
   logoutUser?: string;
+  filter?: ReactNode;
 };
 
 const UsernameCell = (row: UserSessionRepresentation) => {
@@ -64,6 +70,7 @@ export default function SessionsTable({
   hiddenColumns = [],
   emptyInstructions,
   logoutUser,
+  filter,
 }: SessionsTableProps) {
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
@@ -80,6 +87,10 @@ export default function SessionsTable({
         name: "username",
         displayKey: "sessions:user",
         cellRenderer: UsernameCell,
+      },
+      {
+        name: "type",
+        displayKey: "common:type",
       },
       {
         name: "start",
@@ -139,6 +150,7 @@ export default function SessionsTable({
         loader={loader}
         ariaLabelKey="sessions:title"
         searchPlaceholderKey="sessions:searchForSession"
+        searchTypeComponent={filter}
         toolbarItem={
           logoutUser && (
             <ToolbarItem>
