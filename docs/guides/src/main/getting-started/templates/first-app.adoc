@@ -1,4 +1,4 @@
-## Secure your first app
+== Secure your first app
 
 Let's try to secure our first application. First step is to register this application with your Keycloak instance:
 

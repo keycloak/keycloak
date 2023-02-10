@@ -1,4 +1,4 @@
-## Next
+== Next
 
 Before you go and run Keycloak in production there are a few more things that you will want to do, including:
 

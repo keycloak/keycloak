@@ -1,4 +1,4 @@
-## Start Keycloak
+== Start Keycloak
 
 From a terminal start Keycloak with the following command:
 
