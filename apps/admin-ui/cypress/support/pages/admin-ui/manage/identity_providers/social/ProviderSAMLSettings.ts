@@ -85,17 +85,17 @@ export default class ProviderSAMLSettings extends PageObject {
   }
 
   public typeSsoServiceUrl(url: string) {
-    cy.findByTestId(this.ssoServiceUrl).click().clear().type(url);
+    cy.findByTestId(this.ssoServiceUrl).clear().type(url);
     return this;
   }
 
   public typeSingleLogoutServiceUrl(url: string) {
-    cy.findByTestId(this.singleLogoutServiceUrl).click().clear().type(url);
+    cy.findByTestId(this.singleLogoutServiceUrl).clear().type(url);
     return this;
   }
 
   public typeX509Certs(cert: string) {
-    cy.findByTestId(this.validatingX509Certs).click().clear().type(cert);
+    cy.findByTestId(this.validatingX509Certs).clear().type(cert);
     return this;
   }
 

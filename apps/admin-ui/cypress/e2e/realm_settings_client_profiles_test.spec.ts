@@ -18,19 +18,15 @@ describe("Realm settings client profiles tab tests", () => {
   const realmSettingsPage = new RealmSettingsPage(realmName);
 
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
     sidebarPage.waitForPageLoad().goToRealm(realmName).goToRealmSettings();
     realmSettingsPage.goToClientPoliciesTab().goToClientProfilesList();
   });
 
-  before(() => {
-    keycloakBefore();
-    adminClient.createRealm(realmName);
-    loginPage.logIn();
-  });
+  before(() => adminClient.createRealm(realmName));
 
-  after(async () => {
-    await adminClient.deleteRealm(realmName);
-  });
+  after(() => adminClient.deleteRealm(realmName));
 
   it("Go to client policies profiles tab", () => {
     realmSettingsPage.shouldDisplayProfilesTab();

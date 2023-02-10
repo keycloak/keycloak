@@ -23,8 +23,6 @@ describe("Clients SAML tests", () => {
         clientId: samlClientName,
         publicClient: false,
       });
-      keycloakBefore();
-      loginPage.logIn();
     });
 
     after(() => {
@@ -32,6 +30,8 @@ describe("Clients SAML tests", () => {
     });
 
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToClients();
       listingPage.searchItem(samlClientName).goToItemDetails(samlClientName);
     });
@@ -63,8 +63,6 @@ describe("Clients SAML tests", () => {
         clientId,
         protocol: "saml",
       });
-      keycloakBefore();
-      loginPage.logIn();
     });
 
     after(() => {
@@ -72,6 +70,8 @@ describe("Clients SAML tests", () => {
     });
 
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToClients();
       listingPage.searchItem(clientId).goToItemDetails(clientId);
       cy.findByTestId("keysTab").click();
@@ -123,8 +123,6 @@ describe("Clients SAML tests", () => {
         clientId,
         protocol: "saml",
       });
-      keycloakBefore();
-      loginPage.logIn();
     });
 
     after(() => {
@@ -132,6 +130,8 @@ describe("Clients SAML tests", () => {
     });
 
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToClients();
       listingPage.searchItem(clientId).goToItemDetails(clientId);
     });

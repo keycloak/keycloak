@@ -52,8 +52,8 @@ describe("Group test", () => {
   after(() => adminClient.deleteGroups());
 
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToGroups();
     groupName = groupNamePrefix + crypto.randomUUID();
     groupNames.push(groupName);

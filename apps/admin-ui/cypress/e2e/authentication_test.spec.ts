@@ -17,22 +17,21 @@ const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 const commonPage = new CommonPage();
 const listingPage = new ListingPage();
+const realmName = "test" + crypto.randomUUID();
 
 describe("Authentication test", () => {
   const detailPage = new FlowDetails();
   const duplicateFlowModal = new DuplicateFlowModal();
   const modalUtil = new ModalUtils();
 
-  before(() => {
-    cy.wrap(adminClient.createRealm("test"));
-    keycloakBefore();
-    loginPage.logIn();
-    sidebarPage.goToRealm("test");
-  });
+  before(() => adminClient.createRealm(realmName));
 
-  after(() => adminClient.deleteRealm("test"));
+  after(() => adminClient.deleteRealm(realmName));
 
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
+    sidebarPage.goToRealm(realmName);
     sidebarPage.goToAuthentication();
   });
 
@@ -190,19 +189,17 @@ describe("Authentication test", () => {
 describe("Required actions", () => {
   const requiredActionsPage = new RequiredActions();
 
-  before(() => {
-    cy.wrap(adminClient.createRealm("test"));
-    keycloakBefore();
-    loginPage.logIn();
-    sidebarPage.goToRealm("test");
-  });
+  before(() => adminClient.createRealm(realmName));
 
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
+    sidebarPage.goToRealm(realmName);
     sidebarPage.goToAuthentication();
     requiredActionsPage.goToTab();
   });
 
-  after(() => adminClient.deleteRealm("test"));
+  after(() => adminClient.deleteRealm(realmName));
 
   it("should enable delete account", () => {
     const action = "Delete Account";
@@ -236,8 +233,8 @@ describe("Password policies tab", () => {
   const passwordPoliciesPage = new PasswordPolicies();
 
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToAuthentication();
     passwordPoliciesPage.goToTab();
   });

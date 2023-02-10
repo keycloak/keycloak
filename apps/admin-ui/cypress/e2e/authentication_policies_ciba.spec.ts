@@ -17,8 +17,8 @@ describe("Authentication - Policies - CIBA", () => {
   after(() => adminClient.deleteRealm(realmName));
 
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToAuthentication();
     CIBAPolicyPage.goToTab();

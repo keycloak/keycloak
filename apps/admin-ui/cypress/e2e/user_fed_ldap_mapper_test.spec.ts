@@ -77,8 +77,8 @@ const MsadAccountControlsMapper = "MSAD account controls";
 
 describe("User Fed LDAP mapper tests", () => {
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToUserFederation();
   });
 

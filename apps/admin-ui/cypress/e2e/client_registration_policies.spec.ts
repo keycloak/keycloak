@@ -12,13 +12,10 @@ describe("Client registration policies subtab", () => {
   const sidebarPage = new SidebarPage();
   const clientRegistrationPage = new ClientRegistrationPage();
 
-  before(() => {
-    keycloakBefore();
-    loginPage.logIn();
-    sidebarPage.goToClients();
-  });
-
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
+    sidebarPage.goToClients();
     clientRegistrationPage.goToClientRegistrationTab();
     sidebarPage.waitForPageLoad();
   });

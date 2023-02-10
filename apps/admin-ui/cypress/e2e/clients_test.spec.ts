@@ -69,8 +69,8 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(clientId);
       cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
@@ -232,12 +232,9 @@ describe("Clients test", () => {
   });
 
   describe("Client creation", () => {
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-    });
-
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       commonPage.sidebar().goToClients();
     });
 
@@ -438,7 +435,6 @@ describe("Clients test", () => {
 
     it("Should fail to create imported client with empty ID", () => {
       commonPage.sidebar().goToClients();
-      commonPage.masthead().closeAllAlertMessages();
       cy.findByTestId("importClient").click();
       cy.findByTestId("kc-client-id").click();
       cy.findByText("Save").click();
@@ -484,30 +480,19 @@ describe("Clients test", () => {
 
   describe("Roles tab test", () => {
     const rolesTab = new ClientRolesTab();
-    let client: string;
+    const client = "client_" + crypto.randomUUID();
 
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-      commonPage.sidebar().goToClients();
-
-      client = "client_" + crypto.randomUUID();
-
-      commonPage.tableToolbarUtils().createClient();
-
-      createClientPage
-        .selectClientType("openid-connect")
-        .fillClientData(client)
-        .continue()
-        .continue()
-        .save();
-      commonPage
-        .masthead()
-        .checkNotificationMessage("Client created successfully", true);
-    });
+    before(() =>
+      adminClient.createClient({
+        clientId: client,
+        protocol: "openid-connect",
+        publicClient: false,
+      })
+    );
 
     beforeEach(() => {
       loginPage.logIn();
+      keycloakBefore();
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(client);
       commonPage.tableUtils().clickRowItemLink(client);
@@ -696,12 +681,9 @@ describe("Clients test", () => {
     const advancedTab = new AdvancedTab();
     let client: string;
 
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-    });
-
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       commonPage.sidebar().goToClients();
       client = "client_" + crypto.randomUUID();
       commonPage.tableToolbarUtils().createClient();
@@ -814,9 +796,7 @@ describe("Clients test", () => {
     const serviceAccountTab = new RoleMappingTab("user");
     const serviceAccountName = "service-account-client";
 
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
+    before(() =>
       adminClient.createClient({
         protocol: "openid-connect",
         clientId: serviceAccountName,
@@ -824,10 +804,12 @@ describe("Clients test", () => {
         authorizationServicesEnabled: true,
         serviceAccountsEnabled: true,
         standardFlowEnabled: true,
-      });
-    });
+      })
+    );
 
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       commonPage.sidebar().goToClients();
     });
 
@@ -943,8 +925,8 @@ describe("Clients test", () => {
   describe("Mapping tab", () => {
     const mappingClient = "mapping-client";
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(mappingClient);
       commonPage.tableUtils().clickRowItemLink(mappingClient);
@@ -978,17 +960,17 @@ describe("Clients test", () => {
   describe("Keys tab test", () => {
     const keysName = "keys-client";
 
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
+    before(() =>
       adminClient.createClient({
         protocol: "openid-connect",
         clientId: keysName,
         publicClient: false,
-      });
-    });
+      })
+    );
 
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(keysName);
       commonPage.tableUtils().clickRowItemLink(keysName);
@@ -1014,9 +996,9 @@ describe("Clients test", () => {
   describe("Realm client", () => {
     const clientName = "master-realm";
 
-    before(() => {
-      keycloakBefore();
+    beforeEach(() => {
       loginPage.logIn();
+      keycloakBefore();
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(clientName);
       commonPage.tableUtils().clickRowItemLink(clientName);
@@ -1045,15 +1027,19 @@ describe("Clients test", () => {
   describe("Bearer only", () => {
     const clientId = "bearer-only";
 
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
+    before(() =>
       adminClient.createClient({
         clientId,
         protocol: "openid-connect",
         publicClient: false,
         bearerOnly: true,
-      });
+      })
+    );
+
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+
       commonPage.sidebar().goToClients();
       cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
       commonPage.tableToolbarUtils().searchItem(clientId);

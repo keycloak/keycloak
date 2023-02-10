@@ -21,13 +21,11 @@ describe("Realm settings - User registration tab", () => {
 
   const groupName = "The default group";
 
-  before(() => {
-    adminClient.createGroup(groupName);
-    keycloakBefore();
-    loginPage.logIn();
-  });
+  before(() => adminClient.createGroup(groupName));
 
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToRealmSettings();
     userRegistration.goToTab();
   });

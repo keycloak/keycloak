@@ -97,12 +97,9 @@ const ldapTestFailMsg =
   "Error when trying to connect to LDAP. See server.log for details. LDAP test error";
 
 describe("User Federation LDAP tests", () => {
-  before(() => {
-    keycloakBefore();
-    loginPage.logIn();
-  });
-
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToUserFederation();
     cy.intercept("GET", "/admin/realms/master").as("getProvider");
   });

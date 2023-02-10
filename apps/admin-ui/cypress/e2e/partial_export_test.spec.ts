@@ -17,8 +17,8 @@ describe("Partial realm export", () => {
   const realmSettings = new RealmSettings();
 
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToRealm(REALM_NAME).goToRealmSettings();
     realmSettings.clickActionMenu();
     modal.open();

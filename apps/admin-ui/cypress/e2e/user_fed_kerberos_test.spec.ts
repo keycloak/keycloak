@@ -55,8 +55,8 @@ const changeSuccessMsg =
 
 describe("User Fed Kerberos tests", () => {
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToUserFederation();
   });
 

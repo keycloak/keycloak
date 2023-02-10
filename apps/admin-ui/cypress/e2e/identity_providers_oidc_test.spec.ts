@@ -36,8 +36,8 @@ describe("OIDC identity provider test", () => {
     const secret = "123";
 
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToIdentityProviders();
     });
 

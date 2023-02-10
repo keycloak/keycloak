@@ -47,6 +47,7 @@ export default class Masthead extends CommonElements {
   signOut() {
     this.userDropdown().click();
     cy.get("#sign-out").click();
+    Cypress.session.clearAllSavedSessions();
   }
 
   accountManagement() {

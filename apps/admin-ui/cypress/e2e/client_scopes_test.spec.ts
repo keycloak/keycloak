@@ -55,12 +55,9 @@ describe("Client Scopes test", () => {
   });
 
   describe("Client Scope filter list items", () => {
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-    });
-
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToClientScopes();
     });
 
@@ -134,12 +131,10 @@ describe("Client Scopes test", () => {
 
   describe("Client Scope modify list items", () => {
     const itemName = clientScopeName + 0;
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-    });
 
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToClientScopes();
     });
 
@@ -198,12 +193,9 @@ describe("Client Scopes test", () => {
   });
 
   describe("Client Scope delete list items ", () => {
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-    });
-
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToClientScopes();
     });
 
@@ -258,12 +250,9 @@ describe("Client Scopes test", () => {
   });
 
   describe("Client Scope creation", () => {
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-    });
-
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToClientScopes();
     });
 

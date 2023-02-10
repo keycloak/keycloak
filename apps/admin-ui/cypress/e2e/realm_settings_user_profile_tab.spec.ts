@@ -26,17 +26,17 @@ describe("User profile tabs", () => {
   const realmName = "Realm_" + crypto.randomUUID();
   const attributeName = "Test";
 
-  before(() => {
+  before(() =>
     adminClient.createRealm(realmName, {
       attributes: { userProfileEnabled: "true" },
-    });
-    keycloakBefore();
-    loginPage.logIn();
-  });
+    })
+  );
 
   after(() => adminClient.deleteRealm(realmName));
 
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToRealmSettings();
   });
@@ -107,7 +107,7 @@ describe("User profile tabs", () => {
       getAttributesGroupTab();
       listingPage.deleteItem("Test");
       modalUtils.confirmModal();
-      listingPage.itemExist("Test", false);
+      listingPage.checkEmptyList();
     });
   });
 

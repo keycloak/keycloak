@@ -16,6 +16,7 @@ export default defineConfig({
   videoCompression: false,
   numTestsKeptInMemory: 30,
   videoUploadOnPasses: false,
+  experimentalMemoryManagement: true,
 
   retries: {
     runMode: 3,

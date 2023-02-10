@@ -74,8 +74,8 @@ const modifyDateMapper = "modify date";
 
 describe("User Fed LDAP mapper tests", () => {
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToUserFederation();
   });
 

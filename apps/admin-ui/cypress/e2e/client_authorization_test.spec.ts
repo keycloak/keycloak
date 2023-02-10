@@ -22,27 +22,27 @@ describe("Client authentication subtab", () => {
   const permissionsSubTab = new PermissionsTab();
   const clientId = "client-authentication-" + crypto.randomUUID();
 
-  before(() => {
-    keycloakBefore();
-    loginPage.logIn();
-    sidebarPage.goToClients();
-    listingPage.searchItem(clientId).goToItemDetails(clientId);
-    clientDetailsPage.goToAuthorizationTab();
-
-    cy.wrap(
-      adminClient.createClient({
-        protocol: "openid-connect",
-        clientId,
-        publicClient: false,
-        authorizationServicesEnabled: true,
-        serviceAccountsEnabled: true,
-        standardFlowEnabled: true,
-      })
-    );
-  });
+  before(() =>
+    adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    })
+  );
 
   after(() => {
     adminClient.deleteClient(clientId);
+  });
+
+  beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
+    sidebarPage.goToClients();
+    listingPage.searchItem(clientId).goToItemDetails(clientId);
+    clientDetailsPage.goToAuthorizationTab();
   });
 
   it("Should update the resource server settings", () => {

@@ -20,9 +20,9 @@ const editedRealmName = "Edited-Test-realm-" + crypto.randomUUID();
 const testDisabledName = "Test-Disabled";
 
 describe("Realm tests", () => {
-  before(() => {
-    keycloakBefore();
+  beforeEach(() => {
     loginPage.logIn();
+    keycloakBefore();
   });
 
   after(() =>
@@ -113,6 +113,7 @@ describe("Realm tests", () => {
   });
 
   it("should change to Test realm", () => {
+    sidebarPage.goToRealm(editedRealmName);
     sidebarPage.getCurrentRealm().should("eq", editedRealmName);
 
     sidebarPage

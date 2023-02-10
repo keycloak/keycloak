@@ -13,8 +13,8 @@ describe("Policies", () => {
   describe("OTP policies tab", () => {
     const otpPoliciesPage = new OTPPolicies();
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToAuthentication();
       otpPoliciesPage.goToTab();
     });
@@ -34,8 +34,8 @@ describe("Policies", () => {
   describe("Webauthn policies tabs", () => {
     const webauthnPage = new WebAuthnPolicies();
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToAuthentication();
     });
 

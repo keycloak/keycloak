@@ -16,9 +16,10 @@ const groupPage = new GroupPage();
 describe("Sessions test", () => {
   const admin = "admin";
   const client = "security-admin-console";
+
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToSessions();
   });
 

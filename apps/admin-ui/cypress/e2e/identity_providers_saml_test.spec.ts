@@ -35,12 +35,9 @@ describe("SAML identity provider test", () => {
   describe("SAML identity provider creation", () => {
     const samlProviderName = "saml";
 
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-    });
-
     beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToIdentityProviders();
     });
 

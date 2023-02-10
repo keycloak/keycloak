@@ -41,8 +41,8 @@ describe("Identity provider test", () => {
   const deleteSuccessMsg = "Provider successfully deleted.";
 
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToIdentityProviders();
   });
 

@@ -35,23 +35,21 @@ describe("User creation", () => {
   let itemIdWithCred = "user_crud_cred";
   const itemCredential = "Password";
 
-  before(() => {
+  before(async () => {
     for (let i = 0; i <= 2; i++) {
       groupName += "_" + crypto.randomUUID();
-      adminClient.createGroup(groupName);
+      await adminClient.createGroup(groupName);
       groupsList = [...groupsList, groupName];
     }
-    keycloakBefore();
-    loginPage.logIn();
   });
 
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToUsers();
   });
 
-  after(() => {
-    adminClient.deleteGroups();
-  });
+  after(() => adminClient.deleteGroups());
 
   it("Go to create User page", () => {
     createUserPage.goToCreateUser();

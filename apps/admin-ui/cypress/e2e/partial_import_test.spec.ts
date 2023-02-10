@@ -14,21 +14,19 @@ describe("Partial import test", () => {
   const realmSettings = new RealmSettings();
 
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
+    sidebarPage.goToRealm(TEST_REALM);
     sidebarPage.goToRealmSettings();
     realmSettings.clickActionMenu();
   });
 
-  before(() => {
-    cy.wrap(null).then(() =>
-      Promise.all([
-        adminClient.createRealm(TEST_REALM),
-        adminClient.createRealm(TEST_REALM_2),
-      ])
-    );
-    keycloakBefore();
-    loginPage.logIn();
-    sidebarPage.goToRealm(TEST_REALM);
-  });
+  before(() =>
+    Promise.all([
+      adminClient.createRealm(TEST_REALM),
+      adminClient.createRealm(TEST_REALM_2),
+    ])
+  );
 
   after(async () => {
     await Promise.all([

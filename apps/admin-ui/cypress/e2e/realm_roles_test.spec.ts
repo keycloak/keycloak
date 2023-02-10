@@ -21,8 +21,8 @@ const rolesTab = new ClientRolesTab();
 
 describe("Realm roles test", () => {
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToRealmRoles();
   });
 

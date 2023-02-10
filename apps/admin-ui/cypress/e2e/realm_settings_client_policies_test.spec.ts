@@ -16,6 +16,8 @@ describe("Realm settings client policies tab tests", () => {
   const realmSettingsPage = new RealmSettingsPage(realmName);
 
   beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
     sidebarPage
       .waitForPageLoad()
       .goToRealm(realmName)
@@ -24,11 +26,7 @@ describe("Realm settings client policies tab tests", () => {
     realmSettingsPage.goToClientPoliciesTab().goToClientPoliciesList();
   });
 
-  before(() => {
-    keycloakBefore();
-    adminClient.createRealm(realmName);
-    loginPage.logIn();
-  });
+  before(() => adminClient.createRealm(realmName));
 
   after(() => {
     adminClient.deleteRealm(realmName);

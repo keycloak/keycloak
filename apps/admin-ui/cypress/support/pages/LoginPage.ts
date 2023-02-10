@@ -14,20 +14,30 @@ export default class LoginPage {
   }
 
   logIn(userName = "admin", password = "admin") {
-    cy.get('[role="progressbar"]').should("not.exist");
-    cy.get(this.oldLoadContainer).should("not.exist");
-    cy.get(this.loadContainer).should("not.exist");
+    cy.session(
+      [userName, password],
+      () => {
+        cy.visit("/");
+        cy.get('[role="progressbar"]').should("not.exist");
+        cy.get(this.oldLoadContainer).should("not.exist");
+        cy.get(this.loadContainer).should("not.exist");
 
-    cy.get("body")
-      .children()
-      .then((children) => {
-        if (children.length == 1) {
-          cy.get(this.userNameInput).type(userName);
-          cy.get(this.passwordInput).type(password);
+        cy.get("body")
+          .children()
+          .then((children) => {
+            if (children.length == 1) {
+              cy.get(this.userNameInput).type(userName);
+              cy.get(this.passwordInput).type(password);
 
-          cy.get(this.submitBtn).click();
-        }
-      });
-    cy.get('[role="progressbar"]').should("not.exist");
+              cy.get(this.submitBtn).click();
+            }
+          });
+      },
+      {
+        validate() {
+          cy.get('[role="progressbar"]').should("not.exist");
+        },
+      }
+    );
   }
 }

@@ -18,8 +18,8 @@ describe("Realm settings events tab tests", () => {
   const listingPage = new ListingPage();
 
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToRealm(realmName);
   });
 
@@ -424,8 +424,8 @@ describe("Realm settings events tab tests", () => {
 
 describe("Realm settings events tab tests", () => {
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-realm-events-tab").click();
     cy.findByTestId("rs-event-listeners-tab").click();

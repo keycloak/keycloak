@@ -33,7 +33,7 @@ describe("Events tests", () => {
   const eventsTestUser = {
     eventsTestUserId: "",
     userRepresentation: {
-      username: "events-test",
+      username: "events-test" + crypto.randomUUID(),
       enabled: true,
       credentials: [{ value: "events-test" }],
     },
@@ -53,8 +53,8 @@ describe("Events tests", () => {
 
   describe("User events list", () => {
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToEvents();
     });
 
@@ -89,8 +89,8 @@ describe("Events tests", () => {
     ];
 
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToEvents();
     });
 
@@ -106,6 +106,7 @@ describe("Events tests", () => {
 
       masthead.signOut();
       loginPage.logIn();
+      cy.visit("/");
 
       sidebarPage.goToEvents();
       eventsPage.tabUtils().checkIsCurrentTab(EventsTab.UserEvents);
@@ -250,8 +251,8 @@ describe("Events tests", () => {
 
   describe("Admin events list", () => {
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
     });
@@ -288,8 +289,8 @@ describe("Events tests", () => {
     const operationTypes = ["UPDATE"];
 
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
     });
@@ -361,8 +362,8 @@ describe("Events tests", () => {
 
   describe("Search admin events", () => {
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
     });
@@ -413,8 +414,8 @@ describe("Events tests", () => {
 
   describe("Check more button opens auth and representation dialogs", () => {
     beforeEach(() => {
-      keycloakBefore();
       loginPage.logIn();
+      keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
     });

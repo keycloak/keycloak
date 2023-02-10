@@ -14,8 +14,8 @@ describe("Realm settings tabs tests", () => {
   const realmName = "Realm_" + crypto.randomUUID();
 
   beforeEach(() => {
-    keycloakBefore();
     loginPage.logIn();
+    keycloakBefore();
     sidebarPage.goToRealm(realmName);
   });
 

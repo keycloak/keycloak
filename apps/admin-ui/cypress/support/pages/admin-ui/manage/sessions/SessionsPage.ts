@@ -19,6 +19,7 @@ export default class SessionsPage {
     cy.findByTestId(this.actionDropdown).should("exist").click();
     cy.findByTestId(this.revocationActionItem).should("exist").click();
     cy.findByTestId(this.setToNowButton).should("exist").click();
+    Cypress.session.clearAllSavedSessions();
   }
 
   checkNotBeforeValueExists() {
