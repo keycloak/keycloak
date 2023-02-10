@@ -149,6 +149,11 @@ if not errorlevel == 1 (
     set IS_HELP_SHORT=true
 )
 
+if "%PRINT_ENV%" == "true" (
+  echo "Using JAVA_OPTS: %JAVA_OPTS%"
+  echo "Using JAVA_RUN_OPTS: %JAVA_RUN_OPTS%"
+)
+
 set START_SERVER=true
 
 if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (

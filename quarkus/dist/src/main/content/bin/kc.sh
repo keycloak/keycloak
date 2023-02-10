@@ -92,7 +92,7 @@ fi
 
 # See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
 if [ "x$JAVA_ADD_OPENS" = "x" ]; then
-   JAVA_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+   JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
 else
    echo "JAVA_ADD_OPENS already set in environment; overriding default settings with values: $JAVA_ADD_OPENS"
 fi
@@ -114,6 +114,11 @@ if [ "$DEBUG_MODE" = "true" ]; then
 fi
 
 JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
+
+if [ "$PRINT_ENV" = "true" ]; then
+  echo "Using JAVA_OPTS: $JAVA_OPTS"
+  echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
+fi
 
 if [[ (! $CONFIG_ARGS = *"--optimized"*) ]] && [[ ! "$CONFIG_ARGS" == " build"* ]] && [[ ! "$CONFIG_ARGS" == *"-h" ]] && [[ ! "$CONFIG_ARGS" == *"--help"* ]]; then
     eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS

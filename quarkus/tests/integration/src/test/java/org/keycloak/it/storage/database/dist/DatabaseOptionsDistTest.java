@@ -17,15 +17,14 @@
 
 package org.keycloak.it.storage.database.dist;
 
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.WithDatabase;
-import org.keycloak.it.utils.KeycloakDistribution;
-
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 
 @DistributionTest
 @WithDatabase(alias = "postgres")
@@ -40,10 +39,11 @@ public class DatabaseOptionsDistTest {
     }
 
     @Test
-    void testEnvVarPrecedenceOverConfFile(KeycloakDistribution distribution) {
-        distribution.setEnvVar("KC_DB_USERNAME", "bad");
-        CLIResult result = distribution.run("start-dev");
-        result.assertMessage("FATAL: password authentication failed for user \"bad\"");
+    @Launch({ "start-dev" })
+    @WithEnvVars({ "KC_DB_USERNAME", "bad" })
+    void testEnvVarPrecedenceOverConfFile(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("FATAL: password authentication failed for user \"bad\"");
     }
 
 }
