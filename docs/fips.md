@@ -129,6 +129,22 @@ cp $MAVEN_REPO_HOME/org/bouncycastle/bc-fips/$BCFIPS_VERSION/bc-fips-$BCFIPS_VER
 cp $MAVEN_REPO_HOME/org/bouncycastle/bctls-fips/$BCTLSFIPS_VERSION/bctls-fips-$BCTLSFIPS_VERSION.jar ../bin/client/lib/
 ```
 
+Keycloak server in FIPS mode in the container
+---------------------------------------------
+When you want Keycloak in FIPS mode to be executed inside container, it is needed that your "host" is using FIPS mode as well. The container
+will then "inherit" FIPS mode from the parent host. See this docs for the details in the RHEL documentation:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/security_hardening/using-the-system-wide-cryptographic-policies_security-hardening#enabling-fips-mode-in-a-container_using-the-system-wide-cryptographic-policies
+
+So keycloak container image will be just automatically in fips mode when executed from the host in FIPS mode. So only things needed is to
+make sure that Keycloak container also uses BCFIPS jars (instead of BC jars) and proper options when started.
+
+Regarding this, it is likely best to build your own container image based on the official keycloak image and tweak it to use BCFIPS etc. For
+inspiration, you can take a look at the GH project https://github.com/mposolda/keycloak-fips-image, which does pretty much what is described in
+this README file above, and allows to consume this in the container
+
+#### TODO: When we convert this README into official docs, we should likely avoid using this GH project, but somehow describe it better as for example here: https://www.keycloak.org/server/containers
+
+
 Run the unit tests in the FIPS environment
 ------------------------------------------
 This instruction is about running automated tests on the FIPS enabled RHEL 8.6 system with the FIPS enabled OpenJDK 11.
