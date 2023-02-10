@@ -41,6 +41,7 @@ import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import java.io.File;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -78,10 +79,10 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
 
       // authz
       entry(MapResourceServerEntity.class,  ((Function<MapResourceServerEntity, String[]>) v -> new String[] { v.getClientId() })),
-      entry(MapPolicyEntity.class,          ((Function<MapPolicyEntity, String[]>) v -> new String[] { v.getResourceServerId(), "policy", v.getName() })),
-      entry(MapPermissionTicketEntity.class,((Function<MapPermissionTicketEntity, String[]>) v -> new String[] { v.getResourceServerId(), "ticket", v.getId()})),
-      entry(MapResourceEntity.class,        ((Function<MapResourceEntity, String[]>) v -> new String[] { v.getResourceServerId(), "resource", v.getName() })),
-      entry(MapScopeEntity.class,           ((Function<MapScopeEntity, String[]>) v -> new String[] { v.getResourceServerId(), "scope", v.getName() }))
+      entry(MapPolicyEntity.class,          ((Function<MapPolicyEntity, String[]>) v -> new String[] { v.getResourceServerId(), v.getName() })),
+      entry(MapPermissionTicketEntity.class,((Function<MapPermissionTicketEntity, String[]>) v -> new String[] { v.getResourceServerId(), v.getId()})),
+      entry(MapResourceEntity.class,        ((Function<MapResourceEntity, String[]>) v -> new String[] { v.getResourceServerId(), v.getName() })),
+      entry(MapScopeEntity.class,           ((Function<MapScopeEntity, String[]>) v -> new String[] { v.getResourceServerId(), v.getName() }))
     );
 
     @Override
@@ -123,7 +124,7 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
                 return p -> { throw new IllegalStateException("Directory for " + areaName + " area not configured."); };
             }
 
-            String a = areaName.startsWith("authz-") ? "authz" : areaName;
+            Path a = areaName.startsWith("authz-") ? Path.of("authz", areaName.substring(6)) : Path.of(areaName);
 
             return realmId -> {
               if (realmId == null || FORBIDDEN_CHARACTERS.matcher(realmId).find()) {
