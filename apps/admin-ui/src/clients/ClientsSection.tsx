@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
+import { FormattedLink } from "../components/external-link/FormattedLink";
 import {
   Action,
   KeycloakDataTable,
@@ -67,6 +67,17 @@ const ClientDescription = (client: ClientRepresentation) => (
     {emptyFormatter()(client.description)}
   </TableText>
 );
+
+const ClientHomeLink = (client: ClientRepresentation) => {
+  const { adminClient } = useAdminClient();
+  const href = convertClientToUrl(client, adminClient.baseUrl);
+
+  if (!href) {
+    return "—";
+  }
+
+  return <FormattedLink href={href} />;
+};
 
 export default function ClientsSection() {
   const { t } = useTranslation("clients");
@@ -233,9 +244,7 @@ export default function ClientsSection() {
                   name: "baseUrl",
                   displayKey: "clients:homeURL",
                   transforms: [cellWidth(20)],
-                  cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
-                  cellRenderer: (c) =>
-                    convertClientToUrl(c, adminClient.baseUrl) || "",
+                  cellRenderer: ClientHomeLink,
                 },
               ]}
             />
