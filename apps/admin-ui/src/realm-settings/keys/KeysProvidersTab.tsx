@@ -5,9 +5,6 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
   InputGroup,
   PageSection,
   TextInput,
@@ -30,6 +27,7 @@ import { KEY_PROVIDER_TYPE } from "../../util";
 import useToggle from "../../utils/useToggle";
 import { ProviderType, toKeyProvider } from "../routes/KeyProvider";
 import { KeyProviderModal } from "./key-providers/KeyProviderModal";
+import { KeyProvidersPicker } from "./key-providers/KeyProvidersPicker";
 
 import "../realm-settings-section.css";
 
@@ -65,9 +63,8 @@ export const KeysProvidersTab = ({
   const serverInfo = useServerInfo();
   const keyProviderComponentTypes =
     serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
-  const providerTypes = keyProviderComponentTypes.map((item) => item.id);
 
-  const [providerDropdownOpen, setProviderDropdownOpen] = useState(false);
+  const [providerOpen, toggleProviderOpen] = useToggle();
   const [defaultUIDisplayName, setDefaultUIDisplayName] =
     useState<ProviderType>();
 
@@ -140,6 +137,16 @@ export const KeysProvidersTab = ({
 
   return (
     <>
+      {providerOpen && (
+        <KeyProvidersPicker
+          onClose={() => toggleProviderOpen()}
+          onConfirm={(provider) => {
+            handleModalToggle();
+            setDefaultUIDisplayName(provider as ProviderType);
+            toggleProviderOpen();
+          }}
+        />
+      )}
       {isCreateModalOpen && defaultUIDisplayName && (
         <KeyProviderModal
           providerType={defaultUIDisplayName}
@@ -175,35 +182,13 @@ export const KeysProvidersTab = ({
               </InputGroup>
             </ToolbarItem>
             <ToolbarItem>
-              <Dropdown
+              <Button
                 data-testid="addProviderDropdown"
                 className="add-provider-dropdown"
-                isOpen={providerDropdownOpen}
-                toggle={
-                  <DropdownToggle
-                    onToggle={(val) => setProviderDropdownOpen(val)}
-                    isPrimary
-                  >
-                    {t("addProvider")}
-                  </DropdownToggle>
-                }
-                dropdownItems={[
-                  providerTypes.map((item) => (
-                    <DropdownItem
-                      onClick={() => {
-                        handleModalToggle();
-
-                        setProviderDropdownOpen(false);
-                        setDefaultUIDisplayName(item as ProviderType);
-                      }}
-                      data-testid={`option-${item}`}
-                      key={item}
-                    >
-                      {item}
-                    </DropdownItem>
-                  )),
-                ]}
-              />
+                onClick={() => toggleProviderOpen()}
+              >
+                {t("addProvider")}
+              </Button>
             </ToolbarItem>
           </ToolbarGroup>
         </Toolbar>
