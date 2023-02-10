@@ -24,6 +24,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.map.storage.MapStorageProvider;
+import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -43,6 +44,11 @@ import static org.keycloak.testsuite.model.util.KeycloakAssertions.assertExcepti
 @RequireProvider(RealmProvider.class)
 public class StorageTransactionTest extends KeycloakModelTest {
 
+    // System variable is used to simplify configuration for more storages that support pessimistic locking.
+    // Instead of searching which storage is used and then configure its factory, we can just configure
+    // lockTimeout like this: .config("lockTimeout", "${keycloak.model.tests.lockTimeout:}") and
+    // system property will be picked when factory is reinitialized.
+    public static final String LOCK_TIMEOUT_SYSTEM_PROPERTY = "keycloak.model.tests.lockTimeout";
     private String realmId;
 
     @Override
@@ -123,29 +129,42 @@ public class StorageTransactionTest extends KeycloakModelTest {
     // LockObjectForModification is currently used only in map-jpa
     @RequireProvider(value = MapStorageProvider.class, only = JpaMapStorageProviderFactory.PROVIDER_ID)
     public void testLockObjectForModification() {
-        TransactionController tx1 = new TransactionController(getFactory());
-        TransactionController tx2 = new TransactionController(getFactory());
-        TransactionController tx3 = new TransactionController(getFactory());
+        String originalTimeoutValue = System.getProperty(LOCK_TIMEOUT_SYSTEM_PROPERTY);
+        try {
+            System.setProperty(LOCK_TIMEOUT_SYSTEM_PROPERTY, "300");
+            reinitializeKeycloakSessionFactory();
 
-        tx1.begin();
-        tx2.begin();
+            TransactionController tx1 = new TransactionController(getFactory());
+            TransactionController tx2 = new TransactionController(getFactory());
+            TransactionController tx3 = new TransactionController(getFactory());
 
-        // tx1 acquires lock
-        tx1.runStep(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId)));
+            tx1.begin();
+            tx2.begin();
 
-        // tx2 should fail as tx1 locked the realm
-        assertException(() -> tx2.runStep(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId))),
-                allOf(instanceOf(ModelException.class),
-                        hasCause(instanceOf(PessimisticLockException.class))));
+            // tx1 acquires lock
+            tx1.runStep(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId)));
 
-        // end both transactions
-        tx2.rollback();
-        tx1.commit();
+            // tx2 should fail as tx1 locked the realm
+            assertException(() -> tx2.runStep(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId))),
+                    allOf(instanceOf(ModelException.class),
+                            hasCause(instanceOf(PessimisticLockException.class))));
 
-        // start new transaction and read again, it should be successful
-        tx3.begin();
-        tx3.runStep(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId)));
-        tx3.commit();
+            // end both transactions
+            tx2.rollback();
+            tx1.commit();
+
+            // start new transaction and read again, it should be successful
+            tx3.begin();
+            tx3.runStep(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId)));
+            tx3.commit();
+        } finally {
+            if (originalTimeoutValue == null) {
+                System.clearProperty(LOCK_TIMEOUT_SYSTEM_PROPERTY);
+            } else {
+                System.setProperty(LOCK_TIMEOUT_SYSTEM_PROPERTY, originalTimeoutValue);
+            }
+            reinitializeKeycloakSessionFactory();
+        }
     }
 
     @Test
