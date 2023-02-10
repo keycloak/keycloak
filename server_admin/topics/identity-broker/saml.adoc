@@ -64,8 +64,13 @@ We recommend to use some more secure algorithm instead of `*_SHA1`. Also, with `
 do not work if the SAML identity provider (for example another instance of {project_name}) runs on Java 17 or higher.
 
 |Encryption Algorithm
-|Encryption algorithm, which is used by SAML IDP for encryption of SAML documents, assertions or IDs. The corresponding decryption key
-for decrypt SAML document parts will be chosen based on this configured algorithm and should be available in realm keys for the encryption (ENC) usage.
+|Encryption algorithm, which is used by SAML IDP for encryption of SAML
+documents, assertions, or IDs. The corresponding decryption key for decrypt
+SAML document parts will be chosen based on this configured algorithm and
+should be available in realm keys for the encryption (ENC) usage. If the
+algorithm is not configured, any supported algorithm is allowed and a
+decryption key will be chosen based on the algorithm specified in SAML document
+itself.
 
 |SAML Signature Key Name
 |Signed SAML documents sent using POST binding contain the identification of signing key in `KeyName` element, which, by default, contains the {project_name} key ID. External SAML IDPs can expect a different key name. This switch controls whether `KeyName` contains:

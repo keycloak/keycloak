@@ -16,3 +16,25 @@ See the migration guide for details.
 We removed the out-of-box support for Hashicorp vault in this release.
 
 See this https://github.com/keycloak/keycloak/discussions/16446[discussion] for more details.
+
+= SAML SP metadata changes
+
+Prior to this release, SAML SP metadata contained the same key for both
+signing and encryption use. Starting with this version of Keycloak,
+we include only encryption intended realm keys for encryption use
+in SP metadata. For each encryption key descriptor we also specify
+the algorithm that it is supposed to be used with. The following table shows
+the supported XML-Enc algorithms with the mapping to Keycloak realm keys.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+
+[cols="1,1"]
+|===
+|*XML-Enc algorithm*
+|*Keycloak realm key algorithm*
+
+|https://www.w3.org/TR/2002/REC-xmlenc-core-20021210/Overview.html#rsa-oaep-mgf1p[rsa-oaep-mgf1p]
+|RSA-OAEP
+
+|https://www.w3.org/TR/2002/REC-xmlenc-core-20021210/Overview.html#rsa-1_5[rsa-1_5]
+|RSA1_5
+|===
