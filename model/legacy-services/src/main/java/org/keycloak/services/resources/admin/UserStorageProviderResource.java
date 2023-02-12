@@ -177,8 +177,13 @@ public class UserStorageProviderResource {
         if (!model.getProviderType().equals(UserStorageProvider.class.getName())) {
             throw new NotFoundException("found, but not a UserStorageProvider");
         }
+        logger.debug("removing imported users");
 
         session.users().removeImportedUsers(realm, id);
+        logger.infof("Successfully removed imported users for federation provider: '%s' with name: '%s', realm: '%s'", model.getProviderId(), model.getName(), realm.getId());
+        Map<String, String> eventRep = new HashMap<>();
+        eventRep.put("action", "remove-imported-users");
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
     }
     /**
      * Unlink imported users from a storage provider
