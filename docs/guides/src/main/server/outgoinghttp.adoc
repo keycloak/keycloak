@@ -120,7 +120,7 @@ In this example, the following occurs:
 
 == Configuring trusted certificates for TLS connections
 
-Please take a look at the <@links.server id="keycloak-truststore"/> guide about how
+See <@links.server id="keycloak-truststore"/> for how
 to configure a Keycloak Truststore so that Keycloak is able to perform outgoing requests using TLS.
 
 </@tmpl.guide>

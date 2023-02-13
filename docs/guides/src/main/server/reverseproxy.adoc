@@ -218,7 +218,7 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 
 The NGINX SSL/TLS module does not expose the client certificate chain. Keycloak’s NGINX certificate lookup provider rebuilds it by using the Keycloak truststore.
 
-If you are using this provider, please take a look at the <@links.server id="keycloak-truststore"/> guide about how
+If you are using this provider, see <@links.server id="keycloak-truststore"/> for how
 to configure a Keycloak Truststore.
 
 </@tmpl.guide>
