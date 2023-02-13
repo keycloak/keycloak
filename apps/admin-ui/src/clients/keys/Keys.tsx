@@ -93,9 +93,11 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
     try {
       const formData = new FormData();
       const { file, ...rest } = importFile;
-      Object.entries(rest).map((entry) =>
-        formData.append(entry[0], entry[1] as string)
-      );
+
+      for (const [key, value] of Object.entries(rest)) {
+        formData.append(key, value);
+      }
+
       formData.append("file", file.value!);
 
       await adminClient.clients.uploadCertificate(

@@ -987,7 +987,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public uploadCertificate = this.makeUpdateRequest<
     { id: string; attr: string },
-    any
+    FormData
   >({
     method: "POST",
     path: "/{id}/certificates/{attr}/upload-certificate",
