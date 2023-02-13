@@ -26,6 +26,7 @@ info
 gawk
 platform-python
 platform-python-setuptools
+python3
 python3-libs
 python3-pip-wheel
 python3-setuptools-wheel
@@ -63,9 +64,10 @@ do
     <keep xargs rpm -r "$rootfs" -q --requires | sort -Vu | cut -d ' ' -f1 \
         | grep -v -e '^rpmlib(' \
         | xargs -d $'\n' rpm -r "$rootfs" -q --whatprovides \
+        | grep -v -e '^no package provides' \
         | sed -r 's/^(.*)-.*-.*$/\1/' \
         | grep -vxF -f disallow  \
-        > new
+        > new || true
 
     # Safely replace the keep list, appending the new names
     mv keep old
