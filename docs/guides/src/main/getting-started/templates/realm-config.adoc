@@ -1,9 +1,9 @@
-## Login to the admin console
+== Login to the admin console
 
 Go to the {links-admin-console} and login with the username and password
 you created earlier.
 
-## Create a realm
+== Create a realm
 
 A realm in Keycloak is the equivalent of a tenant. It allows creating isolated groups of applications and users. By default
 there is a single realm in Keycloak called `master`. This is dedicated to manage Keycloak and should not be used for
@@ -19,7 +19,7 @@ Let's create our first realm.
 
 image::add-realm.png[Add Realm]
 
-## Create a user
+== Create a user
 
 Initially there are no users in a new realm, so let's create one:
 
