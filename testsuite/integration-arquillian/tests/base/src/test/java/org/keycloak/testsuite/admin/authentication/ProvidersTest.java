@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.util.KerberosUtils;
 
 import javax.ws.rs.NotFoundException;
 import java.util.ArrayList;
@@ -145,7 +146,10 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         if (ProfileAssume.isFeatureEnabled(Profile.Feature.SCRIPTS)) {
             addProviderInfo(result, "auth-script-based", "Script", "Script based authentication. Allows to define custom authentication logic via JavaScript.");
         }
-        addProviderInfo(result, "auth-spnego", "Kerberos", "Initiates the SPNEGO protocol.  Most often used with Kerberos.");
+        String kerberosHelpMessage = (KerberosUtils.isKerberosSupportExpected())
+                ? "Initiates the SPNEGO protocol.  Most often used with Kerberos."
+                : "DISABLED. Please enable Kerberos feature and make sure Kerberos available in your platform. Initiates the SPNEGO protocol. Most often used with Kerberos.";
+        addProviderInfo(result, "auth-spnego", "Kerberos", kerberosHelpMessage);
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
         addProviderInfo(result, "auth-x509-client-username-form", "X509/Validate Username Form",

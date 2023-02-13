@@ -26,3 +26,12 @@ runs:
           ls ~/.m2/repository/org/keycloak
           exit 1
         fi
+
+    - name: Cache Maven Wrapper
+      uses: actions/cache@v3
+      with:
+        path: .mvn/wrapper/maven-wrapper.jar
+        key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('**/maven-wrapper.properties') }}
+        # use a previously cached JAR file as something else besides the version could have changed in the file
+        restore-keys: |
+          ${{ runner.os }}-maven-wrapper-

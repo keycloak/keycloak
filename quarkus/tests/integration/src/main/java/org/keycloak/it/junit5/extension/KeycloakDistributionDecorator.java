@@ -18,6 +18,7 @@
 package org.keycloak.it.junit5.extension;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import org.keycloak.it.utils.KeycloakDistribution;
 
@@ -25,17 +26,24 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
 
     private LegacyStore legacyStoreConfig;
     private WithDatabase databaseConfig;
+    private DistributionTest config;
     private KeycloakDistribution delegate;
 
-    public KeycloakDistributionDecorator(LegacyStore legacyStoreConfig, WithDatabase databaseConfig, KeycloakDistribution delegate) {
+    public KeycloakDistributionDecorator(LegacyStore legacyStoreConfig, WithDatabase databaseConfig, DistributionTest config,
+            KeycloakDistribution delegate) {
         this.legacyStoreConfig = legacyStoreConfig;
         this.databaseConfig = databaseConfig;
+        this.config = config;
         this.delegate = delegate;
     }
 
     @Override
-    public CLIResult run(List<String> arguments) {
-        return delegate.run(new ServerOptions(legacyStoreConfig, databaseConfig, arguments));
+    public CLIResult run(List<String> rawArgs) {
+        List<String> args = new ArrayList<>(rawArgs);
+
+        args.addAll(List.of(config.defaultOptions()));
+
+        return delegate.run(new ServerOptions(legacyStoreConfig, databaseConfig, args));
     }
 
     @Override

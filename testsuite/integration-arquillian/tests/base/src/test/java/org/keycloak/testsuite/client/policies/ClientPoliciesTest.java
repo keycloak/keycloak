@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
@@ -909,8 +910,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         try {
             oauth.clientId(clientBetaId);
             oauth.openLoginForm();
-            assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-            assertEquals(ERR_MSG_REQ_NOT_ALLOWED, oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+            assertTrue(errorPage.isCurrent());
+            assertEquals(ERR_MSG_REQ_NOT_ALLOWED, errorPage.getError());
             revertToBuiltinProfiles();
             successfulLoginAndLogout(clientBetaId, "secretBeta");
         } catch (Exception e) {

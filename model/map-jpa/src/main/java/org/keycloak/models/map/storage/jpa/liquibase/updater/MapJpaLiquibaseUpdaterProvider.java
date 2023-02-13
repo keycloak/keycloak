@@ -45,6 +45,7 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
     private static final Logger logger = Logger.getLogger(MapJpaLiquibaseUpdaterProvider.class);
 
     private final KeycloakSession session;
+    private String databaseShortName;
 
     public MapJpaLiquibaseUpdaterProvider(KeycloakSession session) {
         this.session = session;
@@ -187,6 +188,7 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
         try (Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnectionFromPool(connection.unwrap(Connection.class)))) {
             // if the database is cockroachdb, use the aggregate changelog (see GHI #11230).
             String changelog = database instanceof CockroachDatabase ? "META-INF/jpa-aggregate-changelog.xml" : "META-INF/jpa-" + modelName + "-changelog.xml";
+            databaseShortName = database.getShortName();
             return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelog, this.getClass().getClassLoader(), "databasechangelog");
         } catch (SQLException e) {
             throw new LiquibaseException(e);
@@ -197,4 +199,8 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
     public void close() {
     }
 
+    @Override
+    public String getDatabaseShortName() {
+        return databaseShortName;
+    }
 }

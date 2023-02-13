@@ -2,7 +2,6 @@ package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 
 
@@ -79,4 +78,35 @@ public interface ConcurrentHashMapCrudOperations<V extends AbstractEntity & Upda
      * @return Number of objects. Never returns {@code null}.
      */
     long getCount(QueryParameters<M> queryParameters);
+
+    /**
+     * Returns {@code true} if the object with the given {@code key} exists in the storage. {@code false} otherwise.
+     *
+     * @param key Key of the object. Must not be {@code null}.
+     * @return See description
+     * @throws NullPointerException if the {@code key} is {@code null}
+     */
+    default boolean exists(String key) {
+        return read(key) != null;
+    }
+
+    /**
+     * Returns {@code true} if at least one object is satisfying given {@code criteria} from the storage. {@code false} otherwise.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param queryParameters parameters for the query
+     * @return See description
+     */
+    default boolean exists(QueryParameters<M> queryParameters) {
+        return getCount(queryParameters) > 0;
+    }
+
+    /**
+     * Determines first available key from the value upon creation.
+     * @param value
+     * @return
+     */
+    default String determineKeyFromValue(V value, boolean forCreate) {
+        return value == null ? null : value.getId();
+    }
 }

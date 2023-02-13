@@ -43,7 +43,6 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator{
-    public static final String KERBEROS_DISABLED = "kerberos_disabled";
     private static final Logger logger = Logger.getLogger(SpnegoAuthenticator.class);
 
     @Override

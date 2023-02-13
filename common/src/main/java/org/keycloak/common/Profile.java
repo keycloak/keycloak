@@ -22,6 +22,7 @@ import org.keycloak.common.profile.ProfileConfigResolver;
 import org.keycloak.common.profile.ProfileException;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+import org.keycloak.common.util.KerberosJdkProvider;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,9 +48,6 @@ public class Profile {
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
 
         ADMIN_API("Admin API", Type.DEFAULT),
-
-        @Deprecated
-        ADMIN("Legacy Admin Console", Type.DEPRECATED),
 
         ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
 
@@ -80,6 +78,9 @@ public class Profile {
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
+
+        // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
+        KERBEROS("Kerberos", KerberosJdkProvider.getProvider().isKerberosAvailable() ? Type.DEFAULT : Type.DISABLED_BY_DEFAULT),
 
         RECOVERY_CODES("Recovery codes", Type.PREVIEW),
 

@@ -60,127 +60,6 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
         mapperGroupId = CreatedResponseUtil.getCreatedId(response);
     }
 
-    @Test
-    public void tryToCreateBrokeredUserWithNonExistingGroupDoesNotBreakLogin() {
-        setupScenarioWithNonExistingGroup();
-
-        logInAsUserInIDPForFirstTimeAndAssertSuccess();
-
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatUserDoesNotHaveGroups(user);
-    }
-
-    @Test
-    public void mapperStillWorksWhenTopLevelGroupIsConvertedToSubGroup() {
-        final String mapperId = setupScenarioWithGroupPath(MAPPER_TEST_GROUP_PATH);
-
-        String newParentGroupName = "new-parent";
-        GroupRepresentation newParentGroup = new GroupRepresentation();
-        newParentGroup.setName(newParentGroupName);
-        String newParentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(newParentGroup));
-
-        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
-        realm.groups().group(newParentGroupId).subGroup(mappedGroup).close();
-
-        String expectedNewGroupPath = buildGroupPath(newParentGroupName, MAPPER_TEST_GROUP_NAME);
-
-        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
-    }
-
-    @Test
-    public void mapperStillWorksWhenSubGroupChangesParent() {
-        String parentGroupName = "parent-group";
-        GroupRepresentation parentGroup = new GroupRepresentation();
-        parentGroup.setName(parentGroupName);
-        String parentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(parentGroup));
-
-        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
-        realm.groups().group(parentGroupId).subGroup(mappedGroup).close();
-
-        String initialGroupPath = buildGroupPath(parentGroupName, MAPPER_TEST_GROUP_NAME);
-
-        final String mapperId = setupScenarioWithGroupPath(initialGroupPath);
-
-        String newParentGroupName = "new-parent-group";
-        GroupRepresentation newParentGroup = new GroupRepresentation();
-        newParentGroup.setName(newParentGroupName);
-        String newParentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(newParentGroup));
-
-        realm.groups().group(newParentGroupId).subGroup(mappedGroup).close();
-
-        String expectedNewGroupPath = buildGroupPath(newParentGroupName, MAPPER_TEST_GROUP_NAME);
-
-        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
-    }
-
-    @Test
-    public void mapperStillWorksWhenSubGroupIsConvertedToTopLevelGroup() {
-        String parentGroupName = "parent-group";
-        GroupRepresentation parentGroup = new GroupRepresentation();
-        parentGroup.setName(parentGroupName);
-        String parentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(parentGroup));
-
-        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
-        realm.groups().group(parentGroupId).subGroup(mappedGroup).close();
-
-        String initialGroupPath = buildGroupPath(parentGroupName, MAPPER_TEST_GROUP_NAME);
-
-        final String mapperId = setupScenarioWithGroupPath(initialGroupPath);
-
-        // convert the mapped group to a top-level group
-        realm.groups().add(realm.groups().group(mapperGroupId).toRepresentation());
-
-        String expectedNewGroupPath = buildGroupPath(MAPPER_TEST_GROUP_NAME);
-
-        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
-    }
-
-    @Test
-    public void mapperStillWorksWhenGroupIsRenamed() {
-        final String mapperId = setupScenarioWithGroupPath(MAPPER_TEST_GROUP_PATH);
-
-        String newGroupName = "new-name-" + MAPPER_TEST_GROUP_NAME;
-        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
-        mappedGroup.setName(newGroupName);
-        realm.groups().group(mapperGroupId).update(mappedGroup);
-
-        String expectedNewGroupPath = buildGroupPath(newGroupName);
-
-        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
-    }
-
-    @Test
-    public void mapperStillWorksWhenAncestorGroupIsRenamed() {
-        String topLevelGroupName = "top-level";
-        GroupRepresentation topLevelGroup = new GroupRepresentation();
-        topLevelGroup.setName(topLevelGroupName);
-        String topLevelGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(topLevelGroup));
-
-        String midLevelGroupName = "mid-level";
-        GroupRepresentation midLevelGroup = new GroupRepresentation();
-        midLevelGroup.setName(midLevelGroupName);
-        String midLevelGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(midLevelGroup));
-
-        midLevelGroup = realm.groups().group(midLevelGroupId).toRepresentation();
-        realm.groups().group(topLevelGroupId).subGroup(midLevelGroup).close();
-
-        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
-        realm.groups().group(midLevelGroupId).subGroup(mappedGroup).close();
-
-        String initialGroupPath = buildGroupPath(topLevelGroupName, midLevelGroupName, MAPPER_TEST_GROUP_NAME);
-
-        final String mapperId = setupScenarioWithGroupPath(initialGroupPath);
-
-        String newTopLevelGroupName = "new-name-" + topLevelGroupName;
-        topLevelGroup = realm.groups().group(topLevelGroupId).toRepresentation();
-        topLevelGroup.setName(newTopLevelGroupName);
-        realm.groups().group(topLevelGroupId).update(topLevelGroup);
-
-        String expectedNewGroupPath = buildGroupPath(newTopLevelGroupName, midLevelGroupName, MAPPER_TEST_GROUP_NAME);
-
-        assertMapperHasExpectedPathAndSucceeds(mapperId, expectedNewGroupPath);
-    }
-
     protected UserRepresentation loginAsUserTwiceWithMapper(
             IdentityProviderMapperSyncMode syncMode, boolean createAfterFirstLogin,
             Map<String, List<String>> userConfig, String groupPath) {
@@ -213,7 +92,7 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
         return user;
     }
 
-    private void assertMapperHasExpectedPathAndSucceeds(String mapperId, String expectedGroupPath) {
+    protected void assertMapperHasExpectedPathAndSucceeds(String mapperId, String expectedGroupPath) {
         IdentityProviderMapperRepresentation mapper =
                 realm.identityProviders().get(bc.getIDPAlias()).getMapperById(mapperId);
         Map<String, String> config = mapper.getConfig();

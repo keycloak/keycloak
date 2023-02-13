@@ -23,6 +23,7 @@ import java.util.Arrays;
 import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
 import static org.hamcrest.Matchers.hasToString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.keycloak.models.ClientModel.SearchableFields.*;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
@@ -206,4 +207,80 @@ public class DefaultModelCriteriaTest {
           hasToString("(clientId EQ [4] && id EQ [5])"));
     }
 
+    @Test
+    public void testGetFieldCriteriaSingleArgument() {
+        DefaultModelCriteria<ClientModel> v = criteria();
+        assertThat(
+          v.compare(REALM_ID, Operator.EQ, "aa")
+            .getSingleRestrictionArgument(REALM_ID.getName()),
+          hasToString("aa")
+        );
+
+        assertThat(
+          v.not(v.compare(REALM_ID, Operator.EQ, "aa"))
+            .getSingleRestrictionArgument(REALM_ID.getName()),
+          nullValue()
+        );
+
+        assertThat(
+          v.not(v.not(v.compare(REALM_ID, Operator.EQ, "aa")))
+            .getSingleRestrictionArgument(REALM_ID.getName()),
+          hasToString("aa")
+        );
+
+        assertThat(v.or(
+          v.and(
+            v.compare(CLIENT_ID, Operator.EQ, 4),
+            v.compare(REALM_ID, Operator.EQ, "aa")
+          )
+        ).getSingleRestrictionArgument(REALM_ID.getName()),
+          hasToString("aa")
+        );
+
+        assertThat(v.or(
+          v.and(
+            v.compare(CLIENT_ID, Operator.EQ, 4),
+            v.compare(REALM_ID, Operator.EQ, "aa")
+          ),
+          v.and(
+            v.compare(CLIENT_ID, Operator.EQ, 123),
+            v.compare(REALM_ID, Operator.EQ, "aa")
+          )
+        ).getSingleRestrictionArgument(REALM_ID.getName()),
+          hasToString("aa")
+        );
+
+        assertThat(v.or(
+          v.and(
+            v.compare(CLIENT_ID, Operator.EQ, 4),
+            v.compare(REALM_ID, Operator.EQ, "aa")
+          ),
+          v.and(
+            v.compare(CLIENT_ID, Operator.EQ, 4),
+            v.compare(REALM_ID, Operator.EQ, "bb")
+          )
+        ).getSingleRestrictionArgument(REALM_ID.getName()),
+          nullValue()
+        );
+
+        assertThat(v.or(
+          v.and(
+            v.compare(CLIENT_ID, Operator.EQ, 4),
+            v.compare(REALM_ID, Operator.EQ, "aa")
+          ),
+          v.not(v.compare(ID, Operator.EQ, 5))
+        ).getSingleRestrictionArgument(REALM_ID.getName()),
+          nullValue()
+        );
+
+        assertThat(v.and(
+          v.and(
+            v.compare(CLIENT_ID, Operator.EQ, 4),
+            v.compare(REALM_ID, Operator.EQ, "aa")
+          ),
+          v.not(v.compare(ID, Operator.EQ, 5))
+        ).getSingleRestrictionArgument(REALM_ID.getName()),
+          hasToString("aa")
+        );
+    }
 }

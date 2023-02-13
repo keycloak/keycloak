@@ -18,6 +18,7 @@ package org.keycloak.models.map.processor;
 
 import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -46,7 +47,7 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 public class Util {
 
     private static final Set<String> LIST_TYPES = Set.of(List.class.getCanonicalName(), ArrayList.class.getCanonicalName(), LinkedList.class.getCanonicalName());
-    private static final Set<String> SET_TYPES = Set.of(Set.class.getCanonicalName(), TreeSet.class.getCanonicalName(), HashSet.class.getCanonicalName(), LinkedHashSet.class.getCanonicalName());
+    private static final Set<String> SET_TYPES = Set.of(Set.class.getCanonicalName(), TreeSet.class.getCanonicalName(), HashSet.class.getCanonicalName(), LinkedHashSet.class.getCanonicalName(), Collection.class.getCanonicalName());
     private static final Set<String> MAP_TYPES = Set.of(Map.class.getCanonicalName(), HashMap.class.getCanonicalName());
 
     public static List<TypeMirror> getGenericsDeclaration(TypeMirror fieldType) {
