@@ -14,9 +14,7 @@ export const RecentRealmsContext = createNamedContext<string[] | undefined>(
   undefined
 );
 
-export const RecentRealmsProvider = ({
-  children,
-}: PropsWithChildren<unknown>) => {
+export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
   const { realms } = useRealms();
   const { realm } = useRealm();
   const [storedRealms, setStoredRealms] = useStoredState(

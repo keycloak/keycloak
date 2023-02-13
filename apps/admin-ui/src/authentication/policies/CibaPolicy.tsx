@@ -141,7 +141,9 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             />
           }
           validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
-          helperTextInvalid={errors.attributes?.cibaExpiresIn?.message}
+          helperTextInvalid={
+            errors.attributes?.cibaExpiresIn?.message as string
+          }
           isRequired
         >
           <InputGroup>
@@ -183,7 +185,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             />
           }
           validated={errors.attributes?.cibaInterval ? "error" : "default"}
-          helperTextInvalid={errors.attributes?.cibaInterval?.message}
+          helperTextInvalid={errors.attributes?.cibaInterval?.message as string}
           isRequired
         >
           <InputGroup>

@@ -55,7 +55,7 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         validated={
           errors.description ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={errors.description?.message}
+        helperTextInvalid={t("common:maxLength", { length: 255 })}
       >
         <KeycloakTextArea
           id="kc-description"
@@ -65,12 +65,7 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
-          {...register("description", {
-            maxLength: {
-              value: 255,
-              message: t("common:maxLength", { length: 255 }),
-            },
-          })}
+          {...register("description", { maxLength: 255 })}
         />
       </FormGroup>
     </>

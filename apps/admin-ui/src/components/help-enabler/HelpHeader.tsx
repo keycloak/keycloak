@@ -31,7 +31,7 @@ export const HelpContext = createNamedContext<HelpContextProps | undefined>(
 
 export const useHelp = () => useRequiredContext(HelpContext);
 
-export const Help = ({ children }: PropsWithChildren<unknown>) => {
+export const Help = ({ children }: PropsWithChildren) => {
   const [enabled, setHelp] = useStoredState(localStorage, "helpEnabled", true);
 
   function toggleHelp() {

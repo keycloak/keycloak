@@ -5,6 +5,7 @@ import {
   IActions,
   IActionsResolver,
   IFormatter,
+  IRow,
   ITransform,
   Table,
   TableBody,
@@ -95,7 +96,7 @@ function DataTable<T>({
       cells={columns.map((column) => {
         return { ...column, title: t(column.displayKey || column.name) };
       })}
-      rows={rows}
+      rows={rows as IRow[]}
       actions={actions}
       actionResolver={actionResolver}
       aria-label={t(ariaLabelKey)}

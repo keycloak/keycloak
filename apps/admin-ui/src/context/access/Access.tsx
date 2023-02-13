@@ -17,9 +17,7 @@ export const AccessContext = createNamedContext<AccessContextProps | undefined>(
 
 export const useAccess = () => useRequiredContext(AccessContext);
 
-export const AccessContextProvider = ({
-  children,
-}: PropsWithChildren<unknown>) => {
+export const AccessContextProvider = ({ children }: PropsWithChildren) => {
   const { whoAmI } = useWhoAmI();
   const { realm } = useRealm();
   const [access, setAccess] = useState<readonly AccessType[]>([]);

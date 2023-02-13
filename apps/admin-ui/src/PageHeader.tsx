@@ -12,7 +12,7 @@ import {
   PageHeaderToolsItem,
 } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HelpHeader, useHelp } from "./components/help-enabler/HelpHeader";
@@ -57,9 +57,12 @@ const ServerInfoDropdownItem = () => {
   return (
     <DropdownItem
       key="server info"
-      component={(props: any) => (
-        <Link {...props} to={toDashboard({ realm })} />
-      )}
+      component={
+        // The type definition in PatternFly is incorrect, so we need to cast here.
+        ((props: any) => (
+          <Link {...props} to={toDashboard({ realm })} />
+        )) as unknown as ReactNode
+      }
     >
       {t("realmInfo")}
     </DropdownItem>

@@ -46,7 +46,8 @@ class CreateRealmRolePage {
   }
 
   updateDescription(description: string) {
-    cy.get(this.realmRoleDescriptionInput).clear().type(description);
+    cy.get(this.realmRoleDescriptionInput).clear();
+    cy.get(this.realmRoleDescriptionInput).type(description);
     return this;
   }
 

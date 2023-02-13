@@ -74,7 +74,8 @@ export const LogoutPanel = ({
             />
           }
           helperTextInvalid={
-            errors.attributes?.[beerify("frontchannel.logout.url")]?.message
+            errors.attributes?.[beerify("frontchannel.logout.url")]
+              ?.message as string
           }
           validated={
             errors.attributes?.[beerify("frontchannel.logout.url")]?.message
@@ -117,7 +118,8 @@ export const LogoutPanel = ({
               />
             }
             helperTextInvalid={
-              errors.attributes?.[beerify("backchannel.logout.url")]?.message
+              errors.attributes?.[beerify("backchannel.logout.url")]
+                ?.message as string
             }
             validated={
               errors.attributes?.[beerify("backchannel.logout.url")]?.message

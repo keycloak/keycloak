@@ -54,7 +54,7 @@ export const SelectControl = <
       isRequired={controller.rules?.required === true}
       label={label || name}
       fieldId={name}
-      helperTextInvalid={errors[name]?.message}
+      helperTextInvalid={errors[name]?.message as string}
       validated={
         errors[name] ? ValidatedOptions.error : ValidatedOptions.default
       }

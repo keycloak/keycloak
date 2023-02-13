@@ -100,7 +100,7 @@ export const PermissionRequest = ({
                 <Td>
                   {shareRequest.scopes.map((scope) => (
                     <Chip key={scope.toString()} isReadOnly>
-                      {scope}
+                      {scope as string}
                     </Chip>
                   ))}
                 </Td>

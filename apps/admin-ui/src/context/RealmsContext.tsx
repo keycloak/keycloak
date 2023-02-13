@@ -19,7 +19,7 @@ export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
   undefined
 );
 
-export const RealmsProvider = ({ children }: PropsWithChildren<unknown>) => {
+export const RealmsProvider = ({ children }: PropsWithChildren) => {
   const { keycloak, adminClient } = useAdminClient();
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
   const [refreshCount, setRefreshCount] = useState(0);

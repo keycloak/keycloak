@@ -82,7 +82,7 @@ export const AttributeGeneralSettings = () => {
         fieldId="kc-attribute-name"
         isRequired
         validated={form.formState.errors.name ? "error" : "default"}
-        helperTextInvalid={form.formState.errors.name?.message}
+        helperTextInvalid={t("validateName")}
       >
         <KeycloakTextInput
           isRequired
@@ -91,12 +91,7 @@ export const AttributeGeneralSettings = () => {
           data-testid="attribute-name"
           isDisabled={editMode}
           validated={form.formState.errors.name ? "error" : "default"}
-          {...form.register("name", {
-            required: {
-              value: true,
-              message: t("validateName"),
-            },
-          })}
+          {...form.register("name", { required: true })}
         />
       </FormGroup>
       <FormGroup

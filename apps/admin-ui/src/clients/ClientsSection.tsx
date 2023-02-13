@@ -59,12 +59,14 @@ const ClientDetailLink = (client: ClientRepresentation) => {
 };
 
 const ClientName = (client: ClientRepresentation) => (
-  <TableText wrapModifier="truncate">{emptyFormatter()(client.name)}</TableText>
+  <TableText wrapModifier="truncate">
+    {emptyFormatter()(client.name) as string}
+  </TableText>
 );
 
 const ClientDescription = (client: ClientRepresentation) => (
   <TableText wrapModifier="truncate">
-    {emptyFormatter()(client.description)}
+    {emptyFormatter()(client.description) as string}
   </TableText>
 );
 

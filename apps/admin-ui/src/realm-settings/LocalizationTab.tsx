@@ -30,7 +30,6 @@ import {
   TableVariant,
   validateCellEdits,
 } from "@patternfly/react-table";
-import type { EditableTextCellProps } from "@patternfly/react-table/dist/esm/components/Table/base";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -184,16 +183,11 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
           }),
         cells: [
           {
-            title: (
-              value: string,
-              rowIndex: number,
-              cellIndex: number,
-              props
-            ) => (
+            title: (value, rowIndex, cellIndex, props) => (
               <EditableTextCell
-                value={value}
-                rowIndex={rowIndex}
-                cellIndex={cellIndex}
+                value={value!}
+                rowIndex={rowIndex!}
+                cellIndex={cellIndex!}
                 props={props}
                 isDisabled
                 handleTextInputChange={handleTextInputChange}
@@ -205,16 +199,11 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
             },
           },
           {
-            title: (
-              value: string,
-              rowIndex: number,
-              cellIndex: number,
-              props: EditableTextCellProps
-            ) => (
+            title: (value, rowIndex, cellIndex, props) => (
               <EditableTextCell
-                value={value}
-                rowIndex={rowIndex}
-                cellIndex={cellIndex}
+                value={value!}
+                rowIndex={rowIndex!}
+                cellIndex={cellIndex!}
                 props={props}
                 handleTextInputChange={handleTextInputChange}
                 inputAriaLabel={messageBundle[1]}

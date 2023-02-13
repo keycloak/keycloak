@@ -16,9 +16,7 @@ export const RealmContext = createNamedContext<RealmContextType | undefined>(
   undefined
 );
 
-export const RealmContextProvider = ({
-  children,
-}: PropsWithChildren<unknown>) => {
+export const RealmContextProvider = ({ children }: PropsWithChildren) => {
   const { adminClient } = useAdminClient();
   const routeMatch = useMatch({
     path: DashboardRouteWithRealm.path,

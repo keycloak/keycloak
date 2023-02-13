@@ -15,9 +15,7 @@ export const useServerInfo = () => useRequiredContext(ServerInfoContext);
 export const useLoginProviders = () =>
   sortProviders(useServerInfo().providers!["login-protocol"].providers);
 
-export const ServerInfoProvider = ({
-  children,
-}: PropsWithChildren<unknown>) => {
+export const ServerInfoProvider = ({ children }: PropsWithChildren) => {
   const { adminClient } = useAdminClient();
   const [serverInfo, setServerInfo] = useState<ServerInfoRepresentation>({});
 

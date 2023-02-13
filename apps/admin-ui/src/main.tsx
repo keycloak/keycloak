@@ -10,17 +10,15 @@ import { initI18n } from "./i18n";
 
 import "./index.css";
 
-async function initialize() {
-  const { keycloak, adminClient } = await initAdminClient();
+const { keycloak, adminClient } = await initAdminClient();
 
-  await initI18n(adminClient);
+await initI18n(adminClient);
 
-  render(
-    <StrictMode>
-      <App keycloak={keycloak} adminClient={adminClient} />
-    </StrictMode>,
-    document.getElementById("app")
-  );
-}
+const container = document.getElementById("app");
 
-initialize();
+render(
+  <StrictMode>
+    <App keycloak={keycloak} adminClient={adminClient} />
+  </StrictMode>,
+  container
+);

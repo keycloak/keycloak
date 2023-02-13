@@ -19,10 +19,11 @@ await Promise.all([
 ]);
 
 const router = createBrowserRouter(routes);
+const container = document.getElementById("app");
 
 render(
   <StrictMode>
     <RouterProvider router={router} />
   </StrictMode>,
-  document.getElementById("app")
+  container
 );

@@ -1,3 +1,4 @@
+import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
   FormGroup,
   Select,
@@ -16,7 +17,7 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
 export type LdapSettingsGeneralProps = {
-  form: UseFormReturn;
+  form: UseFormReturn<ComponentRepresentation>;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
   vendorEdit?: boolean;

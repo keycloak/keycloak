@@ -173,9 +173,6 @@ describe("Client authentication subtab", () => {
       "Successfully created the permission",
       true
     );
-    cy.wait(["@load"]);
-
-    sidebarPage.waitForPageLoad();
     authenticationTab.formUtils().cancel();
   });
 

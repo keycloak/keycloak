@@ -29,9 +29,7 @@ export const UserProfileContext = createNamedContext<
   UserProfileProps | undefined
 >("UserProfileContext", undefined);
 
-export const UserProfileProvider = ({
-  children,
-}: PropsWithChildren<unknown>) => {
+export const UserProfileProvider = ({ children }: PropsWithChildren) => {
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();

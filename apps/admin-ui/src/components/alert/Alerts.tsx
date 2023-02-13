@@ -37,7 +37,7 @@ export type AlertEntry = {
   description?: string;
 };
 
-export const AlertProvider = ({ children }: PropsWithChildren<unknown>) => {
+export const AlertProvider = ({ children }: PropsWithChildren) => {
   const { t } = useTranslation();
   const setTimeout = useSetTimeout();
   const [alerts, setAlerts] = useState<AlertEntry[]>([]);

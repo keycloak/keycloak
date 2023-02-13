@@ -16,7 +16,7 @@ const SubGroupsContext = createNamedContext<SubGroupsProps | undefined>(
   undefined
 );
 
-export const SubGroups = ({ children }: PropsWithChildren<unknown>) => {
+export const SubGroups = ({ children }: PropsWithChildren) => {
   const [subGroups, setSubGroups] = useState<GroupRepresentation[]>([]);
 
   const clear = () => setSubGroups([]);

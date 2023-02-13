@@ -102,7 +102,7 @@ export default function PolicyDetails() {
       reset({ ...policy, policies });
       setPolicy(policy);
     },
-    []
+    [id, policyType, policyId]
   );
 
   const onSubmit = async (policy: Policy) => {

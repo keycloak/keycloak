@@ -62,9 +62,7 @@ export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
 
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 
-export const WhoAmIContextProvider = ({
-  children,
-}: PropsWithChildren<unknown>) => {
+export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
   const { adminClient } = useAdminClient();
   const [whoAmI, setWhoAmI] = useState<WhoAmI>(new WhoAmI());
   const [key, setKey] = useState(0);
