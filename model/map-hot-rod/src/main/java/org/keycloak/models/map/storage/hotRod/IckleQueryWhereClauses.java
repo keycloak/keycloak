@@ -22,10 +22,12 @@ import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.storage.StorageId;
@@ -69,6 +71,7 @@ public class IckleQueryWhereClauses {
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(Policy.SearchableFields.CONFIG, IckleQueryWhereClauses::whereClauseForPolicyConfig);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(Event.SearchableFields.EVENT_TYPE, IckleQueryWhereClauses::whereClauseForEnumWithStableIndex);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(AdminEvent.SearchableFields.OPERATION_TYPE, IckleQueryWhereClauses::whereClauseForEnumWithStableIndex);
+        WHERE_CLAUSE_PRODUCER_OVERRIDES.put(RoleModel.SearchableFields.IS_CLIENT_ROLE, IckleQueryWhereClauses::whereClauseForClientRole);
     }
 
     @FunctionalInterface
@@ -165,6 +168,30 @@ public class IckleQueryWhereClauses {
 
         String providerId = new StorageId((String) values[0], "").getId();
         return IckleQueryOperators.combineExpressions(ModelCriteriaBuilder.Operator.LIKE, getFieldName(UserModel.SearchableFields.CONSENT_FOR_CLIENT), new String[] {providerId + "%"}, parameters);
+    }
+
+    private static String whereClauseForClientRole(String modelFieldName, ModelCriteriaBuilder.Operator op, Object[] values, Map<String, Object> parameters) {
+        if (op != ModelCriteriaBuilder.Operator.EQ && op != ModelCriteriaBuilder.Operator.NE) {
+            throw new CriterionNotSupportedException(RoleModel.SearchableFields.IS_CLIENT_ROLE, op);
+        }
+        if (values == null || values.length != 1) {
+            throw new CriterionNotSupportedException(RoleModel.SearchableFields.IS_CLIENT_ROLE, op, "Invalid arguments, expected (boolean), got: " + Arrays.toString(values));
+        }
+
+        Boolean b = (Boolean) values[0];
+        if (op == Operator.EQ) {
+            if (b == null || b == Boolean.FALSE) {
+                return IckleQueryWhereClauses.produceWhereClause(RoleModel.SearchableFields.CLIENT_ID, Operator.NOT_EXISTS, new Object[] {}, parameters);
+            } else {
+                return IckleQueryWhereClauses.produceWhereClause(RoleModel.SearchableFields.CLIENT_ID, Operator.EXISTS, new Object[] {}, parameters);
+            }
+        } else /* if (op == Operator.NE) */ {
+            if (b == null || b == Boolean.TRUE) {
+                return IckleQueryWhereClauses.produceWhereClause(RoleModel.SearchableFields.CLIENT_ID, Operator.NOT_EXISTS, new Object[] {}, parameters);
+            } else {
+                return IckleQueryWhereClauses.produceWhereClause(RoleModel.SearchableFields.CLIENT_ID, Operator.EXISTS, new Object[] {}, parameters);
+            }
+        }
     }
 
     private static String whereClauseForCorrespondingSessionId(String modelFieldName, ModelCriteriaBuilder.Operator op, Object[] values, Map<String, Object> parameters) {

@@ -99,8 +99,7 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public boolean isClientRole() {
-        final Boolean clientRole = entity.isClientRole();
-        return clientRole == null ? false : clientRole;
+        return entity.getClientId() != null;
     }
 
     @Override

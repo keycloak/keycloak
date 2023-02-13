@@ -80,7 +80,6 @@ public class MapRoleProvider implements RoleProvider {
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setName(name);
-        entity.setClientRole(false);
         if (entity.getId() != null && txInRealm(realm).exists(entity.getId())) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
@@ -138,7 +137,6 @@ public class MapRoleProvider implements RoleProvider {
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setName(name);
-        entity.setClientRole(true);
         entity.setClientId(client.getId());
         if (entity.getId() != null && txInRealm(realm).exists(entity.getId())) {
             throw new ModelDuplicateException("Role exists: " + id);
@@ -170,7 +168,7 @@ public class MapRoleProvider implements RoleProvider {
     }
     @Override
     public boolean removeRole(RoleModel role) {
-        LOG.tracef("removeRole(%s(%s))%s", role.getName(), role.getId(), getShortStackTrace());
+        LOG.tracef("removeRole(%s)%s", role, getShortStackTrace());
 
         RealmModel realm = role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : (RealmModel)role.getContainer();
 
