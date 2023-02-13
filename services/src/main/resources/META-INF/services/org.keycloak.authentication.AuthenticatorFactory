@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+org.keycloak.authentication.authenticators.browser.ConditionalSpnegoAuthenticatorFactory
 org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory
 org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory
 org.keycloak.authentication.authenticators.browser.UsernameFormFactory
