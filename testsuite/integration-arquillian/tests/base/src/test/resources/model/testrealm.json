@@ -1,0 +1,985 @@
+{
+    "realm": "test-realm",
+    "enabled": true,
+    "accessTokenLifespan": 6000,
+    "accessTokenLifespanForImplicitFlow": 1500,
+    "ssoSessionIdleTimeout": 1800,
+    "ssoSessionMaxLifespan": 36000,
+    "ssoSessionIdleTimeoutRememberMe": 3600,
+    "ssoSessionMaxLifespanRememberMe": 172800,
+    "accessCodeLifespan": 30,
+    "accessCodeLifespanUserAction": 600,
+    "offlineSessionIdleTimeout": 3600000,
+    "requiredCredentials": [ "password" ],
+    "defaultRoles": [ "foo", "bar" ],
+    "verifyEmail" : "true",
+    "smtpServer": {
+        "from": "auto@keycloak.org",
+        "host": "localhost",
+        "port":"3025"
+    },
+    "identityProviders" : [
+        {
+            "providerId" : "google",
+            "alias" : "google1",
+            "enabled": true,
+            "config": {
+                "syncMode": "IMPORT",
+                "clientId": "googleId",
+                "clientSecret": "googleSecret"
+            }
+        },
+        {
+            "providerId" : "facebook",
+            "alias" : "facebook1",
+            "enabled": true,
+            "config": {
+                "syncMode": "IMPORT",
+                "clientId": "facebookId",
+                "clientSecret": "facebookSecret"
+            }
+        },
+        {
+            "providerId" : "twitter",
+            "alias" : "twitter1",
+            "enabled": true,
+            "config": {
+                "syncMode": "IMPORT",
+                "clientId": "twitterId",
+                "clientSecret": "twitterSecret"
+            }
+        }
+    ],
+    "userFederationProviders": [
+        {
+            "displayName": "MyLDAPProvider1",
+            "providerName": "ldap",
+            "priority": 1,
+            "config": {
+                "connectionUrl": "ldap://foo",
+                "editMode": "WRITABLE"
+            }
+        },
+        {
+            "displayName": "MyLDAPProvider2",
+            "providerName": "ldap",
+            "priority": 2,
+            "config": {
+                "connectionUrl": "ldap://bar",
+                "editMode": "WRITABLE"
+            }
+        }
+    ],
+    "userFederationMappers": [
+        {
+            "name": "FullNameMapper",
+            "federationProviderDisplayName": "MyLDAPProvider1",
+            "federationMapperType": "full-name-ldap-mapper",
+            "config": {
+                "ldap.full.name.attribute": "cn"
+            }
+        }
+    ],
+    "groups": [
+        {
+            "name": "Group A",
+            "path": "/Group A",
+            "attributes": {
+                "topAttribute": [
+                    "true"
+                ]
+            },
+            "subGroups": [
+                {
+                    "name": "Group B",
+                    "path": "/Group A/Group B",
+                    "attributes": {
+                        "level2Attribute": [
+                            "true"
+                        ]
+                    },
+                    "subGroups": []
+                }
+            ]
+        },
+        {
+            "name": "Group C",
+            "path": "/Group C",
+            "attributes": {
+                "topAttribute": [
+                    "true"
+                ]
+            },
+            "subGroups": [
+                {
+                    "name": "Group D",
+                    "path": "/Group C/Group D",
+                    "attributes": {
+                        "level2Attribute": [
+                            "true"
+                        ]
+                    },
+                    "subGroups": []
+                }
+            ]
+        }
+    ],
+    "users": [
+        {
+            "username": "wburke",
+            "enabled": true,
+            "createdTimestamp" : 123654,
+            "notBefore": 159,
+            "attributes": {
+                "old-email": "bburke@redhat.com"
+            },
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "userpassword"
+                }
+            ],
+            "applicationRoles": {
+                "Application": [ "app-user" ],
+                "OtherApp": [  "otherapp-user" ]
+            }
+        },
+        {
+            "username": "loginclient",
+            "createdTimestamp" : "123655",
+            "enabled": true,
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "clientpassword"
+                }
+            ]
+        },
+        {
+            "username": "hashedpassworduser",
+            "createdTimestamp" : "123655",
+            "enabled": true,
+            "credentials": [
+                {
+                    "id": "b0c22f34-f6fb-4165-8fd3-54d3cb4599d1",
+                    "type": "password",
+                    "createdDate": 1576751136227,
+                    "secretData": "{\"value\":\"pass\",\"salt\":\"__SALT__\"}",
+                    "credentialData": "{\"hashIterations\":1234,\"algorithm\":\"pbkdf2-sha256\"}"
+                }
+            ]
+        },
+        {
+            "username": "admin",
+            "enabled": true,
+            "attributes": {
+                "key1": [
+                    "val1"
+                ],
+                "key2": [
+                    "val21",
+                    "val22"
+                ]
+            },
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "adminpassword"
+                }
+            ],
+            "realmRoles": [ "admin" ],
+            "applicationRoles": {
+                "Application": [ "app-admin" ],
+                "OtherApp": [  "otherapp-admin" ]
+            },
+            "clientConsents": [
+                {
+                    "clientId": "Application",
+                    "grantedRealmRoles": [ "offline_access" ],
+                    "grantedClientRoles": {
+                        "Application": [ "app-admin" ]
+                    },
+                    "grantedClientScopes" : [ "roles", "profile", "email", "account", "web-origins" ]
+                },
+                {
+                    "clientId": "OtherApp",
+                    "grantedRealmRoles": [ "admin" ],
+                    "grantedProtocolMappers": {
+                        "openid-connect": [ "gss delegation credential" ]
+                    }
+                }
+            ]
+        },
+        {
+            "username": "mySocialUser",
+            "enabled": true,
+            "federatedIdentities": [
+                {
+                    "identityProvider": "facebook1",
+                    "userId": "facebook1",
+                    "userName": "fbuser1"
+                },
+                {
+                    "identityProvider": "twitter1",
+                    "userId": "twitter1",
+                    "userName": "twuser1"
+                },
+                {
+                    "identityProvider": "google1",
+                    "userId": "google1",
+                    "userName": "mySocialUser@gmail.com"
+                }
+            ]
+        },
+        {
+            "username": "service-account-otherapp",
+            "enabled": true,
+            "serviceAccountClientId": "OtherApp",
+            "realmRoles" : [ "user" ],
+            "applicationRoles": {
+                "OtherApp": [  "otherapp-user", "otherapp-admin" ]
+            }
+        }
+    ],
+    "clients": [
+        {
+            "clientId": "Application",
+            "name": "Applicationn",
+            "enabled": true,
+            "implicitFlowEnabled": true,
+            "directAccessGrantsEnabled": true,
+            "nodeReRegistrationTimeout": 50,
+            "registeredNodes": {
+                "node1": 10,
+                "172.10.15.20": 20
+            }
+        },
+        {
+            "clientId": "OtherApp",
+            "name": "Other Application",
+            "enabled": true,
+            "clientTemplate": "foo scope",
+            "standardFlowEnabled": false,
+            "directAccessGrantsEnabled": false,
+            "serviceAccountsEnabled": true,
+            "authorizationServicesEnabled" : true,
+            "clientAuthenticatorType": "client-jwt",
+            "authenticationFlowBindingOverrides": {
+                "browser": "73dcb1e4-2c7c-4494-825d-f2677cbc114c"
+            },
+            "protocolMappers" : [
+                {
+                    "name" : "gss delegation credential",
+                    "protocol" : "openid-connect",
+                    "protocolMapper" : "oidc-usersessionmodel-note-mapper",
+                    "consentRequired" : true,
+                    "consentText" : "gss delegation credential",
+                    "config" : {
+                        "user.session.note" : "gss_delegation_credential",
+                        "access.token.claim" : "true",
+                        "claim.name" : "gss_delegation_credential",
+                        "Claim JSON Type" : "String"
+                    }
+                }
+            ],
+            "authorizationSettings" : {
+                "allowRemoteResourceManagement": true,
+                "policyEnforcementMode": "ENFORCING",
+                "resources": [
+                    {
+                        "name": "Default Resource",
+                        "type": "urn:test:resources:default",
+                        "ownerManagedAccess": false,
+                        "attributes": {},
+                        "uris": [
+                            "/*"
+                        ]
+                    },
+                    {
+                        "name": "test",
+                        "type": "test",
+                        "ownerManagedAccess": true,
+                        "displayName": "test",
+                        "attributes": {},
+                        "uris": [
+                            "/test"
+                        ]
+                    }
+                ],
+                "policies": [
+                    {
+                        "name": "User Policy",
+                        "description": "User policy test",
+                        "type": "user",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "users": "[\"wburke\"]"
+                        }
+                    },
+                    {
+                        "name": "Default Permission",
+                        "description": "A permission that applies to the default resource type",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "defaultResourceType": "urn:test:resources:default",
+                            "applyPolicies": "[\"User Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "test-permission",
+                        "description": "test-permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"test\"]",
+                            "applyPolicies": "[\"User Policy\"]"
+                        }
+                    }
+                ],
+                "scopes": [],
+                "decisionStrategy": "UNANIMOUS"
+            }
+        },
+        {
+            "clientId": "test-app-authz",
+            "enabled": true,
+            "baseUrl": "/test-app-authz",
+            "adminUrl": "/test-app-authz",
+            "bearerOnly": false,
+            "authorizationSettings": {
+                "allowRemoteResourceManagement": true,
+                "policyEnforcementMode": "ENFORCING",
+                "resources": [
+                    {
+                        "name": "Admin Resource",
+                        "uri": "/protected/admin/*",
+                        "type": "http://test-app-authz/protected/admin",
+                        "icon_uri" : "http://icons.com/icon-admin",
+                        "scopes": [
+                            {
+                                "name": "admin-access"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Protected Resource",
+                        "uri": "/*",
+                        "type": "http://test-app-authz/protected/resource",
+                        "icon_uri" : "http://icons.com/icon-resource",
+                        "scopes": [
+                            {
+                                "name": "resource-access"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Premium Resource",
+                        "uri": "/protected/premium/*",
+                        "type": "urn:test-app-authz:protected:resource",
+                        "icon_uri" : "http://icons.com/icon-premium",
+                        "scopes": [
+                            {
+                                "name": "premium-access"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Main Page",
+                        "type": "urn:test-app-authz:protected:resource",
+                        "icon_uri" : "http://icons.com/icon-main-page",
+                        "scopes": [
+                            {
+                                "name": "urn:test-app-authz:page:main:actionForAdmin"
+                            },
+                            {
+                                "name": "urn:test-app-authz:page:main:actionForUser"
+                            },
+                            {
+                                "name": "urn:test-app-authz:page:main:actionForPremiumUser"
+                            }
+                        ]
+                    }
+                ],
+                "policies": [
+                    {
+                        "name": "Any Admin Policy",
+                        "description": "Defines that adminsitrators can do something",
+                        "type": "role",
+                        "config": {
+                            "roles": "[{\"id\":\"admin\"}]"
+                        }
+                    },
+                    {
+                        "name": "Any User Policy",
+                        "description": "Defines that any user can do something",
+                        "type": "role",
+                        "config": {
+                            "roles": "[{\"id\":\"user\"}]"
+                        }
+                    },
+                    {
+                        "name": "Client and Realm Role Policy",
+                        "type": "role",
+                        "config": {
+                            "roles": "[{\"id\":\"realm-management/impersonation\",\"required\":false},{\"id\":\"realm-management/manage-authorization\",\"required\":true},{\"id\":\"user\",\"required\":false}]"
+                        }
+                    },
+                    {
+                        "name": "Client Test Policy",
+                        "type": "client",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "clients": "[\"broker\",\"admin-cli\"]"
+                        }
+                    },
+                    {
+                        "name": "Group Policy Test",
+                        "type": "group",
+                        "config": {
+                            "groupsClaim": "groups",
+                            "groups": "[{\"path\":\"/Group A\",\"extendChildren\":true},{\"path\":\"/Group A/Group B\",\"extendChildren\":false},{\"path\":\"/Group C/Group D\",\"extendChildren\":true}]"
+                        }
+                    },
+                    {
+                        "name": "Only Premium User Policy",
+                        "description": "Defines that only premium users can do something",
+                        "type": "role",
+                        "logic": "POSITIVE",
+                        "config": {
+                            "roles": "[{\"id\":\"customer-user-premium\"}]"
+                        }
+                    },
+                    {
+                        "name": "wburke policy",
+                        "description": "Defines that only wburke can do something",
+                        "type": "user",
+                        "logic": "POSITIVE",
+                        "config": {
+                            "users" : "[\"wburke\"]"
+                        }
+                    },
+                    {
+                        "name": "All Users Policy",
+                        "description": "Defines that all users can do something",
+                        "type": "aggregate",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                            "applyPolicies": "[\"Any User Policy\",\"Any Admin Policy\",\"Only Premium User Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Premium Resource Permission",
+                        "description": "A policy that defines access to premium resources",
+                        "type": "resource",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Premium Resource\"]",
+                            "applyPolicies": "[\"Only Premium User Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Administrative Resource Permission",
+                        "description": "A policy that defines access to administrative resources",
+                        "type": "resource",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Admin Resource\"]",
+                            "applyPolicies": "[\"Any Admin Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Protected Resource Permission",
+                        "description": "A policy that defines access to any protected resource",
+                        "type": "resource",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                            "resources": "[\"Protected Resource\"]",
+                            "applyPolicies": "[\"All Users Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Action 1 on Main Page Resource Permission",
+                        "description": "A policy that defines access to action 1 on the main page",
+                        "type": "scope",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                            "scopes": "[\"urn:test-app-authz:page:main:actionForAdmin\"]",
+                            "applyPolicies": "[\"Any Admin Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Action 2 on Main Page Resource Permission",
+                        "description": "A policy that defines access to action 2 on the main page",
+                        "type": "scope",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                            "scopes": "[\"urn:test-app-authz:page:main:actionForUser\"]",
+                            "applyPolicies": "[\"Any User Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Action 3 on Main Page Resource Permission",
+                        "description": "A policy that defines access to action 3 on the main page",
+                        "type": "scope",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                            "scopes": "[\"urn:test-app-authz:page:main:actionForPremiumUser\"]",
+                            "applyPolicies": "[\"Only Premium User Policy\"]"
+                        }
+                    }
+                ]
+            },
+            "redirectUris": [
+                "/test-app-authz/*"
+            ],
+            "secret": "secret"
+        }
+    ],
+    "oauthClients" : [
+        {
+            "name" : "oauthclient",
+            "enabled": true,
+            "secret": "clientpassword"
+        }
+    ],
+    "clientTemplates" : [
+        {
+            "name" : "foo scope",
+            "description" : "foo scope-desc",
+            "protocol" : "openid-connect",
+            "protocolMappers" : [
+                {
+                    "name" : "gss delegation credential",
+                    "protocol" : "openid-connect",
+                    "protocolMapper" : "oidc-usersessionmodel-note-mapper",
+                    "consentRequired" : true,
+                    "consentText" : "gss delegation credential",
+                    "config" : {
+                        "user.session.note" : "gss_delegation_credential",
+                        "access.token.claim" : "true",
+                        "claim.name" : "gss_delegation_credential",
+                        "Claim JSON Type" : "String"
+                    }
+                }
+            ]
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "admin"
+            },
+            {
+                "name": "user"
+            },
+            {
+                "name": "customer-user-premium",
+                "description": "Have User Premium privileges"
+            }
+        ],
+        "application" : {
+            "Application" : [
+                {
+                    "name": "app-admin"
+                },
+                {
+                    "name": "app-user"
+                }
+            ],
+            "OtherApp" : [
+                {
+                    "name": "otherapp-admin"
+                },
+                {
+                    "name": "otherapp-user"
+                }
+            ]
+        }
+    },
+    "scopeMappings": [
+        {
+            "client": "oauthclient",
+            "roles": ["admin"]
+        },
+        {
+            "clientTemplate": "foo scope",
+            "roles": ["admin"]
+        }
+    ],
+    "applicationScopeMappings": {
+        "Application": [
+            {
+                "client": "oauthclient",
+                "roles": ["app-user"]
+            },
+            {
+                "clientTemplate": "foo scope",
+                "roles": ["app-user", "app-admin" ]
+            }
+        ]
+
+    },
+    "authenticationFlows": [
+        {
+            "id": "aed29d4f-aba7-4992-a600-18c0a28c1fc3",
+            "alias": "Handle Existing Account",
+            "description": "Handle what to do if there is existing account with same email/username like authenticated identity provider",
+            "providerId": "basic-flow",
+            "topLevel": false,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "idp-confirm-link",
+                    "requirement": "REQUIRED",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "idp-email-verification",
+                    "requirement": "ALTERNATIVE",
+                    "priority": 20,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "requirement": "ALTERNATIVE",
+                    "priority": 30,
+                    "flowAlias": "Verify Existing Account by Re-authentication",
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": true
+                }
+            ]
+        },
+        {
+            "id": "d8b8f564-6d56-4171-ba36-a8922c6eae49",
+            "alias": "Verify Existing Account by Re-authentication",
+            "description": "Reauthentication of existing account",
+            "providerId": "basic-flow",
+            "topLevel": false,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "idp-username-password-form",
+                    "requirement": "REQUIRED",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "auth-otp-form",
+                    "requirement": "OPTIONAL",
+                    "priority": 20,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                }
+            ]
+        },
+        {
+            "id": "73dcb1e4-2c7c-4494-825d-f2677cbc114c",
+            "alias": "browser",
+            "description": "browser based authentication",
+            "providerId": "basic-flow",
+            "topLevel": true,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "auth-cookie",
+                    "requirement": "ALTERNATIVE",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "auth-spnego",
+                    "requirement": "DISABLED",
+                    "priority": 20,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "identity-provider-redirector",
+                    "requirement": "ALTERNATIVE",
+                    "priority": 25,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "requirement": "ALTERNATIVE",
+                    "priority": 30,
+                    "flowAlias": "forms",
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": true
+                }
+            ]
+        },
+        {
+            "id": "a0a80dc3-d473-468e-b6e8-f1d306c21360",
+            "alias": "clients",
+            "description": "Base authentication for clients",
+            "providerId": "client-flow",
+            "topLevel": true,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "client-secret",
+                    "requirement": "ALTERNATIVE",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "client-jwt",
+                    "requirement": "ALTERNATIVE",
+                    "priority": 20,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "client-secret-jwt",
+                    "requirement": "ALTERNATIVE",
+                    "priority": 30,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                }
+            ]
+        },
+        {
+            "id": "91882f46-54be-4738-847a-32e849d53240",
+            "alias": "direct grant",
+            "description": "OpenID Connect Resource Owner Grant",
+            "providerId": "basic-flow",
+            "topLevel": true,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "direct-grant-validate-username",
+                    "requirement": "REQUIRED",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "direct-grant-validate-password",
+                    "requirement": "REQUIRED",
+                    "priority": 20,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "direct-grant-validate-otp",
+                    "requirement": "OPTIONAL",
+                    "priority": 30,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                }
+            ]
+        },
+        {
+            "id": "b727a208-587c-4f27-8f48-ba2a0d4effdd",
+            "alias": "docker auth",
+            "description": "Used by Docker clients to authenticate against the IDP",
+            "providerId": "basic-flow",
+            "topLevel": true,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "docker-http-basic-authenticator",
+                    "requirement": "REQUIRED",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                }
+            ]
+        },
+        {
+            "id": "5a6ac775-4000-4ccf-9271-6cb599297d4b",
+            "alias": "first broker login",
+            "description": "Actions taken after first broker login with identity provider account, which is not yet linked to any Keycloak account",
+            "providerId": "basic-flow",
+            "topLevel": true,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticatorConfig": "review profile config",
+                    "authenticator": "idp-review-profile",
+                    "requirement": "REQUIRED",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticatorConfig": "create unique user config",
+                    "authenticator": "idp-create-user-if-unique",
+                    "requirement": "ALTERNATIVE",
+                    "priority": 20,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "requirement": "ALTERNATIVE",
+                    "priority": 30,
+                    "flowAlias": "Handle Existing Account",
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": true
+                }
+            ]
+        },
+        {
+            "id": "1a84808d-e0c7-4759-aee8-cf9229542429",
+            "alias": "forms",
+            "description": "Username, password, otp and other auth forms.",
+            "providerId": "basic-flow",
+            "topLevel": false,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "auth-username-password-form",
+                    "requirement": "REQUIRED",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "auth-otp-form",
+                    "requirement": "OPTIONAL",
+                    "priority": 20,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                }
+            ]
+        },
+        {
+            "id": "717f990a-1c46-464c-9051-5e0ae39d63db",
+            "alias": "registration",
+            "description": "registration flow",
+            "providerId": "basic-flow",
+            "topLevel": true,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "registration-page-form",
+                    "requirement": "REQUIRED",
+                    "priority": 10,
+                    "flowAlias": "registration form",
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": true
+                }
+            ]
+        },
+        {
+            "id": "166fca50-7b69-4cd4-80eb-a569e87ff8a2",
+            "alias": "registration form",
+            "description": "registration form",
+            "providerId": "form-flow",
+            "topLevel": false,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "registration-user-creation",
+                    "requirement": "REQUIRED",
+                    "priority": 20,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "registration-profile-action",
+                    "requirement": "REQUIRED",
+                    "priority": 40,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "registration-password-action",
+                    "requirement": "REQUIRED",
+                    "priority": 50,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "registration-recaptcha-action",
+                    "requirement": "DISABLED",
+                    "priority": 60,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                }
+            ]
+        },
+        {
+            "id": "a516cb39-8f6d-4d08-ac82-236377be6500",
+            "alias": "reset credentials",
+            "description": "Reset credentials for a user if they forgot their password or something",
+            "providerId": "basic-flow",
+            "topLevel": true,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "reset-credentials-choose-user",
+                    "requirement": "REQUIRED",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "reset-credential-email",
+                    "requirement": "REQUIRED",
+                    "priority": 20,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "reset-password",
+                    "requirement": "REQUIRED",
+                    "priority": 30,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                },
+                {
+                    "authenticator": "reset-otp",
+                    "requirement": "OPTIONAL",
+                    "priority": 40,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                }
+            ]
+        },
+        {
+            "id": "8b9ae730-11e0-451f-b693-e32f09415e42",
+            "alias": "saml ecp",
+            "description": "SAML ECP Profile Authentication Flow",
+            "providerId": "basic-flow",
+            "topLevel": true,
+            "builtIn": true,
+            "authenticationExecutions": [
+                {
+                    "authenticator": "http-basic-authenticator",
+                    "requirement": "REQUIRED",
+                    "priority": 10,
+                    "userSetupAllowed": false,
+                    "autheticatorFlow": false
+                }
+            ]
+        }
+    ],
+    "authenticatorConfig": [
+        {
+            "id": "a6d38dcd-7b53-4991-b4eb-c866ce3c5e70",
+            "alias": "create unique user config",
+            "config": {
+                "require.password.update.after.registration": "false"
+            }
+        },
+        {
+            "id": "7408f503-b929-422f-b52b-277cebda44ba",
+            "alias": "review profile config",
+            "config": {
+                "update.profile.on.first.login": "missing"
+            }
+        }
+    ]
+}

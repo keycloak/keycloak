@@ -1,0 +1,19 @@
+{
+  "realm": "demo",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required": "external",
+  "resource": "secure-portal-with-rewrite-redirect-uri",
+  "credentials": {
+    "jwt": {
+      "client-key-password": "password",
+      "client-keystore-file": "classpath:keystore.jks",
+      "client-keystore-password": "password",
+      "client-key-alias": "secure-portal",
+      "token-timeout": 10,
+      "client-keystore-type": "jks"
+    }
+  },
+  "redirect-rewrite-rules": {
+    "^/(.*)$" : "/rewritten"
+  }
+}

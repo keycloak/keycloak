@@ -1,0 +1,65 @@
+embed-server --server-config=${server.config:standalone.xml}
+
+if (outcome != success) of /extension=org.keycloak.keycloak-adapter-subsystem:read-resource
+    /extension=org.keycloak.keycloak-adapter-subsystem/:add(module=org.keycloak.keycloak-adapter-subsystem)
+else
+    echo Keycloak OpenID Connect Extension already installed
+end-if
+
+if (outcome != success) of /subsystem=keycloak:read-resource
+    /subsystem=keycloak:add
+else
+    echo Keycloak OpenID Connect Subsystem already installed
+end-if
+
+if (outcome != success) of /subsystem=elytron/custom-realm=KeycloakOIDCRealm:read-resource
+    /subsystem=elytron/custom-realm=KeycloakOIDCRealm:add(class-name=org.keycloak.adapters.elytron.KeycloakSecurityRealm, module=org.keycloak.keycloak-wildfly-elytron-oidc-adapter)
+else
+    echo Keycloak OpenID Connect Realm already installed
+end-if
+
+if (outcome != success) of /subsystem=elytron/security-domain=KeycloakDomain:read-resource
+    /subsystem=elytron/security-domain=KeycloakDomain:add(default-realm=KeycloakOIDCRealm,permission-mapper=default-permission-mapper,security-event-listener=local-audit,realms=[{realm=KeycloakOIDCRealm}])
+else
+    echo Keycloak Security Domain already installed. Trying to install Keycloak OpenID Connect Realm.
+    /subsystem=elytron/security-domain=KeycloakDomain:list-add(name=realms, value={realm=KeycloakOIDCRealm})
+end-if
+
+if (outcome != success) of /subsystem=elytron/constant-realm-mapper=keycloak-oidc-realm-mapper:read-resource
+    /subsystem=elytron/constant-realm-mapper=keycloak-oidc-realm-mapper:add(realm-name=KeycloakOIDCRealm)
+else
+    echo Keycloak OpenID Connect Realm Mapper already installed
+end-if
+
+if (outcome != success) of /subsystem=elytron/service-loader-http-server-mechanism-factory=keycloak-oidc-http-server-mechanism-factory:read-resource
+    /subsystem=elytron/service-loader-http-server-mechanism-factory=keycloak-oidc-http-server-mechanism-factory:add(module=org.keycloak.keycloak-wildfly-elytron-oidc-adapter)
+else
+    echo Keycloak OpenID Connect HTTP Mechanism already installed
+end-if
+
+if (outcome != success) of /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:read-resource
+    /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:add(http-server-mechanism-factories=[keycloak-oidc-http-server-mechanism-factory, global])
+else
+    echo Keycloak HTTP Mechanism Factory already installed. Trying to install Keycloak OpenID Connect HTTP Mechanism Factory.
+    /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:list-add(name=http-server-mechanism-factories, value=keycloak-oidc-http-server-mechanism-factory)
+end-if
+
+
+if (outcome != success) of /subsystem=elytron/http-authentication-factory=keycloak-http-authentication:read-resource
+    /subsystem=elytron/http-authentication-factory=keycloak-http-authentication:add(security-domain=KeycloakDomain,http-server-mechanism-factory=keycloak-http-server-mechanism-factory,mechanism-configurations=[{mechanism-name=KEYCLOAK,mechanism-realm-configurations=[{realm-name=KeycloakOIDCRealm,realm-mapper=keycloak-oidc-realm-mapper}]}])
+else
+    echo Keycloak HTTP Authentication Factory already installed. Trying to install Keycloak OpenID Connect Mechanism Configuration
+    /subsystem=elytron/http-authentication-factory=keycloak-http-authentication:list-add(name=mechanism-configurations, value={mechanism-name=KEYCLOAK,mechanism-realm-configurations=[{realm-name=KeycloakOIDCRealm,realm-mapper=keycloak-oidc-realm-mapper}]})
+end-if
+
+if (outcome != success) of /subsystem=undertow/application-security-domain=other:read-resource
+    /subsystem=undertow/application-security-domain=other:add(http-authentication-factory=keycloak-http-authentication)
+else
+    echo Undertow already configured with Keycloak
+end-if
+
+if (outcome != success) of /subsystem=ejb3/application-security-domain=other:read-resource
+    /subsystem=ejb3/application-security-domain=other:add(security-domain=KeycloakDomain)
+else
+    echo EJB already configured with Keycloak
+end-if

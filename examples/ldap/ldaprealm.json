@@ -1,0 +1,290 @@
+{
+  "id": "ldap-demo",
+  "realm": "ldap-demo",
+  "enabled": true,
+  "sslRequired": "external",
+  "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+  "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+  "requiredCredentials": [ "password" ],
+  "clients": [
+    {
+      "clientId": "finance",
+      "enabled": true,
+      "bearerOnly": true
+    },
+    {
+      "clientId": "ldap-app",
+      "enabled": true,
+      "baseUrl": "/ldap-portal",
+      "redirectUris": [
+        "/ldap-portal/*"
+      ],
+      "adminUrl": "/ldap-portal",
+      "secret": "password",
+      "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "protocolMapper" : "oidc-usermodel-property-mapper",
+          "protocol" : "openid-connect",
+          "name" : "username",
+          "config" : {
+            "Claim JSON Type" : "String",
+            "user.attribute" : "username",
+            "claim.name" : "preferred_username",
+            "id.token.claim" : "true",
+            "access.token.claim" : "true"
+          }
+        },
+        {
+          "protocolMapper" : "oidc-full-name-mapper",
+          "protocol" : "openid-connect",
+          "name" : "full name",
+          "config" : {
+            "id.token.claim" : "true",
+            "access.token.claim" : "true"
+          }
+        },
+        {
+          "protocolMapper" : "oidc-usermodel-property-mapper",
+          "protocol" : "openid-connect",
+          "name" : "given name",
+          "config" : {
+            "Claim JSON Type" : "String",
+            "user.attribute" : "firstName",
+            "claim.name" : "given_name",
+            "id.token.claim" : "true",
+            "access.token.claim" : "true"
+          }
+        },
+        {
+          "protocolMapper" : "oidc-usermodel-property-mapper",
+          "protocol" : "openid-connect",
+          "name" : "family name",
+          "config" : {
+            "Claim JSON Type" : "String",
+            "user.attribute" : "lastName",
+            "claim.name" : "family_name",
+            "id.token.claim" : "true",
+            "access.token.claim" : "true"
+          }
+        },
+        {
+          "protocolMapper" : "oidc-usermodel-property-mapper",
+          "protocol" : "openid-connect",
+          "name" : "email",
+          "config" : {
+            "Claim JSON Type" : "String",
+            "user.attribute" : "email",
+            "claim.name" : "email",
+            "id.token.claim" : "true",
+            "access.token.claim" : "true"
+          }
+        },
+        {
+          "protocolMapper" : "oidc-usermodel-attribute-mapper",
+          "protocol" : "openid-connect",
+          "name" : "postal code",
+          "config" : {
+            "Claim JSON Type" : "String",
+            "user.attribute" : "postal_code",
+            "claim.name" : "postal_code",
+            "multivalued": "true",
+            "id.token.claim" : "true",
+            "access.token.claim" : "true"
+          }
+        },
+        {
+          "protocolMapper" : "oidc-usermodel-attribute-mapper",
+          "protocol" : "openid-connect",
+          "name" : "street",
+          "config" : {
+            "Claim JSON Type" : "String",
+            "user.attribute" : "street",
+            "claim.name" : "street",
+            "multivalued": "false",
+            "id.token.claim" : "true",
+            "access.token.claim" : "true"
+          }
+        },
+        {
+          "protocolMapper" : "oidc-usermodel-attribute-mapper",
+          "protocol" : "openid-connect",
+          "name" : "picture",
+          "config" : {
+            "Claim JSON Type" : "String",
+            "user.attribute" : "picture",
+            "claim.name" : "picture",
+            "multivalued": "false",
+            "id.token.claim" : "true",
+            "access.token.claim" : "true"
+          }
+        }
+      ]
+    }
+  ],
+  "userFederationProviders": [
+    {
+      "displayName": "ldap-apacheds",
+      "providerName": "ldap",
+      "priority": 1,
+      "fullSyncPeriod": -1,
+      "changedSyncPeriod": -1,
+      "config": {
+        "pagination" : "true",
+        "debug" : "false",
+        "searchScope" : "1",
+        "connectionPooling" : "true",
+        "usersDn" : "ou=People,dc=keycloak,dc=org",
+        "userObjectClasses" : "inetOrgPerson, organizationalPerson",
+        "usernameLDAPAttribute" : "uid",
+        "bindDn" : "uid=admin,ou=system",
+        "bindCredential" : "secret",
+        "rdnLDAPAttribute" : "uid",
+        "vendor" : "other",
+        "editMode" : "WRITABLE",
+        "uuidLDAPAttribute" : "entryUUID",
+        "connectionUrl" : "ldap://localhost:10389",
+        "syncRegistrations" : "true",
+        "authType" : "simple"
+      }
+    }
+  ],
+  "userFederationMappers" : [
+    {
+      "name" : "username",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "uid",
+        "user.model.attribute" : "username",
+        "is.mandatory.in.ldap" : "true",
+        "read.only" : "false",
+        "always.read.value.from.ldap" : "false"
+      }
+    },
+    {
+      "name" : "first name",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "cn",
+        "user.model.attribute" : "firstName",
+        "is.mandatory.in.ldap" : "true",
+        "read.only" : "false",
+        "always.read.value.from.ldap" : "false"
+      }
+    },
+    {
+      "name" : "last name",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "sn",
+        "user.model.attribute" : "lastName",
+        "is.mandatory.in.ldap" : "true",
+        "read.only" : "false",
+        "always.read.value.from.ldap" : "false"
+      }
+    },
+    {
+      "name" : "email",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "mail",
+        "user.model.attribute" : "email",
+        "is.mandatory.in.ldap" : "false",
+        "read.only" : "false",
+        "always.read.value.from.ldap" : "false"
+      }
+    },
+    {
+      "name" : "creation date",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "createTimestamp",
+        "user.model.attribute" : "createTimestamp",
+        "is.mandatory.in.ldap" : "false",
+        "read.only" : "true",
+        "always.read.value.from.ldap" : "false"
+      }
+    },
+    {
+      "name" : "modify date",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "modifyTimestamp",
+        "user.model.attribute" : "modifyTimestamp",
+        "is.mandatory.in.ldap" : "false",
+        "read.only" : "true",
+        "always.read.value.from.ldap" : "false"
+      }
+    },
+    {
+      "name" : "postal code",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "postalCode",
+        "user.model.attribute" : "postal_code",
+        "is.mandatory.in.ldap" : "false",
+        "read.only" : "false",
+        "always.read.value.from.ldap" : "false"
+      }
+    },
+    {
+      "name" : "street",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "street",
+        "user.model.attribute" : "street",
+        "is.mandatory.in.ldap" : "false",
+        "read.only" : "false",
+        "always.read.value.from.ldap" : "false"
+      }
+    },
+    {
+      "name" : "picture",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "jpegPhoto",
+        "user.model.attribute" : "picture",
+        "is.mandatory.in.ldap" : "false",
+        "read.only" : "false",
+        "always.read.value.from.ldap" : "true",
+        "is.binary.attribute" : "true"
+      }
+    },
+    {
+      "name" : "realm roles",
+      "federationMapperType" : "role-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "roles.dn" : "ou=RealmRoles,dc=keycloak,dc=org",
+        "membership.ldap.attribute" : "member",
+        "role.name.ldap.attribute" : "cn",
+        "role.object.classes" : "groupOfNames",
+        "mode" : "LDAP_ONLY",
+        "use.realm.roles.mapping" : "true"
+      }
+    },
+    {
+      "name" : "finance roles",
+      "federationMapperType" : "role-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "roles.dn" : "ou=FinanceRoles,dc=keycloak,dc=org",
+        "membership.ldap.attribute" : "member",
+        "role.name.ldap.attribute" : "cn",
+        "role.object.classes" : "groupOfNames",
+        "mode" : "LDAP_ONLY",
+        "use.realm.roles.mapping" : "false",
+        "client.id" : "finance"
+      }
+    }
+  ]
+}

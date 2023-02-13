@@ -1,0 +1,194 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>999-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-themes</artifactId>
+    <name>Keycloak Themes</name>
+    <description />
+    <packaging>jar</packaging>
+
+    <properties>
+        <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
+        <dir.account2>src/main/resources/theme/keycloak.v2/account/src</dir.account2>
+        <args.npm.install>ci --no-optional --ignore-scripts</args.npm.install>
+    </properties>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>**/node_modules/**/node_modules/**</exclude>
+                    <exclude>**/minimist/**</exclude>
+                    <exclude>**/mkdirp/**</exclude>
+                    <exclude>**/package.json</exclude>
+                    <exclude>**/package-lock.json</exclude>
+                    <exclude>**/component.json</exclude>
+                    <exclude>**/composer.json</exclude>
+                    <exclude>**/npm-shrinkwrap.json</exclude>
+                    <exclude>**/select2.jquery.json</exclude>
+                    <exclude>**/*.markdown</exclude>
+                    <exclude>**/*.swf</exclude>
+                    <exclude>**/*.sh</exclude>
+                    <exclude>**/.bin/**</exclude>
+                    <exclude>**/bin/**</exclude>
+                    <exclude>**/build/**</exclude>
+                    <exclude>**/docs/**</exclude>
+                    <exclude>**/demo/**</exclude>
+                    <exclude>**/devtools/**</exclude>
+                    <exclude>**/example/**</exclude>
+                    <exclude>**/examples/**</exclude>
+                    <exclude>**/grunt/**</exclude>
+                    <exclude>**/less/**</exclude>
+                    <exclude>**/sass/**</exclude>
+                    <exclude>**/scss/**</exclude>
+                    <exclude>**/jquery/src/**</exclude>
+                    <exclude>**/angular-treeview/src/**</exclude>
+                    <exclude>**/test/**</exclude>
+                    <exclude>**/tests/**</exclude>
+                    <exclude>**/_config.yml</exclude>
+                    <exclude>**/api.md</exclude>
+                    <exclude>**/AUTHORS.txt</exclude>
+                    <exclude>**/CHANGELOG.md</exclude>
+                    <exclude>**/CONTRIBUTING.md</exclude>
+                    <exclude>**/HELP-US-OUT.txt</exclude>
+                    <exclude>**/README.md</exclude>
+                    <exclude>**/Gruntfile.js</exclude>
+                    <exclude>**/Gemfile*</exclude>
+                    <exclude>**/.*</exclude>
+
+                    <exclude>**/keycloak.v2/account/src/**</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources-community</directory>
+            </resource>
+        </resources>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>account2</id>
+            <activation>
+                <property>
+                    <name>!skipAccount2</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>${dir.account2}/web_modules</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Download NPM tools -->
+                            <execution>
+                                <id>setup-node</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                            </execution>
+                            <!-- Compile stuff -->
+                            <execution>
+                                <id>compile-account2</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <workingDirectory>${dir.account2}</workingDirectory>
+                                    <arguments>run build --scripts-prepend-node-path</arguments>
+                                </configuration>
+                            </execution>
+                            <!-- Download NPM packages -->
+                            <execution>
+                                <id>npm-install-account2</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${dir.account2}</workingDirectory>
+                                    <arguments>${args.npm.install}</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <nodeVersion>${node.version}</nodeVersion>
+                            <installDirectory>../</installDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>common</id>
+            <activation>
+                <property>
+                    <name>!skipCommon</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>${dir.common}/web_modules</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Download NPM tools -->
+                            <execution>
+                                <id>setup-node</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                            </execution>
+                            <!-- Download NPM packages -->
+                            <execution>
+                                <id>npm-install-common</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${dir.common}</workingDirectory>
+                                    <arguments>${args.npm.install}</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <nodeVersion>${node.version}</nodeVersion>
+                            <installDirectory>../</installDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

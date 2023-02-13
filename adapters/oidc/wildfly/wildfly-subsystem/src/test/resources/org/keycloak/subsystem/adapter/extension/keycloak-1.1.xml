@@ -1,0 +1,99 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<subsystem xmlns="urn:jboss:domain:keycloak:1.1">
+    <realm name="master">
+        <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4siLKUew0WYxdtq6/rwk4Uj/4amGFFnE/yzIxQVU0PUqz3QBRVkUWpDj0K6ZnS5nzJV/y6DHLEy7hjZTdRDphyF1sq09aDOYnVpzu8o2sIlMM8q5RnUyEfIyUZqwo8pSZDJ90fS0s+IDUJNCSIrAKO3w1lqZDHL6E/YFHXyzkvQIDAQAB</realm-public-key>
+        <auth-server-url>http://localhost:8080/auth</auth-server-url>
+        <truststore>truststore.jks</truststore>
+        <truststore-password>secret</truststore-password>
+        <ssl-required>EXTERNAL</ssl-required>
+        <confidential-port>443</confidential-port>
+        <allow-any-hostname>false</allow-any-hostname>
+        <disable-trust-manager>true</disable-trust-manager>
+        <connection-pool-size>20</connection-pool-size>
+        <enable-cors>true</enable-cors>
+        <client-keystore>keys.jks</client-keystore>
+        <client-keystore-password>secret</client-keystore-password>
+        <client-key-password>secret</client-key-password>
+        <cors-max-age>600</cors-max-age>
+        <cors-allowed-headers>X-Custom</cors-allowed-headers>
+        <cors-allowed-methods>PUT,POST,DELETE,GET</cors-allowed-methods>
+        <expose-token>false</expose-token>
+        <auth-server-url-for-backend-requests>http://127.0.0.2:8080/auth</auth-server-url-for-backend-requests>
+        <always-refresh-token>false</always-refresh-token>
+        <register-node-at-startup>true</register-node-at-startup>
+        <register-node-period>60</register-node-period>
+        <token-store>session</token-store>
+        <principal-attribute>sub</principal-attribute>
+        <proxy-url>http://localhost:9000</proxy-url>
+    </realm>
+    <realm name="jboss-infra">
+        <realm-public-key>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqKoq+a9MgXepmsPJDmo45qswuChW9pWjanX68oIBuI4hGvhQxFHryCow230A+sr7tFdMQMt8f1l/ysmV/fYAuW29WaoY4kI4Ou1yYPuwywKSsxT6PooTs83hKyZ1h4LZMj5DkLGDDDyVRHob2WmPaYg9RGVRw3iGGsD/p+Yb+L/gnBYQnZZ7lYqmN7h36p5CkzzlgXQA1Ha8sQxL+rJNH8+sZm0vBrKsoII3Of7TqHGsm1RwFV3XCuGJ7S61AbjJMXL5DQgJl9Z5scvxGAyoRLKC294UgMnQdzyBTMPw2GybxkRKmiK2KjQKmcopmrJp/Bt6fBR6ZkGSs9qUlxGHgwIDAQAB</realm-public-key>
+        <auth-server-url>http://localhost:8180/auth</auth-server-url>
+    </realm>
+    <secure-deployment name="web-console">
+        <realm>master</realm>
+        <resource>web-console</resource>
+        <use-resource-role-mappings>true</use-resource-role-mappings>
+        <turn-off-change-session-id-on-login>false</turn-off-change-session-id-on-login>
+        <token-minimum-time-to-live>10</token-minimum-time-to-live>
+        <min-time-between-jwks-requests>20</min-time-between-jwks-requests>
+        <public-key-cache-ttl>3600</public-key-cache-ttl>
+        <realm-public-key>
+            MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4siLKUew0WYxdtq6/rwk4Uj/4amGFFnE/yzIxQVU0PUqz3QBRVkUWpDj0K6ZnS5nzJV/y6DHLEy7hjZTdRDphyF1sq09aDOYnVpzu8o2sIlMM8q5RnUyEfIyUZqwo8pSZDJ90fS0s+IDUJNCSIrAKO3w1lqZDHL6E/YFHXyzkvQIDAQAB
+        </realm-public-key>
+        <auth-server-url>http://localhost:8080/auth</auth-server-url>
+        <ssl-required>EXTERNAL</ssl-required>
+        <confidential-port>443</confidential-port>
+        <proxy-url>http://localhost:9000</proxy-url>
+        <verify-token-audience>true</verify-token-audience>
+        <credential name="secret">0aa31d98-e0aa-404c-b6e0-e771dba1e798</credential>
+        <redirect-rewrite-rule name="^/wsmaster/api/(.*)$">api/$1/</redirect-rewrite-rule>
+    </secure-deployment>
+    <secure-deployment name="http-endpoint">
+        <realm>master</realm>
+        <resource>http-endpoint</resource>
+        <use-resource-role-mappings>true</use-resource-role-mappings>
+        <adapter-state-cookie-path>/</adapter-state-cookie-path>
+        <realm-public-key>
+            MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4siLKUew0WYxdtq6/rwk4Uj/4amGFFnE/yzIxQVU0PUqz3QBRVkUWpDj0K6ZnS5nzJV/y6DHLEy7hjZTdRDphyF1sq09aDOYnVpzu8o2sIlMM8q5RnUyEfIyUZqwo8pSZDJ90fS0s+IDUJNCSIrAKO3w1lqZDHL6E/YFHXyzkvQIDAQAB
+        </realm-public-key>
+        <auth-server-url>http://localhost:8080/auth</auth-server-url>
+        <ssl-required>EXTERNAL</ssl-required>
+        <credential name="jwt">
+            <client-keystore-file>/tmp/keystore.jks</client-keystore-file>
+        </credential>
+        <redirect-rewrite-rule name="^/wsmaster/api/(.*)$">/api/$1/</redirect-rewrite-rule>
+    </secure-deployment>
+    <secure-deployment name="wildfly-management">
+        <realm>jboss-infra</realm>
+        <resource>wildfly-management</resource>
+        <bearer-only>true</bearer-only>
+        <ssl-required>EXTERNAL</ssl-required>
+        <principal-attribute>preferred_username</principal-attribute>
+    </secure-deployment>
+    <secure-server name="wildfly-console">
+        <realm>jboss-infra</realm>
+        <resource>wildfly-console</resource>
+        <public-client>true</public-client>
+        <adapter-state-cookie-path>/</adapter-state-cookie-path>
+        <ssl-required>EXTERNAL</ssl-required>
+        <confidential-port>443</confidential-port>
+        <proxy-url>http://localhost:9000</proxy-url>
+    </secure-server>
+</subsystem>

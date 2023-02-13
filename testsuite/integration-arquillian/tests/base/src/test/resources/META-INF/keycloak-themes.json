@@ -1,0 +1,17 @@
+{
+  "themes": [
+    {
+      "name": "address",
+      "types": [
+        "account",
+        "login"
+      ]
+    },
+    {
+      "name": "environment-agnostic",
+      "types": [
+        "login"
+      ]
+    }
+  ]
+}

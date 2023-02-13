@@ -1,0 +1,9 @@
+{
+  "realm": "demo",
+  "resource": "token-refresh",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required" : "external",
+  "credentials": {
+    "secret": "password"
+  }
+}

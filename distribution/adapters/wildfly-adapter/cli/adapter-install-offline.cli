@@ -1,0 +1,5 @@
+embed-server --server-config=${server.config:standalone.xml}
+/subsystem=security/security-domain=keycloak/:add
+/subsystem=security/security-domain=keycloak/authentication=classic/:add(login-modules=[{ "code" => "org.keycloak.adapters.jboss.KeycloakLoginModule","flag" => "required"}])
+/extension=org.keycloak.keycloak-adapter-subsystem/:add(module=org.keycloak.keycloak-adapter-subsystem)
+/subsystem=keycloak:add

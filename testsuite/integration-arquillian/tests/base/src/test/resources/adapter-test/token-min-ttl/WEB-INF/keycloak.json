@@ -1,0 +1,11 @@
+{
+  "realm": "demo",
+  "resource": "token-min-ttl",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required" : "external",
+  "credentials": {
+    "secret": "password"
+  },
+  "token-minimum-time-to-live": 120,
+  "min-time-between-jwks-requests": 120
+}

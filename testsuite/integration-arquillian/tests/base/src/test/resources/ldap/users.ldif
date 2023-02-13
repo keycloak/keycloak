@@ -1,0 +1,25 @@
+dn: dc=keycloak,dc=org
+objectclass: dcObject
+objectclass: organization
+o: Keycloak
+dc: Keycloak
+
+dn: ou=People,dc=keycloak,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: People
+
+dn: ou=RealmRoles,dc=keycloak,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: RealmRoles
+
+dn: ou=FinanceRoles,dc=keycloak,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: FinanceRoles
+
+dn: ou=Groups,dc=keycloak,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: Groups

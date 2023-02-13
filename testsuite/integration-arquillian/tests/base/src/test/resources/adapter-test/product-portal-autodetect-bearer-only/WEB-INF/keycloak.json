@@ -1,0 +1,10 @@
+{
+  "realm" : "demo",
+  "resource" : "product-portal-autodetect-bearer-only",
+  "auth-server-url" : "http://localhost:8180/auth",
+  "ssl-required" : "external",
+  "credentials" : {
+      "secret": "password"
+   },
+   "autodetect-bearer-only" : true
+}

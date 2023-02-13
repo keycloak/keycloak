@@ -1,0 +1,182 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+body {
+    background-color: #040507;
+    background-image: url('../img/bkgrnd.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+
+    color: #fff;
+    font-family: sans-serif;
+    text-shadow: 0px 0px 10px #000;
+}
+
+a {
+    color: #fff;
+}
+
+div#kc-content {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    width: 550px;
+    margin-left: -225px;
+}
+
+div#kc-form {
+    float: left;
+    width: 350px;
+}
+
+div#kc-form label {
+    display: block;
+    font-size: 16px;
+}
+
+div#info-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    margin-top: 40px;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    width: 100%;
+}
+
+div#info-area p {
+    margin-right: 30px;
+    display: inline;
+    text-shadow: none;
+}
+
+input[type=text], input[type=password] {
+    color: #ddd;
+    font-size: 18px;
+    margin-bottom: 20px;
+    background-color: rgba(3,70,114,0.15);
+    border: 0px solid rgba(0,0,0,0.2);
+    box-shadow:inset 0 0 2px 2px rgba(0,0,0,0.15);
+    padding: 10px;
+    width: 296px;
+}
+
+input[type=text]:hover, input[type=password]:hover {
+    background-color: rgba(3,70,114,0.4);
+}
+
+input[type=submit] {
+    border: none;
+
+    background: -webkit-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+    background: -moz-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+    background: -ms-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+    background: -o-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+
+    box-shadow: 0px 0px 6px rgba(0,0,0,0.5);
+
+    color: rgba(0,0,0,0.6);
+
+    font-size: 14px;
+    font-weight: bold;
+
+    padding: 10px;
+    margin-top: 20px;
+    margin-right: 10px;
+    width: 150px;
+}
+
+input[type=submit]:hover {
+    background-color: rgba(255,255,255,0.8);
+}
+
+div#kc-form-options div {
+    display: inline-block;
+    margin-right: 20px;
+    font-size: 12px;
+}
+
+div#kc-form-options div label {
+    font-size: 12px;
+}
+
+div#kc-feedback {
+    box-shadow: 0px 0px 6px rgba(0,0,0,0.5);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+}
+
+div#kc-feedback-wrapper {
+    padding: 1em;
+}
+
+div.feedback-success {
+    background-color: rgba(155,155,255,0.1);
+}
+
+div.feedback-warning {
+    background-color: rgba(255,175,0,0.1);
+}
+
+div.feedback-error {
+    background-color: rgba(255,0,0,0.1);
+}
+
+div#kc-header {
+    display: none;
+}
+
+div#kc-registration {
+    margin-bottom: 20px;
+}
+
+#input-error {
+    color: orangered;
+    position: relative;
+    top: -15px;
+}
+
+#kc-social-providers {
+    background-color: rgba(3, 70, 114, 0.15);
+    border: 0 solid rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 2px 2px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    width: 276px;
+}
+
+#kc-social-providers ul {
+    margin: 0;
+    padding: 0;
+}
+
+#kc-social-providers a {
+    display: block;
+    text-decoration: none;
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#kc-social-providers a:hover{
+    background-color: rgba(3,70,114,0.4);
+}

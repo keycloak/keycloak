@@ -1,0 +1,15 @@
+= Keycloak Admin REST API
+
+== Overview
+This is a REST API reference for the Keycloak Admin REST API.
+
+=== Version information
+Version: 1
+
+=== URI scheme
+
+```
+{base url}/admin/realms
+```
+
+For example `http://localhost:8080/admin/realms`

@@ -1,0 +1,3 @@
+org.keycloak.authentication.otp.GoogleAuthenticatorProvider
+org.keycloak.authentication.otp.FreeOTPProvider
+org.keycloak.authentication.otp.MicrosoftAuthenticatorOTPProvider

@@ -1,0 +1,17 @@
+{
+  "kind": "ServiceAccount",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "proxy-with-redirect-uri",
+    "namespace": "default",
+    "selfLink": "/api/v1/namespaces/default/serviceaccounts/proxy",
+    "uid": "3befc25c-d14a-11e8-8666-5254001e7d16",
+    "resourceVersion": "205225",
+    "creationTimestamp": "2018-10-16T13: 48:59Z",
+    "annotations": {
+      "serviceaccounts.openshift.io/oauth-redirecturi.first": "http://localhost:8180/auth/realms/master/app/auth",
+      "serviceaccounts.openshift.io/oauth-redirecturi.second": "http://localhost:8180/auth/realms/master/app/auth/second",
+      "serviceaccounts.openshift.io/oauth-redirecturi.third": "http://localhost:8180/auth/realms/master/app/auth/third"
+    }
+  }
+}

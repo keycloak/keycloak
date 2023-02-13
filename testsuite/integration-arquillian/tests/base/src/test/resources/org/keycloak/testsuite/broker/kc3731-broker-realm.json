@@ -1,0 +1,88 @@
+{
+  "id" : "${name.realm.consumer}",
+  "realm" : "${name.realm.consumer}",
+  "enabled" : true,
+  "sslRequired" : "external",
+  "roles" : {
+    "client" : {
+      "${url.realm.consumer}/app/auth" : [ {
+        "name" : "manager"
+      } ]
+    }
+  },
+  "clients" : [ {
+    "clientId": "${url.realm.consumer}/app/auth",
+    "enabled": true,
+    "protocol": "saml",
+    "fullScopeAllowed": true,
+    "redirectUris": [
+      "${url.realm.consumer}/app/auth/*"
+    ],
+    "attributes": {
+      "saml.authnstatement": "true",
+      "saml.client.signature": "true",
+      "saml.encrypt": "false",
+      "saml.server.signature": "true",
+      "saml.signature.algorithm": "RSA_SHA512",
+      "saml.signing.certificate": "MIIB1DCCAT0CBgFJGVacCDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1lbmMvMB4XDTE0MTAxNjE0MjA0NloXDTI0MTAxNjE0MjIyNlowMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3QtZW5jLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEikCAwEAATANBgkqhkiG9w0BAQsFAAOBgQBMrfGD9QFfx5v7ld/OAto5rjkTe3R1Qei8XRXfcs83vLaqEzjEtTuLGrJEi55kXuJgBpVmQpnwCCkkjSy0JxbqLDdVi9arfWUxEGmOr01ZHycELhDNaQcFqVMPr5kRHIHgktT8hK2IgCvd3Fy9/JCgUgCPxKfhwecyEOKxUc857g==",
+      "saml.signing.private.key": "MIICXQIBAAKBgQDb7kwJPkGdU34hicplwfp6/WmNcaLh94TSc7Jyr9Undp5pkyLgb0DE7EIE+6kSs4LsqCb8HDkB0nLD5DXbBJFd8n0WGoKstelvtg6FtVJMnwN7k7yZbfkPECWH9zF70VeOo9vbzrApNRnct8ZhH5fbflRB4JMA9L9R+LbURdoSKQIDAQABAoGBANtbZG9bruoSGp2s5zhzLzd4hczT6Jfk3o9hYjzNb5Z60ymN3Z1omXtQAdEiiNHkRdNxK+EM7TcKBfmoJqcaeTkW8cksVEAW23ip8W9/XsLqmbU2mRrJiKa+KQNDSHqJi1VGyimi4DDApcaqRZcaKDFXg2KDr/Qt5JFD/o9IIIPZAkEA+ZENdBIlpbUfkJh6Ln+bUTss/FZ1FsrcPZWu13rChRMrsmXsfzu9kZUWdUeQ2Dj5AoW2Q7L/cqdGXS7Mm5XhcwJBAOGZq9axJY5YhKrsksvYRLhQbStmGu5LG75suF+rc/44sFq+aQM7+oeRr4VY88Mvz7mk4esdfnk7ae+cCazqJvMCQQCx1L1cZw3yfRSn6S6u8XjQMjWE/WpjulujeoRiwPPY9WcesOgLZZtYIH8nRL6ehEJTnMnahbLmlPFbttxPRUanAkA11MtSIVcKzkhp2KV2ipZrPJWwI18NuVJXb+3WtjypTrGWFZVNNkSjkLnHIeCYlJIGhDd8OL9zAiBXEm6kmgLNAkBWAg0tK2hCjvzsaA505gWQb4X56uKWdb0IzN+fOLB3Qt7+fLqbVQNQoNGzqey6B4MoS1fUKAStqdGTFYPG/+9t",
+      "saml_assertion_consumer_url_post" : "${url.realm.consumer}/app/auth",
+      "saml_idp_initiated_sso_url_name" : "sales"
+    },
+    "baseUrl": "${url.realm.consumer}/app/auth",
+    "adminUrl": "${url.realm.consumer}/app/auth"
+  }, {
+    "clientId": "${url.realm.consumer}/app/auth2",
+    "enabled": true,
+    "protocol": "saml",
+    "fullScopeAllowed": true,
+    "redirectUris": [
+      "${url.realm.consumer}/app/auth2/*"
+    ],
+    "attributes": {
+      "saml.authnstatement": "true",
+      "saml.client.signature": "true",
+      "saml.encrypt": "false",
+      "saml.server.signature": "true",
+      "saml.signature.algorithm": "RSA_SHA512",
+      "saml.signing.certificate": "MIIB1DCCAT0CBgFJGVacCDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1lbmMvMB4XDTE0MTAxNjE0MjA0NloXDTI0MTAxNjE0MjIyNlowMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3QtZW5jLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEikCAwEAATANBgkqhkiG9w0BAQsFAAOBgQBMrfGD9QFfx5v7ld/OAto5rjkTe3R1Qei8XRXfcs83vLaqEzjEtTuLGrJEi55kXuJgBpVmQpnwCCkkjSy0JxbqLDdVi9arfWUxEGmOr01ZHycELhDNaQcFqVMPr5kRHIHgktT8hK2IgCvd3Fy9/JCgUgCPxKfhwecyEOKxUc857g==",
+      "saml.signing.private.key": "MIICXQIBAAKBgQDb7kwJPkGdU34hicplwfp6/WmNcaLh94TSc7Jyr9Undp5pkyLgb0DE7EIE+6kSs4LsqCb8HDkB0nLD5DXbBJFd8n0WGoKstelvtg6FtVJMnwN7k7yZbfkPECWH9zF70VeOo9vbzrApNRnct8ZhH5fbflRB4JMA9L9R+LbURdoSKQIDAQABAoGBANtbZG9bruoSGp2s5zhzLzd4hczT6Jfk3o9hYjzNb5Z60ymN3Z1omXtQAdEiiNHkRdNxK+EM7TcKBfmoJqcaeTkW8cksVEAW23ip8W9/XsLqmbU2mRrJiKa+KQNDSHqJi1VGyimi4DDApcaqRZcaKDFXg2KDr/Qt5JFD/o9IIIPZAkEA+ZENdBIlpbUfkJh6Ln+bUTss/FZ1FsrcPZWu13rChRMrsmXsfzu9kZUWdUeQ2Dj5AoW2Q7L/cqdGXS7Mm5XhcwJBAOGZq9axJY5YhKrsksvYRLhQbStmGu5LG75suF+rc/44sFq+aQM7+oeRr4VY88Mvz7mk4esdfnk7ae+cCazqJvMCQQCx1L1cZw3yfRSn6S6u8XjQMjWE/WpjulujeoRiwPPY9WcesOgLZZtYIH8nRL6ehEJTnMnahbLmlPFbttxPRUanAkA11MtSIVcKzkhp2KV2ipZrPJWwI18NuVJXb+3WtjypTrGWFZVNNkSjkLnHIeCYlJIGhDd8OL9zAiBXEm6kmgLNAkBWAg0tK2hCjvzsaA505gWQb4X56uKWdb0IzN+fOLB3Qt7+fLqbVQNQoNGzqey6B4MoS1fUKAStqdGTFYPG/+9t",
+      "saml_assertion_consumer_url_post" : "${url.realm.consumer}/app/auth2/saml",
+      "saml_idp_initiated_sso_url_name" : "sales2"
+    },
+    "baseUrl": "${url.realm.consumer}/app/auth2",
+    "adminUrl": "${url.realm.consumer}/app/auth2"
+  } ],
+  "identityProviders" : [ {
+    "alias" : "saml-leaf",
+    "providerId" : "saml",
+    "enabled" : true,
+    "updateProfileFirstLoginMode" : "on",
+    "trustEmail" : false,
+    "storeToken" : false,
+    "addReadTokenRoleOnCreate" : false,
+    "authenticateByDefault" : false,
+    "firstBrokerLoginFlowAlias" : "first broker login",
+    "config" : {
+      "syncMode": "IMPORT",
+      "nameIDPolicyFormat" : "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+      "postBindingAuthnRequest" : "true",
+      "postBindingResponse" : "true",
+      "singleLogoutServiceUrl" : "${url.realm.provider}/protocol/saml",
+      "singleSignOnServiceUrl" : "${url.realm.provider}/protocol/saml",
+      "validateSignature" : "false",
+      "wantAuthnRequestsSigned" : "false"
+    }
+  } ],
+  "identityProviderMappers" : [ {
+    "name" : "manager-role",
+    "identityProviderAlias" : "saml-leaf",
+    "identityProviderMapper" : "saml-role-idp-mapper",
+    "config" : {
+      "syncMode": "INHERIT",
+      "attribute.value" : "manager",
+      "role" : "${url.realm.consumer}/app/auth.manager",
+      "attribute.name" : "Role"
+    }
+  } ]
+}

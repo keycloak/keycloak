@@ -1,0 +1,51 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<EntitiesDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" Name="urn:keycloak">
+    <EntityDescriptor entityID="http://localhost:8180/auth/realms/mellon-test">
+        <IDPSSODescriptor WantAuthnRequestsSigned="true"
+                          protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+            <NameIDFormat>
+                urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
+            </NameIDFormat>
+            <NameIDFormat>
+                urn:oasis:names:tc:SAML:2.0:nameid-format:transient
+            </NameIDFormat>
+            <NameIDFormat>
+                urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified
+            </NameIDFormat>
+            <NameIDFormat>
+                urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress
+            </NameIDFormat>
+            <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                 Location="http://localhost:8180/auth/realms/mellon-test/protocol/saml"/>
+            <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+                                 Location="http://localhost:8180/auth/realms/mellon-test/protocol/saml"/>
+            <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+                                 Location="http://localhost:8180/auth/realms/mellon-test/protocol/saml"/>
+            <KeyDescriptor use="signing">
+                <dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+                    <dsig:X509Data>
+                        <dsig:X509Certificate>
+                            MIICpTCCAY0CBgFSP3CJrTANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQDDAttZWxsb24tdGVzdDAeFw0xNjAxMTQwOTE5NDVaFw0yNjAxMTQwOTIxMjVaMBYxFDASBgNVBAMMC21lbGxvbi10ZXN0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApaZ6nndLegc+aKXNog08KdWOIZfr393e0nlqZ3SzNCYJ+IrSAWepCNvUW4W0samrtC47XBYNJwBSw9KCLNcpOeR7IC+gtmm8t9VH0QRxDEOvoLoj0zMkuaBhF+1NZdt6kc5gYVSeymkFSG/Eyz06Zo9zfhb52tUK83hYPcRE2azBDAuffnnHGg+fiCMZtMz7qCYXSoGy15odM1AypILDGxCtDpk0nPmwp6AlA7LpWLKYFEXrXhPmZGw2eDA6FqLFYgBovffJzFy1WzqpAzpKbYqVbb/yKUbv5NI4ELlOdjvXfoB7wOp3cHwnuq1G8YjR7OKLeVtszKXUPCjwFSZnFwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBwRkPh3pSAG1UWr1rJW9LMVdfu6KFsVTCMqExuJKUrH4hAPKXXi9iEAyiB/+NdnG8bgvU0xhdH9lW51J1JpH3xRtOMV+1CAZB41RFx1r/zJg0Zrdbfodv1UFJtLhSIKhKnfoSdlml2O9SHwd4VQmwz/QQqzBIS+yJDv7cOxMRszryWq5aWCPMosxwuAJzjwlF6jBHqidkd4EGTNMDK1pDZN1voiYS0ry7h7Lcq2ZbrBFzBqzHvXieym68ACDHr5hkKe065ne1hCgO/+POsAi6VU+qlSbzsD9NenHP60c9+Dt/IY9DeX6IubXChcW5A+qnb5qRWBtwXshfcsDFHYkBJ
+                        </dsig:X509Certificate>
+                    </dsig:X509Data>
+                </dsig:KeyInfo>
+            </KeyDescriptor>
+        </IDPSSODescriptor>
+    </EntityDescriptor>
+</EntitiesDescriptor>

@@ -1,0 +1,9 @@
+{
+  "realm" : "demo",
+  "resource" : "customer-db",
+  "auth-server-url": "/auth",
+  "ssl-required" : "external",
+  "bearer-only" : true,
+  "enable-cors" : true
+
+}

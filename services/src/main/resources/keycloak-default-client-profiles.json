@@ -1,0 +1,141 @@
+{
+  "profiles": [
+    {
+      "name": "fapi-1-baseline",
+      "description": "Client profile, which enforce clients to conform 'Financial-grade API Security Profile 1.0 - Part 1: Baseline' specification.",
+      "executors": [
+        {
+          "executor": "secure-session",
+          "configuration": {}
+        },
+        {
+          "executor": "pkce-enforcer",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "secure-client-authenticator",
+          "configuration": {
+            "allowed-client-authenticators": [
+              "client-jwt",
+              "client-secret-jwt",
+              "client-x509"
+            ],
+            "default-client-authenticator": "client-jwt"
+          }
+        },
+        {
+          "executor": "secure-client-uris",
+          "configuration": {}
+        },
+        {
+          "executor": "consent-required",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "full-scope-disabled",
+          "configuration": {
+            "auto-configure": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "fapi-1-advanced",
+      "description": "Client profile, which enforce clients to conform 'Financial-grade API Security Profile 1.0 - Part 2: Advanced' specification.",
+      "executors": [
+        {
+          "executor": "secure-session",
+          "configuration": {}
+        },
+        {
+          "executor": "confidential-client",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-client-authenticator",
+          "configuration": {
+            "allowed-client-authenticators": [
+              "client-jwt",
+              "client-x509"
+            ],
+            "default-client-authenticator": "client-jwt"
+          }
+        },
+        {
+          "executor": "secure-client-uris",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-request-object",
+          "configuration": {
+            "available-period": "3600",
+            "verify-nbf": true
+          }
+        },
+        {
+          "executor": "secure-response-type",
+          "configuration": {
+            "auto-configure": true,
+            "allow-token-response-type": false
+          }
+        },
+        {
+          "executor": "secure-signature-algorithm",
+          "configuration": {
+            "default-algorithm": "PS256"
+          }
+        },
+        {
+          "executor": "secure-signature-algorithm-signed-jwt",
+          "configuration": {
+            "require-client-assertion": false
+          }
+        },
+        {
+          "executor": "consent-required",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "full-scope-disabled",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "holder-of-key-enforcer",
+          "configuration": {
+            "auto-configure": true
+          }
+        }
+      ]
+    },
+    {
+      "name" : "fapi-ciba",
+      "description" : "Client profile, which enforce clients to conform 'Financial-grade API: Client Initiated Backchannel Authentication Profile' specification (Implementer's Draft ver1'). To satisfy FAPI-CIBA, both this profile and fapi-1-advanced global profile need to be used.",
+      "executors" : [
+        {
+          "executor": "secure-ciba-req-sig-algorithm",
+          "configuration": {
+            "default-algorithm": "PS256"
+          }
+        },
+        {
+          "executor" : "secure-ciba-session",
+          "configuration" : {}
+        },
+        {
+          "executor" : "secure-ciba-signed-authn-req",
+          "configuration" : {
+            "available-period" : "3600"
+          }
+        }
+      ]
+    }
+  ]
+}

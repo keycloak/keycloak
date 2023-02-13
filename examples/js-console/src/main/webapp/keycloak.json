@@ -1,0 +1,7 @@
+{
+  "realm" : "example",
+  "auth-server-url" : "/auth",
+  "ssl-required" : "external",
+  "resource" : "js-console",
+  "public-client" : true
+}

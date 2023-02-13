@@ -1,0 +1,76 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<html>
+<head>
+    <script src="js/keycloak.js"></script>
+</head>
+<body>
+
+<h2>Result</h2>
+<pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="output"></pre>
+
+<h2>Events</h2>
+<pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="events"></pre>
+
+
+<script>
+     function showExpires() {
+        if (!keycloak.tokenParsed) {
+            output("Not authenticated");
+            return;
+        }
+
+        var o = 'Token Expires:\t\t' + new Date((keycloak.tokenParsed.exp + keycloak.timeSkew) * 1000).toLocaleString() + '\n';
+        o += 'Token Expires in:\t' + Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds\n';
+
+        if (keycloak.refreshTokenParsed) {
+            o += 'Refresh Token Expires:\t' + new Date((keycloak.refreshTokenParsed.exp + keycloak.timeSkew) * 1000).toLocaleString() + '\n';
+            o += 'Refresh Expires in:\t' + Math.round(keycloak.refreshTokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds';
+        }
+
+        output(o);
+    }
+
+    function showError() {
+        output("Error: " + getParameterByName("error") + "\n" + "Error description: " + getParameterByName("error_description"));
+    }
+
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&#]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    function output(data) {
+        if (typeof data === 'object') {
+            data = JSON.stringify(data, null, '  ');
+        }
+        document.getElementById('output').innerHTML = data;
+    }
+
+    function event(event) {
+        var e = document.getElementById('events').innerHTML;
+        document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+    "realm": "spring-security",
+    "realm-public-key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCh65Gqi3BSaVe12JHlqChWm8WscICrj46MVqmRoO9FCmqbxEpCQhE1RLjW+GDyc3YdXW3xqUQ3AZxDkTmN1h6BWkhdxPLzA4EnwgWmGurhyJlUF9Id2tKns0jbC+Z7kIb2LcOiKHKL7mRb3q7EtWubNnrvunv8fx+WeXGaQoGEVQIDAQAB",
+    "auth-server-url": "http://localhost:8080/auth",
+    "ssl-required": "external",
+    "resource": "some-resource",
+    "credentials": {
+        "secret": "a9c3501e-20dd-4277-8a7b-351063848446"
+    }
+}

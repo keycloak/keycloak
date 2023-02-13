@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EntityDescriptor entityID="http://localhost:8080/auth/realms/master"
+                  xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                  xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute"
+                  xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                  xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"
+>
+   <Extensions>
+	 <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>http://refeds.org/category/hide-from-discovery</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+      </Extensions>
+   <IDPSSODescriptor WantAuthnRequestsSigned="true"
+      protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+
+      <KeyDescriptor use="signing">
+         <dsig:KeyInfo>
+             <dsig:KeyName>hAoy_sBtpu6FdRVCk7ykihF6Ug-o0pKPK3LN9RYkeqs</dsig:KeyName>
+             <dsig:X509Data>
+                 <dsig:X509Certificate>
+                     MIICmzCCAYMCBgFUYnC0OjANBgkqhkiG9w0BAQsFADARMQ8wDQYDVQQDDAZtYXN0ZXIwHhcNMTYwNDI5MTQzMjEzWhcNMjYwNDI5MTQzMzUzWjARMQ8wDQYDVQQDDAZtYXN0ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCN25AW1poMEZRbuMAHG58AThZmCwMV6/Gcui4mjGacRFyudgqzLjQ2rxpoW41JAtLjbjeAhuWvirUcFVcOeS3gM/ZC27qCpYighAcylZz6MYocnEe1+e8rPPk4JlID6Wv62dgu+pL/vYsQpRhvD3Y2c/ytgr5D32xF+KnzDehUy5BSyzypvu12Wq9mS5vK5tzkN37EjkhpY2ZxaXPubjDIITCAL4Q8M/m5IlacBaUZbzI4AQrHnMP1O1IH2dHSWuMiBe+xSDTco72PmuYPJKTV4wQdeBUIkYbfLc4RxVmXEvgkQgyW86EoMPxlWJpj7+mTIR+l+2thZPr/VgwTs82rAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAA/Ip/Hi8RoVu5ouaFFlc5whT7ltuK8slfLGW4tM4vJXhInYwsqIRQKBNDYW/64xle3eII4u1yAH1OYRRwEs7Em1pr4QuFuTY1at+aE0sE46XDlyESI0txJjWxYoT133vM0We2pj1b2nxgU30rwjKA3whnKEfTEYT/n3JBSqNggy6l8ZGw/oPSgvPaR4+xeB1tfQFC4VrLoYKoqH6hAL530nKxL+qV8AIfL64NDEE8ankIAEDAAFe8x3CPUfXR/p4KOANKkpz8ieQaHDb1eITkAwUwjESj6UF9D1aePlhWls/HX0gujFXtWfWfrJ8CU/ogwlH8y1jgRuLjFQYZk6llc=
+                 </dsig:X509Certificate>
+             </dsig:X509Data>
+         </dsig:KeyInfo>
+      </KeyDescriptor>
+      <KeyDescriptor use="signing">
+         <dsig:KeyInfo>
+             <dsig:KeyName>FJ86GcF3jTbNLOco4NvZkUCIUmfYCqoqtOQeMfbhNlE</dsig:KeyName>
+             <dsig:X509Data>
+                 <dsig:X509Certificate>
+                     MIIBnDCCAQUCBgFYKXKsPTANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAlzYW1sLWRlbW8wHhcNMTYxMTAzMDkwNzEwWhcNMjYxMTAzMDkwODUwWjAUMRIwEAYDVQQDDAlzYW1sLWRlbW8wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKtWsK5O0CtuBpnMvWG+HTG0vmZzujQ2o9WdheQu+BzCILcGMsbDW0YQaglpcO5JpGWWhubnckGGPHfdQ2/7nP9QwbiTK0FbGF41UqcvoaCqU1psxoV88s8IXyQCAqeyLv00yj6foqdJjxh5SZ5z+na+M7Y2OxIBVxYRAxWEnfUvAgMBAAEwDQYJKoZIhvcNAQELBQADgYEAhetvOU8TyqfZF5jpv0IcrviLl/DoFrbjByeHR+pu/vClcAOjL/u7oQELuuTfNsBI4tpexUj5G8q/YbEz0gk7idfLXrAUVcsR73oTngrhRfwUSmPrjjK0kjcRb6HL9V/+wh3R/6mEd59U08ExT8N38rhmn0CI3ehMdebReprP7U8=
+                 </dsig:X509Certificate>
+             </dsig:X509Data>
+         </dsig:KeyInfo>
+      </KeyDescriptor>
+      <SingleLogoutService
+         Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+         Location="http://localhost:8080/auth/realms/master/protocol/saml" />
+      <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>
+      <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+      <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>
+      <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>
+      <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+         Location="http://localhost:8080/auth/realms/master/protocol/saml" />
+   </IDPSSODescriptor>
+</EntityDescriptor>

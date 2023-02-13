@@ -1,0 +1,77 @@
+{
+  "realm": "photoz",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required": "external",
+  "resource": "photoz-restful-api",
+  "bearer-only" : true,
+  "credentials": {
+    "jwt": {
+      "client-key-password": "password",
+      "client-keystore-file": "classpath:keystore.jks",
+      "client-keystore-password": "password",
+      "client-key-alias": "secure-portal",
+      "token-timeout": 10,
+      "client-keystore-type": "jks"
+    }
+  },
+  "policy-enforcer": {
+    "enforcement-mode": "PERMISSIVE",
+    "user-managed-access": {},
+    "lazy-load-paths": true,
+    "paths": [
+      {
+        "name" : "Album Resource",
+        "path" : "/album",
+        "methods" : [
+          {
+            "method": "GET",
+            "scopes-enforcement-mode" : "DISABLED"
+          }
+        ]
+      },
+      {
+        "name" : "Album Resource",
+        "path" : "/album/{id}/",
+        "methods" : [
+          {
+            "method": "DELETE",
+            "scopes" : ["album:delete"]
+          },
+          {
+            "method": "GET",
+            "scopes" : ["album:view"]
+          }
+        ]
+      },
+      {
+        "path" : "/profile"
+      },
+      {
+        "name" : "Admin Resources",
+        "path" : "/admin/*"
+      },
+      {
+        "name" : "Scope Protected Resource",
+        "path" : "/scope-any",
+        "methods": [
+          {
+            "method": "GET",
+            "scopes": ["scope-a", "scope-b"],
+            "scopes-enforcement-mode": "ANY"
+          }
+        ]
+      },
+      {
+        "name" : "Scope Protected Resource",
+        "path" : "/scope-all",
+        "methods": [
+          {
+            "method": "GET",
+            "scopes": ["scope-a", "scope-b"],
+            "scopes-enforcement-mode": "ALL"
+          }
+        ]
+      }
+    ]
+  }
+}

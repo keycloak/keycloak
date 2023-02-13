@@ -1,0 +1,240 @@
+<EntitiesDescriptor Name="https://your-federation.org/metadata/federation-name.xml"
+                    xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                    xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+                    xmlns:shibmd="urn:mace:shibboleth:metadata:1.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <EntityDescriptor entityID="https://idp.example.org/idp/shibboleth">
+
+        <IDPSSODescriptor protocolSupportEnumeration="urn:mace:shibboleth:1.0 urn:oasis:names:tc:SAML:2.0:protocol">
+            <Extensions>
+                <shibmd:Scope regexp="false">example.org</shibmd:Scope>
+            </Extensions>
+            <KeyDescriptor>
+                <ds:KeyInfo>
+                    <ds:X509Data>
+                        <ds:X509Certificate>...</ds:X509Certificate>
+                    </ds:X509Data>
+                </ds:KeyInfo>
+            </KeyDescriptor>
+
+            <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
+            <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+
+            <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest"
+                                 Location="https://idp.example.org/idp/profile/Shibboleth/SSO" />
+
+            <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                 Location="https://idp.example.org/idp/profile/SAML2/POST/SSO" />
+
+            <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+                                 Location="https://idp.example.org/idp/profile/SAML2/Redirect/SSO" />
+        </IDPSSODescriptor>
+
+        <AttributeAuthorityDescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+
+            <KeyDescriptor>
+                <ds:KeyInfo>
+                    <ds:X509Data>
+                        <ds:X509Certificate>...</ds:X509Certificate>
+                    </ds:X509Data>
+                </ds:KeyInfo>
+            </KeyDescriptor>
+
+            <AttributeService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding"
+                              Location="https://idp.example.org:8443/idp/profile/SAML1/SOAP/AttributeQuery" />
+
+            <AttributeService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+                              Location="https://idp.example.org:8443/idp/profile/SAML2/SOAP/AttributeQuery" />
+
+            <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
+            <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+
+        </AttributeAuthorityDescriptor>
+
+        <Organization>
+            <OrganizationName xml:lang="en">Your Identities</OrganizationName>
+            <OrganizationDisplayName xml:lang="en"> Your Identities</OrganizationDisplayName>
+            <OrganizationURL xml:lang="en">http://www.example.org/</OrganizationURL>
+        </Organization>
+        <ContactPerson contactType="technical">
+            <GivenName>Your</GivenName>
+            <SurName>Contact</SurName>
+            <EmailAddress>admin@example.org</EmailAddress>
+        </ContactPerson>
+
+    </EntityDescriptor>
+
+    <!-- A service provider. -->
+    <EntityDescriptor entityID="https://sp.example.org/shibboleth-sp">
+        <SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol">
+
+            <Extensions>
+                <idpdisc:DiscoveryResponse xmlns:idpdisc="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
+                                           index="1" Binding="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
+                                           Location="http://sp.example.org/Shibboleth.sso/DS"/>
+                <idpdisc:DiscoveryResponse xmlns:idpdisc="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
+                                           index="2" Binding="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
+                                           Location="https://sp.example.org/Shibboleth.sso/DS"/>
+            </Extensions>
+
+            <KeyDescriptor>
+                <ds:KeyInfo>
+                    <ds:X509Data>
+                        <ds:X509Certificate>...</ds:X509Certificate>
+                    </ds:X509Data>
+                </ds:KeyInfo>
+            </KeyDescriptor>
+
+            <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+            <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
+
+            <AssertionConsumerService index="1" isDefault="true"
+                                      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                      Location="https://sp.example.org/Shibboleth.sso/SAML2/POST"/>
+            <AssertionConsumerService index="2"
+                                      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-SimpleSign"
+                                      Location="https://sp.example.org/Shibboleth.sso/SAML2/POST-SimpleSign"/>
+            <AssertionConsumerService index="3"
+                                      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+                                      Location="https://sp.example.org/Shibboleth.sso/SAML2/Artifact"/>
+            <AssertionConsumerService index="4"
+                                      Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post"
+                                      Location="https://sp.example.org/Shibboleth.sso/SAML/POST"/>
+            <AssertionConsumerService index="5"
+                                      Binding="urn:oasis:names:tc:SAML:1.0:profiles:artifact-01"
+                                      Location="https://sp.example.org/Shibboleth.sso/SAML/Artifact"/>
+
+        </SPSSODescriptor>
+
+        <Organization>
+            <OrganizationName xml:lang="en">Your Service</OrganizationName>
+            <OrganizationDisplayName xml:lang="en">Your Service</OrganizationDisplayName>
+            <OrganizationURL xml:lang="en">http://sp.example.org/</OrganizationURL>
+        </Organization>
+        <ContactPerson contactType="technical">
+            <GivenName>Your</GivenName>
+            <SurName>Admin</SurName>
+            <EmailAddress>admin@example.org</EmailAddress>
+        </ContactPerson>
+
+    </EntityDescriptor>
+
+    <EntitiesDescriptor>
+        <EntityDescriptor entityID="https://idp.example.org/idp/shibboleth">
+
+            <IDPSSODescriptor protocolSupportEnumeration="urn:mace:shibboleth:1.0 urn:oasis:names:tc:SAML:2.0:protocol">
+                <Extensions>
+                    <shibmd:Scope regexp="false">example.org</shibmd:Scope>
+                </Extensions>
+                <KeyDescriptor>
+                    <ds:KeyInfo>
+                        <ds:X509Data>
+                            <ds:X509Certificate>...</ds:X509Certificate>
+                        </ds:X509Data>
+                    </ds:KeyInfo>
+                </KeyDescriptor>
+
+                <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
+                <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+
+                <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest"
+                                     Location="https://idp.example.org/idp/profile/Shibboleth/SSO" />
+
+                <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                     Location="https://idp.example.org/idp/profile/SAML2/POST/SSO" />
+
+                <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+                                     Location="https://idp.example.org/idp/profile/SAML2/Redirect/SSO" />
+            </IDPSSODescriptor>
+
+            <AttributeAuthorityDescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+
+                <KeyDescriptor>
+                    <ds:KeyInfo>
+                        <ds:X509Data>
+                            <ds:X509Certificate>...</ds:X509Certificate>
+                        </ds:X509Data>
+                    </ds:KeyInfo>
+                </KeyDescriptor>
+
+                <AttributeService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding"
+                                  Location="https://idp.example.org:8443/idp/profile/SAML1/SOAP/AttributeQuery" />
+
+                <AttributeService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+                                  Location="https://idp.example.org:8443/idp/profile/SAML2/SOAP/AttributeQuery" />
+
+                <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
+                <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+
+            </AttributeAuthorityDescriptor>
+
+            <Organization>
+                <OrganizationName xml:lang="en">Your Identities</OrganizationName>
+                <OrganizationDisplayName xml:lang="en"> Your Identities</OrganizationDisplayName>
+                <OrganizationURL xml:lang="en">http://www.example.org/</OrganizationURL>
+            </Organization>
+            <ContactPerson contactType="technical">
+                <GivenName>Your</GivenName>
+                <SurName>Contact</SurName>
+                <EmailAddress>admin@example.org</EmailAddress>
+            </ContactPerson>
+
+        </EntityDescriptor>
+
+        <!-- A service provider. -->
+        <EntityDescriptor entityID="https://sp.example.org/shibboleth-sp">
+            <SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol">
+
+                <Extensions>
+                    <idpdisc:DiscoveryResponse xmlns:idpdisc="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
+                                               index="1" Binding="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
+                                               Location="http://sp.example.org/Shibboleth.sso/DS"/>
+                    <idpdisc:DiscoveryResponse xmlns:idpdisc="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
+                                               index="2" Binding="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
+                                               Location="https://sp.example.org/Shibboleth.sso/DS"/>
+                </Extensions>
+
+                <KeyDescriptor>
+                    <ds:KeyInfo>
+                        <ds:X509Data>
+                            <ds:X509Certificate>...</ds:X509Certificate>
+                        </ds:X509Data>
+                    </ds:KeyInfo>
+                </KeyDescriptor>
+
+                <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+                <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
+
+                <AssertionConsumerService index="1" isDefault="true"
+                                          Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                          Location="https://sp.example.org/Shibboleth.sso/SAML2/POST"/>
+                <AssertionConsumerService index="2"
+                                          Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-SimpleSign"
+                                          Location="https://sp.example.org/Shibboleth.sso/SAML2/POST-SimpleSign"/>
+                <AssertionConsumerService index="3"
+                                          Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+                                          Location="https://sp.example.org/Shibboleth.sso/SAML2/Artifact"/>
+                <AssertionConsumerService index="4"
+                                          Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post"
+                                          Location="https://sp.example.org/Shibboleth.sso/SAML/POST"/>
+                <AssertionConsumerService index="5"
+                                          Binding="urn:oasis:names:tc:SAML:1.0:profiles:artifact-01"
+                                          Location="https://sp.example.org/Shibboleth.sso/SAML/Artifact"/>
+
+            </SPSSODescriptor>
+
+            <Organization>
+                <OrganizationName xml:lang="en">Your Service</OrganizationName>
+                <OrganizationDisplayName xml:lang="en">Your Service</OrganizationDisplayName>
+                <OrganizationURL xml:lang="en">http://sp.example.org/</OrganizationURL>
+            </Organization>
+            <ContactPerson contactType="technical">
+                <GivenName>Your</GivenName>
+                <SurName>Admin</SurName>
+                <EmailAddress>admin@example.org</EmailAddress>
+            </ContactPerson>
+
+        </EntityDescriptor>
+    </EntitiesDescriptor>
+
+</EntitiesDescriptor>

@@ -1,0 +1,340 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>999-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-services</artifactId>
+    <name>Keycloak REST Services</name>
+    <description />
+
+    <properties>
+        <version.swagger.doclet>1.1.2</version.swagger.doclet>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>${keycloak.crypto.artifactId}</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi-private</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.twitter4j</groupId>
+            <artifactId>twitter4j-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-processor</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.transaction</groupId>
+            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+            <artifactId>owasp-java-html-sanitizer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.woodstox</groupId>
+            <artifactId>woodstox-core</artifactId>
+            <version>${woodstox.version}</version>    <!-- this version has to match that of used in Wildfly -->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core-public</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.webauthn4j</groupId>
+            <artifactId>webauthn4j-core</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgument>
+                        -AgeneratedTranslationFilesPath=${project.build.directory}/generated-translation-files
+                    </compilerArgument>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>jboss-release</id>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-resources</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>target/docs</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/docs</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <!-- Reverted version as the new version of maven-javadoc-plugin is not compatible with swagger doclet -->
+                        <version>2.10.3</version>
+                        <executions>
+                            <execution>
+                                <id>generate-service-docs</id>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <doclet>com.carma.swagger.doclet.ServiceDoclet</doclet>
+                                    <docletArtifact>
+                                        <groupId>com.carma</groupId>
+                                        <artifactId>swagger-doclet</artifactId>
+                                        <version>${version.swagger.doclet}</version>
+                                    </docletArtifact>
+
+                                    <subpackages>org.keycloak.services.resources.admin:org.keycloak.protocol.oidc</subpackages>
+                                    <detectOfflineLinks>false</detectOfflineLinks>
+                                    <offlineLinks>
+                                        <offlineLink>
+                                            <url>../javadocs</url>
+                                            <location>${project.basedir}/../target/site/apidocs</location>
+                                        </offlineLink>
+                                    </offlineLinks>
+
+                                    <reportOutputDirectory>${project.basedir}/target/apidocs-rest/swagger</reportOutputDirectory>
+                                    <useStandardDocletOptions>false</useStandardDocletOptions>
+                                    <additionalparam> -skipUiFiles -apiVersion 1 -includeResourcePrefixes org.keycloak.services.resources.admin,org.keycloak.protocol.oidc -docBasePath /apidocs -apiBasePath http://localhost:8080/auth -apiInfoFile ${project.basedir}/target/docs/swagger/apiinfo.json</additionalparam>
+                                </configuration>
+                                <goals>
+                                    <goal>javadoc</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>io.github.swagger2markup</groupId>
+                        <artifactId>swagger2markup-maven-plugin</artifactId>
+                        <version>1.1.0</version>
+
+                        <!-- Replace the dependencies that aren't in Maven Central -->
+                        <dependencies>
+                            <dependency>
+                                <groupId>ca.szc.thirdparty.nl.jworks.markdown_to_asciidoc</groupId>
+                                <artifactId>markdown_to_asciidoc</artifactId>
+                                <!-- Keep in sync with markup-document-builder's dependency -->
+                                <version>1.0</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>io.github.swagger2markup</groupId>
+                                <artifactId>swagger2markup</artifactId>
+                                <!-- Keep in sync with swagger2markup-maven-plugin's dependency -->
+                                <version>1.1.0</version>
+                                <exclusions>
+                                    <exclusion>
+                                        <groupId>nl.jworks.markdown_to_asciidoc</groupId>
+                                        <artifactId>markdown_to_asciidoc</artifactId>
+                                    </exclusion>
+                                </exclusions>
+                            </dependency>
+                        </dependencies>
+
+                        <executions>
+                            <execution>
+                                <id>gen-asciidoc</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>convertSwagger2markup</goal>
+                                </goals>
+                                <configuration>
+                                    <swaggerInput>${project.build.directory}/apidocs-rest/swagger/apidocs/service.json</swaggerInput>
+                                    <outputDir>${project.build.directory}/apidocs-rest/asciidoc/</outputDir>
+                                    <config>
+                                        <swagger2markup.markupLanguage>ASCIIDOC</swagger2markup.markupLanguage>
+                                        <swagger2markup.pathsGroupedBy>TAGS</swagger2markup.pathsGroupedBy>
+                                    </config>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctor-maven-plugin</artifactId>
+                        <version>1.5.3</version>
+                        <executions>
+                            <execution>
+                                <id>generate-docs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>process-asciidoc</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirectory>${project.basedir}/target/docs/asciidoc</sourceDirectory>
+                                    <sourceDocumentName>index.adoc</sourceDocumentName>
+                                    <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
+                                    <backend>html5</backend>
+                                    <attributes>
+                                        <!-- List of attributes:
+                                        https://github.com/asciidoctor/asciidoctorj/blob/master/asciidoctorj-core/src/main/java/org/asciidoctor/Attributes.java
+                                         -->
+                                        <toc/>
+                                        <toc-position>left</toc-position>
+                                        <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
+                                    </attributes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

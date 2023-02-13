@@ -1,0 +1,40 @@
+{
+  "kind": "Route",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "proxy",
+    "namespace": "default",
+    "selfLink": "/oapi/v1/namespaces/default/routes/proxy",
+    "uid": "3bf12cd8-d14a-11e8-82c2-5254001e7d16",
+    "resourceVersion": "45934",
+    "creationTimestamp": "2018-10-16T13:48:59Z",
+    "annotations": {
+      "openshift.io/host.generated": "true"
+    }
+  },
+  "spec": {
+    "host": "127.0.0.1",
+    "to": {
+      "kind": "Service",
+      "name": "proxy",
+      "weight": 100
+    },
+    "wildcardPolicy": "None"
+  },
+  "status": {
+    "ingress": [
+      {
+        "host": "127.0.0.1",
+        "routerName": "router",
+        "conditions": [
+          {
+            "type": "Admitted",
+            "status": "True",
+            "lastTransitionTime": "2018-10-16T13:49:00Z"
+          }
+        ],
+        "wildcardPolicy": "None"
+      }
+    ]
+  }
+}

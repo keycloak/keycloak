@@ -1,0 +1,38 @@
+name: Trivy
+
+on:
+  schedule:
+    - cron: 0 6 * * *
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  analysis:
+    name: Vulnerability scanner for nightly containers
+    runs-on: ubuntu-latest
+    if: github.repository == 'keycloak/keycloak'
+    strategy:
+      matrix:
+        container: [keycloak, keycloak-operator]
+      fail-fast: false
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@cff3e9a7f62c41dd51975266d0ae235709e39c41
+        with:
+          image-ref: quay.io/keycloak/${{ matrix.container}}:nightly
+          format: template
+          template: '@/contrib/sarif.tpl'
+          output: trivy-results.sarif
+          severity: MEDIUM,CRITICAL,HIGH
+          ignore-unfixed: true
+          security-checks: vuln
+          timeout: 15m
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2.2.4
+        with:
+          sarif_file: trivy-results.sarif

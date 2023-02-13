@@ -1,0 +1,25 @@
+{
+  "kind": "Namespace",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "default",
+    "selfLink": "/api/v1/namespaces/default",
+    "uid": "cb37acb7-d084-11e8-aea9-5254001e7d16",
+    "resourceVersion": "977",
+    "creationTimestamp": "2018-10-15T14:15:39Z",
+    "annotations": {
+      "openshift.io/sa.scc.mcs": "s0:c1,c0",
+      "openshift.io/sa.scc.supplemental-groups": "1000000000/10000",
+      "openshift.io/sa.scc.uid-range": "1000000000/10000"
+    }
+  },
+  "spec": {
+    "finalizers": [
+      "kubernetes",
+      "openshift.io/origin"
+    ]
+  },
+  "status": {
+    "phase": "Active"
+  }
+}

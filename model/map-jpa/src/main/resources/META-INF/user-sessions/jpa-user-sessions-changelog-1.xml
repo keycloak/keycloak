@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2022 Red Hat, Inc. and/or its affiliates
+and other contributors as indicated by the @author tags.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+                    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet author="keycloak" id="user-sessions-1">
+
+        <createTable tableName="kc_user_session">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="metadata" type="json"/>
+        </createTable>
+        <ext:addGeneratedColumn tableName="kc_user_session">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="offline" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fOffline"/>
+            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="userid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fUserId"/>
+            <ext:column name="brokersessionid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fBrokerSessionId"/>
+            <ext:column name="brokeruserid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fBrokerUserId"/>
+            <ext:column name="lastsessionrefresh" type="BIGINT" jsonColumn="metadata" jsonProperty="fLastSessionRefresh"/>
+            <ext:column name="expiration" type="BIGINT" jsonColumn="metadata" jsonProperty="fExpiration"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_user_session" indexName="user_session_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
+        <createIndex tableName="kc_user_session" indexName="user_session_realm_offline_user">
+            <column name="realmid"/>
+            <column name="offline"/>
+            <column name="userid"/>
+        </createIndex>
+
+        <createTable tableName="kc_user_session_note">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="user_session_note_fk_root_fkey" references="kc_user_session(id)" deleteCascade="true"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="value" type="TEXT"/>
+        </createTable>
+        <createIndex tableName="kc_user_session_note" indexName="kc_user_session_note_fk_root_name_key">
+            <column name="fk_root"/>
+            <column name="name"/>
+        </createIndex>
+
+    </changeSet>
+
+    <changeSet author="keycloak" id="user-sessions-2" dbms="postgresql">
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
+        <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
+        <addUniqueConstraint tableName="kc_user_session_note" columnNames="fk_root, name" deferrable="true" initiallyDeferred="true" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="client-sessions-1">
+
+        <createTable tableName="kc_client_session">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="client_session_fk_root_fkey" references="kc_user_session(id)" deleteCascade="true"/>
+            </column>
+            <column name="metadata" type="json"/>
+        </createTable>
+        <ext:addGeneratedColumn tableName="kc_client_session">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="clientid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_client_session" indexName="client_session_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
+        <createIndex tableName="kc_client_session" indexName="client_session_fk_root">
+            <column name="fk_root"/>
+        </createIndex>
+
+        <createTable tableName="kc_client_session_note">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="client_session_fk_root_fkey" references="kc_client_session(id)" deleteCascade="true"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="value" type="TEXT"/>
+        </createTable>
+        <createIndex tableName="kc_client_session_note" indexName="kc_client_session_note_fk_root_name_key">
+            <column name="fk_root"/>
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="client-sessions-2" dbms="postgresql">
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
+        <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
+        <addUniqueConstraint tableName="kc_client_session_note" columnNames="fk_root, name" deferrable="true" initiallyDeferred="true" />
+    </changeSet>
+
+
+</databaseChangeLog>

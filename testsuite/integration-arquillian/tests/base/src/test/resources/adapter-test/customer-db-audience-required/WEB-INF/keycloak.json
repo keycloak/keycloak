@@ -1,0 +1,11 @@
+{
+  "realm" : "demo",
+  "resource" : "customer-db-audience-required",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required" : "external",
+  "bearer-only" : true,
+  "enable-cors" : true,
+  "public-key-cache-ttl": 600,
+  "verify-token-audience": true
+
+}

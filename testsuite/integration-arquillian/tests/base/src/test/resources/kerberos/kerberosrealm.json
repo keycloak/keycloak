@@ -1,0 +1,65 @@
+{
+    "id": "test",
+    "realm": "test",
+    "enabled": true,
+    "sslRequired": "external",
+    "registrationAllowed": true,
+    "resetPasswordAllowed": true,
+    "requiredCredentials": [ "password", "kerberos" ],
+    "passwordPolicy": "notUsername(undefined)",
+    "defaultRoles": [ "user" ],
+    "users" : [
+        {
+            "username" : "test-user@localhost",
+            "enabled": true,
+            "email" : "test-user@localhost",
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "password" }
+            ],
+            "realmRoles": ["user"],
+            "applicationRoles": {
+                "account": [ "view-profile", "manage-account" ]
+            }
+        }
+    ],
+    "scopeMappings": [
+        {
+            "client": "kerberos-app",
+            "roles": ["user"]
+        }
+    ],
+    "clients": [
+        {
+            "clientId": "kerberos-app",
+            "enabled": true,
+            "adminUrl": "/kerberos-portal/logout",
+            "baseUrl": "/kerberos-portal",
+            "redirectUris": [
+                "/kerberos-portal/*",
+                "/auth/realms/master/app/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "clientId": "kerberos-app-challenge",
+            "enabled": true,
+            "adminUrl": "/kerberos-portal/logout",
+            "baseUrl": "/kerberos-portal",
+            "redirectUris": [
+                "/kerberos-portal/*",
+                "/auth/realms/master/app/*"
+            ],
+            "secret": "password"
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "Have User privileges"
+            }
+        ]
+    },
+    "eventsListeners": ["jboss-logging", "event-queue"]
+}

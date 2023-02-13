@@ -1,0 +1,36 @@
+{
+  "mvn": {
+    "profiles": ["product", "!community", "jboss-release", "distribution-downloads"],
+    "properties": {
+      "skipTests": "true",
+      "npmRegistryURL": "$NPM_REGISTRY_INSTANCE_URL"
+    }
+  },
+  "pme": {
+    "properties": {
+      "scanActiveProfiles": "false",
+      "dependencySource": "BOMREST",
+      "strictAlignment": "false",
+      "dependencyManagement": "org.jboss.eap:jboss-eap-parent:$EAP_VERSION",
+      "dependencyRelocations.org.wildfly:@org.jboss.eap:": "$EAP_VERSION",
+      "dependencyOverride.org.jboss.as:*@*": "$EAP6SUPPORTED_ORG_JBOSS_AS_JBOSS_AS_SERVER",
+      "dependencyOverride.org.infinispan:*@org.keycloak:keycloak-saml-as7-adapter": "5.2.23.Final-redhat-1",
+      "dependencyOverride.org.osgi:org.osgi.core@*": "5.0.0",
+      "dependencyOverride.org.jboss.spec.javax.servlet:jboss-servlet-api_3.0_spec@*": "$EAP6SUPPORTED_ORG_JBOSS_SPEC_JAVAX_SERVLET_JBOSS_SERVLET_API_3_0_SPEC",
+      "dependencyOverride.org.jboss:jboss-parent@*": "19.0.0.redhat-2",
+      "dependencyOverride.org.jboss.web:jbossweb@*": "$EAP6SUPPORTED_ORG_JBOSS_WEB_JBOSSWEB",
+      "dependencyOverride.com.google.guava:guava@org.keycloak.testsuite:integration-arquillian": "",
+      "dependencyOverride.com.fasterxml.jackson.dataformat:*@*": "2.10.5.redhat-00002",
+      "dependencyOverride.org.jboss.logging:jboss-logging-processor@*": "",
+      "dependencyOverride.org.jboss.logging:jboss-logging@org.keycloak:keycloak-as7-subsystem": "",
+      "dependencyOverride.org.jboss.logging:jboss-logging@org.keycloak:keycloak-saml-as7-subsystem": ""
+    }
+  },
+  "prereqs": [
+    "npm config set fetch-retry-mintimeout 60000",
+    "npm config set fetch-retry-maxtimeout 120000",
+    "npm config set fetch-retries 10",
+    "npm config set strict-ssl=false",
+    "npm config set cafile /tmp/indy-proxy-ca.crt"
+  ]
+}

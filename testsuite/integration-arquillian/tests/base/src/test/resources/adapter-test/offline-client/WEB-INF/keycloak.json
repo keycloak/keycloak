@@ -1,0 +1,9 @@
+{
+  "realm": "test",
+  "resource": "offline-client",
+  "auth-server-url": "http://localhost:8081/auth",
+  "ssl-required" : "external",
+  "credentials": {
+    "secret": "secret1"
+  }
+}

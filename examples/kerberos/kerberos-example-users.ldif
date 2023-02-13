@@ -1,0 +1,90 @@
+dn: dc=keycloak,dc=org
+objectclass: dcObject
+objectclass: organization
+o: Keycloak
+dc: Keycloak
+
+dn: ou=People,dc=keycloak,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: People
+
+dn: uid=krbtgt,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: KDC Service
+sn: Service
+uid: krbtgt
+userPassword: secret
+krb5PrincipalName: krbtgt/KEYCLOAK.ORG@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
+dn: uid=ldap,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: LDAP
+sn: Service
+uid: ldap
+userPassword: randall
+krb5PrincipalName: ${ldapSaslPrincipal}
+krb5KeyVersionNumber: 0
+
+dn: uid=HTTP,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: HTTP
+sn: Service
+uid: HTTP
+userPassword: httppwd
+krb5PrincipalName: HTTP/${hostname}@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
+dn: uid=hnelson,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: Horatio
+sn: Nelson
+mail: hnelson@keycloak.org
+uid: hnelson
+userPassword: secret
+krb5PrincipalName: hnelson@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
+dn: uid=jduke,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: Java
+sn: Duke
+mail: jduke@keycloak.org
+uid: jduke
+userPassword: theduke
+krb5PrincipalName: jduke@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
+dn: uid=gsstestserver,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: gsstestserver
+sn: Service
+uid: gsstestserver
+userPassword: gsstestpwd
+krb5PrincipalName: gsstestserver/xxx@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0

@@ -1,0 +1,30 @@
+{
+  "realm": "authz-test",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required": "external",
+  "resource": "resource-server-test",
+  "credentials": {
+    "secret": "secret"
+  },
+  "bearer-only": true,
+  "policy-enforcer": {
+    "claim-information-point": {
+      "claims": {
+        "claim-b": "claim-b"
+      }
+    },
+    "paths": [
+      {
+        "path": "/api/resourcea",
+        "claim-information-point": {
+          "claims": {
+            "claim-a": "{request.parameter['claim-a']}"
+          },
+          "my-custom-cip": {
+            "claim-value": "test"
+          }
+        }
+      }
+    ]
+  }
+}

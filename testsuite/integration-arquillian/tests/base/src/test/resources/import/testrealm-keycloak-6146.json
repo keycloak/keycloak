@@ -1,0 +1,266 @@
+{
+   "id":"secure-app",
+   "realm":"secure-app",
+   "accessCodeLifespanUserAction" : 300,
+   "enabled":true,
+   "sslRequired":"external",
+   "bruteForceProtected" : true,
+   "permanentLockout": true,
+   "maxFailureWaitSeconds" : 900,
+   "minimumQuickLoginWaitSeconds" : 60,
+   "waitIncrementSeconds" : 60,
+   "quickLoginCheckMilliSeconds" : 1000,
+   "maxDeltaTimeSeconds" : 43200,
+   "failureFactor" : 3,
+   "eventsEnabled" : true,
+   "eventsListeners" : [ "jboss-logging" ],
+   "enabledEventTypes" : [ "SEND_RESET_PASSWORD", "UPDATE_TOTP", "REMOVE_TOTP", "REVOKE_GRANT", "LOGIN_ERROR", "CLIENT_LOGIN", "RESET_PASSWORD_ERROR", "IMPERSONATE_ERROR", "CODE_TO_TOKEN_ERROR", "CUSTOM_REQUIRED_ACTION", "RESTART_AUTHENTICATION", "UPDATE_PROFILE_ERROR", "IMPERSONATE", "LOGIN", "UPDATE_PASSWORD_ERROR", "CLIENT_INITIATED_ACCOUNT_LINKING", "REGISTER", "LOGOUT", "CLIENT_REGISTER", "IDENTITY_PROVIDER_LINK_ACCOUNT", "UPDATE_PASSWORD", "FEDERATED_IDENTITY_LINK_ERROR", "CLIENT_DELETE", "IDENTITY_PROVIDER_FIRST_LOGIN", "VERIFY_EMAIL", "CLIENT_DELETE_ERROR", "CLIENT_LOGIN_ERROR", "RESTART_AUTHENTICATION_ERROR", "REMOVE_FEDERATED_IDENTITY_ERROR", "EXECUTE_ACTIONS", "SEND_IDENTITY_PROVIDER_LINK_ERROR", "EXECUTE_ACTION_TOKEN_ERROR", "SEND_VERIFY_EMAIL", "EXECUTE_ACTIONS_ERROR", "REMOVE_FEDERATED_IDENTITY", "IDENTITY_PROVIDER_POST_LOGIN", "IDENTITY_PROVIDER_LINK_ACCOUNT_ERROR", "UPDATE_EMAIL", "REGISTER_ERROR", "REVOKE_GRANT_ERROR", "LOGOUT_ERROR", "UPDATE_EMAIL_ERROR", "EXECUTE_ACTION_TOKEN", "CLIENT_UPDATE_ERROR", "UPDATE_PROFILE", "FEDERATED_IDENTITY_LINK", "CLIENT_REGISTER_ERROR", "SEND_VERIFY_EMAIL_ERROR", "SEND_IDENTITY_PROVIDER_LINK", "RESET_PASSWORD", "CLIENT_INITIATED_ACCOUNT_LINKING_ERROR", "REMOVE_TOTP_ERROR", "VERIFY_EMAIL_ERROR", "SEND_RESET_PASSWORD_ERROR", "CLIENT_UPDATE", "IDENTITY_PROVIDER_POST_LOGIN_ERROR", "CUSTOM_REQUIRED_ACTION_ERROR", "UPDATE_TOTP_ERROR", "CODE_TO_TOKEN", "IDENTITY_PROVIDER_FIRST_LOGIN_ERROR" ],
+   "adminEventsEnabled" : true,
+   "adminEventsDetailsEnabled" : true,
+   "requiredCredentials":[
+      "password"
+   ],
+   "passwordPolicy": "length(10) and lowerCase(1) and upperCase(1) and passwordHistory(3) and digits(1) and specialChars(1) and hashAlgorithm(pbkdf2-sha256)",
+   "users":[
+      {
+         "username":"user1",
+         "firstName" : "User",
+         "lastName" : "1",
+         "email" : "user1@feedhenry.org",
+         "enabled":true,
+         "credentials":[
+            {
+               "type":"password",
+               "value":"Password123!"
+            }
+         ],
+         "clientRoles":{
+            "account":[
+               "view-profile",
+               "manage-account"
+            ]
+         },
+         "attributes":{
+
+         },
+        "groups" : [ "/Mobile Users" ]
+      },
+      {
+         "username":"user2",
+         "firstName" : "User",
+         "lastName" : "2",
+         "email" : "user2@feedhenry.org",
+         "enabled":true,
+         "credentials":[
+            {
+               "type":"password",
+               "value":"Password123!"
+            }
+         ],
+         "clientRoles":{
+            "account":[
+               "view-profile",
+               "manage-account"
+            ]
+         },
+         "attributes":{
+
+         },
+         "groups" : [ "/Mobile Users" ]
+      },
+      {
+         "username":"secure-user",
+         "enabled" : true,
+          "emailVerified" : true,
+          "firstName" : "Secure",
+          "lastName" : "User",
+          "email" : "secure-user@feedhenry.org",
+         "credentials":[
+            {
+               "type":"password",
+               "value":"Password123!"
+            }
+         ],
+         "requiredActions" : [ "CONFIGURE_TOTP" ],
+         "realmRoles" : [ ],
+         "clientRoles":{
+            "account":[
+               "view-profile",
+               "manage-account"
+            ]
+         },
+         "attributes":{
+
+         },
+         "groups" : [ "/Mobile Users", "/API Access" ]
+      },
+      {
+         "username":"secure-user2",
+         "enabled" : true,
+          "emailVerified" : true,
+          "firstName" : "Secure",
+          "lastName" : "User 2",
+          "email" : "secure-user2@feedhenry.org",
+         "credentials":[
+            {
+               "type":"password",
+               "value":"Password123!"
+            }
+         ],
+         "requiredActions" : [ "CONFIGURE_TOTP" ],
+         "realmRoles" : [ ],
+         "clientRoles":{
+            "account":[
+               "view-profile",
+               "manage-account"
+            ]
+         },
+         "attributes":{
+
+         },
+         "groups" : [ "/Mobile Users", "/API Access" ]
+      },
+      {
+         "username":"superuser",
+         "enabled" : true,
+          "emailVerified" : true,
+          "firstName" : "Super",
+          "lastName" : "User",
+          "email" : "superuser@feedhenry.org",
+         "credentials":[
+            {
+               "type":"password",
+               "value":"Password123!"
+            }
+         ],
+         "realmRoles" : [ ],
+         "clientRoles":{
+            "account":[
+               "view-profile",
+               "manage-account"
+            ]
+         },
+         "attributes":{
+
+         },
+         "groups" : [ "/Mobile Users", "/API Access", "Superuser" ]
+      }
+   ],
+   "clients":[
+      {
+         "clientId":"api-server",
+         "enabled":true,
+         "bearerOnly":true,
+         "adminUrl":"http://localhost:8080"
+      },
+      {
+         "clientId":"client-app",
+         "enabled":true,
+         "publicClient":true,
+         "redirectUris":[
+            "com.feedhenry.securenativeandroidtemplate:/callback"
+         ],
+         "webOrigins":[
+            "*"
+         ]
+      }
+   ],
+   "clientScopeMappings":{
+      "account":[
+         {
+            "client":"api-server",
+            "roles":[
+               "view-profile"
+            ]
+         },
+         {
+            "client":"client-app",
+            "roles":[
+               "view-profile"
+            ]
+         }
+      ]
+   },
+   "groups" : [ {
+     "name" : "Mobile Users",
+     "path" : "/Mobile Users",
+     "attributes" : { },
+     "realmRoles" : [ "mobile-user" ],
+     "clientRoles" : { },
+     "subGroups" : [ ]
+   },
+   {
+     "name" : "API Access",
+     "path" : "/API Access",
+     "attributes" : { },
+     "realmRoles" : [ "mobile-user", "api-access" ],
+     "clientRoles" : { },
+     "subGroups" : [ ]
+   },
+   {
+     "name" : "Superuser",
+     "path" : "/Superusers",
+     "attributes" : { },
+     "realmRoles" : [ "mobile-user", "api-access", "superuser" ],
+     "clientRoles" : { },
+     "subGroups" : [ ]
+   } ],
+   "roles":{
+      "client":{
+         "api-server":[
+
+         ],
+         "client-app":[
+
+         ]
+      }
+   },
+  "authenticatorConfig" : [ {
+    "alias" : "authenticator config",
+    "config" : {
+      "defaultProvider" : ""
+    }
+  }, {
+    "alias" : "create unique user config",
+    "config" : {
+      "require.password.update.after.registration" : "false"
+    }
+  }, {
+    "alias" : "review profile config",
+    "config" : {
+      "update.profile.on.first.login" : "missing"
+    }
+  }, {
+    "alias" : "x509 browser auth config",
+    "config" : {
+      "x509-cert-auth.extendedkeyusage" : "",
+      "x509-cert-auth.mapper-selection.user-attribute-name" : "usercertificate",
+      "x509-cert-auth.ocsp-responder-uri" : "",
+      "x509-cert-auth.regular-expression" : "(.*?)(?:$)",
+      "x509-cert-auth.crl-checking-enabled" : "",
+      "x509-cert-auth.confirmation-page-disallowed" : "",
+      "x509-cert-auth.keyusage" : "",
+      "x509-cert-auth.mapper-selection" : "Username or Email",
+      "x509-cert-auth.crl-relative-path" : "crl.pem",
+      "x509-cert-auth.crldp-checking-enabled" : "false",
+      "x509-cert-auth.mapping-source-selection" : "Subject's Common Name",
+      "x509-cert-auth.ocsp-checking-enabled" : ""
+    }
+  }, {
+    "alias" : "x509 direct grant config",
+    "config" : {
+      "x509-cert-auth.extendedkeyusage" : "",
+      "x509-cert-auth.mapper-selection.user-attribute-name" : "usercertificate",
+      "x509-cert-auth.ocsp-responder-uri" : "",
+      "x509-cert-auth.regular-expression" : "(.*?)(?:$)",
+      "x509-cert-auth.crl-checking-enabled" : "",
+      "x509-cert-auth.confirmation-page-disallowed" : "",
+      "x509-cert-auth.keyusage" : "",
+      "x509-cert-auth.mapper-selection" : "Username or Email",
+      "x509-cert-auth.crl-relative-path" : "crl.pem",
+      "x509-cert-auth.crldp-checking-enabled" : "false",
+      "x509-cert-auth.mapping-source-selection" : "Subject's Common Name",
+      "x509-cert-auth.ocsp-checking-enabled" : ""
+    }
+  } ]
+}

@@ -1,0 +1,9 @@
+{
+  "realm" : "kerberos-demo",
+  "resource" : "kerberos-app",
+  "auth-server-url": "/auth",
+  "ssl-required" : "external",
+  "credentials": {
+      "secret": "password"
+  }
+}
