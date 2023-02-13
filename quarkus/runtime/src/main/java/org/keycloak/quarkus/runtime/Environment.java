@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
+import io.smallrye.config.SmallRyeConfig;
+
 import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
@@ -108,6 +110,7 @@ public final class Environment {
     public static void setProfile(String profile) {
         System.setProperty(PROFILE, profile);
         System.setProperty(ProfileManager.QUARKUS_PROFILE_PROP, profile);
+        System.setProperty(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE, profile);
         if (isTestLaunchMode()) {
             System.setProperty("mp.config.profile", profile);
         }

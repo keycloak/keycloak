@@ -78,7 +78,6 @@ public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity 
     @ProtoField(number = 4)
     public Long timestamp;
 
-    @Basic(sortable = true)
     @ProtoField(number = 5)
     public Long expiration;
 

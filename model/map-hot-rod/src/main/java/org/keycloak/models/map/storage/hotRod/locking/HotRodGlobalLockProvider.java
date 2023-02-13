@@ -17,7 +17,6 @@
 
 package org.keycloak.models.map.storage.hotRod.locking;
 
-import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;

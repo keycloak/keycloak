@@ -214,7 +214,7 @@ public class WelcomeResource {
     }
 
     private static boolean isAdminConsoleEnabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2) || Profile.isFeatureEnabled(Profile.Feature.ADMIN);
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
     }
 
     private Theme getTheme() {

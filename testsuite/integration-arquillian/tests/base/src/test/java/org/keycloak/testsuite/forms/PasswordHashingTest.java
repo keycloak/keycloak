@@ -278,7 +278,13 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void assertEncoded(PasswordCredentialModel credential, String password, byte[] salt, String algorithm, int iterations, boolean expectedSuccess) throws Exception {
-        KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, 512);
+        int keyLength = 512;
+
+        if (Pbkdf2Sha256PasswordHashProviderFactory.ID.equals(credential.getPasswordCredentialData().getAlgorithm())) {
+            keyLength = 256;
+        }
+
+        KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, keyLength);
         byte[] key = SecretKeyFactory.getInstance(algorithm).generateSecret(spec).getEncoded();
         if (expectedSuccess) {
             assertEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());

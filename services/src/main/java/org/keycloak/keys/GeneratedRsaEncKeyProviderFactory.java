@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.KeycloakSession;
@@ -68,9 +69,9 @@ public class GeneratedRsaEncKeyProviderFactory extends AbstractGeneratedRsaKeyPr
 
     @Override
     protected boolean isSupportedRsaAlgorithm(String algorithm) {
-        return algorithm.equals(JWEConstants.RSA1_5) 
-                || algorithm.equals(JWEConstants.RSA_OAEP) 
-                || algorithm.equals(JWEConstants.RSA_OAEP_256);
+        return algorithm.equals(Algorithm.RSA1_5)
+                || algorithm.equals(Algorithm.RSA_OAEP)
+                || algorithm.equals(Algorithm.RSA_OAEP_256);
     }
 
     @Override

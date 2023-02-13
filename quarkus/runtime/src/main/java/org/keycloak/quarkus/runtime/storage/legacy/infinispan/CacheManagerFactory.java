@@ -84,7 +84,6 @@ public class CacheManagerFactory {
         }
 
         if (metricsEnabled) {
-            builder.getNamedConfigurationBuilders().values().stream().forEach(b -> b.statistics().enable());
             builder.getGlobalConfigurationBuilder().addModule(MicrometerMeterRegisterConfigurationBuilder.class);
             builder.getGlobalConfigurationBuilder().module(MicrometerMeterRegisterConfigurationBuilder.class).meterRegistry(Metrics.globalRegistry);
         }

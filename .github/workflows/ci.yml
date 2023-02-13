@@ -390,15 +390,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Fake fips
+        run: |
+          cd .github/fake_fips
+          make
+          sudo insmod fake_fips.ko
+
       - id: unit-test-setup
         name: Unit test setup
         uses: ./.github/actions/unit-test-setup
+        with:
+          jdk-version: 17
 
-      - name: Run crypto tests (BCFIPS non-approved mode)
-        run: ./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true
-
-      - name: Run crypto tests (BCFIPS approved mode)
-        run: ./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402,crypto/elytron -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
+      - name: Run crypto tests
+        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-ut.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -417,21 +422,30 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      matrix:
+        mode: [non-strict, strict]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
+
+      - name: Fake fips
+        run: |
+          cd .github/fake_fips
+          make
+          sudo insmod fake_fips.ko
 
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+        with:
+          jdk-version: 17
 
       - name: Prepare Quarkus distribution with BCFIPS
         run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
 
       - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
-          echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
 
       - name: Upload JVM Heapdumps
         if: always()

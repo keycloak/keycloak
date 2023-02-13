@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.model.session;
 
 import org.junit.Test;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -67,9 +66,8 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
 
         assertThat(withRealm(realmId, (session, realm) -> session.sessions().getUserSession(realm, uSId)), notNullValue());
 
-        Time.setOffset(5);
+        setTimeOffset(5);
 
         assertThat(withRealm(realmId, (session, realm) -> session.sessions().getUserSession(realm, uSId)), nullValue());
-
     }
 }

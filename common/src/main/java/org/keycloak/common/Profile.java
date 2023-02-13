@@ -49,9 +49,6 @@ public class Profile {
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
-        @Deprecated
-        ADMIN("Legacy Admin Console", Type.DEPRECATED),
-
         ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
 
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
