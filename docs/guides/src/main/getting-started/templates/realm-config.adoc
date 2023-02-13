@@ -1,0 +1,43 @@
+== Login to the admin console
+
+Go to the {links-admin-console} and login with the username and password
+you created earlier.
+
+== Create a realm
+
+A realm in Keycloak is the equivalent of a tenant. It allows creating isolated groups of applications and users. By default
+there is a single realm in Keycloak called `master`. This is dedicated to manage Keycloak and should not be used for
+your own applications.
+
+Let's create our first realm.
+
+. Open the {links-admin-console}
+. Hover the mouse over the dropdown in the top-left corner where it says `master`, then click on `Create realm`
+. Fill in the form with the following values:
+** Realm name: `myrealm`
+. Click `Create`
+
+image::add-realm.png[Add Realm]
+
+== Create a user
+
+Initially there are no users in a new realm, so let's create one:
+
+. Open the {links-admin-console}
+. Click `Users` (left-hand menu)
+* Click `Create new user` (top-right corner of table)
+. Fill in the form with the following values:
+** Username: `myuser`
+** First Name: Your first name
+** Last Name: Your last name
+. Click `Create`
+
+image::add-user.png[Add User]
+
+The user will need an initial password set to be able to login. To do this:
+
+. Click `Credentials` (top of the page)
+. Fill in the `Set password` form with a password
+. Click `ON` next to `Temporary` to prevent having to update password on first login
+
+image::set-password.png[Set Password]

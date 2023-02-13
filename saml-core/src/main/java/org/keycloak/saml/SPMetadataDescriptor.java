@@ -30,6 +30,7 @@ import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
 import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
+import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -43,9 +44,9 @@ import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_
  */
 public class SPMetadataDescriptor {
 
-    public static EntityDescriptorType buildSPdescriptor(URI loginBinding, URI logoutBinding, URI assertionEndpoint, URI logoutEndpoint,
-        boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
-        String entityId, String nameIDPolicyFormat, List<Element> signingCerts, List<Element> encryptionCerts)
+    public static EntityDescriptorType buildSPDescriptor(URI loginBinding, URI logoutBinding, URI assertionEndpoint, URI logoutEndpoint,
+                                                         boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
+                                                         String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts, List<KeyDescriptorType> encryptionCerts)
     {
         EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
         entityDescriptor.setID(IDGenerator.create("ID_"));
@@ -57,22 +58,14 @@ public class SPMetadataDescriptor {
         spSSODescriptor.addSingleLogoutService(new EndpointType(logoutBinding, logoutEndpoint));
 
         if (wantAuthnRequestsSigned && signingCerts != null) {
-            for (Element key: signingCerts)
-            {
-                KeyDescriptorType keyDescriptor = new KeyDescriptorType();
-                keyDescriptor.setUse(KeyTypes.SIGNING);
-                keyDescriptor.setKeyInfo(key);
-                spSSODescriptor.addKeyDescriptor(keyDescriptor);
+            for (KeyDescriptorType key: signingCerts) {
+                spSSODescriptor.addKeyDescriptor(key);
             }
         }
 
         if (wantAssertionsEncrypted && encryptionCerts != null) {
-            for (Element key: encryptionCerts)
-            {
-                KeyDescriptorType keyDescriptor = new KeyDescriptorType();
-                keyDescriptor.setUse(KeyTypes.ENCRYPTION);
-                keyDescriptor.setKeyInfo(key);
-                spSSODescriptor.addKeyDescriptor(keyDescriptor);
+            for (KeyDescriptorType key: encryptionCerts) {
+                spSSODescriptor.addKeyDescriptor(key);
             }
         }
 
@@ -84,6 +77,19 @@ public class SPMetadataDescriptor {
         entityDescriptor.addChoiceType(new EntityDescriptorType.EDTChoiceType(Arrays.asList(new EntityDescriptorType.EDTDescriptorChoiceType(spSSODescriptor))));
 
         return entityDescriptor;
+    }
+
+    public static KeyDescriptorType buildKeyDescriptorType(Element keyInfo, KeyTypes use, String algorithm) {
+        KeyDescriptorType keyDescriptor = new KeyDescriptorType();
+        keyDescriptor.setUse(use);
+        keyDescriptor.setKeyInfo(keyInfo);
+
+        if (algorithm != null) {
+            EncryptionMethodType encMethod = new EncryptionMethodType(algorithm);
+            keyDescriptor.addEncryptionMethod(encMethod);
+        }
+
+        return keyDescriptor;
     }
 
     public static Element buildKeyInfoElement(String keyName, String pemEncodedCertificate)

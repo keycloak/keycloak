@@ -72,7 +72,7 @@ db-url-host=mykeycloakdb
 ----
 
 === Using environment variables for configuration values
-It is possible to use placeholders to resolve an environment specific value from environment variables inside the keycloak.conf file by using the `${r"${ENV_VAR}"}` syntax:
+It is possible to use placeholders to resolve an environment specific value from environment variables inside the keycloak.conf file by using the `${r"++${ENV_VAR}++"}` syntax:
 
 [source]
 ----

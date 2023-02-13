@@ -159,7 +159,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(loginResponse.getAssertions().get(0).getEncryptedAssertion(), not(nullValue()));
 
         SamlDeployment deployment = SamlUtils.getSamlDeploymentForClient("sales-post-enc");
-        AssertionUtil.decryptAssertion(response, loginResponse, deployment.getDecryptionKey());
+        AssertionUtil.decryptAssertion(loginResponse, deployment.getDecryptionKey());
 
         assertThat(loginResponse.getAssertions().get(0).getAssertion(), not(nullValue()));
         assertThat(loginResponse.getAssertions().get(0).getEncryptedAssertion(), nullValue());

@@ -35,9 +35,9 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.installation.SamlSPDescriptorClientInstallation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.KeyUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -168,7 +168,7 @@ public class InstallationTest extends AbstractClientTest {
 
     private void assertOidcInstallationConfig(String config) {
         assertThat(config, containsString("test"));
-        assertThat(config, not(containsString(ApiUtil.findActiveSigningKey(testRealmResource()).getPublicKey())));
+        assertThat(config, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getPublicKey())));
         assertThat(config, containsString(authServerUrl()));
     }
 
@@ -182,7 +182,7 @@ public class InstallationTest extends AbstractClientTest {
         String xml = samlClient.getInstallationProvider("keycloak-saml");
         assertThat(xml, containsString("<keycloak-saml-adapter>"));
         assertThat(xml, containsString("SPECIFY YOUR entityID!"));
-        assertThat(xml, not(containsString(ApiUtil.findActiveSigningKey(testRealmResource()).getCertificate())));
+        assertThat(xml, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getCertificate())));
         assertThat(xml, containsString(samlUrl()));
     }
 
@@ -191,7 +191,7 @@ public class InstallationTest extends AbstractClientTest {
         String cli = samlClient.getInstallationProvider("keycloak-saml-subsystem-cli");
         assertThat(cli, containsString("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/"));
         assertThat(cli, containsString("SPECIFY YOUR entityID!"));
-        assertThat(cli, not(containsString(ApiUtil.findActiveSigningKey(testRealmResource()).getCertificate())));
+        assertThat(cli, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getCertificate())));
         assertThat(cli, containsString(samlUrl()));
     }
 
@@ -209,7 +209,7 @@ public class InstallationTest extends AbstractClientTest {
         String xml = samlClient.getInstallationProvider("keycloak-saml-subsystem");
         assertThat(xml, containsString("<secure-deployment"));
         assertThat(xml, containsString("SPECIFY YOUR entityID!"));
-        assertThat(xml, not(containsString(ApiUtil.findActiveSigningKey(testRealmResource()).getCertificate())));
+        assertThat(xml, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getCertificate())));
         assertThat(xml, containsString(samlUrl()));
     }
 
