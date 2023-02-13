@@ -209,6 +209,8 @@ export class Agent {
     } else if (requestHeaders.get("content-type") === "text/plain") {
       // Pass the payload as a plain string if the content type is 'text/plain'.
       requestOptions.body = payload as unknown as string;
+    } else if (payload instanceof FormData) {
+      requestOptions.body = payload;
     } else {
       // Otherwise assume it's JSON and stringify it.
       requestOptions.body = JSON.stringify(
@@ -216,7 +218,7 @@ export class Agent {
       );
     }
 
-    if (!requestHeaders.has("content-type")) {
+    if (!requestHeaders.has("content-type") && !(payload instanceof FormData)) {
       requestHeaders.set("content-type", "application/json");
     }
 
