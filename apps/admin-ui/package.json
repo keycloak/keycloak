@@ -87,10 +87,6 @@
   },
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.3",
-    "@babel/core": "^7.20.12",
-    "@babel/preset-env": "^7.20.2",
-    "@cypress/webpack-batteries-included-preprocessor": "^2.3.0",
-    "@cypress/webpack-preprocessor": "^5.16.3",
     "@testing-library/cypress": "^9.0.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
@@ -102,13 +98,11 @@
     "@types/react-dom": "^18.0.10",
     "@vitejs/plugin-react": "^2.2.0",
     "cypress": "^12.5.1",
-    "del": "^7.0.0",
     "jsdom": "^21.1.0",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
     "vite": "^3.2.5",
     "vite-plugin-checker": "^0.5.5",
-    "vitest": "^0.28.5",
-    "webpack": "^5.75.0"
+    "vitest": "^0.28.5"
   }
 }
