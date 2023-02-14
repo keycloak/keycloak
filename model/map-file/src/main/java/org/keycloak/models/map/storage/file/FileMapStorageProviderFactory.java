@@ -70,7 +70,9 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
     private static final Map<Class<?>, Function<?, String[]>> UNIQUE_HUMAN_READABLE_NAME_FIELD = Map.ofEntries(
       entry(MapClientEntity.class,          ((Function<MapClientEntity, String[]>) v -> new String[] { v.getClientId() })),
       entry(MapClientScopeEntity.class,     ((Function<MapClientScopeEntity, String[]>) v -> new String[] { v.getName() })),
-      entry(MapGroupEntity.class,           ((Function<MapGroupEntity, String[]>) v -> new String[] { v.getName()})),
+      entry(MapGroupEntity.class,           ((Function<MapGroupEntity, String[]>) v -> v.getParentId() == null 
+                                                                                         ? new String[] { v.getName() }
+                                                                                         : new String[] { v.getParentId(), v.getName() })),
       entry(MapRealmEntity.class,           ((Function<MapRealmEntity, String[]>) v -> new String[] { v.getName()})),
       entry(MapRoleEntity.class,            ((Function<MapRoleEntity, String[]>) (v -> v.getClientId() == null
                                                                                          ? new String[] { v.getName() }
