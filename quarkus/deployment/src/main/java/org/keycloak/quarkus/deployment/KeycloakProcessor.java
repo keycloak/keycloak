@@ -629,8 +629,10 @@ class KeycloakProcessor {
         FipsMode fipsMode = Configuration.getOptionalValue(
                 MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
                 FipsMode::valueOf).orElse(FipsMode.disabled);
+        String pkcsConfigFilePath = Configuration.getRawValue(
+                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.PKCS11_CONFIG_FILE.getKey());
 
-        recorder.setCryptoProvider(fipsMode);
+        recorder.setCryptoProvider(fipsMode, pkcsConfigFilePath);
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)

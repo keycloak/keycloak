@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime;
 
 import java.lang.annotation.Annotation;
+import java.security.Security;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -165,7 +166,11 @@ public class KeycloakRecorder {
         };
     }
 
-    public void setCryptoProvider(FipsMode fipsMode) {
+    public void setCryptoProvider(FipsMode fipsMode, String pkcs11ConfigFilePath) {
+        if (pkcs11ConfigFilePath != null) {
+            Security.addProvider(getSunPKCS11SecurityProvider().configure(pkcs11ConfigFilePath));
+        }
+
         String cryptoProvider = fipsMode.getProviderClassName();
 
         try {
@@ -179,5 +184,15 @@ public class KeycloakRecorder {
         } catch (Exception cause) {
             throw new RuntimeException("Unexpected error when configuring the crypto provider: " + cryptoProvider, cause);
         }
+    }
+
+    private static java.security.Provider getSunPKCS11SecurityProvider() {
+        java.security.Provider provider = Security.getProvider("SunPKCS11");
+
+        if (provider == null) {
+            throw new IllegalStateException("PKCS11 configuration file provided but no PKCS11 security provider is available.");
+        }
+
+        return provider;
     }
 }

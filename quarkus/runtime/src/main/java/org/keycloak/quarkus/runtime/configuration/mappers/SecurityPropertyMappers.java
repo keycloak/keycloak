@@ -19,6 +19,9 @@ final class SecurityPropertyMappers {
         return new PropertyMapper[] {
                 fromOption(SecurityOptions.FIPS_MODE).transformer(SecurityPropertyMappers::resolveFipsMode)
                         .paramLabel("mode")
+                        .build(),
+                fromOption(SecurityOptions.PKCS11_CONFIG_FILE)
+                        .paramLabel("path")
                         .build()
         };
     }
@@ -29,17 +32,5 @@ final class SecurityPropertyMappers {
         }
 
         return of(FipsMode.valueOf(value.get()).toString());
-    }
-
-    private static Optional<String> resolveSecurityProvider(Optional<String> value,
-            ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        FipsMode fipsMode = value.map(FipsMode::valueOf)
-                .orElse(FipsMode.disabled);
-
-        if (fipsMode.isFipsEnabled()) {
-            return of("BCFIPS");
-        }
-
-        return value;
     }
 }

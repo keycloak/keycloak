@@ -34,6 +34,27 @@ You can set a secure password for your keystore using the `https-key-store-passw
 
 If no password is set, the default password `password` is used.
 
+==== Using a PKCS#11 Keystore
+
+Keycloak supports loading key material from a Hardware Security Device (HSM) that is compatible with the PKCS#11 standard so that
+the server can use it as a regular keystore.
+
+Before configuring a PKCS#11 keystore you need to make sure the environment where the server is installed is properly configured with
+the necessary modules and configuration files to make it possible to access your cryptographic device using a PKCS#11 compliant Java Security Provider, usually the `SunPKCS11` security provider.
+For more details, please take a look at https://docs.oracle.com/en/java/javase/17/security/pkcs11-reference-guide1.html[PKCS#11 Reference Guide] from the Java documentation.
+The installation and configuration of such modules is out of the scope of this guide as they are specific to the device you are using.
+
+To configure a PKCS#11 Keystore you need to set the following options:
+
+<@kc.start parameters="--https-key-store-type=PKCS11 --https-key-store-password=mypin --pkcs11-config-file=/path/to/pkcs11-conf-file"/>
+
+The `https-key-store-type` option must be set to `PKCS11` to indicate to the server that key material should be loaded using a PKCS#11 compliant Java
+security provider.
+
+The `https-key-store-password` option must be set to provide the `PIN` that will be used to access your PKCS#11 keystore.
+
+The `pkcs11-config-file` option allows you to dynamically set the configuration for the default PKCS#11 compliant Java security provider.
+
 == Configuring TLS protocols
 By default, Keycloak does not enable deprecated TLS protocols.
 If your client supports only deprecated protocols, consider upgrading the client.
