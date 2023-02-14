@@ -1,0 +1,47 @@
+team/cloud-native-sig:
+  - area/admin/cli
+  - area/dependencies
+  - area/dist/quarkus
+  - area/operator
+
+team/continuous-testing:
+  - area/ci
+  - area/testsuite
+
+team/core-features:
+  - area/authentication
+  - area/authentication/webauthn
+  - area/core
+  - area/identity-brokering
+  - area/oidc
+  - area/saml
+
+team/storage-sig:
+  - area/import-export
+  - area/infinispan
+  - area/ldap
+  - area/storage
+
+team/ui:
+  - area/account/ui
+  - area/adapter/javascript
+  - area/admin/client/node
+  - area/admin/ui
+
+team/other:
+  - area/account/api
+  - area/adapter/fuse
+  - area/adapter/java-cli
+  - area/adapter/jee
+  - area/adapter/jee-saml
+  - area/adapter/spring
+  - area/admin/api
+  - area/admin/fine-grained-permissions
+  - area/authorization-services
+  - area/dist/wildfly
+  - area/docs
+  - area/token-exchange
+  - area/user-profile
+
+team/community:
+  - area/translations
