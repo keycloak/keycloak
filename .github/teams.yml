@@ -1,4 +1,5 @@
 team/cloud-native-sig:
+  - area/admin/cli
   - area/dependencies
   - area/dist/quarkus
   - area/operator
@@ -35,7 +36,6 @@ team/other:
   - area/adapter/jee-saml
   - area/adapter/spring
   - area/admin/api
-  - area/admin/cli
   - area/admin/fine-grained-permissions
   - area/authorization-services
   - area/dist/wildfly
