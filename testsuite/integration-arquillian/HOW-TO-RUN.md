@@ -979,5 +979,5 @@ For running testsuite with server using BCFIPS approved mode, those additional p
 ```
 The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
 ```
-KC(BCFIPS version 1.000203 Approved Mode) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
+KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
 ```
