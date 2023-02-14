@@ -17,6 +17,7 @@ import type GlobalRequestResult from "../defs/globalRequestResult.js";
 import type GroupRepresentation from "../defs/groupRepresentation.js";
 import type { ManagementPermissionReference } from "../defs/managementPermissionReference.js";
 import type ComponentTypeRepresentation from "../defs/componentTypeRepresentation.js";
+import type { ClientSessionStat } from "../defs/clientSessionStat.js";
 
 export class Realms extends Resource {
   /**
@@ -294,6 +295,15 @@ export class Realms extends Resource {
   /**
    * Sessions
    */
+  public getClientSessionStats = this.makeRequest<
+    { realm: string },
+    ClientSessionStat[]
+  >({
+    method: "GET",
+    path: "/{realm}/client-session-stats",
+    urlParamKeys: ["realm"],
+  });
+
   public logoutAll = this.makeRequest<{ realm: string }, void>({
     method: "POST",
     path: "/{realm}/logout-all",

@@ -11,7 +11,6 @@ import { IdentityProviders } from "./resources/identityProviders.js";
 import { Realms } from "./resources/realms.js";
 import { Roles } from "./resources/roles.js";
 import { ServerInfo } from "./resources/serverInfo.js";
-import { Sessions } from "./resources/sessions.js";
 import { Users } from "./resources/users.js";
 import { UserStorageProvider } from "./resources/userStorageProvider.js";
 import { WhoAmI } from "./resources/whoAmI.js";
@@ -44,7 +43,6 @@ export class KeycloakAdminClient {
   public serverInfo: ServerInfo;
   public whoAmI: WhoAmI;
   public attackDetection: AttackDetection;
-  public sessions: Sessions;
   public authenticationManagement: AuthenticationManagement;
   public cache: Cache;
 
@@ -78,7 +76,6 @@ export class KeycloakAdminClient {
     this.authenticationManagement = new AuthenticationManagement(this);
     this.serverInfo = new ServerInfo(this);
     this.whoAmI = new WhoAmI(this);
-    this.sessions = new Sessions(this);
     this.attackDetection = new AttackDetection(this);
     this.cache = new Cache(this);
   }

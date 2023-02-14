@@ -1,4 +1,4 @@
-## Start Keycloak
+== Start Keycloak
 
 From a terminal open the directory keycloak-{version}, then to start Keycloak run the following command.
 

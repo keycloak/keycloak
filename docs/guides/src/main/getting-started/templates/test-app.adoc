@@ -1,4 +1,4 @@
-## Test your setup
+== Test your setup
 
 To make it easy for you we have a SPA testing application available on the https://www.keycloak.org/app/[Keycloak website].
 

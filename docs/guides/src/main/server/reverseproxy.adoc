@@ -155,7 +155,6 @@ The following table shows the recommended paths to expose.
 
 |===
 
-.Note:
 [NOTE]
 As it's true that the `js` path is needed for internal clients like the account console, it's good practice to use `keycloak.js` from a JavaScript package manager like npm or yarn for your external clients.
 

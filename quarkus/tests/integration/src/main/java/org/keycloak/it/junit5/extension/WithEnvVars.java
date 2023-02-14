@@ -15,17 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.webauthn.pages;
+package org.keycloak.it.junit5.extension;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Helper class for WebAuthnPolicy Passwordless Page
- *
- * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
+ * {@link WithEnvVars} is used to set environment variables before starting the server
  */
-public class WebAuthnPolicyPasswordlessPage extends WebAuthnPolicyPage {
+@Target({ ElementType.TYPE, ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface WithEnvVars {
 
-    @Override
-    public String getUriFragment() {
-        return super.getAuthenticationUriFragment() + "/webauthn-policy-passwordless";
-    }
+    /**
+     * List of environment variables to be set as key-value pairs, e.g. {"JAVA_OPTS", -Xms64m", "DEBUG_PORT", "5005"}
+     */
+    String[] value() default {};
+
 }

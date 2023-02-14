@@ -1,13 +1,13 @@
 <#import "/templates/guide.adoc" as tmpl>
 
 <@tmpl.guide
-title="Openshift"
-summary="Get started with Keycloak on Openshift">
+title="OpenShift"
+summary="Get started with Keycloak on OpenShift">
 
 :links-admin-console: Keycloak Admin Console
 :links-account-console: Keycloak Account Console
 
-## Before you start
+== Before you start
 
 Install https://code-ready.github.io/crc/[Red Hat Code Ready Containers] and follow the steps in the documentation to install a 
 local OpenShift cluster.
@@ -21,7 +21,7 @@ crc status
 
 If everything is OK you should see an output similar to this:
 
-[source,bash,subs="attributes+"]
+[source,subs="attributes+"]
 ----
 CRC VM:          Running
 OpenShift:       Running
@@ -42,7 +42,7 @@ For this guide, we are going to create a new project called `keycloak`. For that
 oc new-project keycloak
 ----
 
-## Run Keycloak
+== Run Keycloak
 
 To spin up a Keycloak server in your project, execute the following command:
 

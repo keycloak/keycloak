@@ -78,7 +78,6 @@
             <plugin>
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctor-maven-plugin</artifactId>
-                <version>1.5.5</version>
                 <configuration>
                     <sourceDocumentName>index.adoc</sourceDocumentName>
                     <backend>html5</backend>
