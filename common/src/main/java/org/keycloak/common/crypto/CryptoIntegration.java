@@ -80,7 +80,6 @@ public class CryptoIntegration {
                 .append(" Default keystore type: " + KeyStore.getDefaultType() + "\n")
                 .append(" KeyManagerFactory.getDefaultAlgorithm(): " + KeyManagerFactory.getDefaultAlgorithm() + "\n")
                 .append(" TrustManagerFactory.getDefaultAlgorithm(): " + TrustManagerFactory.getDefaultAlgorithm() + "\n")
-                .append(" Default keystore type: " + KeyStore.getDefaultType() + "\n")
                 .append(" keystore.type.compat: " + Security.getProperty("keystore.type.compat") + "\n");
         Stream.of("javax.net.ssl.trustStoreType", "javax.net.ssl.trustStore", "javax.net.ssl.trustStoreProvider",
                         "javax.net.ssl.keyStoreType", "javax.net.ssl.keyStore", "javax.net.ssl.keyStoreProvider")
