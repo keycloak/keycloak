@@ -295,7 +295,7 @@ public class JpaMapStorageProviderFactory implements
     protected EntityManager getEntityManager() {
         EntityManager em = emf.createEntityManager();
 
-        // This is a workaround for Hibernate not supporting javax.persistence.lock.timeout
+        // This is a workaround for Hibernate not supporting jakarta.persistence.lock.timeout
         //   config option for Postgresql/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16181
         if ("postgresql".equals(databaseShortName) || "cockroachdb".equals(databaseShortName)) {
             Long lockTimeout = config.getLong("lockTimeout", DEFAULT_LOCK_TIMEOUT);
@@ -360,7 +360,7 @@ public class JpaMapStorageProviderFactory implements
                     JpaMapUtils.addSpecificNamedQueries(emf);
 
                     // consistency check for transaction handling, as this would lead to data-inconsistencies as changes wouldn't commit when expected
-                    if (jtaEnabled && !this.emf.getProperties().get(AvailableSettings.JPA_TRANSACTION_TYPE).equals(PersistenceUnitTransactionType.JTA.name())) {
+                    if (jtaEnabled && !this.emf.getProperties().get(AvailableSettings.JAKARTA_TRANSACTION_TYPE).equals(PersistenceUnitTransactionType.JTA.name())) {
                         throw new ModelException("Consistency check failed: If Keycloak is run with JTA, the Entity Manager for JPA map storage should be run with JTA as well.");
                     }
 
@@ -384,18 +384,18 @@ public class JpaMapStorageProviderFactory implements
         String dataSource = config.get("dataSource");
 
         if (dataSource != null) {
-            properties.put(AvailableSettings.JPA_NON_JTA_DATASOURCE, dataSource);
+            properties.put(AvailableSettings.JAKARTA_NON_JTA_DATASOURCE, dataSource);
         } else {
-            properties.put(AvailableSettings.JPA_JDBC_URL, config.get("url"));
-            properties.put(AvailableSettings.JPA_JDBC_DRIVER, config.get("driver"));
+            properties.put(AvailableSettings.JAKARTA_JDBC_URL, config.get("url"));
+            properties.put(AvailableSettings.JAKARTA_JDBC_DRIVER, config.get("driver"));
 
             String user = config.get("user");
             if (user != null) {
-                properties.put(AvailableSettings.JPA_JDBC_USER, user);
+                properties.put(AvailableSettings.JAKARTA_JDBC_USER, user);
             }
             String password = config.get("password");
             if (password != null) {
-                properties.put(AvailableSettings.JPA_JDBC_PASSWORD, password);
+                properties.put(AvailableSettings.JAKARTA_JDBC_PASSWORD, password);
             }
         }
 
@@ -409,11 +409,11 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.dialect", config.get("driverDialect"));
         // metadata contributor to register the json type
         properties.put("hibernate.metadata_builder_contributor", "org.keycloak.models.map.storage.jpa.hibernate.contributor.JsonbMetadataBuilderContributor");
-        properties.put("jakarta.persistence.validation.mode", ValidationMode.NONE.name());
+        properties.put(AvailableSettings.JAKARTA_VALIDATION_MODE, ValidationMode.NONE.name());
         Long lockTimeout = config.getLong("lockTimeout", DEFAULT_LOCK_TIMEOUT);
         if (lockTimeout >= 0) {
             // This property does not work for PostgreSQL/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16181
-            properties.put(AvailableSettings.JPA_LOCK_TIMEOUT, String.valueOf(lockTimeout));
+            properties.put(AvailableSettings.JAKARTA_LOCK_TIMEOUT, String.valueOf(lockTimeout));
         } else {
             logger.warnf("Database %s used without lockTimeout option configured. This can result in deadlock where one connection waits for a pessimistic write lock forever.", databaseShortName);
         }
