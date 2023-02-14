@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
+import java.nio.file.Paths;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
@@ -130,6 +131,26 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertNoBuild();
         when().get("/metrics").then().statusCode(200)
                 .body(containsString("jvm_gc_"));
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=keystore" })
+    @Order(10)
+    void testMissingSmallRyeKeyStoreProperty(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("The config property smallrye.config.source.keystore.kc-default.password is required but it could not be found in any config source");
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @Order(11)
+    void testSmallRyeKeyStoreConfigSource(KeycloakDistribution distribution) {
+        // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "debug" as the stored password)
+        CLIResult cliResult = distribution.run("start", "--http-enabled=true", "--hostname-strict=false",
+                "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
+                "--config-keystore-password=secret");
+        assertTrue(cliResult.getOutput().contains("DEBUG"));
+        distribution.stop();
     }
 
     public static class UpdateConsoleLogLevelToWarnFromQuarkusProps implements Consumer<KeycloakDistribution> {

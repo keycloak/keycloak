@@ -15,12 +15,13 @@ Keycloak loads the configuration from four sources, which are listed here in ord
 . Environment variables
 . Options defined in a user-created configuration file.
 . Options defined in the `conf/keycloak.conf` file.
+. Options defined in a user-created Java KeyStore file.
 
 When an option is set in more than one source, the one that comes first in the list determines the value for that option. For example, the value for an option set by a command-line parameter has a higher priority than an environment variable for the same option.
 
 === Example: Configuring the db-url-host parameter
 
-The following example shows how the `db-url` value is set in three configuration sources:
+The following example shows how the `db-url` value is set in four configuration sources:
 
 |===
 |*Source* | *Format*
@@ -33,11 +34,14 @@ The following example shows how the `db-url` value is set in three configuration
 
 |Configuration file
 |`db-url=confFileValue`
+
+|Java KeyStore file
+|`kc.db-url=keystoreValue`
 |===
 
 Based on the priority of application, the value that is used at startup is `cliValue`, because the command line is the highest priority.
 
-If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. However, if this value had been set in a user defined configuration file, that value would take precedence over the `conf/keycloak.conf` file.
+If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. However, if this value had been set in a user defined configuration file, that value would take precedence over the `conf/keycloak.conf` file. If none of the previous values were applied, the value `kc.db-url=confFileValue` would be used due to the lowest priority among the available configuration sources.
 
 == Formats for configuration
 The configuration uses a _unified-per-source_ format, which simplifies translation of a key/value pair from one configuration source to another.
@@ -47,6 +51,8 @@ Command-line parameter format:: Values for the command-line use the `--_<key-wit
 Environment variable format:: Values for environment variables use the uppercased `KC++_++__<key_with_underscores>__=_<value>_` format.
 
 Configuration file format:: Values that go into the configuration file use the `_<key-with-dashes>_=_<value>_` format.
+
+KeyStore configuration file format:: Values that go into the KeyStore configuration file use the `kc._<key-with-dashes>_` format. `_<value>_` is then a password stored in the KeyStore.
 
 At the end of each configuration {section}, look for the _Relevant
 options_ heading, which defines the applicable configuration
@@ -101,6 +107,23 @@ You can also specify an explicit configuration file location using the `[-cf|--c
 
 <@kc.start rootParameters="--config-file=/path/to/myconfig.conf"/>
 
+=== Format for loading properties from a Java KeyStore
+
+Thanks to Keystore Configuration Source you can directly load properties from a Java KeyStore using the `[--config-keystore]` and `[--config-keystore-password]` options.
+Optionally, you can specify the KeyStore type using the `[--config-keystore-type]` option. By default, the KeyStore type is `PKCS12`.
+
+The secrets in a KeyStore need to be stored using the `PBE` (password-based encryption) key algorithm, where a key is derived from a KeyStore password.
+You can generate such a KeyStore using the following `keytool` command:
+[source, bash]
+----
+keytool -importpass -alias kc.db-password -keystore keystore.p12 -storepass keystorepass -storetype PKCS12 -v
+----
+After executing the command, you will be prompted to *Enter the password to be stored*, which represents a value of the `kc.db-password` property above.
+
+When the KeyStore is created, you can start the server using the following parameters:
+
+<@kc.start parameters="--config-keystore=/path/to/keystore.p12 --config-keystore-password=storepass --config-keystore-type=PKCS12"/>
+
 === Format for raw Quarkus properties
 In most cases, the available configuration options should suffice to configure the server. 
 However, for a specific behavior or capability that is missing in the Keycloak configuration, you can use properties from the underlying Quarkus framework.
@@ -118,6 +141,8 @@ You can use only a https://github.com/keycloak/keycloak/blob/main/quarkus/runtim
 * No lock icon for a property in the Quarkus guide indicates a runtime property for Quarkus and Keycloak. 
 
 . Use the `[-cf|--config-file]` command line parameter to include that file.
+
+Similarly, you can also store Quarkus properies in a Java KeyStore.
 
 Note that some Quarkus properties are already mapped in the Keycloak configuration, such as `quarkus.http.port` and similar essential properties. If the property is used by Keycloak, defining that property key in `quarkus.properties` has no effect. The Keycloak configuration value takes precedence over the Quarkus property value.
 
@@ -182,7 +207,10 @@ To run a `build`, enter the following command:
 
 This command shows `build options` that you enter. Keycloak distinguishes between **build options**, that are usable when running the `build` command, and **configuration options**, that are usable when starting up the server.
 
-For a non-optimized startup of Keycloak, this distinction has no effect. However, if you run a build before the startup,  only a subset of options is available to the build command. The restriction is due to the build options getting persisted into an optimized Keycloak image. For example, configuration for credentials such as `db-password` must not get persisted for security reasons.
+For a non-optimized startup of Keycloak, this distinction has no effect. However, if you run a build before the startup,  only a subset of options is available to the build command. The restriction is due to the build options getting persisted into an optimized Keycloak image. For example, configuration for credentials such as `db-password` (which is a runtime option) must not get persisted for security reasons.
+
+[WARNING]
+All build options are persisted in a plain text. Do not store any sensitive data as the build options. This applies across all the available configuration sources, including the KeyStore Config Source. Hence we also do not recommend to store any build options in the KeyStore.
 
 Build options are marked in <@links.server id="all-config"/> with a tool icon.
 To find available build options, see https://www.keycloak.org/server/all-config?f=build[All configuration page with build options selected] or enter the following command:
