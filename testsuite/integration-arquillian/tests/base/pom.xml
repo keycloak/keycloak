@@ -364,7 +364,7 @@
                                     <run>
                                         <shmSize>${docker.database.shmsize}</shmSize>
                                         <ports>
-                                            <port>${docker.database.port}</port>
+                                            <port>${docker.database.port}:${docker.database.port}</port>
                                         </ports>
                                         <env>
                                             <!-- MYSQL and MariaDB -->
