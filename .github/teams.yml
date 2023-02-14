@@ -1,4 +1,4 @@
-team/cloud-native-sig:
+team/cloud-native:
   - area/admin/cli
   - area/dependencies
   - area/dist/quarkus
@@ -8,7 +8,7 @@ team/continuous-testing:
   - area/ci
   - area/testsuite
 
-team/core-features:
+team/core:
   - area/authentication
   - area/authentication/webauthn
   - area/core
@@ -16,7 +16,7 @@ team/core-features:
   - area/oidc
   - area/saml
 
-team/storage-sig:
+team/store:
   - area/import-export
   - area/infinispan
   - area/ldap
