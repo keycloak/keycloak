@@ -29,8 +29,9 @@ RUN echo "keycloak:x:0:root" >> /etc/group && \
     echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
 
 USER 1000
+WORKDIR /opt/keycloak
 
 EXPOSE 8080
 EXPOSE 8443
 
-ENTRYPOINT [ "/opt/keycloak/bin/kc.sh" ]
+ENTRYPOINT [ "bin/kc.sh" ]
