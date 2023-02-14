@@ -81,7 +81,7 @@ if not "x%JAVA_OPTS%" == "x" (
 if not "x%JAVA_ADD_OPENS%" == "x" (
   echo "JAVA_ADD_OPENS already set in environment; overriding default settings with values: %JAVA_ADD_OPENS%"
 ) else (
-  set "JAVA_ADD_OPENS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+  set "JAVA_ADD_OPENS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED"
 )
 set "JAVA_OPTS=%JAVA_OPTS% %JAVA_ADD_OPENS%"
 

@@ -48,7 +48,7 @@ public class KeycloakFipsSecurityProvider extends Provider {
             isSystemFipsEnabled.setAccessible(true);
             return (boolean) isSystemFipsEnabled.invoke(null);
         } catch (Throwable ignore) {
-            logger.warn("Could not detect if FIPS is enabled from the host");
+            logger.debug("Could not detect if FIPS is enabled from the host");
         } finally {
             if (isSystemFipsEnabled != null) {
                 isSystemFipsEnabled.setAccessible(false);
