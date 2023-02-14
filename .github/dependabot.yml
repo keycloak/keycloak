@@ -9,11 +9,6 @@ updates:
       interval: weekly
     labels:
       - area/dependencies
-    ignore:
-      - dependency-name: vite
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@vitejs/plugin-react"
-        update-types: ["version-update:semver-major"]
   - package-ecosystem: maven
     directory: keycloak-theme
     open-pull-requests-limit: 999

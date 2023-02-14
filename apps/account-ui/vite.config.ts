@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 import { checker } from "vite-plugin-checker";
 
 // https://vitejs.dev/config/
@@ -14,7 +14,6 @@ export default defineConfig({
   resolve: {
     // Resolve the 'module' entrypoint at all times (not the default due to Node.js compatibility issues).
     mainFields: ["module"],
-    dedupe: ["react", "react-dom"],
   },
   plugins: [react(), checker({ typescript: true })],
 });

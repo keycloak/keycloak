@@ -96,12 +96,12 @@
     "@types/lodash-es": "^4.17.6",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.10",
-    "@vitejs/plugin-react": "^2.2.0",
+    "@vitejs/plugin-react-swc": "^3.1.0",
     "cypress": "^12.5.1",
     "jsdom": "^21.1.0",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
-    "vite": "^3.2.5",
+    "vite": "^4.1.1",
     "vite-plugin-checker": "^0.5.5",
     "vitest": "^0.28.5"
   }

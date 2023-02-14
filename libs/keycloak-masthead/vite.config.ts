@@ -1,4 +1,4 @@
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 import path from "node:path";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import { defineConfig } from "vite";
