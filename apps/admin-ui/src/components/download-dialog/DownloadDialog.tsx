@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertVariant,
   Form,
   FormGroup,
   ModalVariant,
@@ -111,22 +109,6 @@ export const DownloadDialog = ({
     >
       <Form>
         <Stack hasGutter>
-          {enabled && (
-            <StackItem>
-              <Alert
-                id={id}
-                title={t("clients:description")}
-                variant={AlertVariant.info}
-                isInline
-              >
-                {
-                  configFormats.find(
-                    (configFormat) => configFormat.id === selected
-                  )?.helpText
-                }
-              </Alert>
-            </StackItem>
-          )}
           <StackItem>
             <FormGroup
               fieldId="type"
@@ -157,6 +139,7 @@ export const DownloadDialog = ({
                     key={configFormat.id}
                     value={configFormat.id}
                     isSelected={selected === configFormat.id}
+                    description={enabled ? configFormat.helpText : undefined}
                   >
                     {configFormat.displayType}
                   </SelectOption>
