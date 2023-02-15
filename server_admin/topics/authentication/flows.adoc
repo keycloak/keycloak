@@ -65,7 +65,7 @@ This requirement type is only set on sub-flows.
 
 * A _Conditional_ sub-flow contains executions. These executions must evaluate to logical statements. 
 * If all executions evaluate as _true_, the _Conditional_ sub-flow acts as _Required_. 
-* If all executions evaluate as _false_, the _Conditional_ sub-flow acts as _Disabled_.
+* If any executions evaluate as _false_, the _Conditional_ sub-flow acts as _Disabled_.
 * If you do not set an execution, the _Conditional_ sub-flow acts as _Disabled_. 
 * If a flow contains executions and the flow is not set to _Conditional_, {project_name} does not evaluate the executions, and the executions are considered functionally _Disabled_.
 
