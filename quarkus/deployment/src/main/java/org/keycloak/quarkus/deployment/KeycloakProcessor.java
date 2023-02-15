@@ -22,6 +22,7 @@ import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDP
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
 import static org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
@@ -95,12 +96,11 @@ import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
-import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.StorageOptions;
-import org.keycloak.config.TransactionOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
+import org.keycloak.models.map.storage.jpa.EventListenerIntegrator;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
 import org.keycloak.quarkus.runtime.QuarkusProfileConfigResolver;
@@ -280,7 +280,7 @@ class KeycloakProcessor {
     @BuildStep(onlyIf = IsJpaStoreEnabled.class)
     void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
         String storage = Configuration.getRawValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
+                NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
         ParsedPersistenceXmlDescriptor descriptor;
 
         if (storage == null) {
@@ -325,6 +325,12 @@ class KeycloakProcessor {
         ConfigValue lockTimeoutConfigValue = getConfig().getConfigValue("kc.spi-map-storage-jpa-lock-timeout");
         if (lockTimeoutConfigValue != null && lockTimeoutConfigValue.getValue() != null) {
             unitProperties.setProperty(AvailableSettings.JPA_LOCK_TIMEOUT, lockTimeoutConfigValue.getValue());
+        }
+
+        ConfigValue storage = getConfig().getConfigValue(NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
+        if (storage != null && Objects.equals(storage.getValue(), StorageOptions.StorageType.jpa.name())) {
+            // if JPA map storage is enabled, pass on the property to 'EventListenerIntegrator' to activate the necessary event listeners for JPA map storage
+            unitProperties.setProperty(EventListenerIntegrator.JPA_MAP_STORAGE_ENABLED, Boolean.TRUE.toString());
         }
 
         unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
@@ -632,7 +638,7 @@ class KeycloakProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     void setCryptoProvider(KeycloakRecorder recorder) {
         FipsMode fipsMode = Configuration.getOptionalValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
+                NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
                 FipsMode::valueOf).orElse(FipsMode.disabled);
 
         recorder.setCryptoProvider(fipsMode);
@@ -829,11 +835,11 @@ class KeycloakProcessor {
     }
 
     private boolean isMetricsEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
+        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
     }
 
     private boolean isHealthEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
+        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
     }
 
     static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {
