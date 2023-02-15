@@ -26,6 +26,16 @@ final class ProxyPropertyMappers {
                         .to("quarkus.http.proxy.enable-forwarded-host")
                         .mapFrom("proxy")
                         .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
+                        .build(),
+                fromOption(ProxyOptions.PROXY_FORWARDED_HEADER_ENABLED)
+                        .to("quarkus.http.proxy.allow-forwarded")
+                        .mapFrom("proxy")
+                        .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
+                        .build(),
+                fromOption(ProxyOptions.PROXY_X_FORWARDED_HEADER_ENABLED)
+                        .to("quarkus.http.proxy.allow-x-forwarded")
+                        .mapFrom("proxy")
+                        .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
                         .build()
         };
     }
