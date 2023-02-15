@@ -1,6 +1,6 @@
 <#macro mainLayout active bodyClass>
 <!doctype html>
-<html>
+<html lang="${locale.currentLanguageTag}">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -25,7 +25,7 @@
     </#if>
 </head>
 <body class="admin-console user ${bodyClass}">
-        
+
     <header class="navbar navbar-default navbar-pf navbar-main header">
         <nav class="navbar" role="navigation">
             <div class="navbar-header">

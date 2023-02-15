@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="${locale.currentLanguageTag}">
     <head>
         <title>${msg("accountManagementTitle")}</title>
 
@@ -108,7 +108,7 @@
         <script>
             var content = <#include "resources/content.json"/>
         </script>
-        
+
         <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/react-core/dist/styles/base.css"/>
         <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/react-core/dist/styles/app.css"/>
         <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/patternfly/patternfly-addons.css"/>

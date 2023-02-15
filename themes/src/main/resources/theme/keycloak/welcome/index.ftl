@@ -21,7 +21,7 @@
   -->
 <!DOCTYPE html>
 
-<html>
+<html lang="${locale.currentLanguageTag}">
 <head>
     <title>Welcome to ${productName}</title>
 
