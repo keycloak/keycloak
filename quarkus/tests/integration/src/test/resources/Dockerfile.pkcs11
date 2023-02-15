@@ -1,0 +1,20 @@
+FROM quay.io/keycloak/keycloak:latest AS keycloak-base
+
+FROM fedora:latest
+ENV LANG en_US.UTF-8
+
+COPY --from=keycloak-base --chown=1000:0 /opt/keycloak /opt/keycloak
+
+RUN echo "keycloak:x:0:root" >> /etc/group && \
+    echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
+
+RUN dnf update -y && \
+   dnf install -y --nodocs softhsm && \
+   dnf install -y --nodocs java-17-openjdk-headless
+
+USER 1000
+
+EXPOSE 8080
+EXPOSE 8443
+
+ENTRYPOINT [ "/opt/keycloak/bin/kc.sh" ]
