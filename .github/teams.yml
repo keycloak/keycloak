@@ -9,12 +9,17 @@ team/continuous-testing:
   - area/testsuite
 
 team/core:
+  - area/admin/api
+  - area/admin/fine-grained-permissions
   - area/authentication
   - area/authentication/webauthn
+  - area/authorization-services
   - area/core
   - area/identity-brokering
   - area/oidc
   - area/saml
+  - area/token-exchange
+  - area/user-profile
 
 team/store:
   - area/import-export
@@ -35,13 +40,8 @@ team/other:
   - area/adapter/jee
   - area/adapter/jee-saml
   - area/adapter/spring
-  - area/admin/api
-  - area/admin/fine-grained-permissions
-  - area/authorization-services
   - area/dist/wildfly
   - area/docs
-  - area/token-exchange
-  - area/user-profile
 
 team/community:
   - area/translations

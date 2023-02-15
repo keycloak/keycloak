@@ -74,7 +74,12 @@ public interface UserResource {
     List<GroupRepresentation> groups(@QueryParam("first") Integer firstResult,
                                      @QueryParam("max") Integer maxResults,
                                      @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
-    
+
+    @Path("groups")
+    @GET
+    List<GroupRepresentation> groups(@QueryParam("search") String search,
+                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
+
     @Path("groups")
     @GET
     List<GroupRepresentation> groups(@QueryParam("search") String search,

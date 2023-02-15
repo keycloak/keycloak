@@ -322,6 +322,11 @@ class KeycloakProcessor {
             unitProperties.setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
         }
 
+        ConfigValue lockTimeoutConfigValue = getConfig().getConfigValue("kc.spi-map-storage-jpa-lock-timeout");
+        if (lockTimeoutConfigValue != null && lockTimeoutConfigValue.getValue() != null) {
+            unitProperties.setProperty(AvailableSettings.JPA_LOCK_TIMEOUT, lockTimeoutConfigValue.getValue());
+        }
+
         unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
 
         String dbKind = defaultDataSource.getDbKind();
