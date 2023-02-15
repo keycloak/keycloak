@@ -305,18 +305,6 @@ class KeycloakProcessor {
         unitProperties.setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
         if (Objects.equals(getConfig().getConfigValue("kc.transaction-jta-enabled").getValue(), "disabled")) {
             unitProperties.setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.RESOURCE_LOCAL.name());
-
-            // Only changing this for the new map storage to keep the legacy JPA store untouched as it wasn't tested for the legacy store.
-            // follow-up on this in https://github.com/keycloak/keycloak/issues/13222 to re-visit the auto-commit handling
-            String storage = Configuration.getRawValue(
-                    MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
-            if (storage != null) {
-                // Needed to change the connection handling to avoid Hibernate returning the connection too early,
-                // which then interfered with the auto-commit reset that's done at the end of the transaction and PgConnection throwing a "Cannot commit when autoCommit is enabled."
-                // The current default is DELAYED_ACQUISITION_AND_RELEASE_BEFORE_TRANSACTION_COMPLETION which would only make sense for JTA IMHO.
-                // https://github.com/quarkusio/quarkus/blob/8d89101ffa65465b33d06360047095046bb726e4/extensions/hibernate-orm/runtime/src/main/java/io/quarkus/hibernate/orm/runtime/boot/FastBootMetadataBuilder.java#L287-L288
-                unitProperties.setProperty(AvailableSettings.CONNECTION_HANDLING, PhysicalConnectionHandlingMode.DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION.name());
-            }
         } else {
             // will happen for both "enabled" and "xa"
             unitProperties.setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
