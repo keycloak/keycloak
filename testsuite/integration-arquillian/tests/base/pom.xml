@@ -1045,7 +1045,6 @@
                                 The following properties needs to be synchronized across all map-storage profiles
                                 -->
                                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
                                 <keycloak.realm.provider>map</keycloak.realm.provider>
                                 <keycloak.client.provider>map</keycloak.client.provider>
                                 <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
