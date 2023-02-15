@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin.permissions;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -30,7 +31,7 @@ public interface AdminPermissionManagement {
     public static final String TOKEN_EXCHANGE ="token-exchange";
 
     ClientModel getRealmManagementClient();
-
+    RealmModel getRealm();
     AuthorizationProvider authz();
 
     RolePermissionManagement roles();

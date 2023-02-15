@@ -389,7 +389,8 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         }
     }
 
-
-
-
+    @Override
+    public RealmModel getRealm() {
+        return realm;
+    }
 }

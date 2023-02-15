@@ -25,7 +25,6 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
@@ -41,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -329,11 +329,28 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
         resourceStore.findByType(server, "Group", resource -> {
             if (hasPermission(resource, null, VIEW_MEMBERS_SCOPE, MANAGE_MEMBERS_SCOPE)) {
-                granted.add(resource.getName().substring(RESOURCE_NAME_PREFIX.length()));
+                String groupId = resource.getName().substring(RESOURCE_NAME_PREFIX.length());
+                granted.add(groupId);
+
+                // permission also applies to the subgroups
+                GroupModel group = root.getRealm().getGroupById(groupId);
+                addIdsOfSubGroups(granted, group.getSubGroupsStream());
             }
         });
 
         return granted;
+    }
+
+    private void addIdsOfSubGroups(Set<String> groupIds, Stream<GroupModel> subGroupsStream) {
+        if (subGroupsStream == null) {
+            return;
+        }
+
+        subGroupsStream.forEach(subGroup -> {
+            groupIds.add(subGroup.getId());
+
+            addIdsOfSubGroups(groupIds, subGroup.getSubGroupsStream());
+        });
     }
 
     @Override

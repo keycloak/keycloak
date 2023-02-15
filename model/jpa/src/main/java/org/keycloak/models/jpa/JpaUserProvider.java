@@ -873,6 +873,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
             subPredicates.add(from.get("groupId").in(userGroups));
             subPredicates.add(builder.equal(from.get("user").get("id"), root.get("id")));
+            /*
+                TODO clarify: A sub group might not have a resource - therefore this check might fail for sub groups.
+                              Can it be removed without consequences?
 
             Subquery subquery1 = queryBuilder.subquery(String.class);
 
@@ -887,6 +890,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             subquery1.where(subs.toArray(new Predicate[subs.size()]));
 
             subPredicates.add(builder.exists(subquery1));
+            */
 
             subquery.where(subPredicates.toArray(new Predicate[subPredicates.size()]));
 
