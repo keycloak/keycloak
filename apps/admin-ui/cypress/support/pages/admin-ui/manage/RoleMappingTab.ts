@@ -1,7 +1,7 @@
 const expect = chai.expect;
 export default class RoleMappingTab {
   private type = "client";
-  private tab = "serviceAccountTab";
+  private serviceAccountTab = "serviceAccountTab";
   private scopeTab = "scopeTab";
   private assignEmptyRoleBtn = (type: string) =>
     `no-roles-for-this-${type}-empty-action`;
@@ -19,7 +19,7 @@ export default class RoleMappingTab {
   }
 
   goToServiceAccountTab() {
-    cy.findByTestId(this.tab).click();
+    cy.findByTestId(this.serviceAccountTab).click();
     return this;
   }
 
