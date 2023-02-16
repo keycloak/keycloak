@@ -10,6 +10,7 @@ import {
 } from "@patternfly/react-core";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 import { useAlerts } from "../../../components/alert/Alerts";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
@@ -21,7 +22,8 @@ import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../../../util";
 import { useParams } from "../../../utils/useParams";
-import type { KeyProviderParams, ProviderType } from "../../routes/KeyProvider";
+import { KeyProviderParams, ProviderType } from "../../routes/KeyProvider";
+import { toKeysTab } from "../../routes/KeysTab";
 
 type KeyProviderFormProps = {
   id?: string;
@@ -174,11 +176,18 @@ export const KeyProviderForm = ({
 export default function KeyProviderFormPage() {
   const { t } = useTranslation("realm-settings");
   const params = useParams<KeyProviderParams>();
+  const navigate = useNavigate();
+
   return (
     <>
       <ViewHeader titleKey={t("editProvider")} subKey={params.providerType} />
       <PageSection variant="light">
-        <KeyProviderForm {...params} />
+        <KeyProviderForm
+          {...params}
+          onClose={() =>
+            navigate(toKeysTab({ realm: params.realm, tab: "providers" }))
+          }
+        />
       </PageSection>
     </>
   );
