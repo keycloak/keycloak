@@ -101,10 +101,10 @@ In order to configure a first login flow in which:
 create a new flow with the following two authenticators:
 
 Detect Existing Broker User::
-This authenticator ensures that unique users are handled. Set the authenticator requirement to `Mandatory`.
+This authenticator ensures that unique users are handled. Set the authenticator requirement to `REQUIRED`.
 
 Automatically Set Existing User::
-Automatically sets an existing user to the authentication context without any verification. Set the authenticator requirement to `Mandatory`.
+Automatically sets an existing user to the authentication context without any verification. Set the authenticator requirement to `REQUIRED`.
 
 You have to set the `First Login Flow` of the identity provider configuration to that flow.
 You could set the also set `Sync Mode` to `force` if you want to update the user profile (Last Name, First Name...) with the identity provider attributes.
