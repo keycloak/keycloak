@@ -49,6 +49,7 @@ import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
@@ -132,6 +133,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
             @Override
             public Response runInternal(KeycloakSession session) {
+                CookieHelper.addCookiesAtEndOfTransaction(session);
                 // create another instance of the endpoint to isolate each run.
                 AuthorizationEndpoint other = new AuthorizationEndpoint(session,
                         new EventBuilder(session.getContext().getRealm(), session, clientConnection), action);
