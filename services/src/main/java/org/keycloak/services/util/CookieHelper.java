@@ -29,6 +29,7 @@ import javax.ws.rs.core.HttpHeaders;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
@@ -43,6 +44,7 @@ public class CookieHelper {
     public static final String LEGACY_COOKIE = "_LEGACY";
 
     private static final Logger logger = Logger.getLogger(CookieHelper.class);
+    private static final String ADD_COOKIES_AT_END_OF_TRANSACTION = CookieHelper.class.getName() + "_ADD_COOKIES_AT_END_OF_TRANSACTION";
 
     /**
      * Set a response cookie.  This solely exists because JAX-RS 1.1 does not support setting HttpOnly cookies
@@ -70,12 +72,31 @@ public class CookieHelper {
         StringBuffer cookieBuf = new StringBuffer();
         ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure_sameSite, httpOnly, sameSite);
         String cookie = cookieBuf.toString();
-        session.getTransactionManager().enlistAfterCompletion(new CookieTransaction(response, cookie));
+        if (shouldAddCookiesAtEndOfTransaction(session)) {
+            session.getTransactionManager().enlistAfterCompletion(new CookieTransaction(response, cookie));
+        } else {
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie);
+        }
 
         // a workaround for browser in older Apple OSs – browsers ignore cookies with SameSite=None
         if (sameSiteParam == SameSiteAttributeValue.NONE) {
             addCookie(name + LEGACY_COOKIE, value, path, domain, comment, maxAge, secure, httpOnly, null, session);
         }
+    }
+
+    private static boolean shouldAddCookiesAtEndOfTransaction(KeycloakSession session) {
+        return Objects.equals(session.getAttribute(ADD_COOKIES_AT_END_OF_TRANSACTION), Boolean.TRUE);
+    }
+
+    /**
+     * Adding cookies at the end of the transaction helps when retrying a transaction might add the
+     * cookie multiple times. In some scenarios it must not be added at the end of the transaction,
+     * as at that time the response has already been sent to the caller ("committed"), so the code
+     * needs to make a choice. As retrying transactions is the exception, adding cookies at the end
+     * of the transaction is also the exception and needs to be switched on where necessary.
+     */
+    public static void addCookiesAtEndOfTransaction(KeycloakSession session) {
+        session.setAttribute(ADD_COOKIES_AT_END_OF_TRANSACTION, Boolean.TRUE);
     }
 
     /**
