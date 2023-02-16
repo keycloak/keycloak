@@ -44,14 +44,7 @@ public interface MapRoleEntity extends AbstractEntity, UpdatableEntity, EntityWi
             this.id = id;
             this.updated |= id != null;
         }
-
-        @Override
-        public Boolean isClientRole() {
-            return getClientId() != null;
-        }
     }
-
-    Boolean isClientRole();
 
     String getRealmId();
 
@@ -60,8 +53,6 @@ public interface MapRoleEntity extends AbstractEntity, UpdatableEntity, EntityWi
     String getName();
 
     String getDescription();
-
-    void setClientRole(Boolean clientRole);
 
     void setRealmId(String realmId);
 

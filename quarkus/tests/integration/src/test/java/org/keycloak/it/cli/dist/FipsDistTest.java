@@ -19,6 +19,7 @@ package org.keycloak.it.cli.dist;
 
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import org.keycloak.crypto.fips.KeycloakFipsSecurityProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -38,7 +39,7 @@ public class FipsDistTest {
             CLIResult cliResult = dist.run("start", "--fips-mode=enabled");
             cliResult.assertStarted();
             cliResult.assertMessage("Java security providers: [ \n"
-                    + " KC(BCFIPS version 1.000203) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
+                    + " KC(BCFIPS version 1.000203, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
         });
     }
 
@@ -53,7 +54,7 @@ public class FipsDistTest {
             cliResult.assertMessage(
                     "org.bouncycastle.crypto.fips.FipsUnapprovedOperationError: password must be at least 112 bits");
             cliResult.assertMessage("Java security providers: [ \n"
-                    + " KC(BCFIPS version 1.000203 Approved Mode) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
+                    + " KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
 
             dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", "adminadminadmin");
             cliResult = dist.run("start", "--fips-mode=strict");
@@ -88,6 +89,21 @@ public class FipsDistTest {
     }
 
     @Test
+    void testHttpsBcfksTrustStoreInStrictMode(KeycloakDistribution dist) {
+        runOnFipsEnabledDistribution(dist, () -> {
+            dist.copyOrReplaceFileFromClasspath("/server.keystore.bcfks", Path.of("conf", "server.keystore"));
+
+            RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+            Path truststorePath = rawDist.getDistPath().resolve("conf").resolve("server.keystore").toAbsolutePath();
+
+            // https-trust-store-type should be automatically set to bcfks in fips-mode=strict
+            CLIResult cliResult = dist.run("--verbose", "start", "--fips-mode=strict", "--https-key-store-password=passwordpassword",
+                    "--https-trust-store-file=" + truststorePath, "--https-trust-store-password=passwordpassword");
+            cliResult.assertStarted();
+        });
+    }
+
+    @Test
     void testUnsupportedHttpsPkcs12KeyStoreInStrictMode(KeycloakDistribution dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
@@ -101,6 +117,21 @@ public class FipsDistTest {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=enabled", "--https-key-store-password=passwordpassword");
+            cliResult.assertStarted();
+        });
+    }
+
+    @Test
+    void testHttpsPkcs12TrustStoreInNonApprovedMode(KeycloakDistribution dist) {
+        runOnFipsEnabledDistribution(dist, () -> {
+            dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
+
+            RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+            Path truststorePath = rawDist.getDistPath().resolve("conf").resolve("server.keystore").toAbsolutePath();
+
+            // https-trust-store-type should be automatically set to pkcs12 in fips-mode=enabled
+            CLIResult cliResult = dist.run("--verbose", "start", "--fips-mode=enabled", "--https-key-store-password=passwordpassword",
+                    "--https-trust-store-file=" + truststorePath, "--https-trust-store-password=passwordpassword");
             cliResult.assertStarted();
         });
     }

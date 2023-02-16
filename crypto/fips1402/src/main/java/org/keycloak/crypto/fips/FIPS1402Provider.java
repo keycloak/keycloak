@@ -26,15 +26,18 @@ import java.security.cert.CollectionCertStoreParameters;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -87,6 +90,8 @@ public class FIPS1402Provider implements CryptoProvider {
             checkSecureRandom(() -> Security.insertProviderAt(this.bcFipsProvider, 2));
             Provider bcJsseProvider = new BouncyCastleJsseProvider("fips:BCFIPS");
             Security.insertProviderAt(bcJsseProvider, 3);
+            // force the key and trust manager factories if default values not present in BCJSSE
+            modifyKeyTrustManagerSecurityProperties(bcJsseProvider);
             log.debugf("Inserted security providers: %s", Arrays.asList(this.bcFipsProvider.getName(),bcJsseProvider.getName()));
         } else {
             log.debugf("Security provider %s already loaded", existingBcFipsProvider.getName());
@@ -288,5 +293,43 @@ public class FIPS1402Provider implements CryptoProvider {
                 Security.setProperty("securerandom.strongAlgorithms", origStrongAlgs != null ? origStrongAlgs : "");
             }
         }
+    }
+
+    /**
+     * BCJSSE manages X.509, X509 and PKIX for KeyManagerFactory and
+     * TrustManagerFactory (names or aliases) while JSSE manages SunX509,
+     * NewSunX509 and PKIX for KeyManagerFactory and SunX509, PKIX, SunPKIX,
+     * X509 and X.509 for the TrustManagerFactory. As BCJSSE is used when
+     * fips enabled, the default implementations are changed to the ones
+     * provided by BC if selected ones are not present in the BCJSSE.
+     *
+     * @param bcJsseProvider The BCJSSE provider
+     */
+    private static void modifyKeyTrustManagerSecurityProperties(Provider bcJsseProvider) {
+        boolean setKey = bcJsseProvider.getService(KeyManagerFactory.class.getSimpleName(), KeyManagerFactory.getDefaultAlgorithm()) == null;
+        boolean setTrust = bcJsseProvider.getService(TrustManagerFactory.class.getSimpleName(), TrustManagerFactory.getDefaultAlgorithm()) == null;
+        if (!setKey && !setTrust) {
+            return;
+        }
+        Set<Provider.Service> services = bcJsseProvider.getServices();
+        if (services != null) {
+            for (Provider.Service service : services) {
+                if (setKey && KeyManagerFactory.class.getSimpleName().equals(service.getType())) {
+                    Security.setProperty("ssl.KeyManagerFactory.algorithm", service.getAlgorithm());
+                    setKey = false;
+                    if (!setTrust) {
+                        return;
+                    }
+                } else if (setTrust && TrustManagerFactory.class.getSimpleName().equals(service.getType())) {
+                    Security.setProperty("ssl.TrustManagerFactory.algorithm", service.getAlgorithm());
+                    setTrust = false;
+                    if (!setKey) {
+                        return;
+                    }
+                }
+            }
+        }
+        throw new IllegalStateException("Provider " + bcJsseProvider.getName()
+                + " does not provide KeyManagerFactory or TrustManagerFactory algorithms for TLS");
     }
 }
