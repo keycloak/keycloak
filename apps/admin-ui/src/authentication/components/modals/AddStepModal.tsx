@@ -129,7 +129,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
         </Button>,
       ]}
     >
-      {providers && providers.length > max && (
+      {providers && (
         <PaginatingTableToolbar
           count={page.length || 0}
           first={first}
@@ -144,11 +144,11 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
           inputGroupPlaceholder={t("common:search")}
           inputGroupOnEnter={setSearch}
         >
-          <AuthenticationProviderList list={page} setValue={setValue} />
+          <AuthenticationProviderList
+            list={page.slice(0, max)}
+            setValue={setValue}
+          />
         </PaginatingTableToolbar>
-      )}
-      {providers && providers.length <= max && (
-        <AuthenticationProviderList list={providers} setValue={setValue} />
       )}
     </Modal>
   );
