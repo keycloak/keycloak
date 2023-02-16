@@ -74,7 +74,6 @@ export const KeyProviderForm = ({
           ...component,
           providerId: providerType,
           providerType: KEY_PROVIDER_TYPE,
-          config: { ...component.config, priority: ["0"] },
         });
         addAlert(t("saveProviderSuccess"), AlertVariant.success);
         onClose?.();
