@@ -58,6 +58,16 @@ export const FineGrainOpenIdConnect = ({
     setAuthorizationEncryptedResponseOpen,
   ] = useState(false);
 
+  const [
+    userInfoResponseEncryptionKeyManagementOpen,
+    setUserInfoResponseEncryptionKeyManagementOpen,
+  ] = useState(false);
+
+  const [
+    userInfoResponseEncryptionContentEncryptionOpen,
+    setUserInfoResponseEncryptionContentEncryptionOpen,
+  ] = useState(false);
+
   const { control } = useFormContext();
 
   const keyOptions = [
@@ -311,6 +321,72 @@ export const FineGrainOpenIdConnect = ({
               selections={field.value}
             >
               {signatureOptions}
+            </Select>
+          )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("userInfoResponseEncryptionKeyManagementAlgorithm")}
+        fieldId="userInfoResponseEncryptionKeyManagementAlgorithm"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:userInfoResponseEncryptionKeyManagementAlgorithm"
+            fieldLabelId="clients:userInfoResponseEncryptionKeyManagementAlgorithm"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.user.info.encrypted.response.alg"
+          )}
+          defaultValue=""
+          control={control}
+          render={({ field }) => (
+            <Select
+              toggleId="userInfoResponseEncryptionKeyManagementAlgorithm"
+              variant={SelectVariant.single}
+              onToggle={setUserInfoResponseEncryptionKeyManagementOpen}
+              isOpen={userInfoResponseEncryptionKeyManagementOpen}
+              onSelect={(_, value) => {
+                field.onChange(value);
+                setUserInfoResponseEncryptionKeyManagementOpen(false);
+              }}
+              selections={field.value}
+            >
+              {cekManagementOptions}
+            </Select>
+          )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("userInfoResponseEncryptionContentEncryptionAlgorithm")}
+        fieldId="userInfoResponseEncryptionContentEncryptionAlgorithm"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:userInfoResponseEncryptionContentEncryptionAlgorithm"
+            fieldLabelId="clients:userInfoResponseEncryptionContentEncryptionAlgorithm"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.user.info.encrypted.response.enc"
+          )}
+          defaultValue=""
+          control={control}
+          render={({ field }) => (
+            <Select
+              toggleId="userInfoResponseEncryptionContentEncryptionAlgorithm"
+              variant={SelectVariant.single}
+              onToggle={setUserInfoResponseEncryptionContentEncryptionOpen}
+              isOpen={userInfoResponseEncryptionContentEncryptionOpen}
+              onSelect={(_, value) => {
+                field.onChange(value);
+                setUserInfoResponseEncryptionContentEncryptionOpen(false);
+              }}
+              selections={field.value}
+            >
+              {contentOptions}
             </Select>
           )}
         />

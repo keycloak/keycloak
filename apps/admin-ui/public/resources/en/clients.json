@@ -466,6 +466,8 @@
   "accessTokenSignatureAlgorithm": "Access token signature algorithm",
   "idTokenSignatureAlgorithm": "ID token signature algorithm",
   "idTokenEncryptionKeyManagementAlgorithm": "ID token encryption key management algorithm",
+  "userInfoResponseEncryptionKeyManagementAlgorithm": "User info response encryption key management algorithm",
+  "userInfoResponseEncryptionContentEncryptionAlgorithm": "User info response encryption content encryption algorithm",
   "idTokenEncryptionContentEncryptionAlgorithm": "ID token encryption content encryption algorithm",
   "userInfoSignedResponseAlgorithm": "User info signed response algorithm",
   "requestObjectSignatureAlgorithm": "Request object signature algorithm",
