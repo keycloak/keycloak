@@ -1,9 +1,12 @@
+import { environment } from "../environment";
+import { joinPath } from "../utils/joinPath";
 import { parseResponse } from "./parse-response";
 import {
   ClientRepresentation,
   CredentialContainer,
   CredentialRepresentation,
   DeviceRepresentation,
+  LinkedAccountRepresentation,
   Permission,
   UserRepresentation,
 } from "./representations";
@@ -72,4 +75,31 @@ export async function deleteCredentials(credential: CredentialRepresentation) {
   return request("/credentials/" + credential.id, {
     method: "DELETE",
   });
+}
+
+export async function getLinkedAccounts({ signal }: CallOptions) {
+  const response = await request("/linked-accounts", { signal });
+  return parseResponse<LinkedAccountRepresentation[]>(response);
+}
+
+export async function unLinkAccount(account: LinkedAccountRepresentation) {
+  const response = await request("/linked-accounts/" + account.providerName, {
+    method: "DELETE",
+  });
+  return parseResponse(response);
+}
+
+export async function linkAccount(account: LinkedAccountRepresentation) {
+  const redirectUri = encodeURIComponent(
+    joinPath(
+      environment.authServerUrl,
+      "realms",
+      environment.loginRealm,
+      "account"
+    )
+  );
+  const response = await request("/linked-accounts/" + account.providerName, {
+    searchParams: { providerId: account.providerName, redirectUri },
+  });
+  return parseResponse<{ accountLinkUri: string }>(response);
 }

@@ -8,8 +8,6 @@ import {
   DataListItemRow,
   Dropdown,
   DropdownItem,
-  EmptyState,
-  EmptyStateBody,
   KebabToggle,
   PageSection,
   Spinner,
@@ -27,6 +25,7 @@ import {
   CredentialMetadataRepresentation,
   CredentialRepresentation,
 } from "../api/representations";
+import { EmptyRow } from "../components/datalist/EmptyRow";
 import useFormatter from "../components/format/format-date";
 import { Page } from "../components/page/Page";
 import { keycloak } from "../keycloak";
@@ -153,25 +152,11 @@ const SigningIn = () => {
 
             <DataList aria-label="credential list" className="pf-u-mb-xl">
               {container.userCredentialMetadatas.length === 0 && (
-                <DataListItem>
-                  <DataListItemRow className="pf-u-align-items-center pf-p-b-0">
-                    <DataListItemCells
-                      className="pf-u-py-0"
-                      dataListCells={[
-                        <DataListCell key="0" />,
-                        <EmptyState key="1" variant="xs">
-                          <EmptyStateBody>
-                            {t("notSetUp", [
-                              t(container.displayName as TFuncKey),
-                            ])}
-                          </EmptyStateBody>
-                          ,
-                        </EmptyState>,
-                        <DataListCell key="2" />,
-                      ]}
-                    />
-                  </DataListItemRow>
-                </DataListItem>
+                <EmptyRow
+                  message={t("notSetUp", [
+                    t(container.displayName as TFuncKey),
+                  ])}
+                />
               )}
 
               {container.userCredentialMetadatas.map((meta) => (
