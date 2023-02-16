@@ -128,9 +128,9 @@ const DeviceActivity = () => {
 
           {(devices.length > 1 || devices[0].sessions.length > 1) && (
             <ContinueCancelModal
-              buttonTitle="signOutAllDevices"
-              modalTitle="signOutAllDevices"
-              modalMessage="signOutAllDevicesWarning"
+              buttonTitle={t("signOutAllDevices")}
+              modalTitle={t("signOutAllDevices")}
+              modalMessage={t("signOutAllDevicesWarning")}
               onContinue={() => signOutAll()}
             />
           )}
@@ -173,10 +173,10 @@ const DeviceActivity = () => {
                     >
                       {!session.current && (
                         <ContinueCancelModal
-                          buttonTitle="doSignOut"
-                          modalTitle="doSignOut"
+                          buttonTitle={t("doSignOut")}
+                          modalTitle={t("doSignOut")}
                           buttonVariant="secondary"
-                          modalMessage="signOutWarning"
+                          modalMessage={t("signOutWarning")}
                           onContinue={() => signOutSession(session, device)}
                         />
                       )}

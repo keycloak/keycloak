@@ -84,6 +84,7 @@
   "signOut": "Sign out",
   "signOutAllDevices": "Sign out all devices",
   "signOutAllDevicesWarning": "This action will sign out all the devices that have signed in to your account, including the current device you are using.",
+  "signOutWarning": "Sign out the session?",
   "somethingWentWrong": "Something went wrong",
   "somethingWentWrongDescription": "Sorry, an unexpected error has occurred.",
   "started": "Started",

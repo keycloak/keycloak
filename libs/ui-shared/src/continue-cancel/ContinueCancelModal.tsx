@@ -1,5 +1,4 @@
 import { ReactNode, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { Button, ButtonProps, Modal, ModalProps } from "@patternfly/react-core";
 
 export type ContinueCancelModalProps = Omit<ModalProps, "ref" | "children"> & {
@@ -24,11 +23,10 @@ export const ContinueCancelModal = ({
   onContinue,
   continueLabel = "continue",
   cancelLabel = "doCancel",
-  component = "button",
+  component = Button,
   children,
   ...rest
 }: ContinueCancelModalProps) => {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const Component = component;
 
@@ -39,16 +37,12 @@ export const ContinueCancelModal = ({
         onClick={() => setOpen(true)}
         isDisabled={isDisabled}
       >
-        {
-          //@ts-ignore
-          typeof buttonTitle === "string" ? t(buttonTitle) : buttonTitle
-        }
+        {buttonTitle}
       </Component>
       <Modal
         variant="small"
         {...rest}
-        //@ts-ignore
-        title={t(modalTitle)}
+        title={modalTitle}
         isOpen={open}
         onClose={() => setOpen(false)}
         actions={[
@@ -61,10 +55,7 @@ export const ContinueCancelModal = ({
               onContinue();
             }}
           >
-            {
-              //@ts-ignore
-              t(continueLabel)
-            }
+            {continueLabel}
           </Button>,
           <Button
             id="modal-cancel"
@@ -72,17 +63,11 @@ export const ContinueCancelModal = ({
             variant="secondary"
             onClick={() => setOpen(false)}
           >
-            {
-              //@ts-ignore
-              t(cancelLabel)
-            }
+            {cancelLabel}
           </Button>,
         ]}
       >
-        {
-          //@ts-ignore
-          modalMessage ? t(modalMessage) : children
-        }
+        {modalMessage ? modalMessage : children}
       </Modal>
     </>
   );
