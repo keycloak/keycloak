@@ -21,9 +21,13 @@ import { MoveDialog } from "./components/MoveDialog";
 
 type GroupTableProps = {
   refresh: () => void;
+  canViewDetails: boolean;
 };
 
-export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
+export const GroupTable = ({
+  refresh: viewRefresh,
+  canViewDetails,
+}: GroupTableProps) => {
   const { t } = useTranslation("groups");
 
   const { adminClient } = useAdminClient();
@@ -47,9 +51,6 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
-  const canView =
-    hasAccess("query-groups", "view-users") ||
-    hasAccess("manage-users", "query-groups");
 
   const loader = async (first?: number, max?: number) => {
     const params: Record<string, string> = {
@@ -87,7 +88,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
   };
 
   const GroupNameCell = (group: GroupRepresentation) => {
-    if (!canView) return <span>{group.name}</span>;
+    if (!canViewDetails) return <span>{group.name}</span>;
 
     return (
       <Link

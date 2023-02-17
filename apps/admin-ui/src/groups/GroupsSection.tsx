@@ -66,6 +66,9 @@ export default function GroupsSection() {
   const canManageGroup =
     hasAccess("manage-users") || currentGroup()?.access?.manage;
   const canManageRoles = hasAccess("manage-users");
+  const canViewDetails =
+    hasAccess("query-groups", "view-users") ||
+    hasAccess("manage-users", "query-groups");
 
   useFetch(
     async () => {
@@ -167,7 +170,10 @@ export default function GroupsSection() {
                         eventKey={0}
                         title={<TabTitleText>{t("childGroups")}</TabTitleText>}
                       >
-                        <GroupTable refresh={refresh} />
+                        <GroupTable
+                          refresh={refresh}
+                          canViewDetails={canViewDetails}
+                        />
                       </Tab>
                       <Tab
                         data-testid="members"
@@ -214,13 +220,18 @@ export default function GroupsSection() {
                       )}
                     </Tabs>
                   )}
-                  {subGroups.length === 0 && <GroupTable refresh={refresh} />}
+                  {subGroups.length === 0 && (
+                    <GroupTable
+                      refresh={refresh}
+                      canViewDetails={canViewDetails}
+                    />
+                  )}
                 </DrawerHead>
               </DrawerPanelContent>
             }
           >
             <DrawerContentBody>
-              <GroupTree refresh={refresh} />
+              <GroupTree refresh={refresh} canViewDetails={canViewDetails} />
             </DrawerContentBody>
           </DrawerContent>
         </Drawer>

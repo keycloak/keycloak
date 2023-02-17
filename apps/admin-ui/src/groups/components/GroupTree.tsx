@@ -101,9 +101,13 @@ const GroupTreeContextMenu = ({
 
 type GroupTreeProps = {
   refresh: () => void;
+  canViewDetails: boolean;
 };
 
-export const GroupTree = ({ refresh: viewRefresh }: GroupTreeProps) => {
+export const GroupTree = ({
+  refresh: viewRefresh,
+  canViewDetails,
+}: GroupTreeProps) => {
   const { t } = useTranslation("groups");
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
@@ -132,19 +136,23 @@ export const GroupTree = ({ refresh: viewRefresh }: GroupTreeProps) => {
       id: group.id,
       name: (
         <Tooltip content={group.name}>
-          <Link
-            to={`/${realm}/groups/${joinPath(...groups.map((g) => g.id!))}`}
-            onClick={() => setSubGroups(groups)}
-          >
-            {group.name}
-          </Link>
+          {(canViewDetails && (
+            <Link
+              to={`/${realm}/groups/${joinPath(...groups.map((g) => g.id!))}`}
+              onClick={() => setSubGroups(groups)}
+            >
+              {group.name}
+            </Link>
+          )) || <span>{group.name}</span>}
         </Tooltip>
       ),
       children:
         group.subGroups && group.subGroups.length > 0
           ? group.subGroups.map((g) => mapGroup(g, groups, refresh))
           : undefined,
-      action: <GroupTreeContextMenu group={group} refresh={refresh} />,
+      action: canViewDetails && (
+        <GroupTreeContextMenu group={group} refresh={refresh} />
+      ),
       defaultExpanded: subGroups.map((g) => g.id).includes(group.id),
     };
   };
