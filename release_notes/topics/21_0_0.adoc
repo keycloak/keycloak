@@ -38,3 +38,9 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
 |https://www.w3.org/TR/2002/REC-xmlenc-core-20021210/Overview.html#rsa-1_5[rsa-1_5]
 |RSA1_5
 |===
+
+= Deprecated methods from user session provider were removed
+
+Several deprecated methods were removed from user session provider. If not done already, 
+their usage needs to be replaced with the corresponding replacement documented in Javadoc 
+of Keycloak 20 release. See link:{upgradingguide_link}[{upgradingguide_name}] for more details.
