@@ -188,8 +188,12 @@ public class TokenEndpoint {
 
     private Response processGrantRequestInternal() {
         cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
-
-        MultivaluedMap<String, String> formParameters = request.getDecodedFormParameters();
+         MultivaluedMap<String, String> formParameters=null;
+        try {
+         formParameters = request.getDecodedFormParameters();}
+        catch(Exception e) {
+        	logger.error("unable to get decoded form parameters");
+        }
 
         if (formParameters == null) {
             formParameters = new MultivaluedHashMap<>();
