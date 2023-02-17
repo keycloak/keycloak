@@ -40,7 +40,7 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.security.PublicKey;
 import java.util.concurrent.atomic.AtomicReference;
 
