@@ -294,6 +294,15 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testRemoveSpaceFromValue() {
+        System.setProperty(CLI_ARGS, "--db=postgres      ");
+        SmallRyeConfig config = createConfig();
+        assertEquals("io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
+                config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals("postgres", config.getConfigValue("quarkus.datasource.db-kind").getRawValue());
+    }
+
+    @Test
     public void testDefaultDbPortGetApplied() {
         System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--db-url-host=myhost" + ARG_SEPARATOR + "--db-url-database=kcdb" + ARG_SEPARATOR + "--db-url-port=1234" + ARG_SEPARATOR + "--db-url-properties=?foo=bar");
         SmallRyeConfig config = createConfig();
