@@ -106,9 +106,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
                 .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
                 .assertEvent();
-
-
-
+        
         events.clear();
     }
 
