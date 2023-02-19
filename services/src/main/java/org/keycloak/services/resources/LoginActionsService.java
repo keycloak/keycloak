@@ -809,6 +809,8 @@ public class LoginActionsService {
         event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername());
 
+        event.success();
+
         AuthenticationProcessor processor = new AuthenticationProcessor() {
 
             @Override
@@ -837,7 +839,6 @@ public class LoginActionsService {
                     String authStateNoteKey = PostBrokerLoginConstants.PBL_AUTH_STATE_PREFIX + identityProviderAlias;
                     authSession.setAuthNote(authStateNoteKey, "true");
                 }
-                event.success();
 
                 return redirectToAfterBrokerLoginEndpoint(authSession, firstBrokerLogin);
             }
