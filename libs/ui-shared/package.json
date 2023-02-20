@@ -46,7 +46,7 @@
     "@vitejs/plugin-react-swc": "^3.1.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "vite": "^4.1.1",
-    "vite-plugin-checker": "^0.5.5",
+    "vite-plugin-checker": "^0.5.6",
     "vite-plugin-dts": "^1.7.3"
   }
 }
