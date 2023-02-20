@@ -5,14 +5,13 @@
 </#macro>
 
 <#macro list options buildIcon=true>
-[cols="12a,4,4",role="options"]
+[cols="12a,4",role="options"]
 |===
-| |Type|Default
+| |Value
 
 <#list options as option>
 |
-[.options-key]#${option.key}#
-<#if buildIcon><#if option.build>icon:tools[role=options-build]</#if></#if>
+[.options-key]#`${option.key}`# <#if buildIcon><#if option.build>icon:tools[role=options-build]</#if></#if>
 
 [.options-description]#${option.description}#
 
@@ -25,7 +24,7 @@
 --
 |<#if option.expectedValues?has_content>[.options-type]#${option.expectedValues?join(", ")}#</#if>
 
-|<#if option.defaultValue?has_content>[.options-default]#${option.defaultValue!}#</#if>
+<#if option.defaultValue?has_content>Default: [.options-default]#${option.defaultValue!}#</#if>
 
 </#list>
 
