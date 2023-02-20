@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { union, filter } from "lodash-es";
 import {
   Brand,
@@ -129,12 +129,6 @@ const Dashboard = () => {
       <PageSection variant="light">
         <TextContent className="pf-u-mr-sm">
           <Text component="h1">{t("realmName", { name: realm })}</Text>
-          <Text>
-            <Trans t={t} i18nKey="adminUiVersion">
-              <strong>Admin UI version</strong>
-              {{ version: environment.commitHash }}
-            </Trans>
-          </Text>
         </TextContent>
       </PageSection>
       <PageSection variant="light" className="pf-u-p-0">

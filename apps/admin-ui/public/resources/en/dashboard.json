@@ -13,7 +13,6 @@
   "infoEnabledFeatures": "Shows enabled preview and experimental features.",
   "infoDisabledFeatures": "Shows all disabled features.",
   "disabledFeatures": "Disabled features",
-  "adminUiVersion": "<0 className=\"pf-u-mr-md\">Admin UI version</0>{{version}}",
   "providerInfo": "Provider info",
   "providers": "Providers",
   "realmInfo": "Realm info",

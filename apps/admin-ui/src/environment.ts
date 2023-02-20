@@ -13,8 +13,6 @@ export type Environment = {
   masterRealm: string;
   /** The version hash of the auth server. */
   resourceVersion: string;
-  /** The hash of the commit the Admin UI was built on, useful to determine the exact version the user is running. */
-  commitHash: string;
   /** Indicates if the application is running as a Keycloak theme. */
   isRunningAsTheme: boolean;
 };
@@ -31,7 +29,6 @@ const defaultEnvironment: Environment = {
   resourceUrl: ".",
   masterRealm: "master",
   resourceVersion: "unknown",
-  commitHash: "unknown",
   isRunningAsTheme: false,
 };
 
