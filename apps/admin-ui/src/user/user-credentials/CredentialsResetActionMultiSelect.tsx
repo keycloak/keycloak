@@ -46,6 +46,7 @@ export const CredentialsResetActionMultiSelect = () => {
         control={control}
         render={({ field }) => (
           <Select
+            maxHeight={375}
             toggleId="actions"
             variant={SelectVariant.typeaheadMulti}
             chipGroupProps={{
