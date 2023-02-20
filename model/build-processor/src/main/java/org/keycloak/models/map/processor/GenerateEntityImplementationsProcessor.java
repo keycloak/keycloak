@@ -225,6 +225,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                     pw.println("        }");
                     return;
                 case COLLECTION_DELETE:
+                {
                     String returnType = method.getReturnType().getKind() == TypeKind.VOID ? "Void" : method.getReturnType().toString();
                     TypeElement fieldTypeElement = elements.getTypeElement(types.erasure(fieldType).toString());
                     if (Util.isMapType(fieldTypeElement)) {
@@ -235,8 +236,26 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                     if (method.getReturnType().getKind() == TypeKind.VOID) {
                         pw.println("            e." + method.getSimpleName() + "((" + firstParameterType + ") p0); return null;");
                     } else {
-                        pw.println("            return (" + method.getReturnType() + ") e." + method.getSimpleName() + "((" + firstParameterType + ") p0);");
+                        pw.println("            return e." + method.getSimpleName() + "((" + firstParameterType + ") p0);");
                     }
+                    pw.println("        }");
+                    return;
+                }
+                case COLLECTION_DELETE_BY_ID:
+                {
+                    String returnType = method.getReturnType().getKind() == TypeKind.VOID ? "Void" : method.getReturnType().toString();
+                    pw.println("        @SuppressWarnings(\"unchecked\") @Override public <K> " + returnType + " mapRemove(" + className + " e, K p0) {");
+                    if (method.getReturnType().getKind() == TypeKind.VOID) {
+                        pw.println("            e." + method.getSimpleName() + "((String) p0); return null;");
+                    } else {
+                        pw.println("            return e." + method.getSimpleName() + "((String) p0);");
+                    }
+                    pw.println("        }");
+                    return;
+                }
+                case COLLECTION_GET_BY_ID:
+                    pw.println("        @SuppressWarnings(\"unchecked\") @Override public <K> " + method.getReturnType() + " mapGet(" + className + " e, K key) {");
+                    pw.println("            return e." + method.getSimpleName() + "((" + firstParameterType + ") key);");
                     pw.println("        }");
                     return;
                 case MAP_ADD:
@@ -288,6 +307,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 }
 
                 pw.println("import java.util.Objects;");
+                pw.println("import java.util.Optional;");
                 pw.println("import " + FQN_DEEP_CLONER + ";");
                 pw.println("// DO NOT CHANGE THIS CLASS, IT IS GENERATED AUTOMATICALLY BY " + GenerateEntityImplementationsProcessor.class.getSimpleName());
                 generatedAnnotation(pw);
@@ -454,6 +474,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                     pw.println("    }");
                     return true;
                 case COLLECTION_DELETE:
+                {
                     boolean needsReturn = method.getReturnType().getKind() != TypeKind.VOID;
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
                     pw.println("        if (" + fieldName + " == null) { return" + (needsReturn ? " false" : "") + "; }");
@@ -462,6 +483,25 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                     if (needsReturn) pw.println("        return removed;");
                     pw.println("    }");
                     return true;
+                }
+                case COLLECTION_DELETE_BY_ID:
+                {
+                    boolean needsReturn = method.getReturnType().getKind() != TypeKind.VOID;
+                    pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(String p0) {");
+                    pw.println("        boolean removed = " + fieldName + " != null && " + fieldName + ".removeIf(o -> Objects.equals(o." + getCollectionKey(fieldType, method) + ", p0));");
+                    pw.println("        updated |= removed;");
+                    if (needsReturn) pw.println("        return removed;");
+                    pw.println("    }");
+                    return true;
+                }
+                case COLLECTION_GET_BY_ID:
+                {
+                    pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(String p0) {");
+                    pw.println("        if (" + fieldName + " == null || " + fieldName + ".isEmpty()) return Optional.empty();");
+                    pw.println("        return " + fieldName + ".stream().filter(o -> Objects.equals(o." + getCollectionKey(fieldType, method) + ", p0)).findFirst();");
+                    pw.println("    }");
+                    return true;
+                }
                 case MAP_ADD:
                     TypeMirror secondParameterType = method.getParameters().get(1).asType();
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0, " + secondParameterType + " p1) {");
@@ -580,6 +620,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                     pw.println("    }");
                     return true;
                 case COLLECTION_DELETE:
+                {
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
                     TypeElement fieldTypeElement = elements.getTypeElement(types.erasure(fieldType).toString());
                     String removeMethod = Util.isMapType(fieldTypeElement) ? "mapRemove" : "collectionRemove";
@@ -590,12 +631,25 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                     }
                     pw.println("    }");
                     return true;
+                }
+                case COLLECTION_DELETE_BY_ID:
+                {
+                    pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(String p0) {");
+                    if (method.getReturnType().getKind() == TypeKind.VOID) {
+                        pw.println("        entityFieldDelegate.mapRemove(" + fieldName + ", p0);");
+                    } else {
+                        pw.println("        return (" + method.getReturnType() + ") entityFieldDelegate.mapRemove(" + fieldName + ", p0);");
+                    }
+                    pw.println("    }");
+                    return true;
+                }
                 case MAP_ADD:
                     TypeMirror secondParameterType = method.getParameters().get(1).asType();
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0, " + secondParameterType + " p1) {");
                     pw.println("        entityFieldDelegate.mapPut(" + fieldName + ", p0, p1);");
                     pw.println("    }");
                     return true;
+                case COLLECTION_GET_BY_ID:
                 case MAP_GET:
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
                     pw.println("        return (" + method.getReturnType() + ") entityFieldDelegate.mapGet(" + fieldName + ", p0);");

@@ -100,26 +100,6 @@ public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity 
         }
 
         @Override
-        public Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId) {
-            HotRodRootAuthenticationSessionEntity rootAuthSession = getHotRodEntity();
-            if (rootAuthSession.authenticationSessions == null || rootAuthSession.authenticationSessions.isEmpty()) return Optional.empty();
-
-            return rootAuthSession.authenticationSessions.stream()
-                    .filter(as -> Objects.equals(as.tabId, tabId))
-                    .findFirst()
-                    .map(HotRodAuthenticationSessionEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeAuthenticationSession(String tabId) {
-            HotRodRootAuthenticationSessionEntity rootAuthSession = getHotRodEntity();
-            boolean removed = rootAuthSession.authenticationSessions != null &&
-                    rootAuthSession.authenticationSessions.removeIf(c -> Objects.equals(c.tabId, tabId));
-            rootAuthSession.updated |= removed;
-            return removed;
-        }
-
-        @Override
         public boolean isUpdated() {
             HotRodRootAuthenticationSessionEntity rootAuthSession = getHotRodEntity();
             return rootAuthSession.updated ||

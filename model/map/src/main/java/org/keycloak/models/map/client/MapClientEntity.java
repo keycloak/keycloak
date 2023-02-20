@@ -75,20 +75,6 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity, Entity
               .filter(me -> Objects.equals(me.getValue(), defaultScope))
               .map(Entry::getKey);
         }
-
-        @Override
-        public Optional<MapProtocolMapperEntity> getProtocolMapper(String id) {
-            Set<MapProtocolMapperEntity> mappers = getProtocolMappers();
-            if (mappers == null || mappers.isEmpty()) return Optional.empty();
-
-            return mappers.stream().filter(mapper -> Objects.equals(mapper.getId(), id)).findFirst();
-        }
-
-        @Override
-        public void removeProtocolMapper(String id) {
-            Set<MapProtocolMapperEntity> mappers = getProtocolMappers();
-            this.updated |= mappers != null && mappers.removeIf(mapper -> Objects.equals(mapper.getId(), id));
-        }
     }
 
     Map<String, Boolean> getClientScopes();

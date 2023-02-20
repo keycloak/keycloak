@@ -33,6 +33,9 @@ import static org.keycloak.models.map.processor.Util.pluralToSingular;
  * @author hmlnarik
  */
 enum FieldAccessorType {
+
+    // Order does matter, see {@link #getMethod}
+
     GETTER {
         @Override
         public boolean is(ExecutableElement method, String fieldName, Types types, TypeMirror fieldType) {
@@ -93,6 +96,28 @@ enum FieldAccessorType {
             return Objects.equals(methodName, method.getSimpleName().toString())
               && res.size() == 2
               && types.isSameType(res.get(0), method.getParameters().get(0).asType());
+        }
+    },
+    COLLECTION_GET_BY_ID {
+        @Override
+        public boolean is(ExecutableElement method, String fieldName, Types types, TypeMirror fieldType) {
+            String fieldNameSingular = pluralToSingular(fieldName);
+            String getFromCollection = "get" + fieldNameSingular;
+            List<TypeMirror> res = getGenericsDeclaration(fieldType);
+            return Objects.equals(getFromCollection, method.getSimpleName().toString())
+              && method.getParameters().size() == 1
+              && res.size() == 1
+              && Objects.equals("java.lang.String", method.getParameters().get(0).asType().toString());
+        }
+    },
+    COLLECTION_DELETE_BY_ID {
+        @Override
+        public boolean is(ExecutableElement method, String fieldName, Types types, TypeMirror fieldType) {
+            String fieldNameSingular = pluralToSingular(fieldName);
+            String removeFromCollection = "remove" + fieldNameSingular;
+            return Objects.equals(removeFromCollection, method.getSimpleName().toString())
+              && method.getParameters().size() == 1
+              && Objects.equals("java.lang.String", method.getParameters().get(0).asType().toString());
         }
     },
     UNKNOWN /* Must be the last */ {
