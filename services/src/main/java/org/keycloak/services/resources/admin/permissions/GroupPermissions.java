@@ -296,7 +296,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     @Override
-    public boolean getGroupsWithViewPermission(GroupModel group) {
+    public boolean canViewMembers(GroupModel group) {
         if (root.users().canView() || root.users().canManage()) {
             return true;
         }
@@ -355,7 +355,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public void requireViewMembers(GroupModel group) {
-        if (!getGroupsWithViewPermission(group)) {
+        if (!canViewMembers(group)) {
             throw new ForbiddenException();
         }
     }

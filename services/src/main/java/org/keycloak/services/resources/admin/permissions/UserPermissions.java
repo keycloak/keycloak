@@ -29,7 +29,6 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -593,7 +592,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     }
     private boolean canViewByGroup(UserModel user) {
         if (authz == null) return false;
-        return evaluateHierarchy(user, (group) -> root.groups().getGroupsWithViewPermission(group));
+        return evaluateHierarchy(user, (group) -> root.groups().canViewMembers(group));
     }
 
     public boolean canViewDefault() {
