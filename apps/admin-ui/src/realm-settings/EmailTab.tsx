@@ -333,43 +333,6 @@ export const RealmSettingsEmailTab = ({
               </FormGroup>
             </>
           )}
-
-          <ActionGroup>
-            <ActionListItem>
-              <Button
-                variant="primary"
-                type="submit"
-                data-testid="email-tab-save"
-              >
-                {t("common:save")}
-              </Button>
-            </ActionListItem>
-            <ActionListItem>
-              <Button
-                variant="secondary"
-                onClick={() => testConnection()}
-                data-testid="test-connection-button"
-                isDisabled={
-                  !(emailRegexPattern.test(watchFromValue) && watchHostValue) ||
-                  !currentUser?.email
-                }
-                aria-describedby="descriptionTestConnection"
-                isLoading={isTesting}
-                spinnerAriaValueText={t("testingConnection")}
-              >
-                {t("common:testConnection")}
-              </Button>
-            </ActionListItem>
-            <ActionListItem>
-              <Button
-                variant="link"
-                onClick={reset}
-                data-testid="email-tab-revert"
-              >
-                {t("common:revert")}
-              </Button>
-            </ActionListItem>
-          </ActionGroup>
           {currentUser && (
             <FormGroup id="descriptionTestConnection">
               {currentUser.email ? (
@@ -407,6 +370,42 @@ export const RealmSettingsEmailTab = ({
               )}
             </FormGroup>
           )}
+          <ActionGroup>
+            <ActionListItem>
+              <Button
+                variant="primary"
+                type="submit"
+                data-testid="email-tab-save"
+              >
+                {t("common:save")}
+              </Button>
+            </ActionListItem>
+            <ActionListItem>
+              <Button
+                variant="secondary"
+                onClick={() => testConnection()}
+                data-testid="test-connection-button"
+                isDisabled={
+                  !(emailRegexPattern.test(watchFromValue) && watchHostValue) ||
+                  !currentUser?.email
+                }
+                aria-describedby="descriptionTestConnection"
+                isLoading={isTesting}
+                spinnerAriaValueText={t("testingConnection")}
+              >
+                {t("common:testConnection")}
+              </Button>
+            </ActionListItem>
+            <ActionListItem>
+              <Button
+                variant="link"
+                onClick={reset}
+                data-testid="email-tab-revert"
+              >
+                {t("common:revert")}
+              </Button>
+            </ActionListItem>
+          </ActionGroup>
         </FormAccess>
       </FormPanel>
     </PageSection>
