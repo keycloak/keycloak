@@ -24,7 +24,10 @@ import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/s
 import { ClientSelect } from "../../components/client/ClientSelect";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
+import {
+  keyValueToArray,
+  KeyValueType,
+} from "../../components/key-value-form/key-value-convert";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { FormPanel } from "../../components/scroll-form/FormPanel";
 import { UserSelect } from "../../components/users/UserSelect";
@@ -136,14 +139,21 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
       return;
     }
     const formValues = form.getValues();
-    const keys = formValues.resources?.map(({ key }) => key);
+    const keys = keyValueToArray(formValues.resources as KeyValueType[]);
     const resEval: ResourceEvaluation = {
       roleIds: formValues.roleIds ?? [],
       clientId: formValues.client.id!,
       userId: formValues.user[0],
-      resources: formValues.resources?.filter((resource) =>
-        keys?.includes(resource.name!)
-      ),
+      resources: resources
+        .filter((resource) => Object.keys(keys).includes(resource.name!))
+        .map((r) => ({
+          ...r,
+          scopes: r.scopes?.filter((s) =>
+            Object.values(keys)
+              .flatMap((v) => v)
+              .includes(s.name!)
+          ),
+        })),
       entitlements: false,
       context: {
         attributes: Object.fromEntries(
@@ -277,14 +287,12 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
               <FormGroup
                 label={t("resourcesAndScopes")}
                 id="resourcesAndScopes"
-                isRequired
                 labelIcon={
                   <HelpItem
                     helpText={t("clients-help:contextualAttributes")}
                     fieldLabelId={`resourcesAndScopes`}
                   />
                 }
-                helperTextInvalid={t("common:required")}
                 fieldId="resourcesAndScopes"
               >
                 <KeyBasedAttributeInput

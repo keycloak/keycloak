@@ -178,7 +178,6 @@ export const KeyBasedAttributeInput = ({
       className="kc-attributes__table"
       aria-label="Role attribute keys and values"
       variant="compact"
-      borders={false}
     >
       <Thead>
         <Tr>
