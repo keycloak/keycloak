@@ -54,22 +54,6 @@ public interface MapRootAuthenticationSessionEntity extends AbstractEntity, Upda
         }
 
         @Override
-        public Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId) {
-            Set<MapAuthenticationSessionEntity> authenticationSessions = getAuthenticationSessions();
-            if (authenticationSessions == null || authenticationSessions.isEmpty()) return Optional.empty();
-
-            return authenticationSessions.stream().filter(as -> Objects.equals(as.getTabId(), tabId)).findFirst();
-        }
-
-        @Override
-        public Boolean removeAuthenticationSession(String tabId) {
-            Set<MapAuthenticationSessionEntity> authenticationSessions = getAuthenticationSessions();
-            boolean removed = authenticationSessions != null && authenticationSessions.removeIf(c -> Objects.equals(c.getTabId(), tabId));
-            this.updated |= removed;
-            return removed;
-        }
-
-        @Override
         public boolean isUpdated() {
             return this.updated ||
                     Optional.ofNullable(getAuthenticationSessions()).orElseGet(Collections::emptySet).stream().anyMatch(MapAuthenticationSessionEntity::isUpdated);

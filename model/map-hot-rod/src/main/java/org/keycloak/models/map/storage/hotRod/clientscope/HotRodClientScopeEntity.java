@@ -109,20 +109,6 @@ public class HotRodClientScopeEntity extends AbstractHotRodEntity  {
             entity.id = id;
             entity.updated |= id != null;
         }
-
-        @Override
-        public Optional<MapProtocolMapperEntity> getProtocolMapper(String id) {
-            Set<MapProtocolMapperEntity> mappers = getProtocolMappers();
-            if (mappers == null || mappers.isEmpty()) return Optional.empty();
-
-            return mappers.stream().filter(m -> Objects.equals(m.getId(), id)).findFirst();
-        }
-
-        @Override
-        public void removeProtocolMapper(String id) {
-            HotRodClientScopeEntity entity = getHotRodEntity();
-            entity.updated |= entity.protocolMappers != null && entity.protocolMappers.removeIf(m -> Objects.equals(m.id, id));
-        }
     }
 
     @Override

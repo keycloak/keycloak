@@ -23,6 +23,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.map.annotations.CollectionKey;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
@@ -77,6 +78,7 @@ public interface MapUserConsentEntity extends UpdatableEntity {
         return model;
     }
 
+    @CollectionKey
     String getClientId();
     void setClientId(String clientId);
 

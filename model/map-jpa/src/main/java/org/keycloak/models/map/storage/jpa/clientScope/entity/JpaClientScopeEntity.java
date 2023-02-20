@@ -47,6 +47,7 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
+import java.util.Optional;
 
 /**
  * There are some fields marked by {@code @Column(insertable = false, updatable = false)}.
@@ -163,8 +164,18 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     }
 
     @Override
+    public Optional<MapProtocolMapperEntity> getProtocolMapper(String id) {
+        return metadata.getProtocolMapper(id);
+    }
+
+    @Override
     public void addProtocolMapper(MapProtocolMapperEntity mapping) {
         metadata.addProtocolMapper(mapping);
+    }
+
+    @Override
+    public void removeProtocolMapper(String id) {
+        metadata.removeProtocolMapper(id);
     }
 
     @Override
