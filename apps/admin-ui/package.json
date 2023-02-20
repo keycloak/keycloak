@@ -89,7 +89,7 @@
     "@4tw/cypress-drag-drop": "^2.2.3",
     "@testing-library/cypress": "^9.0.0",
     "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
+    "@testing-library/react": "^14.0.0",
     "@types/dagre": "^0.7.48",
     "@types/file-saver": "^2.0.5",
     "@types/flat": "^5.0.2",
