@@ -11,7 +11,7 @@
 
 <#list options as option>
 |
-[.options-key]#`${option.key}`# <#if buildIcon><#if option.build>icon:tools[role=options-build]</#if></#if>
+[.options-key]#``${option.key}``# <#if buildIcon><#if option.build>[.none]#icon:tools[role=options-build]#</#if></#if>
 
 [.options-description]#${option.description}#
 
@@ -22,9 +22,11 @@
 *CLI:* `${option.keyCli}` +
 *Env:* `${option.keyEnv}`
 --
-|<#if option.expectedValues?has_content>[.options-type]#${option.expectedValues?join(", ")}#</#if>
-
-<#if option.defaultValue?has_content>Default: [.options-default]#${option.defaultValue!}#</#if>
+|<#if option.expectedValues?has_content>
+<#list option.expectedValues as value>`+${value!}+`<#if option.defaultValue?has_content && value = option.defaultValue> (default)</#if><#if value?has_next>, </#if></#list>
+<#else>
+<#if option.defaultValue?has_content>[.options-default]#`+${option.defaultValue!}+`# (default)</#if><#if option.type?has_content && option.defaultValue?has_content> or </#if><#if option.type?has_content && !option.expectedValues?has_content>any `+${option.type!}+`</#if>
+</#if>
 
 </#list>
 
