@@ -1,43 +1,41 @@
-== Login to the admin console
+== Log in to the Admin Console
 
-Go to the {links-admin-console} and login with the username and password
-you created earlier.
+. Go to the {links-admin-console}.
+. Log in with the username and password you created earlier.
 
 == Create a realm
 
-A realm in Keycloak is the equivalent of a tenant. It allows creating isolated groups of applications and users. By default
-there is a single realm in Keycloak called `master`. This is dedicated to manage Keycloak and should not be used for
-your own applications.
+A realm in Keycloak is equivalent to a tenant. Each realm allows an administrator to create isolated groups of applications and users. Initially, Keycloak
+includes a single realm, called `master`. Use this realm only for managing Keycloak and not for managing any applications.
 
-Let's create our first realm.
+Use these steps to create the first realm.
 
-. Open the {links-admin-console}
-. Hover the mouse over the dropdown in the top-left corner where it says `master`, then click on `Create realm`
-. Fill in the form with the following values:
-** Realm name: `myrealm`
-. Click `Create`
+. Open the {links-admin-console}.
+. Click the word *master* in the top-left corner, then click *Create realm*.
+. Enter `myrealm` in the *Realm name* field.
+. Click *Create*.
 
-image::add-realm.png[Add Realm]
+image::add-realm.png[Add realm]
 
 == Create a user
 
-Initially there are no users in a new realm, so let's create one:
+Initially, the realm has no users. Use these steps to create a user:
 
-. Open the {links-admin-console}
-. Click `Users` (left-hand menu)
-* Click `Create new user` (top-right corner of table)
+. Open the {links-admin-console}.
+. Click *Users* in the left-hand menu.
+. Click *Create new user*.
 . Fill in the form with the following values:
-** Username: `myuser`
-** First Name: Your first name
-** Last Name: Your last name
-. Click `Create`
+** *Username*: `myuser`
+** *First name*: any first name
+** *Last name*: any last name
+. Click *Create*.
 
-image::add-user.png[Add User]
+image::add-user.png[Create user]
 
-The user will need an initial password set to be able to login. To do this:
+This user needs a password to log in. To set the initial password:
 
-. Click `Credentials` (top of the page)
-. Fill in the `Set password` form with a password
-. Click `ON` next to `Temporary` to prevent having to update password on first login
+. Click *Credentials* at the top of the page.
+. Fill in the *Set password* form with a password.
+. Toggle *Temporary* to *Off* so that the user does not need update this password at the first login.
 
-image::set-password.png[Set Password]
+image::set-password.png[Set password]
