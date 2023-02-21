@@ -55,10 +55,6 @@
             <artifactId>freemarker</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!--<dependency>
-            <groupId>jakarta.mail</groupId>
-            <artifactId>jakarta.mail-api</artifactId>
-        </dependency>-->
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>jakarta.mail</artifactId>
