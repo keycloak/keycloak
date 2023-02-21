@@ -87,10 +87,8 @@
         <jackson.annotations.version>${jackson.version}</jackson.annotations.version>
 
         <!--JAKARTA-->
+        <com.sun.jakarta.mail.version>2.0.1</com.sun.jakarta.mail.version>
         <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
-        <jakarta.mail.version>2.1.1</jakarta.mail.version>
-        <com.sun.jakarta.mail.version>1.6.5</com.sun.jakarta.mail.version>
-
         <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
         <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
         <jakarta.xml.ws.version>4.0.0</jakarta.xml.ws.version>
@@ -175,8 +173,7 @@
         <oracle-jdbc.version>21.5.0.0</oracle-jdbc.version>
 
         <!-- Test -->
-        <!--<greenmail.version>2.0.0-alpha-3</greenmail.version>-->
-        <greenmail.version>1.6.12</greenmail.version>
+        <greenmail.version>2.0.0-alpha-3</greenmail.version>
         <hamcrest.version>2.2</hamcrest.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
@@ -432,12 +429,6 @@
             </dependency>
 
             <!--JAKARTA-->
-           <!--Add this after support of JakartaEE in GreenMail-->
-            <!--<dependency>
-                <groupId>jakarta.mail</groupId>
-                <artifactId>jakarta.mail-api</artifactId>
-                <version>${jakarta.mail.version}</version>
-            </dependency>-->
             <dependency>
                 <groupId>com.sun.mail</groupId>
                 <artifactId>jakarta.mail</artifactId>
