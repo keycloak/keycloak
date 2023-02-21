@@ -30,6 +30,8 @@ import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 
+import org.keycloak.models.ModelDuplicateException;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -95,9 +97,15 @@ public class ApplianceBootstrap {
     public void createMasterRealmUser(String username, String password) {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
-
-        if (session.users().getUsersCount(realm) > 0) {
-            throw new IllegalStateException("Can't create initial user as users already exists");
+        UserModel existingUser = session.users().getUserByUsername(realm, username);
+        if (existingUser != null) {
+            RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
+            if (existingUser.hasRole(adminRole)) {
+               ServicesLogger.LOGGER.addUserFailedUserExists(username, Config.getAdminRealm());
+            } else {
+               ServicesLogger.LOGGER.userNotAssignedRole(username, Config.getAdminRealm(), AdminRoles.ADMIN);
+            }
+            return;
         }
 
         UserModel adminUser = session.users().addUser(realm, username);
@@ -108,6 +116,8 @@ public class ApplianceBootstrap {
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
         adminUser.grantRole(adminRole);
+
+        ServicesLogger.LOGGER.addUserSuccess(username, Config.getAdminRealm());
     }
 
 }

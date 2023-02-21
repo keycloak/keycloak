@@ -85,7 +85,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=9, value="Added user '%s' to realm '%s'")
     void addUserSuccess(String user, String realm);
 
-    @LogMessage(level = ERROR)
+    @LogMessage(level = INFO)
     @Message(id=10, value="Failed to add user '%s' to realm '%s': user with username exists")
     void addUserFailedUserExists(String user, String realm);
 
@@ -467,4 +467,9 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=106, value="Created script engine '%s', version '%s' for the mime type '%s'")
     @Once
     void scriptEngineCreated(String engineName, String engineVersion, String mimeType);
+
+    @LogMessage(level = ERROR)
+    @Message(id=107, value="User '%s' in realm '%s' is not assigned %s role")
+    void userNotAssignedRole(String user, String realm, String role);
+
 }
