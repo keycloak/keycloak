@@ -41,6 +41,12 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
 
 = Deprecated methods from user session provider were removed
 
-Several deprecated methods were removed from user session provider. If not done already, 
-their usage needs to be replaced with the corresponding replacement documented in Javadoc 
+Several deprecated methods were removed from user session provider. If not done already,
+their usage needs to be replaced with the corresponding replacement documented in Javadoc
 of Keycloak 20 release. See link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+
+= New storage: `IS_CLIENT_ROLE` searchable field was deprecated
+
+The `IS_CLIENT_ROLE` searchable field from the `RoleModel` was deprecated. It
+should be replaced with the `CLIENT_ID` searchable field used with the operators
+`EXISTS` or `NOT_EXISTS`. See JavaDoc of Keycloak 21 for more details.
