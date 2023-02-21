@@ -123,11 +123,7 @@ public class LdapRoleModelCriteriaBuilder extends LdapModelCriteriaBuilder<LdapR
     public LdapRoleModelCriteriaBuilder compare(SearchableModelField<? super RoleModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField == RoleModel.SearchableFields.IS_CLIENT_ROLE) {
-                    LdapRoleModelCriteriaBuilder result = new LdapRoleModelCriteriaBuilder(roleMapperConfig, StringBuilder::new);
-                    result.isClientRole = (boolean) value[0];
-                    return result;
-                } else if (modelField == RoleModel.SearchableFields.CLIENT_ID) {
+                if (modelField == RoleModel.SearchableFields.CLIENT_ID) {
                     LdapRoleModelCriteriaBuilder result = new LdapRoleModelCriteriaBuilder(roleMapperConfig, StringBuilder::new);
                     result.clientId = (String) value[0];
                     return result;
@@ -148,11 +144,7 @@ public class LdapRoleModelCriteriaBuilder extends LdapModelCriteriaBuilder<LdapR
                 }
 
             case NE:
-                if (modelField == RoleModel.SearchableFields.IS_CLIENT_ROLE) {
-                    LdapRoleModelCriteriaBuilder result = new LdapRoleModelCriteriaBuilder(roleMapperConfig, StringBuilder::new);
-                    result.isClientRole = !((boolean) value[0]);
-                    return result;
-                } else if (modelField == RoleModel.SearchableFields.NAME) {
+                if (modelField == RoleModel.SearchableFields.NAME) {
                     // validateValue(value, modelField, op, String.class);
                     String field = modelFieldNameToLdap(roleMapperConfig, modelField);
                     return not(new LdapRoleModelCriteriaBuilder(roleMapperConfig, 
@@ -200,6 +192,13 @@ public class LdapRoleModelCriteriaBuilder extends LdapModelCriteriaBuilder<LdapR
                     });
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
+                }
+            case EXISTS:
+            case NOT_EXISTS:
+                if (modelField == RoleModel.SearchableFields.CLIENT_ID) {
+                    LdapRoleModelCriteriaBuilder result = new LdapRoleModelCriteriaBuilder(roleMapperConfig, StringBuilder::new);
+                    result.isClientRole = op == Operator.EXISTS;
+                    return result;
                 }
 
             default:

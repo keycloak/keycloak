@@ -327,18 +327,15 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     private void addFipsOptions(List<String> commands) {
         commands.add("--fips-mode=" + configuration.getFipsMode().toString());
 
-        log.debugf("Keystore file: %s, keystore type: %s, truststore file: %s, truststore type: %s",
-                configuration.getKeystoreFile(), configuration.getKeystoreType(),
-                configuration.getTruststoreFile(), configuration.getTruststoreType());
+        log.debugf("Keystore file: %s, truststore file: %s",
+                configuration.getKeystoreFile(),
+                configuration.getTruststoreFile());
         commands.add("--https-key-store-file=" + configuration.getKeystoreFile());
-        commands.add("--https-key-store-type=" + configuration.getKeystoreType());
         commands.add("--https-key-store-password=" + configuration.getKeystorePassword());
         commands.add("--https-trust-store-file=" + configuration.getTruststoreFile());
-        commands.add("--https-trust-store-type=" + configuration.getTruststoreType());
         commands.add("--https-trust-store-password=" + configuration.getTruststorePassword());
         commands.add("--spi-truststore-file-file=" + configuration.getTruststoreFile());
         commands.add("--spi-truststore-file-password=" + configuration.getTruststorePassword());
-        commands.add("--spi-truststore-file-type=" + configuration.getTruststoreType());
 
         // BCFIPS approved mode requires passwords of at least 112 bits (14 characters) to be used. To bypass this, we use this by default
         // as testsuite uses shorter passwords everywhere
