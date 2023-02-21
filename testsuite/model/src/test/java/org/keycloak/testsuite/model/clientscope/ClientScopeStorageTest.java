@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.model;
+package org.keycloak.testsuite.model.clientscope;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -30,6 +30,8 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.clientscope.ClientScopeStorageProvider;
 import org.keycloak.storage.clientscope.ClientScopeStorageProviderModel;
 import org.keycloak.testsuite.federation.HardcodedClientScopeStorageProviderFactory;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 
 @RequireProvider(RealmProvider.class)
 @RequireProvider(ClientScopeStorageProvider.class)

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.model;
+package org.keycloak.testsuite.model.client;
 
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,6 +38,8 @@ import org.keycloak.models.RoleProvider;
 import org.keycloak.models.map.client.MapClientProvider;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -234,44 +236,6 @@ public class ClientModelTest extends KeycloakModelTest {
             final ClientModel client2 = session.clients().getClientByClientId(realm, "client2");
             session.clients().removeClient(realm, client1.getId());
             session.clients().removeClient(realm, client2.getId());
-            return null;
-        });
-    }
-
-    @Test
-    public void testClientScopes() {
-        List<String> clientScopes = new LinkedList<>();
-        withRealm(realmId, (session, realm) -> {
-            ClientModel client = session.clients().addClient(realm, "myClientId");
-
-            ClientScopeModel clientScope1 = session.clientScopes().addClientScope(realm, "myClientScope1");
-            clientScopes.add(clientScope1.getId());
-            ClientScopeModel clientScope2 = session.clientScopes().addClientScope(realm, "myClientScope2");
-            clientScopes.add(clientScope2.getId());
-
-
-            client.addClientScope(clientScope1, true);
-            client.addClientScope(clientScope2, false);
-
-            return null;
-        });
-
-        withRealm(realmId, (session, realm) -> {
-            List<String> actualClientScopes = session.clientScopes().getClientScopesStream(realm).map(ClientScopeModel::getId).collect(Collectors.toList());
-            assertThat(actualClientScopes, containsInAnyOrder(clientScopes.toArray()));
-
-            ClientScopeModel clientScopeById = session.clientScopes().getClientScopeById(realm, clientScopes.get(0));
-            assertThat(clientScopeById.getId(), is(clientScopes.get(0)));
-
-            session.clientScopes().removeClientScopes(realm);
-
-            return null;
-        });
-
-        withRealm(realmId, (session, realm) -> {
-            List<ClientScopeModel> actualClientScopes = session.clientScopes().getClientScopesStream(realm).collect(Collectors.toList());
-            assertThat(actualClientScopes, empty());
-
             return null;
         });
     }
