@@ -10,6 +10,9 @@ export default class Masthead extends CommonElements {
   private userDrpDwn = "#user-dropdown";
   private userDrpDwnKebab = "#user-dropdown-kebab";
   private globalAlerts = "global-alerts";
+  private documentationLink = "#link";
+  private backToAdminConsoleLink = "#landingReferrerLink";
+  private userDrpdwnItem = ".pf-c-dropdown__menu-item";
 
   private getAlertsContainer() {
     return cy.findByTestId(this.globalAlerts);
@@ -35,6 +38,39 @@ export default class Masthead extends CommonElements {
     cy.get("#enableHelp").click({ force: true });
   }
 
+  toggleUsernameDropdown() {
+    this.userDropdown().click();
+    return this;
+  }
+
+  toggleMobileViewHelp() {
+    cy.get(this.userDrpdwnItem).contains("Help").click();
+    return this;
+  }
+
+  clickRealmInfo() {
+    cy.get(this.userDrpdwnItem).contains("Realm info").click();
+    return this;
+  }
+
+  clickGlobalHelp() {
+    cy.get(this.helpBtn).click();
+    return this;
+  }
+
+  clickDocumentationLink() {
+    cy.get(this.documentationLink)
+      .find("a")
+      .invoke("removeAttr", "target")
+      .click();
+    return this;
+  }
+
+  goToAdminConsole() {
+    cy.get(this.backToAdminConsoleLink).click({ force: true });
+    return this;
+  }
+
   userDropdown() {
     return cy
       .document()
@@ -45,13 +81,13 @@ export default class Masthead extends CommonElements {
   }
 
   signOut() {
-    this.userDropdown().click();
+    this.toggleUsernameDropdown();
     cy.get("#sign-out").click();
     Cypress.session.clearAllSavedSessions();
   }
 
   accountManagement() {
-    this.userDropdown().click();
+    this.toggleUsernameDropdown();
     cy.get("#manage-account").click();
   }
 
@@ -83,9 +119,16 @@ export default class Masthead extends CommonElements {
     return this;
   }
 
-  checkKebabShown() {
+  assertIsDesktopView() {
+    cy.get(this.userDrpDwn).should("be.visible");
+    cy.get(this.userDrpDwnKebab).should("not.be.visible");
+
+    return this;
+  }
+
+  assertIsMobileView() {
     cy.get(this.userDrpDwn).should("not.be.visible");
-    cy.get(this.userDrpDwnKebab).should("exist");
+    cy.get(this.userDrpDwnKebab).should("be.visible");
 
     return this;
   }
