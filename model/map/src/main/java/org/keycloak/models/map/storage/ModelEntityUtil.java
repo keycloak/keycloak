@@ -224,6 +224,11 @@ public class ModelEntityUtil {
                     super.set(field, value);
                 }
             }
+
+            @Override
+            public String toString() {
+                return super.toString() + " [fixed " + entityField + "=" + value + "]";
+            }
         });
     }
 
