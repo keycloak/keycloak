@@ -45,7 +45,7 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private boolean reaugmentBeforeStart;
     private String importFile = System.getProperty("migration.import.file.name");
 
-    private FipsMode fipsMode = FipsMode.valueOf(System.getProperty("auth.server.fips.mode"));
+    private FipsMode fipsMode = FipsMode.valueOfOption(System.getProperty("auth.server.fips.mode"));
 
     @Override
     public void validate() throws ConfigurationException {

@@ -75,7 +75,7 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
     }
 
     private boolean isFipsDisabled() {
-        return AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.disabled;
+        return AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.DISABLED;
     }
 
 }

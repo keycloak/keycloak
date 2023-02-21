@@ -147,7 +147,7 @@ final class HttpPropertyMappers {
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
         if (value.isPresent()) {
             try {
-                if (FipsMode.valueOf(value.get()).equals(FipsMode.strict)) {
+                if (FipsMode.valueOfOption(value.get()).equals(FipsMode.STRICT)) {
                     return of("BCFKS");
                 }
                 return empty();

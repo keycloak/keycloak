@@ -86,7 +86,9 @@ public class Profile {
 
         UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
 
-        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT);
+        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT),
+
+        FIPS("FIPS 140-2 mode", Type.PREVIEW_DISABLED_BY_DEFAULT);
 
         private final Type type;
         private String label;
@@ -123,6 +125,7 @@ public class Profile {
             DEFAULT("Default"),
             DISABLED_BY_DEFAULT("Disabled by default"),
             PREVIEW("Preview"),
+            PREVIEW_DISABLED_BY_DEFAULT("Preview disabled by default"),
             EXPERIMENTAL("Experimental"),
             DEPRECATED("Deprecated");
 

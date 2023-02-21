@@ -173,7 +173,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());
 
         // only run build during first execution of the server (if the DB is specified), restarts or when running cluster tests
-        if (restart.get() || shouldSetUpDb.get() || "ha".equals(getClusterConfig.get()) || configuration.getFipsMode() != FipsMode.disabled) {
+        if (restart.get() || shouldSetUpDb.get() || "ha".equals(getClusterConfig.get()) || configuration.getFipsMode() != FipsMode.DISABLED) {
             commands.removeIf("--optimized"::equals);
             commands.add("--http-relative-path=/auth");
 
@@ -187,7 +187,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
                 }
             }
 
-            if (configuration.getFipsMode() != FipsMode.disabled) {
+            if (configuration.getFipsMode() != FipsMode.DISABLED) {
                 addFipsOptions(commands);
             }
         }
@@ -325,6 +325,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private void addFipsOptions(List<String> commands) {
+        commands.add("--features=fips");
         commands.add("--fips-mode=" + configuration.getFipsMode().toString());
 
         log.debugf("Keystore file: %s, truststore file: %s",
@@ -339,7 +340,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         // BCFIPS approved mode requires passwords of at least 112 bits (14 characters) to be used. To bypass this, we use this by default
         // as testsuite uses shorter passwords everywhere
-        if (FipsMode.strict == configuration.getFipsMode()) {
+        if (FipsMode.STRICT == configuration.getFipsMode()) {
             commands.add("--spi-password-hashing-pbkdf2-max-padding-length=14");
             commands.add("--spi-password-hashing-pbkdf2-sha256-max-padding-length=14");
             commands.add("--spi-password-hashing-pbkdf2-sha512-max-padding-length=14");

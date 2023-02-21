@@ -84,7 +84,6 @@ import io.smallrye.config.ConfigValue;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
-import org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ClassInfo;
@@ -217,9 +216,7 @@ class KeycloakProcessor {
         return new ConfigBuildItem();
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    @Consume(ConfigBuildItem.class)
+    // called from setCryptoProvider now
     ProfileBuildItem configureProfile(KeycloakRecorder recorder) {
         Profile profile = Profile.configure(
                 new QuarkusProfileConfigResolver(),
@@ -625,9 +622,16 @@ class KeycloakProcessor {
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void setCryptoProvider(KeycloakRecorder recorder) {
-        FipsMode fipsMode = Configuration.getOptionalValue(
-                NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
-                FipsMode::valueOf).orElse(FipsMode.disabled);
+        configureProfile(recorder);
+        FipsMode fipsMode = Configuration.getOptionalValue(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey())
+                .map(FipsMode::valueOfOption)
+                .orElse(FipsMode.DISABLED);
+        if (Profile.isFeatureEnabled(Profile.Feature.FIPS) && !fipsMode.isFipsEnabled()) {
+            // default to non strict when fips feature enabled
+            fipsMode = FipsMode.NON_STRICT;
+        } else if (fipsMode.isFipsEnabled() && !Profile.isFeatureEnabled(Profile.Feature.FIPS)) {
+            throw new RuntimeException("FIPS mode cannot be enabled without enabling the FIPS feature --features=fips");
+        }
 
         recorder.setCryptoProvider(fipsMode);
     }
