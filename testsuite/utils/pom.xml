@@ -35,10 +35,6 @@
 
 
     <dependencies>
-        <!--<dependency>
-            <groupId>jakarta.mail</groupId>
-            <artifactId>jakarta.mail-api</artifactId>
-        </dependency>-->
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>jakarta.mail</artifactId>
@@ -298,11 +294,6 @@
             <version>${mssql-jdbc.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
-        </dependency>
     </dependencies>
 
 
