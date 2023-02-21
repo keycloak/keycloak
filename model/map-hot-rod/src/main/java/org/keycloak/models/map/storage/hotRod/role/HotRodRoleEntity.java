@@ -76,6 +76,16 @@ public class HotRodRoleEntity extends AbstractHotRodEntity {
         }
 
         @Override
+        public void setClientId(String clientId) {
+            HotRodRoleEntity entity = getHotRodEntity();
+            entity.updated |= ! Objects.equals(entity.clientId, clientId);
+            entity.clientId = clientId;
+            
+            // Migration from previous version
+            entity.clientRole = clientId != null;
+        }
+
+        @Override
         public void setName(String name) {
             HotRodRoleEntity entity = getHotRodEntity();
             entity.updated |= ! Objects.equals(entity.name, name);

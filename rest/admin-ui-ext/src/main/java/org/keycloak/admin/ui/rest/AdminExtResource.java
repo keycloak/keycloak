@@ -45,4 +45,9 @@ public final class AdminExtResource {
         return new GroupsResource(session, realm, auth);
     }
 
+    @Path("/sessions")
+    public SessionsResource sessions() {
+        return new SessionsResource(session, realm, auth);
+    }
+
 }

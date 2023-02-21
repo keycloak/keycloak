@@ -17,15 +17,27 @@
 
 package org.keycloak.it.junit5.extension;
 
-import static org.keycloak.it.junit5.extension.DistributionTest.ReInstall.BEFORE_ALL;
-import static org.keycloak.it.junit5.extension.DistributionType.RAW;
-import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
-import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
-import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NAME;
+import io.quarkus.deployment.util.FileUtil;
+import io.quarkus.runtime.configuration.QuarkusConfigFactory;
+import io.quarkus.test.junit.QuarkusMainTestExtension;
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawDistRootPath;
+import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.command.Start;
+import org.keycloak.quarkus.runtime.cli.command.StartDev;
+import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
+import org.keycloak.quarkus.runtime.configuration.test.TestConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -35,25 +47,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.quarkus.deployment.util.FileUtil;
-import io.quarkus.runtime.configuration.QuarkusConfigFactory;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.ParameterResolutionException;
-import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
-import org.keycloak.it.utils.RawDistRootPath;
-import org.keycloak.it.utils.KeycloakDistribution;
-import org.keycloak.it.utils.RawKeycloakDistribution;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.command.Start;
-import org.keycloak.quarkus.runtime.cli.command.StartDev;
-
-import io.quarkus.test.junit.QuarkusMainTestExtension;
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
-import org.keycloak.quarkus.runtime.configuration.test.TestConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
+import static org.keycloak.it.junit5.extension.DistributionTest.ReInstall.BEFORE_ALL;
+import static org.keycloak.it.junit5.extension.DistributionType.RAW;
+import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NAME;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
@@ -102,6 +100,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             copyTestProvider(context.getRequiredTestMethod().getAnnotation(TestProvider.class));
             onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
             onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
+
+            configureEnvVars(context.getRequiredTestClass().getAnnotation(WithEnvVars.class));
+            configureEnvVars(context.getRequiredTestMethod().getAnnotation(WithEnvVars.class));
 
             if (launch != null) {
                 result = dist.run(Stream.concat(List.of(launch.value()).stream(), List.of(distConfig.defaultOptions()).stream()).collect(Collectors.toList()));
@@ -233,7 +234,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     }
 
     private KeycloakDistribution createDistribution(DistributionTest config, LegacyStore legacyStoreConfig, WithDatabase databaseConfig) {
-        return new KeycloakDistributionDecorator(legacyStoreConfig, databaseConfig, DistributionType.getCurrent().orElse(RAW).newInstance(config));
+        return new KeycloakDistributionDecorator(legacyStoreConfig, databaseConfig, config, DistributionType.getCurrent().orElse(RAW).newInstance(config));
     }
 
     @Override
@@ -331,6 +332,16 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         setProperty("quarkus.vault.devservices.enabled", Boolean.FALSE.toString());
         setProperty("quarkus.datasource.devservices.enabled", Boolean.TRUE.toString());
         setProperty("quarkus.devservices.enabled", Boolean.TRUE.toString());
+    }
+
+    private void configureEnvVars(WithEnvVars envVars) {
+        if (envVars == null) {
+            return;
+        }
+
+        for (int i=0; i<envVars.value().length; i=i+2) {
+            dist.setEnvVar(envVars.value()[i], envVars.value()[i+1]);
+        }
     }
 
     private void setProperty(String name, String value) {

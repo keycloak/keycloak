@@ -2,6 +2,7 @@ package org.keycloak.crypto.fips;
 
 import static org.bouncycastle.crypto.CryptoServicesRegistrar.isInApprovedOnlyMode;
 
+import java.lang.reflect.Method;
 import java.security.Provider;
 
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
@@ -19,7 +20,11 @@ public class KeycloakFipsSecurityProvider extends Provider {
     private final BouncyCastleFipsProvider bcFipsProvider;
 
     public KeycloakFipsSecurityProvider(BouncyCastleFipsProvider bcFipsProvider) {
-        super("KC(" + bcFipsProvider.toString() + (isInApprovedOnlyMode() ? " Approved Mode" : "") + ")", 1, "Keycloak pseudo provider");
+        super("KC(" +
+                bcFipsProvider.toString() +
+                (isInApprovedOnlyMode() ? " Approved Mode" : "") +
+                ", FIPS-JVM: " + isSystemFipsEnabled() +
+                ")", 1, "Keycloak pseudo provider");
         this.bcFipsProvider = bcFipsProvider;
     }
 
@@ -31,6 +36,25 @@ public class KeycloakFipsSecurityProvider extends Provider {
             return this.bcFipsProvider.getService("SecureRandom", "DEFAULT");
         } else {
             return null;
+        }
+    }
+
+    public static String isSystemFipsEnabled() {
+        Method isSystemFipsEnabled = null;
+
+        try {
+            Class<?> securityConfigurator = KeycloakFipsSecurityProvider.class.getClassLoader().loadClass("java.security.SystemConfigurator");
+            isSystemFipsEnabled = securityConfigurator.getDeclaredMethod("isSystemFipsEnabled");
+            isSystemFipsEnabled.setAccessible(true);
+            boolean isEnabled = (boolean) isSystemFipsEnabled.invoke(null);
+            return isEnabled ? "enabled" : "disabled";
+        } catch (Throwable ignore) {
+            logger.debug("Could not detect if FIPS is enabled from the host", ignore);
+            return "unknown";
+        } finally {
+            if (isSystemFipsEnabled != null) {
+                isSystemFipsEnabled.setAccessible(false);
+            }
         }
     }
 }

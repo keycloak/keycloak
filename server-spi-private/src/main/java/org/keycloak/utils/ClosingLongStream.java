@@ -16,6 +16,7 @@
  */
 package org.keycloak.utils;
 
+import java.util.Comparator;
 import java.util.LongSummaryStatistics;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
@@ -258,16 +259,110 @@ class ClosingLongStream implements LongStream {
 
     @Override
     public PrimitiveIterator.OfLong iterator() {
-        return delegate.iterator();
+        return new ClosingIterator(delegate.iterator());
     }
 
     @Override
     public Spliterator.OfLong spliterator() {
-        return delegate.spliterator();
+        return new ClosingSpliterator(delegate.spliterator());
     }
 
     @Override
     public boolean isParallel() {
         return delegate.isParallel();
+    }
+
+    private class ClosingIterator implements PrimitiveIterator.OfLong {
+
+        private final PrimitiveIterator.OfLong iterator;
+
+        public ClosingIterator(PrimitiveIterator.OfLong iterator) {
+            this.iterator = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            final boolean res = iterator.hasNext();
+            if (! res) {
+                close();
+            }
+            return res;
+        }
+
+        @Override
+        public Long next() {
+            return iterator.next();
+        }
+
+        @Override
+        public void remove() {
+            iterator.remove();
+        }
+
+        @Override
+        public void forEachRemaining(LongConsumer action) {
+            iterator.forEachRemaining(action);
+            close();
+        }
+
+        @Override
+        public long nextLong() {
+            return iterator.nextLong();
+        }
+    }
+
+    private class ClosingSpliterator implements Spliterator.OfLong {
+
+        private final Spliterator.OfLong spliterator;
+
+        public ClosingSpliterator(Spliterator.OfLong spliterator) {
+            this.spliterator = spliterator;
+        }
+
+        @Override
+        public boolean tryAdvance(LongConsumer action) {
+            final boolean res = spliterator.tryAdvance(action);
+            if (! res) {
+                close();
+            }
+            return res;
+        }
+
+        @Override
+        public void forEachRemaining(LongConsumer action) {
+            spliterator.forEachRemaining(action);
+            close();
+        }
+
+        @Override
+        public Spliterator.OfLong trySplit() {
+            return spliterator.trySplit();
+        }
+
+        @Override
+        public long estimateSize() {
+            return spliterator.estimateSize();
+        }
+
+        @Override
+        public long getExactSizeIfKnown() {
+            return spliterator.getExactSizeIfKnown();
+        }
+
+        @Override
+        public int characteristics() {
+            return spliterator.characteristics();
+        }
+
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return spliterator.hasCharacteristics(characteristics);
+        }
+
+        @Override
+        public Comparator<? super Long> getComparator() {
+            return spliterator.getComparator();
+        }
+
     }
 }

@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>2.13.6.Final</quarkus.version>
+        <quarkus.version>2.13.7.Final</quarkus.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -119,6 +119,11 @@
         <google.guava.version>30.1-jre</google.guava.version>
         <xstream.version>1.4.20</xstream.version>
         <okhttp.version>4.10.0</okhttp.version>
+        <!-- Override of SnakeYAML to fix multiple CVEs -->
+        <org.yaml.snakeyaml.version>1.33</org.yaml.snakeyaml.version>
+        <!-- Override sshd-common to fix CVE-2022-45047 -->
+        <org.apache.sshd.version>2.9.2</org.apache.sshd.version>
+        <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
         <!-- Openshift -->
         <version.com.openshift.openshift-restclient-java>9.0.5.Final</version.com.openshift.openshift-restclient-java>
@@ -139,7 +144,7 @@
         <pax.web.version>7.1.0</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
-        <twitter4j.version>4.0.7</twitter4j.version>
+        <twitter4j.version>4.1.2</twitter4j.version>
         <jna.version>4.1.0</jna.version>
 
         <!-- Databases -->
@@ -185,6 +190,7 @@
         <frontend.plugin.version>1.12.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
+        <shade.plugin.version>3.4.1</shade.plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -297,7 +303,17 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.33</version>
+                <version>${org.yaml.snakeyaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.sshd</groupId>
+                <artifactId>sshd-common</artifactId>
+                <version>${org.apache.sshd.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.snakeyaml</groupId>
+                <artifactId>snakeyaml-engine</artifactId>
+                <version>${org.snakeyaml.snakeyaml-engine.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -1790,6 +1806,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${shade.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <configuration>
                         <tarLongFileMode>posix</tarLongFileMode>
@@ -1814,7 +1835,6 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${surefire-plugin.version}</version>
                     <configuration>
-                        <forkMode>once</forkMode>
                         <argLine>-Djava.awt.headless=true ${surefire.memory.settings} ${surefire.system.args} -Duser.language=en -Duser.region=US -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError</argLine>
                         <runOrder>alphabetical</runOrder>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
@@ -1941,6 +1961,11 @@
                             <phase>process-resources</phase>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.asciidoctor</groupId>
+                    <artifactId>asciidoctor-maven-plugin</artifactId>
+                    <version>1.5.8</version>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -29,6 +29,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import java.util.Objects;
 import org.jboss.logging.Logger;
 
 /**
@@ -120,6 +121,7 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
                 storageProviderFactory = session.getKeycloakSessionFactory().getProviderFactory(MapStorageProvider.class);
             } else {
                 storageProviderFactory = session.getKeycloakSessionFactory().getProviderFactory(MapStorageProvider.class, provider);
+                Objects.requireNonNull(storageProviderFactory, "Could not find map storage provider " + provider);
             }
         } else {
             // If this is being implemented, make sure that the factory is being closed eventually.

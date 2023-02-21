@@ -26,15 +26,15 @@ import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.metadata.AttributeConsumingServiceType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
@@ -53,6 +53,7 @@ import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.SamlSessionUtils;
 import org.keycloak.protocol.saml.mappers.SamlMetadataDescriptorUpdater;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
+import org.keycloak.protocol.saml.SAMLEncryptionAlgorithms;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.SAML2NameIDPolicyBuilder;
@@ -96,7 +97,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author Pedro Igor
@@ -363,15 +363,41 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
 
-            List<Element> signingKeys = streamForExport(session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256), false)
+            // We export all keys for algorithm RS256, both active and passive so IDP is able to verify signature even
+            //  if a key rotation happens in the meantime
+            List<KeyDescriptorType> signingKeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
+                    .filter(key -> key.getCertificate() != null)
+                    .sorted(SamlService::compareKeys)
+                    .map(key -> {
+                        try {
+                            return SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
+                        } catch (ParserConfigurationException e) {
+                            logger.warn("Failed to export SAML SP Metadata!", e);
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .map(key -> SPMetadataDescriptor.buildKeyDescriptorType(key, KeyTypes.SIGNING, null))
                     .collect(Collectors.toList());
 
-            // See also SamlProtocolUtils.getDecryptionKey
+            // We export only active ENC keys so IDP uses different key as soon as possible if a key rotation happens
             String encAlg = getConfig().getEncryptionAlgorithm();
-            Stream<KeyWrapper> encryptionKeyWrappers = (encAlg != null && !encAlg.trim().isEmpty())
-                    ? session.keys().getKeysStream(realm, KeyUse.ENC, encAlg)
-                    : session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256);
-            List<Element> encryptionKeys = streamForExport(encryptionKeyWrappers, true)
+            List<KeyDescriptorType> encryptionKeys = session.keys().getKeysStream(realm)
+                    .filter(key -> key.getStatus().isActive() && KeyUse.ENC.equals(key.getUse())
+                            && (encAlg == null || Objects.equals(encAlg, key.getAlgorithmOrDefault()))
+                            && SAMLEncryptionAlgorithms.forKeycloakIdentifier(key.getAlgorithm()) != null
+                            && key.getCertificate() != null)
+                    .sorted(SamlService::compareKeys)
+                    .map(key -> {
+                        Element keyInfo;
+                        try {
+                            keyInfo = SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
+                        } catch (ParserConfigurationException e) {
+                            logger.warn("Failed to export SAML SP Metadata!", e);
+                            throw new RuntimeException(e);
+                        }
+
+                        return SPMetadataDescriptor.buildKeyDescriptorType(keyInfo, KeyTypes.ENCRYPTION, SAMLEncryptionAlgorithms.forKeycloakIdentifier(key.getAlgorithm()).getXmlEncIdentifier());
+                    })
                     .collect(Collectors.toList());
 
             // Prepare the metadata descriptor model
@@ -379,7 +405,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(sw);
             SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
 
-            EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPdescriptor(
+            EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPDescriptor(
                 authnBinding, authnBinding, endpoint, endpoint,
                 wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
                 entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
@@ -452,23 +478,6 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             logger.warn("Failed to export SAML SP Metadata!", e);
             throw new RuntimeException(e);
         }
-    }
-
-    private Stream<Element> streamForExport(Stream<KeyWrapper> keys, boolean checkActive) {
-        return keys.filter(Objects::nonNull)
-                .filter(key -> key.getCertificate() != null)
-                .filter(key -> !checkActive || key.getStatus() == KeyStatus.ACTIVE)
-                .sorted(SamlService::compareKeys)
-                .map(key -> {
-                    try {
-                        Element element = SPMetadataDescriptor
-                                .buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
-                        return element;
-                    } catch (ParserConfigurationException e) {
-                        logger.warn("Failed to export SAML SP Metadata!", e);
-                        throw new RuntimeException(e);
-                    }
-                });
     }
 
     public SignatureAlgorithm getSignatureAlgorithm() {

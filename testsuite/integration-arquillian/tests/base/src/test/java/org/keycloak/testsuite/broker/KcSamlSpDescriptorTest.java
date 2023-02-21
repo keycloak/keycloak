@@ -3,36 +3,49 @@ package org.keycloak.testsuite.broker;
 import com.google.common.collect.ImmutableMap;
 
 import org.apache.tools.ant.filters.StringInputStream;
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
-import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.protocol.saml.SAMLEncryptionAlgorithms;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.xml.crypto.dsig.XMLSignature;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.KeyUtils.generateNewRealmKey;
 
 public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
@@ -220,14 +233,15 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             String encCert = certs.get("encryption");
             Assert.assertNotNull(signingCert);
             Assert.assertNotNull(encCert);
-            Assert.assertEquals(signingCert, encCert);
+            Assert.assertNotEquals(signingCert, encCert);
+            hasEncAlgorithms(spDescriptor, SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier());
         }
 
         // Enable signing and encryption and set encryption algorithm. Both keys are present and mapped to different realm key (signing to "rsa-generated"m encryption to "rsa-enc-generated")
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
                 .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
                 .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true")
-                .setAttribute(SAMLIdentityProviderConfig.ENCRYPTION_ALGORITHM, JWEConstants.RSA_OAEP)
+                .setAttribute(SAMLIdentityProviderConfig.ENCRYPTION_ALGORITHM, Algorithm.RSA_OAEP)
                 .update())
         {
             spDescriptor = getExportedSamlProvider();
@@ -239,6 +253,48 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             Assert.assertNotNull(signingCert);
             Assert.assertNotNull(encCert);
             Assert.assertNotEquals(signingCert, encCert);
+            hasEncAlgorithms(spDescriptor, SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier());
+        }
+    }
+
+    @Test
+    public void testEncKeyDescriptors() throws Exception {
+        SPSSODescriptorType spDescriptor;
+
+        try (AutoCloseable ac1 = generateNewRealmKey(adminClient.realm(bc.consumerRealmName()), KeyUse.ENC, Algorithm.RSA1_5);
+             AutoCloseable ac2 = generateNewRealmKey(adminClient.realm(bc.consumerRealmName()), KeyUse.ENC, Algorithm.RSA_OAEP_256)) {
+
+            // Test all enc keys are present in metadata
+            try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                    .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true")
+                    .update()) {
+                spDescriptor = getExportedSamlProvider();
+                hasEncAlgorithms(spDescriptor,
+                        SAMLEncryptionAlgorithms.RSA1_5.getXmlEncIdentifier(),
+                        SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier()
+                );
+            }
+
+            // Specify algorithms for IDP
+            try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                    .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true")
+                    .setAttribute(SAMLIdentityProviderConfig.ENCRYPTION_ALGORITHM, Algorithm.RSA_OAEP)
+                    .update()) {
+                spDescriptor = getExportedSamlProvider();
+                hasEncAlgorithms(spDescriptor,
+                        SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier()
+                );
+            }
+
+            try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                    .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true")
+                    .setAttribute(SAMLIdentityProviderConfig.ENCRYPTION_ALGORITHM, Algorithm.RSA1_5)
+                    .update()) {
+                spDescriptor = getExportedSamlProvider();
+                hasEncAlgorithms(spDescriptor,
+                        SAMLEncryptionAlgorithms.RSA1_5.getXmlEncIdentifier()
+                );
+            }
         }
     }
 
@@ -249,12 +305,77 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
         return o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
     }
 
+    private void hasEncAlgorithms(SPSSODescriptorType spDescriptor, String... expectedAlgorithms) {
+        List<String> algorithms = spDescriptor.getKeyDescriptor().stream()
+                .filter(key -> key.getUse() == KeyTypes.ENCRYPTION)
+                .map(KeyDescriptorType::getEncryptionMethod)
+                .flatMap(list -> list.stream().map(EncryptionMethodType::getAlgorithm))
+                .collect(Collectors.toList());
+
+        assertThat(algorithms, containsInAnyOrder(expectedAlgorithms));
+    }
+
     // Key is usage ("signing" or "encryption"), Value is string with X509 certificate
     private Map<String, String> convertCerts(SPSSODescriptorType spDescriptor) {
         return spDescriptor.getKeyDescriptor().stream()
                 .collect(Collectors.toMap(
                         keyDescriptor -> keyDescriptor.getUse().value(),
                         keyDescriptor -> keyDescriptor.getKeyInfo().getElementsByTagNameNS(XMLSignature.XMLNS, "X509Certificate").item(0).getTextContent()));
+    }
+
+
+
+    //KEYCLOAK-18909
+    @Test
+    public void testKeysExistenceInSpMetadata() throws IOException, ParsingException, URISyntaxException {
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "true")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true")
+                .update())
+        {
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            //the SPSSODescriptor should have at least one KeyDescriptor for encryption and one for Signing
+            List<KeyDescriptorType> encKeyDescr = spDescriptor.getKeyDescriptor().stream().filter(k -> KeyTypes.ENCRYPTION.equals(k.getUse())).collect(Collectors.toList());
+            List<KeyDescriptorType> sigKeyDescr = spDescriptor.getKeyDescriptor().stream().filter(k -> KeyTypes.SIGNING.equals(k.getUse())).collect(Collectors.toList());
+
+            assertTrue(encKeyDescr.size() > 0);
+            assertTrue(sigKeyDescr.size() > 0);
+
+            //also, the keys should match the realm's dedicated keys for enc and sig
+
+            Set<String> encKeyDescNames = encKeyDescr.stream()
+                    .map(k-> k.getKeyInfo().getElementsByTagName("ds:KeyName").item(0).getTextContent().trim())
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            Set<String> sigKeyDescNames = sigKeyDescr.stream()
+                    .map(k-> k.getKeyInfo().getElementsByTagName("ds:KeyName").item(0).getTextContent().trim())
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            KeysMetadataRepresentation realmKeysMetadata = adminClient.realm(getBrokerConfiguration().consumerRealmName()).keys().getKeyMetadata();
+
+            long encMatches = realmKeysMetadata.getKeys().stream()
+                    .filter(k -> KeyStatus.valueOf(k.getStatus()).isActive())
+                    //.filter(k -> "RSA".equals(k.getType().trim()))
+                    .filter(k -> KeyUse.ENC.equals(k.getUse()))
+                    .filter(k -> encKeyDescNames.contains(k.getKid().trim()))
+                    .count();
+
+            long sigMatches = realmKeysMetadata.getKeys().stream()
+                    .filter(k -> KeyStatus.valueOf(k.getStatus()).isActive())
+                    //.filter(k -> "RSA".equals(k.getType().trim()))
+                    .filter(k -> KeyUse.SIG.equals(k.getUse()))
+                    .filter(k -> sigKeyDescNames.contains(k.getKid().trim()))
+                    .count();
+
+            assertTrue(encMatches > 0);
+            assertTrue(sigMatches > 0);
+        }
     }
 
 }

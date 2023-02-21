@@ -17,15 +17,17 @@
 package org.keycloak.testsuite.model.events;
 
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.EventStoreSpi;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.map.events.MapEventStoreProviderFactory;
+import org.keycloak.models.map.storage.file.FileMapStorageProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import java.util.List;
@@ -37,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assume.assumeFalse;
 
 /**
  *
@@ -61,6 +64,12 @@ public class EventQueryTest extends KeycloakModelTest {
 
     @Test
     public void testClear() {
+        // Skip the test if EventProvider == File
+        String evProvider = CONFIG.getConfig().get(EventStoreSpi.NAME + ".provider");
+        String evMapStorageProvider = CONFIG.getConfig().get(EventStoreSpi.NAME + ".map.storage-auth-events.provider");
+        assumeFalse(MapEventStoreProviderFactory.PROVIDER_ID.equals(evProvider) &&
+                (evMapStorageProvider == null || FileMapStorageProviderFactory.PROVIDER_ID.equals(evMapStorageProvider)));
+
         inRolledBackTransaction(null, (session, t) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             eventStore.clear();
@@ -90,6 +99,7 @@ public class EventQueryTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             assertThat(eventStore.createQuery()
+                            .realm(realmId)
                             .firstResult(2)
                             .getResultStream()
                             .collect(Collectors.counting()),
@@ -159,13 +169,14 @@ public class EventQueryTest extends KeycloakModelTest {
             return null;
         });
 
-        Time.setOffset(10);
+        setTimeOffset(10);
 
         try {
             withRealm(realmId, (session, realm) -> {
                 EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
                 Set<Event> events = eventStore.createQuery()
+                        .realm(realmId)
                         .getResultStream().collect(Collectors.toSet());
 
                 assertThat(events, hasSize(1));
@@ -173,7 +184,7 @@ public class EventQueryTest extends KeycloakModelTest {
                 return null;
             });
         } finally {
-            Time.setOffset(0);
+            setTimeOffset(0);
         }
 
 
@@ -201,8 +212,8 @@ public class EventQueryTest extends KeycloakModelTest {
         // Check if events were created
         inComittedTransaction(session -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            assertThat(eventStore.createQuery().getResultStream().count(), is(1L));
-            assertThat(eventStore.createAdminQuery().getResultStream().count(), is(1L));
+            assertThat(eventStore.createQuery().realm(newRealmId).getResultStream().count(), is(1L));
+            assertThat(eventStore.createAdminQuery().realm(newRealmId).getResultStream().count(), is(1L));
         });
 
         // Remove realm
@@ -211,8 +222,8 @@ public class EventQueryTest extends KeycloakModelTest {
         // Check events were removed
         inComittedTransaction(session -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            assertThat(eventStore.createQuery().getResultStream().count(), is(0L));
-            assertThat(eventStore.createAdminQuery().getResultStream().count(), is(0L));
+            assertThat(eventStore.createQuery().realm(newRealmId).getResultStream().count(), is(0L));
+            assertThat(eventStore.createAdminQuery().realm(newRealmId).getResultStream().count(), is(0L));
         });
     }
 

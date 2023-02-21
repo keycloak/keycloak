@@ -19,6 +19,7 @@ package org.keycloak.testsuite.client.policies;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
@@ -536,5 +537,33 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_RESPONSE.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForPreAuthorizationRequest() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.PRE_AUTHORIZATION_REQUEST)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Authorization Request
+        oauth.realm(REALM_NAME);
+        oauth.clientId("foo");
+        oauth.openLoginForm();
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Exception thrown intentionally", errorPage.getError());
     }
 }

@@ -59,7 +59,6 @@ public class HotRodAdminEventEntity extends AbstractHotRodEntity {
     @ProtoField(number = 2)
     public String id;
 
-    @Basic(sortable = true)
     @ProtoField(number = 3)
     public Long expiration;
 

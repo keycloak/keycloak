@@ -8,7 +8,7 @@
         </#if>
     <#elseif section = "form">
     <div id="kc-info-message">
-        <p class="instruction">${message.summary}<#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${msg("requiredAction.${reqActionItem}")}<#sep>, </#items></b></#list><#else></#if></p>
+        <p class="instruction">${message.summary}<#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}<#sep>, </#items></b></#list><#else></#if></p>
         <#if skipLink??>
         <#else>
             <#if pageRedirectUri?has_content>

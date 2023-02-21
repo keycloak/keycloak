@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.BouncyIntegration;
 
@@ -75,6 +78,8 @@ public class CryptoIntegration {
         StringBuilder builder = new StringBuilder("Security properties: [ \n")
                 .append(" Java security properties file: " + System.getProperty("java.security.properties") + "\n")
                 .append(" Default keystore type: " + KeyStore.getDefaultType() + "\n")
+                .append(" KeyManagerFactory.getDefaultAlgorithm(): " + KeyManagerFactory.getDefaultAlgorithm() + "\n")
+                .append(" TrustManagerFactory.getDefaultAlgorithm(): " + TrustManagerFactory.getDefaultAlgorithm() + "\n")
                 .append(" keystore.type.compat: " + Security.getProperty("keystore.type.compat") + "\n");
         Stream.of("javax.net.ssl.trustStoreType", "javax.net.ssl.trustStore", "javax.net.ssl.trustStoreProvider",
                         "javax.net.ssl.keyStoreType", "javax.net.ssl.keyStore", "javax.net.ssl.keyStoreProvider")

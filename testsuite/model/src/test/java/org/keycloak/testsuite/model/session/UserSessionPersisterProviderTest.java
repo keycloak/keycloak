@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
+import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -70,6 +71,7 @@ import java.util.LinkedList;
 @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
+@RequireProvider(DeviceRepresentationProvider.class)
 public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     private static final int USER_SESSION_COUNT = 2000;
@@ -432,7 +434,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
             for (int i = 0; i < USER_SESSION_COUNT; i++) {
                 // Having different offsets for each session (to ensure that lastSessionRefresh is also different)
-                Time.setOffset(i);
+                setTimeOffset(i);
 
                 UserSessionModel userSession = session.sessions().createUserSession(realm, user, "user1", "127.0.0.1", "form", true, null, null);
                 createClientSession(session, realmId, realm.getClientByClientId("test-app"), userSession, "http://redirect", "state");
@@ -464,6 +466,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             }
             return null;
         });
+
     }
 
     @Test
@@ -495,7 +498,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             persister.updateLastSessionRefreshes(realm, lastSessionRefresh, Collections.singleton(userSession1[0].getId()), true);
 
             // Increase time offset - 40 days
-            Time.setOffset(3456000);
+            setTimeOffset(3456000);
             try {
                 // Run expiration thread
                 persister.removeExpired(realm);
@@ -507,7 +510,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
             } finally {
                 // Cleanup
-                Time.setOffset(0);
+                setTimeOffset(0);
                 session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             }
         });

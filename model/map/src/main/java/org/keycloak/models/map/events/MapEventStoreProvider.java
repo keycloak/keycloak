@@ -28,13 +28,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.ExpirableEntity;
+import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -47,6 +47,8 @@ public class MapEventStoreProvider implements EventStoreProvider {
     private final KeycloakSession session;
     private final MapKeycloakTransaction<MapAuthEventEntity, Event> authEventsTX;
     private final MapKeycloakTransaction<MapAdminEventEntity, AdminEvent> adminEventsTX;
+    private final boolean adminTxHasRealmId;
+    private final boolean authTxHasRealmId;
 
     public MapEventStoreProvider(KeycloakSession session, MapStorage<MapAuthEventEntity, Event> loginEventsStore, MapStorage<MapAdminEventEntity, AdminEvent> adminEventsStore) {
         this.session = session;
@@ -55,6 +57,30 @@ public class MapEventStoreProvider implements EventStoreProvider {
 
         session.getTransactionManager().enlistAfterCompletion(this.authEventsTX);
         session.getTransactionManager().enlistAfterCompletion(this.adminEventsTX);
+        this.authTxHasRealmId = this.authEventsTX instanceof HasRealmId;
+        this.adminTxHasRealmId = this.adminEventsTX instanceof HasRealmId;
+    }
+
+    private MapKeycloakTransaction<MapAdminEventEntity, AdminEvent> adminTxInRealm(String realmId) {
+        if (adminTxHasRealmId) {
+            ((HasRealmId) adminEventsTX).setRealmId(realmId);
+        }
+        return adminEventsTX;
+    }
+
+    private MapKeycloakTransaction<MapAdminEventEntity, AdminEvent> adminTxInRealm(RealmModel realm) {
+        return adminTxInRealm(realm == null ? null : realm.getId());
+    }
+
+    private MapKeycloakTransaction<MapAuthEventEntity, Event> authTxInRealm(String realmId) {
+        if (authTxHasRealmId) {
+            ((HasRealmId) authEventsTX).setRealmId(realmId);
+        }
+        return authEventsTX;
+    }
+
+    private MapKeycloakTransaction<MapAuthEventEntity, Event> authTxInRealm(RealmModel realm) {
+        return authTxInRealm(realm == null ? null : realm.getId());
     }
 
     /** LOGIN EVENTS **/
@@ -62,13 +88,13 @@ public class MapEventStoreProvider implements EventStoreProvider {
     public void onEvent(Event event) {
         LOG.tracef("onEvent(%s)%s", event, getShortStackTrace());
         String id = event.getId();
+        String realmId = event.getRealmId();
 
-        if (id != null && authEventsTX.read(id) != null) {
+        if (id != null && authTxInRealm(realmId).exists(id)) {
             throw new ModelDuplicateException("Event already exists: " + id);
         }
 
         MapAuthEventEntity entity = modelToEntity(event);
-        String realmId = event.getRealmId();
         if (realmId != null) {
             RealmModel realm = session.realms().getRealm(realmId);
             if (realm != null && realm.getEventsExpiration() > 0) {
@@ -76,45 +102,51 @@ public class MapEventStoreProvider implements EventStoreProvider {
             }
         }
 
-        authEventsTX.create(entity);
-    }
-
-    private boolean filterExpired(ExpirableEntity event) {
-        // Check if entity is expired
-        if (isExpired(event, true)) {
-            // Remove entity
-            authEventsTX.delete(event.getId());
-
-            return false; // Do not include entity in the resulting stream
-        }
-
-        return true; // Entity is not expired
+        authTxInRealm(realmId).create(entity);
     }
 
     @Override
     public EventQuery createQuery() {
         LOG.tracef("createQuery()%s", getShortStackTrace());
-        return new MapAuthEventQuery(((Function<QueryParameters<Event>, Stream<MapAuthEventEntity>>) authEventsTX::read)
-                .andThen(s -> s.filter(this::filterExpired).map(EventUtils::entityToModel)));
+        return new MapAuthEventQuery() {
+            private boolean filterExpired(ExpirableEntity event) {
+                // Check if entity is expired
+                if (isExpired(event, true)) {
+                    // Remove entity
+                    authTxInRealm(realmId).delete(event.getId());
+
+                    return false; // Do not include entity in the resulting stream
+                }
+
+                return true; // Entity is not expired
+            }
+
+            @Override
+            protected Stream<Event> read(QueryParameters<Event> queryParameters) {
+                return authTxInRealm(realmId).read(queryParameters)
+                  .filter(this::filterExpired)
+                  .map(EventUtils::entityToModel);
+            }
+        };
     }
 
     @Override
     public void clear() {
         LOG.tracef("clear()%s", getShortStackTrace());
-        authEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.criteria()));
+        authTxInRealm((String) null).delete(QueryParameters.withCriteria(DefaultModelCriteria.criteria()));
     }
 
     @Override
     public void clear(RealmModel realm) {
         LOG.tracef("clear(%s)%s", realm, getShortStackTrace());
-        authEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<Event>criteria()
+        authTxInRealm(realm).delete(QueryParameters.withCriteria(DefaultModelCriteria.<Event>criteria()
                 .compare(Event.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())));
     }
 
     @Override
     public void clear(RealmModel realm, long olderThan) {
         LOG.tracef("clear(%s, %d)%s", realm, olderThan, getShortStackTrace());
-        authEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<Event>criteria()
+        authTxInRealm(realm).delete(QueryParameters.withCriteria(DefaultModelCriteria.<Event>criteria()
                 .compare(Event.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
                 .compare(Event.SearchableFields.TIMESTAMP, ModelCriteriaBuilder.Operator.LT, olderThan)
         ));
@@ -130,47 +162,67 @@ public class MapEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        LOG.tracef("clear(%s, %s)%s", event, includeRepresentation, getShortStackTrace());
+        LOG.tracef("onEvent(%s, %s)%s", event, includeRepresentation, getShortStackTrace());
         String id = event.getId();
-        if (id != null && authEventsTX.read(id) != null) {
+        String realmId = event.getRealmId();
+        if (id != null && adminTxInRealm(realmId).exists(id)) {
             throw new ModelDuplicateException("Event already exists: " + id);
         }
-        String realmId = event.getRealmId();
         MapAdminEventEntity entity = modelToEntity(event,includeRepresentation);
         if (realmId != null) {
             RealmModel realm = session.realms().getRealm(realmId);
-            Long expiration = realm.getAttribute("adminEventsExpiration",0L);
-            if (realm != null &&  expiration > 0) {
-                entity.setExpiration(Time.currentTimeMillis() + (expiration * 1000));
+            if (realm != null) {
+                Long expiration = realm.getAttribute("adminEventsExpiration",0L);
+                if (expiration > 0) {
+                    entity.setExpiration(Time.currentTimeMillis() + (expiration * 1000));
+                }
             }
         }
-        adminEventsTX.create(entity);
+        adminTxInRealm(realmId).create(entity);
     }
 
     @Override
     public AdminEventQuery createAdminQuery() {
         LOG.tracef("createAdminQuery()%s", getShortStackTrace());
-        return new MapAdminEventQuery(((Function<QueryParameters<AdminEvent>, Stream<MapAdminEventEntity>>) adminEventsTX::read)
-                .andThen(s -> s.filter(this::filterExpired).map(EventUtils::entityToModel)));
+        return new MapAdminEventQuery() {
+            private boolean filterExpired(ExpirableEntity event) {
+                // Check if entity is expired
+                if (isExpired(event, true)) {
+                    // Remove entity
+                    authTxInRealm(realmId).delete(event.getId());
+
+                    return false; // Do not include entity in the resulting stream
+                }
+
+                return true; // Entity is not expired
+            }
+
+            @Override
+            protected Stream<AdminEvent> read(QueryParameters<AdminEvent> queryParameters) {
+                return adminTxInRealm(realmId).read(queryParameters)
+                  .filter(this::filterExpired)
+                  .map(EventUtils::entityToModel);
+            }
+        };
     }
 
     @Override
     public void clearAdmin() {
         LOG.tracef("clearAdmin()%s", getShortStackTrace());
-        adminEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.criteria()));
+        adminTxInRealm((String) null).delete(QueryParameters.withCriteria(DefaultModelCriteria.criteria()));
     }
 
     @Override
     public void clearAdmin(RealmModel realm) {
-        LOG.tracef("clear(%s)%s", realm, getShortStackTrace());
-        adminEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<AdminEvent>criteria()
+        LOG.tracef("clearAdmin(%s)%s", realm, getShortStackTrace());
+        adminTxInRealm(realm).delete(QueryParameters.withCriteria(DefaultModelCriteria.<AdminEvent>criteria()
                 .compare(AdminEvent.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())));
     }
 
     @Override
     public void clearAdmin(RealmModel realm, long olderThan) {
         LOG.tracef("clearAdmin(%s, %d)%s", realm, olderThan, getShortStackTrace());
-        adminEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<AdminEvent>criteria()
+        adminTxInRealm(realm).delete(QueryParameters.withCriteria(DefaultModelCriteria.<AdminEvent>criteria()
                 .compare(AdminEvent.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
                 .compare(AdminEvent.SearchableFields.TIMESTAMP, ModelCriteriaBuilder.Operator.LT, olderThan)
         ));

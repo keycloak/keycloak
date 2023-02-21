@@ -26,7 +26,10 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.SingleUseObjectProviderFactory;
+import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectProviderFactory;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
@@ -60,7 +63,6 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
-        Time.setOffset(0);
         s.realms().removeRealm(realmId);
     }
 
@@ -102,9 +104,13 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             Map<String, String> notes = singleUseObjectProvider.get(key.serializeKey());
             Assert.assertNotNull(notes);
             Assert.assertEquals("bar", notes.get("foo"));
+        });
 
-            Time.setOffset(70);
+        setTimeOffset(70);
 
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseObjectProvider = session.getProvider(SingleUseObjectProvider.class);
+            Map<String, String> notes = singleUseObjectProvider.get(key.serializeKey());
             notes = singleUseObjectProvider.get(key.serializeKey());
             Assert.assertNull(notes);
         });
@@ -153,20 +159,23 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
             Map<String, String> actualNotes = singleUseStore.get(key);
             assertThat(actualNotes, Matchers.anEmptyMap());
+        });
 
-            Time.setOffset(70);
+        setTimeOffset(70);
 
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
             Assert.assertNull(singleUseStore.get(key));
         });
     }
 
     @Test
     public void testCluster() throws InterruptedException {
-        // Skip the test if MapUserSessionProvider == CHM
-        String usProvider = CONFIG.getConfig().get("userSessions.provider");
-        String usMapStorageProvider = CONFIG.getConfig().get("userSessions.map.storage.provider");
-        assumeFalse(MapUserSessionProviderFactory.PROVIDER_ID.equals(usProvider) &&
-                (usMapStorageProvider == null || ConcurrentHashMapStorageProviderFactory.PROVIDER_ID.equals(usMapStorageProvider)));
+        // Skip the test if SingleUseObjectProvider == CHM
+        String suProvider = CONFIG.getConfig().get(SingleUseObjectSpi.NAME + ".provider");
+        String suMapStorageProvider = CONFIG.getConfig().get(SingleUseObjectSpi.NAME + ".map.storage.provider");
+        assumeFalse(MapSingleUseObjectProviderFactory.PROVIDER_ID.equals(suProvider) &&
+                (suMapStorageProvider == null || ConcurrentHashMapStorageProviderFactory.PROVIDER_ID.equals(suMapStorageProvider)));
 
         AtomicInteger index = new AtomicInteger();
         CountDownLatch afterFirstNodeLatch = new CountDownLatch(1);

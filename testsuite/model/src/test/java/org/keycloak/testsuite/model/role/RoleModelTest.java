@@ -21,17 +21,23 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.junit.Assume;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 @RequireProvider(RealmProvider.class)
 @RequireProvider(ClientProvider.class)
 @RequireProvider(RoleProvider.class)
 public class RoleModelTest extends KeycloakModelTest {
+
+    private static final String MAIN_ROLE_NAME = "main-role";
+    private static final String ROLE_PREFIX = "main-role-composite-";
+    private static final String CLIENT_NAME = "client-with-roles";
 
     private String realmId;
     private String mainRoleId;
@@ -58,15 +64,15 @@ public class RoleModelTest extends KeycloakModelTest {
 
 
     private void createRoles(KeycloakSession session, RealmModel realm) {
-        RoleModel mainRole = session.roles().addRealmRole(realm, "main-role");
+        RoleModel mainRole = session.roles().addRealmRole(realm, MAIN_ROLE_NAME);
         mainRoleId = mainRole.getId();
 
-        ClientModel clientModel = session.clients().addClient(realm, "client-with-roles");
+        ClientModel clientModel = session.clients().addClient(realm, CLIENT_NAME);
 
         // Create 10 realm roles that are composites of main role
         rolesSubset = IntStream.range(0, 10)
                 .boxed()
-                .map(i -> session.roles().addRealmRole(realm, "main-role-composite-" + i))
+                .map(i -> session.roles().addRealmRole(realm, ROLE_PREFIX + i))
                 .peek(role -> role.setDescription("This is a description for " + role.getName() + " realm role."))
                 .peek(mainRole::addCompositeRole)
                 .map(RoleModel::getId)
@@ -75,7 +81,7 @@ public class RoleModelTest extends KeycloakModelTest {
         // Create 10 client roles that are composites of main role
         rolesSubset.addAll(IntStream.range(10, 20)
                 .boxed()
-                .map(i -> session.roles().addClientRole(clientModel, "main-role-composite-" + i))
+                .map(i -> session.roles().addClientRole(clientModel, ROLE_PREFIX + i))
                 .peek(role -> role.setDescription("This is a description for " + role.getName() + " client role."))
                 .peek(mainRole::addCompositeRole)
                 .map(RoleModel::getId)
@@ -215,7 +221,7 @@ public class RoleModelTest extends KeycloakModelTest {
             realmRolesByDescription = session.roles().searchForRolesStream(realm, "DESCRIPTION FOR", 3, 9).collect(Collectors.toList());
             assertThat(realmRolesByDescription, hasSize(7));
 
-            ClientModel client = session.clients().getClientByClientId(realm, "client-with-roles");
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_NAME);
 
             List<RoleModel> clientRolesByDescription = session.roles().searchForClientRolesStream(client, "this is a", 0, 10).collect(Collectors.toList());
             assertThat(clientRolesByDescription, hasSize(10));
@@ -283,6 +289,19 @@ public class RoleModelTest extends KeycloakModelTest {
         });
     }
 
+    @Test
+    public void getRolePathTraversal() {
+        // Only perform this test if realm role ID = role.name and client role ID = client.id + ":" + role.name
+        Assume.assumeThat(mainRoleId, is(MAIN_ROLE_NAME));
+        Assume.assumeTrue(rolesSubset.stream().anyMatch((CLIENT_NAME + ":" + ROLE_PREFIX + "10")::equals));
+
+        withRealm(realmId, (session, realm) -> {
+            RoleModel role = session.roles().getRoleById(realm, (CLIENT_NAME + ":" + ROLE_PREFIX + "10") + "/../../" + MAIN_ROLE_NAME);
+            assertThat(role, nullValue());
+            return null;
+        });
+    }
+
     public void testRolesWithIdsPaginationSearchQueries(GetResult resultProvider) {
         // test all parameters together
         List<RoleModel> result = resultProvider.getResult("1", 4, 3);
@@ -291,6 +310,6 @@ public class RoleModelTest extends KeycloakModelTest {
     }
 
     private void assertIndexValues(List<RoleModel> roles, Matcher<? super Collection<? extends Integer>> matcher) {
-        assertThat(roles.stream().map(RoleModel::getName).map(s -> s.substring("main-role-composite-".length())).map(Integer::parseInt).collect(Collectors.toList()), matcher);
+        assertThat(roles.stream().map(RoleModel::getName).map(s -> s.substring(ROLE_PREFIX.length())).map(Integer::parseInt).collect(Collectors.toList()), matcher);
     }
 }

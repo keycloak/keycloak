@@ -28,6 +28,8 @@ Storage (Experimental):
                        Will default to a random number generated when starting the server which is
                        secure but will lead to problems when a loadbalancer without sticky sessions
                        is used or nodes are restarted.
+--storage-file-dir <dir>
+                     Experimental: Root directory for file map store.
 --storage-hotrod-host <host>
                      Experimental: Sets the host of the Infinispan server.
 --storage-hotrod-password <password>
@@ -113,7 +115,8 @@ HTTP/TLS:
                      The password of the key store file. Default: password.
 --https-key-store-type <type>
                      The type of the key store file. If not given, the type is automatically
-                       detected based on the file name.
+                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
+                       value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3.
@@ -124,7 +127,8 @@ HTTP/TLS:
                      The password of the trust store file.
 --https-trust-store-type <type>
                      The type of the trust store file. If not given, the type is automatically
-                       detected based on the file name.
+                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
+                       value is set, it defaults to 'BCFKS'.
 
 Proxy:
 

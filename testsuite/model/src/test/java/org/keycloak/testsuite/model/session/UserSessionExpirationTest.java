@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.model.session;
 
 import org.junit.Test;
-import org.keycloak.common.util.Time;
+import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,6 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @RequireProvider(value = UserSessionProvider.class, only = MapUserSessionProviderFactory.PROVIDER_ID)
 @RequireProvider(RealmProvider.class)
+@RequireProvider(DeviceRepresentationProvider.class)
 public class UserSessionExpirationTest extends KeycloakModelTest {
 
     private String realmId;
@@ -67,9 +68,8 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
 
         assertThat(withRealm(realmId, (session, realm) -> session.sessions().getUserSession(realm, uSId)), notNullValue());
 
-        Time.setOffset(5);
+        setTimeOffset(5);
 
         assertThat(withRealm(realmId, (session, realm) -> session.sessions().getUserSession(realm, uSId)), nullValue());
-
     }
 }

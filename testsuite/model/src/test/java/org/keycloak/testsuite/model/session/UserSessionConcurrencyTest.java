@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.model.session;
 
 import org.junit.Test;
+import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -26,14 +27,19 @@ import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.map.storage.ModelEntityUtil;
+import org.keycloak.models.map.storage.file.FileMapStorageProviderFactory;
 import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
+import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -43,10 +49,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assume.assumeFalse;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 
 @RequireProvider(UserSessionProvider.class)
+@RequireProvider(DeviceRepresentationProvider.class)
 public class UserSessionConcurrencyTest extends KeycloakModelTest {
 
     private String realmId;
@@ -74,18 +82,31 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
     }
 
     @Override
+    public void cleanEnvironment(KeycloakSession s) {
+        s.realms().removeRealm(realmId);
+    }
+
+    @Override
     protected boolean isUseSameKeycloakSessionFactoryForAllThreads() {
         return true;
     }
 
     @Test
-    public void testConcurrentNotesChange() {
+    public void testConcurrentNotesChange() throws InterruptedException {
+        // Defer this one until file locking is available
+        // Skip the test if EventProvider == File
+        String evProvider = CONFIG.getConfig().get(UserSessionSpi.NAME + ".provider");
+        String evMapStorageProvider = CONFIG.getConfig().get(UserSessionSpi.NAME + ".map.storage.provider");
+        assumeFalse(MapUserSessionProviderFactory.PROVIDER_ID.equals(evProvider) &&
+                (evMapStorageProvider == null || FileMapStorageProviderFactory.PROVIDER_ID.equals(evMapStorageProvider)));
+
         // Create user session
         String uId = withRealm(this.realmId, (session, realm) -> session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null)).getId();
 
         // Create/Update client session's notes concurrently
+        CountDownLatch cdl = new CountDownLatch(200 * CLIENTS_COUNT);
         IntStream.range(0, 200 * CLIENTS_COUNT).parallel()
-                .forEach(i -> inComittedTransaction(i, (session, n) -> {
+                .forEach(i -> inComittedTransaction(i, (session, n) -> { try {
                     RealmModel realm = session.realms().getRealm(realmId);
                     ClientModel client = realm.getClientByClientId("client" + (n % CLIENTS_COUNT));
 
@@ -114,8 +135,11 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
                     }
 
                     return null;
-                }));
+                } finally {
+                    cdl.countDown();
+                }}));
 
+        cdl.await(10, TimeUnit.SECONDS);
         withRealm(this.realmId, (session, realm) -> {
             UserSessionModel uSession = session.sessions().getUserSession(realm, uId);
             assertThat(uSession.getAuthenticatedClientSessions(), aMapWithSize(CLIENTS_COUNT));

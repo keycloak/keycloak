@@ -52,7 +52,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockGlobalLockProvider;
 import org.keycloak.models.locking.GlobalLockProvider;
-import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -290,27 +289,19 @@ public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionPro
 
     private void update(Connection connection, String schema, KeycloakSession session, JpaUpdaterProvider updater) {
         GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
-        try {
-            globalLock.withLock(DBLockGlobalLockProvider.DATABASE, innerSession -> {
-                updater.update(connection, schema);
-                return null;
-            });
-        } catch (LockAcquiringTimeoutException e) {
-            throw new RuntimeException("Acquiring database failed.", e);
-        }
+        globalLock.withLock(DBLockGlobalLockProvider.DATABASE, innerSession -> {
+            updater.update(connection, schema);
+            return null;
+        });
     }
 
     private void export(Connection connection, String schema, File databaseUpdateFile, KeycloakSession session,
             JpaUpdaterProvider updater) {
         GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
-        try {
-            globalLock.withLock(DBLockGlobalLockProvider.DATABASE, innerSession -> {
-                updater.export(connection, schema, databaseUpdateFile);
-                return null;
-            });
-        } catch (LockAcquiringTimeoutException e) {
-            throw new RuntimeException("Acquiring database failed.", e);
-        }
+        globalLock.withLock(DBLockGlobalLockProvider.DATABASE, innerSession -> {
+            updater.export(connection, schema, databaseUpdateFile);
+            return null;
+        });
     }
 
     @Override

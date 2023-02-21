@@ -44,4 +44,34 @@ public class AuthenticatedClientSessionReferenceOnlyFieldDelegate implements Ent
 
         return null;
     }
+
+    @Override
+    public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> void set(EF field, T value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> void collectionAdd(EF field, T value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> Object collectionRemove(EF field, T value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <K, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> Object mapGet(EF field, K key) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <K, T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> void mapPut(EF field, K key, T value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <K, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity>> Object mapRemove(EF field, K key) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

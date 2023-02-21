@@ -77,6 +77,14 @@ if not "x%JAVA_OPTS%" == "x" (
   set "JAVA_OPTS=-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8"
 )
 
+@REM See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
+if not "x%JAVA_ADD_OPENS%" == "x" (
+  echo "JAVA_ADD_OPENS already set in environment; overriding default settings with values: %JAVA_ADD_OPENS%"
+) else (
+  set "JAVA_ADD_OPENS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED"
+)
+set "JAVA_OPTS=%JAVA_OPTS% %JAVA_ADD_OPENS%"
+
 if not "x%JAVA_OPTS_APPEND%" == "x" (
   echo "Appending additional Java properties to JAVA_OPTS: %JAVA_OPTS_APPEND%"
   set "JAVA_OPTS=%JAVA_OPTS% %JAVA_OPTS_APPEND%"
@@ -139,6 +147,11 @@ echo "%CONFIG_ARGS%" | findstr /r "\<-h\>" > nul
 
 if not errorlevel == 1 (
     set IS_HELP_SHORT=true
+)
+
+if "%PRINT_ENV%" == "true" (
+  echo "Using JAVA_OPTS: %JAVA_OPTS%"
+  echo "Using JAVA_RUN_OPTS: %JAVA_RUN_OPTS%"
 )
 
 set START_SERVER=true

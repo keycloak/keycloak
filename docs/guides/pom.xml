@@ -41,6 +41,28 @@
     <build>
         <plugins>
             <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <!-- here the phase you need -->
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/src/main/images</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/target/generated-guides/images</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-guides-maven-plugin</artifactId>
                 <version>${project.version}</version>
@@ -56,7 +78,21 @@
             <plugin>
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctor-maven-plugin</artifactId>
-                <version>1.5.5</version>
+                <configuration>
+                    <sourceDocumentName>index.adoc</sourceDocumentName>
+                    <backend>html5</backend>
+                    <sourceHighlighter>coderay</sourceHighlighter>
+                    <attributes>
+                        <toc>left</toc>
+                        <toc>left</toc>
+                        <icons>font</icons>
+                        <sectanchors>true</sectanchors>
+                        <idprefix/>
+                        <idseparator>-</idseparator>
+                        <docinfo1>true</docinfo1>
+                        <imagesdir>../images</imagesdir>
+                    </attributes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>server-asciidoc-to-html</id>
@@ -66,21 +102,7 @@
                         </goals>
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/server</sourceDirectory>
-                            <sourceDocumentName>index.adoc</sourceDocumentName>
                             <outputDirectory>${project.build.directory}/generated-docs/server</outputDirectory>
-                            <backend>html5</backend>
-                            <sourceHighlighter>coderay</sourceHighlighter>
-
-                            <attributes>
-                                <imagesdir>./</imagesdir>
-                                <toc>left</toc>
-                                <toc>left</toc>
-                                <icons>font</icons>
-                                <sectanchors>true</sectanchors>
-                                <idprefix/>
-                                <idseparator>-</idseparator>
-                                <docinfo1>true</docinfo1>
-                            </attributes>
                         </configuration>
                     </execution>
                     <execution>
@@ -91,21 +113,29 @@
                         </goals>
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/operator</sourceDirectory>
-                            <sourceDocumentName>index.adoc</sourceDocumentName>
                             <outputDirectory>${project.build.directory}/generated-docs/operator</outputDirectory>
-                            <backend>html5</backend>
-                            <sourceHighlighter>coderay</sourceHighlighter>
-
-                            <attributes>
-                                <imagesdir>./</imagesdir>
-                                <toc>left</toc>
-                                <toc>left</toc>
-                                <icons>font</icons>
-                                <sectanchors>true</sectanchors>
-                                <idprefix/>
-                                <idseparator>-</idseparator>
-                                <docinfo1>true</docinfo1>
-                            </attributes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>migration-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/migration</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/migration</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>getting-started-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/getting-started</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/getting-started</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
