@@ -26,9 +26,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * Manage the credentials for a user.
+ *
+ * @deprecated Instead of this class, use {@link UserModel#credentialManager()} instead.
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Deprecated
 public interface UserCredentialManager extends UserCredentialStore {
 
     /**
@@ -92,28 +96,17 @@ public interface UserCredentialManager extends UserCredentialStore {
     void disableCredentialType(RealmModel realm, UserModel user, String credentialType);
 
     /**
-     * Returns a set of credential types that can be disabled by disableCredentialType() method
-     *
-     * @param realm
-     * @param user
-     * @return
-     * @deprecated Use {@link #getDisableableCredentialTypesStream(RealmModel, UserModel) getDisableableCredentialTypesStream}
-     * instead.
-     */
-    @Deprecated
-    Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user);
-
-    /**
-     * Obtains the credential types that can be disabled by means of the {@link #disableCredentialType(RealmModel, UserModel, String)}
+     * Obtains the credential types that can be disabled.
      * method.
      *
      * @param realm a reference to the realm.
      * @param user the user whose credentials are being searched.
      * @return a non-null {@link Stream} of credential types.
+     *
+     * @deprecated Use {@link UserModel#credentialManager()} and then call {@link SubjectCredentialManager#getDisableableCredentialTypesStream()}
      */
     default Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
-        Set<String> result = this.getDisableableCredentialTypes(realm, user);
-        return result != null ? result.stream() : Stream.empty();
+        return user.credentialManager().getDisableableCredentialTypesStream();
     }
 
     /**
@@ -153,17 +146,6 @@ public interface UserCredentialManager extends UserCredentialStore {
     CredentialValidationOutput authenticate(KeycloakSession session, RealmModel realm, CredentialInput input);
 
     /**
-     * Return credential types, which are provided by the user storage where user is stored. Returned values can contain for example "password", "otp" etc.
-     * This will always return empty list for "local" users, which are not backed by any user storage
-     *
-     * @return
-     * @deprecated Use {@link #getConfiguredUserStorageCredentialTypesStream(RealmModel, UserModel) getConfiguredUserStorageCredentialTypesStream}
-     * instead.
-     */
-    @Deprecated
-    List<String> getConfiguredUserStorageCredentialTypes(RealmModel realm, UserModel user);
-
-    /**
      * Obtains the credential types provided by the user storage where the specified user is stored. Examples of returned
      * values are "password", "otp", etc.
      * <p/>
@@ -172,34 +154,18 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @param realm a reference to the realm.
      * @param user a reference to the user.
      * @return a non-null {@link Stream} of credential types.
+     *
+     * @deprecated Use {@link UserModel#credentialManager()} and then call {@link SubjectCredentialManager#getConfiguredUserStorageCredentialTypesStream()}
      */
     default Stream<String> getConfiguredUserStorageCredentialTypesStream(RealmModel realm, UserModel user) {
-        List<String> result = this.getConfiguredUserStorageCredentialTypes(realm, user);
-        return result != null ? result.stream() : Stream.empty();
+        return user.credentialManager().getConfiguredUserStorageCredentialTypesStream();
     }
 
     /**
-     * The {@link UserCredentialManager.Streams} interface makes all collection-based methods in {@link UserCredentialManager}
-     * default by providing implementations that delegate to the {@link Stream}-based variants instead of the other way around.
-     * <p/>
-     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
-     * from the potential memory and performance optimizations of that approach.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
-    interface Streams extends UserCredentialManager, UserCredentialStore.Streams {
-        @Override
-        default Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-            return this.getDisableableCredentialTypesStream(realm, user).collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user);
-
-        @Override
-        default List<String> getConfiguredUserStorageCredentialTypes(RealmModel realm, UserModel user) {
-            return this.getConfiguredUserStorageCredentialTypesStream(realm, user).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<String> getConfiguredUserStorageCredentialTypesStream(RealmModel realm, UserModel user);
+    @Deprecated
+    interface Streams extends UserCredentialManager, UserCredentialStore {
     }
 }

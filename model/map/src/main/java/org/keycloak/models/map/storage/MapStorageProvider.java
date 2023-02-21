@@ -17,27 +17,23 @@
 package org.keycloak.models.map.storage;
 
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
 
 /**
  *
  * @author hmlnarik
  */
-public interface MapStorageProvider extends Provider, ProviderFactory<MapStorageProvider> {
+public interface MapStorageProvider extends Provider {
     
-    public enum Flag {
-        INITIALIZE_EMPTY,
-        LOCAL
-    }
-
     /**
-     * Returns a key-value storage
-     * @param <K> type of the primary key
+     * Returns a key-value storage implementation for the given types.
      * @param <V> type of the value
-     * @param name Name of the storage
-     * @param flags
+     * @param <M> type of the corresponding model (e.g. {@code UserModel})
+     * @param modelType Model type
+     * @param flags Flags of the returned storage. Best effort, flags may be not honored by underlying implementation
      * @return
+     * @throws IllegalArgumentException If some of the types is not supported by the underlying implementation.
      */
-    <K, V extends AbstractEntity<K>, M> MapStorage<K, V, M> getStorage(String name, Class<K> keyType, Class<V> valueType, Class<M> modelType, Flag... flags);
+    <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags);
 }

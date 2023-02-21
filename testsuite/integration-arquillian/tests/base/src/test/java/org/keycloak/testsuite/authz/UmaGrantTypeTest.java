@@ -69,8 +69,6 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -80,7 +78,6 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resourceA;
@@ -93,7 +90,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName("Default Policy");
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -109,7 +106,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         policy = new JSPolicyRepresentation();
 
         policy.setName("Deny Policy");
-        policy.setCode("$evaluation.deny();");
+        policy.setType("script-scripts/always-deny-policy.js");
 
         authorization.policies().js().create(policy).close();
     }

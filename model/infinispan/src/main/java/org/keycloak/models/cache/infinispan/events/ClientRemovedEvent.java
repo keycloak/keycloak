@@ -18,8 +18,10 @@
 package org.keycloak.models.cache.infinispan.events;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
@@ -45,8 +47,11 @@ public class ClientRemovedEvent extends InvalidationEvent implements RealmCacheI
     private String realmId;
     // roleId -> roleName
     private Map<String, String> clientRoles;
+    private static final Logger log = Logger.getLogger(ClientRemovedEvent.class);
 
     public static ClientRemovedEvent create(ClientModel client) {
+        log.tracev("Created; clientId={0}", client.getClientId());
+
         ClientRemovedEvent event = new ClientRemovedEvent();
 
         event.realmId = client.getRealm().getId();
@@ -55,6 +60,12 @@ public class ClientRemovedEvent extends InvalidationEvent implements RealmCacheI
         event.clientRoles = client.getRolesStream().collect(Collectors.toMap(RoleModel::getId, RoleModel::getName));
 
         return event;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        log.tracev("Finalized; clientId={0}", clientId);
+        super.finalize();
     }
 
     @Override
@@ -79,6 +90,25 @@ public class ClientRemovedEvent extends InvalidationEvent implements RealmCacheI
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ClientRemovedEvent that = (ClientRemovedEvent) o;
+        boolean equals = Objects.equals(clientUuid, that.clientUuid) &&
+                Objects.equals(clientId, that.clientId) &&
+                Objects.equals(realmId, that.realmId) &&
+                Objects.equals(clientRoles, that.clientRoles);
+        log.tracev("Equals; clientId={0}, equals={1}", clientId, equals);
+        return equals;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), clientUuid, clientId, realmId, clientRoles);
+    }
+
     public static class ExternalizerImpl implements Externalizer<ClientRemovedEvent> {
 
         private static final int VERSION_1 = 1;
@@ -91,6 +121,8 @@ public class ClientRemovedEvent extends InvalidationEvent implements RealmCacheI
             MarshallUtil.marshallString(obj.clientId, output);
             MarshallUtil.marshallString(obj.realmId, output);
             KeycloakMarshallUtil.writeMap(obj.clientRoles, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
+
+            log.tracev("Write; clientId={0}", obj.clientId);
         }
 
         @Override
@@ -110,6 +142,8 @@ public class ClientRemovedEvent extends InvalidationEvent implements RealmCacheI
             res.realmId = MarshallUtil.unmarshallString(input);
             res.clientRoles = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,
               size -> new ConcurrentHashMap<>(size));
+
+            log.tracev("Read; clientId={0}", res.clientId);
 
             return res;
         }

@@ -23,6 +23,7 @@ import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Objects;
 import java.util.Set;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
@@ -47,6 +48,20 @@ public class ResourceServerRemovedEvent extends InvalidationEvent implements Aut
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ResourceServerRemovedEvent that = (ResourceServerRemovedEvent) o;
+        return Objects.equals(id, that.id) && Objects.equals(clientId, that.clientId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), id, clientId);
     }
 
     @Override

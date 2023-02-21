@@ -67,11 +67,30 @@ public class AbstractAuthenticationExecutionRepresentation implements Serializab
      *
      * @return
      */
+    @Deprecated
+    private boolean autheticatorFlow;
+
+    @Deprecated
     public boolean isAutheticatorFlow() {
         return authenticatorFlow;
     }
 
+    @Deprecated
     public void setAutheticatorFlow(boolean autheticatorFlow) {
         this.authenticatorFlow = autheticatorFlow;
     }
+
+    /**
+     * Is the referenced authenticator a flow?
+     *
+     * @return
+     */
+    public boolean isAuthenticatorFlow() {
+        return authenticatorFlow;
+    }
+
+    public void setAuthenticatorFlow(boolean authenticatorFlow) {
+        this.authenticatorFlow = authenticatorFlow;
+    }
+
 }

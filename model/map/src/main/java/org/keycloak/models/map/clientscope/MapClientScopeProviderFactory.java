@@ -16,28 +16,44 @@
  */
 package org.keycloak.models.map.clientscope;
 
-import java.util.UUID;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.ClientScopeProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.MapStorageProvider;
+import org.keycloak.provider.InvalidationHandler;
 
-public class MapClientScopeProviderFactory extends AbstractMapProviderFactory<ClientScopeProvider> implements ClientScopeProviderFactory {
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.CLIENT_SCOPE_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.CLIENT_SCOPE_BEFORE_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
 
-    private MapStorage<UUID, MapClientScopeEntity, ClientScopeModel> store;
+public class MapClientScopeProviderFactory extends AbstractMapProviderFactory<MapClientScopeProvider, MapClientScopeEntity, ClientScopeModel> implements ClientScopeProviderFactory<MapClientScopeProvider>, InvalidationHandler {
 
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("clientscope", UUID.class, MapClientScopeEntity.class, ClientScopeModel.class);
+    public MapClientScopeProviderFactory() {
+        super(ClientScopeModel.class, MapClientScopeProvider.class);
     }
 
     @Override
-    public ClientScopeProvider create(KeycloakSession session) {
-        return new MapClientScopeProvider(session, store);
+    public MapClientScopeProvider createNew(KeycloakSession session) {
+        return new MapClientScopeProvider(session, getStorage(session));
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Client scope provider";
+    }
+
+    @Override
+    public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
+        if (type == REALM_BEFORE_REMOVE) {
+            create(session).preRemove((RealmModel) params[0]);
+        } else if (type == CLIENT_SCOPE_BEFORE_REMOVE) {
+            ((RealmModel) params[0]).removeDefaultClientScope((ClientScopeModel) params[1]);
+        } else if (type == CLIENT_SCOPE_AFTER_REMOVE) {
+            session.getKeycloakSessionFactory().publish(new ClientScopeModel.ClientScopeRemovedEvent() {
+                @Override public ClientScopeModel getClientScope() { return (ClientScopeModel) params[0]; }
+                @Override public KeycloakSession getKeycloakSession() { return session; }
+            });
+        }
     }
 }

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.page.fragment;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -26,8 +27,10 @@ import org.openqa.selenium.support.FindBy;
 import java.util.List;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.openqa.selenium.By.tagName;
 import static org.openqa.selenium.By.xpath;
 
 /**
@@ -48,14 +51,11 @@ public class DataTable {
     private WebElement header;
     @FindBy(css = "tbody")
     private WebElement body;
-    @FindBy(xpath = "(//table)[1]/tbody/tr[@class='ng-scope']")
+    @FindBy(xpath = "tbody/tr[@class='ng-scope']")
     private List<WebElement> rows;
 
     @FindBy(tagName = "tfoot")
     private WebElement footer;
-    
-    @FindBy
-    private WebElement infoRow;
 
     public void search(String pattern) {
         searchInput.sendKeys(pattern);
@@ -94,8 +94,46 @@ public class DataTable {
         clickLink(body.findElement(By.xpath(".//tr/td/a[text()='" + text + "']")));
     }
 
+    public WebElement getActionButton(WebElement row, String buttonText) {
+        return row.findElement(xpath(".//td[contains(@class, 'kc-action-cell') and text()='" + buttonText + "']"));
+    }
+
+    public WebElement getActionButton(String rowLinkText, String buttonText) {
+        return getActionButton(getRowByLinkText(rowLinkText), buttonText);
+    }
+
+    public boolean isActionButtonVisible(String rowLinkText, String buttonText) {
+        try {
+            return getActionButton(rowLinkText, buttonText).isDisplayed();
+        }
+        catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
     public void clickRowActionButton(WebElement row, String buttonText) {
-        clickLink(row.findElement(xpath(".//td[contains(@class, 'kc-action-cell') and text()='" + buttonText + "']")));
+        clickLink(getActionButton(row, buttonText));
+    }
+
+    public void clickRowActionButton(String rowLinkText, String buttonText) {
+        clickLink(getActionButton(rowLinkText, buttonText));
+    }
+
+    public String getColumnText(WebElement row, int colIndex) {
+        return getTextFromElement(row.findElements(tagName("td")).get(colIndex));
+    }
+
+    public String getColumnText(String rowLinkText, int colIndex) {
+        return getColumnText(getRowByLinkText(rowLinkText), colIndex);
+    }
+
+    public boolean isRowPresent(String rowLinkText) {
+        try {
+            return getRowByLinkText(rowLinkText).isDisplayed();
+        }
+        catch (NoSuchElementException e) {
+            return false;
+        }
     }
     
 }

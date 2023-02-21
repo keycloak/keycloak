@@ -26,6 +26,7 @@ import org.keycloak.models.RealmProviderFactory;
 import javax.persistence.EntityManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
@@ -40,6 +41,9 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
 
     private Runnable onClose;
 
+    public static final String PROVIDER_ID = "jpa";
+    public static final int PROVIDER_PRIORITY = 1;
+
     @Override
     public void init(Config.Scope config) {
     }
@@ -52,13 +56,13 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
 
     @Override
     public String getId() {
-        return "jpa";
+        return PROVIDER_ID;
     }
 
     @Override
     public JpaRealmProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em);
+        return new JpaRealmProvider(session, em, null, null);
     }
 
     @Override
@@ -80,7 +84,13 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
             } else {
                 return;
             }
-            create(e.getKeycloakSession()).preRemove(realm, role);
+            ((JpaRealmProvider) e.getKeycloakSession().getProvider(RealmProvider.class)).preRemove(realm, role);
         }
     }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
+    }
+
 }

@@ -48,13 +48,10 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserManagedAccessTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resource;
@@ -70,7 +67,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName("Only Owner Policy");
-        policy.setCode("if ($evaluation.getContext().getIdentity().getId() == $evaluation.getPermission().getResource().getOwner()) {$evaluation.grant();}");
+        policy.setType("script-scripts/only-owner-policy.js");
 
         authorization.policies().js().create(policy).close();
     }

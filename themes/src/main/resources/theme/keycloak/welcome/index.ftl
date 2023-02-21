@@ -19,11 +19,11 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
- 
+<!DOCTYPE html>
+
 <html>
 <head>
-    <title>Welcome to ${productNameFull}</title>
+    <title>Welcome to ${productName}</title>
 
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -49,9 +49,10 @@
     <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2 col-lg-8 col-lg-offset-2">
       <div class="welcome-header">
         <img src="${resourcesPath}/logo.png" alt="${productName}" border="0" />
-        <h1>Welcome to <strong>${productNameFull}</strong></h1>
+        <h1>Welcome to <strong>${productName}</strong></h1>
       </div>
       <div class="row">
+        <#if adminConsoleEnabled>
         <div class="col-xs-12 col-sm-4">
           <div class="card-pf h-l">
             <#if successMessage?has_content>
@@ -60,15 +61,15 @@
                 <p class="alert error">${errorMessage}</p>
                 <h3><img src="welcome-content/user.png">Administration Console</h3>
             <#elseif bootstrap>
-                <#if localUser>
-                    <h3><img src="welcome-content/user.png">Administration Console</h3>
-                    <p>Please create an initial admin user to get started.</p>
-                <#else>
-                    <p class="welcome-message">
-                        <img src="welcome-content/alert.png">You need local access to create the initial admin user. <br><br>Open <a href="http://localhost:8080/auth">http://localhost:8080/auth</a>
-                        <br>or use the add-user-keycloak script.
-                    </p>
-                </#if>
+            <#if localUser>
+                <h3><img src="welcome-content/user.png">Administration Console</h3>
+                <p>Please create an initial admin user to get started.</p>
+            <#else>
+                <p class="welcome-message">
+                    <img src="welcome-content/alert.png">You need local access to create the initial admin user. <br><br>Open <a href="${localAdminUrl}">${localAdminUrl}</a>
+                    <br>${adminUserCreationMessage}.
+                </p>
+            </#if>
             </#if>
 
             <#if bootstrap && localUser>
@@ -93,14 +94,16 @@
                     <button id="create-button" type="submit" class="btn btn-primary">Create</button>
                 </form>
             </#if>
+
             <div class="welcome-primary-link">
               <h3><a href="${adminUrl}"><img src="welcome-content/user.png">Administration Console <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
               <div class="description">
-                Centrally manage all aspects of the ${productNameFull} server
+                Centrally manage all aspects of the ${productName} server
               </div>
             </div>
           </div>
         </div>
+        </#if> <#-- adminConsoleEnabled -->
         <div class="col-xs-12 col-sm-4">
           <div class="card-pf h-l">
             <h3><a href="${properties.documentationUrl}"><img class="doc-img" src="welcome-content/admin-console.png">Documentation <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
@@ -120,15 +123,10 @@
             <h3><a href="https://groups.google.com/forum/#!forum/keycloak-user"><img src="welcome-content/mail.png">Mailing List <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
           </div>
           <div class="card-pf h-m">
-            <h3><a href="https://issues.jboss.org/browse/KEYCLOAK"><img src="welcome-content/bug.png">Report an issue <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
+            <h3><a href="https://github.com/keycloak/keycloak/issues"><img src="welcome-content/bug.png">Report an issue <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
           </div>
         </#if>
         </div>
-      </div>
-      <div class='footer'>
-        <#if properties.displayCommunityLinks = "true">
-        <a href="http://www.jboss.org"><img src="welcome-content/jboss_community.png" alt="JBoss and JBoss Community"></a>
-        </#if>
       </div>
     </div>
   </div>

@@ -23,12 +23,10 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -42,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 
 /**
@@ -263,17 +262,6 @@ public class ApiUtil {
         for (ClientRepresentation c : realm.clients().findAll()) {
             if (c.getClientId().equals(clientId)) {
                 return realm.clients().get(c.getId()).authorization();
-            }
-        }
-        return null;
-    }
-
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveKey(RealmResource realm) {
-        KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
-        String activeKid = keyMetadata.getActive().get(Algorithm.RS256);
-        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
-            if (rep.getKid().equals(activeKid)) {
-                return rep;
             }
         }
         return null;

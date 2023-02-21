@@ -23,16 +23,32 @@ import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.core.ResteasyDeploymentImpl;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.authentication.AuthenticatorSpi;
+import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
+import org.keycloak.authorization.policy.provider.PolicySpi;
+import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.platform.Platform;
+import org.keycloak.protocol.ProtocolMapperSpi;
+import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
+import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
+import org.keycloak.provider.KeycloakDeploymentInfo;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.ProviderManager;
+import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.representations.provider.ScriptProviderMetadata;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -52,14 +68,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.servlet.Filter;
 
 /**
@@ -290,8 +312,10 @@ public class KeycloakServer {
 
           if (tmpDataDir.mkdirs()) {
             tmpDataDir.deleteOnExit();
-          } else {
-            throw new IOException("Could not create directory " + tmpDataDir);
+          } else try (Stream<Path> dir = Files.list(tmpDataDir.toPath())) {
+            if (dir.findAny().isPresent()) {    // Works well if directory is empty
+              throw new IOException("Could not create directory " + tmpDataDir);
+            }
           }
 
           dataPath = tmpDataDir.getAbsolutePath();
@@ -304,7 +328,7 @@ public class KeycloakServer {
 
     private KeycloakServerConfig config;
 
-    private KeycloakSessionFactory sessionFactory;
+    private DefaultKeycloakSessionFactory sessionFactory;
 
     private UndertowJaxrsServer server;
 
@@ -334,10 +358,9 @@ public class KeycloakServer {
     }
 
     public void importRealm(RealmRepresentation rep) {
-        KeycloakSession session = sessionFactory.create();;
-        session.getTransactionManager().begin();
 
-        try {
+        try (KeycloakSession session = sessionFactory.create()) {
+            session.getTransactionManager().begin();
             RealmManager manager = new RealmManager(session);
 
             if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
@@ -352,25 +375,17 @@ public class KeycloakServer {
             RealmModel realm = manager.importRealm(rep);
 
             info("Imported realm " + realm.getName());
-
-            session.getTransactionManager().commit();
-        } finally {
-            session.close();
         }
     }
 
     protected void setupDevConfig() {
         if (System.getProperty("keycloak.createAdminUser", "true").equals("true")) {
-            KeycloakSession session = sessionFactory.create();
-            try {
+            try (KeycloakSession session = sessionFactory.create()) {
                 session.getTransactionManager().begin();
                 if (new ApplianceBootstrap(session).isNoMasterUser()) {
                     new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
                     log.info("Created master user with credentials admin:admin");
                 }
-                session.getTransactionManager().commit();
-            } finally {
-                session.close();
             }
         }
     }
@@ -378,7 +393,7 @@ public class KeycloakServer {
     public void start() throws Throwable {
         long start = System.currentTimeMillis();
 
-        ResteasyDeployment deployment = new ResteasyDeployment();
+        ResteasyDeployment deployment = new ResteasyDeploymentImpl();
 
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
@@ -427,7 +442,9 @@ public class KeycloakServer {
 
             server.deploy(di);
 
-            sessionFactory = KeycloakApplication.getSessionFactory();
+            sessionFactory = (DefaultKeycloakSessionFactory) KeycloakApplication.getSessionFactory();
+
+            registerScriptProviders(sessionFactory);
 
             setupDevConfig();
 
@@ -556,6 +573,62 @@ public class KeycloakServer {
             trustManagerFactory.init(keyStore);
 
             return trustManagerFactory.getTrustManagers();
+        }
+    }
+
+    public static void registerScriptProviders(DefaultKeycloakSessionFactory sessionFactory) {
+        InputStream scriptProviderStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("META-INF/keycloak-scripts.json");
+
+        if (scriptProviderStream != null) {
+            ScriptProviderDescriptor scriptProviderDescriptor;
+
+            try (InputStream inputStream = scriptProviderStream) {
+                scriptProviderDescriptor = JsonSerialization.readValue(inputStream, ScriptProviderDescriptor.class);
+            } catch (IOException cause) {
+                throw new RuntimeException("Failed to read providers metadata", cause);
+            }
+
+            KeycloakDeploymentInfo info = KeycloakDeploymentInfo.create();
+
+            addScriptProvider(info,
+                    scriptProviderDescriptor.getProviders().getOrDefault("authenticators", Collections.emptyList()),
+                    AuthenticatorSpi.class,
+                    DeployedScriptAuthenticatorFactory::new);
+            addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("mappers", Collections.emptyList()),
+                    ProtocolMapperSpi.class,
+                    DeployedScriptOIDCProtocolMapper::new);
+            addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("saml-mappers", Collections.emptyList()),
+                    ProtocolMapperSpi.class,
+                    DeployedScriptSAMLProtocolMapper::new);
+            addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("policies", Collections.emptyList()),
+                    PolicySpi.class,
+                    DeployedScriptPolicyFactory::new);
+
+            sessionFactory.deploy(new ProviderManager(info, Thread.currentThread().getContextClassLoader()));
+        }
+    }
+
+    private static void addScriptProvider(KeycloakDeploymentInfo info, List<ScriptProviderMetadata> scriptsMetadata, Class<? extends Spi> spiType, Function<ScriptProviderMetadata, ProviderFactory> providerCreator) {
+        for (ScriptProviderMetadata metadata : scriptsMetadata) {
+            String fileName = metadata.getFileName();
+
+            metadata.setId(new StringBuilder("script").append("-").append(fileName).toString());
+
+            String name = metadata.getName();
+
+            if (name == null) {
+                name = fileName;
+            }
+
+            metadata.setName(name);
+
+            try (InputStream jsCode = Thread.currentThread().getContextClassLoader().getResourceAsStream(metadata.getFileName())) {
+                metadata.setCode(StreamUtil.readString(jsCode, StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load script from [" + metadata.getFileName() + "]", e);
+            }
+
+            info.addProvider(spiType, providerCreator.apply(metadata));
         }
     }
 }

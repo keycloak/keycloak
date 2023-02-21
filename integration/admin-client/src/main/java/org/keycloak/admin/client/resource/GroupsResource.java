@@ -17,7 +17,6 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.GroupRepresentation;
 
 import javax.ws.rs.*;
@@ -37,7 +36,6 @@ public interface GroupsResource {
      * @return A list containing all groups.
      */
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     List<GroupRepresentation> groups();
 
@@ -48,7 +46,6 @@ public interface GroupsResource {
      * @return A list containing the slice of all groups.
      */
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     List<GroupRepresentation> groups(@QueryParam("first") Integer first, @QueryParam("max") Integer max);
@@ -61,7 +58,6 @@ public interface GroupsResource {
      * @return A list containing the slice of all groups.
      */
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     List<GroupRepresentation> groups(@QueryParam("search") String search,
@@ -77,19 +73,36 @@ public interface GroupsResource {
      * @return A list containing the slice of all groups.
      */
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     List<GroupRepresentation> groups(@QueryParam("search") String search,
                                      @QueryParam("first") Integer first,
                                      @QueryParam("max") Integer max,
                                      @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
+
+    /**
+     * Get groups by pagination params.
+     * @param search search string for group
+     * @param exact exact match for search
+     * @param first index of the first element
+     * @param max max number of occurrences
+     * @param briefRepresentation if false, return groups with their attributes
+     * @return A list containing the slice of all groups.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> groups(@QueryParam("search") String search,
+                                     @QueryParam("exact") Boolean exact,
+                                     @QueryParam("first") Integer first,
+                                     @QueryParam("max") Integer max,
+                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
+
     /**
      * Counts all groups.
      * @return A map containing key "count" with number of groups as value.
      */
     @GET
-    @NoCache
     @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -101,7 +114,6 @@ public interface GroupsResource {
      * @return A map containing key "count" with number of groups as value which matching with search.
      */
     @GET
-    @NoCache
     @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -113,7 +125,6 @@ public interface GroupsResource {
      * @return A map containing key "count" with number of top level groups.
      */
     @GET
-    @NoCache
     @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -132,4 +143,7 @@ public interface GroupsResource {
     @Path("{id}")
     GroupResource group(@PathParam("id") String id);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> query(@QueryParam("q") String searchQuery);
 }

@@ -17,20 +17,21 @@
 
 package org.keycloak.jose.jws;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.keycloak.jose.JOSEHeader;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class JWSHeader implements Serializable {
+public class JWSHeader implements JOSEHeader {
     @JsonProperty("alg")
     private Algorithm algorithm;
 
@@ -60,6 +61,12 @@ public class JWSHeader implements Serializable {
 
     public Algorithm getAlgorithm() {
         return algorithm;
+    }
+
+    @JsonIgnore
+    @Override
+    public String getRawAlgorithm() {
+        return getAlgorithm().name();
     }
 
     public String getType() {

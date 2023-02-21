@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.FederatedIdentityModel;
@@ -75,6 +76,20 @@ public class UserFederationLinkRemovedEvent extends InvalidationEvent implements
     @Override
     public void addInvalidations(UserCacheManager userCache, Set<String> invalidations) {
         userCache.federatedIdentityLinkRemovedInvalidation(userId, realmId, identityProviderId, socialUserId, invalidations);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UserFederationLinkRemovedEvent that = (UserFederationLinkRemovedEvent) o;
+        return Objects.equals(userId, that.userId) && Objects.equals(realmId, that.realmId) && Objects.equals(identityProviderId, that.identityProviderId) && Objects.equals(socialUserId, that.socialUserId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), userId, realmId, identityProviderId, socialUserId);
     }
 
     public static class ExternalizerImpl implements Externalizer<UserFederationLinkRemovedEvent> {

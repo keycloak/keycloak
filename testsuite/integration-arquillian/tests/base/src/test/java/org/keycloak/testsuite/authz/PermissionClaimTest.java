@@ -55,8 +55,6 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -67,7 +65,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class PermissionClaimTest extends AbstractAuthzTest {
 
     private JSPolicyRepresentation claimAPolicy;
@@ -103,28 +100,28 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         claimAPolicy = new JSPolicyRepresentation();
 
         claimAPolicy.setName("Claim A Policy");
-        claimAPolicy.setCode("$evaluation.getPermission().addClaim('claim-a', 'claim-a');$evaluation.getPermission().addClaim('claim-a', 'claim-a1');$evaluation.grant();");
+        claimAPolicy.setType("script-scripts/add-claim-a-policy.js");
 
         authorization.policies().js().create(claimAPolicy).close();
 
         claimBPolicy = new JSPolicyRepresentation();
 
         claimBPolicy.setName("Policy Claim B");
-        claimBPolicy.setCode("$evaluation.getPermission().addClaim('claim-b', 'claim-b');$evaluation.grant();");
+        claimBPolicy.setType("script-scripts/add-claim-b-policy.js");
 
         authorization.policies().js().create(claimBPolicy).close();
 
         claimCPolicy = new JSPolicyRepresentation();
 
         claimCPolicy.setName("Policy Claim C");
-        claimCPolicy.setCode("$evaluation.getPermission().addClaim('claim-c', 'claim-c');$evaluation.grant();");
+        claimCPolicy.setType("script-scripts/add-claim-c-policy.js");
 
         authorization.policies().js().create(claimCPolicy).close();
 
         denyPolicy = new JSPolicyRepresentation();
 
         denyPolicy.setName("Deny Policy");
-        denyPolicy.setCode("$evaluation.getPermission().addClaim('deny-policy', 'deny-policy');$evaluation.deny();");
+        denyPolicy.setType("script-scripts/always-deny-with-claim-policy.js");
 
         authorization.policies().js().create(denyPolicy).close();
     }

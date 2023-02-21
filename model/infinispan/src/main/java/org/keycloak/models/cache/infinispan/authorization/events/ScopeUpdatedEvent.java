@@ -23,6 +23,7 @@ import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Objects;
 import java.util.Set;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
@@ -49,6 +50,20 @@ public class ScopeUpdatedEvent extends InvalidationEvent implements Authorizatio
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ScopeUpdatedEvent that = (ScopeUpdatedEvent) o;
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(serverId, that.serverId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), id, name, serverId);
     }
 
     @Override

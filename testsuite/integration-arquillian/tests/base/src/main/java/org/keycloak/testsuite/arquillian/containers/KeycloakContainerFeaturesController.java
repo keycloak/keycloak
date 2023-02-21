@@ -18,9 +18,9 @@ import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeatures;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
-import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
+import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 
 import java.lang.reflect.AnnotatedElement;
 import java.util.Arrays;
@@ -32,8 +32,6 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getManagementClient;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.isAuthServerRemote;
 
 /**
  * @author mhajas
@@ -73,18 +71,18 @@ public class KeycloakContainerFeaturesController {
         private Profile.Feature feature;
         private boolean skipRestart;
         private FeatureAction action;
-        private boolean onlyForProduct;
+        private final AnnotatedElement annotatedElement;
 
-        public UpdateFeature(Profile.Feature feature, boolean skipRestart, FeatureAction action, boolean onlyForProduct) {
+        public UpdateFeature(Profile.Feature feature, boolean skipRestart, FeatureAction action, AnnotatedElement annotatedElement) {
             this.feature = feature;
             this.skipRestart = skipRestart;
             this.action = action;
-            this.onlyForProduct = onlyForProduct;
+            this.annotatedElement = annotatedElement;
         }
 
         private void assertPerformed() {
             assertThat("An annotation requested to " + action.name() +
-                            " feature " + feature.name() + ", however after performing this operation " +
+                            " feature " + feature.getKey() + ", however after performing this operation " +
                             "the feature is not in desired state" ,
                     ProfileAssume.isFeatureEnabled(feature),
                     is(action == FeatureAction.ENABLE));
@@ -94,6 +92,18 @@ public class KeycloakContainerFeaturesController {
             if ((action == FeatureAction.ENABLE && !ProfileAssume.isFeatureEnabled(feature))
                     || (action == FeatureAction.DISABLE && ProfileAssume.isFeatureEnabled(feature))) {
                 action.accept(testContextInstance.get().getTestingClient(), feature);
+                SetDefaultProvider setDefaultProvider = annotatedElement.getAnnotation(SetDefaultProvider.class);
+                if (setDefaultProvider != null) {
+                    try {
+                        if (action == FeatureAction.ENABLE) {
+                            SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContextInstance.get(), setDefaultProvider);
+                        } else {
+                            SpiProvidersSwitchingUtils.removeProvider(suiteContextInstance.get(), setDefaultProvider);
+                        }
+                    } catch (Exception cause) {
+                        throw new RuntimeException("Failed to (un)set default provider", cause);
+                    }
+                }
             }
         }
 
@@ -107,10 +117,6 @@ public class KeycloakContainerFeaturesController {
 
         public FeatureAction getAction() {
             return action;
-        }
-
-        public boolean isOnlyForProduct() {
-            return onlyForProduct;
         }
 
         @Override
@@ -127,22 +133,13 @@ public class KeycloakContainerFeaturesController {
         }
     }
 
-    public void restartAuthServer() throws Exception {
-        if (isAuthServerRemote()) {
-            try (OnlineManagementClient client = getManagementClient()) {
-                int timeoutInSec = Integer.getInteger(System.getProperty("auth.server.jboss.startup.timeout"), 300);
-                Administration administration = new Administration(client, timeoutInSec);
-                administration.reload();
-            }
-        } else {
-            stopContainerEvent.fire(new StopContainer(suiteContextInstance.get().getAuthServerInfo().getArquillianContainer()));
-            startContainerEvent.fire(new StartContainer(suiteContextInstance.get().getAuthServerInfo().getArquillianContainer()));
-        }
+    public void restartAuthServer() {
+        stopContainerEvent.fire(new StopContainer(suiteContextInstance.get().getAuthServerInfo().getArquillianContainer()));
+        startContainerEvent.fire(new StartContainer(suiteContextInstance.get().getAuthServerInfo().getArquillianContainer()));
     }
 
     private void updateFeatures(Set<UpdateFeature> updateFeatures) throws Exception {
         updateFeatures = updateFeatures.stream()
-                .filter(this::skipForProduct)
                 .collect(Collectors.toSet());
 
         updateFeatures.forEach(UpdateFeature::performAction);
@@ -153,11 +150,6 @@ public class KeycloakContainerFeaturesController {
         }
 
         updateFeatures.forEach(UpdateFeature::assertPerformed);
-    }
-
-    // KEYCLOAK-12958 WebAuthn profile product/project
-    private boolean skipForProduct(UpdateFeature feature) {
-        return !feature.onlyForProduct || Profile.getName().equals("product");
     }
 
     private void checkAnnotatedElementForFeatureAnnotations(AnnotatedElement annotatedElement, State state) throws Exception {
@@ -186,12 +178,12 @@ public class KeycloakContainerFeaturesController {
 
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
                 .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                        state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotation.onlyForProduct()))
+                        state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotatedElement))
                 .collect(Collectors.toSet()));
 
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
                 .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                        state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotation.onlyForProduct()))
+                        state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotatedElement))
                 .collect(Collectors.toSet()));
 
         return ret;

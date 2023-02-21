@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.cli.admin;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,7 +9,6 @@ import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.util.TempFileResource;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,17 +16,14 @@ import java.util.stream.StreamSupport;
 import static org.hamcrest.Matchers.equalTo;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
 public class KcAdmSessionTest extends AbstractAdmCliTest {
 
-    static Class<? extends List<ObjectNode>> LIST_OF_JSON = new ArrayList<ObjectNode>() {}.getClass();
+    static TypeReference<List<ObjectNode>> LIST_OF_JSON = new TypeReference<List<ObjectNode>>() {};
 
     @Test
     public void test() throws IOException {
@@ -42,7 +39,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             KcAdmExec exe = execute("create realms --config '" + configFile.getName() + "' -s realm=demorealm -s enabled=true");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertTrue(exe.stderrLines().get(0).startsWith("Created "));
+            Assert.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created "));
 
             // create user
             exe = execute("create users --config '" + configFile.getName() + "' -r demorealm -s username=testuser -s enabled=true -i");
@@ -98,7 +95,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             exe = execute("create clients/" + idOfClient + "/roles --config '" + configFile.getName() + "' -s name=clientrole  -s 'description=Test client role'");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertTrue(exe.stderrLines().get(0).startsWith("Created "));
+            Assert.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created "));
 
             // make sure client role has been created
             exe = execute("get-roles --config '" + configFile.getName() + "' --cclientid testclient");

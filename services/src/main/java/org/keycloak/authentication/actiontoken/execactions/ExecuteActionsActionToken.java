@@ -38,6 +38,11 @@ public class ExecuteActionsActionToken extends DefaultActionToken {
         this.issuedFor = clientId;
     }
 
+    public ExecuteActionsActionToken(String userId, String email, int absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
+        this(userId, absoluteExpirationInSecs, requiredActions, redirectUri, clientId);
+        setEmail(email);
+    }
+
     private ExecuteActionsActionToken() {
     }
 

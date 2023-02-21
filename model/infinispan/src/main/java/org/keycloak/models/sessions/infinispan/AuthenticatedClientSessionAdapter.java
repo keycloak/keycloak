@@ -117,7 +117,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public String getId() {
-        return null;
+        return entity.getId().toString();
     }
 
     @Override

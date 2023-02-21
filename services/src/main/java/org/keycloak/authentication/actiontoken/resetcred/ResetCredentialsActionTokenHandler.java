@@ -24,19 +24,19 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ErrorPage;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.LoginActionsServiceChecks.IsActionRequired;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
 import javax.ws.rs.core.Response;
+
 import static org.keycloak.services.resources.LoginActionsService.RESET_CREDENTIALS_PATH;
 
 /**
  *
  * @author hmlnarik
  */
-public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHander<ResetCredentialsActionToken> {
+public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHandler<ResetCredentialsActionToken> {
 
     public ResetCredentialsActionTokenHandler() {
         super(
@@ -51,11 +51,13 @@ public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHande
 
     @Override
     public Predicate<? super ResetCredentialsActionToken>[] getVerifiers(ActionTokenContext<ResetCredentialsActionToken> tokenContext) {
-        return new Predicate[] {
+        return TokenUtils.predicates(
             TokenUtils.checkThat(tokenContext.getRealm()::isResetPasswordAllowed, Errors.NOT_ALLOWED, Messages.RESET_CREDENTIAL_NOT_ALLOWED),
 
+            verifyEmail(tokenContext),
+
             new IsActionRequired(tokenContext, Action.AUTHENTICATE)
-        };
+        );
     }
 
     @Override

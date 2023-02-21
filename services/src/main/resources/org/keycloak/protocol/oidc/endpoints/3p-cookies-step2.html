@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <script>
+      var hasAccess = document.cookie.indexOf("KEYCLOAK_3P_COOKIE") !== -1;
+
+      if (hasAccess) {
+        document.cookie = "KEYCLOAK_3P_COOKIE_SAMESITE=; Max-Age=0";
+        document.cookie = "KEYCLOAK_3P_COOKIE=; Max-Age=0";
+      }
+
+      window.parent.postMessage(hasAccess ? "supported" : "unsupported", "*");
+    </script>
+  </body>
+</html>

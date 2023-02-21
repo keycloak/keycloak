@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.util.saml;
 
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -81,6 +83,9 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
 
             case POST:
                 return handlePostBinding(currentResponse);
+                
+            case ARTIFACT_RESPONSE:
+                return handleArtifactResponse(currentResponse);
         }
 
         throw new RuntimeException("Unknown binding for " + ModifySamlResponseStepBuilder.class.getName());
@@ -128,6 +133,18 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
     public ModifySamlResponseStepBuilder targetUri(URI forceUri) {
         this.targetUri = forceUri;
         return this;
+    }
+
+    private HttpUriRequest handleArtifactResponse(CloseableHttpResponse currentResponse) throws Exception {
+        SAMLDocumentHolder samlDocumentHolder = null;
+        try {
+            samlDocumentHolder = Binding.ARTIFACT_RESPONSE.extractResponse(currentResponse);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        return createRequest(this.targetUri, this.targetAttribute, DocumentUtil.asString(samlDocumentHolder.getSamlDocument()), new LinkedList<>());
     }
 
     protected HttpUriRequest handleRedirectBinding(CloseableHttpResponse currentResponse) throws Exception, IOException, URISyntaxException {

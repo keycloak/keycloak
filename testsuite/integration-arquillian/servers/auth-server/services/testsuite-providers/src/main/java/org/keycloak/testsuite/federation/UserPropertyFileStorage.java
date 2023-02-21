@@ -19,10 +19,12 @@ package org.keycloak.testsuite.federation;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -33,6 +35,11 @@ import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -45,13 +52,42 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyFileStorage implements UserLookupProvider.Streams, UserStorageProvider, UserQueryProvider.Streams, CredentialInputValidator {
+public class UserPropertyFileStorage implements UserLookupProvider, UserStorageProvider, UserQueryProvider, CredentialInputValidator {
+
+    public static final String SEARCH_METHOD = "searchForUserStream(RealmMode, String, Integer, Integer)";
+    public static final String COUNT_SEARCH_METHOD = "getUsersCount(RealmModel, String)";
 
     protected Properties userPasswords;
     protected ComponentModel model;
     protected KeycloakSession session;
     protected boolean federatedStorageEnabled;
+    
+    public static Map<String, List<UserPropertyFileStorageCall>> storageCalls = new HashMap<>();
 
+    public static class UserPropertyFileStorageCall implements Serializable {
+        private final String method;
+        private final Integer first;
+        private final Integer max;
+
+        public UserPropertyFileStorageCall(String method, Integer first, Integer max) {
+            this.method = method;
+            this.first = first;
+            this.max = max;
+        }
+
+        public String getMethod() {
+            return method;
+        }
+
+        public Integer getFirst() {
+            return first;
+        }
+
+        public Integer getMax() {
+            return max;
+        }
+    }
+    
     public UserPropertyFileStorage(KeycloakSession session, ComponentModel model, Properties userPasswords) {
         this.session = session;
         this.model = model;
@@ -59,6 +95,23 @@ public class UserPropertyFileStorage implements UserLookupProvider.Streams, User
         this.federatedStorageEnabled = model.getConfig().containsKey("federatedStorage") && Boolean.valueOf(model.getConfig().getFirst("federatedStorage")).booleanValue();
     }
 
+    private void addCall(String method, Integer first, Integer max) {
+        storageCalls.merge(model.getId(), new LinkedList<>(Collections.singletonList(new UserPropertyFileStorageCall(method, first, max))), (a, b) -> {
+            a.addAll(b);
+            return a;
+        });
+    }
+
+    private void addCall(String method) {
+        addCall(method, null, null);
+    }
+
+    @Override
+    public int getUsersCount(RealmModel realm, String search) {
+        addCall(COUNT_SEARCH_METHOD);
+        
+        return (int) searchForUser(realm, search, null, null, username -> username.contains(search)).count();
+    }
 
     @Override
     public UserModel getUserById(RealmModel realm, String id) {
@@ -87,6 +140,11 @@ public class UserPropertyFileStorage implements UserLookupProvider.Streams, User
                 @Override
                 public String getUsername() {
                     return username;
+                }
+
+                @Override
+                public SubjectCredentialManager credentialManager() {
+                    return new LegacyUserCredentialManager(session, realm, this);
                 }
             };
         }
@@ -159,6 +217,7 @@ public class UserPropertyFileStorage implements UserLookupProvider.Streams, User
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+        addCall(SEARCH_METHOD, firstResult, maxResults);
         return searchForUser(realm, search, firstResult, maxResults, username -> username.contains(search));
     }
 

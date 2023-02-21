@@ -22,9 +22,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.jose.jws.AlgorithmType;
+import org.keycloak.keys.GeneratedRsaEncKeyProviderFactory;
 import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
-import org.keycloak.keys.KeyMetadata;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -35,9 +36,12 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.utils.StringUtil;
 
 import javax.ws.rs.core.Response;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -64,10 +68,19 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void defaultKeysize() throws Exception {
+    public void defaultKeysizeForSig() throws Exception {
+        defaultKeysize(GeneratedRsaKeyProviderFactory.ID, KeyUse.SIG);
+    }
+
+    @Test
+    public void defaultKeysizeForEnc() throws Exception {
+        defaultKeysize(GeneratedRsaEncKeyProviderFactory.ID, KeyUse.ENC);
+    }
+
+    private void defaultKeysize(String providerId, KeyUse keyUse) throws Exception {
         long priority = System.currentTimeMillis();
 
-        ComponentRepresentation rep = createRep("valid", GeneratedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("valid", providerId);
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
 
@@ -88,13 +101,23 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(AlgorithmType.RSA.name(), key.getType());
         assertEquals(priority, key.getProviderPriority());
         assertEquals(2048, ((RSAPublicKey) PemUtils.decodePublicKey(keys.getKeys().get(0).getPublicKey())).getModulus().bitLength());
+        assertEquals(keyUse, key.getUse());
     }
 
     @Test
-    public void largeKeysize() throws Exception {
+    public void largeKeysizeForSig() throws Exception {
+        largeKeysize(GeneratedRsaKeyProviderFactory.ID, KeyUse.SIG);
+    }
+
+    @Test
+    public void largeKeysizeForEnc() throws Exception {
+        largeKeysize(GeneratedRsaEncKeyProviderFactory.ID, KeyUse.ENC);
+    }
+
+    private void largeKeysize(String providerId, KeyUse keyUse) throws Exception {
         long priority = System.currentTimeMillis();
 
-        ComponentRepresentation rep = createRep("valid", GeneratedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("valid", providerId);
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
         rep.getConfig().putSingle("keySize", "4096");
@@ -116,13 +139,23 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(AlgorithmType.RSA.name(), key.getType());
         assertEquals(priority, key.getProviderPriority());
         assertEquals(4096, ((RSAPublicKey) PemUtils.decodePublicKey(keys.getKeys().get(0).getPublicKey())).getModulus().bitLength());
+        assertEquals(keyUse, key.getUse());
     }
 
     @Test
-    public void updatePriority() throws Exception {
+    public void updatePriorityForSig() throws Exception {
+        updatePriority(GeneratedRsaKeyProviderFactory.ID, KeyUse.SIG);
+    }
+
+    @Test
+    public void updatePriorityForEnc() throws Exception {
+        updatePriority(GeneratedRsaEncKeyProviderFactory.ID, KeyUse.ENC);
+    }
+
+    private void updatePriority(String providerId, KeyUse keyUse) throws Exception {
         long priority = System.currentTimeMillis();
 
-        ComponentRepresentation rep = createRep("valid", GeneratedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("valid", providerId);
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
 
@@ -147,13 +180,23 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         String publicKey2 = keys.getKeys().get(0).getPublicKey();
 
         assertEquals(publicKey, publicKey2);
+        assertEquals(keyUse, keys.getKeys().get(0).getUse());
     }
 
     @Test
-    public void updateKeysize() throws Exception {
+    public void updateKeysizeForSig() throws Exception {
+        updateKeysize(GeneratedRsaKeyProviderFactory.ID, KeyUse.SIG);
+    }
+
+    @Test
+    public void updateKeysizeForEnc() throws Exception {
+        updateKeysize(GeneratedRsaEncKeyProviderFactory.ID, KeyUse.ENC);
+    }
+
+    private void updateKeysize(String providerId, KeyUse keyUse) throws Exception {
         long priority = System.currentTimeMillis();
 
-        ComponentRepresentation rep = createRep("valid", GeneratedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("valid", providerId);
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
 
@@ -177,15 +220,26 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         assertNotEquals(publicKey, publicKey2);
         assertEquals(2048, ((RSAPublicKey) PemUtils.decodePublicKey(publicKey)).getModulus().bitLength());
         assertEquals(4096, ((RSAPublicKey) PemUtils.decodePublicKey(publicKey2)).getModulus().bitLength());
+        assertEquals(keyUse, keys.getKeys().get(0).getUse());
     }
 
     @Test
-    public void invalidKeysize() throws Exception {
-        ComponentRepresentation rep = createRep("invalid", GeneratedRsaKeyProviderFactory.ID);
+    public void invalidKeysizeForSig() throws Exception {
+        invalidKeysize(GeneratedRsaKeyProviderFactory.ID);
+    }
+
+    @Test
+    public void invalidKeysizeForEnc() throws Exception {
+        invalidKeysize(GeneratedRsaEncKeyProviderFactory.ID);
+    }
+
+    private void invalidKeysize(String providerId) throws Exception {
+        ComponentRepresentation rep = createRep("invalid", providerId);
         rep.getConfig().putSingle("keySize", "1234");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "'Key size' should be 1024, 2048 or 4096");
+        String expectedKeySizesDisplay = StringUtil.joinValuesWithLogicalCondition("or", Arrays.asList(KeyUtils.getExpectedSupportedRsaKeySizes()));
+        assertErrror(response, "'Key size' should be " + expectedKeySizesDisplay);
     }
 
     protected void assertErrror(Response response, String error) {
@@ -201,7 +255,7 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, String providerId) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId("test");
+        rep.setParentId(adminClient.realm("test").toRepresentation().getId());
         rep.setProviderId(providerId);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

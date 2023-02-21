@@ -29,7 +29,6 @@ import org.apache.directory.api.ldap.model.schema.SchemaManager;
 import org.apache.directory.server.core.api.DirectoryService;
 import org.apache.directory.server.core.api.interceptor.Interceptor;
 import org.apache.directory.server.core.api.partition.Partition;
-import org.apache.directory.server.core.factory.AvlPartitionFactory;
 import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
 import org.apache.directory.server.core.factory.JdbmPartitionFactory;
 import org.apache.directory.server.core.normalization.NormalizationInterceptor;
@@ -45,6 +44,7 @@ import org.keycloak.common.util.StreamUtil;
 
 import java.io.File;
 import java.io.InputStream;
+import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -175,7 +175,8 @@ public class LDAPEmbeddedServer {
 
     public void init() throws Exception {
         log.info("Creating LDAP Directory Service. Config: baseDN=" + baseDN + ", bindHost=" + bindHost + ", bindPort=" + bindPort +
-                ", ldapSaslPrincipal=" + ldapSaslPrincipal + ", directoryServiceFactory=" + directoryServiceFactory + ", ldif=" + ldifFile);
+                ", ldapSaslPrincipal=" + ldapSaslPrincipal + ", directoryServiceFactory=" + directoryServiceFactory + ", ldif=" + ldifFile +
+                ", enableSSL=" + enableSSL + ", enableStartTLS: " + enableStartTLS + ", keystoreFile: " + keystoreFile + ", default java keystore type: " + KeyStore.getDefaultType());
 
         this.directoryService = createDirectoryService();
 
@@ -207,7 +208,13 @@ public class LDAPEmbeddedServer {
         dcName = dcName.substring(dcName.indexOf("=") + 1);
 
         if (this.directoryServiceFactory.equals(DSF_INMEMORY)) {
-            System.setProperty( "apacheds.partition.factory", AvlPartitionFactory.class.getName());
+            // this used to be AvlPartitionFactory but it didn't prove stable in testing;
+            // sometimes the search returned an OPERATIONS_ERROR, sometimes after retrieving a list of entries
+            // and deleting them one by one, an entry was missing before it was deleted and either the search or the deletion failed.
+            // This happened in approximately one out of 100 test runs for RoleModelTest.
+            // This all happened with ApacheDS 2.0.0.AM26. Once changed to JdbmPartitionFactory, the problems disappeared.
+            // https://issues.apache.org/jira/browse/DIRSERVER-2369
+            System.setProperty( "apacheds.partition.factory", JdbmPartitionFactoryFast.class.getName());
         } else if (this.directoryServiceFactory.equals(DSF_FILE)) {
             System.setProperty( "apacheds.partition.factory", JdbmPartitionFactory.class.getName());
         } else {

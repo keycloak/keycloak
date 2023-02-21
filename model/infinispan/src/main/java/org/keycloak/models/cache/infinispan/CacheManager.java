@@ -101,6 +101,12 @@ public abstract class CacheManager {
             if (getLogger().isTraceEnabled()) {
                 getLogger().tracev("get() missing rev {0}", id);
             }
+            /* id is no longer in this.revisions
+             ** => remove it also from this.cache
+             ** to come back to a consistent state
+             ** this allows caching the current version again
+             */
+            cache.remove(id);
             return null;
         }
         long oRev = o.getRevision() == null ? -1L : o.getRevision().longValue();
@@ -108,6 +114,8 @@ public abstract class CacheManager {
             if (getLogger().isTraceEnabled()) {
                 getLogger().tracev("get() rev: {0} o.rev: {1}", rev.longValue(), oRev);
             }
+            // the object in this.cache is outdated => remove it
+            cache.remove(id);
             return null;
         }
         return o != null && type.isInstance(o) ? type.cast(o) : null;

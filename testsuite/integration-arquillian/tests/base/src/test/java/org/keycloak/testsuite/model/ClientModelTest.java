@@ -17,12 +17,10 @@
  */
 package org.keycloak.testsuite.model;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -34,26 +32,20 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertThat;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientModelTest extends AbstractKeycloakTest {
     private ClientModel client;
     private String roleId;
@@ -179,10 +171,11 @@ public class ClientModelTest extends AbstractKeycloakTest {
             currentSession = sessionClientRoleRemoveTx2;
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
 
-            ClientModel scoped = realm.getClientByClientId("scoped");
             ClientModel from = realm.getClientByClientId("from");
             RoleModel role = currentSession.roles().getRoleById(realm, roleId);
             from.removeRole(role);
+
+            ClientModel scoped = realm.getClientByClientId("scoped");
 
             // used to throw an NPE
             assertThat("Scope Mappings is not 0", scoped.getScopeMappingsStream().count(), is(0L));
@@ -407,44 +400,6 @@ public class ClientModelTest extends AbstractKeycloakTest {
             realm.removeClientScope(scope1Atomic.get().getId());
             realm.removeClientScope(scope2Atomic.get().getId());
             realm.removeClientScope(scope3Atomic.get().getId());
-        });
-    }
-
-    @Test
-    @ModelTest
-    public void testCannotRemoveBoundClientTemplate(KeycloakSession session) {
-        AtomicReference<ClientScopeModel> scope1Atomic = new AtomicReference<>();
-
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCantRemoveBound1) -> {
-            currentSession = sessionCantRemoveBound1;
-            RealmModel realm = currentSession.realms().getRealmByName(realmName);
-            client = realm.addClient("templatized");
-            ClientScopeModel scope1 = realm.addClientScope("template");
-            scope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            scope1Atomic.set(scope1);
-            client.addClientScope(scope1, true);
-        });
-
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCantRemoveBound2) -> {
-            currentSession = sessionCantRemoveBound2;
-            RealmModel realm = currentSession.realms().getRealmByName(realmName);
-            ClientScopeModel scope1 = scope1Atomic.get();
-            client = realm.getClientByClientId("templatized");
-
-            assertThat("Scope name is wrong!!", scope1.getName(), is("template"));
-
-            try {
-                realm.removeClientScope(scope1.getId());
-                Assert.fail();
-            } catch (ModelException e) {
-                // Expected
-            }
-
-            currentSession.clients().removeClient(realm, client.getId());
-            realm.removeClientScope(scope1Atomic.get().getId());
-
-            assertThat("Error with removing Client from realm.", realm.getClientById(client.getId()), nullValue());
-            assertThat("Error with removing Client Scope from realm.", realm.getClientScopeById(scope1.getId()), nullValue());
         });
     }
 

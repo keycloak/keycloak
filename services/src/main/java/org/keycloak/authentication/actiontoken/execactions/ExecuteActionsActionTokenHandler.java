@@ -16,10 +16,12 @@
  */
 package org.keycloak.authentication.actiontoken.execactions;
 
+import org.keycloak.TokenVerifier;
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.*;
+import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -36,11 +38,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
+
 /**
  *
  * @author hmlnarik
  */
-public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<ExecuteActionsActionToken> {
+public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler<ExecuteActionsActionToken> {
 
     public ExecuteActionsActionTokenHandler() {
         super(
@@ -62,7 +66,10 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<
                       tokenContext.getAuthenticationSession().getClient()) != null,
             Errors.INVALID_REDIRECT_URI,
             Messages.INVALID_REDIRECT_URI
-          )
+          ),
+
+          verifyEmail(tokenContext),
+          verifyRequiredActions(tokenContext)
         );
     }
 
@@ -113,17 +120,22 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<
         KeycloakSessionFactory sessionFactory = tokenContext.getSession().getKeycloakSessionFactory();
 
         return token.getRequiredActions().stream()
-          .map(actionName -> realm.getRequiredActionProviderByAlias(actionName))    // get realm-specific model from action name and filter out irrelevant
+          .map(realm::getRequiredActionProviderByAlias)    // get realm-specific model from action name and filter out irrelevant
           .filter(Objects::nonNull)
           .filter(RequiredActionProviderModel::isEnabled)
 
           .map(RequiredActionProviderModel::getProviderId)      // get provider ID from model
 
-          .map(providerId -> (RequiredActionFactory) sessionFactory.getProviderFactory(RequiredActionProvider.class, providerId))
+          .map(providerId -> (RequiredActionFactory) sessionFactory.getProviderFactory(RequiredActionProvider.class, getDefaultRequiredActionCaseInsensitively(providerId)))
           .filter(Objects::nonNull)
 
           .noneMatch(RequiredActionFactory::isOneTimeAction);
     }
 
-
+    // Verify required actions included in the token are valid
+    protected TokenVerifier.Predicate<ExecuteActionsActionToken> verifyRequiredActions(ActionTokenContext<ExecuteActionsActionToken> tokenContext) {
+        return TokenUtils.checkThat(t -> RequiredActionsValidator.validRequiredActions(tokenContext.getSession(), t.getRequiredActions()),
+                Errors.RESOLVE_REQUIRED_ACTIONS, Messages.INVALID_TOKEN_REQUIRED_ACTIONS
+        );
+    }
 }

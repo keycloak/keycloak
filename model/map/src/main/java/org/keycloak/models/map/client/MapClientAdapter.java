@@ -16,17 +16,23 @@
  */
 package org.keycloak.models.map.client;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import java.security.MessageDigest;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -35,13 +41,17 @@ import java.util.stream.Stream;
  */
 public abstract class MapClientAdapter extends AbstractClientModel<MapClientEntity> implements ClientModel {
 
+    private static final Logger LOG = Logger.getLogger(MapClientAdapter.class);
+    private final MapProtocolMapperUtils pmUtils;
+
     public MapClientAdapter(KeycloakSession session, RealmModel realm, MapClientEntity entity) {
         super(session, realm, entity);
+        pmUtils = MapProtocolMapperUtils.instanceFor(safeGetProtocol());
     }
 
     @Override
     public String getId() {
-        return entity.getId().toString();
+        return entity.getId();
     }
 
     @Override
@@ -76,7 +86,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isEnabled() {
-        return entity.isEnabled();
+        final Boolean enabled = entity.isEnabled();
+        return enabled == null ? false : enabled;
     }
 
     @Override
@@ -86,7 +97,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isAlwaysDisplayInConsole() {
-        return entity.isAlwaysDisplayInConsole();
+        final Boolean alwaysDisplayInConsole = entity.isAlwaysDisplayInConsole();
+        return alwaysDisplayInConsole == null ? false : alwaysDisplayInConsole;
     }
 
     @Override
@@ -96,7 +108,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isSurrogateAuthRequired() {
-        return entity.isSurrogateAuthRequired();
+        final Boolean surrogateAuthRequired = entity.isSurrogateAuthRequired();
+        return surrogateAuthRequired == null ? false : surrogateAuthRequired;
     }
 
     @Override
@@ -106,7 +119,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Set<String> getWebOrigins() {
-        return entity.getWebOrigins();
+        final Set<String> webOrigins = entity.getWebOrigins();
+        return webOrigins == null ? Collections.emptySet() : webOrigins;
     }
 
     @Override
@@ -126,7 +140,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Set<String> getRedirectUris() {
-        return entity.getRedirectUris();
+        final Set<String> redirectUris = entity.getRedirectUris();
+        return redirectUris == null ? Collections.emptySet() : redirectUris;
     }
 
     @Override
@@ -176,7 +191,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isBearerOnly() {
-        return entity.isBearerOnly();
+        final Boolean bearerOnly = entity.isBearerOnly();
+        return bearerOnly == null ? false : bearerOnly;
     }
 
     @Override
@@ -211,7 +227,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public int getNodeReRegistrationTimeout() {
-        return entity.getNodeReRegistrationTimeout();
+        final Integer nodeReRegistrationTimeout = entity.getNodeReRegistrationTimeout();
+        return nodeReRegistrationTimeout == null ? 0 : nodeReRegistrationTimeout;
     }
 
     @Override
@@ -236,8 +253,10 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public void setProtocol(String protocol) {
-        entity.setProtocol(protocol);
-        session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> MapClientAdapter.this);
+        if (!Objects.equals(entity.getProtocol(), protocol)) {
+            entity.setProtocol(protocol);
+            session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> MapClientAdapter.this);
+        }
     }
 
     @Override
@@ -249,7 +268,7 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
             return;
         }
 
-        entity.setAttribute(name, value);
+        entity.setAttribute(name, Collections.singletonList(value));
     }
 
     @Override
@@ -259,12 +278,29 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public String getAttribute(String name) {
-        return entity.getAttribute(name);
+        List<String> attribute = entity.getAttribute(name);
+        if (attribute == null || attribute.isEmpty()) return null;
+        return attribute.get(0);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        return entity.getAttributes();
+        final Map<String, List<String>> attributes = entity.getAttributes();
+        final Map<String, List<String>> a = attributes == null ? Collections.emptyMap() : attributes;
+        return a.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
+            entry -> {
+                if (entry.getValue().isEmpty()) {
+                    return null;
+                } else if (entry.getValue().size() > 1) {
+                    // This could be caused by an inconsistency in the storage, a programming error,
+                    // or a downgrade from a future version of Keycloak that already supports multi-valued attributes.
+                    // The caller will not see the other values, and when this entity is later updated, the additional values will be lost.
+                    LOG.warnf("Client '%s' realm '%s' has attribute '%s' with %d values, retrieving only the first", getClientId(), getRealm().getName(), entry.getKey(),
+                            entry.getValue().size());
+                }
+                return entry.getValue().get(0);
+            })
+        );
     }
 
     @Override
@@ -274,7 +310,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Map<String, String> getAuthenticationFlowBindingOverrides() {
-        return entity.getAuthenticationFlowBindingOverrides();
+        final Map<String, String> authenticationFlowBindingOverrides = entity.getAuthenticationFlowBindingOverrides();
+        return authenticationFlowBindingOverrides == null ? Collections.emptyMap() : authenticationFlowBindingOverrides;
     }
 
     @Override
@@ -289,7 +326,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isFrontchannelLogout() {
-        return entity.isFrontchannelLogout();
+        final Boolean frontchannelLogout = entity.isFrontchannelLogout();
+        return frontchannelLogout == null ? false : frontchannelLogout;
     }
 
     @Override
@@ -299,7 +337,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isFullScopeAllowed() {
-        return entity.isFullScopeAllowed();
+        final Boolean fullScopeAllowed = entity.isFullScopeAllowed();
+        return fullScopeAllowed == null ? false : fullScopeAllowed;
     }
 
     @Override
@@ -309,7 +348,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isPublicClient() {
-        return entity.isPublicClient();
+        final Boolean publicClient = entity.isPublicClient();
+        return publicClient == null ? false : publicClient;
     }
 
     @Override
@@ -319,7 +359,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isConsentRequired() {
-        return entity.isConsentRequired();
+        final Boolean consentRequired = entity.isConsentRequired();
+        return consentRequired == null ? false : consentRequired;
     }
 
     @Override
@@ -329,7 +370,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isStandardFlowEnabled() {
-        return entity.isStandardFlowEnabled();
+        final Boolean standardFlowEnabled = entity.isStandardFlowEnabled();
+        return standardFlowEnabled == null ? false : standardFlowEnabled;
     }
 
     @Override
@@ -339,7 +381,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isImplicitFlowEnabled() {
-        return entity.isImplicitFlowEnabled();
+        final Boolean implicitFlowEnabled = entity.isImplicitFlowEnabled();
+        return implicitFlowEnabled == null ? false : implicitFlowEnabled;
     }
 
     @Override
@@ -349,7 +392,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isDirectAccessGrantsEnabled() {
-        return entity.isDirectAccessGrantsEnabled();
+        final Boolean directAccessGrantsEnabled = entity.isDirectAccessGrantsEnabled();
+        return directAccessGrantsEnabled == null ? false : directAccessGrantsEnabled;
     }
 
     @Override
@@ -359,7 +403,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isServiceAccountsEnabled() {
-        return entity.isServiceAccountsEnabled();
+        final Boolean serviceAccountsEnabled = entity.isServiceAccountsEnabled();
+        return serviceAccountsEnabled == null ? false : serviceAccountsEnabled;
     }
 
     @Override
@@ -374,19 +419,21 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public int getNotBefore() {
-        return entity.getNotBefore();
+        final Long notBefore = entity.getNotBefore();
+        return notBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(notBefore);
     }
 
     @Override
     public void setNotBefore(int notBefore) {
-        entity.setNotBefore(notBefore);
+        entity.setNotBefore(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(notBefore));
     }
 
     /*************** Scopes mappings ****************/
 
     @Override
     public Stream<RoleModel> getScopeMappingsStream() {
-        return this.entity.getScopeMappings().stream()
+        final Collection<String> scopeMappings = this.entity.getScopeMappings();
+        return scopeMappings == null ? Stream.empty() : scopeMappings.stream()
                 .map(realm::getRoleById)
                 .filter(Objects::nonNull);
     }
@@ -403,8 +450,19 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     public void deleteScopeMapping(RoleModel role) {
         final String id = role == null ? null : role.getId();
         if (id != null) {
-            this.entity.deleteScopeMapping(id);
+            this.entity.removeScopeMapping(id);
         }
+    }
+
+    @Override
+    public boolean hasDirectScope(RoleModel role) {
+        final String id = role == null ? null : role.getId();
+        final Collection<String> scopeMappings = this.entity.getScopeMappings();
+        if (id != null && scopeMappings != null && scopeMappings.contains(id)) {
+            return true;
+        }
+
+        return getRolesStream().anyMatch(r -> (Objects.equals(r, role)));
     }
 
     @Override
@@ -412,7 +470,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
         if (isFullScopeAllowed()) return true;
 
         final String id = role == null ? null : role.getId();
-        if (id != null && this.entity.getScopeMappings().contains(id)) {
+        final Collection<String> scopeMappings = this.entity.getScopeMappings();
+        if (id != null && scopeMappings != null && scopeMappings.contains(id)) {
             return true;
         }
 
@@ -459,9 +518,14 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     /*************** Protocol mappers ****************/
 
+    private String safeGetProtocol() {
+        return entity.getProtocol() == null ? "openid-connect" : entity.getProtocol();
+    }
+
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
-        return entity.getProtocolMappers().stream().distinct();
+        final Set<MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
+        return protocolMappers == null ? Stream.empty() : protocolMappers.stream().distinct().map(pmUtils::toModel);
     }
 
     @Override
@@ -470,19 +534,17 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
             return null;
         }
 
-        ProtocolMapperModel pm = new ProtocolMapperModel();
-        pm.setId(KeycloakModelUtils.generateId());
-        pm.setName(model.getName());
-        pm.setProtocol(model.getProtocol());
-        pm.setProtocolMapper(model.getProtocolMapper());
-
-        if (model.getConfig() != null) {
-            pm.setConfig(new HashMap<>(model.getConfig()));
-        } else {
+        MapProtocolMapperEntity pm = MapProtocolMapperUtils.fromModel(model);
+        if (pm.getId() == null) {
+            String id = KeycloakModelUtils.generateId();
+            pm.setId(id);
+        }
+        if (model.getConfig() == null) {
             pm.setConfig(new HashMap<>());
         }
 
-        return entity.addProtocolMapper(pm);
+        entity.addProtocolMapper(pm);
+        return pmUtils.toModel(pm);
     }
 
     @Override
@@ -497,19 +559,27 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
         final String id = mapping == null ? null : mapping.getId();
         if (id != null) {
-            entity.updateProtocolMapper(id, mapping);
+            entity.getProtocolMapper(id).ifPresent((pmEntity) -> {
+                entity.removeProtocolMapper(id);
+                addProtocolMapper(mapping);
+            });
         }
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        return entity.getProtocolMapperById(id);
+        return entity.getProtocolMapper(id).map(pmUtils::toModel).orElse(null);
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        return entity.getProtocolMappers().stream()
-          .filter(pm -> Objects.equals(pm.getProtocol(), protocol) && Objects.equals(pm.getName(), name))
+        final Set<MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
+        if (! Objects.equals(protocol, safeGetProtocol())) {
+            return null;
+        }
+        return protocolMappers == null ? null : protocolMappers.stream()
+          .filter(pm -> Objects.equals(pm.getName(), name))
+          .map(pmUtils::toModel)
           .findAny()
           .orElse(null);
     }

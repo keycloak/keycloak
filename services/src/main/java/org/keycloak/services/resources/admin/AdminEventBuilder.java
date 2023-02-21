@@ -36,29 +36,58 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 public class AdminEventBuilder {
 
     protected static final Logger logger = Logger.getLogger(AdminEventBuilder.class);
+    private final AdminAuth auth;
+    private final String ipAddress;
+    private final RealmModel realm;
+    private final AdminEvent adminEvent;
+    private final Map<String, EventListenerProvider> listeners;
 
     private EventStoreProvider store;
-    private Map<String, EventListenerProvider> listeners;
-    private RealmModel realm;
-    private AdminEvent adminEvent;
 
     public AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
+        this(realm, auth, session, clientConnection.getRemoteAddr());
+    }
+
+    private AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress) {
         this.realm = realm;
         adminEvent = new AdminEvent();
 
         this.listeners = new HashMap<>();
         updateStore(session);
         addListeners(session);
-
+        this.auth = auth;
+        this.ipAddress = ipAddress;
+        realm(realm);
         authRealm(auth.getRealm());
         authClient(auth.getClient());
         authUser(auth.getUser());
-        authIpAddress(clientConnection.getRemoteAddr());
+        authIpAddress(ipAddress);
+    }
+
+    /**
+     * Create a new instance of the {@link AdminEventBuilder} that is bound to a new session.
+     * Use this when starting, for example, a nested transaction.
+     * @param session new session where the {@link AdminEventBuilder} should be bound to.
+     * @return a new instance of {@link AdminEventBuilder}
+     */
+    public AdminEventBuilder clone(KeycloakSession session) {
+        RealmModel newEventRealm = session.realms().getRealm(realm.getId());
+        RealmModel newAuthRealm = session.realms().getRealm(this.auth.getRealm().getId());
+        UserModel newAuthUser = session.users().getUserById(newAuthRealm, this.auth.getUser().getId());
+        ClientModel newAuthClient = session.clients().getClientById(newAuthRealm, this.auth.getClient().getId());
+
+        return new AdminEventBuilder(
+                newEventRealm,
+                new AdminAuth(newAuthRealm, this.auth.getToken(), newAuthUser, newAuthClient),
+                session,
+                ipAddress
+        );
     }
 
     public AdminEventBuilder realm(RealmModel realm) {
@@ -238,13 +267,10 @@ public class AdminEventBuilder {
         // Event needs to be copied because the same builder can be used with another event
         AdminEvent eventCopy = new AdminEvent(adminEvent);
         eventCopy.setTime(Time.currentTimeMillis());
+        eventCopy.setId(UUID.randomUUID().toString());
 
         if (store != null) {
-            try {
-                store.onEvent(eventCopy, includeRepresentation);
-            } catch (Throwable t) {
-                ServicesLogger.LOGGER.failedToSaveEvent(t);
-            }
+            store.onEvent(eventCopy, includeRepresentation);
         }
 
         if (listeners != null) {

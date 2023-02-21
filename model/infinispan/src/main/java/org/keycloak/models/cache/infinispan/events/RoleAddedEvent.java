@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
@@ -56,6 +57,20 @@ public class RoleAddedEvent extends InvalidationEvent implements RealmCacheInval
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
         realmCache.roleAdded(containerId, invalidations);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        RoleAddedEvent that = (RoleAddedEvent) o;
+        return Objects.equals(roleId, that.roleId) && Objects.equals(containerId, that.containerId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), roleId, containerId);
     }
 
     public static class ExternalizerImpl implements Externalizer<RoleAddedEvent> {

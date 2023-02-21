@@ -20,11 +20,11 @@ package org.keycloak.models.utils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserModelDelegate implements UserModel.Streams {
+public class UserModelDelegate implements UserModel {
     protected UserModel delegate;
 
     public UserModelDelegate(UserModel delegate) {
@@ -210,6 +210,11 @@ public class UserModelDelegate implements UserModel.Streams {
         delegate.setServiceAccountClientLink(clientInternalId);
     }
 
+    @Override
+    public SubjectCredentialManager credentialManager() {
+        return delegate.credentialManager();
+    }
+
     public UserModel getDelegate() {
         return delegate;
     }
@@ -260,4 +265,5 @@ public class UserModelDelegate implements UserModel.Streams {
     public int hashCode() {
         return getDelegate().getId().hashCode();
     }
+
 }

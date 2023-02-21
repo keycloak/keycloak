@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.model;
 
-
+import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
@@ -26,9 +26,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
@@ -37,13 +37,11 @@ import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class CacheTest extends AbstractTestRealmKeycloakTest {
 
 	private ClientModel testApp = null;
@@ -57,6 +55,7 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 
 	 @Test
 	    public void testStaleCache() throws Exception {
+            Assume.assumeTrue("Realm cache disabled.", isRealmCacheEnabled());
 		 testingClient.server().run(session -> {
 		 	String appId = null;
 	        {
@@ -111,7 +110,7 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
             user.setFirstName("firstName");
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
     	
-            UserSessionModel userSession = session.sessions().createUserSession("123", realm, user, "testAddUserNotAddedToCache",
+            UserSessionModel userSession = session.sessions().createUserSession(UUID.randomUUID().toString(), realm, user, "testAddUserNotAddedToCache",
 					"127.0.0.1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
             user = userSession.getUser();
 

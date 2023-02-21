@@ -19,6 +19,9 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.Config;
 import org.jboss.logging.Logger;
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
@@ -43,7 +46,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
+public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     protected static final Logger logger = Logger.getLogger(RealmAdapter.class);
     protected RealmEntity realm;
     protected EntityManager em;
@@ -558,6 +561,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public CibaConfig getCibaPolicy() {
+        return new CibaConfig(this);
+    }
+
+    @Override
+    public ParConfig getParPolicy() {
+        return new ParConfig(this);
+    }
+
+    @Override
     public Map<String, Integer> getUserActionTokenLifespans() {
 
         Map<String, Integer> userActionTokens = new HashMap<>();
@@ -778,6 +791,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return session.clients().searchClientsByClientIdStream(this, clientId, firstResult, maxResults);
     }
 
+    @Override
+    public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return session.clients().searchClientsByAttributes(this, attributes, firstResult, maxResults);
+    }
+
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";
 
     @Override
@@ -879,6 +897,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             otpPolicy.setLookAheadWindow(realm.getOtpPolicyLookAheadWindow());
             otpPolicy.setType(realm.getOtpPolicyType());
             otpPolicy.setPeriod(realm.getOtpPolicyPeriod());
+            otpPolicy.setCodeReusable(getAttribute(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE, OTPPolicy.DEFAULT_IS_REUSABLE));
         }
         return otpPolicy;
     }
@@ -891,6 +910,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         realm.setOtpPolicyLookAheadWindow(policy.getLookAheadWindow());
         realm.setOtpPolicyType(policy.getType());
         realm.setOtpPolicyPeriod(policy.getPeriod());
+        setAttribute(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE, policy.isCodeReusable());
         em.flush();
     }
 
@@ -1150,7 +1170,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
         RealmModel masterRealm = getName().equals(Config.getAdminRealm())
           ? this
-          : session.realms().getRealm(Config.getAdminRealm());
+          : session.realms().getRealmByName(Config.getAdminRealm());
         return session.clients().getClientById(masterRealm, masterAdminClientId);
     }
 
@@ -1180,7 +1200,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     private IdentityProviderModel entityToModel(IdentityProviderEntity entity) {
-        IdentityProviderModel identityProviderModel = new IdentityProviderModel();
+        IdentityProviderModel identityProviderModel = getModelFromProviderFactory(entity.getProviderId());
         identityProviderModel.setProviderId(entity.getProviderId());
         identityProviderModel.setAlias(entity.getAlias());
         identityProviderModel.setDisplayName(entity.getDisplayName());
@@ -1199,6 +1219,21 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         identityProviderModel.setStoreToken(entity.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
         return identityProviderModel;
+    }
+
+    private IdentityProviderModel getModelFromProviderFactory(String providerId) {
+        Optional<IdentityProviderFactory> factory = Stream.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
+                                                                  session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class))
+                                                          .filter(providerFactory -> Objects.equals(providerFactory.getId(), providerId))
+                                                          .map(IdentityProviderFactory.class::cast)
+                                                          .findFirst();
+
+        if (factory.isPresent()) {
+            return factory.get().createConfig();
+        } else {
+            logger.warn("Couldn't find a suitable identity provider factory for " + providerId);
+            return new IdentityProviderModel();
+        }
     }
 
     @Override
@@ -1782,6 +1817,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
+        if (getRequiredActionProviderByAlias(model.getAlias()) != null) {
+            throw new ModelDuplicateException("A Required Action Provider with given alias already exists.");
+        }
         RequiredActionProviderEntity auth = new RequiredActionProviderEntity();
         String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
         auth.setId(id);
@@ -1918,8 +1956,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    @Deprecated
     public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(this, search, first, max);
+        return session.groups().searchForGroupByNameStream(this, search, false, first, max);
     }
 
     @Override
@@ -2158,14 +2197,13 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
+    public void createOrUpdateRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
         Map<String, RealmLocalizationTextsEntity> currentLocalizationTexts = realm.getRealmLocalizationTexts();
         if(currentLocalizationTexts.containsKey(locale)) {
             RealmLocalizationTextsEntity localizationTextsEntity = currentLocalizationTexts.get(locale);
-            Map<String, String> keys = new HashMap<>(localizationTextsEntity.getTexts());
-            keys.putAll(localizationTexts);
-            localizationTextsEntity.setTexts(keys);
-            localizationTextsEntity.getTexts().putAll(localizationTexts);
+            Map<String, String> updatedTexts = new HashMap<>(localizationTextsEntity.getTexts());
+            updatedTexts.putAll(localizationTexts);
+            localizationTextsEntity.setTexts(updatedTexts);
 
             em.persist(localizationTextsEntity);
         }

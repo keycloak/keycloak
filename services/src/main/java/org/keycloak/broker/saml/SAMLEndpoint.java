@@ -20,7 +20,6 @@ package org.keycloak.broker.saml;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -31,6 +30,8 @@ import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
@@ -53,6 +54,7 @@ import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.SamlSessionUtils;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
+import org.keycloak.protocol.saml.SAMLDecryptionKeysLocator;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -67,8 +69,8 @@ import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.Consumes;
@@ -79,7 +81,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -114,8 +115,11 @@ import org.w3c.dom.NodeList;
 import java.net.URI;
 import java.security.cert.CertificateException;
 
+import java.util.Collections;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.crypto.dsig.XMLSignature;
+
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -132,29 +136,32 @@ public class SAMLEndpoint {
     public static final String SAML_LOGIN_RESPONSE = "SAML_LOGIN_RESPONSE";
     public static final String SAML_ASSERTION = "SAML_ASSERTION";
     public static final String SAML_AUTHN_STATEMENT = "SAML_AUTHN_STATEMENT";
-    protected RealmModel realm;
+    protected final RealmModel realm;
     protected EventBuilder event;
-    protected SAMLIdentityProviderConfig config;
-    protected IdentityProvider.AuthenticationCallback callback;
-    protected SAMLIdentityProvider provider;
+    protected final SAMLIdentityProviderConfig config;
+    protected final IdentityProvider.AuthenticationCallback callback;
+    protected final SAMLIdentityProvider provider;
     private final DestinationValidator destinationValidator;
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
-    @Context
-    private HttpHeaders headers;
+    private final HttpHeaders headers;
+
+    public static final String ENCRYPTION_DEPRECATED_MODE_PROPERTY = "keycloak.saml.deprecated.encryption";
+    private final boolean DEPRECATED_ENCRYPTION = Boolean.getBoolean(ENCRYPTION_DEPRECATED_MODE_PROPERTY);
 
 
-    public SAMLEndpoint(RealmModel realm, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
-        this.realm = realm;
+    public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
+        this.realm = session.getContext().getRealm();
         this.config = config;
         this.callback = callback;
         this.provider = provider;
         this.destinationValidator = destinationValidator;
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     @GET
@@ -282,7 +289,7 @@ public class SAMLEndpoint {
                 event.error(Errors.INVALID_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestAbstractType.getDestination())) {
+            if (! destinationValidator.validate(getExpectedDestination(config.getAlias(), null), requestAbstractType.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.INVALID_DESTINATION);
                 event.error(Errors.INVALID_SAML_RESPONSE);
@@ -325,8 +332,8 @@ public class SAMLEndpoint {
 
             }  else {
                 for (String sessionIndex : request.getSessionIndex()) {
-                    String brokerSessionId = brokerUserId + "." + sessionIndex;
-                    UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId);
+                    String brokerSessionId = config.getAlias()  + "." + sessionIndex;
+                    UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId));
                     if (userSession != null) {
                         if (userSession.getState() == UserSessionModel.State.LOGGING_OUT || userSession.getState() == UserSessionModel.State.LOGGED_OUT) {
                             continue;
@@ -412,9 +419,8 @@ public class SAMLEndpoint {
                 }
                 session.getContext().setAuthenticationSession(authSession);
 
-                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 if (! isSuccessfulSamlResponse(responseType)) {
-                    String statusMessage = responseType.getStatus() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
+                    String statusMessage = responseType.getStatus() == null || responseType.getStatus().getStatusMessage() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
                     return callback.error(statusMessage);
                 }
                 if (responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
@@ -430,15 +436,47 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                Element assertionElement;
+                Element assertionElement = null;
 
                 if (assertionIsEncrypted) {
-                    // This methods writes the parsed and decrypted assertion back on the responseType parameter:
-                    assertionElement = AssertionUtil.decryptAssertion(holder, responseType, keys.getPrivateKey());
+                    try {
+                        /* This code is deprecated and will be removed in Keycloak 24 */
+                        if (DEPRECATED_ENCRYPTION) {
+                            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                            assertionElement = AssertionUtil.decryptAssertion(responseType, keys.getPrivateKey());
+                        } else {
+                        /* End of deprecated code */
+                            assertionElement = AssertionUtil.decryptAssertion(responseType, new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm()));
+                        }
+                    } catch (ProcessingException ex) {
+                        logger.warnf(ex, "Not possible to decrypt SAML assertion. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the assertion encrypted by identity provider '%s'", realm.getName(), config.getAlias());
+                        throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+                    }
                 } else {
                     /* We verify the assertion using original document to handle cases where the IdP
                     includes whitespace and/or newlines inside tags. */
                     assertionElement = DocumentUtil.getElement(holder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
+                }
+
+                // Validate the response Issuer
+                final String responseIssuer = responseType.getIssuer() != null ? responseType.getIssuer().getValue(): null;
+                final boolean responseIssuerValidationSuccess = config.getIdpEntityId() == null ||
+                    (responseIssuer != null && responseIssuer.equals(config.getIdpEntityId()));
+                if (!responseIssuerValidationSuccess) {
+                    logger.errorf("Response Issuer validation failed: expected %s, actual %s", config.getIdpEntityId(), responseIssuer);
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                }
+
+                // Validate InResponseTo attribute: must match the generated request ID
+                String expectedRequestId = authSession.getClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER);
+                final boolean inResponseToValidationSuccess = validateInResponseToAttribute(responseType, expectedRequestId);
+                if (!inResponseToValidationSuccess)
+                {
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
                 boolean signed = AssertionUtil.isSignedElement(assertionElement);
@@ -453,7 +491,35 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
+                if (AssertionUtil.isIdEncrypted(responseType)) {
+                    try {
+                        /* This code is deprecated and will be removed in Keycloak 24 */
+                        if (DEPRECATED_ENCRYPTION) {
+                            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                            AssertionUtil.decryptId(responseType, data -> Collections.singletonList(keys.getPrivateKey()));
+                        } else {
+                            /* End of deprecated code */
+                            AssertionUtil.decryptId(responseType, new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm()));
+                        }
+                    } catch (ProcessingException ex) {
+                        logger.warnf(ex, "Not possible to decrypt SAML encryptedId. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the encryptedId encrypted by identity provider '%s'", realm.getName(), config.getAlias());
+                        throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+                    }
+                }
+
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
+
+                // Validate the assertion Issuer
+                final String assertionIssuer = assertion.getIssuer() != null ? assertion.getIssuer().getValue(): null;
+                final boolean assertionIssuerValidationSuccess = config.getIdpEntityId() == null ||
+                    (assertionIssuer != null && assertionIssuer.equals(config.getIdpEntityId()));
+                if (!assertionIssuerValidationSuccess) {
+                    logger.errorf("Assertion Issuer validation failed: expected %s, actual %s", config.getIdpEntityId(), assertionIssuer);
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                }
+
                 NameIDType subjectNameID = getSubjectNameID(assertion);
                 String principal = getPrincipal(assertion);
 
@@ -519,7 +585,7 @@ public class SAMLEndpoint {
                 identity.setIdpConfig(config);
                 identity.setIdp(provider);
                 if (authn != null && authn.getSessionIndex() != null) {
-                    identity.setBrokerSessionId(identity.getBrokerUserId() + "." + authn.getSessionIndex());
+                    identity.setBrokerSessionId(config.getAlias() + "." + authn.getSessionIndex());
                  }
 
 
@@ -543,10 +609,10 @@ public class SAMLEndpoint {
          */
         private AuthenticationSessionModel samlIdpInitiatedSSO(final String clientUrlName) {
             event.event(EventType.LOGIN);
-            CacheControlUtil.noBackButtonCacheControlHeader();
-            Optional<ClientModel> oClient = SAMLEndpoint.this.realm.getClientsStream()
-                    .filter(c -> Objects.equals(c.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME), clientUrlName))
-                    .findFirst();
+            CacheControlUtil.noBackButtonCacheControlHeader(session);
+            Optional<ClientModel> oClient = SAMLEndpoint.this.session.clients()
+              .searchClientsByAttributes(realm, Collections.singletonMap(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME, clientUrlName), 0, 1)
+              .findFirst();
 
             if (! oClient.isPresent()) {
                 event.error(Errors.CLIENT_NOT_FOUND);
@@ -555,8 +621,7 @@ public class SAMLEndpoint {
             }
 
             LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
-            SamlService samlService = (SamlService) factory.createProtocolEndpoint(SAMLEndpoint.this.realm, event);
-            ResteasyProviderFactory.getInstance().injectProperties(samlService);
+            SamlService samlService = (SamlService) factory.createProtocolEndpoint(SAMLEndpoint.this.session, event);
             AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, SAMLEndpoint.this.realm, oClient.get(), null);
             if (authSession == null) {
                 event.error(Errors.INVALID_REDIRECT_URI);
@@ -583,7 +648,7 @@ public class SAMLEndpoint {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.INVALID_SAML_DOCUMENT);
                 event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_INVALID_RESPONSE);
             }
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
@@ -594,7 +659,7 @@ public class SAMLEndpoint {
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {
+            if (! destinationValidator.validate(getExpectedDestination(config.getAlias(), clientId), statusResponse.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.INVALID_DESTINATION);
                 event.error(Errors.INVALID_SAML_RESPONSE);
@@ -607,7 +672,7 @@ public class SAMLEndpoint {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_INVALID_SIGNATURE);
                 }
             }
             if (statusResponse instanceof ResponseType) {
@@ -628,7 +693,7 @@ public class SAMLEndpoint {
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
-            UserSessionModel userSession = session.sessions().getUserSession(realm, relayState);
+            UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, relayState));
             if (userSession == null) {
                 logger.error("no valid user session");
                 event.event(EventType.LOGOUT);
@@ -642,6 +707,13 @@ public class SAMLEndpoint {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
             }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
+        }
+
+        private String getExpectedDestination(String providerAlias, String clientId) {
+            if(clientId != null) {
+                return session.getContext().getUri().getAbsolutePath().toString();
+            }
+            return Urls.identityProviderAuthnResponse(session.getContext().getUri().getBaseUri(), providerAlias, realm.getName()).toString();
         }
     }
 
@@ -773,5 +845,66 @@ public class SAMLEndpoint {
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         return subType != null ? (NameIDType) subType.getBaseID() : null;
+    }
+
+    private boolean validateInResponseToAttribute(ResponseType responseType, String expectedRequestId) {
+        // If we are not expecting a request ID, don't bother
+        if (expectedRequestId == null || expectedRequestId.isEmpty())
+            return true;
+
+        // We are expecting a request ID so we are in SP-initiated login, attribute InResponseTo must be present
+        if (responseType.getInResponseTo() == null) {
+            logger.error("Response Validation Error: InResponseTo attribute was expected but not present in received response");
+            return false;
+        }
+
+        // Attribute is present, proceed with validation
+        // 1) Attribute Response > InResponseTo must not be empty
+        String responseInResponseToValue = responseType.getInResponseTo();
+        if (responseInResponseToValue.isEmpty()) {
+            logger.error("Response Validation Error: InResponseTo attribute was expected but it is empty in received response");
+            return false;
+        }
+
+        // 2) Attribute Response > InResponseTo must match request ID
+        if (!responseInResponseToValue.equals(expectedRequestId)) {
+            logger.error("Response Validation Error: received InResponseTo attribute does not match the expected request ID");
+            return false;
+        }
+
+        // If present, Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo must also be validated
+        if (responseType.getAssertions().isEmpty())
+            return true;
+
+        SubjectType subjectElement = responseType.getAssertions().get(0).getAssertion().getSubject();
+        if (subjectElement != null) {
+            if (subjectElement.getConfirmation() != null && !subjectElement.getConfirmation().isEmpty())
+            {
+                SubjectConfirmationType subjectConfirmationElement = subjectElement.getConfirmation().get(0);
+
+                if (subjectConfirmationElement != null) {
+                    SubjectConfirmationDataType subjectConfirmationDataElement = subjectConfirmationElement.getSubjectConfirmationData();
+
+                    if (subjectConfirmationDataElement != null) {
+                        if (subjectConfirmationDataElement.getInResponseTo() != null) {
+                            // 3) Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo is empty
+                            String subjectConfirmationDataInResponseToValue = subjectConfirmationDataElement.getInResponseTo();
+                            if (subjectConfirmationDataInResponseToValue.isEmpty()) {
+                                logger.error("Response Validation Error: SubjectConfirmationData InResponseTo attribute was expected but it is empty in received response");
+                                return false;
+                            }
+
+                            // 4) Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo does not match request ID
+                            if (!subjectConfirmationDataInResponseToValue.equals(expectedRequestId)) {
+                                logger.error("Response Validation Error: received SubjectConfirmationData InResponseTo attribute does not match the expected request ID");
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 }

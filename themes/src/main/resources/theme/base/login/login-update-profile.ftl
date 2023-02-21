@@ -23,23 +23,25 @@
                     </div>
                 </div>
             </#if>
-            <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="email" class="${properties.kcLabelClass!}">${msg("email")}</label>
-                </div>
-                <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="email" name="email" value="${(user.email!'')}"
-                           class="${properties.kcInputClass!}"
-                           aria-invalid="<#if messagesPerField.existsError('email')>true</#if>"
-                    />
+            <#if user.editEmailAllowed>
+                <div class="${properties.kcFormGroupClass!}">
+                    <div class="${properties.kcLabelWrapperClass!}">
+                        <label for="email" class="${properties.kcLabelClass!}">${msg("email")}</label>
+                    </div>
+                    <div class="${properties.kcInputWrapperClass!}">
+                        <input type="text" id="email" name="email" value="${(user.email!'')}"
+                               class="${properties.kcInputClass!}"
+                               aria-invalid="<#if messagesPerField.existsError('email')>true</#if>"
+                        />
 
-                    <#if messagesPerField.existsError('email')>
-                        <span id="input-error-email" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                            ${kcSanitize(messagesPerField.get('email'))?no_esc}
-                        </span>
-                    </#if>
+                        <#if messagesPerField.existsError('email')>
+                            <span id="input-error-email" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+                                ${kcSanitize(messagesPerField.get('email'))?no_esc}
+                            </span>
+                        </#if>
+                    </div>
                 </div>
-            </div>
+            </#if>
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">

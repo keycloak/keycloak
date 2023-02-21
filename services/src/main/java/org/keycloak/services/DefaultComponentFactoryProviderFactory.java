@@ -23,6 +23,7 @@ import org.keycloak.common.util.StackUtil;
 import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentModelScope;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.InvalidationHandler;
@@ -59,10 +60,12 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
     private KeycloakSessionFactory factory;
     private boolean componentCachingAvailable;
     private boolean componentCachingEnabled;
+    private Boolean componentCachingForced;
 
     @Override
     public void init(Scope config) {
         this.componentCachingEnabled = config.getBoolean("cachingEnabled", true);
+        this.componentCachingForced = config.getBoolean("cachingForced", false);
     }
 
     @Override
@@ -72,7 +75,12 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
         if (! componentCachingEnabled) {
             LOG.warn("Caching of components disabled by the configuration which may have performance impact.");
         } else if (! componentCachingAvailable) {
-            LOG.warn("No system-wide ClusterProviderFactory found. Cannot send messages across cluster, thus disabling caching of components.");
+            if (Objects.equals(componentCachingForced, Boolean.TRUE)) {
+                LOG.warn("Component caching forced even though no system-wide ClusterProviderFactory found. This would be only reliable in single-node deployment.");
+                this.componentCachingAvailable = true;
+            } else {
+                LOG.warn("No system-wide ClusterProviderFactory found. Cannot send messages across cluster, thus disabling caching of components. Consider setting cachingForced option in single-node deployment.");
+            }
         }
     }
 
@@ -120,9 +128,13 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
         Scope scope = Config.scope(factory.getSpi(clazz).getName(), provider);
         ComponentModelScope configScope = new ComponentModelScope(scope, cm);
 
-        return this.componentCachingAvailable
-          ? componentsMap.get().computeIfAbsent(componentId, cId -> initializeFactory(clazz, realmId, componentId, newFactory, configScope))
-          : initializeFactory(clazz, realmId, componentId, newFactory, configScope);
+        ProviderFactory<T> providerFactory;
+        if (this.componentCachingAvailable) {
+            providerFactory = componentsMap.get().computeIfAbsent(componentId, cId -> initializeFactory(clazz, realmId, componentId, newFactory, configScope));
+        } else {
+            providerFactory = initializeFactory(clazz, realmId, componentId, newFactory, configScope);
+        }
+        return providerFactory;
     }
 
     @SuppressWarnings("unchecked")
@@ -132,14 +144,19 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
         newFactory.init(configScope);
         newFactory.postInit(factory);
 
-        dependentInvalidations.computeIfAbsent(realmId, k -> ConcurrentHashMap.newKeySet()).add(componentId);
+        if (realmId == null) {
+            realmId = configScope.getComponentParentId();
+        }
+        if (realmId != null) {
+            dependentInvalidations.computeIfAbsent(realmId, k -> ConcurrentHashMap.newKeySet()).add(componentId);
+        }
         dependentInvalidations.computeIfAbsent(newFactory.getClass(), k -> ConcurrentHashMap.newKeySet()).add(componentId);
 
         return newFactory;
     }
 
     @Override
-    public void invalidate(InvalidableObjectType type, Object... ids) {
+    public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... ids) {
         if (LOG.isDebugEnabled()) {
             LOG.debugf("Invalidating %s: %s", type, Arrays.asList(ids));
         }
@@ -153,25 +170,25 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
             Stream.of(ids)
               .map(componentsMap.get()::remove).filter(Objects::nonNull)
               .forEach(ProviderFactory::close);
-            propagateInvalidation(componentsMap.get(), type, ids);
+            propagateInvalidation(session, componentsMap.get(), type, ids);
         } else if (type == ObjectType.REALM || type == ObjectType.PROVIDER_FACTORY) {
             Stream.of(ids)
               .map(dependentInvalidations::get).filter(Objects::nonNull).flatMap(Collection::stream)
               .map(componentsMap.get()::remove).filter(Objects::nonNull)
               .forEach(ProviderFactory::close);
             Stream.of(ids).forEach(dependentInvalidations::remove);
-            propagateInvalidation(componentsMap.get(), type, ids);
+            propagateInvalidation(session, componentsMap.get(), type, ids);
         } else {
-            propagateInvalidation(componentsMap.get(), type, ids);
+            propagateInvalidation(session, componentsMap.get(), type, ids);
         }
     }
 
-    private void propagateInvalidation(ConcurrentMap<String, ProviderFactory> componentsMap, InvalidableObjectType type, Object[] ids) {
+    private void propagateInvalidation(KeycloakSession session, ConcurrentMap<String, ProviderFactory> componentsMap, InvalidableObjectType type, Object[] ids) {
         componentsMap.values()
           .stream()
           .filter(InvalidationHandler.class::isInstance)
           .map(InvalidationHandler.class::cast)
-          .forEach(ih -> ih.invalidate(type, ids));
+          .forEach(ih -> ih.invalidate(session, type, ids));
     }
 
     @Override

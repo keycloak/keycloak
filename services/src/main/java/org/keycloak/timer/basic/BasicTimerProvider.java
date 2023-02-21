@@ -35,11 +35,13 @@ public class BasicTimerProvider implements TimerProvider {
 
     private final KeycloakSession session;
     private final Timer timer;
+    private final int transactionTimeout;
     private final BasicTimerProviderFactory factory;
 
-    public BasicTimerProvider(KeycloakSession session, Timer timer, BasicTimerProviderFactory factory) {
+    public BasicTimerProvider(KeycloakSession session, Timer timer, int transactionTimeout, BasicTimerProviderFactory factory) {
         this.session = session;
         this.timer = timer;
+        this.transactionTimeout = transactionTimeout;
         this.factory = factory;
     }
 
@@ -65,7 +67,7 @@ public class BasicTimerProvider implements TimerProvider {
 
     @Override
     public void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName) {
-        ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask);
+        ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask, transactionTimeout);
         this.schedule(scheduledTaskRunner, intervalMillis, taskName);
     }
 

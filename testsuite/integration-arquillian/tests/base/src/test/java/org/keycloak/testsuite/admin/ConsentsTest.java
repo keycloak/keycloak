@@ -31,7 +31,9 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -51,15 +53,18 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.AbstractTestRealmKeycloakTest.TEST_REALM_NAME;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
+import org.openqa.selenium.By;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -262,7 +267,6 @@ public class ConsentsTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testConsents() {
         driver.navigate().to(getAccountUrl(consumerRealmName()));
 
@@ -336,6 +340,65 @@ public class ConsentsTest extends AbstractKeycloakTest {
         Assert.assertEquals("There should be no client in user session", 0, sessions.get(0).getClients().size());
     }
 
+    /**
+     * KEYCLOAK-18954
+     */
+    @Test
+    public void testRetrieveConsentsForUserWithClientsWithGrantedOfflineAccess() throws Exception {
+
+        RealmResource providerRealm = adminClient.realm(providerRealmName());
+
+        RealmRepresentation providerRealmRep = providerRealm.toRepresentation();
+        providerRealmRep.setAccountTheme("keycloak");
+        providerRealm.update(providerRealmRep);
+
+        ClientRepresentation providerAccountRep = providerRealm.clients().findByClientId("account").get(0);
+
+        // add offline_scope to default account-console client scope
+        ClientScopeRepresentation offlineAccessScope = providerRealm.getDefaultOptionalClientScopes().stream()
+                .filter(csr -> csr.getName().equals(OAuth2Constants.OFFLINE_ACCESS)).findFirst().get();
+        providerRealm.clients().get(providerAccountRep.getId()).removeOptionalClientScope(offlineAccessScope.getId());
+        providerRealm.clients().get(providerAccountRep.getId()).addDefaultClientScope(offlineAccessScope.getId());
+
+        // enable consent required to explicitly grant offline access
+        providerAccountRep.setConsentRequired(true);
+        providerAccountRep.setDirectAccessGrantsEnabled(true); // for offline token retrieval
+        providerRealm.clients().get(providerAccountRep.getId()).update(providerAccountRep);
+
+        List<UserRepresentation> searchResult = providerRealm.users().search(getUserLogin());
+        UserRepresentation user = searchResult.get(0);
+
+        driver.navigate().to(getAccountUrl(providerRealmName()));
+
+        waitForPage("Sign in to provider");
+        log.debug("Logging in");
+        accountLoginPage.login(getUserLogin(), getUserPassword());
+
+        waitForPage("grant access");
+        log.debug("Grant consent for offline_access");
+        Assert.assertTrue(consentPage.isCurrent());
+        consentPage.confirm();
+
+        waitForPage("keycloak account console");
+
+        // disable consent required again to enable direct grant token retrieval.
+        providerAccountRep.setConsentRequired(false);
+        providerRealm.clients().get(providerAccountRep.getId()).update(providerAccountRep);
+
+        log.debug("Obtain offline_token");
+        OAuthClient.AccessTokenResponse response = oauth.realm(providerRealmRep.getRealm())
+                .clientId(providerAccountRep.getClientId())
+                .scope(OAuth2Constants.SCOPE_OPENID +" " + OAuth2Constants.SCOPE_PROFILE + " " + OAuth2Constants.OFFLINE_ACCESS)
+                .doGrantAccessTokenRequest(null, getUserLogin(), getUserPassword());
+        assertNotNull(response.getRefreshToken());
+
+        log.debug("Check for Offline Token in consents");
+        List<Map<String, Object>> consents = providerRealm.users().get(user.getId()).getConsents();
+        assertFalse("Consents should not be empty", consents.isEmpty());
+
+        assertTrue(consents.toString().contains("Offline Token"));
+    }
+
     @Test
     public void testConsentCancel() {
         // setup account client to require consent
@@ -401,6 +464,37 @@ public class ConsentsTest extends AbstractKeycloakTest {
             clientRepresentation.setConsentRequired(false);
             adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId()).update(clientRepresentation);
         }
+    }
+
+    @Test
+    public void testConsentWithAdditionalClientAttributes() {
+        // setup account client to require consent
+        RealmResource providerRealm = adminClient.realm(providerRealmName());
+        ClientResource accountClient = findClientByClientId(providerRealm, "account");
+
+        ClientRepresentation clientRepresentation = accountClient.toRepresentation();
+        clientRepresentation.setConsentRequired(true);
+        clientRepresentation.getAttributes().put(ClientModel.LOGO_URI,"https://www.keycloak.org/resources/images/keycloak_logo_480x108.png");
+        clientRepresentation.getAttributes().put(ClientModel.POLICY_URI,"https://www.keycloak.org/policy");
+        clientRepresentation.getAttributes().put(ClientModel.TOS_URI,"https://www.keycloak.org/tos");
+        accountClient.update(clientRepresentation);
+
+        // setup correct realm
+        accountPage.setAuthRealm(providerRealmName());
+
+        // navigate to account console and login
+        accountPage.navigateTo();
+        loginPage.form().login(getUserLogin(), getUserPassword());
+
+        consentPage.assertCurrent();
+        assertTrue("logoUri must be presented", driver.findElement(By.xpath("//img[@src='https://www.keycloak.org/resources/images/keycloak_logo_480x108.png']")).isDisplayed());
+        assertTrue("policyUri must be presented", driver.findElement(By.xpath("//a[@href='https://www.keycloak.org/policy']")).isDisplayed());
+        assertTrue("tosUri must be presented", driver.findElement(By.xpath("//a[@href='https://www.keycloak.org/tos']")).isDisplayed());
+
+        consentPage.confirm();
+
+        // successful login
+        accountPage.assertCurrent();
     }
 
     private String getAccountUrl(String realmName) {

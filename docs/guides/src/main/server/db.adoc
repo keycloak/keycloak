@@ -1,0 +1,164 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+    title="Configuring the database"
+    summary="An overview about how to configure relational databases"
+    includedOptions="db db-* transaction-xa-enabled">
+
+This guide explains how to configure the Keycloak server to store data in a relational database.
+
+== Supported databases
+
+The server has built-in support for different databases. You can query the available databases by viewing the expected values for the `db` configuration option. The following table lists the supported databases and their tested versions.
+
+|===
+|Database | Tested Version
+
+|mariadb| 10
+|mssql| 2016
+|mysql| 8
+|oracle| 12c
+|postgres| 10
+|===
+
+By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
+only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
+
+== Configuring a database
+
+For each supported database, the server provides some opinionated defaults to simplify database configuration. You complete the configuration by providing some key settings such as the database host and credentials.
+
+. Start the server and set the basic options to configure a database
++
+<@kc.start parameters="--db postgres --db-url-host mypostgres --db-username myuser --db-password change_me"/>
++
+
+This command includes the minimum settings needed to connect to the database.
+
+The default schema is `keycloak`, but you can change it by using the `db-schema` configuration option.
+
+[WARNING]
+Do NOT use the `--optimized` flag for the `start` command if you want to use a particular DB (except the H2).
+Executing the build phase before starting the server instance is necessary.
+You can achieve it either by starting the instance without the `--optimized` flag,
+or by executing the `build` command before the optimized start.
+For more information, see <@links.server id="configuration"/>.
+
+== Overriding default connection settings
+
+The server uses JDBC as the underlying technology to communicate with the database. If the default connection settings are insufficient, you can specify a JDBC URL using the `db-url` configuration option.
+
+The following is a sample command for a PostgreSQL database.
+
+<@kc.start parameters="--db postgres --db-url jdbc:postgresql://mypostgres/mydatabase"/>
+
+Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
+
+== Configuring Unicode support for the database
+
+Unicode support for all fields depends on whether the database allows VARCHAR and CHAR fields to use the Unicode character set.
+
+* If these fields can be set, Unicode is likely to work, usually at the expense of field length.
+* If the database only supports Unicode in the NVARCHAR and NCHAR fields, Unicode support for all text fields is unlikely to work because the server schema uses VARCHAR and CHAR fields extensively.
+
+The database schema provides support for Unicode strings only for the following special fields:
+
+* *Realms*: display name, HTML display name, localization texts (keys and values)
+
+* *Federation* Providers: display name
+
+* *Users*: username, given name, last name, attribute names and values
+
+* *Groups*: name, attribute names and values
+
+* *Roles*: name
+
+* Descriptions of objects
+
+Otherwise, characters are limited to those contained in database encoding, which is often 8-bit. However, for some database systems, you can enable UTF-8 encoding of Unicode characters and use the full Unicode character set in all text fields. For a given database, this choice might result in a shorter maximum string length than the maximum string length supported by 8-bit encodings.
+
+=== Configuring Unicode support for an Oracle database
+
+Unicode characters are supported in an Oracle database if the database was created with Unicode support in the VARCHAR and CHAR fields. For example, you configured AL32UTF8 as the database character set. In this case, the JDBC driver requires no special settings.
+
+If the database was not created with Unicode support, you need to configure the JDBC driver to support Unicode characters in the special fields. You configure two properties. Note that you can configure these properties as system properties or as connection properties.
+
+. Set `oracle.jdbc.defaultNChar` to `true`.
+
+. Optionally, set `oracle.jdbc.convertNcharLiterals` to `true`.
++
+[NOTE]
+====
+For details on these properties and any performance implications, see the Oracle JDBC driver configuration documentation.
+====
+
+=== Unicode support for a Microsoft SQL Server database
+
+Unicode characters are supported only for the special fields for a Microsoft SQL Server database. The database requires no special settings.
+
+The `sendStringParametersAsUnicode` property of JDBC driver should be set to `false` to significantly improve performance. Without this parameter,
+the Microsoft SQL Server might be unable to use indexes.
+
+=== Configuring Unicode support for a MySQL database
+
+Unicode characters are supported in a MySQL database if the database was created with Unicode support in the VARCHAR and CHAR fields when using the CREATE DATABASE command.
+
+Note that the utf8mb4 character set is not supported due to different storage requirements for the utf8 character set. See MySQL documentation for details. In that situation, the length restriction on non-special fields does not apply because columns are created to accommodate the number of characters, not bytes.  If the database default character set does not allow Unicode storage, only the special fields allow storing Unicode values.
+
+. Start MySQL Server.
+. Under JDBC driver settings, locate the *JDBC connection settings*.
+. Add this connection property: `characterEncoding=UTF-8`
+
+=== Configuring Unicode support for a PostgreSQL database
+
+Unicode is supported for a PostgreSQL database when the database character set is UTF8. Unicode characters can be used in any field with no reduction of field length for non-special fields. The JDBC driver requires no special settings. The character set is determined when the PostgreSQL database is created.
+
+. Check the default character set for a PostgreSQL cluster by entering the following SQL command.
++
+```
+show server_encoding;
+```
+
+. If the default character set is not UTF 8, create the database with the UTF8 as the default character set using a command such as:
+
++
+```
+create database keycloak with encoding 'UTF8';
+```
+
+== Changing database locking timeout in a cluster configuration
+
+Because cluster nodes can boot concurrently, they take extra time for database actions. For example, a booting server instance may perform some database migration, importing, or first time initializations. A database lock prevents start actions from conflicting with each other when cluster nodes boot up concurrently.
+
+The maximum timeout for this lock is 900 seconds. If a node waits on this lock for more than the timeout, the boot fails. The need to change the default value is unlikely, but you can change it by entering this command:
+
+<@kc.start parameters="--spi-dblock-jpa-lock-wait-timeout 900"/>
+
+== Using Database Vendors without XA transaction support
+Keycloak uses XA transactions and the appropriate database drivers by default. Certain vendors, such as Azure SQL and MariaDB Galera, do not support or rely on the XA transaction mechanism. To use Keycloak without XA transaction support using the appropriate JDBC driver, enter the following command:
+
+<@kc.build parameters="--db=<vendor> --transaction-xa-enabled=false"/>
+
+Keycloak automatically chooses the appropriate JDBC driver for your vendor.
+
+== Setting JPA provider configuration option for migrationStrategy
+
+To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
+
+.Setting the `migration-strategy` for the `quarkus` provider of the `connections-jpa` SPI
+<@kc.start parameters="--spi-connections-jpa-legacy-migration-strategy=manual"/>
+
+If you want to get a SQL file for DB initialization, too, you have to add this additional SPI initializeEmpty (true/false):
+
+.Setting the `initialize-empty` for the `quarkus` provider of the `connections-jpa` SPI
+<@kc.start parameters="--spi-connections-jpa-legacy-initialize-empty=false"/>
+
+In the same way the migrationExport to point to a specific file and location:
+
+.Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
+<@kc.start parameters="--spi-connections-jpa-legacy-migration-export=<path>/<file.sql>"/>
+
+</@tmpl.guide>

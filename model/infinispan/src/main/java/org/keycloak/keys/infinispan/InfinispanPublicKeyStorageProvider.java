@@ -19,6 +19,7 @@ package org.keycloak.keys.infinispan;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -30,11 +31,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 
 
 /**
@@ -62,15 +63,6 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         this.tasksInProgress = tasksInProgress;
         this.minTimeBetweenRequests = minTimeBetweenRequests;
     }
-
-
-    @Override
-    public void clearCache() {
-        keys.clear();
-        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(InfinispanPublicKeyStorageProviderFactory.KEYS_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true, ClusterProvider.DCNotify.ALL_DCS);
-    }
-
 
     void addInvalidation(String cacheKey) {
         if (!transactionEnlisted) {
@@ -121,14 +113,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
         for (String cacheKey : invalidations) {
             keys.remove(cacheKey);
-            cluster.notify(InfinispanPublicKeyStorageProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, PublicKeyStorageInvalidationEvent.create(cacheKey), true, ClusterProvider.DCNotify.ALL_DCS);
+            cluster.notify(InfinispanCachePublicKeyProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, PublicKeyStorageInvalidationEvent.create(cacheKey), true, ClusterProvider.DCNotify.ALL_DCS);
         }
-    }
-
-
-    @Override
-    public KeyWrapper getPublicKey(String modelKey, String kid, PublicKeyLoader loader) {
-        return getPublicKey(modelKey, kid, null, loader);
     }
 
     @Override
@@ -136,13 +122,15 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         return getPublicKey(modelKey, null, algorithm, loader);
     }
 
-    private KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
+    @Override
+    public KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
         // Check if key is in cache
         PublicKeysEntry entry = keys.get(modelKey);
         if (entry != null) {
-            KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
+            KeyWrapper publicKey = entry.getCurrentKeys().getKeyByKidAndAlg(kid, algorithm);
             if (publicKey != null) {
-                return publicKey;
+                // return a copy of the key to not modify the cached one
+                return publicKey.cloneKey();
             }
         }
 
@@ -166,9 +154,10 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 entry = task.get();
 
                 // Computation finished. Let's see if key is available
-                KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
+                KeyWrapper publicKey = entry.getCurrentKeys().getKeyByKidAndAlg(kid, algorithm);
                 if (publicKey != null) {
-                    return publicKey;
+                    // return a copy of the key to not modify the cached one
+                    return publicKey.cloneKey();
                 }
 
             } catch (ExecutionException ee) {
@@ -185,25 +174,9 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
             log.warnf("Won't load the keys for model '%s' . Last request time was %d", modelKey, lastRequestTime);
         }
 
-        Set<String> availableKids = entry==null ? Collections.emptySet() : entry.getCurrentKeys().keySet();
+        List<String> availableKids = entry==null ? Collections.emptyList() : entry.getCurrentKeys().getKids();
         log.warnf("PublicKey wasn't found in the storage. Requested kid: '%s' . Available kids: '%s'", kid, availableKids);
 
-        return null;
-    }
-
-    private KeyWrapper getPublicKey(Map<String, KeyWrapper> publicKeys, String kid) {
-        // Backwards compatibility
-        if (kid == null && !publicKeys.isEmpty()) {
-            return publicKeys.values().iterator().next();
-        } else {
-            return publicKeys.get(kid);
-        }
-    }
-
-    private KeyWrapper getPublicKeyByAlg(Map<String, KeyWrapper> publicKeys, String algorithm) {
-        if (algorithm == null) return null;
-        for(KeyWrapper keyWrapper : publicKeys.values())
-            if (algorithm.equals(keyWrapper.getAlgorithm())) return keyWrapper;
         return null;
     }
 
@@ -232,10 +205,10 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
             // Check again if we are allowed to send request. There is a chance other task was already finished and removed from tasksInProgress in the meantime.
             if (currentTime > lastRequestTime + minTimeBetweenRequests) {
 
-                Map<String, KeyWrapper> publicKeys = delegate.loadKeys();
+                PublicKeysWrapper publicKeys = delegate.loadKeys();
 
                 if (log.isDebugEnabled()) {
-                    log.debugf("Public keys retrieved successfully for model %s. New kids: %s", modelKey, publicKeys.keySet().toString());
+                    log.debugf("Public keys retrieved successfully for model %s. New kids: %s", modelKey, publicKeys.getKids());
                 }
 
                 entry = new PublicKeysEntry(currentTime, publicKeys);

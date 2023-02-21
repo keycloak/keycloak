@@ -17,9 +17,11 @@
 
 package org.keycloak.admin.client.token;
 
+import javax.ws.rs.client.WebTarget;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.admin.client.Config;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.BasicAuthFilter;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessTokenResponse;
@@ -33,6 +35,8 @@ import static org.keycloak.OAuth2Constants.CLIENT_ID;
 import static org.keycloak.OAuth2Constants.GRANT_TYPE;
 import static org.keycloak.OAuth2Constants.PASSWORD;
 import static org.keycloak.OAuth2Constants.REFRESH_TOKEN;
+import static org.keycloak.OAuth2Constants.SCOPE;
+import static org.keycloak.OAuth2Constants.USERNAME;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -42,6 +46,7 @@ public class TokenManager {
 
     private AccessTokenResponse currentToken;
     private long expirationTime;
+    private long refreshExpirationTime;
     private long minTokenValidity = DEFAULT_MIN_VALIDITY;
     private final Config config;
     private final TokenService tokenService;
@@ -49,11 +54,11 @@ public class TokenManager {
 
     public TokenManager(Config config, Client client) {
         this.config = config;
-        ResteasyWebTarget target = (ResteasyWebTarget) client.target(config.getServerUrl());
+        WebTarget target = client.target(config.getServerUrl());
         if (!config.isPublicClient()) {
             target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
         }
-        this.tokenService = target.proxy(TokenService.class);
+        this.tokenService = Keycloak.getClientProvider().targetProxy(target, TokenService.class);
         this.accessTokenGrantType = config.getGrantType();
 
         if (CLIENT_CREDENTIALS.equals(accessTokenGrantType) && config.isPublicClient()) {
@@ -77,8 +82,12 @@ public class TokenManager {
     public AccessTokenResponse grantToken() {
         Form form = new Form().param(GRANT_TYPE, accessTokenGrantType);
         if (PASSWORD.equals(accessTokenGrantType)) {
-            form.param("username", config.getUsername())
-                .param("password", config.getPassword());
+            form.param(USERNAME, config.getUsername())
+                .param(PASSWORD, config.getPassword());
+        }
+
+        if (config.getScope() != null) {
+            form.param(SCOPE, config.getScope());
         }
 
         if (config.isPublicClient()) {
@@ -89,12 +98,13 @@ public class TokenManager {
         synchronized (this) {
             currentToken = tokenService.grantToken(config.getRealm(), form.asMap());
             expirationTime = requestTime + currentToken.getExpiresIn();
+            refreshExpirationTime = requestTime + currentToken.getRefreshExpiresIn();
         }
         return currentToken;
     }
 
     public synchronized AccessTokenResponse refreshToken() {
-        if (currentToken.getRefreshToken() == null) {
+        if (currentToken.getRefreshToken() == null || refreshTokenExpired()) {
             return grantToken();
         }
 
@@ -116,6 +126,21 @@ public class TokenManager {
         }
     }
 
+    public synchronized void logout() {
+        if (currentToken.getRefreshToken() == null) {
+            return;
+        }
+
+        Form form = new Form().param(REFRESH_TOKEN, currentToken.getRefreshToken());
+
+        if (config.isPublicClient()) {
+            form.param(CLIENT_ID, config.getClientId());
+        }
+
+        tokenService.logout(config.getRealm(), form.asMap());
+        currentToken = null;
+    }
+
     public synchronized void setMinTokenValidity(long minTokenValidity) {
         this.minTokenValidity = minTokenValidity;
     }
@@ -123,6 +148,8 @@ public class TokenManager {
     private synchronized boolean tokenExpired() {
         return (Time.currentTime() + minTokenValidity) >= expirationTime;
     }
+
+    private synchronized boolean refreshTokenExpired() { return (Time.currentTime() + minTokenValidity) >= refreshExpirationTime; }
 
     /**
      * Invalidates the current token, but only when it is equal to the token passed as an argument.

@@ -1,5 +1,0 @@
-# default is cpuCount * 2
-/subsystem=io/worker=default:write-attribute(name=io-threads,value=${env.WORKER_IO_THREADS:2})
-
-# default is cpuCount * 16
-/subsystem=io/worker=default:write-attribute(name=task-max-threads,value=${env.WORKER_TASK_MAX_THREADS:16})

@@ -34,7 +34,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
@@ -49,23 +48,23 @@ import java.util.Map;
  */
 public class AttackDetectionResource {
     protected static final Logger logger = Logger.getLogger(AttackDetectionResource.class);
-    protected AdminPermissionEvaluator auth;
-    protected RealmModel realm;
-    private AdminEventBuilder adminEvent;
+    protected final AdminPermissionEvaluator auth;
+    protected final RealmModel realm;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected ClientConnection connection;
+    protected final ClientConnection connection;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
-    public AttackDetectionResource(AdminPermissionEvaluator auth, RealmModel realm, AdminEventBuilder adminEvent) {
+    public AttackDetectionResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
+        this.connection = session.getContext().getConnection();
         this.adminEvent = adminEvent.realm(realm).resource(ResourceType.USER_LOGIN_FAILURE);
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     /**
@@ -94,7 +93,7 @@ public class AttackDetectionResource {
         if (!realm.isBruteForceProtected()) return data;
 
 
-        UserLoginFailureModel model = session.sessions().getUserLoginFailure(realm, userId);
+        UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, userId);
         if (model == null) return data;
 
         boolean disabled;
@@ -129,9 +128,9 @@ public class AttackDetectionResource {
         } else {
             auth.users().requireManage(user);
         }
-        UserLoginFailureModel model = session.sessions().getUserLoginFailure(realm, userId);
+        UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, userId);
         if (model != null) {
-            session.sessions().removeUserLoginFailure(realm, userId);
+            session.loginFailures().removeUserLoginFailure(realm, userId);
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
         }
     }
@@ -147,7 +146,7 @@ public class AttackDetectionResource {
     public void clearAllBruteForce() {
         auth.users().requireManage();
 
-        session.sessions().removeAllUserLoginFailures(realm);
+        session.loginFailures().removeAllUserLoginFailures(realm);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 

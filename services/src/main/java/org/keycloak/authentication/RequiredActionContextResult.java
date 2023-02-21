@@ -17,7 +17,7 @@
 
 package org.keycloak.authentication;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
@@ -164,15 +164,6 @@ public class RequiredActionContextResult implements RequiredActionContext {
         String accessCode = generateCode();
         return getActionUrl(accessCode);
 
-    }
-
-    @Override
-    public URI getActionUrl(boolean authSessionIdParam) {
-        URI uri = getActionUrl();
-        if (authSessionIdParam) {
-            uri = UriBuilder.fromUri(uri).queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId()).build();
-        }
-        return uri;
     }
 
     @Override

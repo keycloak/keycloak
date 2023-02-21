@@ -18,14 +18,12 @@
 
 package org.keycloak.testsuite.model.infinispan;
 
-import org.infinispan.commons.time.TimeService;
-import org.infinispan.factories.GlobalComponentRegistry;
-import org.infinispan.factories.impl.BasicComponentRegistry;
-import org.infinispan.factories.impl.ComponentRef;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+
+import static org.keycloak.connections.infinispan.InfinispanUtil.setTimeServiceToKeycloakTime;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -34,7 +32,7 @@ public class InfinispanTestUtil {
 
     protected static final Logger logger = Logger.getLogger(InfinispanTestUtil.class);
 
-    private static TimeService origTimeService = null;
+    private static Runnable origTimeService = null;
 
     /**
      * Set Keycloak test TimeService to infinispan cacheManager. This will cause that infinispan will be aware of Keycloak Time offset, which is useful
@@ -46,49 +44,24 @@ public class InfinispanTestUtil {
             throw new IllegalStateException("Calling setTestingTimeService when testing TimeService was already set");
         }
 
-        logger.info("Will set KeycloakIspnTimeService to the infinispan cacheManager");
-
         InfinispanConnectionProvider ispnProvider = session.getProvider(InfinispanConnectionProvider.class);
-        EmbeddedCacheManager cacheManager = ispnProvider.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getCacheManager();
-        origTimeService = replaceComponent(cacheManager,  TimeService.class, new KeycloakTestTimeService(), true);
+        if (ispnProvider != null) {
+            logger.info("Will set KeycloakIspnTimeService to the infinispan cacheManager");
+            EmbeddedCacheManager cacheManager = ispnProvider.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getCacheManager();
+            origTimeService = setTimeServiceToKeycloakTime(cacheManager);
+        }
     }
 
     public static void revertTimeService(KeycloakSession session) {
         // Testing timeService not set. This shouldn't happen if this utility is properly used
-        if (origTimeService == null) {
-            throw new IllegalStateException("Calling revertTimeService when testing TimeService was not set");
-        }
-
-        logger.info("Revert set KeycloakIspnTimeService to the infinispan cacheManager");
-
         InfinispanConnectionProvider ispnProvider = session.getProvider(InfinispanConnectionProvider.class);
-        EmbeddedCacheManager cacheManager = ispnProvider.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getCacheManager();
-        replaceComponent(cacheManager,  TimeService.class, origTimeService, true);
-        origTimeService = null;
-    }
+        if (ispnProvider != null) {
+            if (origTimeService == null) {
+                throw new IllegalStateException("Calling revertTimeService when testing TimeService was not set");
+            }
 
-
-    /**
-     * Forked from org.infinispan.test.TestingUtil class
-     *
-     * Replaces a component in a running cache manager (global component registry).
-     *
-     * @param cacheMgr       cache in which to replace component
-     * @param componentType        component type of which to replace
-     * @param replacementComponent new instance
-     * @param rewire               if true, ComponentRegistry.rewire() is called after replacing.
-     *
-     * @return the original component that was replaced
-     */
-    private static <T> T replaceComponent(EmbeddedCacheManager cacheMgr, Class<T> componentType, T replacementComponent, boolean rewire) {
-        GlobalComponentRegistry cr = cacheMgr.getGlobalComponentRegistry();
-        BasicComponentRegistry bcr = cr.getComponent(BasicComponentRegistry.class);
-        ComponentRef<T> old = bcr.getComponent(componentType);
-        bcr.replaceComponent(componentType.getName(), replacementComponent, true);
-        if (rewire) {
-            cr.rewire();
-            cr.rewireNamedRegistries();
+            origTimeService.run();
+            origTimeService = null;
         }
-        return old != null ? old.wired() : null;
     }
 }

@@ -24,9 +24,14 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,6 +40,9 @@ import java.util.Set;
 public class EmailEventListenerProviderFactory implements EventListenerProviderFactory {
 
     private static final Set<EventType> SUPPORTED_EVENTS = new HashSet<>();
+
+    public static final String ID = "email";
+
     static {
         Collections.addAll(SUPPORTED_EVENTS, EventType.LOGIN_ERROR, EventType.UPDATE_PASSWORD, EventType.REMOVE_TOTP, EventType.UPDATE_TOTP);
     }
@@ -43,8 +51,7 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        EmailTemplateProvider emailTemplateProvider = session.getProvider(EmailTemplateProvider.class);
-        return new EmailEventListenerProvider(session, emailTemplateProvider, includedEvents);
+        return new EmailEventListenerProvider(session, includedEvents);
     }
 
     @Override
@@ -77,7 +84,30 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
 
     @Override
     public String getId() {
-        return "email";
+        return ID;
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        String[] supportedEvents = Arrays.stream(EventType.values())
+                .map(EventType::name)
+                .map(String::toLowerCase)
+                .sorted(Comparator.naturalOrder())
+                .toArray(String[]::new);
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("include-events")
+                .type("string")
+                .helpText("A comma-separated list of events that should be sent via email to the user's account.")
+                .options(supportedEvents)
+                .defaultValue("All events")
+                .add()
+                .property()
+                .name("exclude-events")
+                .type("string")
+                .helpText("A comma-separated list of events that should not be sent via email to the user's account.")
+                .options(supportedEvents)
+                .add()
+                .build();
+    }
 }

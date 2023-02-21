@@ -1,3 +1,4 @@
+/* Globals */
 .brand {
   height: 35px;
 }
@@ -12,5 +13,72 @@
     width: 120px;
     height: 50px;
   }
+}
 
+/* Account Page screen */
+.personal-info-form .pf-c-form__group-control {
+  max-width: 600px;
+}
+
+/* Device Activity screen */
+.signed-in-device-list .pf-c-data-list__item-row {
+  --pf-c-data-list__item-row--PaddingRight: 0;
+  --pf-c-data-list__item-row--PaddingLeft: 0;
+}
+
+.signed-in-device-list .pf-c-data-list__expandable-content-body {
+  --pf-c-data-list__expandable-content-body--PaddingRight: 0;
+}
+
+.signed-in-device-grid {
+  grid-template-columns: auto repeat(11, [col-start] 1fr);
+}
+
+.signed-in-device-list.pf-c-data-list {
+  --pf-c-data-list--sm--BorderTopWidth: 0;
+}
+
+.pf-c-data-list__item {
+  --pf-c-data-list__item--BorderBottomWidth: 1px;
+  --pf-c-data-list__item--BorderBottomColor: var(--pf-global--BorderColor--100);
+}
+
+.signed-in-device-list.pf-c-data-list {
+  --pf-c-data-list--BorderTopWidth: 0;
+}
+
+@media (min-width: 576px) {
+  .pf-c-data-list__item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--pf-c-data-list__item--BackgroundColor);
+    border-bottom: var(--pf-c-data-list__item--BorderBottomWidth) solid var(--pf-c-data-list__item--BorderBottomColor);
+  }
+
+  .signed-in-device-list.pf-c-data-list {
+    --pf-c-data-list--BorderTopWidth: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .signed-in-device-list .pf-c-description-list {
+    --pf-c-description-list--GridTemplateColumns--count: 5;
+  }
+}
+
+/* Signing in screen */
+.title-case:first-letter,
+.cred-title:first-letter,
+#otp-not-set-up .pf-c-empty-state__body:first-letter {
+  text-transform: capitalize
+}
+
+/* Applications screen */
+#applications-list-header .pf-c-data-list__item-content {
+  --pf-c-data-list__item-content--md--PaddingBottom: 1rem;
+}
+
+.pf-u-pl-35xl {
+  padding-left: 4.5rem;
 }

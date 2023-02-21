@@ -30,6 +30,7 @@ public interface Errors {
     String CLIENT_DISABLED = "client_disabled";
     String INVALID_CLIENT_CREDENTIALS = "invalid_client_credentials";
     String INVALID_CLIENT = "invalid_client";
+    String UNAUTHORIZED_CLIENT ="unauthorized_client";
     String CONSENT_DENIED = "consent_denied";
     String RESOLVE_REQUIRED_ACTIONS = "resolve_required_actions";
 
@@ -52,6 +53,8 @@ public interface Errors {
     String INVALID_SAML_AUTHN_REQUEST = "invalid_authn_request";
     String INVALID_SAML_LOGOUT_REQUEST = "invalid_logout_request";
     String INVALID_SAML_LOGOUT_RESPONSE = "invalid_logout_response";
+    String INVALID_SAML_ARTIFACT = "invalid_artifact";
+    String INVALID_SAML_ARTIFACT_RESPONSE = "invalid_artifact_response";
     String SAML_TOKEN_NOT_FOUND = "saml_token_not_found";
     String INVALID_SIGNATURE = "invalid_signature";
     String INVALID_REGISTRATION = "invalid_registration";
@@ -60,6 +63,7 @@ public interface Errors {
     String INVALID_CONFIG = "invalid_config";
     String EXPIRED_CODE = "expired_code";
     String INVALID_INPUT = "invalid_input";
+    String COOKIE_NOT_FOUND = "cookie_not_found";
 
     String REGISTRATION_DISABLED = "registration_disabled";
     String RESET_CREDENTIAL_DISABLED = "reset_credential_disabled";
@@ -106,6 +110,7 @@ public interface Errors {
     String INVALID_OAUTH2_DEVICE_CODE = "invalid_oauth2_device_code";
     String EXPIRED_OAUTH2_DEVICE_CODE = "expired_oauth2_device_code";
     String INVALID_OAUTH2_USER_CODE = "invalid_oauth2_user_code";
-    String EXPIRED_OAUTH2_USER_CODE = "expired_oauth2_user_code";
     String SLOW_DOWN = "slow_down";
+    String GENERIC_AUTHENTICATION_ERROR= "generic_authentication_error";
+
 }

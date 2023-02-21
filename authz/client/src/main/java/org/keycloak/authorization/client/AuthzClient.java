@@ -69,7 +69,7 @@ public class AuthzClient {
      * @return a new instance
      */
     public static AuthzClient create(InputStream configStream) throws RuntimeException {
-        if (Objects.isNull(configStream)) {
+        if (configStream == null) {
             throw new IllegalArgumentException("Config input stream can not be null");
         }
 
@@ -188,7 +188,12 @@ public class AuthzClient {
      * @return a {@link AuthorizationResource}
      */
     public AuthorizationResource authorization(final String userName, final String password) {
-        return new AuthorizationResource(configuration, serverConfiguration, this.http, createRefreshableAccessTokenSupplier(userName, password));
+        return authorization(userName, password, null);
+    }
+
+    public AuthorizationResource authorization(final String userName, final String password, final String scope) {
+        return new AuthorizationResource(configuration, serverConfiguration, this.http,
+            createRefreshableAccessTokenSupplier(userName, password, scope));
     }
 
     /**
@@ -276,6 +281,11 @@ public class AuthzClient {
     }
 
     private TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password) {
-        return new TokenCallable(userName, password, http, configuration, serverConfiguration);
+        return createRefreshableAccessTokenSupplier(userName, password, null);
+    }
+
+    private TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password,
+        final String scope) {
+        return new TokenCallable(userName, password, scope, http, configuration, serverConfiguration);
     }
 }

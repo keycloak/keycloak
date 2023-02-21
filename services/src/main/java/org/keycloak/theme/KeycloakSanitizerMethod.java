@@ -19,9 +19,11 @@ package org.keycloak.theme;
 
 import freemarker.template.TemplateMethodModelEx;
 import freemarker.template.TemplateModelException;
+import org.owasp.html.Encoding;
 
 import java.util.List;
-import org.owasp.html.PolicyFactory;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Allows sanitizing of html that uses Freemarker ?no_esc.  This way, html
@@ -30,7 +32,7 @@ import org.owasp.html.PolicyFactory;
  */
 public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     
-    private static final PolicyFactory KEYCLOAK_POLICY = KeycloakSanitizerPolicy.POLICY_DEFINITION;
+    private static final Pattern HREF_PATTERN = Pattern.compile("\\s+href=\"([^\"]*)\"");
     
     @Override
     public Object exec(List list) throws TemplateModelException {
@@ -39,9 +41,52 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         }
         
         String html = list.get(0).toString();
-        String sanitized = KEYCLOAK_POLICY.sanitize(html);
+
+        html = decodeHtmlFull(html);
+
+        String sanitized = KeycloakSanitizerPolicy.POLICY_DEFINITION.sanitize(html);
         
-        return sanitized;
+        return fixURLs(sanitized);
+    }
+
+
+    // Fully decode HTML. Assume it can be encoded multiple times
+    private String decodeHtmlFull(String html) {
+        if (html == null) return null;
+
+        int MAX_DECODING_COUNT = 5; // Max count of attempts for decoding HTML (in case it was encoded multiple times)
+        String decodedHtml;
+
+        for (int i = 0; i < MAX_DECODING_COUNT; i++) {
+            decodedHtml = Encoding.decodeHtml(html);
+            if (decodedHtml.equals(html)) {
+                // HTML is decoded. We can return it
+                return html;
+            } else {
+                // Next attempt
+                html = decodedHtml;
+            }
+        }
+
+        return "";
+    }
+
+    private String fixURLs(String msg) {
+        Matcher matcher = HREF_PATTERN.matcher(msg);
+        if (matcher.find()) {
+            int last = 0;
+            StringBuilder result = new StringBuilder(msg.length());
+            do {
+                String href = matcher.group(1).replaceAll("&#61;", "=")
+                        .replaceAll("\\.\\.", ".")
+                        .replaceAll("&amp;", "&");
+                result.append(msg.substring(last, matcher.start(1))).append(href);
+                last = matcher.end(1);
+            } while (matcher.find());
+            result.append(msg.substring(last));
+            return result.toString();
+        }
+        return msg;
     }
     
 }

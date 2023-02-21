@@ -17,9 +17,9 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.FederatedIdentityModel;
@@ -83,6 +83,20 @@ public class UserFullInvalidationEvent extends InvalidationEvent implements User
     @Override
     public void addInvalidations(UserCacheManager userCache, Set<String> invalidations) {
         userCache.fullUserInvalidation(userId, username, email, realmId, identityFederationEnabled, federatedIdentities, invalidations);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UserFullInvalidationEvent that = (UserFullInvalidationEvent) o;
+        return identityFederationEnabled == that.identityFederationEnabled && Objects.equals(userId, that.userId) && Objects.equals(username, that.username) && Objects.equals(email, that.email) && Objects.equals(realmId, that.realmId) && Objects.equals(federatedIdentities, that.federatedIdentities);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), userId, username, email, realmId, identityFederationEnabled, federatedIdentities);
     }
 
     public static class ExternalizerImpl implements Externalizer<UserFullInvalidationEvent> {

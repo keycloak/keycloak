@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,17 @@
  */
 package org.keycloak.authorization;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -36,16 +39,17 @@ public class UserManagedPermissionUtil {
     public static void updatePolicy(PermissionTicket ticket, StoreFactory storeFactory) {
         Scope scope = ticket.getScope();
         Policy policy = ticket.getPolicy();
+        ResourceServer resourceServer = ticket.getResourceServer();
 
         if (policy == null) {
-            HashMap<String, String> filter = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filter = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filter.put(PermissionTicket.OWNER, ticket.getOwner());
-            filter.put(PermissionTicket.REQUESTER, ticket.getRequester());
-            filter.put(PermissionTicket.RESOURCE, ticket.getResource().getId());
-            filter.put(PermissionTicket.POLICY_IS_NOT_NULL, Boolean.TRUE.toString());
+            filter.put(PermissionTicket.FilterOption.OWNER, ticket.getOwner());
+            filter.put(PermissionTicket.FilterOption.REQUESTER, ticket.getRequester());
+            filter.put(PermissionTicket.FilterOption.RESOURCE_ID, ticket.getResource().getId());
+            filter.put(PermissionTicket.FilterOption.POLICY_IS_NOT_NULL, Boolean.TRUE.toString());
 
-            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(filter, ticket.getResourceServer().getId(), -1, 1);
+            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(resourceServer.getRealm(), resourceServer, filter, null, null);
 
             if (!tickets.isEmpty()) {
                 policy = tickets.iterator().next().getPolicy();
@@ -70,25 +74,26 @@ public class UserManagedPermissionUtil {
 
     public static void removePolicy(PermissionTicket ticket, StoreFactory storeFactory) {
         Policy policy = ticket.getPolicy();
+        RealmModel realm = ticket.getResourceServer().getRealm();
 
         if (policy != null) {
-            HashMap<String, String> filter = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filter = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filter.put(PermissionTicket.OWNER, ticket.getOwner());
-            filter.put(PermissionTicket.REQUESTER, ticket.getRequester());
-            filter.put(PermissionTicket.RESOURCE, ticket.getResource().getId());
-            filter.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+            filter.put(PermissionTicket.FilterOption.OWNER, ticket.getOwner());
+            filter.put(PermissionTicket.FilterOption.REQUESTER, ticket.getRequester());
+            filter.put(PermissionTicket.FilterOption.RESOURCE_ID, ticket.getResource().getId());
+            filter.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
 
-            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(filter, ticket.getResourceServer().getId(), -1, -1);
+            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(realm, ticket.getResourceServer(), filter, null, null);
 
             if (tickets.isEmpty()) {
                 PolicyStore policyStore = storeFactory.getPolicyStore();
 
                 for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
-                    policyStore.delete(associatedPolicy.getId());
+                    policyStore.delete(realm, associatedPolicy.getId());
                 }
 
-                policyStore.delete(policy.getId());
+                policyStore.delete(realm, policy.getId());
             } else if (ticket.getScope() != null) {
                 policy.removeScope(ticket.getScope());
             }
@@ -102,7 +107,7 @@ public class UserManagedPermissionUtil {
         userPolicyRep.setName(KeycloakModelUtils.generateId());
         userPolicyRep.addUser(ticket.getRequester());
 
-        Policy userPolicy = policyStore.create(userPolicyRep, ticket.getResourceServer());
+        Policy userPolicy = policyStore.create(ticket.getResourceServer(), userPolicyRep);
 
         userPolicy.setOwner(ticket.getOwner());
 
@@ -112,7 +117,7 @@ public class UserManagedPermissionUtil {
         policyRep.setType("uma");
         policyRep.addPolicy(userPolicy.getId());
 
-        Policy policy = policyStore.create(policyRep, ticket.getResourceServer());
+        Policy policy = policyStore.create(ticket.getResourceServer(), policyRep);
 
         policy.setOwner(ticket.getOwner());
         policy.addResource(ticket.getResource());

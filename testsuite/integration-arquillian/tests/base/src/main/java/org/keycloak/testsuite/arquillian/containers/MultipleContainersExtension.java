@@ -43,7 +43,9 @@ public class MultipleContainersExtension implements LoadableExtension {
 
         logger.info("Multiple containers extension registering.");
 
-        builder.service(DeployableContainer.class, KeycloakQuarkusServerDeployableContainer.class);
+        builder.service(DeployableContainer.class, KeycloakQuarkusServerDeployableContainer.class)
+                .service(DeployableContainer.class, KeycloakQuarkusEmbeddedDeployableContainer.class)
+                .service(DeployableContainer.class, InfinispanServerDeployableContainer.class);
 
         builder.context(ContainerContextImpl.class).context(DeploymentContextImpl.class);
 

@@ -30,14 +30,20 @@ import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.jpa.entities.RealmAttributeEntity;
+import org.keycloak.models.jpa.entities.RealmAttributes;
+import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -52,11 +58,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     private final KeycloakSession session;
     private final EntityManager em;
     private final int maxDetailLength;
+    private final int maxFieldLength;
 
-    public JpaEventStoreProvider(KeycloakSession session, EntityManager em, int maxDetailLength) {
+    public JpaEventStoreProvider(KeycloakSession session, EntityManager em, int maxDetailLength, int maxFieldLength) {
         this.session = session;
         this.em = em;
         this.maxDetailLength = maxDetailLength;
+        this.maxFieldLength = maxFieldLength;
     }
 
     @Override
@@ -70,13 +78,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     }
 
     @Override
-    public void clear(String realmId) {
-        em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realmId).executeUpdate();
+    public void clear(RealmModel realm) {
+        em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
-    public void clear(String realmId, long olderThan) {
-        em.createQuery("delete from EventEntity where realmId = :realmId and time < :time").setParameter("realmId", realmId).setParameter("time", olderThan).executeUpdate();
+    public void clear(RealmModel realm, long olderThan) {
+        em.createQuery("delete from EventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
     }
 
     @Override
@@ -88,23 +96,24 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         if (KeycloakModelUtils.isRealmProviderJpa(session)) {
 
             // Group realms by expiration times. This will be effective if different realms have same/similar event expiration times, which will probably be the case in most environments
-            List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm").getResultList();
+            List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm where realm.eventsExpiration > 0").getResultList();
             for (Long expiration : eventExpirations) {
-                if (expiration > 0) {
-                    int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in (select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration) and time < :eventTime")
-                            .setParameter("expiration", expiration)
-                            .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
-                            .executeUpdate();
-                    logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
-                    numDeleted += currentNumDeleted;
-                }
+                List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration")
+                        .setParameter("expiration", expiration)
+                        .getResultList();
+                int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in :realmIds and time < :eventTime")
+                        .setParameter("realmIds", realmIds)
+                        .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
+                        .executeUpdate();
+                logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
+                numDeleted += currentNumDeleted;
             }
             logger.debugf("Cleared %d expired events in all realms", numDeleted);
         } else {
             session.realms().getRealmsStream().forEach(realm -> {
                 if (realm.isEventsEnabled() && realm.getEventsExpiration() > 0) {
                     long olderThan = Time.currentTimeMillis() - realm.getEventsExpiration() * 1000;
-                    clear(realm.getId(), olderThan);
+                    clear(realm, olderThan);
                 }
             });
         }
@@ -126,13 +135,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     }
 
     @Override
-    public void clearAdmin(String realmId) {
-        em.createQuery("delete from AdminEventEntity where realmId = :realmId").setParameter("realmId", realmId).executeUpdate();
+    public void clearAdmin(RealmModel realm) {
+        em.createQuery("delete from AdminEventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
-    public void clearAdmin(String realmId, long olderThan) {
-        em.createQuery("delete from AdminEventEntity where realmId = :realmId and time < :time").setParameter("realmId", realmId).setParameter("time", olderThan).executeUpdate();
+    public void clearAdmin(RealmModel realm, long olderThan) {
+        em.createQuery("delete from AdminEventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
     }
 
     @Override
@@ -146,7 +155,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     private EventEntity convertEvent(Event event) {
         EventEntity eventEntity = new EventEntity();
-        eventEntity.setId(UUID.randomUUID().toString());
+        eventEntity.setId(event.getId() == null ? UUID.randomUUID().toString() : event.getId());
         eventEntity.setTime(event.getTime());
         eventEntity.setType(event.getType().toString());
         eventEntity.setRealmId(event.getRealmId());
@@ -158,9 +167,9 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         try {
             if (maxDetailLength > 0 && event.getDetails() != null) {
                 Map<String, String> result = new HashMap<>(event.getDetails());
-                result.entrySet().forEach(t -> t.setValue(trimToMaxLength(t.getValue())));
+                result.entrySet().forEach(t -> t.setValue(trimToMaxDetailLength(t.getValue())));
 
-                eventEntity.setDetailsJson(mapper.writeValueAsString(result));
+                eventEntity.setDetailsJson(trimToMaxFieldLength(mapper.writeValueAsString(result)));
             } else {
                 eventEntity.setDetailsJson(mapper.writeValueAsString(event.getDetails()));
             }
@@ -170,19 +179,29 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         return eventEntity;
     }
 
-    private String trimToMaxLength(String detail) {
+    private String trimToMaxDetailLength(String detail) {
         if (detail != null && detail.length() > maxDetailLength) {
+            logger.warnf("Detail '%s' will be truncated.", detail);
             // (maxDetailLength - 3) takes "..." into account
-            String result = detail.substring(0, maxDetailLength - 3).concat("...");
-            logger.warn("Detail was truncated to " + result);
-            return result;
+            return detail.substring(0, maxDetailLength - 3).concat("...");
         } else {
             return detail;
         }
     }
 
+    private String trimToMaxFieldLength(String field) {
+        if (maxFieldLength > 0 && field != null && field.length() > maxFieldLength) {
+            logger.warnf("Field '%s' will be truncated.", field);
+            // (maxFieldLength - 3) takes "..." into account
+            return field.substring(0, maxFieldLength - 3).concat("...");
+        } else {
+            return field;
+        }
+    }
+
     static Event convertEvent(EventEntity eventEntity) {
         Event event = new Event();
+        event.setId(eventEntity.getId() == null ? UUID.randomUUID().toString() : eventEntity.getId());
         event.setTime(eventEntity.getTime());
         event.setType(EventType.valueOf(eventEntity.getType()));
         event.setRealmId(eventEntity.getRealmId());
@@ -200,9 +219,9 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         return event;
     }
     
-    static AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+    private AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
-        adminEventEntity.setId(UUID.randomUUID().toString());
+        adminEventEntity.setId(adminEvent.getId() == null ? UUID.randomUUID().toString() : adminEvent.getId());
         adminEventEntity.setTime(adminEvent.getTime());
         adminEventEntity.setRealmId(adminEvent.getRealmId());
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());
@@ -216,13 +235,14 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEventEntity.setError(adminEvent.getError());
         
         if(includeRepresentation) {
-            adminEventEntity.setRepresentation(adminEvent.getRepresentation());
+            adminEventEntity.setRepresentation(trimToMaxFieldLength(adminEvent.getRepresentation()));
         }
         return adminEventEntity;
     }
 
     static AdminEvent convertAdminEvent(AdminEventEntity adminEventEntity) {
         AdminEvent adminEvent = new AdminEvent();
+        adminEvent.setId(adminEventEntity.getId() == null ? UUID.randomUUID().toString() : adminEventEntity.getId());
         adminEvent.setTime(adminEventEntity.getTime());
         adminEvent.setRealmId(adminEventEntity.getRealmId());
         setAuthDetails(adminEvent, adminEventEntity);
@@ -257,4 +277,33 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEvent.setAuthDetails(authDetails);
     }
 
+    protected void clearExpiredAdminEvents() {
+        TypedQuery<RealmAttributeEntity> query = em.createNamedQuery("selectRealmAttributesNotEmptyByName", RealmAttributeEntity.class)
+                .setParameter("name", RealmAttributes.ADMIN_EVENTS_EXPIRATION);
+        Map<Long, List<RealmAttributeEntity>> realms = query.getResultStream()
+                // filtering again on the attribute as parsing the CLOB to BIGINT didn't work in H2 2.x, and it also different on OracleDB
+                .filter(attribute -> {
+                    try {
+                        return Long.parseLong(attribute.getValue()) > 0;
+                    } catch (NumberFormatException ex) {
+                        logger.warnf("Unable to parse value '%s' for attribute '%s' in realm '%s' (expecting it to be decimal numeric)",
+                                attribute.getValue(),
+                                RealmAttributes.ADMIN_EVENTS_EXPIRATION,
+                                attribute.getRealm().getId(),
+                                ex);
+                        return false;
+                    }
+                })
+                .collect(Collectors.groupingBy(attribute -> Long.valueOf(attribute.getValue())));
+
+        long current = Time.currentTimeMillis();
+        realms.forEach((key, value) -> {
+            List<String> realmIds = value.stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
+            int currentNumDeleted = em.createQuery("delete from AdminEventEntity where realmId in :realmIds and time < :eventTime")
+                    .setParameter("realmIds", realmIds)
+                    .setParameter("eventTime", current - (key * 1000))
+                    .executeUpdate();
+            logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, key);
+        });
+    }
 }

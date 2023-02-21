@@ -20,6 +20,7 @@ package org.keycloak.authorization.model;
 
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.storage.SearchableModelField;
 
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +31,51 @@ import java.util.Set;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface Policy {
+
+    public static class SearchableFields {
+        public static final SearchableModelField<Policy> ID = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<Policy> NAME = new SearchableModelField<>("name", String.class);
+        public static final SearchableModelField<Policy> RESOURCE_SERVER_ID = new SearchableModelField<>("resourceServerId", String.class);
+        public static final SearchableModelField<Policy> RESOURCE_ID = new SearchableModelField<>("resourceId", String.class);
+        public static final SearchableModelField<Policy> SCOPE_ID = new SearchableModelField<>("scopeId", String.class);
+        public static final SearchableModelField<Policy> TYPE = new SearchableModelField<>("type", String.class);
+        public static final SearchableModelField<Policy> OWNER = new SearchableModelField<>("owner", String.class);
+        public static final SearchableModelField<Policy> CONFIG = new SearchableModelField<>("config", String.class);
+        public static final SearchableModelField<Policy> ASSOCIATED_POLICY_ID = new SearchableModelField<>("associatedPolicyId", String.class);
+        public static final SearchableModelField<Policy> REALM_ID = new SearchableModelField<>("realmId", String.class);
+    }
+
+    public static enum FilterOption {
+        ID("id", SearchableFields.ID),
+        PERMISSION("permission", SearchableFields.TYPE),
+        OWNER("owner", SearchableFields.OWNER),
+        ANY_OWNER("owner.any", SearchableFields.OWNER),
+        RESOURCE_ID("resources.id", SearchableFields.RESOURCE_ID),
+        SCOPE_ID("scopes.id", SearchableFields.SCOPE_ID),
+        CONFIG("config", SearchableFields.CONFIG),
+        TYPE("type", SearchableFields.TYPE),
+        NAME("name", SearchableFields.NAME);
+
+        public static final String[] EMPTY_FILTER = new String[0];
+        private final String name;
+        private final SearchableModelField<Policy> searchableModelField;
+
+        FilterOption(String name, SearchableModelField<Policy> searchableModelField) {
+            this.name = name;
+            this.searchableModelField = searchableModelField;
+        }
+
+
+        public String getName() {
+            return name;
+        }
+
+        public SearchableModelField<Policy> getSearchableModelField() {
+            return searchableModelField;
+        }
+    }
+    
+    public static final String CONFIG_SEPARATOR = "##";
 
     /**
      * Returns the unique identifier for this instance.
@@ -55,7 +101,7 @@ public interface Policy {
     /**
      * Sets the {DecisionStrategy} for this policy.
      *
-     * @return the decision strategy for this policy
+     * @param decisionStrategy for this policy
      */
     void setDecisionStrategy(DecisionStrategy decisionStrategy);
 
@@ -69,7 +115,7 @@ public interface Policy {
     /**
      * Sets the {Logic} for this policy.
      *
-     * @return the decision strategy for this policy
+     * @param logic for this policy
      */
     void setLogic(Logic logic);
 
@@ -84,7 +130,7 @@ public interface Policy {
     /**
      * Sets a {@link Map} with string-based key/value pairs representing any additional configuration for this policy.
      *
-     * @return a map with any additional configuration for this policy.
+     * @param config a map with any additional configuration for this policy.
      */
     void setConfig(Map<String, String> config);
 
@@ -163,6 +209,4 @@ public interface Policy {
     void addResource(Resource resource);
 
     void removeResource(Resource resource);
-
-    boolean isFetched(String association);
 }

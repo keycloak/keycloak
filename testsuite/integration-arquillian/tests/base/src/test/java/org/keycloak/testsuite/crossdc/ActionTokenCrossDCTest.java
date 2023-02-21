@@ -16,11 +16,14 @@
  */
 package org.keycloak.testsuite.crossdc;
 
+import org.junit.Ignore;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -35,6 +38,7 @@ import javax.mail.internet.MimeMessage;
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -83,13 +87,17 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     @InitialDcState(authServers = ServerSetup.ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC)
+    // KEYCLOAK-17584: Temporarily disable the test for 'community' profile till KEYCLOAK-17628 isn't fixed. In other words till:
+    // * The test is either rewritten to start using the new Wildfly subsystem for base metrics introduced in Wildfly 22,
+    // * Or Keycloak is able to load the Eclipse MicroProfile Metrics subsystem from the microprofile Galleon feature-pack
+    @Ignore
     public void sendResetPasswordEmailSuccessWorksInCrossDc(
       @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node0Statistics,
       @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=1, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node1Statistics,
       @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc1Node0Statistics,
       @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
         log.debug("--DC: START sendResetPasswordEmailSuccessWorksInCrossDc");
-        
+
         cacheDc0Node1Statistics.waitToBecomeAvailable(10, TimeUnit.SECONDS);
 
         Comparable originalNumberOfEntries = cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY);

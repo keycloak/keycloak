@@ -35,6 +35,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final XmlKeyInfoKeyNameTransformer DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER = XmlKeyInfoKeyNameTransformer.NONE;
 
     public static final String ENTITY_ID = "entityId";
+    public static final String IDP_ENTITY_ID = "idpEntityId";
     public static final String ADD_EXTENSIONS_ELEMENT_WITH_KEY_INFO = "addExtensionsElementWithKeyInfo";
     public static final String BACKCHANNEL_SUPPORTED = "backchannelSupported";
     public static final String ENCRYPTION_PUBLIC_KEY = "encryptionPublicKey";
@@ -44,6 +45,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String POST_BINDING_LOGOUT = "postBindingLogout";
     public static final String POST_BINDING_RESPONSE = "postBindingResponse";
     public static final String SIGNATURE_ALGORITHM = "signatureAlgorithm";
+    public static final String ENCRYPTION_ALGORITHM = "encryptionAlgorithm";
     public static final String SIGNING_CERTIFICATE_KEY = "signingCertificate";
     public static final String SINGLE_LOGOUT_SERVICE_URL = "singleLogoutServiceUrl";
     public static final String SINGLE_SIGN_ON_SERVICE_URL = "singleSignOnServiceUrl";
@@ -60,6 +62,8 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String AUTHN_CONTEXT_DECL_REFS = "authnContextDeclRefs";
     public static final String SIGN_SP_METADATA = "signSpMetadata";
     public static final String ALLOW_CREATE = "allowCreate";
+    public static final String ATTRIBUTE_CONSUMING_SERVICE_INDEX = "attributeConsumingServiceIndex";
+    public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -74,6 +78,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setEntityId(String entityId) {
         getConfig().put(ENTITY_ID, entityId);
+    }
+
+    public String getIdpEntityId() {
+        return getConfig().get(IDP_ENTITY_ID);
+    }
+
+    public void setIdpEntityId(String idpEntityId) {
+        getConfig().put(IDP_ENTITY_ID, idpEntityId);
     }
 
     public String getSingleSignOnServiceUrl() {
@@ -191,6 +203,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setSignatureAlgorithm(String signatureAlgorithm) {
         getConfig().put(SIGNATURE_ALGORITHM, signatureAlgorithm);
+    }
+
+    public String getEncryptionAlgorithm() {
+        return getConfig().get(ENCRYPTION_ALGORITHM);
+    }
+
+    public void setEncryptionAlgorithm(String encryptionAlgorithm) {
+        getConfig().put(ENCRYPTION_ALGORITHM, encryptionAlgorithm);
     }
 
     public String getEncryptionPublicKey() {
@@ -343,6 +363,38 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setAllowCreated(boolean allowCreate) {
         getConfig().put(ALLOW_CREATE, String.valueOf(allowCreate));
+    }
+
+    public Integer getAttributeConsumingServiceIndex() {
+        Integer result = null;
+        String strAttributeConsumingServiceIndex = getConfig().get(ATTRIBUTE_CONSUMING_SERVICE_INDEX);
+        if (strAttributeConsumingServiceIndex != null && !strAttributeConsumingServiceIndex.isEmpty()) {
+            try {
+                result = Integer.parseInt(strAttributeConsumingServiceIndex);
+                if (result < 0) {
+                    result = null;
+                }
+            } catch (NumberFormatException e) {
+                // ignore it and use null
+            }
+        }
+        return result;
+    }
+
+    public void setAttributeConsumingServiceIndex(Integer attributeConsumingServiceIndex) {
+        if (attributeConsumingServiceIndex == null || attributeConsumingServiceIndex < 0) {
+            getConfig().remove(ATTRIBUTE_CONSUMING_SERVICE_INDEX);
+        } else {
+            getConfig().put(ATTRIBUTE_CONSUMING_SERVICE_INDEX, String.valueOf(attributeConsumingServiceIndex));
+        }
+    }
+
+    public void setAttributeConsumingServiceName(String attributeConsumingServiceName) {
+        getConfig().put(ATTRIBUTE_CONSUMING_SERVICE_NAME, attributeConsumingServiceName);
+    }
+
+    public String getAttributeConsumingServiceName() {
+        return getConfig().get(ATTRIBUTE_CONSUMING_SERVICE_NAME);
     }
 
     @Override

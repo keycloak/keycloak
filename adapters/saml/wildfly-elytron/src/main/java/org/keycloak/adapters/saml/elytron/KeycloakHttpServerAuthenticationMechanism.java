@@ -173,7 +173,13 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
             String path = uri.getPath();
             String relativePath = exchange.getRequest().getRelativePath();
             String contextPath = path.substring(0, path.indexOf(relativePath));
-            String loc = exchange.getURI().getScheme() + "://" + exchange.getURI().getHost() + ":" + exchange.getURI().getPort() + contextPath + location;
+            String loc;
+            int port = uri.getPort();
+            if (port == -1) {
+                loc = uri.getScheme() + "://" + uri.getHost() + contextPath + location;
+            } else {
+                loc = uri.getScheme() + "://" + uri.getHost() + ":" + port + contextPath + location;
+            }
             exchange.getResponse().setHeader("Location", loc);
         }
         exchange.getResponse().setStatus(HttpServletResponse.SC_FOUND);

@@ -42,7 +42,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -58,16 +58,15 @@ import java.util.stream.Stream;
 public class RoleByIdResource extends RoleResource {
     protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;
-    private AdminPermissionEvaluator auth;
-    private AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
-    public RoleByIdResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        super(realm);
-
-        this.realm = realm;
+    public RoleByIdResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        super(session.getContext().getRealm());
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.adminEvent = adminEvent;
     }
@@ -138,7 +137,7 @@ public class RoleByIdResource extends RoleResource {
     public void updateRole(final @PathParam("role-id") String id, final RoleRepresentation rep) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
-        updateRole(rep, role);
+        updateRole(rep, role, realm, session);
 
         if (role.isClientRole()) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
@@ -176,12 +175,21 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
+    public Stream<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id,
+                                                        final @QueryParam("search") String search,
+                                                        final @QueryParam("first") Integer first,
+                                                        final @QueryParam("max") Integer max
+    ) {
 
         if (logger.isDebugEnabled()) logger.debug("*** getRoleComposites: '" + id + "'");
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
-        return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+
+        if (search == null && first == null && max == null) {
+            return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+        }
+
+        return role.getCompositesStream(search, first, max).map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**

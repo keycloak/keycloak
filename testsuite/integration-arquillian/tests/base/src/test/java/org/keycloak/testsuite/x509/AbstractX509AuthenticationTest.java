@@ -49,7 +49,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -82,14 +81,12 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
  * @since 10/28/2016
  */
-@AuthServerContainerExclude(REMOTE)
 public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     public static final String EMPTY_CRL_PATH = "empty.crl";
@@ -109,6 +106,8 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     protected String userId;
 
     protected String userId2;
+
+    protected String realmId;
 
     protected AuthenticationManagementResource authMgmtResource;
 
@@ -207,6 +206,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     @Before
     public void configureFlows() {
         authMgmtResource = adminClient.realms().realm(REALM_NAME).flows();
+        this.realmId = adminClient.realm(REALM_NAME).toRepresentation().getId();
 
         AuthenticationFlowRepresentation browserFlow = copyBrowserFlow();
         Assert.assertNotNull(browserFlow);
@@ -290,7 +290,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         UserRepresentation user = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
-                .username("Keycloak")
+                .username("keycloak")
                 .email("localhost@localhost")
                 .enabled(true)
                 .password("password")
@@ -320,7 +320,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         finally {
             response.close();
         }
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authFlowsPath()), flowRep, ResourceType.AUTH_FLOW);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authFlowsPath()), flowRep, ResourceType.AUTH_FLOW);
 
         for (AuthenticationFlowRepresentation flow : authMgmtResource.getFlows()) {
             if (flow.getAlias().equalsIgnoreCase(flowRep.getAlias())) {
@@ -335,7 +335,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         HashMap<String, String> params = new HashMap<>();
         params.put("newName", newFlow);
         Response response = authMgmtResource.copy(existingFlow, params);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, Encode.decode(AdminEventPaths.authCopyFlowPath(existingFlow)), params, ResourceType.AUTH_FLOW);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Encode.decode(AdminEventPaths.authCopyFlowPath(existingFlow)), params, ResourceType.AUTH_FLOW);
         try {
             Assert.assertEquals("Copy flow", 201, response.getStatus());
         } finally {
@@ -432,6 +432,11 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithExtendedKeyUsage(String extendedKeyUsage) {
         return createLoginSubjectEmail2UsernameOrEmailConfig()
                 .setExtendedKeyUsage(extendedKeyUsage);
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithRevalidateCert(boolean revalidateCertEnabled) {
+        return createLoginSubjectEmail2UsernameOrEmailConfig()
+                .setRevalidateCertificateEnabled(revalidateCertEnabled);
     }
 
     protected static X509AuthenticatorConfigModel createLoginSubjectCN2UsernameOrEmailConfig() {

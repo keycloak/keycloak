@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,7 @@ public class PolicyEvaluationResponseBuilder {
         authorizationData.setPermissions(decision.results());
         accessToken.setAuthorization(authorizationData);
 
-        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
+        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getClientId());
 
         if (!accessToken.hasAudience(clientModel.getClientId())) {
             accessToken.audience(clientModel.getClientId());
@@ -181,6 +182,7 @@ public class PolicyEvaluationResponseBuilder {
 
         PolicyRepresentation representation = new PolicyRepresentation();
         Policy policy = result.getPolicy();
+        ResourceServer resourceServer = policy.getResourceServer();
 
         representation.setId(policy.getId());
         representation.setName(policy.getName());
@@ -189,11 +191,11 @@ public class PolicyEvaluationResponseBuilder {
         representation.setDescription(policy.getDescription());
 
         if ("uma".equals(representation.getType())) {
-            Map<String, String> filters = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filters.put(PermissionTicket.POLICY, policy.getId());
+            filters.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
 
-            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, policy.getResourceServer().getId(), -1, 1);
+            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer.getRealm(), resourceServer, filters, -1, 1);
 
             if (!tickets.isEmpty()) {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();

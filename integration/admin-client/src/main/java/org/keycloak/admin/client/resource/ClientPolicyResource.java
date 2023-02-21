@@ -26,7 +26,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -38,7 +37,6 @@ public interface ClientPolicyResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
     ClientPolicyRepresentation toRepresentation();
 
     @PUT
@@ -51,19 +49,16 @@ public interface ClientPolicyResource {
     @Path("/associatedPolicies")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
     List<PolicyRepresentation> associatedPolicies();
 
     @Path("/dependentPolicies")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
     List<PolicyRepresentation> dependentPolicies();
 
     @Path("/resources")
     @GET
     @Produces("application/json")
-    @NoCache
     List<ResourceRepresentation> resources();
 
 }

@@ -17,13 +17,39 @@
 
 package org.keycloak.models;
 
+import org.keycloak.storage.SearchableModelField;
+
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
+import org.keycloak.util.EnumWithStableIndex;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface UserSessionModel {
+
+    class SearchableFields {
+        public static final SearchableModelField<UserSessionModel> ID       = new SearchableModelField<>("id", String.class);
+
+        /**
+         * Represents the corresponding offline user session for the online user session.
+         * null if there is no corresponding offline user session.
+         */
+        public static final SearchableModelField<UserSessionModel> CORRESPONDING_SESSION_ID = new SearchableModelField<>("correspondingSessionId", String.class);
+        public static final SearchableModelField<UserSessionModel> REALM_ID = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<UserSessionModel> USER_ID  = new SearchableModelField<>("userId", String.class);
+        public static final SearchableModelField<UserSessionModel> CLIENT_ID  = new SearchableModelField<>("clientId", String.class);
+        public static final SearchableModelField<UserSessionModel> BROKER_SESSION_ID  = new SearchableModelField<>("brokerSessionId", String.class);
+        public static final SearchableModelField<UserSessionModel> BROKER_USER_ID  = new SearchableModelField<>("brokerUserId", String.class);
+        public static final SearchableModelField<UserSessionModel> IS_OFFLINE  = new SearchableModelField<>("isOffline", Boolean.class);
+        public static final SearchableModelField<UserSessionModel> LAST_SESSION_REFRESH  = new SearchableModelField<>("lastSessionRefresh", Long.class);
+    }
+
+    /**
+     * Represents the corresponding online/offline user session.
+     */
+    String CORRESPONDING_SESSION_ID = "correspondingSessionId";
 
     String getId();
     RealmModel getRealm();
@@ -85,10 +111,28 @@ public interface UserSessionModel {
     // Will completely restart whole state of user session. It will just keep same ID.
     void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
 
-    enum State {
-        LOGGED_IN,
-        LOGGING_OUT,
-        LOGGED_OUT
+    enum State implements EnumWithStableIndex {
+        LOGGED_IN(0),
+        LOGGING_OUT(1),
+        LOGGED_OUT(2),
+        LOGGED_OUT_UNCONFIRMED(3);
+
+        private final int stableIndex;
+        private static final Map<Integer, State> BY_ID = EnumWithStableIndex.getReverseIndex(values());
+
+        private State(int stableIndex) {
+            Objects.requireNonNull(stableIndex);
+            this.stableIndex = stableIndex;
+        }
+
+        @Override
+        public int getStableIndex() {
+            return stableIndex;
+        }
+
+        public static State valueOfInteger(Integer id) {
+            return id == null ? null : BY_ID.get(id);
+        }
     }
 
     /**

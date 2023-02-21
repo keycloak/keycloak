@@ -18,7 +18,7 @@
 package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.common.ClientConnection;
@@ -39,6 +39,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -66,6 +67,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -104,6 +107,11 @@ public class AuthenticationProcessor {
      * This could be an success message forwarded from another authenticator
      */
     protected ForwardedFormMessageStore forwardedSuccessMessageStore = new ForwardedFormMessageStore(ForwardedFormMessageType.SUCCESS);
+
+    /**
+     * This could be an success message forwarded from another authenticator
+     */
+    protected ForwardedFormMessageStore forwardedInfoMessageStore = new ForwardedFormMessageStore(ForwardedFormMessageType.INFO);
 
     // Used for client authentication
     protected ClientModel client;
@@ -232,6 +240,11 @@ public class AuthenticationProcessor {
         return this;
     }
 
+    public AuthenticationProcessor setForwardedInfoMessage(FormMessage forwardedInfoMessage) {
+        this.forwardedInfoMessageStore.setForwardedMessage(forwardedInfoMessage);
+        return this;
+    }
+
     public String generateCode() {
         ClientSessionCode accessCode = new ClientSessionCode(session, getRealm(), getAuthenticationSession());
         authenticationSession.getParentSession().setTimestamp(Time.currentTime());
@@ -292,6 +305,8 @@ public class AuthenticationProcessor {
         FormMessage errorMessage;
         FormMessage successMessage;
         List<AuthenticationSelectionOption> authenticationSelections;
+        String eventDetails;
+        String userErrorMessage;
 
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
@@ -389,6 +404,15 @@ public class AuthenticationProcessor {
             this.status = FlowStatus.FAILED;
             this.challenge = challenge;
 
+        }
+        
+        @Override
+        public void failure(AuthenticationFlowError error, Response challenge, String eventDetails, String userErrorMessage) {
+            this.error = error;
+            this.status = FlowStatus.FAILED;
+            this.challenge = challenge;
+            this.eventDetails = eventDetails;
+            this.userErrorMessage = userErrorMessage;
         }
 
         @Override
@@ -528,6 +552,9 @@ public class AuthenticationProcessor {
             } else if (getForwardedSuccessMessage() != null) {
                 provider.addSuccess(getForwardedSuccessMessage());
                 forwardedSuccessMessageStore.removeForwardedMessage();
+            } else if (getForwardedInfoMessage() != null) {
+                provider.setInfo(getForwardedInfoMessage().getMessage(), getForwardedInfoMessage().getParameters());
+                forwardedInfoMessageStore.removeForwardedMessage();
             }
             return provider;
         }
@@ -555,21 +582,6 @@ public class AuthenticationProcessor {
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
                     .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
-            }
-            return uriBuilder
-                    .build(getRealm().getName());
-        }
-
-        @Override
-        public URI getActionUrl(String code, boolean authSessionIdParam) {
-            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
-                    .path(AuthenticationProcessor.this.flowPath)
-                    .queryParam(LoginActionsService.SESSION_CODE, code)
-                    .queryParam(Constants.EXECUTION, getExecution().getId())
-                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
-            if (authSessionIdParam) {
                 uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
             }
             return uriBuilder
@@ -642,12 +654,32 @@ public class AuthenticationProcessor {
             return AuthenticationProcessor.this.forwardedSuccessMessageStore.getForwardedMessage();
         }
 
+        @Override
+        public void setForwardedInfoMessage(String message, Object... parameters) {
+            AuthenticationProcessor.this.setForwardedInfoMessage(new FormMessage(message, parameters));
+        }
+
+        @Override
+        public FormMessage getForwardedInfoMessage() {
+            return AuthenticationProcessor.this.forwardedInfoMessageStore.getForwardedMessage();
+        }
+
         public FormMessage getErrorMessage() {
             return errorMessage;
         }
 
         public FormMessage getSuccessMessage() {
             return successMessage;
+        }
+
+        @Override
+        public String getEventDetails() {
+            return eventDetails;
+        }
+
+        @Override
+        public String getUserErrorMessage() {
+            return userErrorMessage;
         }
     }
 
@@ -664,18 +696,6 @@ public class AuthenticationProcessor {
         AuthenticationSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
         if (status == null) return false;
         return status == AuthenticationSessionModel.ExecutionStatus.SUCCESS;
-    }
-
-    public boolean isEvaluatedTrue(AuthenticationExecutionModel model) {
-        AuthenticationSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
-        if (status == null) return false;
-        return status == AuthenticationSessionModel.ExecutionStatus.EVALUATED_TRUE;
-    }
-
-    public boolean isEvaluatedFalse(AuthenticationExecutionModel model) {
-        AuthenticationSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
-        if (status == null) return false;
-        return status == AuthenticationSessionModel.ExecutionStatus.EVALUATED_FALSE;
     }
 
     public Response handleBrowserExceptionList(AuthenticationFlowException e) {
@@ -775,7 +795,7 @@ public class AuthenticationProcessor {
                         .setSession(session)
                         .setUriInfo(uriInfo)
                         .setRequest(request);
-                CacheControlUtil.noBackButtonCacheControlHeader();
+                CacheControlUtil.noBackButtonCacheControlHeader(session);
                 return processor.authenticate();
 
             } else if (e.getError() == AuthenticationFlowError.DISPLAY_NOT_SUPPORTED) {
@@ -788,6 +808,14 @@ public class AuthenticationProcessor {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CREDENTIAL_SETUP_REQUIRED);
+            } else if (e.getError() == AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR) {
+                ServicesLogger.LOGGER.failedAuthentication(e);
+                if (e.getEventDetails() != null) {
+                    event.detail(Details.AUTHENTICATION_ERROR_DETAIL, e.getEventDetails());
+                }
+                event.error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                if (e.getResponse() != null) return e.getResponse();
+                return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, e.getUserErrorMessage());
             } else {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_USER_CREDENTIALS);
@@ -795,6 +823,13 @@ public class AuthenticationProcessor {
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
             }
 
+        } else if (KeycloakModelUtils.isExceptionRetriable(failure)) {
+            // let calling code decide if whole action should be retried.
+            if (failure instanceof RuntimeException) {
+                throw (RuntimeException) failure;
+            } else {
+                throw new RuntimeException(failure);
+            }
         } else {
             ServicesLogger.LOGGER.failedAuthentication(failure);
             event.error(Errors.INVALID_USER_CREDENTIALS);
@@ -809,16 +844,16 @@ public class AuthenticationProcessor {
             ServicesLogger.LOGGER.failedClientAuthentication(e);
             if (e.getError() == AuthenticationFlowError.CLIENT_NOT_FOUND) {
                 event.error(Errors.CLIENT_NOT_FOUND);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Invalid client credentials");
+                return ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Invalid client or Invalid client credentials");
             } else if (e.getError() == AuthenticationFlowError.CLIENT_DISABLED) {
                 event.error(Errors.CLIENT_DISABLED);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Invalid client credentials");
+                return ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Invalid client or Invalid client credentials");
             } else if (e.getError() == AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED) {
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
                 return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client credentials setup required");
             } else {
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Invalid client credentials");
+                return ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Invalid client or Invalid client credentials");
             }
         } else {
             ServicesLogger.LOGGER.errorAuthenticatingClient(failure);
@@ -990,7 +1025,12 @@ public class AuthenticationProcessor {
         Response challenge = authenticationFlow.processFlow();
         if (challenge != null) return challenge;
         if (authenticationSession.getAuthenticatedUser() == null) {
-            throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
+            if (this.forwardedErrorMessageStore.getForwardedMessage() != null) {
+                LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authenticationSession);
+                forms.addError(this.forwardedErrorMessageStore.getForwardedMessage());
+                return forms.createErrorPage(Response.Status.BAD_REQUEST);
+            } else
+                throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
         }
         if (!authenticationFlow.isSuccessful()) {
             throw new AuthenticationFlowException(authenticationFlow.getFlowExceptions());
@@ -1021,7 +1061,7 @@ public class AuthenticationProcessor {
 
         if (userSession == null) { // if no authenticator attached a usersession
 
-            userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
+            userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, authSession.getParentSession().getId()));
             if (userSession == null) {
                 UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
 
@@ -1037,7 +1077,7 @@ public class AuthenticationProcessor {
                 if (!authSession.getAuthenticatedUser().equals(userSession.getUser())) {
                     event.detail(Details.EXISTING_USER, userSession.getUser().getId());
                     event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
-                    throw new ErrorPageException(session, authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
+                    throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
                 }
             }
             userSession.setState(UserSessionModel.State.LOGGED_IN);
@@ -1134,7 +1174,7 @@ public class AuthenticationProcessor {
     }
 
     private enum ForwardedFormMessageType {
-        SUCCESS("fwMessageSuccess"), ERROR("fwMessageError");
+        SUCCESS("fwMessageSuccess"), ERROR("fwMessageError"), INFO("fwMessageInfo");
 
         private final String key;
 

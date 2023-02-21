@@ -21,6 +21,8 @@ import org.keycloak.models.KeycloakSession;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Objects;
+
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
@@ -37,6 +39,21 @@ public class ClientRemovedSessionEvent extends SessionClusterEvent  {
         ClientRemovedSessionEvent event = ClientRemovedSessionEvent.createEvent(ClientRemovedSessionEvent.class, eventKey, session, realmId, resendingEvent);
         event.clientUuid = clientUuid;
         return event;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        ClientRemovedSessionEvent that = (ClientRemovedSessionEvent) o;
+        return Objects.equals(clientUuid, that.clientUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), clientUuid);
     }
 
     @Override

@@ -18,10 +18,12 @@
 package org.keycloak.truststore;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.crypto.CryptoIntegration;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Comparator;
 
 
 /**
@@ -29,14 +31,16 @@ import java.net.Socket;
  * <p>
  * This SSLSocketFactory can only use truststore configured by TruststoreProvider after the ProviderFactory was
  * initialized using standard Spi load / init mechanism. That will only happen if "truststore" provider is configured
- * in standalone.xml or domain.xml.
+ * by the Keycloak Provider SPI configuration mechanism
  * <p>
- * If TruststoreProvider is not available this SSLSocketFactory will delegate all operations to javax.net.ssl.SSLSocketFactory.getDefault().
+ * If TruststoreProvider is not available this SSLSocketFactory will delegate all operations to the SSLSocketFactory
+ * returned by {@link org.keycloak.common.crypto.CryptoProvider#wrapFactoryForTruststore(javax.net.ssl.SSLSocketFactory)},
+ * which will delegate further to the factory returned by javax.net.ssl.SSLSocketFactory.getDefault().
  *
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
-public class SSLSocketFactory extends javax.net.ssl.SSLSocketFactory {
+public class SSLSocketFactory extends javax.net.ssl.SSLSocketFactory implements Comparator {
 
     private static final Logger log = Logger.getLogger(SSLSocketFactory.class);
 
@@ -57,7 +61,7 @@ public class SSLSocketFactory extends javax.net.ssl.SSLSocketFactory {
             sf = (javax.net.ssl.SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault();
         }
 
-        sslsf = sf;
+        sslsf = CryptoIntegration.getProvider().wrapFactoryForTruststore(sf);
     }
 
     public static synchronized SSLSocketFactory getDefault() {
@@ -107,4 +111,8 @@ public class SSLSocketFactory extends javax.net.ssl.SSLSocketFactory {
         return sslsf.createSocket();
     }
 
+    @Override
+    public int compare(Object socketFactory1, Object socketFactory2) {
+        return socketFactory1.equals(socketFactory2) ? 0 : -1;
+    }
 }

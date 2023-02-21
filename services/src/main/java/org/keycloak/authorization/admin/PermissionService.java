@@ -45,17 +45,17 @@ public class PermissionService extends PolicyService {
     protected PolicyTypeService doCreatePolicyTypeResource(String type) {
         return new PolicyTypeService(type, resourceServer, authorization, auth, adminEvent) {
             @Override
-            protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<String, String[]> filters) {
-                filters.put("permission", new String[] {Boolean.TRUE.toString()});
-                filters.put("type", new String[] {type});
+            protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<Policy.FilterOption, String[]> filters) {
+                filters.put(Policy.FilterOption.PERMISSION, new String[] {Boolean.TRUE.toString()});
+                filters.put(Policy.FilterOption.TYPE, new String[] {type});
                 return super.doSearch(firstResult, maxResult, fields, filters);
             }
         };
     }
 
     @Override
-    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<String, String[]> filters) {
-        filters.put("permission", new String[] {Boolean.TRUE.toString()});
+    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<Policy.FilterOption, String[]> filters) {
+        filters.put(Policy.FilterOption.PERMISSION, new String[] {Boolean.TRUE.toString()});
         return super.doSearch(firstResult, maxResult, fields, filters);
     }
 

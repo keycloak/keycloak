@@ -11,10 +11,13 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -53,6 +56,14 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
     @Page
     @SecondBrowser
     private OIDCLogin secondTestRealmLoginPage;
+
+    @Page
+    @SecondBrowser
+    protected LogoutConfirmPage secondBrowserLogoutConfirmPage;
+
+    @Page
+    @SecondBrowser
+    protected InfoPage secondBrowserInfoPage;
 
     @Page
     private Sessions realmSessions;
@@ -120,7 +131,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         DroneUtils.removeWebDriver(); // From now driver will be used instead of driver2
 
         // Logout in browser1
-        driver.navigate().to(logoutPage(SERVLET_URL));
+        logout(SERVLET_URL);
         waitForPageToLoad();
 
         // Assert that I am logged out in browser1
@@ -137,7 +148,17 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         secondBrowserSessionPage.assertIsCurrent();
         assertThat(secondBrowserSessionPage.getCounter(), is(equalTo(2)));
 
-        driver2.navigate().to(logoutPage(SERVLET_URL));
+        String logoutUrl = getLogoutUrl();
+        driver2.navigate().to(logoutUrl);
+
+        waitForPageToLoad();
+        Assert.assertThat(true, is(secondBrowserLogoutConfirmPage.isCurrent(driver2)));
+        secondBrowserLogoutConfirmPage.confirmLogout(driver2);
+        waitForPageToLoad();
+        secondBrowserInfoPage.assertCurrent();
+        waitForPageToLoad();
+        driver2.navigate().to(SERVLET_URL);
+
         waitForPageToLoad();
         assertCurrentUrlStartsWith(secondTestRealmLoginPage, driver2);
 
@@ -166,8 +187,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         loginAndCheckSession();
 
         // Logout
-        String logoutUri = logoutPage(SERVLET_URL);
-        driver.navigate().to(logoutUri);
+        logout(SERVLET_URL);
         waitForPageToLoad();
 
         // Assert that http session was invalidated
@@ -184,7 +204,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         realmRep.setAccessCodeLifespan(origTokenLifespan);
         realmResource.update(realmRep);
 
-        driver.navigate().to(logoutUri);
+        logout(SERVLET_URL);
         waitForPageToLoad();
     }
 
@@ -204,7 +224,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         sessionPage.assertIsCurrent();
         assertThat(sessionPage.getCounter(), is(equalTo(2)));
 
-        driver.navigate().to(logoutPage(SERVLET_URL));
+        logout(SERVLET_URL);
         waitForPageToLoad();
     }
 
@@ -218,7 +238,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         // Assert I need to login again (logout was propagated to the app)
         loginAndCheckSession();
 
-        driver.navigate().to(logoutPage(SERVLET_URL));
+        logout(SERVLET_URL);
         waitForPageToLoad();
     }
 }

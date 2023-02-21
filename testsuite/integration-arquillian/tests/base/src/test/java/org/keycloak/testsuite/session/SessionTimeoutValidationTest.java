@@ -29,11 +29,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest {
 
     @Override
@@ -46,7 +43,6 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
     public  void before() {
         testingClient.server().run( session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            realm = session.realms().getRealm("test");
             session.users().addUser(realm, "user1");
         });
     }

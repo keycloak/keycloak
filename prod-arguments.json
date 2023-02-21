@@ -20,7 +20,7 @@
       "dependencyOverride.org.jboss:jboss-parent@*": "19.0.0.redhat-2",
       "dependencyOverride.org.jboss.web:jbossweb@*": "$EAP6SUPPORTED_ORG_JBOSS_WEB_JBOSSWEB",
       "dependencyOverride.com.google.guava:guava@org.keycloak.testsuite:integration-arquillian": "",
-      "dependencyOverride.com.fasterxml.jackson.dataformat:*@*": "2.10.4.redhat-00001",
+      "dependencyOverride.com.fasterxml.jackson.dataformat:*@*": "2.10.5.redhat-00002",
       "dependencyOverride.org.jboss.logging:jboss-logging-processor@*": "",
       "dependencyOverride.org.jboss.logging:jboss-logging@org.keycloak:keycloak-as7-subsystem": "",
       "dependencyOverride.org.jboss.logging:jboss-logging@org.keycloak:keycloak-saml-as7-subsystem": ""

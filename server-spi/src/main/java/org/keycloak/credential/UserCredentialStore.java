@@ -17,6 +17,7 @@
 package org.keycloak.credential;
 
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
@@ -31,14 +32,19 @@ import java.util.stream.Stream;
 public interface UserCredentialStore extends Provider {
     void updateCredential(RealmModel realm, UserModel user, CredentialModel cred);
     CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred);
-    boolean removeStoredCredential(RealmModel realm, UserModel user, String id);
-    CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id);
 
     /**
-     * @deprecated Use {@link #getStoredCredentialsStream(RealmModel, UserModel) getStoredCredentialsStream} instead.
+     * Removes credential with the {@code id} for the {@code user}.
+     *
+     * @param realm realm.
+     * @param user user
+     * @param id id
+     * @return {@code true} if the credential was removed, {@code false} otherwise
+     *
+     * TODO: Make this method return Boolean so that store can return "I don't know" answer, this can be used for example in async stores
      */
-    @Deprecated
-    List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user);
+    boolean removeStoredCredential(RealmModel realm, UserModel user, String id);
+    CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id);
 
     /**
      * Obtains the stored credentials associated with the specified user.
@@ -47,17 +53,7 @@ public interface UserCredentialStore extends Provider {
      * @param user the user whose credentials are being searched.
      * @return a non-null {@link Stream} of credentials.
      */
-    default Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
-        List<CredentialModel> result = this.getStoredCredentials(realm, user);
-        return result != null ? result.stream() : Stream.empty();
-    }
-
-    /**
-     * @deprecated Use {@link #getStoredCredentialsByTypeStream(RealmModel, UserModel, String) getStoredCredentialsByTypeStream}
-     * instead.
-     */
-    @Deprecated
-    List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type);
+    Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user);
 
     /**
      * Obtains the stored credentials associated with the specified user that match the specified type.
@@ -67,10 +63,7 @@ public interface UserCredentialStore extends Provider {
      * @param type the type of credentials being searched.
      * @return a non-null {@link Stream} of credentials.
      */
-    default Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
-        List<CredentialModel> result = this.getStoredCredentialsByType(realm, user, type);
-        return result != null ? result.stream() : Stream.empty();
-    }
+    Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type);
 
     CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type);
 
@@ -78,27 +71,10 @@ public interface UserCredentialStore extends Provider {
     boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId);
 
     /**
-     * The {@link UserCredentialStore.Streams} interface makes all collection-based methods in {@link UserCredentialStore}
-     * default by providing implementations that delegate to the {@link Stream}-based variants instead of the other way around.
-     * <p/>
-     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
-     * from the potential memory and performance optimizations of that approach.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
+    @Deprecated
     interface Streams extends UserCredentialStore {
-        @Override
-        default List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-            return this.getStoredCredentialsStream(realm, user).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user);
-
-        @Override
-        default List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-            return this.getStoredCredentialsByTypeStream(realm, user, type).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type);
     }
 }

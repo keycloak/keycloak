@@ -70,7 +70,6 @@ public abstract class AbstractUiTest extends AbstractAuthTest {
         realm.setInternationalizationEnabled(true);
         realm.setSupportedLocales(supportedLocales);
         realm.setLoginTheme(LOCALIZED_THEME);
-        realm.setAdminTheme(LOCALIZED_THEME);
         realm.setAccountTheme(localizedTheme);
         realm.setEmailTheme(LOCALIZED_THEME);
     }

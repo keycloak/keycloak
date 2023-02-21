@@ -17,12 +17,19 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.junit.Assume;
+import org.keycloak.Config;
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.RealmSpi;
+import org.keycloak.models.map.common.AbstractMapProviderFactory;
+import org.keycloak.models.map.realm.MapRealmProviderFactory;
+import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.components.TestProvider;
 
@@ -38,22 +45,31 @@ import java.util.function.BiConsumer;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.*;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ComponentsTest extends AbstractAdminTest {
 
     private ComponentsResource components;
 
+    private String realmProvider;
+
     @Before
     public void before() throws Exception {
+        // realmProvider is used only to prevent tests from running in certain configs, should be removed once GHI #15410 is resolved.
+        realmProvider = testingClient.server().fetch(session -> Config.getProvider(RealmSpi.NAME), String.class);
+        if (realmProvider.equals(MapRealmProviderFactory.PROVIDER_ID)) {
+            // append the storage provider in case of map
+            String mapStorageProvider = testingClient.server().fetch(session -> Config.scope(RealmSpi.NAME,
+                    MapRealmProviderFactory.PROVIDER_ID, AbstractMapProviderFactory.CONFIG_STORAGE).get("provider"), String.class);
+            if (mapStorageProvider != null) realmProvider = realmProvider + "-" + mapStorageProvider;
+        }
+
         components = adminClient.realm(REALM_NAME).components();
     }
 
@@ -83,6 +99,11 @@ public class ComponentsTest extends AbstractAdminTest {
 
     @Test
     public void testConcurrencyWithoutChildren() throws InterruptedException {
+        // remove this restriction once GHI #15410 is resolved.
+        Assume.assumeThat("Test does not run with HotRod after HotRod client transaction was enabled. This will be removed with pessimistic locking introduction.",
+                realmProvider,
+                not(equalTo(MapRealmProviderFactory.PROVIDER_ID + "-" + HotRodMapStorageProviderFactory.PROVIDER_ID)));
+
         testConcurrency((s, i) -> s.submit(new CreateAndDeleteComponent(s, i)));
 
 //        Data consistency is not guaranteed with concurrent access to entities in map store. 
@@ -93,6 +114,11 @@ public class ComponentsTest extends AbstractAdminTest {
 
     @Test
     public void testConcurrencyWithChildren() throws InterruptedException {
+        // remove this restriction once GHI #15410 is resolved.
+        Assume.assumeThat("Test does not run with HotRod after HotRod client transaction was enabled. This will be removed with pessimistic locking introduction.",
+                realmProvider,
+                not(equalTo(MapRealmProviderFactory.PROVIDER_ID + "-" + HotRodMapStorageProviderFactory.PROVIDER_ID)));
+
         testConcurrency((s, i) -> s.submit(new CreateAndDeleteComponentWithFlatChildren(s, i)));
 
 //        Data consistency is not guaranteed with concurrent access to entities in map store. 
@@ -166,10 +192,39 @@ public class ComponentsTest extends AbstractAdminTest {
     public void testCreateWithGivenId() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
         rep.getConfig().addFirst("required", "foo");
-        rep.setId("fixed-id");
+        String componentId = KeycloakModelUtils.generateId();
+        rep.setId(componentId);
 
         String id = createComponent(rep);
-        assertEquals("fixed-id", id);
+        assertEquals(componentId, id);
+    }
+
+    @Test
+    public void failCreateWithLongName() {
+        StringBuilder name = new StringBuilder();
+
+        while (name.length() < 30) {
+            name.append("invalid");
+        }
+
+        ComponentRepresentation rep = createComponentRepresentation(name.toString());
+
+        rep.getConfig().addFirst("required", "foo");
+
+        ComponentsResource components = realm.components();
+
+        try (Response response = components.add(rep)) {
+            if (Response.Status.INTERNAL_SERVER_ERROR.getStatusCode() == response.getStatus()) {
+                // using database should fail due to constraint violations
+                assertFalse(components.query().stream().map(ComponentRepresentation::getName).anyMatch(name.toString()::equals));
+            } else if (Response.Status.CREATED.getStatusCode() == response.getStatus()) {
+                // using the map storage should work because there are no constraints
+                String id = ApiUtil.getCreatedId(response);
+                assertNotNull(components.component(id).toRepresentation());
+            } else {
+                fail("Unexpected response");
+            }
+        }
     }
 
     @Test

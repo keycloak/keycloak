@@ -23,6 +23,7 @@ import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -124,23 +125,30 @@ public class RestartLoginCookie implements Token {
         String encoded = session.tokens().encode(restart);
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
-        CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true);
+        CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true, session);
     }
 
-    public static void expireRestartCookie(RealmModel realm, ClientConnection connection, UriInfo uriInfo) {
+    public static void expireRestartCookie(RealmModel realm, UriInfo uriInfo, KeycloakSession session) {
+        KeycloakContext context = session.getContext();
+        ClientConnection connection = context.getConnection();
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
-        CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true);
+        CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true, session);
     }
 
-
-    public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm,
-                                                            RootAuthenticationSessionModel rootSession, String expectedClientId) throws Exception {
+    public static Cookie getRestartCookie(KeycloakSession session){
         Cookie cook = session.getContext().getRequestHeaders().getCookies().get(KC_RESTART);
         if (cook ==  null) {
             logger.debug("KC_RESTART cookie doesn't exist");
             return null;
         }
+        return cook;
+    }
+
+    public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm,
+                                                            RootAuthenticationSessionModel rootSession, String expectedClientId,
+                                                            Cookie cook) throws Exception {
+
         String encodedCookie = cook.getValue();
 
         RestartLoginCookie cookie = session.tokens().decode(encodedCookie, RestartLoginCookie.class);

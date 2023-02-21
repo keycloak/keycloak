@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -129,6 +130,18 @@ public class RealmBuilder {
             rep.setClients(new LinkedList<>());
         }
         rep.getClients().add(client);
+        return this;
+    }
+
+    public RealmBuilder clientScope(ClientScopeBuilder clientScope) {
+        return clientScope(clientScope.build());
+    }
+
+    public RealmBuilder clientScope(ClientScopeRepresentation clientScope) {
+        if (rep.getClientScopes() == null) {
+            rep.setClientScopes(new LinkedList<>());
+        }
+        rep.getClientScopes().add(clientScope);
         return this;
     }
 

@@ -52,7 +52,7 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
         PasswordPolicy policy = session.getContext().getRealm().getPasswordPolicy();
         int passwordHistoryPolicyValue = policy.getPolicyConfig(PasswordPolicy.PASSWORD_HISTORY_ID);
         if (passwordHistoryPolicyValue != -1) {
-            if (session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, PasswordCredentialModel.TYPE)
+            if (user.credentialManager().getStoredCredentialsByTypeStream(PasswordCredentialModel.TYPE)
                     .map(PasswordCredentialModel::createFromCredentialModel)
                     .anyMatch(passwordCredential -> {
                         PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class,
@@ -63,7 +63,7 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
             }
 
             if (passwordHistoryPolicyValue > 0) {
-                if (this.getRecent(session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, PasswordCredentialModel.PASSWORD_HISTORY),
+                if (this.getRecent(user.credentialManager().getStoredCredentialsByTypeStream(PasswordCredentialModel.PASSWORD_HISTORY),
                         passwordHistoryPolicyValue - 1)
                         .map(PasswordCredentialModel::createFromCredentialModel)
                         .anyMatch(passwordCredential -> {

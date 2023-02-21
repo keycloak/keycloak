@@ -17,16 +17,21 @@
 
 package org.keycloak.common;
 
-import static org.keycloak.common.Profile.Type.DEPRECATED;
-
 import org.jboss.logging.Logger;
+import org.keycloak.common.profile.ProfileConfigResolver;
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+import org.keycloak.common.util.KerberosJdkProvider;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Properties;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,238 +39,237 @@ import java.util.Set;
  */
 public class Profile {
 
+    public enum Feature {
+        AUTHORIZATION("Authorization Service", Type.DEFAULT),
+
+        ACCOUNT_API("Account Management REST API", Type.DEFAULT),
+        ACCOUNT2("New Account Management Console", Type.DEFAULT, Feature.ACCOUNT_API),
+
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
+
+        ADMIN_API("Admin API", Type.DEFAULT),
+
+        ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
+
+        DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
+
+        IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
+
+        OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
+
+        SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
+
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
+
+        WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
+
+        CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
+
+        CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
+
+        MAP_STORAGE("New store", Type.EXPERIMENTAL),
+
+        PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
+
+        DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
+
+        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
+
+        CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
+
+        STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
+
+        // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
+        KERBEROS("Kerberos", KerberosJdkProvider.getProvider().isKerberosAvailable() ? Type.DEFAULT : Type.DISABLED_BY_DEFAULT),
+
+        RECOVERY_CODES("Recovery codes", Type.PREVIEW),
+
+        UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
+
+        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT);
+
+        private final Type type;
+        private String label;
+
+        private Set<Feature> dependencies;
+        Feature(String label, Type type) {
+            this.label = label;
+            this.type = type;
+        }
+
+        Feature(String label, Type type, Feature... dependencies) {
+            this.label = label;
+            this.type = type;
+            this.dependencies = Arrays.stream(dependencies).collect(Collectors.toSet());
+        }
+
+        public String getKey() {
+            return name().toLowerCase().replaceAll("_", "-");
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public Type getType() {
+            return type;
+        }
+
+        public Set<Feature> getDependencies() {
+            return dependencies;
+        }
+
+        public enum Type {
+            DEFAULT("Default"),
+            DISABLED_BY_DEFAULT("Disabled by default"),
+            PREVIEW("Preview"),
+            EXPERIMENTAL("Experimental"),
+            DEPRECATED("Deprecated");
+
+            private String label;
+
+            Type(String label) {
+                this.label = label;
+            }
+
+            public String getLabel() {
+                return label;
+            }
+        }
+    }
+
     private static final Logger logger = Logger.getLogger(Profile.class);
 
-    public enum Type {
-        DEFAULT,
-        DISABLED_BY_DEFAULT,
-        PREVIEW,
-        EXPERIMENTAL,
-        DEPRECATED;
-    }
-    public enum Feature {
-        ACCOUNT2(Type.DEFAULT),
-        ACCOUNT_API(Type.DEFAULT),
-        ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
-        DOCKER(Type.DISABLED_BY_DEFAULT),
-        IMPERSONATION(Type.DEFAULT),
-        OPENSHIFT_INTEGRATION(Type.PREVIEW),
-        SCRIPTS(Type.PREVIEW),
-        TOKEN_EXCHANGE(Type.PREVIEW),
-        UPLOAD_SCRIPTS(DEPRECATED),
-        WEB_AUTHN(Type.DEFAULT, Type.PREVIEW),
-        CLIENT_POLICIES(Type.PREVIEW);
-
-        private Type typeProject;
-        private Type typeProduct;
-
-        Feature(Type type) {
-            this(type, type);
-        }
-
-        Feature(Type typeProject, Type typeProduct) {
-            this.typeProject = typeProject;
-            this.typeProduct = typeProduct;
-        }
-
-        public Type getTypeProject() {
-            return typeProject;
-        }
-
-        public Type getTypeProduct() {
-            return typeProduct;
-        }
-
-        public boolean hasDifferentProductType() {
-            return typeProject != typeProduct;
-        }
-    }
-
-    private enum ProductValue {
-        KEYCLOAK,
-        RHSSO
-    }
-
-    private enum ProfileValue {
-        COMMUNITY,
-        PRODUCT,
-        PREVIEW
-    }
+    private static final List<ProfileConfigResolver> DEFAULT_RESOLVERS = new LinkedList<>();
+    static {
+        DEFAULT_RESOLVERS.add(new PropertiesProfileConfigResolver(System.getProperties()));
+        DEFAULT_RESOLVERS.add(new PropertiesFileProfileConfigResolver());
+    };
 
     private static Profile CURRENT;
 
-    private final ProductValue product;
+    private final ProfileName profileName;
 
-    private final ProfileValue profile;
+    private final Map<Feature, Boolean> features;
 
-    private final Set<Feature> disabledFeatures = new HashSet<>();
-    private final Set<Feature> previewFeatures = new HashSet<>();
-    private final Set<Feature> experimentalFeatures = new HashSet<>();
-    private final Set<Feature> deprecatedFeatures = new HashSet<>();
-
-    private final PropertyResolver propertyResolver;
-    
-    public Profile(PropertyResolver resolver) {
-        this.propertyResolver = resolver;
-        Config config = new Config();
-
-        product = "rh-sso".equals(Version.NAME) ? ProductValue.RHSSO : ProductValue.KEYCLOAK;
-        profile = ProfileValue.valueOf(config.getProfile().toUpperCase());
-
-        for (Feature f : Feature.values()) {
-            Boolean enabled = config.getConfig(f);
-            Type type = product.equals(ProductValue.RHSSO) ? f.getTypeProduct() : f.getTypeProject();
-
-            switch (type) {
-                case DEFAULT:
-                    if (enabled != null && !enabled) {
-                        disabledFeatures.add(f);
-                    }
-                    break;
-                case DEPRECATED:
-                    deprecatedFeatures.add(f);
-                case DISABLED_BY_DEFAULT:
-                    if (enabled == null || !enabled) {
-                        disabledFeatures.add(f);
-                    } else if (DEPRECATED.equals(type)) {
-                        logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
-                        if (Feature.UPLOAD_SCRIPTS.equals(f)) {
-                            previewFeatures.add(Feature.SCRIPTS);
-                            disabledFeatures.remove(Feature.SCRIPTS);
-                            logger.warnf("Preview feature enabled: " + Feature.SCRIPTS.name().toLowerCase());
-                        }
-                    }
-                    break;
-                case PREVIEW:
-                    previewFeatures.add(f);
-                    if ((enabled == null || !enabled) && !profile.equals(ProfileValue.PREVIEW)) {
-                        disabledFeatures.add(f);
-                    } else {
-                        logger.info("Preview feature enabled: " + f.name().toLowerCase());
-                    }
-                    break;
-                case EXPERIMENTAL:
-                    experimentalFeatures.add(f);
-                    if (enabled == null || !enabled) {
-                        disabledFeatures.add(f);
-                    } else {
-                        logger.warn("Experimental feature enabled: " + f.name().toLowerCase());
-                    }
-                    break;
-            }
-        }
+    public static Profile defaults() {
+        return configure();
     }
 
-    private static Profile getInstance() {
-        if (CURRENT == null) {
-            CURRENT = new Profile(null);
-        }
+    public static Profile configure(ProfileConfigResolver... resolvers) {
+        ProfileName profile = Arrays.stream(resolvers).map(ProfileConfigResolver::getProfileName).filter(Objects::nonNull).findFirst().orElse(ProfileName.DEFAULT);
+        Map<Feature, Boolean> features = Arrays.stream(Feature.values()).collect(Collectors.toMap(f -> f, f -> isFeatureEnabled(profile, f, resolvers)));
+        verifyConfig(features);
+
+        CURRENT = new Profile(profile, features);
         return CURRENT;
     }
 
-    public static void init() {
-        CURRENT = new Profile(null);
-    }
-    
-    public static void setInstance(Profile instance) {
-        CURRENT = instance;
+    public static Profile init(ProfileName profileName, Map<Feature, Boolean> features) {
+        CURRENT = new Profile(profileName, features);
+        return CURRENT;
     }
 
-    public static String getName() {
-        return getInstance().profile.name().toLowerCase();
+    private Profile(ProfileName profileName, Map<Feature, Boolean> features) {
+        this.profileName = profileName;
+        this.features = Collections.unmodifiableMap(features);
+
+        logUnsupportedFeatures();
     }
 
-    public static Set<Feature> getDisabledFeatures() {
-        return getInstance().disabledFeatures;
-    }
-
-    public static Set<Feature> getPreviewFeatures() {
-        return getInstance().previewFeatures;
-    }
-
-    public static Set<Feature> getExperimentalFeatures() {
-        return getInstance().experimentalFeatures;
-    }
-
-    public static Set<Feature> getDeprecatedFeatures() {
-        return getInstance().deprecatedFeatures;
+    public static Profile getInstance() {
+        return CURRENT;
     }
 
     public static boolean isFeatureEnabled(Feature feature) {
-        return !getInstance().disabledFeatures.contains(feature);
+        return getInstance().features.get(feature);
     }
 
-    private class Config {
+    public ProfileName getName() {
+        return profileName;
+    }
 
-        private Properties properties;
+    public Set<Feature> getAllFeatures() {
+        return features.keySet();
+    }
 
-        public Config() {
-            properties = new Properties();
+    public Set<Feature> getDisabledFeatures() {
+        return features.entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).collect(Collectors.toSet());
+    }
 
-            try {
-                String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
-                if (jbossServerConfigDir != null) {
-                    File file = new File(jbossServerConfigDir, "profile.properties");
-                    if (file.isFile()) {
-                        try (FileInputStream is = new FileInputStream(file)) {
-                            properties.load(is);
-                        }
+    public Set<Feature> getPreviewFeatures() {
+        return getFeatures(Feature.Type.PREVIEW);
+    }
+
+    public Set<Feature> getExperimentalFeatures() {
+        return getFeatures(Feature.Type.EXPERIMENTAL);
+    }
+
+    public Set<Feature> getDeprecatedFeatures() {
+        return getFeatures(Feature.Type.DEPRECATED);
+    }
+
+    public Set<Feature> getFeatures(Feature.Type type) {
+        return features.keySet().stream().filter(f -> f.getType().equals(type)).collect(Collectors.toSet());
+    }
+
+    public Map<Feature, Boolean> getFeatures() {
+        return features;
+    }
+
+    public enum ProfileName {
+        DEFAULT,
+        PREVIEW
+    }
+
+    private static Boolean isFeatureEnabled(ProfileName profile, Feature feature, ProfileConfigResolver... resolvers) {
+        ProfileConfigResolver.FeatureConfig configuration = Arrays.stream(resolvers).map(r -> r.getFeatureConfig(feature))
+                .filter(r -> !r.equals(ProfileConfigResolver.FeatureConfig.UNCONFIGURED))
+                .findFirst()
+                .orElse(ProfileConfigResolver.FeatureConfig.UNCONFIGURED);
+        switch (configuration) {
+            case ENABLED:
+                return true;
+            case DISABLED:
+                return false;
+            default:
+                switch (feature.getType()) {
+                    case DEFAULT:
+                        return true;
+                    case PREVIEW:
+                        return profile.equals(ProfileName.PREVIEW) ? true : false;
+                    default:
+                        return false;
+                }
+        }
+    }
+
+    private static void verifyConfig(Map<Feature, Boolean> features) {
+        for (Feature f : features.keySet()) {
+            if (f.getDependencies() != null) {
+                for (Feature d : f.getDependencies()) {
+                    if (!features.get(d)) {
+                        throw new ProfileException("Feature " + f.getKey() + " depends on disabled feature " + d.getKey());
                     }
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
-        }
-
-        public String getProfile() {
-            String profile = getProperty("keycloak.profile");
-            if (profile != null) {
-                return profile;
-            }
-
-            profile = properties.getProperty("profile");
-            if (profile != null) {
-                return profile;
-            }
-
-            return Version.DEFAULT_PROFILE;
-        }
-
-        public Boolean getConfig(Feature feature) {
-            String config = getProperty("keycloak.profile.feature." + feature.name().toLowerCase());
-
-            if (config == null) {
-                config = properties.getProperty("feature." + feature.name().toLowerCase());
-            }
-
-            if (config == null) {
-                return null;
-            } else if (config.equals("enabled")) {
-                return Boolean.TRUE;
-            } else if (config.equals("disabled")) {
-                return Boolean.FALSE;
-            } else {
-                throw new RuntimeException("Invalid value for feature " + config);
-            }
-        }
-
-        private String getProperty(String name) {
-            String value = System.getProperty(name);
-
-            if (value != null) {
-                return value;
-            }
-            
-            if (propertyResolver != null) {
-                return propertyResolver.resolve(name);
-            }
-            
-            return null;
         }
     }
-    
-    public interface PropertyResolver {
-        String resolve(String feature);
+
+    private void logUnsupportedFeatures() {
+        logUnsuportedFeatures(Feature.Type.PREVIEW, Logger.Level.INFO);
+        logUnsuportedFeatures(Feature.Type.EXPERIMENTAL, Logger.Level.WARN);
+        logUnsuportedFeatures(Feature.Type.DEPRECATED, Logger.Level.WARN);
+    }
+
+    private void logUnsuportedFeatures(Feature.Type type, Logger.Level level) {
+        String enabledFeaturesOfType = features.entrySet().stream()
+                .filter(e -> e.getValue() && e.getKey().getType().equals(type))
+                .map(e -> e.getKey().getKey()).sorted().collect(Collectors.joining(", "));
+
+        if (!enabledFeaturesOfType.isEmpty()) {
+            logger.logv(level, "{0} features enabled: {1}", type.getLabel(), enabledFeaturesOfType);
+        }
     }
 
 }

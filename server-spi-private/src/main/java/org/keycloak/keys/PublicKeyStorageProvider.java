@@ -31,10 +31,11 @@ public interface PublicKeyStorageProvider extends Provider {
      *
      * @param modelKey
      * @param kid
+     * @param algorithm The returned key must match this algorithm (unless the algorithm is not set in the JWK)
      * @param loader
      * @return
      */
-	KeyWrapper getPublicKey(String modelKey, String kid, PublicKeyLoader loader);
+	KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader);
 
     /**
      * Get first found public key to verify messages signed by particular client having several public keys. Used for example during JWT client authentication
@@ -46,10 +47,5 @@ public interface PublicKeyStorageProvider extends Provider {
      * @return
      */
     KeyWrapper getFirstPublicKey(String modelKey, String algorithm, PublicKeyLoader loader);
-
-    /**
-     * Clears all the cached public keys, so they need to be loaded again
-     */
-    void clearCache();
 
 }

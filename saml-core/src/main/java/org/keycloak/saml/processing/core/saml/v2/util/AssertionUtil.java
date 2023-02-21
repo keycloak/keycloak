@@ -27,24 +27,30 @@ import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
+import org.keycloak.dom.saml.v2.assertion.EncryptedElementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType.STSubType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.exceptions.fed.IssueInstantMissingException;
 import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
+import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLAssertionWriter;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
@@ -55,18 +61,17 @@ import org.w3c.dom.Node;
 
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-
-import org.keycloak.rotation.HardcodedKeyLocator;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 
 /**
  * Utility to deal with assertions
@@ -282,11 +287,11 @@ public class AssertionUtil {
      *
      * @return true if signature is present and valid
      */
-    
+
     public static boolean isSignatureValid(Element element, KeyLocator keyLocator) {
         try {
             SAML2Signature.configureIdAttribute(element);
-            
+
             Element signature = getSignature(element);
             if(signature != null) {
                 return XMLSignatureUtil.validateSingleNode(signature, keyLocator);
@@ -296,11 +301,11 @@ public class AssertionUtil {
         }
         return false;
     }
-    
+
     /**
-     * 
+     *
      * Given an {@linkplain Element}, check if there is a Signature direct child element
-     * 
+     *
      * @param element parent {@linkplain Element}
      * @return true if signature is present
      */
@@ -308,11 +313,11 @@ public class AssertionUtil {
     public static boolean isSignedElement(Element element) {
         return getSignature(element) != null;
     }
-    
+
     protected static Element getSignature(Element element) {
         return DocumentUtil.getDirectChildElement(element, XMLSignature.XMLNS, "Signature");
     }
-    
+
     /**
      * Check whether the assertion has expired.
      * Processing rules defined in Section 2.5.1.2 of saml-core-2.0-os.pdf.
@@ -562,7 +567,7 @@ public class AssertionUtil {
             if (privateKey == null) {
                 throw new ProcessingException("Encryptd assertion and decrypt private key is null");
             }
-            decryptAssertion(holder, responseType, privateKey);
+            decryptAssertion(responseType, privateKey);
 
         }
         return responseType.getAssertions().get(0).getAssertion();
@@ -579,25 +584,32 @@ public class AssertionUtil {
         return rtChoiceType.getEncryptedAssertion() != null;
     }
 
+    public static Element decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
+        return decryptAssertion(responseType, encryptedData -> Collections.singletonList(privateKey));
+    }
+
     /**
      * This method modifies the given responseType, and replaces the encrypted assertion with a decrypted version.
-     * @param responseType a response containg an encrypted assertion
+     *
+     * @param responseType a response containing an encrypted assertion
+     * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
+     *
      * @return the assertion element as it was decrypted. This can be used in signature verification.
      */
-    public static Element decryptAssertion(SAMLDocumentHolder holder, ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
-        Document doc = holder.getSamlDocument();
-        Element enc = DocumentUtil.getElement(doc, new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
-
-        if (enc == null) {
-            throw new ProcessingException("No encrypted assertion found.");
-        }
+    public static Element decryptAssertion(ResponseType responseType, XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator) throws ParsingException, ProcessingException, ConfigurationException {
+        Element enc = responseType.getAssertions().stream()
+                .map(ResponseType.RTChoiceType::getEncryptedAssertion)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .map(EncryptedElementType::getEncryptedElement)
+                .orElseThrow(() -> new ProcessingException("No encrypted assertion found."));
 
         String oldID = enc.getAttribute(JBossSAMLConstants.ID.get());
         Document newDoc = DocumentUtil.createDocument();
         Node importedNode = newDoc.importNode(enc, true);
         newDoc.appendChild(importedNode);
 
-        Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, privateKey);
+        Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, decryptionKeyLocator);
         SAMLParser parser = SAMLParser.getInstance();
 
         JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
@@ -607,5 +619,52 @@ public class AssertionUtil {
         responseType.replaceAssertion(oldID, new ResponseType.RTChoiceType(assertion));
 
         return decryptedDocumentElement;
+    }
+
+    public static boolean isIdEncrypted(final ResponseType responseType) {
+        final STSubType subTypeElement = getSubTypeElement(responseType);
+        return subTypeElement != null && subTypeElement.getEncryptedID() != null;
+    }
+
+    /**
+     * This method modifies the given responseType, and replaces the encrypted id with a decrypted version.
+     *
+     * @param responseType a response containing an encrypted id
+     * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
+     *
+     */
+    public static void decryptId(final ResponseType responseType, XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator) throws ConfigurationException, ProcessingException, ParsingException {
+        final STSubType subTypeElement = getSubTypeElement(responseType);
+        if(subTypeElement == null) {
+            return;
+        }
+        final EncryptedElementType encryptedID = subTypeElement.getEncryptedID();
+        if (encryptedID == null) {
+            return;
+        }
+        Element encryptedElement = encryptedID.getEncryptedElement();
+        Document newDoc = DocumentUtil.createDocument();
+        Node importedNode = newDoc.importNode(encryptedElement, true);
+        newDoc.appendChild(importedNode);
+        Element decryptedNameIdElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, decryptionKeyLocator);
+
+        final XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(DocumentUtil.getNodeAsStream(decryptedNameIdElement));
+        NameIDType nameIDType = SAMLParserUtil.parseNameIDType(xmlEventReader);
+
+        // Add unencrypted id, remove encrypted
+        subTypeElement.addBaseID(nameIDType);
+        subTypeElement.setEncryptedID(null);
+    }
+
+    private static STSubType getSubTypeElement(final ResponseType responseType) {
+        final List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
+        if (assertions.isEmpty()) {
+            return null;
+        }
+        final AssertionType assertion = assertions.get(0).getAssertion();
+        if (assertion.getSubject() == null) {
+            return null;
+        }
+        return assertion.getSubject().getSubType();
     }
 }

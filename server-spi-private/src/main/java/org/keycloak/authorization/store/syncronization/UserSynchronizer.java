@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
 
 package org.keycloak.authorization.store.syncronization;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,11 +25,9 @@ import java.util.Set;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -58,12 +56,14 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         UserModel userModel = event.getUser();
-        Map<String, String[]> attributes = new HashMap<>();
+        RealmModel realm = event.getRealm();
+        Map<Policy.FilterOption, String[]> attributes = new EnumMap<>(Policy.FilterOption.class);
 
-        attributes.put("type", new String[] {"user"});
-        attributes.put("config:users", new String[] {userModel.getId()});
+        attributes.put(Policy.FilterOption.TYPE, new String[] {"user"});
+        attributes.put(Policy.FilterOption.CONFIG, new String[] {"users", userModel.getId()});
+        attributes.put(Policy.FilterOption.ANY_OWNER, new String[] {Boolean.TRUE.toString()});
 
-        List<Policy> search = policyStore.findByResourceServer(attributes, null, -1, -1);
+        List<Policy> search = policyStore.find(realm, null, attributes, null, null);
 
         for (Policy policy : search) {
             PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());
@@ -74,7 +74,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
 
             if (users.isEmpty()) {
                 policyFactory.onRemove(policy, authorizationProvider);
-                policyStore.delete(policy.getId());
+                policyStore.delete(realm, policy.getId());
             } else {
                 policyFactory.onUpdate(policy, representation, authorizationProvider);
             }
@@ -85,26 +85,19 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-        RealmModel realm = event.getRealm();
         UserModel userModel = event.getUser();
+        RealmModel realm = event.getRealm();
 
-        realm.getClientsStream().forEach(clientModel -> {
-            ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
-
-            if (resourceServer != null) {
-                resourceStore.findByOwner(userModel.getId(), resourceServer.getId()).forEach(resource -> {
-                    String resourceId = resource.getId();
-                    policyStore.findByResource(resourceId, resourceServer.getId()).forEach(policy -> {
-                        if (policy.getResources().size() == 1) {
-                            policyStore.delete(policy.getId());
-                        } else {
-                            policy.removeResource(resource);
-                        }
-                    });
-                    resourceStore.delete(resourceId);
-                });
-            }
+        resourceStore.findByOwner(realm, null, userModel.getId(), resource -> {
+            String resourceId = resource.getId();
+            policyStore.findByResource(resource.getResourceServer(), resource).forEach(policy -> {
+                if (policy.getResources().size() == 1) {
+                    policyStore.delete(realm, policy.getId());
+                } else {
+                    policy.removeResource(resource);
+                }
+            });
+            resourceStore.delete(realm, resourceId);
         });
     }
 
@@ -112,20 +105,21 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
         UserModel userModel = event.getUser();
-        Map<String, String> attributes = new HashMap<>();
+        RealmModel realm = event.getRealm();
+        Map<PermissionTicket.FilterOption, String> attributes = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-        attributes.put(PermissionTicket.OWNER, userModel.getId());
+        attributes.put(PermissionTicket.FilterOption.OWNER, userModel.getId());
 
-        for (PermissionTicket ticket : ticketStore.find(attributes, null, -1, -1)) {
-            ticketStore.delete(ticket.getId());
+        for (PermissionTicket ticket : ticketStore.find(realm, null, attributes, null, null)) {
+            ticketStore.delete(realm, ticket.getId());
         }
 
-        attributes = new HashMap<>();
+        attributes.clear();
         
-        attributes.put(PermissionTicket.REQUESTER, userModel.getId());
+        attributes.put(PermissionTicket.FilterOption.REQUESTER, userModel.getId());
 
-        for (PermissionTicket ticket : ticketStore.find(attributes, null, -1, -1)) {
-            ticketStore.delete(ticket.getId());
+        for (PermissionTicket ticket : ticketStore.find(realm, null, attributes, null, null)) {
+            ticketStore.delete(realm, ticket.getId());
         }
     }
 }

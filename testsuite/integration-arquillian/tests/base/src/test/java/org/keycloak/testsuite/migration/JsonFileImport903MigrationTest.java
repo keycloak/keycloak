@@ -25,13 +25,10 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class JsonFileImport903MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Override
@@ -51,7 +48,9 @@ public class JsonFileImport903MigrationTest extends AbstractJsonFileImportMigrat
     @Test
     public void migration9_0_3Test() throws Exception {
         checkRealmsImported();
-        testMigrationTo12_x();
+        testMigrationTo12_x(true);
+        testMigrationTo18_x();
+        testMigrationTo20_x();
     }
 
 }

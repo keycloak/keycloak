@@ -19,15 +19,14 @@ package org.keycloak.testsuite.migration;
 import org.junit.Test;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.common.Profile;
+import org.keycloak.testsuite.ProfileAssume;
 
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
@@ -35,7 +34,6 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(value = {AuthServer.REMOTE, AuthServer.QUARKUS}, details = "It works locally for Quarkus, but failing on CI for unknown reason")
 public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Override
@@ -44,6 +42,10 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
         try {
             reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-2.5.5.Final.json"));
             masterRep = reps.remove("master");
+
+            //the realm with special characters in its id is intended for db migration test, not json file test
+            reps.remove("test ' and ; and -- and \"");
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -58,13 +60,15 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
     public void migration2_5_5Test() throws Exception {
         checkRealmsImported();
         testMigrationTo3_x();
-        testMigrationTo4_x(true, false);
+        testMigrationTo4_x(ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION), false);
         testMigrationTo5_x();
         testMigrationTo6_x();
-        testMigrationTo7_x(true);
+        testMigrationTo7_x(ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
         testMigrationTo8_x();
         testMigrationTo9_x();
-        testMigrationTo12_x();
+        testMigrationTo12_x(false);
+        testMigrationTo18_x();
+        testMigrationTo20_x();
     }
 
 }

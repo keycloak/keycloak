@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.actions;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -40,6 +41,8 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -51,6 +54,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
@@ -63,6 +67,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.hamcrest.Matchers;
@@ -71,16 +76,15 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeycloakTest {
 
@@ -89,6 +93,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Page
     protected AppPage appPage;
@@ -353,7 +360,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.navigate().to(verificationUrl1.trim());
 
         appPage.assertCurrent();
-        appPage.logout();
+        accountPage.setAuthRealm(AuthRealm.TEST);
+        accountPage.navigateTo();
+        accountPage.logOut();
 
         MimeMessage message2 = greenMail.getReceivedMessages()[1];
 
@@ -453,7 +462,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         events.poll();
 
         try {
-            setTimeOffset(3600);
+            setTimeOffset(360);
 
             driver.navigate().to(verificationUrl.trim());
 
@@ -763,7 +772,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
             accountPage.assertCurrent();
 
-            driver.navigate().to(oauth.getLogoutUrl().redirectUri(accountPage.buildUri().toString()).build());
+            accountPage.logOut();
             loginPage.assertCurrent();
 
             verifyEmailDuringAuthFlow();
@@ -804,7 +813,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 assertThat(driver2.getCurrentUrl(), Matchers.startsWith(accountPage.buildUri().toString()));
 
                 // Browser 1: Logout
-                driver.navigate().to(oauth.getLogoutUrl().redirectUri(accountPage.buildUri().toString()).build());
+                accountPage.logOut();
 
                 // Browser 1: Go to account page
                 accountPage.navigateTo();
@@ -989,7 +998,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String verificationUrl = getPasswordResetEmailLink(message);
 
         try {
-            setTimeOffset(3600);
+            setTimeOffset(360);
 
             driver.navigate().to(verificationUrl.trim());
 
@@ -998,5 +1007,54 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         } finally {
             setTimeOffset(0);
         }
+    }
+
+    // KEYCLOAK-15170
+    @Test
+    public void changeEmailAddressAfterSendingEmail() throws Exception {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.assertCurrent();
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        UserResource user = testRealm().users().get(testUserId);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setEmail("vmuzikar@redhat.com");
+        user.update(userRep);
+
+        driver.navigate().to(verificationUrl.trim());
+        errorPage.assertCurrent();
+        assertEquals("The link you clicked is an old stale link and is no longer valid. Maybe you have already verified your email.", errorPage.getError());
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.UPDATE_EMAIL, skipRestart = true)
+    public void actionTokenWithInvalidRequiredActions() throws IOException {
+        // Send email with required action
+        testRealm().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.UPDATE_EMAIL.name()));
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        MailUtils.EmailBody body = MailUtils.getBody(message);
+        assertThat(body, notNullValue());
+
+        final String link = MailUtils.getLink(body.getText());
+        assertThat(link, notNullValue());
+
+        // Disable feature and the required action UPDATE_EMAIL provider is not present
+        testingClient.disableFeature(Profile.Feature.UPDATE_EMAIL);
+
+        driver.navigate().to(link);
+
+        errorPage.assertCurrent();
+
+        // Required action included in the action token is not valid anymore, because we don't know the provider for it
+        assertThat(errorPage.getError(), is("Required actions included in the link are not valid"));
     }
 }

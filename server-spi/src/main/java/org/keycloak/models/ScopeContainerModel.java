@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,29 +29,10 @@ import java.util.stream.Stream;
 public interface ScopeContainerModel {
 
     /**
-     * @deprecated Use {@link #getScopeMappingsStream() getScopeMappingsStream} instead.
-     */
-    @Deprecated
-    default Set<RoleModel> getScopeMappings() {
-        return getScopeMappingsStream().collect(Collectors.toSet());
-    }
-
-    /**
      * Returns scope mappings for this scope container as a stream.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
     Stream<RoleModel> getScopeMappingsStream();
-
-    /**
-     * From the scope mappings returned by {@link #getScopeMappings()} returns only those
-     * that belong to the realm that owns this scope container.
-     * @return set of {@link RealmModel}
-     * @deprecated Use {@link #getRealmScopeMappingsStream() getRealmScopeMappingsStream} instead.
-     */
-    @Deprecated
-    default Set<RoleModel> getRealmScopeMappings() {
-        return getRealmScopeMappingsStream().collect(Collectors.toSet());
-    }
 
     /**
      * From the scope mappings returned by {@link #getScopeMappingsStream()} returns only those
@@ -63,6 +45,26 @@ public interface ScopeContainerModel {
 
     void deleteScopeMapping(RoleModel role);
 
+    /**
+     * Returns {@code true}, if this object has the given role directly in its scope.
+     *
+     * @param role the role
+     * @return see description
+     * @see #hasScope(RoleModel) if you want to check whether this object has the given role directly or indirectly in
+     *      its scope
+     */
+    default boolean hasDirectScope(RoleModel role) {
+        return getScopeMappingsStream().anyMatch(r -> Objects.equals(r, role));
+    }
+
+    /**
+     * Returns {@code true}, if this object has the given role directly or indirectly in its scope, {@code false}
+     * otherwise.
+     *
+     * @param role the role
+     * @return see description
+     * @see #hasDirectScope(RoleModel) if you want to check if this object has the given role directly in its scope
+     */
     boolean hasScope(RoleModel role);
 
 }

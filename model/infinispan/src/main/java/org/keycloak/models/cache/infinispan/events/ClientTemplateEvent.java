@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
@@ -58,6 +59,20 @@ public class ClientTemplateEvent extends InvalidationEvent implements RealmCache
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
         // Nothing. ID was already invalidated
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ClientTemplateEvent that = (ClientTemplateEvent) o;
+        return Objects.equals(clientTemplateId, that.clientTemplateId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), clientTemplateId);
     }
 
     public static class ExternalizerImpl implements Externalizer<ClientTemplateEvent> {

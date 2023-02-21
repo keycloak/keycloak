@@ -24,6 +24,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
@@ -95,6 +96,7 @@ public class HttpClientBuilder {
     protected int connectionPoolSize = 128;
     protected int maxPooledPerRoute = 64;
     protected long connectionTTL = -1;
+    protected boolean reuseConnections = true;
     protected TimeUnit connectionTTLUnit = TimeUnit.MILLISECONDS;
     protected long maxConnectionIdleTime = 900000;
     protected TimeUnit maxConnectionIdleTimeUnit = TimeUnit.MILLISECONDS;
@@ -105,6 +107,7 @@ public class HttpClientBuilder {
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
     protected boolean disableCookies = false;
     protected ProxyMappings proxyMappings;
+    protected boolean expectContinueEnabled = false;
 
     /**
      * Socket inactivity timeout
@@ -137,6 +140,11 @@ public class HttpClientBuilder {
     public HttpClientBuilder connectionTTL(long ttl, TimeUnit unit) {
         this.connectionTTL = ttl;
         this.connectionTTLUnit = unit;
+        return this;
+    }
+
+    public HttpClientBuilder reuseConnections(boolean reuseConnections) {
+        this.reuseConnections = reuseConnections;
         return this;
     }
 
@@ -213,6 +221,10 @@ public class HttpClientBuilder {
         return this;
     }
 
+    public HttpClientBuilder expectContinueEnabled(boolean expectContinueEnabled) {
+        this.expectContinueEnabled = expectContinueEnabled;
+        return this;
+    }
 
     static class VerifierWrapper implements X509HostnameVerifier {
         protected HostnameVerifier verifier;
@@ -280,7 +292,8 @@ public class HttpClientBuilder {
 
             RequestConfig requestConfig = RequestConfig.custom()
                     .setConnectTimeout((int) establishConnectionTimeout)
-                    .setSocketTimeout((int) socketTimeout).build();
+                    .setSocketTimeout((int) socketTimeout)
+                    .setExpectContinueEnabled(expectContinueEnabled).build();
 
             org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
                     .setDefaultRequestConfig(requestConfig)
@@ -289,6 +302,9 @@ public class HttpClientBuilder {
                     .setMaxConnPerRoute(maxPooledPerRoute)
                     .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
 
+            if (!reuseConnections) {
+                builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
+            }
 
             if (proxyMappings != null && !proxyMappings.isEmpty()) {
                 builder.setRoutePlanner(new ProxyMappingsAwareRoutePlanner(proxyMappings));
@@ -300,6 +316,11 @@ public class HttpClientBuilder {
             }
 
             if (disableCookies) builder.disableCookieManagement();
+
+            if (!reuseConnections) {
+                builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
+            }
+
             return builder.build();
         } catch (Exception e) {
             throw new RuntimeException(e);

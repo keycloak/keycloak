@@ -56,6 +56,8 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -67,9 +69,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -95,8 +94,6 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
 
         RealmBuilder realm = RealmBuilder.create().name("test")
-                .privateKey("MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=")
-                .publicKey("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB")
                 .testEventListener();
 
         ClientRepresentation enabledApp = ClientBuilder.create()
@@ -125,6 +122,15 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .build();
 
         realm.client(disabledApp);
+
+        ClientRepresentation secretsWithSpecialCharacterClient = ClientBuilder.create()
+            .id(KeycloakModelUtils.generateId())
+            .clientId("service-account-cl-special-secrets")
+            .secret("secret/with=special?character")
+            .serviceAccountsEnabled(true)
+            .build();
+
+        realm.client(secretsWithSpecialCharacterClient);
 
         UserBuilder defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -333,13 +339,13 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         representation.setCredentials(Arrays.asList(password));
 
-        this.expectedException.expect(Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), 
+        this.expectedException.expect(Matchers.allOf(Matchers.instanceOf(ClientErrorException.class),
                 Matchers.hasProperty("response", Matchers.hasProperty("status", Matchers.is(400)))));
         this.expectedException.reportMissingExceptionWithMessage("Should fail, should not be possible to manage credentials for service accounts");
 
         serviceAccount.update(representation);
     }
-    
+
     /**
      * See KEYCLOAK-9551
      */
@@ -512,5 +518,17 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         HttpResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret1");
         assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+    }
+
+    /**
+     *  See KEYCLOAK-18704
+     */
+    @Test
+    public void clientCredentialsAuthSuccessWithUrlEncodedSpecialCharactersSecret() throws Exception {
+        oauth.clientId("service-account-cl-special-secrets");
+
+        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret/with=special?character");
+
+        assertEquals(200, response.getStatusCode());
     }
 }

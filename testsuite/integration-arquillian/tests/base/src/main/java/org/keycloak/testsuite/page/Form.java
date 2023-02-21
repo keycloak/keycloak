@@ -46,7 +46,7 @@ public class Form {
     private WebElement cancel;
 
     public void save() {
-        clickLink(save);
+        clickLink(saveBtn());
         try {
             AbstractPatternFlyAlert.waitUntilDisplayed();
         }
@@ -56,7 +56,7 @@ public class Form {
     }
 
     public void cancel() {
-        guardAjax(cancel).click();
+        guardAjax(cancelBtn()).click();
     }
 
     public WebElement saveBtn() {

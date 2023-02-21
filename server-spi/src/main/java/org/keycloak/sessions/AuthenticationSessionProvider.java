@@ -38,18 +38,6 @@ public interface AuthenticationSessionProvider extends Provider {
     RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm);
 
     /**
-     * Creates a new root authentication session specified by the provided id and realm.
-     * @param id {@code String} Id of newly created root authentication session. If {@code null} a random id will be generated.
-     * @param realm {@code RealmModel} Can't be {@code null}.
-     * @return Returns created {@code RootAuthenticationSessionModel}. Never returns {@code null}.
-     * @deprecated Use {@link #createRootAuthenticationSession(RealmModel, String)} createRootAuthenticationSession} instead.
-     */
-    @Deprecated
-    default RootAuthenticationSessionModel createRootAuthenticationSession(String id, RealmModel realm) {
-        return createRootAuthenticationSession(realm, id);
-    }
-
-    /**
      * Creates a new root authentication session specified by the provided realm and id.
      * @param realm {@code RealmModel} Can't be {@code null}.
      * @param id {@code String} Id of newly created root authentication session. If {@code null} a random id will be generated.
@@ -74,12 +62,19 @@ public interface AuthenticationSessionProvider extends Provider {
 
     /**
      * Remove expired authentication sessions in all the realms
+     *
+     * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store
+     *             implementation to handle expirable entities
      */
     void removeAllExpired();
 
     /**
      * Removes all expired root authentication sessions for the given realm.
      * @param realm {@code RealmModel} Can't be {@code null}.
+     *
+     *
+     * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store
+     *             implementation to handle expirable entities
      */
     void removeExpired(RealmModel realm);
 

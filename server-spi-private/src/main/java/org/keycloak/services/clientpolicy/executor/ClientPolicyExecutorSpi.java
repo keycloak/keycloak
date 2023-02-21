@@ -26,6 +26,8 @@ import org.keycloak.provider.Spi;
  */
 public class ClientPolicyExecutorSpi implements Spi {
 
+    public static final String SPI_NAME = "client-policy-executor";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -33,7 +35,7 @@ public class ClientPolicyExecutorSpi implements Spi {
 
     @Override
     public String getName() {
-        return "client-policy-executor";
+        return SPI_NAME;
     }
 
     @Override

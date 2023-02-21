@@ -51,18 +51,6 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
     RoleModel addRealmRole(RealmModel realm, String id, String name);
 
     /**
-     * Returns all the realm roles of the given realm.
-     * Effectively the same as the call {@code getRealmRoles(realm, null, null)}.
-     * @param realm Realm.
-     * @return List of the roles. Never returns {@code null}.
-     * @deprecated use the stream variant instead
-     */
-    @Deprecated
-    default Set<RoleModel> getRealmRoles(RealmModel realm) {
-        return getRealmRolesStream(realm, null, null).collect(Collectors.toSet());
-    }
-
-    /**
      * Returns all the realm roles of the given realm as a stream.
      * Effectively the same as the call {@code getRealmRolesStream(realm, null, null)}.
      * @param realm Realm.
@@ -80,6 +68,18 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @return Stream of the roles. Never returns {@code null}.
      */
     Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max);
+
+    /**
+     * Returns a paginated stream of roles with given ids and given search value in role names.
+     *
+     * @param realm Realm. Cannot be {@code null}.
+     * @param ids Stream of ids. Returns empty {@code Stream} when {@code null}.
+     * @param search Case-insensitive string to search by role's name or description. Ignored if {@code null}.
+     * @param first Index of the first result to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of desired roles. Never returns {@code null}.
+     */
+    Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max);
 
     /**
      * Removes given realm role from the given realm.

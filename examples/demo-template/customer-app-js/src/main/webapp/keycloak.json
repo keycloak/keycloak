@@ -1,7 +1,0 @@
-{
-  "realm" : "demo",
-  "auth-server-url" : "/auth",
-  "ssl-required" : "external",
-  "resource" : "customer-portal-js",
-  "public-client" : true
-}

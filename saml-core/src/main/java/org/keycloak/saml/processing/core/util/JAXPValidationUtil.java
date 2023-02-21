@@ -98,8 +98,8 @@ public class JAXPValidationUtil {
             // Do not optimize the following into setProperty(...) && setProperty(...).
             // This way if it fails in the first setProperty, it will try the subsequent setProperty anyway
             // which it would not due to short-circuiting in case of an && expression.
-            boolean successful1 = setProperty(validator, XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            successful1 &= setProperty(validator, XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            boolean successful1 = setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_DTD, "");
+            successful1 &= setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             boolean successful2 = setFeature(validator, feature_disallow_doctype_decl, true);
             successful2 &= setFeature(validator, feature_external_general_entities, false);
             successful2 &= setFeature(validator, feature_external_parameter_entities, false);

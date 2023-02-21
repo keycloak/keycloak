@@ -17,6 +17,7 @@
 
 package org.keycloak.models.utils;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -24,75 +25,84 @@ import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
-import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
+
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.keycloak.models.AccountRoles;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+
+import static org.keycloak.models.Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE;
+import static org.keycloak.models.Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
  *
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public final class KeycloakModelUtils {
+
+    private static final Logger logger = Logger.getLogger(KeycloakModelUtils.class);
+
+    public static final String AUTH_TYPE_CLIENT_SECRET = "client-secret";
+    public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
+
+    public static final String GROUP_PATH_SEPARATOR = "/";
+    private static final char CLIENT_ROLE_SEPARATOR = '.';
 
     private KeycloakModelUtils() {
     }
 
     public static String generateId() {
         return UUID.randomUUID().toString();
-    }
-
-    public static byte[] generateSecret() {
-        return generateSecret(32);
-    }
-
-    public static byte[] generateSecret(int bytes) {
-        byte[] buf = new byte[bytes];
-        new SecureRandom().nextBytes(buf);
-        return buf;
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {
@@ -156,14 +166,16 @@ public final class KeycloakModelUtils {
         return rep;
     }
 
-    public static UserCredentialModel generateSecret(ClientModel client) {
-        UserCredentialModel secret = UserCredentialModel.generateSecret();
-        client.setSecret(secret.getChallengeResponse());
+    public static String generateSecret(ClientModel client) {
+        int secretLength = getSecretLengthByAuthenticationType(client.getClientAuthenticatorType(), client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG));
+        String secret = SecretGenerator.getInstance().randomString(secretLength);
+        client.setSecret(secret);
+        client.setAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME, String.valueOf(Time.currentTime()));
         return secret;
     }
 
     public static String getDefaultClientAuthenticatorType() {
-        return "client-secret";
+        return AUTH_TYPE_CLIENT_SECRET;
     }
 
     public static String generateCodeSecret() {
@@ -215,7 +227,7 @@ public final class KeycloakModelUtils {
 
         Set<RoleModel> compositeRoles = composite.getCompositesStream().collect(Collectors.toSet());
         return compositeRoles.contains(role) ||
-                        compositeRoles.stream().anyMatch(x -> x.isComposite() && searchFor(role, x, visited));
+                compositeRoles.stream().anyMatch(x -> x.isComposite() && searchFor(role, x, visited));
     }
 
     /**
@@ -238,34 +250,102 @@ public final class KeycloakModelUtils {
 
     /**
      * Wrap given runnable job into KeycloakTransaction.
-     *
-     * @param factory
-     * @param task
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
-        KeycloakSession session = factory.create();
-        KeycloakTransaction tx = session.getTransactionManager();
-        try {
-            tx.begin();
+        runJobInTransactionWithResult(factory, session -> {
             task.run(session);
+            return null;
+        });
+    }
 
-            if (tx.isActive()) {
-                if (tx.getRollbackOnly()) {
-                    tx.rollback();
+    /**
+     * Wrap a given callable job into a KeycloakTransaction.
+     */
+    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
+        V result;
+        try (KeycloakSession session = factory.create()) {
+            session.getTransactionManager().begin();
+            try {
+                result = callable.run(session);
+            } catch (Throwable t) {
+                session.getTransactionManager().setRollbackOnly();
+                throw t;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Creates a new {@link KeycloakSession} and runs the specified callable in a new transaction. If the transaction fails
+     * with a SQL retriable error, the method re-executes the specified callable until it either succeeds or the maximum number
+     * of attempts is reached, leaving some increasing random delay milliseconds between the invocations. It uses the exponential
+     * backoff + jitter algorithm to compute the delay, which is limited to {@code attemptsCount * retryIntervalMillis}.
+     * More details https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+     *
+     * @param factory a reference to the {@link KeycloakSessionFactory}.
+     * @param callable a reference to the {@link KeycloakSessionTaskWithResult} that will be executed in a retriable way.
+     * @param attemptsCount the maximum number of attempts to execute the callable.
+     * @param retryIntervalMillis the base interval value in millis used to compute the delay.
+     * @param <V> the type returned by the callable.
+     * @return the value computed by the callable.
+     */
+    public static <V> V runJobInRetriableTransaction(final KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable,
+                                                     final int attemptsCount, final int retryIntervalMillis) {
+        int retryCount = 0;
+        Random rand = new Random();
+        while (true) {
+            try (KeycloakSession session = factory.create()) {
+                session.getTransactionManager().begin();
+                return callable.run(session);
+            } catch (RuntimeException re) {
+                if (isExceptionRetriable(re) && ++retryCount < attemptsCount) {
+                    int delay = Math.min(retryIntervalMillis * attemptsCount, (1 << retryCount) * retryIntervalMillis)
+                            + rand.nextInt(retryIntervalMillis);
+                    logger.debugf("Caught retriable exception, retrying request. Retry count = %s, retry delay = %s", retryCount, delay);
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException ie) {
+                        ie.addSuppressed(re);
+                        throw new RuntimeException(ie);
+                    }
                 } else {
-                    tx.commit();
+                    if (retryCount == attemptsCount) {
+                        logger.debug("Exhausted all retry attempts for request.");
+                        throw new RuntimeException("retries exceeded", re);
+                    }
+                    throw re;
                 }
             }
-        } catch (RuntimeException re) {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
-            throw re;
-        } finally {
-            session.close();
         }
     }
 
+    /**
+     * Checks if the specified exception is retriable or not. A retriable exception must be an instance of {@code SQLException}
+     * and must have a 40001 SQL retriable state. This is a standard SQL state as defined in SQL standard, and across the
+     * implementations its meaning boils down to "deadlock" (applies to Postgres, MSSQL, Oracle, MySQL, and others).
+     *
+     * @param exception the exception to be checked.
+     * @return {@code true} if the exception is retriable; {@code false} otherwise.
+     */
+    public static boolean isExceptionRetriable(final Throwable exception) {
+        Objects.requireNonNull(exception);
+        // first find the root cause and check if it is a SQLException
+        Throwable rootCause = exception;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+        }
+        // JTA transaction handler might add multiple suppressed exceptions to the root cause, evaluate each of those
+        for (Throwable suppressed : rootCause.getSuppressed()) {
+            if (isExceptionRetriable(suppressed)) {
+                return true;
+            }
+        };
+        if (rootCause instanceof SQLException) {
+            // check if the exception state is a recoverable one (40001)
+            return "40001".equals(((SQLException) rootCause).getSQLState());
+        }
+        return false;
+    }
 
     /**
      * Wrap given runnable job into KeycloakTransaction. Set custom timeout for the JTA transaction (in case we're in the environment with JTA enabled)
@@ -275,34 +355,28 @@ public final class KeycloakModelUtils {
      * @param timeoutInSeconds
      */
     public static void runJobInTransactionWithTimeout(KeycloakSessionFactory factory, KeycloakSessionTask task, int timeoutInSeconds) {
-        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)factory.getProviderFactory(JtaTransactionManagerLookup.class);
         try {
-            if (lookup != null) {
-                if (lookup.getTransactionManager() != null) {
-                    try {
-                        lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
-                    } catch (SystemException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-
+            setTransactionLimit(factory, timeoutInSeconds);
             runJobInTransaction(factory, task);
-
         } finally {
-            if (lookup != null) {
-                if (lookup.getTransactionManager() != null) {
-                    try {
-                        // Reset to default transaction timeout
-                        lookup.getTransactionManager().setTransactionTimeout(0);
-                    } catch (SystemException e) {
-                        // Shouldn't happen for Wildfly transaction manager
-                        throw new RuntimeException(e);
-                    }
+            setTransactionLimit(factory, 0);
+        }
+
+    }
+
+    public static void setTransactionLimit(KeycloakSessionFactory factory, int timeoutInSeconds) {
+        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup) factory.getProviderFactory(JtaTransactionManagerLookup.class);
+        if (lookup != null) {
+            if (lookup.getTransactionManager() != null) {
+                try {
+                    // If timeout is set to 0, reset to default transaction timeout
+                    lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
+                } catch (SystemException e) {
+                    // Shouldn't happen for Wildfly transaction manager
+                    throw new RuntimeException(e);
                 }
             }
         }
-
     }
 
     public static Function<KeycloakSessionFactory, ComponentModel> componentModelGetter(String realmId, String componentId) {
@@ -323,7 +397,7 @@ public final class KeycloakModelUtils {
         String componentId = config.get("componentId");
         if (realmId == null || componentId == null) {
             realmId = "ROOT";
-            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName);
+            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName, realmId);
             return factory.getProviderFactory(providerClass, realmId, cm.getId(), k -> cm);
         } else {
             return factory.getProviderFactory(providerClass, realmId, componentId, componentModelGetter(realmId, componentId));
@@ -335,14 +409,16 @@ public final class KeycloakModelUtils {
         private final String componentId;
         private final String providerId;
         private final String providerType;
+        private final String realmId;
         private final Scope config;
 
-        public ScopeComponentModel(Class<?> providerClass, Scope baseConfiguration, String spiName) {
+        public ScopeComponentModel(Class<?> providerClass, Scope baseConfiguration, String spiName, String realmId) {
             final String pr = baseConfiguration.get("provider", Config.getProvider(spiName));
 
             this.providerId = pr == null ? "default" : pr;
             this.config = baseConfiguration.scope(this.providerId);
-            this.componentId = spiName + "-" + this.providerId;
+            this.componentId = spiName + "- " + (realmId == null ? "" : "f:" + realmId + ":") + this.providerId;
+            this.realmId = realmId;
             this.providerType = providerClass.getName();
         }
 
@@ -367,6 +443,11 @@ public final class KeycloakModelUtils {
         }
 
         @Override
+        public String getParentId() {
+            return realmId;
+        }
+
+        @Override
         public boolean get(String key, boolean defaultValue) {
             return config.getBoolean(key, defaultValue);
         }
@@ -383,7 +464,6 @@ public final class KeycloakModelUtils {
 
         @Override
         public String get(String key, String defaultValue) {
-
             return config.get(key, defaultValue);
         }
 
@@ -399,24 +479,6 @@ public final class KeycloakModelUtils {
 
     // USER FEDERATION RELATED STUFF
 
-
-    public static UserStorageProviderModel findUserStorageProviderByName(String displayName, RealmModel realm) {
-        if (displayName == null) {
-            return null;
-        }
-
-        return realm.getUserStorageProvidersStream()
-                .filter(fedProvider -> Objects.equals(fedProvider.getName(), displayName))
-                .findFirst()
-                .orElse(null);
-    }
-
-    public static UserStorageProviderModel findUserStorageProviderById(String fedProviderId, RealmModel realm) {
-        return realm.getUserStorageProvidersStream()
-                .filter(fedProvider -> Objects.equals(fedProvider.getId(), fedProviderId))
-                .findFirst()
-                .orElse(null);
-    }
 
     public static ComponentModel createComponentModel(String name, String parentId, String providerId, String providerType, String... config) {
         ComponentModel mapperModel = new ComponentModel();
@@ -445,12 +507,13 @@ public final class KeycloakModelUtils {
     // END USER FEDERATION RELATED STUFF
 
     public static String toLowerCaseSafe(String str) {
-        return str==null ? null : str.toLowerCase();
+        return str == null ? null : str.toLowerCase();
     }
 
     /**
      * Creates default role for particular realm with the given name.
-     * @param realm Realm
+     *
+     * @param realm           Realm
      * @param defaultRoleName Name of the newly created defaultRole
      */
     public static void setupDefaultRole(RealmModel realm, String defaultRoleName) {
@@ -505,13 +568,13 @@ public final class KeycloakModelUtils {
 
     }
 
-    public static List<String>  resolveAttribute(GroupModel group, String name) {
-        List<String> values = group.getAttributeStream(name).collect(Collectors.toList());
-        if (!values.isEmpty()) return values;
-        if (group.getParentId() == null) return null;
-        return resolveAttribute(group.getParent(), name);
+    public static Collection<String> resolveAttribute(GroupModel group, String name, boolean aggregateAttrs) {
+        Set<String> values = group.getAttributeStream(name).collect(Collectors.toSet());
+        if ((values.isEmpty() || aggregateAttrs) && group.getParentId() != null) {
+            values.addAll(resolveAttribute(group.getParent(), name, aggregateAttrs));
+        }
+        return values;
     }
-
 
     public static Collection<String> resolveAttribute(UserModel user, String name, boolean aggregateAttrs) {
         List<String> values = user.getAttributeStream(name).collect(Collectors.toList());
@@ -522,13 +585,13 @@ public final class KeycloakModelUtils {
             }
             aggrValues.addAll(values);
         }
-        Stream<List<String>> attributes = user.getGroupsStream()
-                .map(group -> resolveAttribute(group, name))
+        Stream<Collection<String>> attributes = user.getGroupsStream()
+                .map(group -> resolveAttribute(group, name, aggregateAttrs))
                 .filter(Objects::nonNull)
                 .filter(attr -> !attr.isEmpty());
 
         if (!aggregateAttrs) {
-            Optional<List<String>> first = attributes.findFirst();
+            Optional<Collection<String>> first = attributes.findFirst();
             if (first.isPresent()) return first.get();
         } else {
             aggrValues.addAll(attributes.flatMap(Collection::stream).collect(Collectors.toSet()));
@@ -546,8 +609,7 @@ public final class KeycloakModelUtils {
             if (groupName.equals(pathSegments[index])) {
                 if (pathSegments.length == index + 1) {
                     return group;
-                }
-                else {
+                } else {
                     if (index + 1 < pathSegments.length) {
                         GroupModel found = findSubGroup(pathSegments, index + 1, group);
                         if (found != null) return found;
@@ -559,16 +621,16 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Given the {@code pathParts} of a group with the given {@code groupName}, format the {@pathParts} in order to ignore
+     * Given the {@code pathParts} of a group with the given {@code groupName}, format the {@code segments} in order to ignore
      * group names containing a {@code /} character.
      *
-     * @param segments the path segments
-     * @param index the index pointing to the position to start looking for the group name
+     * @param segments  the path segments
+     * @param index     the index pointing to the position to start looking for the group name
      * @param groupName the groupName
      * @return a new array of strings with the correct segments in case the group has a name containing slashes
      */
     private static String[] formatPathSegments(String[] segments, int index, String groupName) {
-        String[] nameSegments = groupName.split("/");
+        String[] nameSegments = groupName.split(GROUP_PATH_SEPARATOR);
 
         if (nameSegments.length > 1 && segments.length >= nameSegments.length) {
             for (int i = 0; i < nameSegments.length; i++) {
@@ -600,13 +662,13 @@ public final class KeycloakModelUtils {
         if (path == null) {
             return null;
         }
-        if (path.startsWith("/")) {
+        if (path.startsWith(GROUP_PATH_SEPARATOR)) {
             path = path.substring(1);
         }
-        if (path.endsWith("/")) {
+        if (path.endsWith(GROUP_PATH_SEPARATOR)) {
             path = path.substring(0, path.length() - 1);
         }
-        String[] split = path.split("/");
+        String[] split = path.split(GROUP_PATH_SEPARATOR);
         if (split.length == 0) return null;
 
         return realm.getTopLevelGroupsStream().map(group -> {
@@ -616,8 +678,7 @@ public final class KeycloakModelUtils {
             if (groupName.equals(pathSegments[0])) {
                 if (pathSegments.length == 1) {
                     return group;
-                }
-                else {
+                } else {
                     if (pathSegments.length > 1) {
                         GroupModel subGroup = findSubGroup(pathSegments, 1, group);
                         if (subGroup != null) return subGroup;
@@ -629,11 +690,47 @@ public final class KeycloakModelUtils {
         }).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
+    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent) {
+        if (parent != null) {
+            buildGroupPath(sb, parent.getName(), parent.getParent());
+        }
+        sb.append(GROUP_PATH_SEPARATOR).append(groupName);
+    }
+
+    public static String buildGroupPath(GroupModel group) {
+        StringBuilder sb = new StringBuilder();
+        buildGroupPath(sb, group.getName(), group.getParent());
+        return sb.toString();
+    }
+
+    public static String buildGroupPath(GroupModel group, GroupModel otherParentGroup) {
+        StringBuilder sb = new StringBuilder();
+        buildGroupPath(sb, group.getName(), otherParentGroup);
+        return sb.toString();
+    }
+
+    public static String normalizeGroupPath(final String groupPath) {
+        if (groupPath == null) {
+            return null;
+        }
+
+        String normalized = groupPath;
+
+        if (!normalized.startsWith(GROUP_PATH_SEPARATOR)) {
+            normalized = GROUP_PATH_SEPARATOR +  normalized;
+        }
+        if (normalized.endsWith(GROUP_PATH_SEPARATOR)) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+
+        return normalized;
+    }
+
     /**
-     * @deprecated Use {@link #getClientScopeMappingsStream(ClientModel, ScopeContainerModel)}  getClientScopeMappingsStream} instead.
-     * @param client {@link ClientModel}
+     * @param client    {@link ClientModel}
      * @param container {@link ScopeContainerModel}
      * @return
+     * @deprecated Use {@link #getClientScopeMappingsStream(ClientModel, ScopeContainerModel)}  getClientScopeMappingsStream} instead.
      */
     @Deprecated
     public static Set<RoleModel> getClientScopeMappings(ClientModel client, ScopeContainerModel container) {
@@ -648,8 +745,12 @@ public final class KeycloakModelUtils {
 
     // Used in various role mappers
     public static RoleModel getRoleFromString(RealmModel realm, String roleName) {
+        if (roleName == null) {
+            return null;
+        }
+
         // Check client roles for all possible splits by dot
-        int scopeIndex = roleName.lastIndexOf('.');
+        int scopeIndex = roleName.lastIndexOf(CLIENT_ROLE_SEPARATOR);
         while (scopeIndex >= 0) {
             String appName = roleName.substring(0, scopeIndex);
             ClientModel client = realm.getClientByClientId(appName);
@@ -658,7 +759,7 @@ public final class KeycloakModelUtils {
                 return client.getRole(role);
             }
 
-            scopeIndex = roleName.lastIndexOf('.', scopeIndex - 1);
+            scopeIndex = roleName.lastIndexOf(CLIENT_ROLE_SEPARATOR, scopeIndex - 1);
         }
 
         // determine if roleName is a realm role
@@ -667,7 +768,7 @@ public final class KeycloakModelUtils {
 
     // Used for hardcoded role mappers
     public static String[] parseRole(String role) {
-        int scopeIndex = role.lastIndexOf('.');
+        int scopeIndex = role.lastIndexOf(CLIENT_ROLE_SEPARATOR);
         if (scopeIndex > -1) {
             String appName = role.substring(0, scopeIndex);
             role = role.substring(scopeIndex + 1);
@@ -678,6 +779,14 @@ public final class KeycloakModelUtils {
             return rtn;
 
         }
+    }
+
+    public static String buildRoleQualifier(String clientId, String roleName) {
+        if (clientId == null) {
+            return roleName;
+        }
+
+        return clientId + CLIENT_ROLE_SEPARATOR + roleName;
     }
 
     /**
@@ -699,14 +808,7 @@ public final class KeycloakModelUtils {
 
         return realm.getIdentityProvidersStream().anyMatch(idp ->
                 Objects.equals(idp.getFirstBrokerLoginFlowId(), model.getId()) ||
-                Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
-    }
-
-    public static boolean isClientScopeUsed(RealmModel realm, ClientScopeModel clientScope) {
-        return realm.getClientsStream()
-                .filter(c -> (c.getClientScopes(true).containsKey(clientScope.getName())) ||
-                (c.getClientScopes(false).containsKey(clientScope.getName())))
-                .findFirst().isPresent();
+                        Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
     }
 
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {
@@ -714,10 +816,7 @@ public final class KeycloakModelUtils {
                 .filter(clientScope -> Objects.equals(clientScopeName, clientScope.getName()))
                 .findFirst()
                 // check if we are referencing a client instead of a scope
-                .orElse(realm.getClientsStream()
-                        .filter(c -> Objects.equals(clientScopeName, c.getClientId()))
-                        .findFirst()
-                        .orElse(null));
+                .orElseGet(() -> realm.getClientByClientId(clientScopeName));
     }
 
     /**
@@ -725,9 +824,13 @@ public final class KeycloakModelUtils {
      * if underlying model is clientScope or client
      */
     public static ClientScopeModel findClientScopeById(RealmModel realm, ClientModel client, String clientScopeId) {
+        if (client.getId().equals(clientScopeId)) {
+            return client;
+        }
+
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
 
-        if (clientScope ==  null) {
+        if (clientScope == null) {
             // as fallback we try to resolve dynamic scopes
             clientScope = client.getDynamicClientScope(clientScopeId);
         }
@@ -739,7 +842,9 @@ public final class KeycloakModelUtils {
         }
     }
 
-    /** Replace spaces in the name with underscore, so that scope name can be used as value of scope parameter **/
+    /**
+     * Replace spaces in the name with underscore, so that scope name can be used as value of scope parameter
+     **/
     public static String convertClientScopeName(String previousName) {
         if (previousName.contains(" ")) {
             return previousName.replaceAll(" ", "_");
@@ -759,7 +864,7 @@ public final class KeycloakModelUtils {
     }
 
     public static void suspendJtaTransaction(KeycloakSessionFactory factory, Runnable runnable) {
-        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)factory.getProviderFactory(JtaTransactionManagerLookup.class);
+        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup) factory.getProviderFactory(JtaTransactionManagerLookup.class);
         Transaction suspended = null;
         try {
             if (lookup != null) {
@@ -808,4 +913,31 @@ public final class KeycloakModelUtils {
         return providerIds != null && providerIds.size() == 1 && providerIds.iterator().next().equals("jpa");
     }
 
+    /**
+     * @param clientAuthenticatorType
+     * @return secret size based on authentication type
+     */
+    public static int getSecretLengthByAuthenticationType(String clientAuthenticatorType, String signingAlg) {
+        if (clientAuthenticatorType != null)
+            switch (clientAuthenticatorType) {
+                case AUTH_TYPE_CLIENT_SECRET_JWT: {
+                    if (Algorithm.HS384.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_384_BITS;
+                    if (Algorithm.HS512.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_512_BITS;
+                }
+            }
+        return SecretGenerator.SECRET_LENGTH_256_BITS;
+    }
+
+    /**
+     * Returns <code>true</code> if given realm has attribute {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE}
+     * set and its value is <code>true</code>. Otherwise default value of it is returned. The default setting 
+     * can be seen at {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT}.
+     * 
+     * @param realm
+     * @return See the description
+     * @throws NullPointerException if <code>realm</code> is <code>null</code>
+     */
+    public static boolean isUsernameCaseSensitive(RealmModel realm) {
+        return realm.getAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT);
+    }
 }

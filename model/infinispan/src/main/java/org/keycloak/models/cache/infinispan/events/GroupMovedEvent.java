@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.GroupModel;
@@ -67,6 +68,20 @@ public class GroupMovedEvent extends InvalidationEvent implements RealmCacheInva
         if (oldParentId != null) {
             invalidations.add(oldParentId);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        GroupMovedEvent that = (GroupMovedEvent) o;
+        return Objects.equals(groupId, that.groupId) && Objects.equals(newParentId, that.newParentId) && Objects.equals(oldParentId, that.oldParentId) && Objects.equals(realmId, that.realmId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), groupId, newParentId, oldParentId, realmId);
     }
 
     public static class ExternalizerImpl implements Externalizer<GroupMovedEvent> {

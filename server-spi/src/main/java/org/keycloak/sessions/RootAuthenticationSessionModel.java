@@ -34,7 +34,6 @@ public interface RootAuthenticationSessionModel {
     public static class SearchableFields {
         public static final SearchableModelField<RootAuthenticationSessionModel> ID              = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<RootAuthenticationSessionModel> REALM_ID        = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<RootAuthenticationSessionModel> TIMESTAMP       = new SearchableModelField<>("timestamp", Long.class);
     }
 
     /**
@@ -57,6 +56,7 @@ public interface RootAuthenticationSessionModel {
 
     /**
      * Sets a timestamp when the root authentication session was created or updated.
+     * It also updates the expiration time for the root authentication session entity.
      * @param timestamp {@code int}
      */
     void setTimestamp(int timestamp);
@@ -78,7 +78,7 @@ public interface RootAuthenticationSessionModel {
     AuthenticationSessionModel getAuthenticationSession(ClientModel client, String tabId);
 
     /**
-     * Create a new authentication session and returns it. Overwrites existing session for particular client if already exists.
+     * Create a new authentication session and returns it.
      * @param client {@code ClientModel} Can't be {@code null}.
      * @return {@code AuthenticationSessionModel} non-null fresh authentication session. Never returns {@code null}.
      */

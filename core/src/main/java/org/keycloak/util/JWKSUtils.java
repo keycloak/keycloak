@@ -17,55 +17,56 @@
 
 package org.keycloak.util;
 
+import org.jboss.logging.Logger;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 
 import java.security.PublicKey;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JWKSUtils {
 
+    private static final Logger logger = Logger.getLogger(JWKSUtils.class.getName());
+
+    /**
+     * @deprecated Use {@link #getKeyWrappersForUse(JSONWebKeySet, JWK.Use)}
+     **/
+    @Deprecated
     public static Map<String, PublicKey> getKeysForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
-        Map<String, PublicKey> result = new HashMap<>();
-
-        for (JWK jwk : keySet.getKeys()) {
-            JWKParser parser = JWKParser.create(jwk);
-            if (jwk.getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
-                result.put(jwk.getKeyId(), parser.toPublicKey());
-            }
-        }
-
-        return result;
+        return getKeyWrappersForUse(keySet, requestedUse).getKeys()
+                .stream()
+                .collect(Collectors.toMap(KeyWrapper::getKid, keyWrapper -> (PublicKey) keyWrapper.getPublicKey()));
     }
 
-    public static Map<String, KeyWrapper> getKeyWrappersForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
-        Map<String, KeyWrapper> result = new HashMap<>();
+    public static PublicKeysWrapper getKeyWrappersForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
+        List<KeyWrapper> result = new ArrayList<>();
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
-            if (jwk.getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
+            if (jwk.getPublicKeyUse() == null) {
+                logger.debugf("Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
+            } else if (requestedUse.asString().equals(jwk.getPublicKeyUse()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 KeyWrapper keyWrapper = new KeyWrapper();
                 keyWrapper.setKid(jwk.getKeyId());
                 if (jwk.getAlgorithm() != null) {
                     keyWrapper.setAlgorithm(jwk.getAlgorithm());
                 }
-                else if (jwk.getKeyType().equalsIgnoreCase("RSA")){
-                    //backwards compatibility: RSA keys without "alg" field set are considered RS256
-                    keyWrapper.setAlgorithm("RS256");
-                }
                 keyWrapper.setType(jwk.getKeyType());
                 keyWrapper.setUse(getKeyUse(jwk.getPublicKeyUse()));
                 keyWrapper.setPublicKey(parser.toPublicKey());
-                result.put(keyWrapper.getKid(), keyWrapper);
+                result.add(keyWrapper);
             }
         }
-        return result;
+        return new PublicKeysWrapper(result);
     }
 
     private static KeyUse getKeyUse(String keyUse) {
@@ -82,7 +83,9 @@ public class JWKSUtils {
     public static JWK getKeyForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
-            if (parser.getJwk().getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
+            if (jwk.getPublicKeyUse() == null) {
+                logger.debugf("Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
+            } else if (requestedUse.asString().equals(parser.getJwk().getPublicKeyUse()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 return jwk;
             }
         }

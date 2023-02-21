@@ -37,14 +37,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -74,7 +73,6 @@ public class LinkedAccountsResource {
     
     private final KeycloakSession session;
     private final HttpRequest request;
-    private final ClientModel client;
     private final EventBuilder event;
     private final UserModel user;
     private final RealmModel realm;
@@ -82,13 +80,11 @@ public class LinkedAccountsResource {
 
     public LinkedAccountsResource(KeycloakSession session, 
                                   HttpRequest request, 
-                                  ClientModel client,
-                                  Auth auth, 
+                                  Auth auth,
                                   EventBuilder event, 
                                   UserModel user) {
         this.session = session;
         this.request = request;
-        this.client = client;
         this.auth = auth;
         this.event = event;
         this.user = user;
@@ -245,7 +241,7 @@ public class LinkedAccountsResource {
     }
     
     private boolean isPasswordSet() {
-        return session.userCredentialManager().isConfiguredFor(realm, user, PasswordCredentialModel.TYPE);
+        return user.credentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
     }
     
     private boolean isValidProvider(String providerId) {

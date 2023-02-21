@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +17,7 @@
 package org.keycloak.authorization.admin;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,7 +37,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -88,7 +86,7 @@ public class PolicyService {
             return doCreatePolicyTypeResource(type);
         }
 
-        Policy policy = authorization.getStoreFactory().getPolicyStore().findById(type, resourceServer.getId());
+        Policy policy = authorization.getStoreFactory().getPolicyStore().findById(resourceServer.getRealm(), resourceServer, type);
 
         return doCreatePolicyResource(policy);
     }
@@ -105,7 +103,7 @@ public class PolicyService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response create(String payload, @Context KeycloakSession session) {
+    public Response create(String payload) {
         if (auth != null) {
             this.auth.realm().requireManageAuthorization();
         }
@@ -115,7 +113,7 @@ public class PolicyService {
 
         representation.setId(policy.getId());
 
-        audit(representation, representation.getId(), OperationType.CREATE, session);
+        audit(representation, representation.getId(), OperationType.CREATE, authorization.getKeycloakSession());
 
         return Response.status(Status.CREATED).entity(representation).build();
     }
@@ -134,13 +132,13 @@ public class PolicyService {
 
     public Policy create(AbstractPolicyRepresentation representation) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
-        Policy existing = policyStore.findByName(representation.getName(), resourceServer.getId());
+        Policy existing = policyStore.findByName(resourceServer, representation.getName());
 
         if (existing != null) {
             throw new ErrorResponseException("Policy with name [" + representation.getName() + "] already exists", "Conflicting policy", Status.CONFLICT);
         }
 
-        return policyStore.create(representation, resourceServer);
+        return policyStore.create(resourceServer, representation);
     }
 
     @Path("/search")
@@ -158,7 +156,7 @@ public class PolicyService {
             return Response.status(Status.BAD_REQUEST).build();
         }
 
-        Policy model = storeFactory.getPolicyStore().findByName(name, this.resourceServer.getId());
+        Policy model = storeFactory.getPolicyStore().findByName(this.resourceServer, name);
 
         if (model == null) {
             return Response.noContent().build();
@@ -184,74 +182,74 @@ public class PolicyService {
             this.auth.realm().requireViewAuthorization();
         }
 
-        Map<String, String[]> search = new HashMap<>();
+        Map<Policy.FilterOption, String[]> search = new EnumMap<>(Policy.FilterOption.class);
 
         if (id != null && !"".equals(id.trim())) {
-            search.put("id", new String[] {id});
+            search.put(Policy.FilterOption.ID, new String[] {id});
         }
 
         if (name != null && !"".equals(name.trim())) {
-            search.put("name", new String[] {name});
+            search.put(Policy.FilterOption.NAME, new String[] {name});
         }
 
         if (type != null && !"".equals(type.trim())) {
-            search.put("type", new String[] {type});
+            search.put(Policy.FilterOption.TYPE, new String[] {type});
         }
 
         if (owner != null && !"".equals(owner.trim())) {
-            search.put("owner", new String[] {owner});
+            search.put(Policy.FilterOption.OWNER, new String[] {owner});
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (resource != null && !"".equals(resource.trim())) {
             ResourceStore resourceStore = storeFactory.getResourceStore();
-            Resource resourceModel = resourceStore.findById(resource, resourceServer.getId());
+            Resource resourceModel = resourceStore.findById(resourceServer.getRealm(), resourceServer, resource);
 
             if (resourceModel == null) {
-                Map<String, String[]> resourceFilters = new HashMap<>();
+                Map<Resource.FilterOption, String[]> resourceFilters = new EnumMap<>(Resource.FilterOption.class);
 
-                resourceFilters.put("name", new String[]{resource});
+                resourceFilters.put(Resource.FilterOption.NAME, new String[]{resource});
 
                 if (owner != null) {
-                    resourceFilters.put("owner", new String[]{owner});
+                    resourceFilters.put(Resource.FilterOption.OWNER, new String[]{owner});
                 }
 
-                Set<String> resources = resourceStore.findByResourceServer(resourceFilters, resourceServer.getId(), -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
+                Set<String> resources = resourceStore.find(resourceServer.getRealm(), resourceServer, resourceFilters, -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
 
                 if (resources.isEmpty()) {
                     return Response.noContent().build();
                 }
 
-                search.put("resource", resources.toArray(new String[resources.size()]));
+                search.put(Policy.FilterOption.RESOURCE_ID, resources.toArray(new String[resources.size()]));
             } else {
-                search.put("resource", new String[] {resourceModel.getId()});
+                search.put(Policy.FilterOption.RESOURCE_ID, new String[] {resourceModel.getId()});
             }
         }
 
         if (scope != null && !"".equals(scope.trim())) {
             ScopeStore scopeStore = storeFactory.getScopeStore();
-            Scope scopeModel = scopeStore.findById(scope, resourceServer.getId());
+            Scope scopeModel = scopeStore.findById(resourceServer.getRealm(), resourceServer, scope);
 
             if (scopeModel == null) {
-                Map<String, String[]> scopeFilters = new HashMap<>();
+                Map<Scope.FilterOption, String[]> scopeFilters = new EnumMap<>(Scope.FilterOption.class);
 
-                scopeFilters.put("name", new String[]{scope});
+                scopeFilters.put(Scope.FilterOption.NAME, new String[]{scope});
 
-                Set<String> scopes = scopeStore.findByResourceServer(scopeFilters, resourceServer.getId(), -1, 1).stream().map(Scope::getId).collect(Collectors.toSet());
+                Set<String> scopes = scopeStore.findByResourceServer(resourceServer, scopeFilters, -1, 1).stream().map(Scope::getId).collect(Collectors.toSet());
 
                 if (scopes.isEmpty()) {
                     return Response.noContent().build();
                 }
 
-                search.put("scope", scopes.toArray(new String[scopes.size()]));
+                search.put(Policy.FilterOption.SCOPE_ID, scopes.toArray(new String[scopes.size()]));
             } else {
-                search.put("scope", new String[] {scopeModel.getId()});
+                search.put(Policy.FilterOption.SCOPE_ID, new String[] {scopeModel.getId()});
             }
         }
 
         if (permission != null) {
-            search.put("permission", new String[] {permission.toString()});
+            search.put(Policy.FilterOption.PERMISSION, new String[] {permission.toString()});
         }
 
         return Response.ok(
@@ -263,9 +261,9 @@ public class PolicyService {
         return ModelToRepresentation.toRepresentation(model, authorization, true, false, fields != null && fields.equals("*"));
     }
 
-    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<String, String[]> filters) {
+    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<Policy.FilterOption, String[]> filters) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
-        return policyStore.findByResourceServer(filters, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
+        return policyStore.find(resourceServer.getRealm(), resourceServer, filters, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
                 .map(policy -> toRepresentation(policy, fields, authorization))
                 .collect(Collectors.toList());
     }
@@ -301,11 +299,7 @@ public class PolicyService {
             this.auth.realm().requireViewAuthorization();
         }
 
-        PolicyEvaluationService resource = new PolicyEvaluationService(this.resourceServer, this.authorization, this.auth);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new PolicyEvaluationService(this.resourceServer, this.authorization, this.auth);
     }
 
     protected PolicyProviderAdminService getPolicyProviderAdminResource(String policyType) {

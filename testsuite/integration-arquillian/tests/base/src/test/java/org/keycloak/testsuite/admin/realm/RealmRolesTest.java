@@ -39,19 +39,19 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -236,7 +236,7 @@ public class RealmRolesTest extends AbstractAdminTest {
     public void testUsersInRole() {
         RoleResource role = resource.get("role-with-users");
 
-        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search("test-role-member", null, null, null, null, null);
+        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search("test-role-member");
         assertEquals(1, users.size());
         UserResource user = adminClient.realm(REALM_NAME).users().get(users.get(0).getId());
         UserRepresentation userRep = user.toRepresentation();
@@ -247,12 +247,12 @@ public class RealmRolesTest extends AbstractAdminTest {
         adminClient.realm(REALM_NAME).users().get(userRep.getId()).roles().realmLevel().add(rolesToAdd);
 
         roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());
-        roleResource.getRoleUserMembers();
-        //roleResource.getRoleUserMembers().stream().forEach((member) -> log.infof("Found user {}", member.getUsername()));
-        assertEquals(1, roleResource.getRoleUserMembers().size());
-
+        assertEquals(Collections.singletonList("test-role-member"), extractUsernames(roleResource.getUserMembers()));
     }
 
+    private static List<String> extractUsernames(Collection<UserRepresentation> users) {
+        return users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+    }
 
     /**
      * KEYCLOAK-2035  Verifies that Role with no users assigned is being properly retrieved without members in API endpoint for role membership
@@ -262,9 +262,7 @@ public class RealmRolesTest extends AbstractAdminTest {
         RoleResource role = resource.get("role-without-users");
 
         role = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());
-        role.getRoleUserMembers();
-        assertEquals(0, role.getRoleUserMembers().size());
-
+        assertThat(role.getUserMembers(), is(empty()));
     }
 
 
@@ -320,13 +318,10 @@ public class RealmRolesTest extends AbstractAdminTest {
         adminClient.realm(REALM_NAME).users().get(userRep.getId()).roles().realmLevel().add(rolesToAdd);
 
         roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());
-        roleResource.getRoleUserMembers();
-        assertEquals(1, roleResource.getRoleUserMembers().size());
+        assertEquals(Collections.singletonList("test-role-member"), extractUsernames(roleResource.getUserMembers()));
 
         adminClient.realm(REALM_NAME).users().delete(userRep.getId());
-        roleResource.getRoleUserMembers();
-        assertEquals(0, roleResource.getRoleUserMembers().size());
-
+        assertThat(roleResource.getUserMembers(), is(empty()));
     }
 
     @Test
@@ -354,20 +349,22 @@ public class RealmRolesTest extends AbstractAdminTest {
         }
 
         RoleResource roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());
-        Set<UserRepresentation> roleUserMembers = roleResource.getRoleUserMembers(0, 1);
 
-        Set<String> expectedMembers = new HashSet<>();
+        List<UserRepresentation> roleUserMembers = roleResource.getUserMembers(0, 1);
+        assertEquals(Collections.singletonList("test-role-member"), extractUsernames(roleUserMembers));
+
+        roleUserMembers = roleResource.getUserMembers(1, 1);
         assertThat(roleUserMembers, hasSize(1));
-        expectedMembers.add(roleUserMembers.iterator().next().getUsername());
+        assertEquals(Collections.singletonList("test-role-member2"), extractUsernames(roleUserMembers));
 
-        roleUserMembers = roleResource.getRoleUserMembers(1, 1);
-        assertThat(roleUserMembers, hasSize(1));
-        expectedMembers.add(roleUserMembers.iterator().next().getUsername());
-
-        roleUserMembers = roleResource.getRoleUserMembers(2, 1);
+        roleUserMembers = roleResource.getUserMembers(2, 1);
         assertThat(roleUserMembers, is(empty()));
+    }
 
-        assertThat(expectedMembers, containsInAnyOrder("test-role-member", "test-role-member2"));
+    // issue #9587
+    @Test
+    public void testSearchForRealmRoles() {
+        resource.list("role-", true).stream().forEach(role -> assertThat("There is client role '" + role.getName() + "' among realm roles.", role.getClientRole(), is(false)));
     }
 
     @Test
@@ -521,6 +518,11 @@ public class RealmRolesTest extends AbstractAdminTest {
         assertThat(convertRolesToNames(userResource.roles().clientLevel(clientUuid).listEffective()),
                 hasItem("role-c")
         );
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void testDeleteDefaultRole() {
+        adminClient.realm(REALM_NAME).roles().deleteRole(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
     }
 
     private List<String> convertRolesToNames(List<RoleRepresentation> roles) {

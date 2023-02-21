@@ -29,7 +29,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.HashSet;
@@ -38,13 +37,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -125,7 +121,7 @@ public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session5) -> {
 
-            RealmModel realm = session5.realms().getRealm("TestComposites");
+            RealmModel realm = session5.realms().getRealmByName("TestComposites");
 
             Set<RoleModel> requestedRoles = getRequestedRoles(realm.getClientByClientId("APP_COMPOSITE_APPLICATION"), session.users().getUserByUsername(realm, "APP_COMPOSITE_USER"));
 
@@ -166,7 +162,6 @@ public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
         log.infof("testcomposites imported");
         RealmRepresentation newRealm = loadJson(getClass().getResourceAsStream("/model/testcomposites2.json"), RealmRepresentation.class);
-        newRealm.setId("TestComposites");
         adminClient.realms().create(newRealm);
 
     }

@@ -38,7 +38,7 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader<Offline
         OfflinePersistentWorkerContext, OfflinePersistentWorkerResult>, Serializable {
 
     // Placeholder String used in the searching conditions to identify very first session
-    private static final String FIRST_SESSION_ID = "000";
+    private static final String FIRST_SESSION_ID = "00000000-0000-0000-0000-000000000000";
 
     private static final Logger log = Logger.getLogger(OfflinePersistentUserSessionLoader.class);
 
@@ -72,24 +72,21 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader<Offline
 
     @Override
     public OfflinePersistentWorkerContext computeWorkerContext(OfflinePersistentLoaderContext loaderCtx, int segment, int workerId, OfflinePersistentWorkerResult previousResult) {
-        int lastCreatedOn;
         String lastSessionId;
         if (previousResult == null) {
-            lastCreatedOn = 0;
             lastSessionId = FIRST_SESSION_ID;
         } else {
-            lastCreatedOn = previousResult.getLastCreatedOn();
             lastSessionId = previousResult.getLastSessionId();
         }
 
         // We know the last loaded session. New workers iteration will start from this place
-        return new OfflinePersistentWorkerContext(segment, workerId, lastCreatedOn, lastSessionId);
+        return new OfflinePersistentWorkerContext(segment, workerId, lastSessionId);
     }
 
 
     @Override
     public OfflinePersistentWorkerResult createFailedWorkerResult(OfflinePersistentLoaderContext loaderContext, OfflinePersistentWorkerContext workerContext) {
-        return new OfflinePersistentWorkerResult(false, workerContext.getSegment(), workerContext.getWorkerId(), -1, FIRST_SESSION_ID);
+        return new OfflinePersistentWorkerResult(false, workerContext.getSegment(), workerContext.getWorkerId(), FIRST_SESSION_ID);
     }
 
 
@@ -97,14 +94,14 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader<Offline
     public OfflinePersistentWorkerResult loadSessions(KeycloakSession session, OfflinePersistentLoaderContext loaderContext, OfflinePersistentWorkerContext ctx) {
         int first = ctx.getWorkerId() * sessionsPerSegment;
 
-        log.tracef("Loading sessions for segment=%d createdOn=%d lastSessionId=%s", ctx.getSegment(), ctx.getLastCreatedOn(), ctx.getLastSessionId());
+        log.tracef("Loading sessions for segment=%d lastSessionId=%s", ctx.getSegment(), ctx.getLastSessionId());
 
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         List<UserSessionModel> sessions = persister
-                .loadUserSessionsStream(first, sessionsPerSegment, true, ctx.getLastCreatedOn(), ctx.getLastSessionId())
+                .loadUserSessionsStream(first, sessionsPerSegment, true, ctx.getLastSessionId())
                 .collect(Collectors.toList());
 
-        log.tracef("Sessions loaded from DB - segment=%d createdOn=%d lastSessionId=%s", ctx.getSegment(), ctx.getLastCreatedOn(), ctx.getLastSessionId());
+        log.tracef("Sessions loaded from DB - segment=%d lastSessionId=%s", ctx.getSegment(), ctx.getLastSessionId());
 
         UserSessionModel lastSession = null;
         if (!sessions.isEmpty()) {
@@ -114,12 +111,11 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader<Offline
             session.sessions().importUserSessions(sessions, true);
         }
 
-        int lastCreatedOn = lastSession==null ? Time.currentTime() + 100000 : lastSession.getStarted();
         String lastSessionId = lastSession==null ? FIRST_SESSION_ID : lastSession.getId();
 
-        log.tracef("Sessions imported to infinispan - segment: %d, lastCreatedOn: %d, lastSessionId: %s", ctx.getSegment(), lastCreatedOn, lastSessionId);
+        log.tracef("Sessions imported to infinispan - segment: %d, lastSessionId: %s", ctx.getSegment(), lastSessionId);
 
-        return new OfflinePersistentWorkerResult(true, ctx.getSegment(), ctx.getWorkerId(), lastCreatedOn, lastSessionId);
+        return new OfflinePersistentWorkerResult(true, ctx.getSegment(), ctx.getWorkerId(), lastSessionId);
     }
 
 

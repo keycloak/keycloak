@@ -93,7 +93,7 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
         String password = formData.getFirst(RegistrationPage.FIELD_PASSWORD);
         UserModel user = context.getUser();
         try {
-            context.getSession().userCredentialManager().updateCredential(context.getRealm(), user, UserCredentialModel.password(formData.getFirst("password"), false));
+            user.credentialManager().updateCredential(UserCredentialModel.password(formData.getFirst("password"), false));
         } catch (Exception me) {
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         }

@@ -51,10 +51,13 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
     private final int maxErrors;
 
+    // Effectively no timeout
+    private final int stalledTimeoutInSeconds;
 
-    public InfinispanCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, String stateKeySuffix, int sessionsPerSegment, int maxErrors) {
+    public InfinispanCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, String stateKeySuffix, int sessionsPerSegment, int maxErrors, int stalledTimeoutInSeconds) {
         super(sessionFactory, workCache, sessionLoader, stateKeySuffix, sessionsPerSegment);
         this.maxErrors = maxErrors;
+        this.stalledTimeoutInSeconds = stalledTimeoutInSeconds;
     }
 
 
@@ -111,6 +114,10 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
         startLoadingImpl(state, ctx[0]);
     }
 
+    @Override
+    protected int getStalledTimeoutInSeconds() {
+        return this.stalledTimeoutInSeconds;
+    }
 
     protected void startLoadingImpl(InitializerState state, SessionLoader.LoaderContext loaderCtx) {
         // Assume each worker has same processor's count
@@ -158,7 +165,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
                     completableFuture = clusterExecutor.submitConsumer(worker, (address, workerResult, throwable) -> {
                         log.tracef("Calling triConsumer on address %s, throwable message: %s, segment: %s", address, throwable == null ? "null" : throwable.getMessage(),
-                                workerResult.getSegment());
+                                workerResult == null ? null : workerResult.getSegment());
 
                         if (throwable != null) {
                             throw new CacheException(throwable);

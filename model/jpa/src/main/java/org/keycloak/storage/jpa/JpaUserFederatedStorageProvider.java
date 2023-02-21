@@ -72,7 +72,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class JpaUserFederatedStorageProvider implements
         UserFederatedStorageProvider.Streams,
-        UserCredentialStore.Streams {
+        UserCredentialStore {
 
     protected static final Logger logger = Logger.getLogger(JpaUserFederatedStorageProvider.class);
 
@@ -212,11 +212,12 @@ public class JpaUserFederatedStorageProvider implements
         return true;
     }
 
-    @Override 
+    @Override
     public void preRemove(RealmModel realm, IdentityProviderModel provider) {
         em.createNamedQuery("deleteBrokerLinkByIdentityProvider")
                 .setParameter("realmId", realm.getId())
-                .setParameter("providerAlias", provider.getAlias());
+                .setParameter("providerAlias", provider.getAlias())
+                .executeUpdate();
     }
 
     private BrokerLinkEntity getBrokerLinkEntity(RealmModel realm, String userId, String socialProvider) {

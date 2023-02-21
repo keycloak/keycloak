@@ -44,6 +44,7 @@ import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.representations.info.ClientInstallationRepresentation;
+import org.keycloak.representations.info.CryptoInfoRepresentation;
 import org.keycloak.representations.info.MemoryInfoRepresentation;
 import org.keycloak.representations.info.ProfileInfoRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
@@ -56,7 +57,6 @@ import org.keycloak.theme.Theme;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Arrays;
@@ -77,8 +77,11 @@ public class ServerInfoAdminResource {
 
     private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
+
+    public ServerInfoAdminResource(KeycloakSession session) {
+        this.session = session;
+    }
 
     /**
      * Get themes, social providers, auth providers, and event listeners available on this server
@@ -93,6 +96,7 @@ public class ServerInfoAdminResource {
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         info.setMemoryInfo(MemoryInfoRepresentation.create());
         info.setProfileInfo(ProfileInfoRepresentation.create());
+        info.setCryptoInfo(CryptoInfoRepresentation.create());
 
         setSocialProviders(info);
         setIdentityProviders(info);
@@ -167,13 +171,8 @@ public class ServerInfoAdminResource {
         info.setThemes(new HashMap<>());
 
         for (Theme.Type type : Theme.Type.values()) {
-            List<String> themeNames = new LinkedList<>(session.theme().nameSet(type));
+            List<String> themeNames = filterThemes(type, new LinkedList<>(session.theme().nameSet(type)));
             Collections.sort(themeNames);
-
-            if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
-                themeNames.remove("keycloak.v2");
-                themeNames.remove("rh-sso.v2");
-            }
 
             List<ThemeInfoRepresentation> themes = new LinkedList<>();
             info.getThemes().put(type.toString().toLowerCase(), themes);
@@ -195,6 +194,22 @@ public class ServerInfoAdminResource {
                 }
             }
         }
+    }
+    
+    private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
+        LinkedList<String> filteredNames = new LinkedList<>(themeNames);
+        
+        boolean filterAccountV2 = (type == Theme.Type.ACCOUNT) && 
+                !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
+        boolean filterAdminV2 = (type == Theme.Type.ADMIN) && 
+                !Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
+        
+        if (filterAccountV2 || filterAdminV2) {
+            filteredNames.remove("keycloak.v2");
+            filteredNames.remove("rh-sso.v2");
+        }
+        
+        return filteredNames;
     }
 
     private void setSocialProviders(ServerInfoRepresentation info) {

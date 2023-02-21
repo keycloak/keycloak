@@ -8,8 +8,10 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -21,7 +23,6 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -29,6 +30,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import javax.ws.rs.core.UriBuilder;
 import java.security.MessageDigest;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -38,7 +40,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 //https://tools.ietf.org/html/rfc7636
 
@@ -85,7 +86,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    
     public void accessTokenRequestWithoutPKCE() throws Exception {
     	// test case : success : A-1-1
         oauth.doLogin("test-user@localhost", "password");
@@ -151,7 +152,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
     
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    
     public void accessTokenRequestInPKCEValidPlainCodeChallengeMethod() throws Exception {
     	// test case : success : A-1-3
     	oauth.codeChallenge(".234567890-234567890~234567890_234567890123");
@@ -198,7 +199,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
     
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    
     public void accessTokenRequestInPKCEValidDefaultCodeChallengeMethod() throws Exception {
     	// test case : success : A-1-4
     	oauth.codeChallenge("1234567890123456789012345678901234567890123");
@@ -419,7 +420,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
         assertEquals("Bearer", response.getTokenType());
 
-        String expectedKid = oauth.doCertsRequest("test").getKeys()[0].getKeyId();
+        String expectedKid = Stream.of(oauth.doCertsRequest("test").getKeys())
+                .filter(jwk -> KeyUse.SIG.getSpecName().equals(jwk.getPublicKeyUse()))
+                .map(JWK::getKeyId)
+                .findFirst().orElseThrow(() -> new AssertionError("Was not able to find key with usage SIG in the 'test' realm keys"));
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         assertEquals("RS256", header.getAlgorithm().name());
@@ -539,7 +543,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // unstable
+     // unstable
     //accessTokenRequestValidPlainCodeChallengeMethodPkceEnforced:561->expectSuccessfulResponseFromTokenEndpoint:465
     //  Expected: (a value equal to or greater than <1799> and a value less than or equal to <1800>)
     //  but: a value equal to or greater than <1799> <1798> was less than <1799>

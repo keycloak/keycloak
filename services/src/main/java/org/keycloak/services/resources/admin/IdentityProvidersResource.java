@@ -19,15 +19,13 @@ package org.keycloak.services.resources.admin;
 
 import com.google.common.collect.Streams;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.http.FormPartValue;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -48,10 +46,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -89,7 +87,7 @@ public class IdentityProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getIdentityProviders(@PathParam("provider_id") String providerId) {
         this.auth.realm().requireViewIdentityProviders();
-        IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
+        IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         if (providerFactory != null) {
             return Response.ok(providerFactory).build();
         }
@@ -107,16 +105,15 @@ public class IdentityProvidersResource {
     @Path("import-config")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> importFrom(MultipartFormDataInput input) throws IOException {
+    public Map<String, String> importFrom() throws IOException {
         this.auth.realm().requireManageIdentityProviders();
-        Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
+        MultivaluedMap<String, FormPartValue> formDataMap = session.getContext().getHttpRequest().getMultiPartFormParameters();
         if (!(formDataMap.containsKey("providerId") && formDataMap.containsKey("file"))) {
             throw new BadRequestException();
         }
-        String providerId = formDataMap.get("providerId").get(0).getBodyAsString();
-        InputPart file = formDataMap.get("file").get(0);
-        InputStream inputStream = file.getBody(InputStream.class, null);
-        IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
+        String providerId = formDataMap.getFirst("providerId").asString();
+        InputStream inputStream = formDataMap.getFirst("file").asInputStream();
+        IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         Map<String, String> config = providerFactory.parseConfig(session, inputStream);
         return config;
     }
@@ -134,7 +131,7 @@ public class IdentityProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> importFrom(Map<String, Object> data) throws IOException {
         this.auth.realm().requireManageIdentityProviders();
-        if (!(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
+        if (data == null || !(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
         }
         
@@ -144,7 +141,7 @@ public class IdentityProvidersResource {
         String from = data.get("fromUrl").toString();
         InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
         try {
-            IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
+            IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
             Map<String, String> config;
             config = providerFactory.parseConfig(session, inputStream);
             return config;
@@ -215,13 +212,10 @@ public class IdentityProvidersResource {
                 .filter(p -> Objects.equals(p.getAlias(), alias) || Objects.equals(p.getInternalId(), alias))
                 .findFirst().orElse(null);
 
-        IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(identityProviderResource);
-        
-        return identityProviderResource;
+        return new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
     }
 
-    private IdentityProviderFactory getProviderFactorytById(String providerId) {
+    private IdentityProviderFactory getProviderFactoryById(String providerId) {
         return getProviderFactories()
                 .filter(providerFactory -> Objects.equals(providerId, providerFactory.getId()))
                 .map(IdentityProviderFactory.class::cast)

@@ -16,19 +16,16 @@
  */
 package org.keycloak.authentication.authenticators.browser;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.io.IOException;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -44,8 +41,6 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
 public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, EnvironmentDependentProviderFactory {
-
-    private static final Logger LOGGER = Logger.getLogger(ScriptBasedAuthenticatorFactory.class);
 
     public static final String PROVIDER_ID = "auth-script-based";
 
@@ -136,15 +131,9 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, En
         ProviderConfigProperty script = new ProviderConfigProperty();
         script.setType(SCRIPT_TYPE);
         script.setName(SCRIPT_CODE);
+        script.setReadOnly(true);
         script.setLabel("Script Source");
 
-        String scriptTemplate = "//enter your script code here";
-        try {
-            scriptTemplate = StreamUtil.readString(getClass().getResourceAsStream("/scripts/authenticator-template.js"));
-        } catch (IOException ioe) {
-            LOGGER.warn(ioe);
-        }
-        script.setDefaultValue(scriptTemplate);
         script.setHelpText("The script used to authenticate. Scripts must at least define a function with the name 'authenticate(context)' that accepts a context (AuthenticationFlowContext) parameter.\n" +
                 "This authenticator exposes the following additional variables: 'script', 'realm', 'user', 'session', 'authenticationSession', 'httpRequest', 'LOG'");
 
@@ -153,6 +142,6 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, En
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS) && Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
+        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
     }
 }

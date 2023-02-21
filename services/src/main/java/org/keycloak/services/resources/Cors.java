@@ -21,12 +21,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
@@ -134,55 +135,19 @@ public class Cors {
     }
 
     public Response build() {
-        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
-        if (origin == null || origin.equals("null")) {
-            logger.trace("No origin header ignoring");
-            return builder.build();
-        }
-
-        if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
-            if (logger.isDebugEnabled()) {
-                logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
-            }
-            return builder.build();
-        }
-
-        builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-
-        if (preflight) {
-            if (allowedMethods != null) {
-                builder.header(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
-            } else {
-                builder.header(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
-            }
-        }
-
-        if (!preflight && exposedHeaders != null) {
-            builder.header(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
-        }
-
-        builder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
-
-        if (preflight) {
-            if (auth) {
-                builder.header(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
-            } else {
-                builder.header(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
-            }
-        }
-
-        if (preflight) {
-            builder.header(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
-        }
-
+        build(builder::header);
         logger.debug("Added CORS headers to response");
-
         return builder.build();
     }
 
     public void build(HttpResponse response) {
+        build(response::addHeader);
+        logger.debug("Added CORS headers to response");
+    }
+
+    public void build(BiConsumer<String, String> addHeader) {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
-        if (origin == null || origin.equals("null")) {
+        if (origin == null) {
             logger.trace("No origin header ignoring");
             return;
         }
@@ -194,35 +159,33 @@ public class Cors {
             return;
         }
 
-        response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        addHeader.accept(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
         if (preflight) {
             if (allowedMethods != null) {
-                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
+                addHeader.accept(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
             } else {
-                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
+                addHeader.accept(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
             }
         }
 
         if (!preflight && exposedHeaders != null) {
-            response.getOutputHeaders().add(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
+            addHeader.accept(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
         }
 
-        response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
+        addHeader.accept(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
 
         if (preflight) {
             if (auth) {
-                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
+                addHeader.accept(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
             } else {
-                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+                addHeader.accept(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
             }
         }
 
         if (preflight) {
-            response.getOutputHeaders().add(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
+            addHeader.accept(ACCESS_CONTROL_MAX_AGE, String.valueOf(DEFAULT_MAX_AGE));
         }
-
-        logger.debug("Added CORS headers to response");
     }
 
 }

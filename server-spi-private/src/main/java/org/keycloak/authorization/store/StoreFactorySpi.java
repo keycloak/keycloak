@@ -18,6 +18,7 @@
 
 package org.keycloak.authorization.store;
 
+import org.keycloak.common.Profile;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -26,6 +27,9 @@ import org.keycloak.provider.Spi;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class StoreFactorySpi implements Spi {
+
+    public static final String NAME = "authorizationPersister";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -33,7 +37,7 @@ public class StoreFactorySpi implements Spi {
 
     @Override
     public String getName() {
-        return "authorizationPersister";
+        return NAME;
     }
 
     @Override
@@ -44,5 +48,10 @@ public class StoreFactorySpi implements Spi {
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
         return AuthorizationStoreFactory.class;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION);
     }
 }

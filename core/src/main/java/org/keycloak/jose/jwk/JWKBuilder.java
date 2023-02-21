@@ -26,12 +26,13 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 
-import java.math.BigInteger;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+
+import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -43,7 +44,7 @@ public class JWKBuilder {
     private String kid;
 
     private String algorithm;
-    
+
     private JWKBuilder() {
     }
 
@@ -67,14 +68,18 @@ public class JWKBuilder {
     }
 
     public JWK rsa(Key key) {
-        return rsa(key, (List<X509Certificate>) null);
+        return rsa(key, null, KeyUse.SIG);
     }
     
     public JWK rsa(Key key, X509Certificate certificate) {
-        return rsa(key, Collections.singletonList(certificate));
+        return rsa(key, Collections.singletonList(certificate), KeyUse.SIG);
     }
 
     public JWK rsa(Key key, List<X509Certificate> certificates) {
+        return rsa(key, certificates, null);
+    }
+
+    public JWK rsa(Key key, List<X509Certificate> certificates, KeyUse keyUse) {
         RSAPublicKey rsaKey = (RSAPublicKey) key;
 
         RSAPublicJWK k = new RSAPublicJWK();
@@ -83,7 +88,7 @@ public class JWKBuilder {
         k.setKeyId(kid);
         k.setKeyType(KeyType.RSA);
         k.setAlgorithm(algorithm);
-        k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
+        k.setPublicKeyUse(keyUse == null ? KeyUse.SIG.getSpecName() : keyUse.getSpecName());
         k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
         k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
 
@@ -113,8 +118,6 @@ public class JWKBuilder {
 
         String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
         int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
-        BigInteger affineX = ecKey.getW().getAffineX();
-        BigInteger affineY = ecKey.getW().getAffineY();
 
         k.setKeyId(kid);
         k.setKeyType(KeyType.EC);
@@ -126,32 +129,4 @@ public class JWKBuilder {
         
         return k;
     }
-
-    /**
-     * Copied from org.apache.commons.codec.binary.Base64
-     */
-    private static byte[] toIntegerBytes(final BigInteger bigInt) {
-        int bitlen = bigInt.bitLength();
-        // round bitlen
-        bitlen = ((bitlen + 7) >> 3) << 3;
-        final byte[] bigBytes = bigInt.toByteArray();
-
-        if (((bigInt.bitLength() % 8) != 0) && (((bigInt.bitLength() / 8) + 1) == (bitlen / 8))) {
-            return bigBytes;
-        }
-        // set up params for copying everything but sign bit
-        int startSrc = 0;
-        int len = bigBytes.length;
-
-        // if bigInt is exactly byte-aligned, just skip signbit in copy
-        if ((bigInt.bitLength() % 8) == 0) {
-            startSrc = 1;
-            len--;
-        }
-        final int startDst = bitlen / 8 - len; // to pad w/ nulls as per spec
-        final byte[] resizedBytes = new byte[bitlen / 8];
-        System.arraycopy(bigBytes, startSrc, resizedBytes, startDst, len);
-        return resizedBytes;
-    }
-
 }

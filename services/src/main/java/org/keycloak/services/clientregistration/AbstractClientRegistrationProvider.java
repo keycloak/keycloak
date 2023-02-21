@@ -17,10 +17,12 @@
 
 package org.keycloak.services.clientregistration;
 
+import java.util.stream.Stream;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientRegistrationAccessTokenConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -65,6 +67,12 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             RealmModel realm = session.getContext().getRealm();
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
+            if (client.getDefaultRoles() != null) {
+                for (String name : client.getDefaultRoles()) {
+                    clientModel.addDefaultRole(name);
+                }
+            }
+
             if (clientModel.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
             }
@@ -73,6 +81,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 RepresentationToModel.createResourceServer(clientModel, session, true);
             }
 
+            session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new DynamicClientRegisteredContext(context, clientModel, auth.getJwt(), realm));
             ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
 
@@ -89,6 +98,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             }
 
             client.setDirectAccessGrantsEnabled(false);
+
+            Stream<String> defaultRolesNames = clientModel.getDefaultRolesStream();
+            if (defaultRolesNames != null) {
+                client.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
+            }
 
             event.client(client.getClientId()).success();
             return client;
@@ -114,6 +128,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
 
+        Stream<String> defaultRolesNames = client.getDefaultRolesStream();
+        if (defaultRolesNames != null) {
+            rep.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
+        }
+
         event.client(client.getClientId()).success();
         return rep;
     }
@@ -124,23 +143,42 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         event.event(EventType.CLIENT_UPDATE).client(clientId);
 
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
+        session.setAttribute(ClientRegistrationAccessTokenConstants.ROTATION_ENABLED, true);
         RegistrationAuth registrationAuth = auth.requireUpdate(context, client);
 
         if (!client.getClientId().equals(rep.getClientId())) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
 
-        RepresentationToModel.updateClient(rep, client);
+        RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
+
+        if (rep.getDefaultRoles() != null) {
+            client.updateDefaultRoles(rep.getDefaultRoles());
+        }
 
         rep = ModelToRepresentation.toRepresentation(client, session);
 
-        if (auth.isRegistrationAccessToken()) {
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
-            rep.setRegistrationAccessToken(registrationAccessToken);
+        rep.setSecret(client.getSecret());
+
+        Stream<String> defaultRolesNames = client.getDefaultRolesStream();
+        if (defaultRolesNames != null) {
+            rep.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
         }
 
+        if (auth.isRegistrationAccessToken()) {
+            String registrationAccessToken;
+            if ((boolean) session.getAttribute(ClientRegistrationAccessTokenConstants.ROTATION_ENABLED)) {
+                registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
+            } else {
+                registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
+            }
+            rep.setRegistrationAccessToken(registrationAccessToken);
+        }
+        session.removeAttribute(ClientRegistrationAccessTokenConstants.ROTATION_ENABLED);
+
         try {
+            session.getContext().setClient(client);
             session.clientPolicy().triggerOnEvent(new DynamicClientUpdatedContext(session, client, auth.getJwt(), client.getRealm()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);

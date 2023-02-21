@@ -18,11 +18,14 @@ package org.keycloak.authorization.model;
 
 import org.keycloak.authorization.store.StoreFactory;
 
+import java.util.Objects;
+
 public abstract class AbstractAuthorizationModel {
 
-    private StoreFactory storeFactory;
+    protected final StoreFactory storeFactory;
 
     public AbstractAuthorizationModel(StoreFactory storeFactory) {
+        Objects.requireNonNull(storeFactory, "storeFactory");
         this.storeFactory = storeFactory;
     }
 

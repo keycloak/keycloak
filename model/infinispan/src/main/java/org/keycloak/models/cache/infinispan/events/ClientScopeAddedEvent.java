@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
@@ -43,6 +44,20 @@ public class ClientScopeAddedEvent extends InvalidationEvent implements RealmCac
     @Override
     public String getId() {
         return clientScopeId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ClientScopeAddedEvent that = (ClientScopeAddedEvent) o;
+        return Objects.equals(clientScopeId, that.clientScopeId) && Objects.equals(realmId, that.realmId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), clientScopeId, realmId);
     }
 
     @Override

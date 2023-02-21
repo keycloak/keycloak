@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -26,11 +25,13 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.Urls;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -106,13 +107,15 @@ public class GroupResource {
             return ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
-        boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
-                .anyMatch(s -> Objects.equals(s.getName(), groupName));
-        if (exists) {
-            return ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
+        if (!Objects.equals(groupName, group.getName())) {
+            boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
+                    .anyMatch(s -> Objects.equals(s.getName(), groupName));
+            if (exists) {
+                return ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
+            }
         }
         
-        updateGroup(rep, group);
+        updateGroup(rep, group, realm, session);
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
         
         return Response.noContent().build();
@@ -165,10 +168,14 @@ public class GroupResource {
             adminEvent.operation(OperationType.UPDATE);
         } else {
             child = realm.createGroup(groupName, group);
-            updateGroup(rep, child);
+            updateGroup(rep, child, realm, session);
             URI uri = session.getContext().getUri().getBaseUriBuilder()
-                                           .path(session.getContext().getUri().getMatchedURIs().get(2))
-                                           .path(child.getId()).build();
+                    .path(AdminRoot.class)
+                    .path(AdminRoot.class, "getRealmsAdmin")
+                    .path(RealmsAdminResource.class, "getRealmAdmin")
+                    .path(RealmAdminResource.class, "getGroups")
+                    .path(GroupsResource.class, "getGroupById")
+                    .build(realm.getName(), child.getId());
             builder.status(201).location(uri);
             rep.setId(child.getId());
             adminEvent.operation(OperationType.CREATE);
@@ -180,8 +187,42 @@ public class GroupResource {
         return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
     }
 
-    public static void updateGroup(GroupRepresentation rep, GroupModel model) {
-        if (rep.getName() != null) model.setName(rep.getName());
+    public static void updateGroup(GroupRepresentation rep, GroupModel model, RealmModel realm, KeycloakSession session) {
+        String newName = rep.getName();
+        if (newName != null) {
+            String existingName = model.getName();
+            if (!newName.equals(existingName)) {
+                String previousPath = KeycloakModelUtils.buildGroupPath(model);
+
+                model.setName(newName);
+
+                String newPath = KeycloakModelUtils.buildGroupPath(model);
+
+                GroupModel.GroupPathChangeEvent event =
+                        new GroupModel.GroupPathChangeEvent() {
+                            @Override
+                            public RealmModel getRealm() {
+                                return realm;
+                            }
+
+                            @Override
+                            public String getNewPath() {
+                                return newPath;
+                            }
+
+                            @Override
+                            public String getPreviousPath() {
+                                return previousPath;
+                            }
+
+                            @Override
+                            public KeycloakSession getKeycloakSession() {
+                                return session;
+                            }
+                        };
+                session.getKeycloakSessionFactory().publish(event);
+            }
+        }
 
         if (rep.getAttributes() != null) {
             Set<String> attrsToRemove = new HashSet<>(model.getAttributes().keySet());
@@ -200,9 +241,7 @@ public class GroupResource {
     public RoleMapperResource getRoleMappings() {
         AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.groups().requireManage(group);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.groups().requireView(group);
-        RoleMapperResource resource =  new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new RoleMapperResource(session, auth, group, adminEvent, manageCheck, viewCheck);
 
     }
 

@@ -13,14 +13,11 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcRegUpdateTest extends AbstractRegCliTest {
 
 
@@ -103,7 +100,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
             exe = execute("update my_client --config '" + configFile.getName() + "' -o -s enabled=true -e oidc");
 
             assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-            Assert.assertEquals("error message", "Failed to set attribute 'enabled' on document type 'oidc'", exe.stderrLines().get(0));
+            Assert.assertEquals("error message", "Failed to set attribute 'enabled' on document type 'oidc'", exe.stderrLines().get(exe.stderrLines().size() - 1));
 
 
 

@@ -17,24 +17,37 @@
 
 package org.keycloak.testsuite.client;
 
-import org.junit.Assert;
+import org.apache.http.Header;
+import org.apache.http.HeaderElement;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,23 +59,25 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_CLIENT_METADATA;
 import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_REDIRECT_URI;
+import static org.keycloak.utils.MediaType.APPLICATION_JSON;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     private static final String CLIENT_ID = "test-client";
@@ -90,7 +105,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         // Remove this client after test
         getCleanup().addClientUuid(createdClient.getId());
 
-        return client;
+        return createdClient;
     }
 
     @Test
@@ -164,6 +179,41 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void registerClientUsingRevokedToken() throws Exception {
+        reg.auth(Auth.token(getToken("manage-clients", "password")));
+
+        ClientRepresentation myclient = new ClientRepresentation();
+
+        myclient.setClientId("myclient");
+        myclient.setServiceAccountsEnabled(true);
+        myclient.setSecret("password");
+        myclient.setDirectAccessGrantsEnabled(true);
+
+        reg.create(myclient);
+
+        oauth.clientId("myclient");
+        String bearerToken = getToken("myclient", "password", "manage-clients", "password");
+        try (CloseableHttpResponse response = oauth.doTokenRevoke(bearerToken, "access_token", "password")) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusLine().getStatusCode());
+        }
+
+        try {
+            reg.auth(Auth.token(bearerToken));
+
+            ClientRepresentation clientRep = buildClient();
+            clientRep.setServiceAccountsEnabled(true);
+
+            registerClient(clientRep);
+        } catch (ClientRegistrationException cre) {
+            HttpErrorException cause = (HttpErrorException) cre.getCause();
+            assertEquals(401, cause.getStatusLine().getStatusCode());
+            OAuth2ErrorRepresentation error = cause.toErrorRepresentation();
+            assertEquals(Errors.INVALID_TOKEN, error.getError());
+            assertEquals("Failed decode token", error.getErrorDescription());
+        }
+    }
+
+    @Test
     public void registerClientWithNonAsciiChars() throws ClientRegistrationException {
     	authCreateClients();
     	ClientRepresentation client = buildClient();
@@ -172,6 +222,24 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     	
     	ClientRepresentation createdClient = registerClient(client);
     	assertEquals(name, createdClient.getName());
+    }
+
+    @Test
+    public void clientWithDefaultRoles() throws ClientRegistrationException {
+        authCreateClients();
+        ClientRepresentation client = buildClient();
+        client.setDefaultRoles(new String[]{"test-default-role"});
+
+        ClientRepresentation createdClient = registerClient(client);
+        assertThat(createdClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+
+        authManageClients();
+        ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
+        assertThat(obtainedClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+
+        client.setDefaultRoles(new String[]{"test-default-role1","test-default-role2"});
+        ClientRepresentation updatedClient = reg.update(client);
+        assertThat(updatedClient.getDefaultRoles(), Matchers.arrayContainingInAnyOrder("test-default-role1","test-default-role2"));
     }
 
     @Test
@@ -203,6 +271,40 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
                 "Redirect URIs must not contain an URI fragment",
                 "http://redhat.com/abcd#someFragment"
         );
+    }
+
+    @Test
+    public void testUpdateAuthorizationSettings() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation clientRep = buildClient();
+        clientRep.setAuthorizationServicesEnabled(true);
+
+        ClientRepresentation rep = registerClient(clientRep);
+        rep = adminClient.realm("test").clients().get(rep.getId()).toRepresentation();
+
+        assertTrue(rep.getAuthorizationServicesEnabled());
+
+        ResourceServerRepresentation authzSettings = new ResourceServerRepresentation();
+
+        authzSettings.setAllowRemoteResourceManagement(false);
+        authzSettings.setResources(List.of(new ResourceRepresentation("foo", "scope-a", "scope-b")));
+
+        PolicyRepresentation permission = new PolicyRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setType("resource");
+        permission.setResources(Collections.singleton("foo"));
+
+        authzSettings.setPolicies(List.of(permission));
+
+        rep.setAuthorizationSettings(authzSettings);
+
+        reg.update(rep);
+        authzSettings = adminClient.realm("test").clients().get(rep.getId()).authorization().exportSettings();
+
+        assertFalse(authzSettings.getResources().isEmpty());
+        assertFalse(authzSettings.getScopes().isEmpty());
+        assertFalse(authzSettings.getPolicies().isEmpty());
     }
 
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
@@ -597,4 +699,29 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         }
     }
 
+    @Test
+    @UncaughtServerErrorExpected
+    public void registerClientWithWrongCharacters() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/master/clients-registrations/openid-connect").build());
+            post.setEntity(new StringEntity("{\"<img src=alert(1)>\":1}"));
+            post.setHeader("Content-Type", APPLICATION_JSON);
+
+            try (CloseableHttpResponse response = client.execute(post)) {
+                assertThat(response.getStatusLine().getStatusCode(),is(400));
+
+                Header header = response.getFirstHeader("Content-Type");
+                assertThat(header, notNullValue());
+
+                // Verify the Content-Type is not text/html
+                assertThat(Arrays.stream(header.getElements())
+                        .map(HeaderElement::getName)
+                        .filter(Objects::nonNull)
+                        .anyMatch(f -> f.equals(APPLICATION_JSON)), is(true));
+
+                // The alert is not executed
+                assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Unrecognized field \\\"<img src=alert(1)>\\\""));
+            }
+        }
+    }
 }

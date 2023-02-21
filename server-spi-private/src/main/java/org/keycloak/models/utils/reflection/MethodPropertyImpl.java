@@ -49,7 +49,7 @@ class MethodPropertyImpl<V> implements MethodProperty<V> {
             if (method.getReturnType() == Void.TYPE) {
                 throw new IllegalArgumentException(
                         "Invalid accessor method, must have return value if starts with 'get'. Method: " + method);
-            } else if (method.getParameterTypes().length > 0) {
+            } else if (method.getParameterCount() > 0) {
                 throw new IllegalArgumentException(
                         "Invalid accessor method, must have zero arguments if starts with 'get'. Method: " + method);
             }
@@ -59,7 +59,7 @@ class MethodPropertyImpl<V> implements MethodProperty<V> {
             if (method.getReturnType() != Void.TYPE) {
                 throw new IllegalArgumentException(
                         "Invalid accessor method, must not have return value if starts with 'set'. Method: " + method);
-            } else if (method.getParameterTypes().length != 1) {
+            } else if (method.getParameterCount() != 1) {
                 throw new IllegalArgumentException(
                         "Invalid accessor method, must have one argument if starts with 'set'. Method: " + method);
             }
@@ -151,7 +151,7 @@ class MethodPropertyImpl<V> implements MethodProperty<V> {
         Method[] methods = clazz.getMethods();
         for (Method method : methods) {
             String methodName = method.getName();
-            if (methodName.startsWith(SETTER_METHOD_PREFIX) && method.getParameterTypes().length == 1) {
+            if (methodName.startsWith(SETTER_METHOD_PREFIX) && method.getParameterCount() == 1) {
                 if (Introspector.decapitalize(methodName.substring(SETTER_METHOD_PREFIX_LENGTH)).equals(name)) {
                     return method;
                 }
@@ -163,7 +163,7 @@ class MethodPropertyImpl<V> implements MethodProperty<V> {
     private static Method getGetterMethod(Class<?> clazz, String name) {
         for (Method method : clazz.getDeclaredMethods()) {
             String methodName = method.getName();
-            if (method.getParameterTypes().length == 0) {
+            if (method.getParameterCount() == 0) {
                 if (methodName.startsWith(GETTER_METHOD_PREFIX)) {
                     if (Introspector.decapitalize(methodName.substring(GETTER_METHOD_PREFIX_LENGTH)).equals(name)) {
                         return method;

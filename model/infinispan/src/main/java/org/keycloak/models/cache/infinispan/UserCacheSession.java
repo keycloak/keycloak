@@ -19,8 +19,11 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
@@ -53,11 +56,16 @@ import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.CacheableStorageProviderModel;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.LegacyStoreManagers;
+import org.keycloak.storage.OnCreateComponent;
+import org.keycloak.storage.OnUpdateComponent;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -71,7 +79,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCacheSession implements UserCache.Streams {
+public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateComponent {
     protected static final Logger logger = Logger.getLogger(UserCacheSession.class);
     protected UserCacheManager cache;
     protected KeycloakSession session;
@@ -85,11 +93,13 @@ public class UserCacheSession implements UserCache.Streams {
     protected Set<String> realmInvalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
     protected Map<String, UserModel> managedUsers = new HashMap<>();
+    private LegacyStoreManagers datastoreProvider;
 
     public UserCacheSession(UserCacheManager cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
         this.startupRevision = cache.getCurrentCounter();
+        this.datastoreProvider = (LegacyStoreManagers) session.getProvider(DatastoreProvider.class);
         session.getTransactionManager().enlistAfterCompletion(getTransaction());
     }
 
@@ -103,7 +113,7 @@ public class UserCacheSession implements UserCache.Streams {
     public UserProvider getDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
-        delegate = session.userStorageManager();
+        delegate = this.datastoreProvider.userStorageManager();
 
         return delegate;
     }
@@ -364,7 +374,7 @@ public class UserCacheSession implements UserCache.Streams {
 
     private void onCache(RealmModel realm, UserAdapter adapter, UserModel delegate) {
         ((OnUserCache)getDelegate()).onCache(realm, adapter, delegate);
-        ((OnUserCache)session.userCredentialManager()).onCache(realm, adapter, delegate);
+        ((OnUserCache) session.getProvider(LegacySessionSupportProvider.class).userCredentialManager()).onCache(realm, adapter, delegate);
     }
 
     @Override
@@ -536,8 +546,8 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
-        return getDelegate().getUsersStream(realm, includeServiceAccounts);
+    public CredentialValidationOutput getUserByCredential(RealmModel realm, CredentialInput input) {
+        return getDelegate().getUserByCredential(realm, input);
     }
 
     @Override
@@ -568,21 +578,6 @@ public class UserCacheSession implements UserCache.Streams {
     @Override
     public int getUsersCount(RealmModel realm, Map<String, String> params, Set<String> groupIds) {
         return getDelegate().getUsersCount(realm, params, groupIds);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
-        return getDelegate().getUsersStream(realm, firstResult, maxResults, includeServiceAccounts);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
-        return getUsersStream(realm, false);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-         return getUsersStream(realm, firstResult, maxResults, false);
     }
 
     @Override
@@ -687,13 +682,35 @@ public class UserCacheSession implements UserCache.Streams {
         CachedUserConsents cached = cache.get(cacheKey, CachedUserConsents.class);
 
         if (cached == null) {
+            UserConsentModel consent = getDelegate().getConsentByClient(realm, userId, clientId);
+            List<CachedUserConsent> consents;
+
+            if (consent == null) {
+                consents = Collections.singletonList(new CachedUserConsent(clientId));
+            } else {
+                consents = Collections.singletonList(new CachedUserConsent(consent));
+            }
+
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<UserConsentModel> consents = getDelegate().getConsentsStream(realm, userId).collect(Collectors.toList());
-            cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
+            cached = new CachedUserConsents(loaded, cacheKey, realm, consents, false);
             cache.addRevisioned(cached, startupRevision);
         }
-        CachedUserConsent cachedConsent = cached.getConsents().get(clientId);
-        if (cachedConsent == null) return null;
+
+        Map<String, CachedUserConsent> consents = cached.getConsents();
+        CachedUserConsent cachedConsent = consents.get(clientId);
+
+        if (cachedConsent == null) {
+            UserConsentModel consent = getDelegate().getConsentByClient(realm, userId, clientId);
+
+            if (consent == null) {
+                cachedConsent = new CachedUserConsent(clientId);
+            } else {
+                cachedConsent = new CachedUserConsent(consent);
+            }
+
+            consents.put(cachedConsent.getClientDbId(), cachedConsent);
+        }
+
         return toConsentModel(realm, cachedConsent);
     }
 
@@ -708,10 +725,15 @@ public class UserCacheSession implements UserCache.Streams {
 
         CachedUserConsents cached = cache.get(cacheKey, CachedUserConsents.class);
 
+        if (cached != null && !cached.isAllConsents()) {
+            cached = null;
+            cache.invalidateObject(cacheKey);
+        }
+
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
             List<UserConsentModel> consents = getDelegate().getConsentsStream(realm, userId).collect(Collectors.toList());
-            cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
+            cached = new CachedUserConsents(loaded, cacheKey, realm, consents.stream().map(CachedUserConsent::new).collect(Collectors.toList()));
             cache.addRevisioned(cached, startupRevision);
             return consents.stream();
         } else {
@@ -721,6 +743,10 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     private UserConsentModel toConsentModel(RealmModel realm, CachedUserConsent cachedConsent) {
+        if (cachedConsent.isNotExistent()) {
+            return null;
+        }
+
         ClientModel client = session.clients().getClientById(realm, cachedConsent.getClientDbId());
         if (client == null) {
             return null;
@@ -906,4 +932,17 @@ public class UserCacheSession implements UserCache.Streams {
         invalidationEvents.add(UserCacheRealmInvalidationEvent.create(realmId));
     }
 
+    @Override
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        if (getDelegate() instanceof OnUpdateComponent) {
+            ((OnUpdateComponent) getDelegate()).onUpdate(session, realm, oldModel, newModel);
+        }
+    }
+
+    @Override
+    public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        if (getDelegate() instanceof OnCreateComponent) {
+            ((OnCreateComponent) getDelegate()).onCreate(session, realm, model);
+        }
+    }
 }

@@ -5,12 +5,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.concurrency.AbstractConcurrencyTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
@@ -24,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.junit.BeforeClass;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
@@ -41,9 +44,14 @@ public abstract class AbstractUserStorageDirtyDeletionTest extends AbstractConcu
 
     private List<Creator<UserResource>> createdUsers;
 
+    @BeforeClass
+    public static void checkNotMapStorage() {
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
+    }
+
     public static void remove20UsersFromStorageProvider(KeycloakSession session) {
         assertThat(REMOVED_USERS_COUNT, Matchers.lessThan(NUM_USERS));
-        final RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
+        final RealmModel realm = session.realms().getRealmByName(TEST_REALM_NAME);
         UserStorageProvidersTestUtils.getEnabledStorageProviders(session, realm, UserMapStorage.class)
           .forEachOrdered((UserMapStorage userMapStorage) -> {
               Set<String> users = new HashSet<>(userMapStorage.getUsernames());

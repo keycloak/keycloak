@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.events.admin.OperationType;
@@ -30,21 +31,27 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.ws.rs.ClientErrorException;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+
 import org.keycloak.testsuite.util.RoleBuilder;
 
 /**
@@ -156,6 +163,47 @@ public class ClientRolesTest extends AbstractClientTest {
         assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());
     }
 
+
+    @Test
+    public void testCompositeRolesSearch() {
+        // Create main-role we will work on
+        RoleRepresentation mainRole = makeRole("main-role");
+        rolesRsc.create(mainRole);
+
+        RoleResource mainRoleRsc = rolesRsc.get("main-role");
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "main-role"), mainRole, ResourceType.CLIENT_ROLE);
+
+        // Add composites
+        List<RoleRepresentation> createdRoles = IntStream.range(0, 20)
+                .boxed()
+                .map(i -> makeRole("role" + i))
+                .peek(rolesRsc::create)
+                .peek(role -> assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, role.getName()), role, ResourceType.CLIENT_ROLE))
+                .map(role -> rolesRsc.get(role.getName()).toRepresentation())
+                .collect(Collectors.toList());
+
+        mainRoleRsc.addComposites(createdRoles);
+        mainRole = mainRoleRsc.toRepresentation();
+        RoleByIdResource roleByIdResource = adminClient.realm(TEST).rolesById();
+
+        // Search for all composites
+        Set<RoleRepresentation> foundRoles = roleByIdResource.getRoleComposites(mainRole.getId());
+        assertThat(foundRoles, hasSize(createdRoles.size()));
+
+        // Search paginated composites
+        foundRoles = roleByIdResource.searchRoleComposites(mainRole.getId(), null, 0, 10);
+        assertThat(foundRoles, hasSize(10));
+
+        // Search for composites by string role1 (should be role1, role10-role19) without pagination
+        foundRoles = roleByIdResource.searchRoleComposites(mainRole.getId(), "role1", null, null);
+        assertThat(foundRoles, hasSize(11));
+
+        // Search for role1 with pagination
+        foundRoles.forEach(System.out::println);
+        foundRoles = roleByIdResource.searchRoleComposites(mainRole.getId(), "role1", 5, 5);
+        assertThat(foundRoles, hasSize(5));
+    }
+
     @Test
     public void usersInRole() {
         String clientID = clientRsc.toRepresentation().getId();
@@ -168,38 +216,40 @@ public class ClientRolesTest extends AbstractClientTest {
         List<RoleRepresentation> roleToAdd = Collections.singletonList(rolesRsc.get(roleName).toRepresentation());
 
         //create users and assign test role
-        Set<UserRepresentation> users = new HashSet<>();
-        for (int i = 0; i < 10; i++) {
-            String userName = "user" + i;
+        List<String> usernames = createUsernames(0, 10);
+        usernames.forEach(username -> {
             UserRepresentation user = new UserRepresentation();
-            user.setUsername(userName);
+            user.setUsername(username);
             testRealmResource().users().create(user);
-            user = getFullUserRep(userName);
+            user = getFullUserRep(username);
             testRealmResource().users().get(user.getId()).roles().clientLevel(clientID).add(roleToAdd);
-            users.add(user);
-        }
+        });
 
         // check if users have test role assigned
         RoleResource roleResource = rolesRsc.get(roleName);
-        Set<UserRepresentation> usersInRole = roleResource.getRoleUserMembers();
-        assertEquals(users.size(), usersInRole.size());
-        for (UserRepresentation user : users) {
-            Optional<UserRepresentation> result = usersInRole.stream().filter(u -> user.getUsername().equals(u.getUsername())).findAny();
-            assertTrue(result.isPresent());
-        }
+        List<UserRepresentation> usersInRole = roleResource.getUserMembers();
+        assertEquals(usernames, extractUsernames(usersInRole));
 
         // pagination
-        Set<UserRepresentation> usersInRole1 = roleResource.getRoleUserMembers(0, 5);
-        assertEquals(5, usersInRole1.size());
-        Set<UserRepresentation> usersInRole2 = roleResource.getRoleUserMembers(5, 10);
-        assertEquals(5, usersInRole2.size());
-        for (UserRepresentation user : users) {
-            Optional<UserRepresentation> result1 = usersInRole1.stream().filter(u -> user.getUsername().equals(u.getUsername())).findAny();
-            Optional<UserRepresentation> result2 = usersInRole2.stream().filter(u -> user.getUsername().equals(u.getUsername())).findAny();
-            assertTrue((result1.isPresent() || result2.isPresent()) && !(result1.isPresent() && result2.isPresent()));
-        }
+        List<UserRepresentation> usersInRole1 = roleResource.getUserMembers(0, 5);
+        assertEquals(createUsernames(0, 5), extractUsernames(usersInRole1));
+        List<UserRepresentation> usersInRole2 = roleResource.getUserMembers(5, 10);
+        assertEquals(createUsernames(5, 10), extractUsernames(usersInRole2));
     }
-    
+
+    private static List<String> createUsernames(int startIndex, int endIndex) {
+        List<String> usernames = new ArrayList<>();
+        for (int i = startIndex; i < endIndex; i++) {
+            String userName = "user" + i;
+            usernames.add(userName);
+        }
+        return usernames;
+    }
+
+    private static List<String> extractUsernames(Collection<UserRepresentation> users) {
+        return users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+    }
+
     @Test
     public void testSearchForRoles() {
         

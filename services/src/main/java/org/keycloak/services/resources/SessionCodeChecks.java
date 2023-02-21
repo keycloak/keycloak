@@ -17,13 +17,19 @@
 
 package org.keycloak.services.resources;
 
+import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE;
+import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
+
 import java.net.URI;
+
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
@@ -40,11 +46,13 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -150,7 +158,8 @@ public class SessionCodeChecks {
         // object retrieve
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
         AuthenticationSessionModel authSession = null;
-        if (authSessionId != null) authSession = authSessionManager.getAuthenticationSessionByIdAndClient(realm, authSessionId, client, tabId);
+        if (authSessionId != null)
+            authSession = authSessionManager.getAuthenticationSessionByIdAndClient(realm, authSessionId, client, tabId);
         AuthenticationSessionModel authSessionCookie = authSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
 
         if (authSession != null && authSessionCookie != null && !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId())) {
@@ -174,6 +183,15 @@ public class SessionCodeChecks {
 
         // See if we are already authenticated and userSession with same ID exists.
         UserSessionModel userSession = authSessionManager.getUserSessionFromAuthCookie(realm);
+
+        if (userSession == null) {
+            // fallback to check if there is an identity cookie
+            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session, () -> authenticateIdentityCookie(session, realm, false));
+
+            if (authResult != null) {
+                userSession = authResult.getSession();
+            }
+        }
 
         if (userSession != null) {
             LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
@@ -200,6 +218,7 @@ public class SessionCodeChecks {
         if (authSession == null) {
             return false;
         }
+        session.getContext().setAuthenticationSession(authSession);
 
         // Check cached response from previous action request
         response = BrowserHistoryHelper.getInstance().loadSavedResponse(session, authSession);
@@ -217,12 +236,12 @@ public class SessionCodeChecks {
             return false;
         }
 
-        event.client(client);
+        setClientToEvent(client);
         session.getContext().setClient(client);
 
-        if (!client.isEnabled()) {
+        if (checkClientDisabled(client)) {
             event.error(Errors.CLIENT_DISABLED);
-            response = ErrorPage.error(session,authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
+            response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             clientCode.removeExpiredClientSession();
             return false;
         }
@@ -234,7 +253,7 @@ public class SessionCodeChecks {
             String lastFlow = authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH);
 
             // Check if we transitted between flows (eg. clicking "register" on login screen)
-            if (execution==null && !flowPath.equals(lastFlow)) {
+            if (execution == null && !flowPath.equals(lastFlow)) {
                 logger.debugf("Transition between flows! Current flow: %s, Previous flow: %s", flowPath, lastFlow);
 
                 // Don't allow moving to different flow if I am on requiredActions already
@@ -253,7 +272,7 @@ public class SessionCodeChecks {
                 // Allow refresh, but rewrite browser history
                 if (execution == null && lastExecFromSession != null) {
                     logger.debugf("Parameter 'execution' is not in the request, but flow wasn't changed. Will update browser history");
-                    request.setAttribute(BrowserHistoryHelper.SHOULD_UPDATE_BROWSER_HISTORY, true);
+                    session.setAttribute(BrowserHistoryHelper.SHOULD_UPDATE_BROWSER_HISTORY, true);
                 }
 
                 return true;
@@ -269,15 +288,18 @@ public class SessionCodeChecks {
                 // In case that is replayed action, but sent to the same FORM like actual FORM, we just re-render the page
                 if (ObjectUtil.isEqualOrBothNull(execution, authSession.getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION))) {
                     String latestFlowPath = authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH);
-                    URI redirectUri = getLastExecutionUrl(latestFlowPath, execution, tabId);
+                    if (latestFlowPath != null) {
+                        URI redirectUri = getLastExecutionUrl(latestFlowPath, execution, tabId);
 
-                    logger.debugf("Invalid action code, but execution matches. So just redirecting to %s", redirectUri);
-                    authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.EXPIRED_ACTION);
-                    response = Response.status(Response.Status.FOUND).location(redirectUri).build();
-                } else {
-                    response = showPageExpired(authSession);
+                        logger.debugf("Invalid action code, but execution matches. So just redirecting to %s", redirectUri);
+                        authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.EXPIRED_ACTION);
+                        response = Response.status(Response.Status.FOUND).location(redirectUri).build();
+                        return false;
+                    }
                 }
+                response = showPageExpired(authSession);
                 return false;
+
             }
 
 
@@ -287,6 +309,11 @@ public class SessionCodeChecks {
             }
             return true;
         }
+    }
+
+    // Client is not null
+    protected void setClientToEvent(ClientModel client) {
+        event.client(client);
     }
 
 
@@ -316,7 +343,7 @@ public class SessionCodeChecks {
     }
 
 
-    private boolean isActionActive(ClientSessionCode.ActionType actionType) {
+    protected boolean isActionActive(ClientSessionCode.ActionType actionType) {
         if (!clientCode.isActionActive(actionType)) {
             event.clone().error(Errors.EXPIRED_CODE);
 
@@ -363,12 +390,18 @@ public class SessionCodeChecks {
     }
 
 
-    private Response restartAuthenticationSessionFromCookie(RootAuthenticationSessionModel existingRootSession) {
+    protected Response restartAuthenticationSessionFromCookie(RootAuthenticationSessionModel existingRootSession) {
         logger.debug("Authentication session not found. Trying to restart from cookie.");
         AuthenticationSessionModel authSession = null;
 
+        Cookie cook = RestartLoginCookie.getRestartCookie(session);
+        if (cook == null) {
+            event.error(Errors.COOKIE_NOT_FOUND);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.COOKIE_NOT_FOUND);
+        }
+
         try {
-            authSession = RestartLoginCookie.restartSession(session, realm, existingRootSession, clientId);
+            authSession = RestartLoginCookie.restartSession(session, realm, existingRootSession, clientId, cook);
         } catch (Exception e) {
             ServicesLogger.LOGGER.failedToParseRestartLoginCookie(e);
         }
@@ -424,5 +457,17 @@ public class SessionCodeChecks {
     private Response showPageExpired(AuthenticationSessionModel authSession) {
         return new AuthenticationFlowURLHelper(session, realm, uriInfo)
                 .showPageExpired(authSession);
+    }
+
+    protected KeycloakSession getSession() {
+        return session;
+    }
+
+    protected EventBuilder getEvent() {
+        return event;
+    }
+
+    protected boolean checkClientDisabled(ClientModel client) {
+        return !client.isEnabled();
     }
 }

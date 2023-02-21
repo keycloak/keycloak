@@ -17,14 +17,21 @@
 
 package org.keycloak.connections.jpa;
 
+import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
+import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
+import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
+
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
+import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -80,6 +87,10 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         logger.trace("Create JpaConnectionProvider");
         lazyInit(session);
 
+        return new DefaultJpaConnectionProvider(createEntityManager(session));
+    }
+
+    private EntityManager createEntityManager(KeycloakSession session) {
         EntityManager em;
         if (!jtaEnabled) {
             logger.trace("enlisting EntityManager in JpaKeycloakTransaction");
@@ -89,8 +100,27 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
         em = PersistenceExceptionConverter.create(session, em);
-        if (!jtaEnabled) session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
-        return new DefaultJpaConnectionProvider(em);
+        if (!jtaEnabled) {
+            session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
+        }
+        return em;
+    }
+
+    private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
+        EntityManager em = null;
+        try {
+            em = createEntityManager(session);
+            String dbKind = getDatabaseType(connection.getMetaData().getDatabaseProductName());
+            for (Map.Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
+                String queryName = query.getKey().toString();
+                String querySql = query.getValue().toString();
+                configureNamedQuery(queryName, querySql, em);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            JpaUtils.closeEntityManager(em);
+        }
     }
 
     @Override
@@ -131,7 +161,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             synchronized (this) {
                 if (emf == null) {
                     KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () -> {
-                        logger.debug("Initializing JPA connections");
+                        logger.debugf("Initializing JPA connections%s", StackUtil.getShortStackTrace());
 
                         Map<String, Object> properties = new HashMap<>();
 
@@ -145,8 +175,13 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                                 properties.put(AvailableSettings.JPA_NON_JTA_DATASOURCE, dataSource);
                             }
                         } else {
-                            properties.put(AvailableSettings.JPA_JDBC_URL, config.get("url"));
-                            properties.put(AvailableSettings.JPA_JDBC_DRIVER, config.get("driver"));
+                            String url = config.get("url");
+                            String driver = config.get("driver");
+                            if (driver.equals("org.h2.Driver")) {
+                                url = addH2NonKeywords(url);
+                            }
+                            properties.put(AvailableSettings.JPA_JDBC_URL, url);
+                            properties.put(AvailableSettings.JPA_JDBC_DRIVER, driver);
 
                             String user = config.get("user");
                             if (user != null) {
@@ -208,10 +243,23 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             classLoaders.add(getClass().getClassLoader());
                             properties.put(AvailableSettings.CLASSLOADERS, classLoaders);
                             emf = JpaUtils.createEntityManagerFactory(session, unitName, properties, jtaEnabled);
+                            addSpecificNamedQueries(session, connection);
                             logger.trace("EntityManagerFactory created");
 
                             if (globalStatsInterval != -1) {
                                 startGlobalStats(session, globalStatsInterval);
+                            }
+
+                            /*
+                             * Migrate model is executed just in case following providers are "jpa".
+                             * In Map Storage, there is an assumption that migrateModel is not needed.
+                             */
+                            if ((Config.getProvider("realm") == null || "jpa".equals(Config.getProvider("realm"))) &&
+                                (Config.getProvider("client") == null || "jpa".equals(Config.getProvider("client"))) &&
+                                (Config.getProvider("clientScope") == null || "jpa".equals(Config.getProvider("clientScope")))) {
+
+                                logger.debug("Calling migrateModel");
+                                migrateModel(session);
                             }
                         } finally {
                             // Close after creating EntityManagerFactory to prevent in-mem databases from closing
@@ -276,6 +324,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         return sql2012Dialect;
                     }
                 }
+
                 // For Oracle19c, we may need to set dialect explicitly to workaround https://hibernate.atlassian.net/browse/HHH-13184
                 if (dbProductName.equals("Oracle") && connection.getMetaData().getDatabaseMajorVersion() > 12) {
                     logger.debugf("Manually specify dialect for Oracle to org.hibernate.dialect.Oracle12cDialect");
@@ -296,7 +345,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     }
 
     void migration(MigrationStrategy strategy, boolean initializeEmpty, String schema, File databaseUpdateFile, Connection connection, KeycloakSession session) {
-        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class);
+        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class, LiquibaseJpaUpdaterProviderFactory.PROVIDER_ID);
 
         JpaUpdaterProvider.Status status = updater.validate(connection, schema);
         if (status == JpaUpdaterProvider.Status.VALID) {
@@ -370,8 +419,13 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                 DataSource dataSource = (DataSource) new InitialContext().lookup(dataSourceLookup);
                 return dataSource.getConnection();
             } else {
-                Class.forName(config.get("driver"));
-                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(config.get("url"), System.getProperties()), config.get("user"), config.get("password"));
+                String url = config.get("url");
+                String driver = config.get("driver");
+                if (driver.equals("org.h2.Driver")) {
+                    url = addH2NonKeywords(url);
+                }
+                Class.forName(driver);
+                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(url, System.getProperties()), config.get("user"), config.get("password"));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to database", e);
@@ -400,6 +454,28 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         } else {
             return MigrationStrategy.UPDATE;
         }
+    }
+
+    private void migrateModel(KeycloakSession session) {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), MigrationModelManager::migrate);
+    }
+
+    /**
+     * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
+     * <p />
+     * Alternatives considered and rejected:
+     * <ul>
+     * <li>customizing H2 Database dialect -&gt; wouldn't work for existing Liquibase scripts.</li>
+     * <li>adding quotes to <code>@Column(name="VALUE")</code> annotations -&gt; would require testing for all DBs, wouldn't work for existing Liquibase scripts.</li>
+     * </ul>
+     * Downsides of this solution: Release notes needed to point out that any H2 JDBC URL parameter with <code>NON_KEYWORDS</code> needs to add the keyword <code>VALUE</code> manually.
+     * @return JDBC URL with <code>NON_KEYWORDS=VALUE</code> appended if the URL doesn't contain <code>NON_KEYWORDS=</code> yet
+     */
+    private String addH2NonKeywords(String jdbcUrl) {
+        if (!jdbcUrl.contains("NON_KEYWORDS=")) {
+            jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
+        }
+        return jdbcUrl;
     }
 
 }

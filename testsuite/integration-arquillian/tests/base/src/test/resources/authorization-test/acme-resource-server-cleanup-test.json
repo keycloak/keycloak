@@ -56,7 +56,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "roles": "[{\"id\":\"Acme administrator\",\"required\":true}]"
+        "roles": "[{\"id\":\"myclient/Acme administrator\",\"required\":true}]"
       }
     },
     {
@@ -65,7 +65,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "roles": "[{\"id\":\"Acme viewer\",\"required\":true}]"
+        "roles": "[{\"id\":\"myclient/Acme viewer\",\"required\":true}]"
       }
     },
     {
@@ -74,7 +74,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "roles": "[{\"id\":\"tenant user\",\"required\":true}]"
+        "roles": "[{\"id\":\"myclient/tenant user\",\"required\":true}]"
       }
     },
     {
@@ -83,7 +83,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "roles": "[{\"id\":\"tenant administrator\",\"required\":true}]"
+        "roles": "[{\"id\":\"myclient/tenant administrator\",\"required\":true}]"
       }
     },
     {
@@ -92,7 +92,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "roles": "[{\"id\":\"tenant viewer\",\"required\":true}]"
+        "roles": "[{\"id\":\"myclient/tenant viewer\",\"required\":true}]"
       }
     },
     {

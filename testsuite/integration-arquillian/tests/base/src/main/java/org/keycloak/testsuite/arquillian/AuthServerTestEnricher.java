@@ -24,7 +24,6 @@ import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopContainer;
-import org.jboss.arquillian.container.spi.event.container.AfterStart;
 import org.jboss.arquillian.container.spi.event.container.BeforeStop;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Event;
@@ -40,31 +39,22 @@ import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 import org.keycloak.testsuite.util.SqlUtils;
 import org.keycloak.testsuite.util.SystemInfoHelper;
 import org.keycloak.testsuite.util.VaultUtils;
-import org.keycloak.testsuite.util.ServerURLs;
-import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
-import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
-import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
-import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
 import org.keycloak.testsuite.util.TextFileChecker;
-import org.wildfly.extras.creaper.core.ManagementClient;
-import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
-import org.wildfly.extras.creaper.core.online.OnlineOptions;
-import org.wildfly.extras.creaper.core.online.operations.Address;
-import org.wildfly.extras.creaper.core.online.operations.Operations;
-import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -88,9 +78,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.Before;
-import org.jboss.shrinkwrap.api.importer.ZipImporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Assert;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -119,6 +107,7 @@ public class AuthServerTestEnricher {
     private Event<StopContainer> stopContainerEvent;
 
     private JavaArchive testsuiteProvidersArchive;
+    private JavaArchive testsuiteProvidersDeploymentArchive;
     private String currentContainerName;
 
     public static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
@@ -128,8 +117,6 @@ public class AuthServerTestEnricher {
     public static final String AUTH_SERVER_BACKEND_DEFAULT = AUTH_SERVER_CONTAINER + "-backend";
     public static final String AUTH_SERVER_BACKEND_PROPERTY = "auth.server.backend";
     public static final String AUTH_SERVER_BACKEND = System.getProperty(AUTH_SERVER_BACKEND_PROPERTY, AUTH_SERVER_BACKEND_DEFAULT);
-
-    public static final String AUTH_SERVER_LEGACY = "auth-server-legacy";
 
     public static final String AUTH_SERVER_BALANCER_DEFAULT = "auth-server-balancer";
     public static final String AUTH_SERVER_BALANCER_PROPERTY = "auth.server.balancer";
@@ -141,6 +128,10 @@ public class AuthServerTestEnricher {
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
     public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
+
+    public static final String AUTH_SERVER_FIPS_MODE_PROPERTY = "auth.server.fips.mode";
+
+    public static final FipsMode AUTH_SERVER_FIPS_MODE = FipsMode.valueOf(System.getProperty(AUTH_SERVER_FIPS_MODE_PROPERTY, FipsMode.disabled.toString()));
 
     public static final String CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY = "cache.server.lifecycle.skip";
     public static final boolean CACHE_SERVER_LIFECYCLE_SKIP = Boolean.parseBoolean(System.getProperty(CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY, "false"));
@@ -165,10 +156,6 @@ public class AuthServerTestEnricher {
     @ClassScoped
     private InstanceProducer<OAuthClient> oAuthClientProducer;
 
-    public static boolean isAuthServerRemote() {
-        return AUTH_SERVER_CONTAINER.equals("auth-server-remote");
-    }
-
     public static boolean isAuthServerQuarkus() {
         return AUTH_SERVER_CONTAINER.equals("auth-server-quarkus");
     }
@@ -178,6 +165,13 @@ public class AuthServerTestEnricher {
         int httpPort = Integer.parseInt(System.getProperty("auth.server.http.port")); // property must be set
 
         return removeDefaultPorts(String.format("%s://%s:%s", "http", host, httpPort));
+    }
+
+    public static String getHttpsAuthServerContextRoot() {
+        String host = System.getProperty("auth.server.host", "localhost");
+        int httpPort = Integer.parseInt(System.getProperty("auth.server.https.port")); // property must be set
+
+        return removeDefaultPorts(String.format("%s://%s:%s", "https", host, httpPort));
     }
 
     public static String getAuthServerBrowserContextRoot() throws MalformedURLException {
@@ -193,19 +187,6 @@ public class AuthServerTestEnricher {
                 contextRoot.getPort() == -1 || contextRoot.getPort() == contextRoot.getDefaultPort()
                         ? ""
                         : ":" + contextRoot.getPort());
-    }
-
-    public static OnlineManagementClient getManagementClient() {
-        try {
-            return ManagementClient.online(OnlineOptions
-                    .standalone()
-                    .hostAndPort(System.getProperty("auth.server.management.host", "localhost"), Integer.parseInt(System.getProperty("auth.server.management.port", "10090")))
-                    .auth("admin", "admin")
-                    .build()
-            );
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public void distinguishContainersInConsoleOutput(@Observes(precedence = 5) StartContainer event) {
@@ -251,11 +232,15 @@ public class AuthServerTestEnricher {
                     });
 
             containers.stream()
-                    .filter(c -> c.getQualifier().startsWith("cache-server-cross-dc-"))
+                    .filter(c -> c.getQualifier().startsWith("cache-server-"))
                     .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
                     .forEach(containerInfo -> {
-                        int prefixSize = "cache-server-cross-dc-".length();
-                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) -1;
+                        
+                        log.info(String.format("cache container: %s", containerInfo.getQualifier()));
+                        
+                        int prefixSize = containerInfo.getQualifier().lastIndexOf("-") + 1;
+                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) - 1;
+                        
                         suiteContext.addCacheServerInfo(dcIndex, containerInfo);
                     });
 
@@ -293,15 +278,6 @@ public class AuthServerTestEnricher {
                     suiteContext.addAuthServerBackendsInfo(0, c);
                 });
 
-            if (Boolean.parseBoolean(System.getProperty("auth.server.jboss.legacy"))) {
-                ContainerInfo legacy = containers.stream()
-                    .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_LEGACY))
-                    .findAny()
-                    .orElseThrow(() -> new IllegalStateException("Not found legacy container: " + AUTH_SERVER_LEGACY));
-                updateWithAuthServerInfo(legacy, 500);
-                suiteContext.setLegacyAuthServerInfo(legacy);
-            }
-
             if (suiteContext.getAuthServerBackendsInfo().isEmpty()) {
                 throw new RuntimeException(String.format("No auth server container matching '%s' found in arquillian.xml.", AUTH_SERVER_BACKEND));
             }
@@ -321,15 +297,15 @@ public class AuthServerTestEnricher {
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server
-                if (container.getQualifier().equals("auth-server-jboss-migration")) {
+                if (container.getQualifier().equals("auth-server-migration")) {
                     updateWithAuthServerInfo(container);
                     suiteContext.setMigratedAuthServerInfo(container);
                 }
             }
             // validate setup
             if (suiteContext.getMigratedAuthServerInfo() == null) {
-                throw new RuntimeException(String.format("Migration test was enabled but no auth server from which to migrate was activated. "
-                        + "A container matching auth-server-jboss-migration needs to be enabled in arquillian.xml."));
+                throw new RuntimeException("Migration test was enabled but no auth server from which to migrate was activated. "
+                        + "A container matching 'auth-server-migration' needs to be enabled in arquillian.xml.");
             }
         }
 
@@ -370,27 +346,15 @@ public class AuthServerTestEnricher {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("\n\n### Starting keycloak " + System.getProperty("migrated.auth.server.version", "- previous") + " ###\n\n");
             startContainerEvent.fire(new StartContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
-            initializeTLS(suiteContext.getMigratedAuthServerInfo());
-        }
-    }
-
-    public void deployProviders(@Observes(precedence = -1) AfterStart event) throws DeploymentException {
-        if (isAuthServerRemote() && currentContainerName.contains("auth-server")) {
-            this.testsuiteProvidersArchive = ShrinkWrap.create(ZipImporter.class, "testsuiteProviders.jar")
-                    .importFrom(Maven.configureResolverViaPlugin()
-                        .resolve("org.keycloak.testsuite:integration-arquillian-testsuite-providers")
-                        .withoutTransitivity()
-                        .asSingleFile()
-                    ).as(JavaArchive.class)
-                    .addAsManifestResource("jboss-deployment-structure.xml");
-                    
-            event.getDeployableContainer().deploy(testsuiteProvidersArchive);
         }
     }
 
     public void unDeployProviders(@Observes(precedence = 20) BeforeStop event) throws DeploymentException {
         if (testsuiteProvidersArchive != null) {
             event.getDeployableContainer().undeploy(testsuiteProvidersArchive);
+        }
+        if (testsuiteProvidersDeploymentArchive != null) {
+            event.getDeployableContainer().undeploy(testsuiteProvidersDeploymentArchive);
         }
     }
 
@@ -405,6 +369,7 @@ public class AuthServerTestEnricher {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("## STOP old container: " + suiteContext.getMigratedAuthServerInfo().getQualifier());
             stopContainerEvent.fire(new StopContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
+            suiteContext.setMigratedAuthServerInfo(null);
         }
     }
 
@@ -422,9 +387,6 @@ public class AuthServerTestEnricher {
                     // this will mitigate possible issues in manual server update tests
                     // when the auth server started with not updated DB
                     // e.g. Caused by: org.keycloak.ServerStartupError: Database not up-to-date, please migrate database with
-                    if (suiteContext.getServerLogChecker() == null) {
-                        setServerLogChecker();
-                    }
                     suiteContext.getServerLogChecker()
                         .updateLastCheckedPositionsOfAllFilesToEndOfFile();
                 } catch (IOException ioe) {
@@ -494,68 +456,39 @@ public class AuthServerTestEnricher {
         }
     }
 
-    private void setServerLogChecker() throws IOException {
-        String jbossHomePath = suiteContext.getAuthServerInfo().getProperties().get("jbossHome");
-        suiteContext.setServerLogChecker(LogChecker.getJBossServerLogsChecker(jbossHomePath));
+    public void checkServerLogs(@Observes(precedence = -1) BeforeSuite event) {
+        suiteContext.setServerLogChecker(new TextFileChecker());
     }
 
-    public void checkServerLogs(@Observes(precedence = -1) BeforeSuite event) throws IOException, InterruptedException {
-        if (! suiteContext.getAuthServerInfo().isJBossBased()) {
-            suiteContext.setServerLogChecker(new TextFileChecker());    // checks nothing
-            return;
-        }
-        if (suiteContext.getServerLogChecker() == null) {
-            setServerLogChecker();
-        }
-        boolean checkLog = Boolean.parseBoolean(System.getProperty("auth.server.log.check", "true"));
-        if (checkLog) {
-            suiteContext.getServerLogChecker()
-                .checkFiles(true, AuthServerTestEnricher::failOnRecognizedErrorInLog);
-        }
-    }
-
-    public void restartAuthServer() throws Exception {
-        if (isAuthServerRemote()) {
-            try (OnlineManagementClient client = getManagementClient()) {
-                int timeoutInSec = Integer.getInteger(System.getProperty("auth.server.jboss.startup.timeout"), 300);
-                Administration administration = new Administration(client, timeoutInSec);
-                administration.reload();
-            }
-        } else {
-            stopContainerEvent.fire(new StopContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
-            startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
-        }
+    public void restartAuthServer() {
+        stopContainerEvent.fire(new StopContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+        startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
     }
 
     public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) throws Exception {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
+        ProfileAssume.setTestContext(testContext);
 
-        if (!isAuthServerRemote() && !isAuthServerQuarkus() && event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+        boolean wasUpdated = false;
+
+        if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
+            SetDefaultProvider defaultProvider = event.getTestClass().getAnnotation(SetDefaultProvider.class);
+
+            if (defaultProvider.beforeEnableFeature()) {
+                SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContext, defaultProvider);
+                wasUpdated = true;
+            }
+        }
+
+        if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
             VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+            wasUpdated = true;
+        }
+
+        if (wasUpdated) {
             restartAuthServer();
             testContext.reconnectAdminClient();
-        }
-    }
-
-    public void initializeTLS(@Observes(precedence = 3) BeforeClass event) throws Exception {
-        // TLS for Undertow is configured in KeycloakOnUndertow since it requires
-        // SSLContext while initializing HTTPS handlers
-        if (!suiteContext.isAuthServerCrossDc() && !suiteContext.isAuthServerCluster()) {
-            initializeTLS(suiteContext.getAuthServerInfo());
-        }
-    }
-
-    public static void initializeTLS(ContainerInfo containerInfo) {
-        if (ServerURLs.AUTH_SERVER_SSL_REQUIRED && containerInfo.isJBossBased()) {
-            log.infof("\n\n### Setting up TLS for %s ##\n\n", containerInfo);
-            try (OnlineManagementClient client = getManagementClient(containerInfo)) {
-                AuthServerTestEnricher.enableTLS(client);
-            } catch (Exception e) {
-                log.warn("Failed to set up TLS for container '" + containerInfo.getQualifier() + "'. This may lead to unexpected behavior unless the test" +
-                        " sets it up manually", e);
-            }
-
         }
     }
 
@@ -750,50 +683,6 @@ public class AuthServerTestEnricher {
         }
     }
 
-    private static OnlineManagementClient getManagementClient(ContainerInfo containerInfo) {
-        try {
-            return ManagementClient.online(OnlineOptions
-                    .standalone()
-                    .hostAndPort("localhost", Integer.valueOf(containerInfo.getProperties().get("managementPort")))
-                    .build()
-            );
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void enableTLS(OnlineManagementClient client) throws Exception {
-        Administration administration = new Administration(client);
-        Operations operations = new Operations(client);
-
-        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
-            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
-            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
-            client.execute("/core-service=management/security-realm=UndertowRealm/authentication=truststore:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.truststore");
-
-            client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
-                  .forDefaultServer());
-
-            administration.reloadIfRequired();
-
-            client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
-                  .securityRealm("UndertowRealm")
-                  .verifyClient(SslVerifyClient.REQUESTED)
-                  .build());
-
-            administration.reloadIfRequired();
-        } else {
-            log.info("## The Auth Server has already configured TLS. Skipping ##");
-        }
-    }
-
-    protected boolean isAuthServerJBossBased() {
-        return containerRegistry.get().getContainers().stream()
-              .map(ContainerInfo::new)
-              .filter(ci -> ci.isJBossBased())
-              .findFirst().isPresent();
-    }
-
     public void initializeOAuthClient(@Observes(precedence = 4) BeforeClass event) {
         // TODO workaround. Check if can be removed
         OAuthClient.updateURLs(suiteContext.getAuthServerInfo().getContextRoot().toString());
@@ -851,8 +740,19 @@ public class AuthServerTestEnricher {
 
         removeTestRealms(testContext, adminClient);
 
-        if (!isAuthServerRemote() && event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+        boolean wasUpdated = false;
+
+        if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
+            SpiProvidersSwitchingUtils.resetProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
+            wasUpdated = true;
+        }
+
+        if (event.getTestClass().isAnnotationPresent(EnableVault.class) && !isAuthServerQuarkus()) {
             VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+            wasUpdated = true;
+        }
+
+        if (wasUpdated) {
             restartAuthServer();
             testContext.reconnectAdminClient();
         }

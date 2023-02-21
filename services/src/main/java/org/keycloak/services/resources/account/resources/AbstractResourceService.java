@@ -25,9 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
@@ -82,7 +83,8 @@ public abstract class AbstractResourceService {
 
             setScopes(resource.getScopes().stream().map(Scope::new).collect(Collectors.toSet()));
 
-            this.client = new Client(provider.getRealm().getClientById(resource.getResourceServer()));
+            ResourceServer resourceServer = resource.getResourceServer();
+            this.client = new Client(provider.getRealm().getClientById(resourceServer.getClientId()));
         }
 
         Resource(org.keycloak.authorization.model.Resource resource, AuthorizationProvider provider) {

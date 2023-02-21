@@ -89,7 +89,7 @@ public class StripSecretsUtils {
         return rep;
     }
 
-    public static RealmRepresentation stripForExport(KeycloakSession session, RealmRepresentation rep) {
+    public static void stripForExport(KeycloakSession session, RealmRepresentation rep) {
         strip(rep);
 
         List<ClientRepresentation> clients = rep.getClients();
@@ -127,8 +127,6 @@ public class StripSecretsUtils {
                 strip(u);
             }
         }
-
-        return rep;
     }
 
     public static UserRepresentation strip(UserRepresentation user) {

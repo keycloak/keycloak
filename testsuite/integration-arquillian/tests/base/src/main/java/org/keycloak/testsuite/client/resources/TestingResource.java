@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.client.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -38,6 +39,9 @@ import javax.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.infinispan.commons.time.TimeService;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -197,7 +201,7 @@ public interface TestingResource {
     void removeExpired(@QueryParam("realm") final String realm);
 
     /**
-     * Will set {@link org.keycloak.testsuite.model.infinispan.KeycloakTestTimeService} to the infinispan CacheManager before the test.
+     * Will set Inifispan's {@link TimeService} that is aware of Keycloak time shifts to the infinispan {@code CacheManager} before the test.
      * This will allow infinispan expiration to be aware of Keycloak {@link org.keycloak.common.util.Time#setOffset}
      */
     @POST
@@ -331,15 +335,47 @@ public interface TestingResource {
     @Produces(MediaType.TEXT_HTML_UTF_8)
     String getJavascriptTestingEnvironment();
 
+    @GET
+    @Path("/list-disabled-features")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<Profile.Feature> listDisabledFeatures();
+
     @POST
     @Path("/enable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
-    Response enableFeature(@PathParam("feature") String feature);
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<Profile.Feature> enableFeature(@PathParam("feature") String feature);
 
     @POST
     @Path("/disable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
-    Response disableFeature(@PathParam("feature") String feature);
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<Profile.Feature> disableFeature(@PathParam("feature") String feature);
+
+    /**
+     * If property-value is null, the system property will be unset (removed) on the server
+     */
+    @GET
+    @Path("/set-system-property")
+    @Consumes(MediaType.TEXT_HTML_UTF_8)
+    void setSystemPropertyOnServer(@QueryParam("property-name") String propertyName, @QueryParam("property-value") String propertyValue);
+
+    /**
+     * Re-initialize specified provider factory with system properties scope. This will allow to change providerConfig in runtime with {@link #setSystemPropertyOnServer}
+     *
+     * This works just for the provider factories, which can be re-initialized without any side-effects (EG. some functionality already dependent
+     * on the previously initialized properties, which cannot be easily changed in runtime)
+     *
+     * @param providerType fully qualified class name of provider (subclass of org.keycloak.provider.Provider)
+     * @param providerId provider Id
+     * @param systemPropertiesPrefix prefix to be used for system properties
+     */
+    @GET
+    @Path("/reinitialize-provider-factory-with-system-properties-scope")
+    @Consumes(MediaType.TEXT_HTML_UTF_8)
+    @NoCache
+    void reinitializeProviderFactoryWithSystemPropertiesScope(@QueryParam("provider-type") String providerType, @QueryParam("provider-id") String providerId,
+                                                              @QueryParam("system-properties-prefix") String systemPropertiesPrefix);
 
 
     /**
@@ -353,4 +389,13 @@ public interface TestingResource {
     Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
                                          @QueryParam("encodedFormParameters") String encodedFormParameters);
 
+    /**
+     * Display message to Error Page - for testing purposes
+     *
+     * @param message message
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/display-error-message")
+    Response displayErrorMessage(@QueryParam("message") String message);
 }

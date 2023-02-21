@@ -64,7 +64,7 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        String testErrorParamVal = context.getHttpRequest().getFormParameters().getFirst(TEST_ERROR_PARAM);
+        String testErrorParamVal = context.getHttpRequest().getDecodedFormParameters().getFirst(TEST_ERROR_PARAM);
         if (testErrorParamVal != null) {
             throw new RuntimeException(testErrorParamVal);
         }

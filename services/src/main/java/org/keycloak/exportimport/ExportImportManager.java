@@ -21,9 +21,20 @@ package org.keycloak.exportimport;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.ServicesLogger;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -33,6 +44,7 @@ public class ExportImportManager {
     private static final Logger logger = Logger.getLogger(ExportImportManager.class);
 
     private KeycloakSessionFactory sessionFactory;
+    private KeycloakSession session;
 
     private final String realmName;
 
@@ -41,6 +53,7 @@ public class ExportImportManager {
 
     public ExportImportManager(KeycloakSession session) {
         this.sessionFactory = session.getKeycloakSessionFactory();
+        this.session = session;
 
         realmName = ExportImportConfig.getRealmName();
 
@@ -92,6 +105,57 @@ public class ExportImportManager {
             ServicesLogger.LOGGER.importSuccess();
         } catch (IOException e) {
             throw new RuntimeException("Failed to run import", e);
+        }
+    }
+
+    public void runImportAtStartup(String dir, Strategy strategy) throws IOException {
+        ExportImportConfig.setReplacePlaceholders(true);
+        ExportImportConfig.setAction("import");
+
+        Stream<ProviderFactory> factories = sessionFactory.getProviderFactoriesStream(ImportProvider.class);
+
+        for (ProviderFactory factory : factories.collect(Collectors.toList())) {
+            String providerId = factory.getId();
+
+            if ("dir".equals(providerId)) {
+                ExportImportConfig.setDir(dir);
+                ImportProvider importProvider = session.getProvider(ImportProvider.class, providerId);
+                importProvider.importModel(sessionFactory, strategy);
+            } else if ("singleFile".equals(providerId)) {
+                Set<String> filesToImport = new HashSet<>();
+
+                for (File file : Paths.get(dir).toFile().listFiles()) {
+                    Path filePath = file.toPath();
+
+                    if (!(Files.exists(filePath) && Files.isRegularFile(filePath) && filePath.toString().endsWith(".json"))) {
+                        logger.debugf("Ignoring import file because it is not a valid file: %s", file);
+                        continue;
+                    }
+
+                    String fileName = file.getName();
+
+                    if (fileName.contains("-realm.json") || fileName.contains("-users-")) {
+                        continue;
+                    }
+
+                    filesToImport.add(file.getAbsolutePath());
+                }
+
+                for (String file : filesToImport) {
+                    ExportImportConfig.setFile(file);
+                    KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+                        @Override
+                        public void run(KeycloakSession session) {
+                            ImportProvider importProvider = session.getProvider(ImportProvider.class, providerId);
+                            try {
+                                importProvider.importModel(sessionFactory, strategy);
+                            } catch (IOException cause) {
+                                throw new RuntimeException(cause);
+                            }
+                        }
+                    });
+                }
+            }
         }
     }
 

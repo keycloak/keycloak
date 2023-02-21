@@ -92,8 +92,6 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -107,7 +105,6 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class EntitlementAPITest extends AbstractAuthzTest {
 
     private static final String RESOURCE_SERVER_TEST = "resource-server-test";
@@ -424,7 +421,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName("Only Owner Policy");
-        policy.setCode("if ($evaluation.getContext().getIdentity().getId() == $evaluation.getPermission().getResource().getOwner()) {$evaluation.grant();}");
+        policy.setType("script-scripts/only-owner-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -563,7 +560,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -614,7 +611,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -670,7 +667,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -769,7 +766,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -809,7 +806,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -891,7 +888,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -981,14 +978,14 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation grantPolicy = new JSPolicyRepresentation();
 
         grantPolicy.setName(KeycloakModelUtils.generateId());
-        grantPolicy.setCode("$evaluation.grant();");
+        grantPolicy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(grantPolicy).close();
 
         JSPolicyRepresentation denyPolicy = new JSPolicyRepresentation();
 
         denyPolicy.setName(KeycloakModelUtils.generateId());
-        denyPolicy.setCode("$evaluation.deny();");
+        denyPolicy.setType("script-scripts/always-deny-policy.js");
 
         authorization.policies().js().create(denyPolicy).close();
 
@@ -1117,7 +1114,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -1730,16 +1727,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation onlyOwnerPolicy = new JSPolicyRepresentation();
 
         onlyOwnerPolicy.setName(KeycloakModelUtils.generateId());
-        onlyOwnerPolicy.setCode("var context = $evaluation.getContext();\n" +
-                "var identity = context.getIdentity();\n" +
-                "var permission = $evaluation.getPermission();\n" +
-                "var resource = permission.getResource();\n" +
-                "\n" +
-                "if (resource) {\n" +
-                "    if (resource.owner == identity.id) {\n" +
-                "        $evaluation.grant();\n" +
-                "    }\n" +
-                "}");
+        onlyOwnerPolicy.setType("script-scripts/only-owner-policy.js");
 
         return onlyOwnerPolicy;
     }
@@ -1751,19 +1739,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation onlyPublicResourcesPolicy = new JSPolicyRepresentation();
 
         onlyPublicResourcesPolicy.setName(KeycloakModelUtils.generateId());
-        onlyPublicResourcesPolicy.setCode("var createPermission = $evaluation.getPermission();\n" +
-                "var resource = createPermission.getResource();\n" +
-                "\n" +
-                "if (resource) {\n" +
-                "    var attributes = resource.getAttributes();\n" +
-                "    var visibility = attributes.get('visibility');\n" +
-                "    \n" +
-                "    if (visibility && \"private\".equals(visibility.get(0))) {\n" +
-                "        $evaluation.deny();\n" +
-                "      } else {\n" +
-                "        $evaluation.grant();\n" +
-                "    }\n" +
-                "}");
+        onlyPublicResourcesPolicy.setType("script-scripts/resource-visibility-attribute-policy.js");
 
         authorization.policies().js().create(onlyPublicResourcesPolicy).close();
 
@@ -1929,7 +1905,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -1997,7 +1973,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -2051,7 +2027,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -2107,7 +2083,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -2155,7 +2131,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -2220,7 +2196,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation grantPolicy = new JSPolicyRepresentation();
 
         grantPolicy.setName("Grant Policy");
-        grantPolicy.setCode("$evaluation.grant();");
+        grantPolicy.setType("script-scripts/default-policy.js");
 
         rsB.authorization().policies().js().create(grantPolicy);
 
@@ -2263,7 +2239,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -2318,7 +2294,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 
@@ -2493,7 +2469,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName("Default Policy");
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         authorization.policies().js().create(policy).close();
 

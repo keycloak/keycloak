@@ -31,7 +31,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.PageUtils;
+import org.keycloak.testsuite.pages.InstalledAppRedirectPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.By;
@@ -57,6 +57,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Page
     private ErrorPage errorPage;
+
+    @Page
+    private InstalledAppRedirectPage installedAppPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -92,14 +95,28 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
 
-        String title = PageUtils.getPageTitle(driver);
-        Assert.assertEquals("Success code", title);
-
-        driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
+        installedAppPage.getSuccessCode();
 
         events.expectLogin().detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
 
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris(Constants.INSTALLED_APP_URN);
+    }
+
+    @Test
+    public void authorizationRequestInstalledAppErrors() throws IOException {
+        String error = "<p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>";
+        installedAppPage.open("test", null, error, null);
+
+        // Assert text escaped and not "a" link present
+        installedAppPage.assertLinkBackToApplicationNotPresent();
+        Assert.assertEquals("Error code: <p>Back to application</p>", installedAppPage.getPageTitleText());
+
+        error = "<p><a href=\"http://foo.com\">Back to application</a></p>";
+        installedAppPage.open("test", null, error, null);
+
+        // In this case, link is not sanitized as it is valid link, however it is escaped and not shown as a link
+        installedAppPage.assertLinkBackToApplicationNotPresent();
+        Assert.assertEquals("Error code: <p><a href=\"http://foo.com\" rel=\"nofollow\">Back to application</a></p>", installedAppPage.getPageTitleText());
     }
 
     @Test
@@ -158,10 +175,44 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
     }
 
+    @Test
+    public void authorizationRequestFormPostResponseModeInvalidResponseType() throws IOException {
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+        oauth.responseType("tokenn");
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        String error = driver.findElement(By.id("error")).getText();
+        String state = driver.findElement(By.id("state")).getText();
+
+        assertEquals(OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, error);
+        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
+
+    }
+
+    @Test
+    public void authorizationRequestFormPostResponseModeWithoutResponseType() throws IOException {
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+        oauth.responseType(null);
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        String error = driver.findElement(By.id("error")).getText();
+        String errorDescription = driver.findElement(By.id("error_description")).getText();
+        String state = driver.findElement(By.id("state")).getText();
+
+        assertEquals(OAuthErrorException.INVALID_REQUEST, error);
+        assertEquals("Missing parameter: response_type", errorDescription);
+        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
+
+    }
+
     // KEYCLOAK-3281
     @Test
     public void authorizationRequestFormPostResponseMode() throws IOException {
-        oauth.responseMode(OIDCResponseMode.FORM_POST.toString().toLowerCase());
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         oauth.doLoginGrant("test-user@localhost", "password");
 
@@ -179,7 +230,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Test
     public void authorizationRequestFormPostResponseModeWithCustomState() throws IOException {
-        oauth.responseMode(OIDCResponseMode.FORM_POST.toString().toLowerCase());
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.stateParamHardcoded("\"><foo>bar_baz(2)far</foo>");
         oauth.doLoginGrant("test-user@localhost", "password");
 
@@ -198,7 +249,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     public void authorizationRequestFragmentResponseModeNotKept() throws Exception {
         // Set response_mode=fragment and login
-        oauth.responseMode(OIDCResponseMode.FRAGMENT.toString().toLowerCase());
+        oauth.responseMode(OIDCResponseMode.FRAGMENT.value());
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());

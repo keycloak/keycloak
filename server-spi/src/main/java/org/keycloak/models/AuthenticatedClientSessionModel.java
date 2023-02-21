@@ -27,7 +27,15 @@ import org.keycloak.sessions.CommonClientSessionModel;
  */
 public interface AuthenticatedClientSessionModel extends CommonClientSessionModel {
 
+    String STARTED_AT_NOTE = "startedAt";
+
     String getId();
+
+    default int getStarted() {
+        String started = getNote(STARTED_AT_NOTE);
+        // Fallback to 0 if "started" note is not available. This can happen for the offline sessions migrated from old version where "startedAt" note was not yet available
+        return started == null ? 0 : Integer.parseInt(started);
+    }
 
     int getTimestamp();
     void setTimestamp(int timestamp);

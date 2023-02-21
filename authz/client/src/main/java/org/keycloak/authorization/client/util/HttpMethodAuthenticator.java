@@ -48,10 +48,16 @@ public class HttpMethodAuthenticator<R> {
     }
 
     public HttpMethod<R> oauth2ResourceOwnerPassword(String userName, String password) {
+        return oauth2ResourceOwnerPassword(userName, password, null);
+    }
+
+    public HttpMethod<R> oauth2ResourceOwnerPassword(String userName, String password, String scope) {
         client();
         this.method.params.put(OAuth2Constants.GRANT_TYPE, Arrays.asList(OAuth2Constants.PASSWORD));
         this.method.params.put("username", Arrays.asList(userName));
         this.method.params.put("password", Arrays.asList(password));
+        if (scope != null)
+            this.method.params.put("scope", Arrays.asList(scope));
         return this.method;
     }
 
@@ -118,6 +124,10 @@ public class HttpMethodAuthenticator<R> {
 
             if (metadata.getLimit() != null) {
                 method.param("response_permissions_limit", metadata.getLimit().toString());
+            }
+
+            if (metadata.getResponseMode() != null) {
+                method.param("response_mode", metadata.getResponseMode());
             }
         }
 

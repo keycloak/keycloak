@@ -1,66 +1,48 @@
 package org.keycloak.testsuite.arquillian.containers;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
-import org.apache.commons.io.FileUtils;
-import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
-import org.jboss.arquillian.container.spi.client.container.DeploymentException;
+import org.apache.commons.exec.StreamPumper;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
-import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
-import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.logging.Logger;
-import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.descriptor.api.Descriptor;
-import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.model.StoreProvider;
 
 /**
  * @author mhajas
  */
-public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
+public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDeployableContainer {
 
-    protected static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
-    
-    private KeycloakQuarkusConfiguration configuration;
+    private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
+
+    private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
+
     private Process container;
-    private static AtomicBoolean restart = new AtomicBoolean();
-
-    @Inject
-    private Instance<SuiteContext> suiteContext;
-
-    @Override
-    public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
-        return KeycloakQuarkusConfiguration.class;
-    }
-
-    @Override
-    public void setup(KeycloakQuarkusConfiguration configuration) {
-        this.configuration = configuration;
-    }
+    private Thread stdoutForwarderThread;
 
     @Override
     public void start() throws LifecycleException {
         try {
+            importRealm();
             container = startContainer();
+            stdoutForwarderThread = new Thread(new StreamPumper(container.getInputStream(), System.out));
+            stdoutForwarderThread.start();
             waitForReadiness();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -69,43 +51,44 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     @Override
     public void stop() throws LifecycleException {
-        container.destroy();
-        try {
-            container.waitFor(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            container.destroyForcibly();
+        if (container.isAlive()) {
+            try {
+                destroyDescendantsOnWindows(container, false);
+                container.destroy();
+                container.waitFor(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                destroyDescendantsOnWindows(container, true);
+                container.destroyForcibly();
+            }
         }
     }
 
-    @Override
-    public ProtocolDescription getDefaultProtocol() {
-        return null;
-    }
+    private void importRealm() throws IOException, URISyntaxException {
+        if (suiteContext.get().isAuthServerMigrationEnabled() && configuration.getImportFile() != null) {
+            final String importFileName = configuration.getImportFile();
 
-    @Override
-    public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        return null;
-    }
+            log.infof("Importing realm from file '%s'", importFileName);
 
-    @Override
-    public void undeploy(Archive<?> archive) throws DeploymentException {
+            final URL url = getClass().getResource("/migration-test/" + importFileName);
+            if (url == null) throw new IllegalArgumentException("Cannot find migration import file");
 
-    }
+            final Path path = Paths.get(url.toURI());
+            final File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
+            final List<String> commands = new ArrayList<>();
 
-    @Override
-    public void deploy(Descriptor descriptor) throws DeploymentException {
+            commands.add(getCommand());
+            commands.add("import");
+            commands.add("--file=" + wrkDir.toPath().relativize(path));
 
-    }
-
-    @Override
-    public void undeploy(Descriptor descriptor) throws DeploymentException {
-
+            final ProcessBuilder pb = new ProcessBuilder(commands);
+            pb.directory(wrkDir).inheritIO().start();
+        }
     }
 
     private Process startContainer() throws IOException {
-        ProcessBuilder pb = new ProcessBuilder(getProcessCommands());
+        ProcessBuilder pb = getProcessBuilder();
         File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
-        ProcessBuilder builder = pb.directory(wrkDir).inheritIO().redirectErrorStream(true);
+        ProcessBuilder builder = pb.directory(wrkDir).redirectErrorStream(true);
 
         String javaOpts = configuration.getJavaOpts();
 
@@ -113,143 +96,104 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             builder.environment().put("JAVA_OPTS", javaOpts);
         }
 
-        builder.environment().put("KEYCLOAK_ADMIN", "admin");
-        builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
-        
-        if (restart.compareAndSet(false, true)) {
-            FileUtils.deleteDirectory(configuration.getProvidersPath().resolve("data").toFile());
+        final StoreProvider storeProvider = StoreProvider.getCurrentProvider();
+        final boolean isJpaStore = storeProvider.equals(StoreProvider.JPA) || storeProvider.equals(StoreProvider.LEGACY);
+
+        if (!isJpaStore) {
+            builder.environment().put("KEYCLOAK_ADMIN", "admin");
+            builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
         }
 
-        if (configuration.isReaugmentBeforeStart()) {
-            ProcessBuilder reaugment = new ProcessBuilder("./kc.sh", "config");
-
-            reaugment.directory(wrkDir).inheritIO();
-
-            try {
-                log.infof("Re-building the server with the new configuration");
-                reaugment.start().waitFor(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Timeout while waiting for re-augmentation", e);
-            }
+        if (restart.compareAndSet(false, true)) {
+            deleteDirectory(configuration.getProvidersPath().resolve("data"));
         }
 
         return builder.start();
     }
 
-    private String[] getProcessCommands() {
-        List<String> commands = new ArrayList<>();
+    @Override
+    protected List<String> configureArgs(List<String> args) {
+        List<String> commands = new ArrayList<>(args);
 
-        commands.add("./kc.sh");
+        commands.add(0, getCommand());
+        commands.add("--optimized");
 
-        if (configuration.getDebugPort() > 0) {
-            commands.add("--debug");
-            commands.add(Integer.toString(configuration.getDebugPort()));
-        } else if (Boolean.valueOf(System.getProperty("auth.server.debug", "false"))) {
-            commands.add("--debug");
-            commands.add(System.getProperty("auth.server.debug.port", "5005"));
-        }
+        log.debugf("Quarkus parameters: %s", commands);
 
-        commands.add("--http-port=" + configuration.getBindHttpPort());
-        commands.add("--https-port=" + configuration.getBindHttpsPort());
-
-        if (configuration.getRoute() != null) {
-            commands.add("-Djboss.node.name=" + configuration.getRoute());
-        }
-
-        commands.add("--cluster=" + System.getProperty("auth.server.quarkus.cluster.config", "local"));
-
-        return commands.toArray(new String[commands.size()]);
+        return commands;
     }
 
-    private void waitForReadiness() throws MalformedURLException, LifecycleException {
-        SuiteContext suiteContext = this.suiteContext.get();
-        //TODO: not sure if the best endpoint but it makes sure that everything is properly initialized. Once we have
-        // support for MP Health this should change
-        URL contextRoot = new URL(getBaseUrl(suiteContext) + "/auth/realms/master/");
-        HttpURLConnection connection;
-        long startTime = System.currentTimeMillis();
+    private ProcessBuilder getProcessBuilder() {
+        Map<String, String> env = new HashMap<>();
+        String[] processCommands = getArgs(env).toArray(new String[0]);
+        ProcessBuilder pb = new ProcessBuilder(processCommands);
 
-        while (true) {
-            if (System.currentTimeMillis() - startTime > getStartTimeout()) {
-                stop();
-                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
-            }
+        pb.environment().putAll(env);
 
-            try {
-                // wait before checking for opening a new connection
-                Thread.sleep(1000);
-                if ("https".equals(contextRoot.getProtocol())) {
-                    HttpsURLConnection httpsConnection = (HttpsURLConnection) (connection = (HttpURLConnection) contextRoot.openConnection());
-                    httpsConnection.setSSLSocketFactory(createInsecureSslSocketFactory());
-                    httpsConnection.setHostnameVerifier(createInsecureHostnameVerifier());
-                } else {
-                    connection = (HttpURLConnection) contextRoot.openConnection();
-                }
+        return pb;
+    }
 
-                connection.setReadTimeout((int) getStartTimeout());
-                connection.setConnectTimeout((int) getStartTimeout());
-                connection.connect();
-
-                if (connection.getResponseCode() == 200) {
-                    break;
-                }
-
-                connection.disconnect();
-            } catch (Exception ignore) {
-            }
+    private String getCommand() {
+        if (isWindows()) {
+            return configuration.getProvidersPath().resolve("bin").resolve("kc.bat").toString();
         }
-        
-        log.infof("Keycloak is ready at %s", contextRoot);
+        return "./kc.sh";
     }
 
-    private URL getBaseUrl(SuiteContext suiteContext) throws MalformedURLException {
-        URL baseUrl = suiteContext.getAuthServerInfo().getContextRoot();
-
-        // might be running behind a load balancer
-        if ("https".equals(baseUrl.getProtocol())) {
-            baseUrl = new URL(baseUrl.toString().replace(String.valueOf(baseUrl.getPort()), String.valueOf(configuration.getBindHttpsPort())));
-        } else {
-            baseUrl = new URL(baseUrl.toString().replace(String.valueOf(baseUrl.getPort()), String.valueOf(configuration.getBindHttpPort())));
+    private void destroyDescendantsOnWindows(Process parent, boolean force) {
+        if (!isWindows()) {
+            return;
         }
-        return baseUrl;
-    }
 
-    private HostnameVerifier createInsecureHostnameVerifier() {
-        return new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
-    }
+        CompletableFuture allProcesses = CompletableFuture.completedFuture(null);
 
-    private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
-        TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
-            public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
+        for (ProcessHandle process : parent.descendants().collect(Collectors.toList())) {
+            if (force) {
+                process.destroyForcibly();
+            } else {
+                process.destroy();
             }
 
-            public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
-            }
-
-            public X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-        }};
-
-        SSLContext sslContext;
-        SSLSocketFactory socketFactory;
+            allProcesses = CompletableFuture.allOf(allProcesses, process.onExit());
+        }
 
         try {
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-            socketFactory = sslContext.getSocketFactory();
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new IOException("Can't create unsecure trust manager");
+            allProcesses.get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to terminate descendants processes", cause);
         }
-        return socketFactory;
+
+        try {
+            // TODO: remove this. do not ask why, but on Windows we are here even though the process was previously terminated
+            // without this pause, tests re-installing dist before tests should fail
+            // looks like pausing the current thread let windows to cleanup processes?
+            // more likely it is env dependent
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+        }
     }
 
-    private long getStartTimeout() {
-        return TimeUnit.SECONDS.toMillis(configuration.getStartupTimeoutInSeconds());
+    public static void deleteDirectory(final Path directory) throws IOException {
+        if (Files.isDirectory(directory, new LinkOption[0])) {
+            Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    try {
+                        Files.delete(file);
+                    } catch (IOException var4) {
+                    }
+
+                    return FileVisitResult.CONTINUE;
+                }
+
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    try {
+                        Files.delete(dir);
+                    } catch (IOException var4) {
+                    }
+
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
     }
 }

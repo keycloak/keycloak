@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
@@ -320,6 +321,14 @@ public class LDAPOperationManager {
                                     identityQuery.getPaginationContext().setCookie(cookie);
                                 }
                             }
+                        } else {
+                            /*
+                             * This ensures that PaginationContext#hasNextPage() will return false if we don't get ResponseControls back
+                             * from the LDAP query response. This helps to avoid an infinite loop in org.keycloak.storage.ldap.LDAPUtils.loadAllLDAPObjects
+                             * See KEYCLOAK-19036
+                             */
+                            identityQuery.getPaginationContext().setCookie(null);
+                            logger.warnf("Did not receive response controls for paginated query using DN [%s], filter [%s]. Did you hit a query result size limit?", baseDN, filter);
                         }
 
                         return result;
@@ -362,47 +371,35 @@ public class LDAPOperationManager {
     }
 
     public String getFilterById(String id) {
-        String filter = null;
+        StringBuilder filter = new StringBuilder();
+        filter.insert(0, "(&");
 
         if (this.config.isObjectGUID()) {
-            final String strObjectGUID = "<GUID=" + id + ">";
+            byte[] objectGUID = LDAPUtil.encodeObjectGUID(id);
+            filter.append("(objectClass=*)(").append(
+                    getUuidAttributeName()).append(LDAPConstants.EQUAL)
+                .append(LDAPUtil.convertObjectGUIDToByteString(
+                    objectGUID)).append(")");
 
-            try {
-                Attributes attributes = execute(new LdapOperation<Attributes>() {
-
-                    @Override
-                    public Attributes execute(LdapContext context) throws NamingException {
-                        return context.getAttributes(strObjectGUID);
-                    }
-
-
-                    @Override
-                    public String toString() {
-                        return new StringBuilder("LdapOperation: GUIDResolve\n")
-                                .append(" strObjectGUID: ").append(strObjectGUID)
-                                .toString();
-                    }
-
-
-                });
-
-                byte[] objectGUID = (byte[]) attributes.get(LDAPConstants.OBJECT_GUID).get();
-
-                filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIDToByteString(objectGUID) + "))";
-            } catch (NamingException ne) {
-                filter = null;
-            }
+        } else if (this.config.isEdirectoryGUID()) {
+            filter.append("(objectClass=*)(").append(getUuidAttributeName().toUpperCase())
+                .append(LDAPConstants.EQUAL
+                ).append(LDAPUtil.convertGUIDToEdirectoryHexString(id)).append(")");
+        } else {
+            filter.append("(objectClass=*)(").append(getUuidAttributeName()).append(LDAPConstants.EQUAL)
+                .append(id).append(")");
         }
 
-        if (filter == null) {
-            filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + id + "))";
+        if (config.getCustomUserSearchFilter() != null) {
+            filter.append(config.getCustomUserSearchFilter());
         }
 
-        if (logger.isTraceEnabled()) {
-            logger.tracef("Using filter for lookup user by LDAP ID: %s", filter);
-        }
+        filter.append(")");
+        String ldapIdFilter = filter.toString();
 
-        return filter;
+        logger.tracef("Using filter for lookup user by LDAP ID: %s", ldapIdFilter);
+
+        return ldapIdFilter;
     }
 
     public SearchResult lookupById(final String baseDN, final String id, final Collection<String> returningAttributes) {
@@ -500,6 +497,7 @@ public class LDAPOperationManager {
         StartTlsResponse tlsResponse = null;
 
         try {
+            LDAPUtils.setLDAPHostnameToKeycloakSession(session, config);
 
             Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 
@@ -534,6 +532,13 @@ public class LDAPOperationManager {
             }
 
             throw ae;
+        } catch(RuntimeException re){
+            if (logger.isDebugEnabled()) {
+                logger.debugf(re, "LDAP Connection TimeOut for DN [%s]", dn);
+            }
+            
+            throw re;
+
         } catch (Exception e) {
             logger.errorf(e, "Unexpected exception when validating password of DN [%s]", dn);
             throw new AuthenticationException("Unexpected exception when validating password of user");

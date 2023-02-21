@@ -14,73 +14,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.models.map.group;
 
-import org.keycloak.models.ClientModel;
+import java.util.stream.Collectors;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.GroupProvider;
 import org.keycloak.models.GroupProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.MapStorageProvider;
+import org.keycloak.provider.InvalidationHandler;
 
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
-import java.util.UUID;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.GROUP_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.GROUP_BEFORE_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.ROLE_BEFORE_REMOVE;
 
 /**
  *
  * @author mhajas
  */
-public class MapGroupProviderFactory extends AbstractMapProviderFactory<GroupProvider> implements GroupProviderFactory, ProviderEventListener {
+public class MapGroupProviderFactory extends AbstractMapProviderFactory<MapGroupProvider, MapGroupEntity, GroupModel> implements GroupProviderFactory<MapGroupProvider>, InvalidationHandler {
 
-    private MapStorage<UUID, MapGroupEntity, GroupModel> store;
-
-    private Runnable onClose;
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("groups", UUID.class, MapGroupEntity.class, GroupModel.class);
-
-        factory.register(this);
-        onClose = () -> factory.unregister(this);
-    }
-
-
-    @Override
-    public MapGroupProvider create(KeycloakSession session) {
-        return new MapGroupProvider(session, store);
+    public MapGroupProviderFactory() {
+        super(GroupModel.class, MapGroupProvider.class);
     }
 
     @Override
-    public void close() {
-        super.close();
-        onClose.run();
+    public MapGroupProvider createNew(KeycloakSession session) {
+        return new MapGroupProvider(session, getStorage(session));
     }
 
     @Override
-    public void onEvent(ProviderEvent event) {
-        if (event instanceof RoleContainerModel.RoleRemovedEvent) {
-            RoleRemovedEvent e = (RoleContainerModel.RoleRemovedEvent) event;
-            RoleModel role = e.getRole();
-            RoleContainerModel container = role.getContainer();
-            RealmModel realm;
-            if (container instanceof RealmModel) {
-                realm = (RealmModel) container;
-            } else if (container instanceof ClientModel) {
-                realm = ((ClientModel) container).getRealm();
-            } else {
-                return;
-            }
-            create(e.getKeycloakSession()).preRemove(realm, role);
+    public String getHelpText() {
+        return "Group provider";
+    }
+
+    @Override
+    public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
+        if (type == REALM_BEFORE_REMOVE) {
+            create(session).preRemove((RealmModel) params[0]);
+        } else if (type == ROLE_BEFORE_REMOVE) {
+            create(session).preRemove((RealmModel) params[0], (RoleModel) params[1]);
+        } else if (type == GROUP_BEFORE_REMOVE) {
+            RealmModel realm = (RealmModel) params[0];
+            GroupModel group = (GroupModel) params[1];
+
+            realm.removeDefaultGroup(group);
+            group.getSubGroupsStream().collect(Collectors.toSet()).forEach(subGroup -> create(session).removeGroup(realm, subGroup));
+        } else if (type == GROUP_AFTER_REMOVE) {
+            session.getKeycloakSessionFactory().publish(new GroupModel.GroupRemovedEvent() {
+                @Override public RealmModel getRealm() { return (RealmModel) params[0]; }
+                @Override public GroupModel getGroup() { return (GroupModel) params[1]; }
+                @Override public KeycloakSession getKeycloakSession() { return session; }
+            });
         }
     }
 }

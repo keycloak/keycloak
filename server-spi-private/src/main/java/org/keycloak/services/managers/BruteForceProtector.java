@@ -28,9 +28,21 @@ import org.keycloak.provider.Provider;
  * @version $Revision: 1 $
  */
 public interface BruteForceProtector extends Provider {
+    String DISABLED_BY_PERMANENT_LOCKOUT = "permanentLockout";
+
     void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection);
 
     void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection);
 
     boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user);
+
+    boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user);
+
+    /**
+     * Clears any remaining traces of the permanent lockout. Does not enable the user as such!
+     * @param session
+     * @param realm
+     * @param user
+     */
+    void cleanUpPermanentLockout(KeycloakSession session, RealmModel realm, UserModel user);
 }

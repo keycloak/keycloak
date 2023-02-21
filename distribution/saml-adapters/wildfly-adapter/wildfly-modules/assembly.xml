@@ -25,7 +25,7 @@
 
     <fileSets>
         <fileSet>
-            <directory>src/main/resources/licenses/${product.slot}</directory>
+            <directory>src/main/resources/licenses/keycloak</directory>
             <outputDirectory>licenses</outputDirectory>
             <excludes>
                 <exclude>licenses.xml</exclude>

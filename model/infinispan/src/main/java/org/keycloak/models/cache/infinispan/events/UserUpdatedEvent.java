@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.UserCacheManager;
@@ -60,6 +61,20 @@ public class UserUpdatedEvent extends InvalidationEvent implements UserCacheInva
     @Override
     public void addInvalidations(UserCacheManager userCache, Set<String> invalidations) {
         userCache.userUpdatedInvalidations(userId, username, email, realmId, invalidations);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UserUpdatedEvent that = (UserUpdatedEvent) o;
+        return Objects.equals(userId, that.userId) && Objects.equals(username, that.username) && Objects.equals(email, that.email) && Objects.equals(realmId, that.realmId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), userId, username, email, realmId);
     }
 
     public static class ExternalizerImpl implements Externalizer<UserUpdatedEvent> {

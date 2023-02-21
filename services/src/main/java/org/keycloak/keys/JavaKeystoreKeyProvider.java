@@ -19,11 +19,12 @@ package org.keycloak.keys;
 
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -61,8 +62,11 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
 
     @Override
     protected KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
-        try (FileInputStream is = new FileInputStream(model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_KEY))) {
-            KeyStore keyStore = KeyStore.getInstance("JKS");
+        String keystorePath = model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_KEY);
+        try (FileInputStream is = new FileInputStream(keystorePath)) {
+            // Use "JKS" as default type for backwards compatibility
+            String keystoreType = KeystoreUtil.getKeystoreType(model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_TYPE_KEY), keystorePath, "JKS");
+            KeyStore keyStore = KeyStore.getInstance(keystoreType);
             keyStore.load(is, model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_PASSWORD_KEY).toCharArray());
 
             String keyAlias = model.get(JavaKeystoreKeyProviderFactory.KEY_ALIAS_KEY);
@@ -76,7 +80,9 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
                 certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
             }
 
-            return createKeyWrapper(keyPair, certificate, loadCertificateChain(keyStore, keyAlias));
+            KeyUse keyUse = KeyUse.valueOf(model.get(Attributes.KEY_USE, KeyUse.SIG.getSpecName()).toUpperCase());
+
+            return createKeyWrapper(keyPair, certificate, loadCertificateChain(keyStore, keyAlias), keyUse);
         } catch (KeyStoreException kse) {
             throw new RuntimeException("KeyStore error on server. " + kse.getMessage(), kse);
         } catch (FileNotFoundException fnfe) {

@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyPair;
-import java.security.PrivateKey;
 import java.util.UUID;
 
 import static java.lang.System.currentTimeMillis;
@@ -193,7 +192,8 @@ public class AuthUtil {
 
     public static String getSignedRequestToken(String keystore, String storePass, String keyPass, String alias, int sigLifetime, String clientId, String realmInfoUrl) {
 
-        KeyPair keypair = KeystoreUtil.loadKeyPairFromKeystore(keystore, storePass, keyPass, alias, KeystoreUtil.KeystoreFormat.JKS);
+        KeystoreUtil.KeystoreFormat keystoreType = Enum.valueOf(KeystoreUtil.KeystoreFormat.class, KeystoreUtil.getKeystoreType(null, keystore, KeystoreUtil.KeystoreFormat.JKS.toString()));
+        KeyPair keypair = KeystoreUtil.loadKeyPairFromKeystore(keystore, storePass, keyPass, alias, keystoreType);
 
         JsonWebToken reqToken = new JsonWebToken();
         reqToken.id(UUID.randomUUID().toString());

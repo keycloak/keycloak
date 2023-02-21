@@ -16,10 +16,11 @@
  */
 package org.keycloak.testsuite.migration;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -27,16 +28,19 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(value = {AuthServer.REMOTE, AuthServer.QUARKUS}, details = "It works locally for Quarkus, but failing on CI for unknown reason")
 public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrationTest {
+
+    @BeforeClass
+    public static void checkKerberosSupportedByAuthServer() {
+        // Requires 'KERBEROS' feature on the server, due some kerberos provider present in the JSON
+        KerberosUtils.assumeKerberosSupportExpected();
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -50,12 +54,10 @@ public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrat
         for (RealmRepresentation rep : reps.values()) {
             testRealms.add(rep);
         }
-
-
     }
 
     @Test
-    public void migration1_9_8Test() throws Exception {
+    public void migration1_9_8Test() {
         checkRealmsImported();
         testMigratedMigrationData(false);
         testMigrationTo2_0_0();
@@ -70,7 +72,9 @@ public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo7_x(false);
         testMigrationTo8_x();
         testMigrationTo9_x();
-        testMigrationTo12_x();
+        testMigrationTo12_x(false);
+        testMigrationTo18_x();
+        testMigrationTo20_x();
     }
 
     @Override

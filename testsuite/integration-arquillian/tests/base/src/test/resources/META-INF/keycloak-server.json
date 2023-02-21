@@ -25,6 +25,14 @@
         "provider": "${keycloak.eventsStore.provider:jpa}",
         "jpa": {
             "max-detail-length": "${keycloak.eventsStore.maxDetailLength:1000}"
+        },
+        "map": {
+            "storage-admin-events": {
+                "provider": "${keycloak.adminEventsStore.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            },
+            "storage-auth-events": {
+                "provider": "${keycloak.authEventsStore.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
         }
     },
 
@@ -36,38 +44,136 @@
         "event-queue": {}
     },
 
+    "deploymentState": {
+        "provider": "${keycloak.deploymentState.provider:jpa}",
+        "map": {
+            "resourcesVersionSeed": "1JZ379bzyOCFA"
+        }
+    },
+
+    "globalLock": {
+        "provider": "${keycloak.globalLock.provider:dblock}"
+    },
+
     "realm": {
-        "provider": "${keycloak.realm.provider:jpa}"
+        "provider": "${keycloak.realm.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.realm.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:jpa}"
+        "provider": "${keycloak.user.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.user.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
     },
 
     "client": {
-        "provider": "${keycloak.client.provider:jpa}"
+        "provider": "${keycloak.client.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.client.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
     },
 
     "clientScope": {
-        "provider": "${keycloak.clientScope.provider:jpa}"
+        "provider": "${keycloak.clientScope.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.clientScope.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
     },
 
     "group": {
-        "provider": "${keycloak.group.provider:jpa}"
+        "provider": "${keycloak.group.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.group.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
     },
 
     "role": {
-        "provider": "${keycloak.role.provider:jpa}"
+        "provider": "${keycloak.role.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.role.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
     },
 
     "authenticationSessions": {
-        "provider": "${keycloak.authSession.provider:infinispan}"
+        "provider": "${keycloak.authSession.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.authSession.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        },
+        "infinispan": {
+            "authSessionsLimit": "${keycloak.authSessions.limit:300}"
+        }
+    },
+
+    "userSessions": {
+        "provider": "${keycloak.userSession.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.userSession.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
+    },
+
+    "loginFailure": {
+        "provider": "${keycloak.loginFailure.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.loginFailure.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
+    },
+
+    "singleUseObject": {
+        "provider": "${keycloak.singleUseObject.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.singleUseObject.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
+    },
+
+    "publicKeyStorage": {
+        "provider": "${keycloak.publicKeyStorage.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.publicKeyStorage.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
     },
 
     "mapStorage": {
-        "provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
         "concurrenthashmap": {
-            "dir": "${project.build.directory:target}"
+            "dir": "${project.build.directory:target}",
+            "keyType.single-use-objects": "string",
+            "keyType.realms": "string",
+            "keyType.authz-resource-servers": "string"
+        },
+        "jpa": {
+            "url": "${keycloak.map.storage.connectionsJpa.url:}",
+            "user": "${keycloak.map.storage.connectionsJpa.user:}",
+            "password": "${keycloak.map.storage.connectionsJpa.password:}",
+            "driver": "org.postgresql.Driver",
+            "driverDialect": "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect",
+            "showSql": "${keycloak.map.storage.connectionsJpa,showSql:false}"
+        },
+        "file": {
+            "dir": "${keycloak.map.storage.file.directory:target/file}"
         }
     },
 
@@ -80,21 +186,33 @@
     },
 
     "authorizationPersister": {
-        "provider": "${keycloak.authorization.provider:jpa}"
+        "provider": "${keycloak.authorization.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.authorization.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
+    },
+
+    "authorizationCache": {
+        "default": {
+            "enabled": "${keycloak.authorizationCache.enabled:true}"
+        }
     },
 
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:default}",
         "default" : {
-            "enabled": true
+            "enabled": "${keycloak.userCache.enabled:true}"
         },
         "mem": {
             "maxSize": 20000
         }
     },
 
-    "userSessions": {
-        "provider" : "${keycloak.userSessions.provider:infinispan}"
+    "publicKeyCache": {
+        "default" : {
+            "enabled": "${keycloak.publicKeyCache.enabled:true}"
+        }
     },
 
     "timer": {
@@ -128,7 +246,7 @@
 
     "connectionsHttpClient": {
         "default": {
-            "max-connection-idle-time-millis": 100
+            "reuse-connections": false
         }
     },
 
@@ -149,9 +267,8 @@
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:default}",
         "default" : {
-            "enabled": true
+            "enabled": "${keycloak.realmCache.enabled:true}"
         }
     },
 
@@ -172,11 +289,23 @@
         }
     },
 
+    "connectionsHotRod": {
+        "default": {
+            "port": "${keycloak.connectionsHotRod.port:11222}",
+            "host": "${keycloak.connectionsHotRod.host:127.0.0.1}",
+            "configureRemoteCaches": "${keycloak.connectionsHotRod.configureRemoteCaches:true}",
+            "username": "${keycloak.connectionsHotRod.username:admin}",
+            "password": "${keycloak.connectionsHotRod.password:admin}",
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:true}"
+        }
+    },
+
     "truststore": {
         "file": {
             "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
             "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
+            "type": "${keycloak.truststore.type:}",
             "disabled": "${keycloak.truststore.disabled:false}"
         }
     },
@@ -199,7 +328,8 @@
     },
 
     "userProfile": {
-        "legacy-user-profile": {
+        "provider": "${keycloak.userProfile.provider:}",
+        "declarative-user-profile": {
             "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
             "admin-read-only-attributes": [ "deniedSomeAdmin" ]
         }
@@ -235,5 +365,9 @@
             "dir": "target/dependency/vault",
             "enabled": "${keycloak.vault.files-plaintext.provider.enabled:false}"
         }
+    },
+
+    "saml-artifact-resolver": {
+        "provider": "${keycloak.saml-artifact-resolver.provider:default}"
     }
 }

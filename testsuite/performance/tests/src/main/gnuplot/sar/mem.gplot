@@ -1,8 +1,0 @@
-set title "Memory Utilization"
-set ylabel "MB"
-plot \
-    datafile using 3:($5/1024) title 'Used' with filledcurves x1, \
-    datafile using 3:($5/1024) notitle with lines lc rgb "#000000" lw 1, \
-    datafile using 3:(($5 - $7 - $8)/1024) title 'Really Used' with filledcurves x1, \
-    datafile using 3:(($5 - $7 - $8)/1024) notitle with lines lc rgb "#000000" lw 1
-

@@ -21,6 +21,7 @@ import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusDetailType;
@@ -39,6 +40,8 @@ import java.net.URI;
 import java.util.List;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import javax.xml.crypto.dsig.XMLSignature;
+
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 
 /**
  * Write a SAML Response to stream
@@ -135,9 +138,16 @@ public class SAMLResponseWriter extends BaseWriter {
             AuthnRequestType authn = (AuthnRequestType) anyObj;
             SAMLRequestWriter requestWriter = new SAMLRequestWriter(writer);
             requestWriter.write(authn);
+        } else if (anyObj instanceof LogoutRequestType) {
+            LogoutRequestType logoutRequestType = (LogoutRequestType) anyObj;
+            SAMLRequestWriter requestWriter = new SAMLRequestWriter(writer);
+            requestWriter.write(logoutRequestType);
         } else if (anyObj instanceof ResponseType) {
             ResponseType rt = (ResponseType) anyObj;
             write(rt);
+        } else if (anyObj instanceof StatusResponseType) {
+            StatusResponseType rt = (StatusResponseType) anyObj;
+            write(rt, new QName(PROTOCOL_NSURI.get(), JBossSAMLConstants.LOGOUT_RESPONSE.get(), "samlp"));
         }
 
         StaxUtil.writeEndElement(writer);

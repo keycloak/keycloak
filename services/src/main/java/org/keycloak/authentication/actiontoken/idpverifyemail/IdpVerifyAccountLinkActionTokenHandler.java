@@ -16,7 +16,7 @@
  */
 package org.keycloak.authentication.actiontoken.idpverifyemail;
 
-import org.keycloak.authentication.actiontoken.AbstractActionTokenHander;
+import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.*;
@@ -43,7 +43,7 @@ import javax.ws.rs.core.UriInfo;
  * Action token handler for verification of e-mail address.
  * @author hmlnarik
  */
-public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenHander<IdpVerifyAccountLinkActionToken> {
+public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenHandler<IdpVerifyAccountLinkActionToken> {
 
     public IdpVerifyAccountLinkActionTokenHandler() {
         super(
@@ -58,6 +58,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
     @Override
     public Predicate<? super IdpVerifyAccountLinkActionToken>[] getVerifiers(ActionTokenContext<IdpVerifyAccountLinkActionToken> tokenContext) {
         return TokenUtils.predicates(
+            verifyEmail(tokenContext)
         );
     }
 
