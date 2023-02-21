@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.model;
+package org.keycloak.testsuite.model.user;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -10,12 +10,13 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.federation.UserPropertyFileStorage;
 import org.keycloak.testsuite.federation.UserPropertyFileStorage.UserPropertyFileStorageCall;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
+import org.keycloak.testsuite.model.KeycloakModelTest;
 
+import org.keycloak.testsuite.model.RequireProvider;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
