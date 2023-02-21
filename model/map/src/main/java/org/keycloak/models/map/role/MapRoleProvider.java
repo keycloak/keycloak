@@ -91,7 +91,8 @@ public class MapRoleProvider implements RoleProvider {
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
+                // filter realm roles only
+                 .compare(SearchableFields.CLIENT_ID, Operator.NOT_EXISTS);
 
         return txInRealm(realm).read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
             .map(entityToAdapterFunc(realm));
@@ -118,7 +119,8 @@ public class MapRoleProvider implements RoleProvider {
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm) {
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
+                // filter realm roles only
+                 .compare(SearchableFields.CLIENT_ID, Operator.NOT_EXISTS);
         
         return txInRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
                 .map(entityToAdapterFunc(realm));
@@ -200,7 +202,8 @@ public class MapRoleProvider implements RoleProvider {
 
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true)
+                // filter realm roles only
+                 .compare(SearchableFields.CLIENT_ID, Operator.NOT_EXISTS)
                  .compare(SearchableFields.NAME, Operator.EQ, name);
 
         return txInRealm(realm).read(withCriteria(mcb))
@@ -251,7 +254,8 @@ public class MapRoleProvider implements RoleProvider {
         }
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true)
+                // filter realm roles only
+                .compare(SearchableFields.CLIENT_ID, Operator.NOT_EXISTS)
                 .or(
                         mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
                         mcb.compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")

@@ -98,6 +98,8 @@ final class HttpPropertyMappers {
                         .build(),
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_TYPE)
                         .to("quarkus.http.ssl.certificate.trust-store-file-type")
+                        .mapFrom(SecurityOptions.FIPS_MODE.getKey())
+                        .transformer(HttpPropertyMappers::resolveKeyStoreType)
                         .paramLabel("type")
                         .build()
         };

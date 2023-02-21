@@ -129,7 +129,6 @@ public class MapFieldPredicates {
         put(ROLE_PREDICATES, RoleModel.SearchableFields.CLIENT_ID,                MapRoleEntity::getClientId);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.DESCRIPTION,              MapRoleEntity::getDescription);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.NAME,                     MapRoleEntity::getName);
-        put(ROLE_PREDICATES, RoleModel.SearchableFields.IS_CLIENT_ROLE,           MapFieldPredicates::isClientRole);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.COMPOSITE_ROLE,           MapFieldPredicates::checkCompositeRoles);
 
         put(USER_PREDICATES, UserModel.SearchableFields.REALM_ID,                 MapUserEntity::getRealmId);
@@ -387,18 +386,6 @@ public class MapFieldPredicates {
         };
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
-    }
-
-
-    private static MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> isClientRole(MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> mcb, Operator op, Object[] values) {
-        if (values == null || values.length != 1 || ! (op == Operator.EQ || op == Operator.NE) || ! (values[0] instanceof Boolean)) {
-            throw new CriterionNotSupportedException(RoleModel.SearchableFields.IS_CLIENT_ROLE, op, "Invalid arguments, got: " + Arrays.toString(values));
-        }
-        Function<MapRoleEntity, Boolean> getter;
-        Predicate<Object> valueComparator = CriteriaOperator.predicateFor(op, values);
-        getter = re -> re.getClientId() != null;
-
-        return mcb.fieldCompare(valueComparator, getter);
     }
 
     private static MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> checkCompositeRoles(MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> mcb, Operator op, Object[] values) {

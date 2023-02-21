@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dnf install -y java-17-openjdk-devel crypto-policies-scripts
+dnf install -y java-17-openjdk-devel
 fips-mode-setup --enable --no-bootcfg
 fips-mode-setup --is-enabled
 if [ $? -ne 0 ]; then
