@@ -10,6 +10,8 @@ includedOptions="">
 The Federal Information Processing Standard Publication 140-2, (FIPS 140-2), is a U.S. government computer security standard used to approve cryptographic modules. Keycloak supports to
 run in FIPS 140-2 compliant mode. In this case, Keycloak will use only FIPS approved cryptography algorithms for it's functionality.
 
+NOTE: FIPS 140-2 is supported only as a preview feature in Keycloak for now.
+
 To run in FIPS 140-2, Keycloak should run on a FIPS 140-2 enabled system. This requirement usually assumes RHEL or Fedora where FIPS was enabled during installation.
 See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html-single/security_hardening/index#assembly_installing-the-system-in-fips-mode_security-hardening[RHEL documentation]
 for the details. When the system is in FIPS mode, it makes sure that the underlying OpenJDK is in FIPS mode as well and would use only
@@ -66,13 +68,14 @@ Similar options are needed when you are doing any other manipulation with keysto
 
 To run the server with BCFIPS in non-approved mode, enter the following command::
 
-<@kc.start parameters="--fips-mode=enabled --hostname=localhost --https-key-store-password=passwordpassword --log-level=INFO,org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE"/>
+<@kc.start parameters="--features=fips --hostname=localhost --https-key-store-password=passwordpassword --log-level=INFO,org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE"/>
 
 NOTE: You can disable logging in production if everything works as expected.
 
 == Strict mode
 
-For the `fips-mode` option, the more secure alternative is to use `--fips-mode=strict` in which case BouncyCastle FIPS will use "approved mode".
+There is the `fips-mode` option, which is automatically set to `non-strict` when the `fips` feature is enabled. This means to run BCFIPS in the "non-approved mode".
+The more secure alternative is to use `--features=fips --fips-mode=strict` in which case BouncyCastle FIPS will use "approved mode".
 Using that option results in stricter security requirements on cryptography and security algorithms.
 
 When starting server, you can check that the startup log contains `KC` provider with the note about `Approved Mode` such as the following:
@@ -84,7 +87,7 @@ KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class
 === Cryptography restrictions in strict mode
 
 * As mentioned in the previous section, strict mode may not work with `pkcs12` keystore. It is needed to use another keystore (like `bcfks`) as mentioned earlier. Also `jks` and `pkcs12` keystores are not
-supported in Keycloak. Some examples are importing or generating a keystore of an OIDC or SAML client in the Admin Console or for a `java-keystore` provider in the realm keys.
+supported in Keycloak when using strict mode. Some examples are importing or generating a keystore of an OIDC or SAML client in the Admin Console or for a `java-keystore` provider in the realm keys.
 
 * User passwords must be 14 characters or longer. Keycloak uses PBKDF2 based password encoding by default. BCFIPS approved mode requires passwords to be at least 112 bits
 (effectively 14 characters) with PBKDF2 algorithm. If you want to allow a shorter password, set the property `max-padding-length` of provider `pbkdf2-sha256` of SPI `password-hashing`
@@ -107,7 +110,7 @@ always match this requirement.
 
 == Other restrictions
 
-To have SAML working, make sure that a`XMLDSig` security provider is available in your security providers.
+To have SAML working, make sure that a `XMLDSig` security provider is available in your security providers.
 To have Kerberos working, make sure that a `SunJGSS` security provider is available. In FIPS enabled RHEL 9 in OpenJDK 17.0.6, these
 security providers are not present in the `java.security`, which means that they effectively cannot work.
 
@@ -186,7 +189,7 @@ RUN cp /tmp/files/*.jar /opt/keycloak/providers/
 RUN cp /tmp/files/keycloak-fips.keystore.* /opt/keycloak/conf/server.keystore
 RUN cp /tmp/files/kc.java.security /opt/keycloak/conf/
 
-RUN /opt/keycloak/bin/kc.sh build --fips-mode=strict
+RUN /opt/keycloak/bin/kc.sh build --features=fips --fips-mode=strict
 
 FROM quay.io/keycloak/keycloak:latest
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
