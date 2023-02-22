@@ -57,3 +57,15 @@ of Keycloak 20 release. See link:{upgradingguide_link}[{upgradingguide_name}] fo
 The `IS_CLIENT_ROLE` searchable field from the `RoleModel` was deprecated. It
 should be replaced with the `CLIENT_ID` searchable field used with the operators
 `EXISTS` or `NOT_EXISTS`. See JavaDoc of Keycloak 21 for more details.
+
+= FIPS 140-2 preview support
+
+FIPS 140-2 support in Keycloak, which was experimental in the previous release, is now promoted to preview. There were many fixes and improvements to create this preview version.
+For the details, see the hhttps://www.keycloak.org/guides#server[FIPS documentation]. Feedback is welcome!
+
+Thanks again to https://github.com/david-rh[David Anderson], https://github.com/sudeepd[Sudeep Das] and https://github.com/isaacjensen[Isaac Jensen]
+for their huge help with this feature.
+
+= Other improvements
+
+* Option to disable client registration access token rotation. Thanks to https://github.com/reda-alaoui[Réda Housni Alaoui]
