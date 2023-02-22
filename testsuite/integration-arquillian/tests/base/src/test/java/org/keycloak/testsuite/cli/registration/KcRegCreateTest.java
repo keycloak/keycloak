@@ -213,7 +213,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             }
 
             // TODO: SAML is not tested with FIPS enabled as it does not work. This needs to be revisited when SAML works with FIPS
-            if (AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.disabled) {
+            if (AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.DISABLED) {
 
                 // test create saml formated xml - format autodetection
                 File samlSpMetaFile = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/saml-sp-metadata.xml");

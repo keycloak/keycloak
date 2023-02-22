@@ -123,7 +123,7 @@ public class Keycloak {
                 addOptionIfNotSet(args, StorageOptions.STORAGE, StorageOptions.StorageType.chm);
             }
 
-            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).orElse(FipsMode.disabled).isFipsEnabled();
+            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).orElse(FipsMode.DISABLED).isFipsEnabled();
 
             if (isFipsEnabled) {
                 String logLevel = getOptionValue(args, LoggingOptions.LOG_LEVEL);
