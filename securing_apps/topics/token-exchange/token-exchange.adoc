@@ -260,6 +260,56 @@ This setup page appears.
 image:images/exchange-idp-permission-setup.png[Identity Provider Exchange Permission Setup]
 
 . Click *Client details* in the breadcrumbs at the top of the screen.
+
+. Click *Policies* tab to create a client policy.
++
+.Client Policy Creation
+image:images/exchange-idp-client-policy.png[Client Policy Creation]
+
+. Enter the starting client that is the authenticated client that is requesting a token exchange.
+
+. Return to the identity provider's *token-exchange* permission and add the client policy you just defined.
++
+.Apply Client Policy
+image:images/exchange-idp-apply-policy.png[Apply Client Policy]
+
+Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you try to make an exchange.
+
+[[_internal_external_making_request]]
+==== Making the request
+
+When your client is exchanging an existing internal token to an external one, you provide the `requested_issuer` parameter.  The parameter must be the alias of a configured identity provider.
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+    -d "client_id=starting-client" \
+    -d "client_secret=the client secret" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+    -d "subject_token=...." \
+    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
+    -d "requested_issuer=google" \
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
+----
+
+The `subject_token` parameter must be an access token for the target realm.  The `requested_token_type` parameter
+must be `urn:ietf:params:oauth:token-type:access_token` or left blank.  No other requested token type is supported
+at this time.  Here's
+an example successful JSON response you get back from this call.
+
+[source,json]
+----
+{
+   "access_token" : "....",
+   "expires_in" : 3600
+   "account-link-url" : "https://...."
+}
+----
+
+If the external identity provider is not linked for whatever reason, you will get an HTTP 400 response code with
+this JSON document:
+
+[source,json]
 ----
 {
    "error" : "....",
