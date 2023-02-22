@@ -152,6 +152,7 @@ export const RequiredActions = () => {
         {
           name: "default",
           displayKey: "authentication:setAsDefaultAction",
+          thTooltipText: "authentication-help:authDefaultActionTooltip",
           cellRenderer: (row) => (
             <Switch
               id={`default-${toKey(row.name)}`}

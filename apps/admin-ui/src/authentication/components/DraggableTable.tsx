@@ -18,12 +18,14 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { ThInfoType } from "@patternfly/react-table/components/Table/base/types";
 import styles from "@patternfly/react-styles/css/components/DataList/data-list";
 
 export type Field<T> = {
   name: string;
   displayKey?: string;
   cellRenderer?: (row: T) => ReactNode;
+  thTooltipText?: string;
 };
 
 export type Action<T> = IAction & { isActionable?: (item: T) => boolean };
@@ -179,6 +181,14 @@ export function DraggableTable<T>({
     });
   };
 
+  const thInfo = (column: Field<T>): ThInfoType | undefined => {
+    if (!column.thTooltipText) return undefined;
+    return {
+      popover: <div>{t(column.thTooltipText)}</div>,
+      ariaLabel: t(column.thTooltipText),
+    };
+  };
+
   return (
     <TableComposable
       aria-label="Draggable table"
@@ -189,7 +199,9 @@ export function DraggableTable<T>({
         <Tr>
           <Th />
           {columns.map((column) => (
-            <Th key={column.name}>{t(column.displayKey || column.name)}</Th>
+            <Th key={column.name} info={thInfo(column)}>
+              {t(column.displayKey || column.name)}
+            </Th>
           ))}
         </Tr>
       </Thead>
