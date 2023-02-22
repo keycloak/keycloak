@@ -135,14 +135,14 @@ Feature:
 --features <feature> Enables a set of one or more features. Possible values are: account-api,
                        account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
                        client-policies, client-secret-rotation, declarative-user-profile, docker,
-                       dynamic-scopes, impersonation, js-adapter, kerberos, map-storage,
+                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
                        openshift-integration, par, preview, recovery-codes, scripts,
                        step-up-authentication, token-exchange, update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
                        client-policies, client-secret-rotation, declarative-user-profile, docker,
-                       dynamic-scopes, impersonation, js-adapter, kerberos, map-storage,
+                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
                        openshift-integration, par, preview, recovery-codes, scripts,
                        step-up-authentication, token-exchange, update-email, web-authn.
 
@@ -209,7 +209,8 @@ HTTP/TLS:
                      The password of the trust store file.
 --https-trust-store-type <type>
                      The type of the trust store file. If not given, the type is automatically
-                       detected based on the file name.
+                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
+                       value is set, it defaults to 'BCFKS'.
 
 Health:
 
@@ -285,11 +286,11 @@ Logging:
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
 
-Security (Experimental):
+Security (Preview):
 
---fips-mode <mode>   Experimental: Sets the FIPS mode. If 'enabled' is set, FIPS is enabled but on
+--fips-mode <mode>   Preview: Sets the FIPS mode. If 'non-strict' is set, FIPS is enabled but on
                        non-approved mode. For full FIPS compliance, set 'strict' to run on approved
-                       mode. Possible values are: enabled, strict, disabled. Default: disabled.
+                       mode. Possible values are: non-strict, strict. Default: disabled.
 
 By default, this command tries to update the server configuration by running a
 'build' before starting the server. You can disable this behavior by using the

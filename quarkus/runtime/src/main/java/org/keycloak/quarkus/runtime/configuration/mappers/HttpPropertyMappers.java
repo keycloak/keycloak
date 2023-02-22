@@ -98,6 +98,8 @@ final class HttpPropertyMappers {
                         .build(),
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_TYPE)
                         .to("quarkus.http.ssl.certificate.trust-store-file-type")
+                        .mapFrom(SecurityOptions.FIPS_MODE.getKey())
+                        .transformer(HttpPropertyMappers::resolveKeyStoreType)
                         .paramLabel("type")
                         .build()
         };
@@ -145,7 +147,7 @@ final class HttpPropertyMappers {
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
         if (value.isPresent()) {
             try {
-                if (FipsMode.valueOf(value.get()).equals(FipsMode.strict)) {
+                if (FipsMode.valueOfOption(value.get()).equals(FipsMode.STRICT)) {
                     return of("BCFKS");
                 }
                 return empty();

@@ -173,7 +173,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());
 
         // only run build during first execution of the server (if the DB is specified), restarts or when running cluster tests
-        if (restart.get() || shouldSetUpDb.get() || "ha".equals(getClusterConfig.get()) || configuration.getFipsMode() != FipsMode.disabled) {
+        if (restart.get() || shouldSetUpDb.get() || "ha".equals(getClusterConfig.get()) || configuration.getFipsMode() != FipsMode.DISABLED) {
             commands.removeIf("--optimized"::equals);
             commands.add("--http-relative-path=/auth");
 
@@ -187,7 +187,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
                 }
             }
 
-            if (configuration.getFipsMode() != FipsMode.disabled) {
+            if (configuration.getFipsMode() != FipsMode.DISABLED) {
                 addFipsOptions(commands);
             }
         }
@@ -325,24 +325,22 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private void addFipsOptions(List<String> commands) {
+        commands.add("--features=fips");
         commands.add("--fips-mode=" + configuration.getFipsMode().toString());
 
-        log.debugf("Keystore file: %s, keystore type: %s, truststore file: %s, truststore type: %s",
-                configuration.getKeystoreFile(), configuration.getKeystoreType(),
-                configuration.getTruststoreFile(), configuration.getTruststoreType());
+        log.debugf("Keystore file: %s, truststore file: %s",
+                configuration.getKeystoreFile(),
+                configuration.getTruststoreFile());
         commands.add("--https-key-store-file=" + configuration.getKeystoreFile());
-        commands.add("--https-key-store-type=" + configuration.getKeystoreType());
         commands.add("--https-key-store-password=" + configuration.getKeystorePassword());
         commands.add("--https-trust-store-file=" + configuration.getTruststoreFile());
-        commands.add("--https-trust-store-type=" + configuration.getTruststoreType());
         commands.add("--https-trust-store-password=" + configuration.getTruststorePassword());
         commands.add("--spi-truststore-file-file=" + configuration.getTruststoreFile());
         commands.add("--spi-truststore-file-password=" + configuration.getTruststorePassword());
-        commands.add("--spi-truststore-file-type=" + configuration.getTruststoreType());
 
         // BCFIPS approved mode requires passwords of at least 112 bits (14 characters) to be used. To bypass this, we use this by default
         // as testsuite uses shorter passwords everywhere
-        if (FipsMode.strict == configuration.getFipsMode()) {
+        if (FipsMode.STRICT == configuration.getFipsMode()) {
             commands.add("--spi-password-hashing-pbkdf2-max-padding-length=14");
             commands.add("--spi-password-hashing-pbkdf2-sha256-max-padding-length=14");
             commands.add("--spi-password-hashing-pbkdf2-sha512-max-padding-length=14");

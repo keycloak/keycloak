@@ -70,6 +70,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.text.SimpleDateFormat;
@@ -80,6 +81,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.servlet.Filter;
 
 /**
@@ -310,8 +312,10 @@ public class KeycloakServer {
 
           if (tmpDataDir.mkdirs()) {
             tmpDataDir.deleteOnExit();
-          } else {
-            throw new IOException("Could not create directory " + tmpDataDir);
+          } else try (Stream<Path> dir = Files.list(tmpDataDir.toPath())) {
+            if (dir.findAny().isPresent()) {    // Works well if directory is empty
+              throw new IOException("Could not create directory " + tmpDataDir);
+            }
           }
 
           dataPath = tmpDataDir.getAbsolutePath();

@@ -28,6 +28,7 @@ import java.util.concurrent.TimeoutException;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.keycloak.common.Version;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
@@ -117,9 +118,12 @@ public class Keycloak {
             addOptionIfNotSet(args, HttpOptions.HTTP_ENABLED, true);
             addOptionIfNotSet(args, HttpOptions.HTTP_PORT);
             addOptionIfNotSet(args, HttpOptions.HTTPS_PORT);
-            addOptionIfNotSet(args, StorageOptions.STORAGE, StorageOptions.StorageType.chm);
 
-            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).orElse(FipsMode.disabled).isFipsEnabled();
+            if (getOptionValue(args, DatabaseOptions.DB) == null) {
+                addOptionIfNotSet(args, StorageOptions.STORAGE, StorageOptions.StorageType.chm);
+            }
+
+            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).orElse(FipsMode.DISABLED).isFipsEnabled();
 
             if (isFipsEnabled) {
                 String logLevel = getOptionValue(args, LoggingOptions.LOG_LEVEL);

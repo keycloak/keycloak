@@ -81,6 +81,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -260,6 +261,7 @@ public class LoginActionsService {
             @Override
             public Response runInternal(KeycloakSession session) {
                 // create another instance of the endpoint to isolate each run.
+                CookieHelper.addCookiesAtEndOfTransaction(session);
                 LoginActionsService other = new LoginActionsService(session, new EventBuilder(session.getContext().getRealm(), session, clientConnection));
                 // process the request in the created instance.
                 return other.authenticateInternal(authSessionId, code, execution, clientId, tabId);

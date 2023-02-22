@@ -76,23 +76,20 @@ public class LdapMapRoleMapperConfig extends LdapMapCommonGroupMapperConfig {
         return rolesDn;
     }
 
-    public String getRolesDn(Boolean isClientRole, String clientId) {
+    public String getRolesDn(String clientId) {
         String rolesDn;
-        if (isClientRole == null && clientId == null) {
-            rolesDn = mapperModel.getConfig().getFirst(COMMON_ROLES_DN);
+        boolean isClientRole = clientId != null;
+        if (! isClientRole) {
+            rolesDn = mapperModel.getConfig().getFirst(REALM_ROLES_DN);
         } else {
-            if (isClientRole != null && !isClientRole) {
-                rolesDn = config.get(REALM_ROLES_DN);
-            } else {
-                rolesDn = config.get(CLIENT_ROLES_DN);
-                if (rolesDn != null) {
-                    LdapMapDn dn = LdapMapDn.fromString(rolesDn);
-                    LdapMapDn.RDN firstRdn = dn.getFirstRdn();
-                    for (String key : firstRdn.getAllKeys()) {
-                        firstRdn.setAttrValue(key, firstRdn.getAttrValue(key).replaceAll("\\{0}", Matcher.quoteReplacement(clientId)));
-                    }
-                    rolesDn = dn.toString();
+            rolesDn = config.get(CLIENT_ROLES_DN);
+            if (rolesDn != null) {
+                LdapMapDn dn = LdapMapDn.fromString(rolesDn);
+                LdapMapDn.RDN firstRdn = dn.getFirstRdn();
+                for (String key : firstRdn.getAllKeys()) {
+                    firstRdn.setAttrValue(key, firstRdn.getAttrValue(key).replaceAll("\\{0}", Matcher.quoteReplacement(clientId)));
                 }
+                rolesDn = dn.toString();
             }
         }
         if (rolesDn == null) {

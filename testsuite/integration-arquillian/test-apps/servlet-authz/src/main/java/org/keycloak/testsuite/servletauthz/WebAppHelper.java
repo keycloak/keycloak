@@ -28,6 +28,7 @@ public class WebAppHelper {
         boolean isTLSEnabled = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "true"));
         String authPort = isTLSEnabled ? System.getProperty("auth.server.https.port", "8543") : System.getProperty("auth.server.http.port", "8180");
         String authScheme = isTLSEnabled ? "https" : "http";
-        return authScheme + "://localhost:" + authPort + "/auth";
+        String authHost = System.getProperty("auth.server.host", "localhost");
+        return authScheme + "://" + authHost + ":" + authPort + "/auth";
     }
 }

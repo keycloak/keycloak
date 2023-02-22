@@ -34,7 +34,7 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
   extends ConcurrentHashMapKeycloakTransaction<String, V, M> {
 
     private final List<Path> pathsToDelete = new LinkedList<>();
-    private Map<Path, Path> renameOnCommit = new IdentityHashMap<>();
+    private final Map<Path, Path> renameOnCommit = new HashMap<>();
 
     private final String txId = StringKey.INSTANCE.yieldNewUniqueKey();
 

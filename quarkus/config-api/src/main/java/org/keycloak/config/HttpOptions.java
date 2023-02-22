@@ -84,7 +84,7 @@ public class HttpOptions {
             .category(OptionCategory.HTTP)
             .description("The type of the key store file. " +
                     "If not given, the type is automatically detected based on the file name. " +
-                    "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.strict.name() + "' and no value is set, it defaults to 'BCFKS'.")
+                    "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
             .build();
 
     public static final Option HTTPS_TRUST_STORE_FILE = new OptionBuilder<>("https-trust-store-file", File.class)
@@ -97,10 +97,11 @@ public class HttpOptions {
             .description("The password of the trust store file.")
             .build();
 
-    public static final Option HTTPS_TRUST_STORE_TYPE = new OptionBuilder<>("https-trust-store-type", File.class)
+    public static final Option<String> HTTPS_TRUST_STORE_TYPE = new OptionBuilder<>("https-trust-store-type", String.class)
             .category(OptionCategory.HTTP)
             .description("The type of the trust store file. " +
-                    "If not given, the type is automatically detected based on the file name.")
+                    "If not given, the type is automatically detected based on the file name. " +
+                    "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
             .build();
 
     public static final Option<Boolean> HTTP_SERVER_ENABLED = new OptionBuilder<>("http-server-enabled", Boolean.class)
