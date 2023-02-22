@@ -11,6 +11,13 @@ Due to this change, metrics have been renamed.
 
 See the migration guide for details.
 
+= Java 11 support for Keycloak server deprecated
+
+Running the Keycloak server with Java 11 is now deprecated, and planned to be removed in Keycloak 22.
+
+Adapters remain supported on Java 8, Java 11, and Java 17. However, we are planning to remove support for Java 8 in the
+not too distant future.
+
 = Hashicop Vault no longer supported
 
 We removed the out-of-box support for Hashicorp vault in this release.
