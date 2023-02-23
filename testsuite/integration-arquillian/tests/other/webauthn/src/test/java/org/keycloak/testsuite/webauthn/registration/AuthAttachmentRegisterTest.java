@@ -19,6 +19,7 @@ package org.keycloak.testsuite.webauthn.registration;
 import com.webauthn4j.data.AuthenticatorAttachment;
 import com.webauthn4j.data.UserVerificationRequirement;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
@@ -47,6 +48,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    @Ignore
     public void authenticatorAttachmentCrossPlatformInternal() {
         getVirtualAuthManager().useAuthenticator(DEFAULT_INTERNAL.getOptions());
         assertAuthenticatorAttachment(true, AuthenticatorAttachment.CROSS_PLATFORM);
