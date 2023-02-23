@@ -61,10 +61,20 @@ should be replaced with the `CLIENT_ID` searchable field used with the operators
 = FIPS 140-2 preview support
 
 FIPS 140-2 support in Keycloak, which was experimental in the previous release, is now promoted to preview. There were many fixes and improvements to create this preview version.
-For the details, see the hhttps://www.keycloak.org/guides#server[FIPS documentation]. Feedback is welcome!
+For the details, see the https://www.keycloak.org/guides#server[FIPS documentation]. Feedback is welcome!
 
 Thanks again to https://github.com/david-rh[David Anderson], https://github.com/sudeepd[Sudeep Das] and https://github.com/isaacjensen[Isaac Jensen]
 for their huge help with this feature.
+
+= Support for the standard `Forwarded` header when running behind a reverse proxy
+
+In addition to recognize the non-standard `X-Forwarded-*` to fetch information
+added by proxies that would otherwise be altered or lost when proxy servers are involved in the path of the request, Keycloak
+can now leverage the standard `Forwarded` header for the same purpose.
+
+For more details, see the https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] guide.
+
+Please, make sure your proxy is also overriding the `Forwarded` header when making requests to Keycloak nodes.
 
 = Other improvements
 
