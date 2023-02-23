@@ -1,15 +1,10 @@
-import {
-  DataList,
-  PageSection,
-  Stack,
-  StackItem,
-  Title,
-} from "@patternfly/react-core";
+import { DataList, Stack, StackItem, Title } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getLinkedAccounts } from "../api/methods";
 import { LinkedAccountRepresentation } from "../api/representations";
 import { EmptyRow } from "../components/datalist/EmptyRow";
+import { Page } from "../components/page/Page";
 import { usePromise } from "../utils/usePromise";
 import { AccountRow } from "./AccountRow";
 
@@ -33,7 +28,10 @@ const LinkedAccounts = () => {
   );
 
   return (
-    <PageSection isFilled variant="light">
+    <Page
+      title={t("linkedAccountsTitle")}
+      description={t("linkedAccountsIntroMessage")}
+    >
       <Stack hasGutter>
         <StackItem>
           <Title headingLevel="h2" className="pf-u-mb-lg" size="xl">
@@ -73,7 +71,7 @@ const LinkedAccounts = () => {
           </DataList>
         </StackItem>
       </Stack>
-    </PageSection>
+    </Page>
   );
 };
 

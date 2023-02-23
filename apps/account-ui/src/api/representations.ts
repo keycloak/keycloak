@@ -202,3 +202,9 @@ export interface Permissions {
   permissions: Permission[];
   row?: number;
 }
+
+export interface Group {
+  id?: string;
+  name: string;
+  path: string;
+}

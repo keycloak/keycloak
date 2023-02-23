@@ -6,6 +6,7 @@ import {
   CredentialContainer,
   CredentialRepresentation,
   DeviceRepresentation,
+  Group,
   LinkedAccountRepresentation,
   Permission,
   UserRepresentation,
@@ -102,4 +103,11 @@ export async function linkAccount(account: LinkedAccountRepresentation) {
     searchParams: { providerId: account.providerName, redirectUri },
   });
   return parseResponse<{ accountLinkUri: string }>(response);
+}
+
+export async function getGroups({ signal }: CallOptions) {
+  const response = await request("/groups", {
+    signal,
+  });
+  return parseResponse<Group[]>(response);
 }
