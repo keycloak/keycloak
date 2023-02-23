@@ -32,8 +32,8 @@ jobs:
       - name: Check out Keycloak Server
         uses: actions/checkout@v3
         with:
-          repository: ${{ inputs.keycloakRepo || (contains(github.ref, 'release/') && github.ref || 'keycloak/keycloak') }}
-          ref: ${{ inputs.keycloakBranch || 'main' }}
+          repository: ${{ inputs.keycloakRepo || 'keycloak/keycloak' }}
+          ref: ${{ inputs.keycloakBranch || (contains(github.ref, 'release/') && github.ref || 'main') }}
           path: keycloak-repo
 
       - name: Set up Java
