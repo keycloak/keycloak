@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
@@ -60,6 +61,8 @@ import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ID_TOKEN_HINT;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.LOGIN_HINT_PARAM;
 
 public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
+
+    private static final Logger log = Logger.getLogger(BackchannelAuthenticationEndpoint.class);
 
     private final RealmModel realm;
 
@@ -116,6 +119,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
                         .build();
             }
         } catch (Exception e) {
+            log.warn("Unexpected failure when processing CIBA authentication request", e);
             throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Failed to send authentication request", Response.Status.SERVICE_UNAVAILABLE);
         }
 
