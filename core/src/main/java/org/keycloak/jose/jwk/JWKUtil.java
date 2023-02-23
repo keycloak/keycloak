@@ -18,35 +18,46 @@
 package org.keycloak.jose.jwk;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 public class JWKUtil {
 
     /**
-     * Convert BigInteger to 64-byte integer array
+     * Coverts {@code BigInteger} to 64-byte array removing the sign byte if
+     * necessary.
      *
-     * Copied from org.apache.commons.codec.binary.Base64
+     * @param bigInt {@code BigInteger} to be converted
+     * @return Byte array representation of the BigInteger parameter
      */
     public static byte[] toIntegerBytes(final BigInteger bigInt) {
-        int bitlen = bigInt.bitLength();
-        // round bitlen
-        bitlen = ((bitlen + 7) >> 3) << 3;
-        final byte[] bigBytes = bigInt.toByteArray();
+        return toIntegerBytes(bigInt, bigInt.bitLength());
+    }
 
-        if (((bigInt.bitLength() % 8) != 0) && (((bigInt.bitLength() / 8) + 1) == (bitlen / 8))) {
-            return bigBytes;
+    /**
+     * Coverts {@code BigInteger} to 64-byte array but maintaining the length
+     * to bitlen as specified in rfc7518 for certain fields (X and Y parameter
+     * for EC keys).
+     *
+     * @param bigInt {@code BigInteger} to be converted
+     * @param bitlen The bit length size of the integer (for example 521 for EC P-521)
+     * @return Byte array representation of the BigInteger parameter with length (bitlen + 7) / 8
+     * @throws IllegalStateException if the big integer is longer than bitlen
+     */
+    public static byte[] toIntegerBytes(final BigInteger bigInt, int bitlen) {
+        assert bigInt.bitLength() <= bitlen : "Incorrect big integer with bit length " + bigInt.bitLength() + " for " + bitlen;
+        final int bytelen = (bitlen + 7) / 8;
+        final byte[] array = bigInt.toByteArray();
+        if (array.length == bytelen) {
+            // expected number of bytes, return them
+            return array;
+        } else if (bytelen < array.length) {
+            // if array is greater is because the sign bit (it can be only 1 byte more), remove it
+            return Arrays.copyOfRange(array, array.length - bytelen, array.length);
+        } else {
+            // if array is smaller fill it with zeros
+            final byte[] resizedBytes = new byte[bytelen];
+            System.arraycopy(array, 0, resizedBytes, bytelen - array.length, array.length);
+            return resizedBytes;
         }
-        // set up params for copying everything but sign bit
-        int startSrc = 0;
-        int len = bigBytes.length;
-
-        // if bigInt is exactly byte-aligned, just skip signbit in copy
-        if ((bigInt.bitLength() % 8) == 0) {
-            startSrc = 1;
-            len--;
-        }
-        final int startDst = bitlen / 8 - len; // to pad w/ nulls as per spec
-        final byte[] resizedBytes = new byte[bitlen / 8];
-        System.arraycopy(bigBytes, startSrc, resizedBytes, startDst, len);
-        return resizedBytes;
     }
 }
