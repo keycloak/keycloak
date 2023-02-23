@@ -224,7 +224,7 @@
         <firefoxUserPreferences/>
         <firefoxHeadless>true</firefoxHeadless>
         <chromeBinary/>
-        <chromeArguments>--headless</chromeArguments>
+        <chromeArguments>--headless --window-size=1920,1080</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>
