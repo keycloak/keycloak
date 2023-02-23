@@ -32,7 +32,7 @@ import java.util.Map;
 @DeepCloner.Root
 public interface MapComponentEntity extends UpdatableEntity, AbstractEntity {
     static MapComponentEntity fromModel(ComponentModel model) {
-        MapComponentEntity entity = new MapComponentEntityImpl();
+        MapComponentEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapComponentEntity.class);
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setName(model.getName());

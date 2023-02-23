@@ -32,7 +32,7 @@ import java.util.Map;
 public interface MapIdentityProviderMapperEntity extends UpdatableEntity, AbstractEntity {
     static MapIdentityProviderMapperEntity fromModel(IdentityProviderMapperModel model) {
         if (model == null) return null;
-        MapIdentityProviderMapperEntity entity = new MapIdentityProviderMapperEntityImpl();
+        MapIdentityProviderMapperEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapIdentityProviderMapperEntity.class);
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setName(model.getName());

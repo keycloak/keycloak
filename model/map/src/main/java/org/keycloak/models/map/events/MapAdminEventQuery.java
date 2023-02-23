@@ -27,7 +27,6 @@ import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.EQ;
@@ -39,21 +38,18 @@ import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.Order.DESCENDING;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
-public class MapAdminEventQuery implements AdminEventQuery {
+public abstract class MapAdminEventQuery implements AdminEventQuery {
 
     private Integer firstResult;
     private Integer maxResults;
     private QueryParameters.Order order = DESCENDING;
     private DefaultModelCriteria<AdminEvent> mcb = criteria();
-    private final Function<QueryParameters<AdminEvent>, Stream<AdminEvent>> resultProducer;
-
-    public MapAdminEventQuery(Function<QueryParameters<AdminEvent>, Stream<AdminEvent>> resultProducer) {
-        this.resultProducer = resultProducer;
-    }
+    protected String realmId;
 
     @Override
     public AdminEventQuery realm(String realmId) {
         mcb = mcb.compare(SearchableFields.REALM_ID, EQ, realmId);
+        this.realmId = realmId;
         return this;
     }
 
@@ -137,10 +133,12 @@ public class MapAdminEventQuery implements AdminEventQuery {
 
     @Override
     public Stream<AdminEvent> getResultStream() {
-        return resultProducer.apply(QueryParameters.withCriteria(mcb)
+        return read(QueryParameters.withCriteria(mcb)
                 .offset(firstResult)
                 .limit(maxResults)
                 .orderBy(SearchableFields.TIMESTAMP, order)
         );
     }
+
+    protected abstract Stream<AdminEvent> read(QueryParameters<AdminEvent> queryParameters);
 }

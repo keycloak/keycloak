@@ -40,13 +40,7 @@ public final class ImportRealmMixin {
         File importDir = Environment.getHomePath().resolve("data").resolve("import").toFile();
 
         if (importDir.exists()) {
-            StringBuilder filesToImport = new StringBuilder();
-
-            for (File realmFile : importDir.listFiles()) {
-                filesToImport.append(realmFile.getAbsolutePath()).append(",");
-            }
-
-            System.setProperty("keycloak.import", filesToImport.toString());
+            System.setProperty("keycloak.import", importDir.getAbsolutePath());
         }
     }
 }

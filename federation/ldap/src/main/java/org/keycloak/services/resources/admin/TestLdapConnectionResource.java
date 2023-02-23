@@ -30,8 +30,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -41,16 +39,16 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class TestLdapConnectionResource {
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    protected AdminPermissionEvaluator auth;
+    protected final AdminPermissionEvaluator auth;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public TestLdapConnectionResource(RealmModel realm, AdminPermissionEvaluator auth) {
+    public TestLdapConnectionResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
     }
 
     /**

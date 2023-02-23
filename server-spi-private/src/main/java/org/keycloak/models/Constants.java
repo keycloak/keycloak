@@ -146,4 +146,9 @@ public final class Constants {
 
     public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
     public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
+
+    /**
+     * Attribute of KeycloakSession where the hostname of the SSL server can be saved. This can be used by org.keycloak.truststore.SSLSocketFactory
+     */
+    public static final String SSL_SERVER_HOST_ATTR = "sslServerHost";
 }

@@ -152,7 +152,7 @@ public class EventBuilder {
      * Add event detail where strings from the input Collection are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
      * 
      * @param key of the detail
-     * @param value, can be null
+     * @param values, can be null
      * @return builder for chaining
      */
     public EventBuilder detail(String key, Collection<String> values) {
@@ -166,7 +166,7 @@ public class EventBuilder {
      * Add event detail where strings from the input Stream are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
      * 
      * @param key of the detail
-     * @param value, can be null
+     * @param values, can be null
      * @return builder for chaining
      */
     public EventBuilder detail(String key, Stream<String> values) {

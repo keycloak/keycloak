@@ -218,7 +218,7 @@ public class SAMLParserTest {
         assertNotNull(rtChoiceType.getEncryptedAssertion());
 
         PrivateKey privateKey = DerUtils.decodePrivateKey(Base64.decode(PRIVATE_KEY));
-        AssertionUtil.decryptAssertion(holder, resp, privateKey);
+        AssertionUtil.decryptAssertion(resp, privateKey);
 
         rtChoiceType = resp.getAssertions().get(0);
         assertNotNull(rtChoiceType.getAssertion());

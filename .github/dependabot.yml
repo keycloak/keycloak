@@ -20,6 +20,30 @@ updates:
     labels:
       - area/dependencies
       - area/admin/ui
+      - team/ui
     ignore:
       - dependency-name: bootstrap
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: npm
+    directory: js
+    open-pull-requests-limit: 999
+    rebase-strategy: disabled
+    versioning-strategy: increase
+    schedule:
+      interval: weekly
+    labels:
+      - area/dependencies
+      - team/ui
+    ignore:
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-dom
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: vite
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
         update-types: ["version-update:semver-major"]

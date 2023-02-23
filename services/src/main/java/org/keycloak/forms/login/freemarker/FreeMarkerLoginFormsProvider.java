@@ -275,6 +275,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         new OAuthGrantBean(accessCode, client, clientScopesRequested));
                 break;
             case CODE:
+                attributes.remove("message"); // No need to include "message" attribute as error is included in separate field anyway
                 attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? getFirstMessageUnformatted() : null));
                 break;
             case X509_CONFIRM:
@@ -459,7 +460,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("realm", new RealmBean(realm));
 
             List<IdentityProviderModel> identityProviders = LoginFormsUtil
-                    .filterIdentityProviders(realm.getIdentityProvidersStream(), session, context);
+                    .filterIdentityProvidersForTheme(realm.getIdentityProvidersStream(), session, context);
             attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCodeAndClientId));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));

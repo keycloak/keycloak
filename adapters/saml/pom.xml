@@ -33,24 +33,11 @@
     <modules>
         <module>core-public</module>
         <module>core</module>
+        <module>jetty</module>
         <module>undertow</module>
         <module>tomcat</module>
         <module>wildfly</module>
         <module>servlet-filter</module>
         <module>wildfly-elytron</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <modules>
-                <module>jetty</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

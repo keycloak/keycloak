@@ -24,6 +24,8 @@ import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
@@ -80,12 +82,24 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
 
         }
         {  // search ID Token
-            JsonWebToken token = (JsonWebToken)context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ID_TOKEN);
-            if (token != null) {
-                Object value = getClaimValue(token, claim);
-                if (value != null) return value;
+            Object rawIdToken = context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ID_TOKEN);
+            JsonWebToken idToken;
+
+            if (rawIdToken instanceof String) {
+                try {
+                    idToken = new JWSInput(rawIdToken.toString()).readJsonContent(JsonWebToken.class);
+                } catch (JWSInputException e) {
+                    return null;
+                }
+            } else if (rawIdToken instanceof JsonWebToken) {
+                idToken = (JsonWebToken) rawIdToken;
+            } else {
+                return null;
             }
 
+            Object value = getClaimValue(idToken, claim);
+            if (value != null)
+                return value;
         }
         {
             // Search the OIDC UserInfo claim set (if any)

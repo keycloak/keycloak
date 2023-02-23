@@ -53,6 +53,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static org.keycloak.models.map.storage.ldap.role.config.LdapMapRoleMapperConfig.COMMON_ROLES_DN;
 
 public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<LdapMapRoleEntityFieldDelegate, MapRoleEntity, RoleModel> implements Provider {
 
@@ -153,12 +154,12 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
             identityStore.add(mapped.getLdapMapObject());
             // TODO: add a flag for temporary created roles until they are finally committed so that they don't show up in ready(query) in their temporary state
         } catch (ModelException ex) {
-            if (value.isClientRole() && ex.getCause() instanceof NamingException) {
+            if (value.getClientId() != null && ex.getCause() instanceof NamingException) {
                 // the client hasn't been created, therefore adding it here
                 LdapMapObject client = new LdapMapObject();
                 client.setObjectClasses(Arrays.asList("top", "organizationalUnit"));
                 client.setRdnAttributeName("ou");
-                client.setDn(LdapMapDn.fromString(roleMapperConfig.getRolesDn(mapped.isClientRole(), mapped.getClientId())));
+                client.setDn(LdapMapDn.fromString(roleMapperConfig.getRolesDn(mapped.getClientId())));
                 client.setSingleAttribute("ou", mapped.getClientId());
                 identityStore.add(client);
 
@@ -261,7 +262,7 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
     }
 
     private LdapMapRoleEntityFieldDelegate lookupEntityById(String id, String clientId) {
-        LdapMapQuery ldapQuery = getLdapQuery(clientId != null, clientId);
+        LdapMapQuery ldapQuery = getLdapQuery(clientId);
 
         LdapMapObject ldapObject = identityStore.fetchById(id, ldapQuery);
         if (ldapObject != null) {
@@ -278,7 +279,10 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
         Boolean isClientRole = mcb.isClientRole();
         String clientId = mcb.getClientId();
 
-        LdapMapQuery ldapQuery = getLdapQuery(isClientRole, clientId);
+        LdapMapQuery ldapQuery = getLdapQuery(clientId);
+        if (isClientRole == null) {
+            ldapQuery.setSearchDn(roleMapperConfig.getCommonRolesDn());
+        }
 
         mcb = mcb.withCustomFilter(roleMapperConfig.getCustomLdapFilter());
         ldapQuery.setModelCriteriaBuilder(mcb);
@@ -364,13 +368,13 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
         return null;
     }
 
-    private LdapMapQuery getLdapQuery(Boolean isClientRole, String clientId) {
+    private LdapMapQuery getLdapQuery(String clientId) {
         LdapMapQuery ldapMapQuery = new LdapMapQuery();
 
         // For now, use same search scope, which is configured "globally" and used for user's search.
         ldapMapQuery.setSearchScope(ldapMapConfig.getSearchScope());
 
-        String rolesDn = roleMapperConfig.getRolesDn(isClientRole, clientId);
+        String rolesDn = roleMapperConfig.getRolesDn(clientId);
         ldapMapQuery.setSearchDn(rolesDn);
 
         Collection<String> roleObjectClasses = ldapMapConfig.getRoleObjectClasses();

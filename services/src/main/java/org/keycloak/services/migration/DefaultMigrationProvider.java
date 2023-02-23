@@ -23,17 +23,15 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -84,26 +82,29 @@ public class DefaultMigrationProvider implements MigrationProvider {
         new RealmManager(session).setupAdminCli(realm);
     }
 
+    private OIDCLoginProtocolFactory getOIDCLoginProtocolFactory() {
+        return (OIDCLoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+    }
 
     @Override
     public ClientScopeModel addOIDCRolesClientScope(RealmModel realm) {
-        return OIDCLoginProtocolFactory.addRolesClientScope(realm);
+        return getOIDCLoginProtocolFactory().addRolesClientScope(realm);
     }
 
 
     @Override
     public ClientScopeModel addOIDCWebOriginsClientScope(RealmModel realm) {
-        return OIDCLoginProtocolFactory.addWebOriginsClientScope(realm);
+        return getOIDCLoginProtocolFactory().addWebOriginsClientScope(realm);
     }
 
     @Override
     public ClientScopeModel addOIDCMicroprofileJWTClientScope(RealmModel realm) {
-        return OIDCLoginProtocolFactory.addMicroprofileJWTClientScope(realm);
+        return getOIDCLoginProtocolFactory().addMicroprofileJWTClientScope(realm);
     }
 
     @Override
     public void addOIDCAcrClientScope(RealmModel realm) {
-        OIDCLoginProtocolFactory.addAcrClientScope(realm);
+        getOIDCLoginProtocolFactory().addAcrClientScope(realm);
     }
 
     @Override

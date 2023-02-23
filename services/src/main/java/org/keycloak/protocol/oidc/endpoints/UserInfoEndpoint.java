@@ -17,8 +17,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
@@ -74,7 +73,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MultivaluedMap;
@@ -89,17 +88,11 @@ import java.util.Map;
  */
 public class UserInfoEndpoint {
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
-    @Context
-    private HttpResponse response;
+    private final KeycloakSession session;
 
-    @Context
-    private KeycloakSession session;
-
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     private final org.keycloak.protocol.oidc.TokenManager tokenManager;
     private final AppAuthManager appAuthManager;
@@ -108,11 +101,14 @@ public class UserInfoEndpoint {
     private Cors cors;
     private String authorization;
 
-    public UserInfoEndpoint(org.keycloak.protocol.oidc.TokenManager tokenManager, RealmModel realm) {
-        this.realm = realm;
+    public UserInfoEndpoint(KeycloakSession session, org.keycloak.protocol.oidc.TokenManager tokenManager) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.tokenManager = tokenManager;
         this.appAuthManager = new AppAuthManager();
         this.error = new OAuth2Error().json(false).realm(realm);
+        this.request = session.getContext().getHttpRequest();
     }
 
     @Path("/")
@@ -124,9 +120,10 @@ public class UserInfoEndpoint {
     @Path("/")
     @GET
     @NoCache
-    public Response issueUserInfoGet(@Context final HttpHeaders headers) {
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    public Response issueUserInfoGet() {
         setupCors();
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
         authorization(accessToken);
         return issueUserInfo();
     }
@@ -134,6 +131,7 @@ public class UserInfoEndpoint {
     @Path("/")
     @POST
     @NoCache
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public Response issueUserInfoPost() {
         setupCors();
 
@@ -143,10 +141,12 @@ public class UserInfoEndpoint {
         authorization(accessToken);
 
         try {
-            MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
-            checkAccessTokenDuplicated(formParams);
-            accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-            authorization(accessToken);
+            if (MediaType.APPLICATION_FORM_URLENCODED.equalsIgnoreCase(headers.getHeaderString(HttpHeaders.CONTENT_TYPE))) {
+                MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
+                checkAccessTokenDuplicated(formParams);
+                accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
+                authorization(accessToken);  
+            }
         } catch (IllegalArgumentException e) {
             // not application/x-www-form-urlencoded, ignore
         }

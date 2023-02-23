@@ -1,0 +1,17 @@
+== Start Keycloak
+
+. From a terminal, open the keycloak-{version} directory.
+. Enter the following command:
+* On Linux, run:
++
+[source,bash,subs="attributes+"]
+----
+bin/kc.sh start-dev
+----
+
+* On Windows, run:
++
+[source,bash,subs="attributes+"]
+----
+bin/kc.bat start-dev
+----

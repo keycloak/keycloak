@@ -35,6 +35,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
@@ -103,8 +104,11 @@ public abstract class BaseOperatorTest {
   }
 
   @BeforeEach
-  public void beforeEach() {
-    Log.info(((operatorDeployment == OperatorDeployment.remote) ? "Remote " : "Local ") + "Run Test :" + namespace);
+  public void beforeEach(TestInfo testInfo) {
+    String testClassName = testInfo.getTestClass().map(c -> c.getSimpleName() + ".").orElse("");
+    Log.info("\n------- STARTING: " + testClassName + testInfo.getDisplayName() + "\n"
+            + "------- Namespace: " + namespace + "\n"
+            + "------- Mode: " + ((operatorDeployment == OperatorDeployment.remote) ? "remote" : "local"));
   }
 
   private static void createK8sClient() {

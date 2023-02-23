@@ -17,12 +17,17 @@
 
 package org.keycloak.theme;
 
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface ThemeSelectorProvider extends Provider {
+
+    String DEFAULT = "keycloak";
+    String DEFAULT_V2 = "keycloak.v2";
 
     /**
      * Return the theme name to use for the specified type
@@ -31,5 +36,22 @@ public interface ThemeSelectorProvider extends Provider {
      * @return
      */
     String getThemeName(Theme.Type type);
+
+    default String getDefaultThemeName(Theme.Type type) {
+        String name = Config.scope("theme").get("default");
+        if (name != null && !name.isEmpty()) {
+            return name;
+        }
+
+        if ((type == Theme.Type.ACCOUNT) && Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
+            return DEFAULT_V2;
+        }
+
+        if ((type == Theme.Type.ADMIN) && Profile.isFeatureEnabled(Profile.Feature.ADMIN2)) {
+            return DEFAULT_V2;
+        }
+
+        return DEFAULT;
+    }
 
 }

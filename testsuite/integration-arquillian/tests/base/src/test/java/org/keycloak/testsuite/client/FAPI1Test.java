@@ -73,6 +73,7 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -315,7 +316,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         // Register client (default authenticator)
         String clientUUID = createClientByAdmin("foo", (ClientRepresentation clientRep) -> {
             clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-            clientRep.setSecret("secret");
+            clientRep.setSecret("atleast-14chars-password");
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertFalse(client.isPublicClient());
@@ -335,7 +336,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
         successfulLoginAndLogout("foo", false, (String code) -> {
-            String signedJwt = getClientSecretSignedJWT("secret", Algorithm.HS256);
+            String signedJwt = getClientSecretSignedJWT("atleast-14chars-password", Algorithm.HS256);
             return doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, DefaultHttpClient::new);
         });
     }
@@ -616,6 +617,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setAllowRegexPatternComparison(false);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
         ClientRepresentation client = clientResource.toRepresentation();

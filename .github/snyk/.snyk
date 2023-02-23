@@ -27,7 +27,7 @@ ignore:
           according to the Netty team, the fix should be available on Netty 5.
           The expiry date was set as a reminder for us to upgrade, once they
           provide the fix.
-        expires: 2022-05-31T00:00:00.000Z
+        expires: 2023-12-31T00:00:00.000Z
   SNYK-JAVA-ORGWILDFLYSECURITY-1316682:
     - "*":
         reason: >
@@ -69,6 +69,12 @@ ignore:
           More details:
             - https://github.com/keycloak/keycloak/issues/14785
         expires: 2022-11-31T00:00:00.000Z
+  SNYK-JAVA-IOSMALLRYE-2993220:
+    - "*":
+        reason: >
+          Keycloak is not vulnerable. The issue was fixed on Quarkus 2.7.5
+          More details:
+            - https://github.com/keycloak/keycloak/issues/14993         
 
   # License warnings
   snyk:lic:maven:org.eclipse.sisu:org.eclipse.sisu.plexus:EPL-1.0:

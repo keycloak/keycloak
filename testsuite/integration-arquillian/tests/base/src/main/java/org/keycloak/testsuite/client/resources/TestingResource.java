@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.client.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -38,6 +39,8 @@ import javax.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import org.infinispan.commons.time.TimeService;
 
 /**
@@ -332,15 +335,22 @@ public interface TestingResource {
     @Produces(MediaType.TEXT_HTML_UTF_8)
     String getJavascriptTestingEnvironment();
 
+    @GET
+    @Path("/list-disabled-features")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<Profile.Feature> listDisabledFeatures();
+
     @POST
     @Path("/enable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
-    Response enableFeature(@PathParam("feature") String feature);
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<Profile.Feature> enableFeature(@PathParam("feature") String feature);
 
     @POST
     @Path("/disable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
-    Response disableFeature(@PathParam("feature") String feature);
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<Profile.Feature> disableFeature(@PathParam("feature") String feature);
 
     /**
      * If property-value is null, the system property will be unset (removed) on the server

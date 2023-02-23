@@ -21,11 +21,12 @@ enabling the less common use cases through custom extensions.
 Keycloak consists of several projects:
 
 * [Keycloak](https://github.com/keycloak/keycloak) - Keycloak Server and Java adapters
+* [Keycloak UI](https://github.com/keycloak/keycloak-ui) - Keycloak Admin and Account user interface
 * [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation) - Documentation for Keycloak
 * [Keycloak QuickStarts](https://github.com/keycloak/keycloak-quickstarts) - QuickStarts for getting started with Keycloak
-* [Keycloak Containers](https://github.com/keycloak/keycloak-containers) - Container images for Keycloak
-* [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
-* [Keycloak Node.js Admin Client](https://github.com/keycloak/keycloak-nodejs-admin-client) - Node.js library for Keycloak Admin REST API
+* [Keycloak Benchmark](https://github.com/keycloak/keycloak-benchmark) - Load tests for benchmarking Keycloak
+* [Keycloak Community](https://github.com/keycloak/keycloak-community) - Keycloak design documents
+* [Keycloak Web](https://github.com/keycloak/keycloak-web) - Website keycloak.org
 
 The same governance model applies to all projects. However, the list of maintainers may vary per project. 
 

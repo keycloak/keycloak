@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.security.Key;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -69,6 +70,8 @@ import org.w3c.dom.Element;
  * @version $Revision: 1 $
  */
 public class SamlProtocolUtils {
+
+    private static final Logger logger = Logger.getLogger(SamlProtocolUtils.class);
 
     /**
      * Verifies a signature of the given SAML document using settings for the given client.

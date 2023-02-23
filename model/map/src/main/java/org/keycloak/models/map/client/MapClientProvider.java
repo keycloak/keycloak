@@ -39,6 +39,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -58,12 +60,14 @@ public class MapClientProvider implements ClientProvider {
     private final KeycloakSession session;
     final MapKeycloakTransaction<MapClientEntity, ClientModel> tx;
     private final ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore;
+    private final boolean txHasRealmId;
 
     public MapClientProvider(KeycloakSession session, MapStorage<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore) {
         this.session = session;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
         this.tx = clientStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
+        this.txHasRealmId = tx instanceof HasRealmId;
     }
 
     private ClientUpdatedEvent clientUpdatedEvent(ClientModel c) {
@@ -117,6 +121,13 @@ public class MapClientProvider implements ClientProvider {
         };
     }
 
+    private MapKeycloakTransaction<MapClientEntity, ClientModel> txInRealm(RealmModel realm) {
+        if (txHasRealmId) {
+            ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
+        }
+        return tx;
+    }
+
     private Predicate<MapClientEntity> entityRealmFilter(RealmModel realm) {
         if (realm == null || realm.getId() == null) {
             return c -> false;
@@ -130,7 +141,7 @@ public class MapClientProvider implements ClientProvider {
         DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.CLIENT_ID))
+        return txInRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.CLIENT_ID))
             .map(entityToAdapterFunc(realm));
     }
 
@@ -139,7 +150,7 @@ public class MapClientProvider implements ClientProvider {
         DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return tx.read(withCriteria(mcb).orderBy(SearchableFields.CLIENT_ID, ASCENDING))
+        return txInRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.CLIENT_ID, ASCENDING))
           .map(entityToAdapterFunc(realm));
     }
 
@@ -147,20 +158,20 @@ public class MapClientProvider implements ClientProvider {
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
         LOG.tracef("addClient(%s, %s, %s)%s", realm, id, clientId, getShortStackTrace());
 
-        if (id != null && tx.read(id) != null) {
+        if (id != null && txInRealm(realm).exists(id)) {
             throw new ModelDuplicateException("Client with same id exists: " + id);
         }
         if (clientId != null && getClientByClientId(realm, clientId) != null) {
             throw new ModelDuplicateException("Client with same clientId in realm " + realm.getName() + " exists: " + clientId);
         }
 
-        MapClientEntity entity = new MapClientEntityImpl();
+        MapClientEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapClientEntity.class);
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setClientId(clientId);
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
-        entity = tx.create(entity);
+        entity = txInRealm(realm).create(entity);
         if (clientId == null) {
             clientId = entity.getId();
             entity.setClientId(clientId);
@@ -179,7 +190,7 @@ public class MapClientProvider implements ClientProvider {
         DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                  .compare(SearchableFields.ALWAYS_DISPLAY_IN_CONSOLE, Operator.EQ, Boolean.TRUE);
-        return tx.read(withCriteria(mcb).orderBy(SearchableFields.CLIENT_ID, ASCENDING))
+        return txInRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.CLIENT_ID, ASCENDING))
                   .map(entityToAdapterFunc(realm));
     }
 
@@ -204,7 +215,7 @@ public class MapClientProvider implements ClientProvider {
 
         session.invalidate(CLIENT_BEFORE_REMOVE, realm, client);
 
-        tx.delete(id);
+        txInRealm(realm).delete(id);
 
         session.invalidate(CLIENT_AFTER_REMOVE, client);
 
@@ -216,7 +227,7 @@ public class MapClientProvider implements ClientProvider {
         DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return tx.getCount(withCriteria(mcb));
+        return txInRealm(realm).getCount(withCriteria(mcb));
     }
 
     @Override
@@ -227,7 +238,7 @@ public class MapClientProvider implements ClientProvider {
 
         LOG.tracef("getClientById(%s, %s)%s", realm, id, getShortStackTrace());
 
-        MapClientEntity entity = tx.read(id);
+        MapClientEntity entity = txInRealm(realm).read(id);
         return (entity == null || ! entityRealmFilter(realm).test(entity))
           ? null
           : entityToAdapterFunc(realm).apply(entity);
@@ -244,7 +255,7 @@ public class MapClientProvider implements ClientProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.EQ, clientId);
 
-        return tx.read(withCriteria(mcb))
+        return txInRealm(realm).read(withCriteria(mcb))
           .map(entityToAdapterFunc(realm))
           .findFirst()
           .orElse(null)
@@ -261,7 +272,7 @@ public class MapClientProvider implements ClientProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, "%" + clientId + "%");
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.CLIENT_ID))
+        return txInRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.CLIENT_ID))
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -274,14 +285,14 @@ public class MapClientProvider implements ClientProvider {
             mcb = mcb.compare(SearchableFields.ATTRIBUTE, Operator.EQ, entry.getKey(), entry.getValue());
         }
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.CLIENT_ID))
+        return txInRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.CLIENT_ID))
                 .map(entityToAdapterFunc(realm));
     }
 
     @Override
     public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
         final String id = client.getId();
-        MapClientEntity entity = tx.read(id);
+        MapClientEntity entity = txInRealm(realm).read(id);
 
         if (entity == null) return;
 
@@ -302,7 +313,7 @@ public class MapClientProvider implements ClientProvider {
     @Override
     public void removeClientScope(RealmModel realm, ClientModel client, ClientScopeModel clientScope) {
         final String id = client.getId();
-        MapClientEntity entity = tx.read(id);
+        MapClientEntity entity = txInRealm(realm).read(id);
 
         if (entity == null) return;
 
@@ -314,7 +325,7 @@ public class MapClientProvider implements ClientProvider {
     @Override
     public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScopes) {
         final String id = client.getId();
-        MapClientEntity entity = tx.read(id);
+        MapClientEntity entity = txInRealm(realm).read(id);
 
         if (entity == null) return null;
 
@@ -336,7 +347,7 @@ public class MapClientProvider implements ClientProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.ENABLED, Operator.EQ, Boolean.TRUE);
 
-        try (Stream<MapClientEntity> st = tx.read(withCriteria(mcb))) {
+        try (Stream<MapClientEntity> st = txInRealm(realm).read(withCriteria(mcb))) {
             return st
               .filter(mce -> mce.getRedirectUris() != null && ! mce.getRedirectUris().isEmpty())
               .collect(Collectors.toMap(
@@ -351,11 +362,9 @@ public class MapClientProvider implements ClientProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
 
-        try (Stream<MapClientEntity> toRemove = tx.read(withCriteria(mcb))) {
+        try (Stream<MapClientEntity> toRemove = txInRealm(realm).read(withCriteria(mcb))) {
             toRemove
-                .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId()))
-                .filter(Objects::nonNull)
-                .forEach(clientModel -> clientModel.deleteScopeMapping(role));
+                    .forEach(clientEntity -> clientEntity.removeScopeMapping(role.getId()));
         }
     }
 
@@ -364,7 +373,7 @@ public class MapClientProvider implements ClientProvider {
         DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        tx.delete(withCriteria(mcb));
+        txInRealm(realm).delete(withCriteria(mcb));
     }
 
     @Override

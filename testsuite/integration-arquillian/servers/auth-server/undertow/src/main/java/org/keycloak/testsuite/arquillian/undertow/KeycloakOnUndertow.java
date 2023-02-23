@@ -232,15 +232,11 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
     }
 
     protected void setupDevConfig() {
-        KeycloakSession session = sessionFactory.create();
-        try {
+        try (KeycloakSession session = sessionFactory.create()) {
             session.getTransactionManager().begin();
             if (new ApplianceBootstrap(session).isNoMasterUser()) {
                 new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
             }
-            session.getTransactionManager().commit();
-        } finally {
-            session.close();
         }
     }
 

@@ -99,6 +99,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 
 /**
  * Test for the FAPI CIBA specifications (still implementer's draft):
@@ -370,6 +371,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
@@ -413,6 +415,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
@@ -442,6 +445,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);

@@ -66,6 +66,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-rest-admin-ui-ext</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
         </dependency>
         <dependency>
@@ -254,17 +258,23 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.driver.version}</version>
+            <version>${postgresql-jdbc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>${oracle-jdbc.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>${mariadb.driver.version}</version>
+            <version>${mariadb-jdbc.version}</version>
         </dependency>
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>${mssql.driver.version}</version>
+            <version>${mssql-jdbc.version}</version>
         </dependency>
 
     </dependencies>
@@ -315,7 +325,7 @@
                         <configuration>
                             <systemProperties>
                                 <systemProperty><key>keycloak.profile.feature.map_storage</key><value>enabled</value></systemProperty>
-                                <systemProperty><key>keycloak.dblock.provider</key><value>none</value></systemProperty>
+                                <systemProperty><key>keycloak.globalLock.provider</key><value>none</value></systemProperty>
                                 <systemProperty><key>keycloak.realm.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.client.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.clientScope.provider</key><value>map</value></systemProperty>

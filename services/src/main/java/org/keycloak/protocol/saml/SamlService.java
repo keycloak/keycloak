@@ -23,9 +23,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.specimpl.ResteasyHttpHeaders;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
@@ -53,6 +50,8 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.executors.ExecutorsProvider;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeyManager;
@@ -161,8 +160,8 @@ public class SamlService extends AuthorizationEndpointBase {
 
     private final DestinationValidator destinationValidator;
 
-    public SamlService(RealmModel realm, EventBuilder event, DestinationValidator destinationValidator) {
-        super(realm, event);
+    public SamlService(KeycloakSession session, EventBuilder event, DestinationValidator destinationValidator) {
+        super(session, event);
         this.destinationValidator = destinationValidator;
     }
 
@@ -812,7 +811,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @GET
     public void redirectBinding(@Suspended AsyncResponse asyncResponse, @QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest, @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse, @QueryParam(GeneralConstants.RELAY_STATE) String relayState, @QueryParam(GeneralConstants.SAML_ARTIFACT_KEY) String artifact) {
         logger.debug("SAML GET");
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
 
         new RedirectBindingProtocol().execute(asyncResponse, samlRequest, samlResponse, relayState, artifact);
     }
@@ -920,7 +919,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response idpInitiatedSSO(@PathParam("client") String clientUrlName, @QueryParam("RelayState") String relayState) {
         event.event(EventType.LOGIN);
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
         ClientModel client = session.clients()
                 .searchClientsByAttributes(realm, Collections.singletonMap(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME, clientUrlName), 0, 1)
                 .findFirst().orElse(null);
@@ -1073,9 +1072,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @NoCache
     @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
-        SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event, destinationValidator);
-
-        ResteasyProviderFactory.getInstance().injectProperties(bindingService);
+        SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, destinationValidator);
 
         return bindingService.authenticate(inputStream);
     }
@@ -1314,16 +1311,15 @@ public class SamlService extends AuthorizationEndpointBase {
 
     private class ArtifactResolutionRunnable implements ScheduledTask{
 
+        private final HttpRequest request;
+        private final HttpResponse response;
         private AsyncResponse asyncResponse;
         private URI clientArtifactBindingURI;
         private String relayState;
         private Document doc;
         private UriInfo uri;
         private String realmId;
-        private HttpHeaders httpHeaders;
         private ClientConnection connection;
-        private org.jboss.resteasy.spi.HttpResponse response;
-        private HttpRequest request;
         private String bindingType;
 
         public ArtifactResolutionRunnable(String bindingType, AsyncResponse asyncResponse, Document doc, URI clientArtifactBindingURI, String relayState, ClientConnection connection){
@@ -1333,11 +1329,10 @@ public class SamlService extends AuthorizationEndpointBase {
             this.relayState = relayState;
             this.uri = session.getContext().getUri();
             this.realmId = realm.getId();
-            this.httpHeaders = new ResteasyHttpHeaders(headers.getRequestHeaders());
             this.connection = connection;
-            this.response = Resteasy.getContextData(org.jboss.resteasy.spi.HttpResponse.class);
-            this.request = Resteasy.getContextData(HttpRequest.class);
             this.bindingType = bindingType;
+            this.request = session.getContext().getHttpRequest();
+            this.response = session.getContext().getHttpResponse();
         }
 
 
@@ -1349,10 +1344,8 @@ public class SamlService extends AuthorizationEndpointBase {
             Resteasy.pushContext(KeycloakTransaction.class, tx);
 
             Resteasy.pushContext(KeycloakSession.class, session);
-            Resteasy.pushContext(HttpHeaders.class, httpHeaders);
-            Resteasy.pushContext(org.jboss.resteasy.spi.HttpResponse.class, response);
             Resteasy.pushContext(HttpRequest.class, request);
-
+            Resteasy.pushContext(HttpResponse.class, response);
             Resteasy.pushContext(ClientConnection.class, connection);
 
             RealmManager realmManager = new RealmManager(session);
@@ -1403,8 +1396,7 @@ public class SamlService extends AuthorizationEndpointBase {
                         throw new NotFoundException("Protocol not found");
                     }
 
-                    SamlService endpoint = (SamlService) factory.createProtocolEndpoint(realm, event);
-                    ResteasyProviderFactory.getInstance().injectProperties(endpoint);
+                    SamlService endpoint = (SamlService) factory.createProtocolEndpoint(session, event);
                     BindingProtocol protocol;
                     if (SamlProtocol.SAML_POST_BINDING.equals(bindingType)) {
                         protocol = endpoint.newPostBindingProtocol();
@@ -1433,7 +1425,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     EntityUtils.consumeQuietly(result.getEntity());
                 }
 
-            } catch (IOException | ProcessingException | ParsingException e) {
+            } catch (IOException | ProcessingException | ParsingException | IllegalArgumentException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.IDENTITY_PROVIDER_ERROR);

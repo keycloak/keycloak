@@ -46,7 +46,7 @@ import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
 import org.keycloak.testsuite.pages.social.OpenShiftLoginPage;
 import org.keycloak.testsuite.pages.social.PayPalLoginPage;
 import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
-import org.keycloak.testsuite.pages.social.TwitterLoginPage;
+import org.keycloak.testsuite.pages.social.TwitterConsentLoginPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -121,7 +121,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         FACEBOOK_INCLUDE_BIRTHDAY("facebook", FacebookLoginPage.class),
         GITHUB("github", GitHubLoginPage.class),
         GITHUB_PRIVATE_EMAIL("github", "github-private-email", GitHubLoginPage.class),
-        TWITTER("twitter", TwitterLoginPage.class),
+        TWITTER("twitter", TwitterConsentLoginPage.class),
         LINKEDIN("linkedin", LinkedInLoginPage.class),
         LINKEDIN_WITH_PROJECTION("linkedin", LinkedInLoginPage.class),
         MICROSOFT("microsoft", MicrosoftLoginPage.class),
@@ -604,10 +604,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         String username = users.get(0).getUsername();
         checkFeature(501, username);
 
-        Response tokenResp = testingClient.testing().enableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-        assertEquals(200, tokenResp.getStatus());
+        testingClient.enableFeature(Profile.Feature.TOKEN_EXCHANGE);
 
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
         Client httpClient = AdminClientUtil.createResteasyClient();
 
         try {
@@ -690,8 +688,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
             adminClient.realm(REALM).identityProviders().get(idp.getAlias()).update(idp);
         } finally {
             httpClient.close();
-            tokenResp = testingClient.testing().disableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-            assertEquals(200, tokenResp.getStatus());
+            testingClient.disableFeature(Profile.Feature.TOKEN_EXCHANGE);
             checkFeature(501, username);
         }
     }

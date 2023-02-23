@@ -105,8 +105,12 @@ public class UserStorageSyncManager {
 
                     @Override
                     public SynchronizationResult call() throws Exception {
-                        updateLastSyncInterval(sessionFactory, provider, realmId);
-                        return ((ImportSynchronization)factory).sync(sessionFactory, realmId, provider);
+                        int lastSync = Time.currentTime();
+                        SynchronizationResult result = ((ImportSynchronization)factory).sync(sessionFactory, realmId, provider);
+                        if (!result.isIgnored()) {
+                            updateLastSyncInterval(sessionFactory, provider, realmId, lastSync);
+                        }
+                        return result;
                     }
 
                 });
@@ -147,8 +151,12 @@ public class UserStorageSyncManager {
                     public SynchronizationResult call() throws Exception {
                         // See when we did last sync.
                         int oldLastSync = provider.getLastSync();
-                        updateLastSyncInterval(sessionFactory, provider, realmId);
-                        return ((ImportSynchronization)factory).syncSince(Time.toDate(oldLastSync), sessionFactory, realmId, provider);
+                        int lastSync = Time.currentTime();
+                        SynchronizationResult result = ((ImportSynchronization)factory).syncSince(Time.toDate(oldLastSync), sessionFactory, realmId, provider);
+                        if (!result.isIgnored()) {
+                            updateLastSyncInterval(sessionFactory, provider, realmId, lastSync);
+                        }
+                        return result;
                     }
 
                 });
@@ -262,7 +270,7 @@ public class UserStorageSyncManager {
     }
 
     // Update interval of last sync for given UserFederationProviderModel. Do it in separate transaction
-    private static void updateLastSyncInterval(final KeycloakSessionFactory sessionFactory, UserStorageProviderModel provider, final String realmId) {
+    private static void updateLastSyncInterval(final KeycloakSessionFactory sessionFactory, UserStorageProviderModel provider, final String realmId, final int lastSync) {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
@@ -272,7 +280,6 @@ public class UserStorageSyncManager {
                         .filter(persistentFedProvider -> Objects.equals(provider.getId(), persistentFedProvider.getId()))
                         .forEachOrdered(persistentFedProvider -> {
                             // Update persistent provider in DB
-                            int lastSync = Time.currentTime();
                             persistentFedProvider.setLastSync(lastSync);
                             persistentRealm.updateComponent(persistentFedProvider);
 

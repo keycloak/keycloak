@@ -1,11 +1,17 @@
 package org.keycloak.testsuite.util;
 
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.KeyProvider;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 
+import javax.ws.rs.core.Response;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -15,6 +21,11 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author mhajas
@@ -41,22 +52,77 @@ public class KeyUtils {
         }
     }
 
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveSigningKey(KeysMetadataRepresentation keys, String algorithm) {
-        for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
-            if (k.getAlgorithm().equals(algorithm) && KeyStatus.valueOf(k.getStatus()).isActive() && KeyUse.SIG.equals(k.getUse())) {
-                return k;
-            }
-        }
-        throw new RuntimeException("Active key not found");
-    }
-
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveEncKey(KeysMetadataRepresentation keys, String algorithm) {
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveEncryptionKey(KeysMetadataRepresentation keys, String algorithm) {
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
             if (k.getAlgorithm().equals(algorithm) && KeyStatus.valueOf(k.getStatus()).isActive() && KeyUse.ENC.equals(k.getUse())) {
                 return k;
             }
         }
         throw new RuntimeException("Active key not found");
+    }
+
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm) {
+        return findRealmKeys(realm, rep -> rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && KeyUse.SIG.equals(rep.getUse()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm, String alg) {
+        return findRealmKeys(realm, rep -> rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && KeyUse.SIG.equals(rep.getUse()) && alg.equals(rep.getAlgorithm()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveEncryptingKey(RealmResource realm, String alg) {
+        return findRealmKeys(realm, rep -> rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && KeyUse.ENC.equals(rep.getUse()) && alg.equals(rep.getAlgorithm()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static Stream<KeysMetadataRepresentation.KeyMetadataRepresentation> findRealmKeys(RealmResource realm, Predicate<KeysMetadataRepresentation.KeyMetadataRepresentation> filter) {
+        return realm.keys().getKeyMetadata().getKeys().stream().filter(filter);
+    }
+
+    public static AutoCloseable generateNewRealmKey(RealmResource realm, KeyUse keyUse, String algorithm, String priority) {
+        String realmId = realm.toRepresentation().getId();
+
+        ComponentRepresentation keys = new ComponentRepresentation();
+        keys.setName("generated");
+        keys.setProviderType(KeyProvider.class.getName());
+        keys.setProviderId(keyUse == KeyUse.ENC ? "rsa-enc-generated" : "rsa-generated");
+        keys.setParentId(realmId);
+        keys.setConfig(new MultivaluedHashMap<>());
+        keys.getConfig().putSingle("priority", priority);
+        keys.getConfig().putSingle("keyUse", KeyUse.ENC.getSpecName());
+        keys.getConfig().putSingle("algorithm", algorithm);
+        Response response = realm.components().add(keys);
+        assertEquals(201, response.getStatus());
+        String id = ApiUtil.getCreatedId(response);
+        response.close();
+
+        return () -> realm.components().removeComponent(id);
+    }
+
+    public static AutoCloseable generateNewRealmKey(RealmResource realm, KeyUse keyUse, String algorithm) {
+        return generateNewRealmKey(realm, keyUse, algorithm, "100");
+    }
+    /**
+     * @return key sizes, which are expected to be supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory} and {@link org.keycloak.keys.GeneratedRsaEncKeyProviderFactory}.
+     */
+    public static String[] getExpectedSupportedRsaKeySizes() {
+        String expectedKeySizes = System.getProperty("auth.server.supported.rsa.key.sizes");
+        if (expectedKeySizes == null || expectedKeySizes.trim().isEmpty()) {
+            fail("System property 'auth.server.supported.rsa.key.sizes' should be set");
+        }
+        return expectedKeySizes.split(",");
+    }
+
+    /**
+     * @return Lowest key size supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory}.
+     * It is usually 1024, but can be 2048 in some environments (typically in FIPS environments)
+     */
+    public static int getLowestSupportedRsaKeySize() {
+        return Integer.parseInt(getExpectedSupportedRsaKeySizes()[0]);
     }
 
 }

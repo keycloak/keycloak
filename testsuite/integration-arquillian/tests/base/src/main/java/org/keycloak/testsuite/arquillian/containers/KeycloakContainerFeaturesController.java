@@ -71,21 +71,18 @@ public class KeycloakContainerFeaturesController {
         private Profile.Feature feature;
         private boolean skipRestart;
         private FeatureAction action;
-        private boolean onlyForProduct;
         private final AnnotatedElement annotatedElement;
 
-        public UpdateFeature(Profile.Feature feature, boolean skipRestart, FeatureAction action, boolean onlyForProduct
-                , AnnotatedElement annotatedElement) {
+        public UpdateFeature(Profile.Feature feature, boolean skipRestart, FeatureAction action, AnnotatedElement annotatedElement) {
             this.feature = feature;
             this.skipRestart = skipRestart;
             this.action = action;
-            this.onlyForProduct = onlyForProduct;
             this.annotatedElement = annotatedElement;
         }
 
         private void assertPerformed() {
             assertThat("An annotation requested to " + action.name() +
-                            " feature " + feature.name() + ", however after performing this operation " +
+                            " feature " + feature.getKey() + ", however after performing this operation " +
                             "the feature is not in desired state" ,
                     ProfileAssume.isFeatureEnabled(feature),
                     is(action == FeatureAction.ENABLE));
@@ -122,10 +119,6 @@ public class KeycloakContainerFeaturesController {
             return action;
         }
 
-        public boolean isOnlyForProduct() {
-            return onlyForProduct;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -147,7 +140,6 @@ public class KeycloakContainerFeaturesController {
 
     private void updateFeatures(Set<UpdateFeature> updateFeatures) throws Exception {
         updateFeatures = updateFeatures.stream()
-                .filter(this::skipForProduct)
                 .collect(Collectors.toSet());
 
         updateFeatures.forEach(UpdateFeature::performAction);
@@ -158,11 +150,6 @@ public class KeycloakContainerFeaturesController {
         }
 
         updateFeatures.forEach(UpdateFeature::assertPerformed);
-    }
-
-    // KEYCLOAK-12958 WebAuthn profile product/project
-    private boolean skipForProduct(UpdateFeature feature) {
-        return !feature.onlyForProduct || Profile.getName().equals("product");
     }
 
     private void checkAnnotatedElementForFeatureAnnotations(AnnotatedElement annotatedElement, State state) throws Exception {
@@ -191,13 +178,12 @@ public class KeycloakContainerFeaturesController {
 
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
                 .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                        state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotation.onlyForProduct(), annotatedElement))
+                        state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotatedElement))
                 .collect(Collectors.toSet()));
 
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
                 .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                        state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotation.onlyForProduct(),
-                        annotatedElement))
+                        state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotatedElement))
                 .collect(Collectors.toSet()));
 
         return ret;

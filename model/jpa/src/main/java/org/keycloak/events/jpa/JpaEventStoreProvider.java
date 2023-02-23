@@ -35,15 +35,9 @@ import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.InvalidationHandler;
-import org.keycloak.timer.ScheduledTask;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -64,11 +58,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     private final KeycloakSession session;
     private final EntityManager em;
     private final int maxDetailLength;
+    private final int maxFieldLength;
 
-    public JpaEventStoreProvider(KeycloakSession session, EntityManager em, int maxDetailLength) {
+    public JpaEventStoreProvider(KeycloakSession session, EntityManager em, int maxDetailLength, int maxFieldLength) {
         this.session = session;
         this.em = em;
         this.maxDetailLength = maxDetailLength;
+        this.maxFieldLength = maxFieldLength;
     }
 
     @Override
@@ -171,9 +167,9 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         try {
             if (maxDetailLength > 0 && event.getDetails() != null) {
                 Map<String, String> result = new HashMap<>(event.getDetails());
-                result.entrySet().forEach(t -> t.setValue(trimToMaxLength(t.getValue())));
+                result.entrySet().forEach(t -> t.setValue(trimToMaxDetailLength(t.getValue())));
 
-                eventEntity.setDetailsJson(mapper.writeValueAsString(result));
+                eventEntity.setDetailsJson(trimToMaxFieldLength(mapper.writeValueAsString(result)));
             } else {
                 eventEntity.setDetailsJson(mapper.writeValueAsString(event.getDetails()));
             }
@@ -183,14 +179,23 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         return eventEntity;
     }
 
-    private String trimToMaxLength(String detail) {
+    private String trimToMaxDetailLength(String detail) {
         if (detail != null && detail.length() > maxDetailLength) {
+            logger.warnf("Detail '%s' will be truncated.", detail);
             // (maxDetailLength - 3) takes "..." into account
-            String result = detail.substring(0, maxDetailLength - 3).concat("...");
-            logger.warn("Detail was truncated to " + result);
-            return result;
+            return detail.substring(0, maxDetailLength - 3).concat("...");
         } else {
             return detail;
+        }
+    }
+
+    private String trimToMaxFieldLength(String field) {
+        if (maxFieldLength > 0 && field != null && field.length() > maxFieldLength) {
+            logger.warnf("Field '%s' will be truncated.", field);
+            // (maxFieldLength - 3) takes "..." into account
+            return field.substring(0, maxFieldLength - 3).concat("...");
+        } else {
+            return field;
         }
     }
 
@@ -214,7 +219,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         return event;
     }
     
-    static AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+    private AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
         adminEventEntity.setId(adminEvent.getId() == null ? UUID.randomUUID().toString() : adminEvent.getId());
         adminEventEntity.setTime(adminEvent.getTime());
@@ -230,7 +235,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEventEntity.setError(adminEvent.getError());
         
         if(includeRepresentation) {
-            adminEventEntity.setRepresentation(adminEvent.getRepresentation());
+            adminEventEntity.setRepresentation(trimToMaxFieldLength(adminEvent.getRepresentation()));
         }
         return adminEventEntity;
     }
@@ -273,13 +278,10 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     }
 
     protected void clearExpiredAdminEvents() {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<RealmAttributeEntity> cr = cb.createQuery(RealmAttributeEntity.class);
-        Root<RealmAttributeEntity> root = cr.from(RealmAttributeEntity.class);
-        // unable to cast the CLOB to a BIGINT in the select for H2 2.x, therefore comparing strings only in the DB, and filtering again in the next statement
-        cr.select(root).where(cb.and(cb.equal(root.get("name"),RealmAttributes.ADMIN_EVENTS_EXPIRATION),cb.notEqual(root.get("value"), "0")));
-        Map<Long, List<RealmAttributeEntity>> realms = em.createQuery(cr).getResultStream()
-                // filtering again on the attribute as paring the CLOB to BIGINT didn't work in H2 2.x
+        TypedQuery<RealmAttributeEntity> query = em.createNamedQuery("selectRealmAttributesNotEmptyByName", RealmAttributeEntity.class)
+                .setParameter("name", RealmAttributes.ADMIN_EVENTS_EXPIRATION);
+        Map<Long, List<RealmAttributeEntity>> realms = query.getResultStream()
+                // filtering again on the attribute as parsing the CLOB to BIGINT didn't work in H2 2.x, and it also different on OracleDB
                 .filter(attribute -> {
                     try {
                         return Long.parseLong(attribute.getValue()) > 0;

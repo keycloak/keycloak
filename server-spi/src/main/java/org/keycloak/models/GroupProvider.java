@@ -33,30 +33,6 @@ import java.util.stream.Stream;
 public interface GroupProvider extends Provider, GroupLookupProvider {
 
     /**
-     * Returns a group from the given realm with the corresponding id
-     * 
-     * @param id Id.
-     * @param realm Realm.
-     * @return GroupModel with the corresponding id.
-     * @deprecated Use method {@link #getGroupById(RealmModel, String) getGroupById}
-     */
-    default GroupModel getGroupById(String id, RealmModel realm) {
-        return getGroupById(realm, id);
-    }
-
-    /**
-     * Returns groups for the given realm.
-     *
-     * @param realm Realm.
-     * @return List of groups in the Realm.
-     * @deprecated Use {@link #getGroupsStream(RealmModel) getGroupsStream} instead.
-     */
-    @Deprecated
-    default List<GroupModel> getGroups(RealmModel realm) {
-        return getGroupsStream(realm).collect(Collectors.toList());
-    }
-
-    /**
      * Returns groups for the given realm.
      *
      * @param realm Realm.
@@ -139,21 +115,6 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param role Role.
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return List of groups with the given role.
-     * @deprecated Use {@link #getGroupsByRoleStream(RealmModel, RoleModel, Integer, Integer) getGroupsByRoleStream} instead.
-     */
-    @Deprecated
-    default List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
-        return  getGroupsByRoleStream(realm, role, firstResult, maxResults).collect(Collectors.toList());
-    }
-
-    /**
-     * Returns groups with the given role in the given realm.
-     *
-     * @param realm Realm.
-     * @param role Role.
-     * @param firstResult First result to return. Ignored if negative or {@code null}.
-     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of groups with the given role. Never returns {@code null}.
      */
      Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults);
@@ -162,35 +123,9 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * Returns all top level groups (i.e. groups without parent group) for the given realm.
      *
      * @param realm Realm.
-     * @return List of all top level groups in the realm.
-     * @deprecated Use {@link #getTopLevelGroupsStream(RealmModel) getTopLevelGroupsStream} instead.
-     */
-    @Deprecated
-    default List<GroupModel> getTopLevelGroups(RealmModel realm) {
-        return getTopLevelGroupsStream(realm).collect(Collectors.toList());
-    }
-
-    /**
-     * Returns all top level groups (i.e. groups without parent group) for the given realm.
-     *
-     * @param realm Realm.
      * @return Stream of all top level groups in the realm. Never returns {@code null}.
      */
     Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm);
-
-    /**
-     * Returns top level groups (i.e. groups without parent group) for the given realm.
-     *
-     * @param realm Realm.
-     * @param firstResult First result to return. Ignored if negative or {@code null}.
-     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return List of top level groups in the realm.
-     * @deprecated Use {@link #getTopLevelGroupsStream(RealmModel, Integer, Integer) getTopLevelGroupsStream} instead.
-     */
-    @Deprecated
-    default List<GroupModel> getTopLevelGroups(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return getTopLevelGroupsStream(realm, firstResult, maxResults).collect(Collectors.toList());
-    }
 
     /**
      * Returns top level groups (i.e. groups without parent group) for the given realm.

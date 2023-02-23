@@ -19,6 +19,7 @@ package org.keycloak.testsuite.model.session;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Test;
+import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -43,6 +44,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 
 @RequireProvider(UserSessionProvider.class)
 @RequireProvider(value = HotRodConnectionProvider.class, only = DefaultHotRodConnectionProviderFactory.PROVIDER_ID)
+@RequireProvider(DeviceRepresentationProvider.class)
 public class HotRodUserSessionClientSessionRelationshipTest extends KeycloakModelTest {
 
     private String realmId;
@@ -50,7 +52,7 @@ public class HotRodUserSessionClientSessionRelationshipTest extends KeycloakMode
 
     @Override
     public void createEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().createRealm("test");
+        RealmModel realm = createRealm(s, "test");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionIdleTimeout(1800);
         realm.setSsoSessionMaxLifespan(36000);

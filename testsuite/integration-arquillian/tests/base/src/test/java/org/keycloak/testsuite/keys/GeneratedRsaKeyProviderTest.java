@@ -36,9 +36,12 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.utils.StringUtil;
 
 import javax.ws.rs.core.Response;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -226,7 +229,7 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void invalidKeysizeForEnd() throws Exception {
+    public void invalidKeysizeForEnc() throws Exception {
         invalidKeysize(GeneratedRsaEncKeyProviderFactory.ID);
     }
 
@@ -235,7 +238,8 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keySize", "1234");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "'Key size' should be 1024, 2048 or 4096");
+        String expectedKeySizesDisplay = StringUtil.joinValuesWithLogicalCondition("or", Arrays.asList(KeyUtils.getExpectedSupportedRsaKeySizes()));
+        assertErrror(response, "'Key size' should be " + expectedKeySizesDisplay);
     }
 
     protected void assertErrror(Response response, String error) {

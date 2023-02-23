@@ -81,38 +81,6 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
         }
 
         @Override
-        public Optional<MapUserConsentEntity> getUserConsent(String clientId) {
-            Set<MapUserConsentEntity> ucs = getUserConsents();
-            if (ucs == null || ucs.isEmpty()) return Optional.empty();
-
-            return ucs.stream().filter(uc -> Objects.equals(uc.getClientId(), clientId)).findFirst();
-        }
-
-        @Override
-        public Boolean removeUserConsent(String clientId) {
-            Set<MapUserConsentEntity> consents = getUserConsents();
-            boolean removed = consents != null && consents.removeIf(uc -> Objects.equals(uc.getClientId(), clientId));
-            this.updated |= removed;
-            return removed;
-        }
-
-        @Override
-        public Optional<MapUserCredentialEntity> getCredential(String id) {
-            List<MapUserCredentialEntity> uce = getCredentials();
-            if (uce == null || uce.isEmpty()) return Optional.empty();
-
-            return uce.stream().filter(uc -> Objects.equals(uc.getId(), id)).findFirst();
-        }
-
-        @Override
-        public Boolean removeCredential(String id) {
-            List<MapUserCredentialEntity> credentials = getCredentials();
-            boolean removed = credentials != null && credentials.removeIf(c -> Objects.equals(c.getId(), id));
-            this.updated |= removed;
-            return removed;
-        }
-
-        @Override
         public Boolean moveCredential(String credentialId, String newPreviousCredentialId) {
             // 1 - Get all credentials from the entity.
             List<MapUserCredentialEntity> credentialsList = getCredentials();
@@ -153,22 +121,6 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
 
             this.updated = true;
             return true;
-        }
-
-        @Override
-        public Optional<MapUserFederatedIdentityEntity> getFederatedIdentity(String identityProviderId) {
-            Set<MapUserFederatedIdentityEntity> fes = getFederatedIdentities();
-            if (fes == null || fes.isEmpty()) return Optional.empty();
-
-            return fes.stream().filter(fi -> Objects.equals(fi.getIdentityProvider(), identityProviderId)).findFirst();
-        }
-
-        @Override
-        public Boolean removeFederatedIdentity(String identityProviderId) {
-            Set<MapUserFederatedIdentityEntity> federatedIdentities = getFederatedIdentities();
-            boolean removed = federatedIdentities != null && federatedIdentities.removeIf(fi -> Objects.equals(fi.getIdentityProvider(), identityProviderId));
-            this.updated |= removed;
-            return removed;
         }
     }
 

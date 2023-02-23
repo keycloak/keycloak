@@ -1,6 +1,6 @@
 package org.keycloak.services.resources.account;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.services.resources.Cors;
 
 import javax.ws.rs.OPTIONS;
@@ -12,7 +12,7 @@ import javax.ws.rs.core.Response;
  */
 public class CorsPreflightService {
 
-    private HttpRequest request;
+    private final HttpRequest request;
 
     public CorsPreflightService(HttpRequest request) {
         this.request = request;

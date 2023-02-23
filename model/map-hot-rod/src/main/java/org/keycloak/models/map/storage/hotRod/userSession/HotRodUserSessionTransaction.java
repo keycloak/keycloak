@@ -37,6 +37,7 @@ import org.keycloak.storage.SearchableModelField;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -65,6 +66,7 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
     }
 
     private MapAuthenticatedClientSessionEntity wrapClientSessionEntityToClientSessionAwareDelegate(MapAuthenticatedClientSessionEntity d) {
+        if (!clientSessionTransaction.exists(d.getId())) return null;
         return new MapAuthenticatedClientSessionEntityDelegate(new HotRodAuthenticatedClientSessionEntityDelegateProvider(d) {
             @Override
             public MapAuthenticatedClientSessionEntity loadClientSessionFromDatabase() {
@@ -82,13 +84,15 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
                 Set<MapAuthenticatedClientSessionEntity> clientSessions = super.getAuthenticatedClientSessions();
                 return clientSessions == null ? null : clientSessions.stream()
                         .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toSet());
             }
 
             @Override
             public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
                 return super.getAuthenticatedClientSession(clientUUID)
-                        .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate);
+                        .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate)
+                        .filter(Objects::nonNull);
             }
 
             @Override

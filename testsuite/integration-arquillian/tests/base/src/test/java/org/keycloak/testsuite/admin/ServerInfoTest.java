@@ -19,10 +19,18 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.Test;
 import org.keycloak.common.Version;
+import org.keycloak.keys.Attributes;
+import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.testsuite.util.KeystoreUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -56,6 +64,18 @@ public class ServerInfoTest extends AbstractKeycloakTest {
 
         assertNotNull(info.getMemoryInfo());
         assertNotNull(info.getSystemInfo());
+        assertNotNull(info.getCryptoInfo());
+        Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), KeystoreUtils.getSupportedKeystoreTypes());
+
+        ComponentTypeRepresentation rsaGeneratedProviderInfo = info.getComponentTypes().get(KeyProvider.class.getName())
+                .stream()
+                .filter(componentType -> GeneratedRsaKeyProviderFactory.ID.equals(componentType.getId()))
+                .findFirst().orElseThrow(() -> new RuntimeException("Not found provider with ID 'rsa-generated'"));
+        ConfigPropertyRepresentation keySizeRep = rsaGeneratedProviderInfo.getProperties()
+                .stream()
+                .filter(configProp -> Attributes.KEY_SIZE_KEY.equals(configProp.getName()))
+                .findFirst().orElseThrow(() -> new RuntimeException("Not found provider with ID 'rsa-generated'"));
+        Assert.assertNames(keySizeRep.getOptions(), KeyUtils.getExpectedSupportedRsaKeySizes());
 
         assertEquals(Version.VERSION, info.getSystemInfo().getVersion());
         assertNotNull(info.getSystemInfo().getServerTime());

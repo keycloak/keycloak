@@ -46,6 +46,13 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <modules>
@@ -55,13 +62,4 @@
         <module>utils</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>performance</id>
-            <modules>
-                <module>performance</module>
-            </modules>
-        </profile>
-    </profiles>
-        
 </project>

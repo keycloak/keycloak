@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.authSession;
 
+import org.keycloak.models.map.annotations.CollectionKey;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
@@ -31,6 +32,7 @@ import java.util.Set;
 @DeepCloner.Root
 public interface MapAuthenticationSessionEntity extends UpdatableEntity {
 
+    @CollectionKey
     String getTabId();
     void setTabId(String tabId);
 

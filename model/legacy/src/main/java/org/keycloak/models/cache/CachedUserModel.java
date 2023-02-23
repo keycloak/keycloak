@@ -59,10 +59,10 @@ public interface CachedUserModel extends UserModel {
     ConcurrentMap getCachedWith();
 
     /**
-     * The {@link CachedUserModel.Streams} interface differs from {@link CachedUserModel} in that it extends the
-     * {@link UserModel.Streams} interface, allowing implementations of {@link CachedUserModel} to focus on the
-     * {@link java.util.stream.Stream}-based methods in the {@link UserModel} interface.
+     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * and therefore the parent interface can be used directly
      */
+    @Deprecated
     interface Streams extends CachedUserModel, UserModel.Streams {
     }
 }

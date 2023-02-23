@@ -18,13 +18,12 @@
 
 package org.keycloak.testsuite.federation;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
@@ -80,7 +79,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         final String username = storageId.getExternalId();
         if (!users.containsKey(translateUserName(username))) return null;
@@ -215,7 +214,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
         Set<String> types = new HashSet<>();
 
         MyUser myUser = getMyUser(user);
@@ -223,7 +222,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
             types.add(CredentialModel.OTP);
         }
 
-        return types;
+        return types.stream();
     }
 
     @Override
@@ -291,14 +290,14 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
         if (!users.containsKey(translateUserName(username))) return null;
 
         return createUser(realm, username);
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         return null;
     }
 
@@ -322,12 +321,11 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, -1, -1);
+    public Stream<UserModel> getUsersStream(RealmModel realm) {
+        return getUsers(realm, -1, -1).stream();
     }
 
-    @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+    private List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
         return users.values()
                 .stream()
                 .skip(firstResult).limit(maxResults)
@@ -336,44 +334,44 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, -1, -1);
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
+        return searchForUserStream(realm, search, -1, -1);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
         UserModel user = getUserByUsername(realm, search);
-        return user == null ? Collections.emptyList() : Arrays.asList(user);
+        return user == null ? Stream.empty() : Stream.of(user);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override

@@ -22,7 +22,7 @@ In a production environment, Keycloak instances usually run in a private network
 For details on the endpoint categories and instructions on how to configure the public hostname for them, see the <@links.server id="hostname"/> guide.
 
 == Reverse proxy in a distributed environment
-Apart from <<Setting the hostname for Keycloak>>, production environments usually include a reverse proxy / load balancer component. It separates and unifies access to the network used by your company or organization. For a Keycloak production environment, this component is recommended.
+Apart from <@links.server id="hostname"/>, production environments usually include a reverse proxy / load balancer component. It separates and unifies access to the network used by your company or organization. For a Keycloak production environment, this component is recommended.
 
 For details on configuring proxy communication modes in Keycloak, see the <@links.server id="reverseproxy"/> guide. That guide also recommends which paths should be hidden from public access and which paths should be exposed so that Keycloak can secure your applications.
 
@@ -44,11 +44,13 @@ By default, Keycloak is configured to prefer IPv4 addresses. In order to run wit
 you need to specify `java.net.preferIPv4Stack=false` (the JVM default) and `java.net.preferIPv6Addresses=true`.
 The latter ensures that any hostname to IP address conversions always return IPv6 address variants.
 
-These system properties are conveniently set by the `JAVA_OPTS_APPEND` environment variable. For example, to change the IP stack preference from its default of IPv4 to IPv6, set an environment variable as follows:
+These system properties are conveniently set by the `JAVA_OPTS` environment variable. For example, to change the IP stack preference from its default of IPv4 to IPv6, set an environment variable as follows:
 
 [source, bash]
 ----
-export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+export JAVA_OPTS="-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
 ----
+
+Note that when setting the `JAVA_OPTS` you are replacing the default JVM settings. Make sure to adjust them accordingly to your need.
 
 </@tmpl.guide>

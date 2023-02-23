@@ -67,6 +67,8 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .observer(AppServerTestEnricher.class)
                 .observer(CrossDCTestEnricher.class)
                 .observer(HotRodStoreTestEnricher.class)
+                .observer(PostgresContainerTestEnricher.class)
+                .observer(CockroachdbContainerTestEnricher.class)
                 .observer(H2TestEnricher.class);
         builder
                 .service(TestExecutionDecider.class, MigrationTestExecutionDecider.class)

@@ -94,4 +94,27 @@ public interface MapKeycloakTransaction<V extends AbstractEntity, M> extends Key
      */
     long delete(QueryParameters<M> queryParameters);
 
+    /**
+     * Returns {@code true} if the object with the given {@code key} exists in the underlying storage with respect to changes done
+     * in current transaction. {@code false} otherwise.
+     *
+     * @param key Key of the object. Must not be {@code null}.
+     * @return See description
+     * @throws NullPointerException if the {@code key} is {@code null}
+     */
+    default boolean exists(String key) {
+        return read(key) != null;
+    }
+
+    /**
+     * Returns {@code true} if at least one object is satisfying given {@code criteria} from the underlying storage with respect to changes done
+     * in current transaction. {@code false} otherwise.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param queryParameters parameters for the query
+     * @return See description
+     */
+    default boolean exists(QueryParameters<M> queryParameters) {
+        return getCount(queryParameters) > 0;
+    }
 }

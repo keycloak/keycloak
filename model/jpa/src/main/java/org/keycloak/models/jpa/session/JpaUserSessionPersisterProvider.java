@@ -352,7 +352,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         query.setParameter("offline", offlineStr);
         query.setParameter("realmId", realm.getId());
 
-        return loadUserSessionsWithClientSessions(query, offlineStr);
+        return loadUserSessionsWithClientSessions(query, offlineStr, true);
     }
 
     @Override
@@ -368,7 +368,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         query.setParameter("realmId", realm.getId());
         query.setParameter("userId", user.getId());
 
-        return loadUserSessionsWithClientSessions(query, offlineStr);
+        return loadUserSessionsWithClientSessions(query, offlineStr, true);
     }
 
     public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
@@ -379,10 +379,20 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             .setParameter("offline", offlineStr)
             .setParameter("lastSessionId", lastUserSessionId), firstResult, maxResults);
 
-        return loadUserSessionsWithClientSessions(query, offlineStr);
+        return loadUserSessionsWithClientSessions(query, offlineStr, false);
     }
 
-    private Stream<UserSessionModel> loadUserSessionsWithClientSessions(TypedQuery<PersistentUserSessionEntity> query, String offlineStr) {
+    /**
+     *
+     * @param query
+     * @param offlineStr
+     * @param useExact If {@code true}, then only client sessions from the user sessions
+     *          obtained from the {@code query} are loaded. If {@code false}, then IDs of user sessions
+     *          returned by the query is taken as limits, and all client sessions are loaded that belong
+     *          to user sessions whose ID is in between the minimum and maximum ID from this result.
+     * @return
+     */
+    private Stream<UserSessionModel> loadUserSessionsWithClientSessions(TypedQuery<PersistentUserSessionEntity> query, String offlineStr, boolean useExact) {
 
         List<PersistentUserSessionAdapter> userSessionAdapters = closing(query.getResultStream()
                 .map(this::toAdapter)
@@ -392,16 +402,25 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         Map<String, PersistentUserSessionAdapter> sessionsById = userSessionAdapters.stream()
                 .collect(Collectors.toMap(UserSessionModel::getId, Function.identity()));
 
+        Set<String> userSessionIds = sessionsById.keySet();
+
         Set<String> removedClientUUIDs = new HashSet<>();
 
         if (!sessionsById.isEmpty()) {
-            String fromUserSessionId = userSessionAdapters.get(0).getId();
-            String toUserSessionId = userSessionAdapters.get(userSessionAdapters.size() - 1).getId();
+            TypedQuery<PersistentClientSessionEntity> queryClientSessions;
+            if (useExact) {
+                queryClientSessions = em.createNamedQuery("findClientSessionsOrderedByIdExact", PersistentClientSessionEntity.class);
+                queryClientSessions.setParameter("offline", offlineStr);
+                queryClientSessions.setParameter("userSessionIds", userSessionIds);
+            } else {
+                String fromUserSessionId = userSessionAdapters.get(0).getId();
+                String toUserSessionId = userSessionAdapters.get(userSessionAdapters.size() - 1).getId();
 
-            TypedQuery<PersistentClientSessionEntity> queryClientSessions = em.createNamedQuery("findClientSessionsOrderedById", PersistentClientSessionEntity.class);
-            queryClientSessions.setParameter("offline", offlineStr);
-            queryClientSessions.setParameter("fromSessionId", fromUserSessionId);
-            queryClientSessions.setParameter("toSessionId", toUserSessionId);
+                queryClientSessions = em.createNamedQuery("findClientSessionsOrderedByIdInterval", PersistentClientSessionEntity.class);
+                queryClientSessions.setParameter("offline", offlineStr);
+                queryClientSessions.setParameter("fromSessionId", fromUserSessionId);
+                queryClientSessions.setParameter("toSessionId", toUserSessionId);
+            }
 
             closing(queryClientSessions.getResultStream()).forEach(clientSession -> {
                 PersistentUserSessionAdapter userSession = sessionsById.get(clientSession.getUserSessionId());

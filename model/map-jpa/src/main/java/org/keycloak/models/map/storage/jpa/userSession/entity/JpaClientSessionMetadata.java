@@ -27,7 +27,7 @@ public class JpaClientSessionMetadata extends MapAuthenticatedClientSessionEntit
     }
 
     public JpaClientSessionMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

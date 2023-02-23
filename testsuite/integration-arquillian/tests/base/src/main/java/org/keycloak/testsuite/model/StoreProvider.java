@@ -38,7 +38,7 @@ public enum StoreProvider {
         public void addStoreOptions(List<String> commands) {
             commands.add("--storage=" + getAlias());
             getDbVendor().ifPresent(vendor -> commands.add("--db=" + vendor));
-            commands.add("--db-url='" + System.getProperty("keycloak.map.storage.connectionsJpa.url") + "'");
+            commands.add("--db-url=" + System.getProperty("keycloak.map.storage.connectionsJpa.url"));
             commands.add("--db-username=" + System.getProperty("keycloak.map.storage.connectionsJpa.user"));
             commands.add("--db-password=" + System.getProperty("keycloak.map.storage.connectionsJpa.password"));
         }
@@ -48,8 +48,8 @@ public enum StoreProvider {
         public void addStoreOptions(List<String> commands) {
             commands.add("--storage=" + getAlias());
             commands.add("--storage-hotrod-host='" + System.getProperty("keycloak.connectionsHotRod.host") + "'");
-            commands.add("--storage-hotrod-username" + System.getProperty("keycloak.connectionsHotRod.username"));
-            commands.add("--storage-hotrod-password" + System.getProperty("keycloak.connectionsHotRod.password"));
+            commands.add("--storage-hotrod-username=" + System.getProperty("keycloak.connectionsHotRod.username", "admin"));
+            commands.add("--storage-hotrod-password=" + System.getProperty("keycloak.connectionsHotRod.password", "admin"));
         }
     },
     LEGACY("legacy") {
@@ -59,6 +59,9 @@ public enum StoreProvider {
             commands.add("--db-url='" + System.getProperty("keycloak.connectionsJpa.url") + "'");
             commands.add("--db-username=" + System.getProperty("keycloak.connectionsJpa.user"));
             commands.add("--db-password=" + System.getProperty("keycloak.connectionsJpa.password"));
+            if ("mssql".equals(getDbVendor().orElse(null))){
+                commands.add("--transaction-xa-enabled=false");
+            }
         }
     },
     DEFAULT("default") {

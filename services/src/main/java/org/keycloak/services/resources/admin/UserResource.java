@@ -18,11 +18,12 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
+import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
@@ -92,7 +93,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -129,27 +129,27 @@ import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForM
 public class UserResource {
     private static final Logger logger = Logger.getLogger(UserResource.class);
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    private AdminPermissionEvaluator auth;
+    private final AdminPermissionEvaluator auth;
 
-    private AdminEventBuilder adminEvent;
-    private UserModel user;
+    private final AdminEventBuilder adminEvent;
+    private final UserModel user;
 
-    @Context
-    protected ClientConnection clientConnection;
+    protected final ClientConnection clientConnection;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
     
-    public UserResource(RealmModel realm, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public UserResource(KeycloakSession session, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
+        this.clientConnection = session.getContext().getConnection();
         this.user = user;
         this.adminEvent = adminEvent.resource(ResourceType.USER);
+        this.headers = session.getContext().getRequestHeaders();
     }
     
     /**
@@ -206,15 +206,20 @@ public class UserResource {
             }
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
+            session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
+            session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
+            session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         } catch (ForbiddenException fe) {
+            session.getTransactionManager().setRollbackOnly();
             throw fe;
         } catch (Exception me) { // JPA
+            session.getTransactionManager().setRollbackOnly();
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
             return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         }
@@ -326,8 +331,8 @@ public class UserResource {
         if (authenticatedRealm.getId().equals(realm.getId()) && sessionState != null) {
             sameRealm = true;
             UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(authenticatedRealm, sessionState));
-            AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
-            AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), clientConnection);
+            AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
+            AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), session);
             AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, session.getContext().getUri(), clientConnection, headers, true);
         }
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
@@ -581,10 +586,7 @@ public class UserResource {
     public RoleMapperResource getRoleMappings() {
         AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.users().requireMapRoles(user);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.users().requireView(user);
-        RoleMapperResource resource =  new RoleMapperResource(realm, auth, user, adminEvent, manageCheck, viewCheck);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
-
+        return new RoleMapperResource(session, auth, user, adminEvent, manageCheck, viewCheck);
     }
 
     /**
@@ -763,7 +765,7 @@ public class UserResource {
 
 
     /**
-     * Send a update account email to the user
+     * Send an email to the user with a link they can click to execute particular actions.
      *
      * An email contains a link the user can click to perform a set of required actions.
      * The redirectUri and clientId parameters are optional. If no redirect is given, then there will
@@ -773,7 +775,7 @@ public class UserResource {
      * @param redirectUri Redirect uri
      * @param clientId Client id
      * @param lifespan Number of seconds after which the generated token expires
-     * @param actions required actions the user needs to complete
+     * @param actions Required actions the user needs to complete
      * @return
      */
     @Path("execute-actions-email")
@@ -801,6 +803,11 @@ public class UserResource {
 
         if (clientId == null) {
             clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+        }
+
+        if (CollectionUtil.isNotEmpty(actions) && !RequiredActionsValidator.validRequiredActions(session, actions)) {
+            throw new WebApplicationException(
+                ErrorResponse.error("Provided invalid required actions", Status.BAD_REQUEST));
         }
 
         ClientModel client = realm.getClientByClientId(clientId);
@@ -883,12 +890,10 @@ public class UserResource {
                                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.users().requireView(user);
 
-        if (Objects.nonNull(search) && Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+        if (Objects.nonNull(search)) {
             return ModelToRepresentation.searchForGroupByName(user, !briefRepresentation, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         } else {
-            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation);
+            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         }
     }
 

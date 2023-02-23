@@ -19,8 +19,7 @@ package org.keycloak.services.resources.admin;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.keycloak.http.FormPartValue;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -28,7 +27,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.stream.Stream;
@@ -44,8 +42,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
@@ -53,11 +51,11 @@ public class RealmLocalizationResource {
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public RealmLocalizationResource(RealmModel realm, AdminPermissionEvaluator auth) {
-        this.realm = realm;
+    public RealmLocalizationResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
     }
 
@@ -83,16 +81,14 @@ public class RealmLocalizationResource {
     @POST
     @Path("{locale}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public void createOrUpdateRealmLocalizationTextsFromFile(@PathParam("locale") String locale,
-            MultipartFormDataInput input) {
+    public void createOrUpdateRealmLocalizationTextsFromFile(@PathParam("locale") String locale) {
         this.auth.realm().requireManageRealm();
 
-        Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
+        MultivaluedMap<String, FormPartValue> formDataMap = session.getContext().getHttpRequest().getMultiPartFormParameters();
         if (!formDataMap.containsKey("file")) {
             throw new BadRequestException();
         }
-        InputPart file = formDataMap.get("file").get(0);
-        try (InputStream inputStream = file.getBody(InputStream.class, null)) {
+        try (InputStream inputStream = formDataMap.getFirst("file").asInputStream()) {
             TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() {
             };
             Map<String, String> rep = JsonSerialization.readValue(inputStream, typeRef);

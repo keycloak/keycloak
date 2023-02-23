@@ -30,8 +30,10 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.*;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.keys.Attributes;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -41,7 +43,6 @@ import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestingCacheResource;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -146,7 +147,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         cfg.setValidateSignature(true);
         cfg.setUseJwksUrl(false);
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), Algorithm.RS256);
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = org.keycloak.testsuite.util.KeyUtils.findActiveSigningKey(providerRealm(), Algorithm.RS256);
         cfg.setPublicKeySignatureVerifier(key.getPublicKey());
         updateIdentityProvider(idpRep);
 
@@ -181,7 +182,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         rotateKeys(Algorithm.ES256, "ecdsa-generated");
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), Algorithm.ES256);
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = org.keycloak.testsuite.util.KeyUtils.findActiveSigningKey(providerRealm(), Algorithm.ES256);
         cfg.setPublicKeySignatureVerifier(key.getPublicKey());
         updateIdentityProvider(idpRep);
 
@@ -209,7 +210,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         rotateKeys(Algorithm.PS512, "rsa-generated");
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), Algorithm.PS512);
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = org.keycloak.testsuite.util.KeyUtils.findActiveSigningKey(providerRealm(), Algorithm.PS512);
         cfg.setPublicKeySignatureVerifier(key.getPublicKey());
         updateIdentityProvider(idpRep);
 
@@ -263,7 +264,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         cfg.setValidateSignature(true);
         cfg.setUseJwksUrl(false);
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), Algorithm.RS256);
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = org.keycloak.testsuite.util.KeyUtils.findActiveSigningKey(providerRealm(), Algorithm.RS256);
         String pemData = key.getPublicKey();
         cfg.setPublicKeySignatureVerifier(pemData);
         String expectedKeyId = KeyUtils.createKeyId(PemUtils.decodePublicKey(pemData));
@@ -404,11 +405,51 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         }
     }
 
+    // GH issue 14794
+    @Test
+    public void testMultipleKeysWithSameKid() throws Exception {
+        updateIdentityProviderWithJwksUrl();
+        String activeKid = providerRealm().keys().getKeyMetadata().getActive().get(Constants.DEFAULT_SIGNATURE_ALGORITHM);
+
+        // Set the same "kid" of the default key and newly created key.
+        // Assumption is that used algorithm RS512 is NOT the realm default one. When the realm default is updated to RS512, this one will need to change
+        ComponentRepresentation newKeyRep = createComponentRep(Algorithm.RS512, "rsa-generated", providerRealm().toRepresentation().getId());
+        newKeyRep.getConfig().putSingle(Attributes.KID_KEY, activeKid);
+        try (Response response = providerRealm().components().add(newKeyRep)) {
+            assertEquals(201, response.getStatus());
+        }
+
+        try (Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+                .setAttribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.RS512)
+                .setAttribute(OIDCConfigAttributes.AUTHORIZATION_SIGNED_RESPONSE_ALG, Algorithm.RS512)
+                .setAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.RS512)
+                .update()) {
+
+            // Check that user is able to login with ES256
+            logInAsUserInIDPForFirstTime();
+            assertLoggedInAccountManagement();
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+
+            logInAsUserInIDP();
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        }
+    }
+
     private void rotateKeys(String algorithm, String providerId) {
         String activeKid = providerRealm().keys().getKeyMetadata().getActive().get(algorithm);
 
         // Rotate public keys on the parent broker
         String realmId = providerRealm().toRepresentation().getId();
+        ComponentRepresentation keys = createComponentRep(algorithm, providerId, realmId);
+        try (Response response = providerRealm().components().add(keys)) {
+            assertEquals(201, response.getStatus());
+        }
+
+        String updatedActiveKid = providerRealm().keys().getKeyMetadata().getActive().get(algorithm);
+        assertNotEquals(activeKid, updatedActiveKid);
+    }
+
+    private ComponentRepresentation createComponentRep(String algorithm, String providerId, String realmId) {
         ComponentRepresentation keys = new ComponentRepresentation();
         keys.setName("generated");
         keys.setProviderType(KeyProvider.class.getName());
@@ -417,12 +458,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         keys.setConfig(new MultivaluedHashMap<>());
         keys.getConfig().putSingle("priority", Long.toString(System.currentTimeMillis()));
         keys.getConfig().putSingle("algorithm", algorithm);
-        try (Response response = providerRealm().components().add(keys)) {
-            assertEquals(201, response.getStatus());
-        }
-
-        String updatedActiveKid = providerRealm().keys().getKeyMetadata().getActive().get(algorithm);
-        assertNotEquals(activeKid, updatedActiveKid);
+        return keys;
     }
 
     private void createHSKey(String algorithm, String size, String secret) {

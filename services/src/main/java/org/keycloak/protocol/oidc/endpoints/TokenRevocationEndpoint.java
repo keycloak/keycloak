@@ -24,13 +24,12 @@ import java.util.stream.Collectors;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -62,32 +61,30 @@ import org.keycloak.util.TokenUtil;
 public class TokenRevocationEndpoint {
     private static final String PARAM_TOKEN = "token";
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
-    @Context
-    private HttpHeaders headers;
-
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
-    private RealmModel realm;
-    private EventBuilder event;
+    private final RealmModel realm;
+    private final EventBuilder event;
     private Cors cors;
     private AccessToken token;
     private UserModel user;
 
-    public TokenRevocationEndpoint(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    public TokenRevocationEndpoint(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
+        this.request = session.getContext().getHttpRequest();
     }
 
     @POST
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response revoke() {
         event.event(EventType.REVOKE_GRANT);

@@ -70,6 +70,8 @@ public class IdentityProviderModel implements Serializable {
 
     private String displayName;
 
+    private String displayIconClasses;
+
     private IdentityProviderSyncMode syncMode;
 
     /**
@@ -96,6 +98,7 @@ public class IdentityProviderModel implements Serializable {
             this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
             this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
             this.postBrokerLoginFlowId = model.getPostBrokerLoginFlowId();
+            this.displayIconClasses = model.getDisplayIconClasses();
         }
     }
 
@@ -203,6 +206,10 @@ public class IdentityProviderModel implements Serializable {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getDisplayIconClasses() {
+        return displayIconClasses;
     }
 
     /**

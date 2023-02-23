@@ -40,7 +40,6 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -52,7 +51,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -62,16 +60,12 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  */
 public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
-    private static final String PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=";
-    private static final String PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
     private static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         super.addTestRealms(testRealms);
         RealmRepresentation testRealm = testRealms.get(0);
-        testRealm.setPrivateKey(PRIVATE_KEY);
-        testRealm.setPublicKey(PUBLIC_KEY);
 
         ClientRepresentation samlApp = KeycloakModelUtils.createClient(testRealm, "saml-client");
         samlApp.setSecret("secret");
@@ -587,32 +581,6 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    public void testOIDCEndpointCreateWithSamlClient() throws Exception {
-        ClientsResource clientsResource = adminClient.realm(TEST).clients();
-        ClientRepresentation samlClient = clientsResource.findByClientId("saml-client").get(0);
-        String samlClientServiceId = clientsResource.get(samlClient.getId()).getServiceAccountUser().getId();
-
-        String realmManagementId = clientsResource.findByClientId("realm-management").get(0).getId();
-        RoleRepresentation role = clientsResource.get(realmManagementId).roles().get("create-client").toRepresentation();
-
-        adminClient.realm(TEST).users().get(samlClientServiceId).roles().clientLevel(realmManagementId).add(Arrays.asList(role));
-
-        String accessToken = oauth.clientId("saml-client").doClientCredentialsGrantAccessTokenRequest("secret").getAccessToken();
-        reg.auth(Auth.token(accessToken));
-
-        // change client to saml
-        samlClient.setProtocol("saml");
-        clientsResource.get(samlClient.getId()).update(samlClient);
-
-        OIDCClientRepresentation client = createRep();
-        assertCreateFail(client, 400, Errors.INVALID_CLIENT);
-
-        // revert client
-        samlClient.setProtocol("openid-connect");
-        clientsResource.get(samlClient.getId()).update(samlClient);
-    }
-
-    @Test
     public void testOIDCEndpointGetWithSamlClient() throws Exception {
         OIDCClientRepresentation response = create();
         reg.auth(Auth.token(response));
@@ -866,6 +834,22 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     public void testPostLogoutRedirectUriNull() throws Exception {
         OIDCClientRepresentation clientRep = createRep();
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
-        assertNull(response.getPostLogoutRedirectUris());
+        assertEquals("http://redirect", response.getPostLogoutRedirectUris().get(0));
+    }
+
+    @Test
+    public void testPostLogoutRedirectUriEmpty() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setPostLogoutRedirectUris(new ArrayList<String>());
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertEquals("http://redirect", response.getPostLogoutRedirectUris().get(0));
+    }
+
+    @Test
+    public void testPostLogoutRedirectUriMinus() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setPostLogoutRedirectUris(Collections.singletonList("-"));
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertTrue(response.getPostLogoutRedirectUris().isEmpty());
     }
 }

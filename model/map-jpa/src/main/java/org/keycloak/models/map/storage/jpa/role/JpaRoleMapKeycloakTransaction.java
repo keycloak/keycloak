@@ -21,10 +21,13 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.role.MapRoleEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
+import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
+
 import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
@@ -32,6 +35,8 @@ import org.keycloak.models.map.storage.jpa.role.delegate.JpaMapRoleEntityDelegat
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 
 public class JpaRoleMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaRoleEntity, MapRoleEntity, RoleModel> {
+
+    private static final Logger logger = Logger.getLogger(JpaRoleMapKeycloakTransaction.class);
 
     @SuppressWarnings("unchecked")
     public JpaRoleMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
@@ -59,6 +64,16 @@ public class JpaRoleMapKeycloakTransaction extends JpaMapKeycloakTransaction<Jpa
     @Override
     public JpaModelCriteriaBuilder createJpaModelCriteriaBuilder() {
         return new JpaRoleModelCriteriaBuilder();
+    }
+
+    @Override
+    public MapRoleEntity create(MapRoleEntity mapEntity) {
+        JpaRoleEntity jpaEntity = new JpaRoleEntity(CLONER);
+        MapRoleEntity entity = new JpaMapRoleEntityDelegate(jpaEntity, em);
+        CLONER.deepClone(mapEntity, entity);
+        logger.tracef("tx %d: create entity %s", hashCode(), jpaEntity.getId());
+        setEntityVersion(jpaEntity);
+        return mapToEntityDelegateUnique(jpaEntity);
     }
 
     @Override

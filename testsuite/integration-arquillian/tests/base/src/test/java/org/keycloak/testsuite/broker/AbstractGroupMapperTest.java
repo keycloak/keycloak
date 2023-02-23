@@ -41,10 +41,10 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
             IdentityProviderRepresentation idp, IdentityProviderMapperSyncMode syncMode, String groupPath);
 
     /**
-     * Sets up a scenario with a matching group.
+     * Sets up a scenario with the given group path.
      * @return the ID of the mapper
      */
-    protected abstract String setupScenarioWithMatchingGroup();
+    protected abstract String setupScenarioWithGroupPath(String groupPath);
 
     protected abstract void setupScenarioWithNonExistingGroup();
 
@@ -58,65 +58,6 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
 
         Response response = adminClient.realm(bc.consumerRealmName()).groups().add(mapperTestGroup);
         mapperGroupId = CreatedResponseUtil.getCreatedId(response);
-    }
-
-    @Test
-    public void tryToCreateBrokeredUserWithNonExistingGroupDoesNotBreakLogin() {
-        setupScenarioWithNonExistingGroup();
-
-        logInAsUserInIDPForFirstTimeAndAssertSuccess();
-
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatUserDoesNotHaveGroups(user);
-    }
-
-    @Test
-    public void mapperStillWorksWhenGroupIsMoved() {
-        final String mapperId = setupScenarioWithMatchingGroup();
-
-        String newParentGroupName = "new-parent";
-        GroupRepresentation newParentGroup = new GroupRepresentation();
-        newParentGroup.setName(newParentGroupName);
-        String newParentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(newParentGroup));
-
-        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
-        realm.groups().group(newParentGroupId).subGroup(mappedGroup).close();
-
-        String expectedNewGroupPath = buildGroupPath(newParentGroupName, MAPPER_TEST_GROUP_NAME);
-
-        // mapper should have been updated to the new path of the group
-        IdentityProviderMapperRepresentation mapper =
-                realm.identityProviders().get(bc.getIDPAlias()).getMapperById(mapperId);
-        Map<String, String> config = mapper.getConfig();
-        assertThat(config.get(ConfigConstants.GROUP), equalTo(expectedNewGroupPath));
-
-        logInAsUserInIDPForFirstTimeAndAssertSuccess();
-
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatUserHasBeenAssignedToGroup(user, expectedNewGroupPath);
-    }
-
-    @Test
-    public void mapperStillWorksWhenGroupIsRenamed() {
-        final String mapperId = setupScenarioWithMatchingGroup();
-
-        String newGroupName = "new-name-" + MAPPER_TEST_GROUP_NAME;
-        GroupRepresentation mappedGroup = realm.groups().group(mapperGroupId).toRepresentation();
-        mappedGroup.setName(newGroupName);
-        realm.groups().group(mapperGroupId).update(mappedGroup);
-
-        String expectedNewGroupPath = buildGroupPath(newGroupName);
-
-        // mapper should have been updated to the new path of the group
-        IdentityProviderMapperRepresentation mapper =
-                realm.identityProviders().get(bc.getIDPAlias()).getMapperById(mapperId);
-        Map<String, String> config = mapper.getConfig();
-        assertThat(config.get(ConfigConstants.GROUP), equalTo(expectedNewGroupPath));
-
-        logInAsUserInIDPForFirstTimeAndAssertSuccess();
-
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatUserHasBeenAssignedToGroup(user, expectedNewGroupPath);
     }
 
     protected UserRepresentation loginAsUserTwiceWithMapper(
@@ -149,6 +90,18 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
 
         user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
         return user;
+    }
+
+    protected void assertMapperHasExpectedPathAndSucceeds(String mapperId, String expectedGroupPath) {
+        IdentityProviderMapperRepresentation mapper =
+                realm.identityProviders().get(bc.getIDPAlias()).getMapperById(mapperId);
+        Map<String, String> config = mapper.getConfig();
+        assertThat(config.get(ConfigConstants.GROUP), equalTo(expectedGroupPath));
+
+        logInAsUserInIDPForFirstTimeAndAssertSuccess();
+
+        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
+        assertThatUserHasBeenAssignedToGroup(user, expectedGroupPath);
     }
 
     protected void assertThatUserHasBeenAssignedToGroup(UserRepresentation user) {

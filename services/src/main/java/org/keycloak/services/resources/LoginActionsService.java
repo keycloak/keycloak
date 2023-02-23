@@ -17,7 +17,8 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.common.util.ResponseSessionTask;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -80,6 +81,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -91,7 +93,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -99,11 +100,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriBuilderException;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.Providers;
 import java.net.URI;
 import java.util.Map;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
+import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -128,22 +129,15 @@ public class LoginActionsService {
     
     public static final String CANCEL_AIA = "cancel-aia";
 
-    private RealmModel realm;
+    private final RealmModel realm;
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
-    @Context
-    protected Providers providers;
-
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
     private EventBuilder event;
 
@@ -180,10 +174,14 @@ public class LoginActionsService {
         return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getLoginActionsService");
     }
 
-    public LoginActionsService(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    public LoginActionsService(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
+        this.request = session.getContext().getHttpRequest();
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     private boolean checkSsl() {
@@ -259,6 +257,21 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
+        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+            @Override
+            public Response runInternal(KeycloakSession session) {
+                // create another instance of the endpoint to isolate each run.
+                CookieHelper.addCookiesAtEndOfTransaction(session);
+                LoginActionsService other = new LoginActionsService(session, new EventBuilder(session.getContext().getRealm(), session, clientConnection));
+                // process the request in the created instance.
+                return other.authenticateInternal(authSessionId, code, execution, clientId, tabId);
+            }
+        }, 10, 100);
+
+    }
+
+    private Response authenticateInternal(final String authSessionId, final String code, final String execution,
+                                          final String clientId, final String tabId) {
         event.event(EventType.LOGIN);
 
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, AUTHENTICATE_PATH);
@@ -706,7 +719,7 @@ public class LoginActionsService {
 
         processLocaleParam(authSession);
 
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
+        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
 
         return processRegistration(checks.isActionRequest(), execution, authSession, null);
     }
@@ -997,7 +1010,7 @@ public class LoginActionsService {
         event.event(EventType.CUSTOM_REQUIRED_ACTION);
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
 
-        RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, action);
+        RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, getDefaultRequiredActionCaseInsensitively(action));
         if (factory == null) {
             ServicesLogger.LOGGER.actionProviderNull();
             event.error(Errors.INVALID_CODE);

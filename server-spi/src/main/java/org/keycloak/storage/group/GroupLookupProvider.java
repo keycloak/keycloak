@@ -34,21 +34,6 @@ public interface GroupLookupProvider {
      * @return GroupModel with the corresponding id.
      */
     GroupModel getGroupById(RealmModel realm, String id);
-    
-    /**
-     * Returns groups with the given string in name for the given realm.
-     *
-     * @param realm Realm.
-     * @param search Case sensitive searched string.
-     * @param firstResult First result to return. Ignored if {@code null}.
-     * @param maxResults Maximum number of results to return. Ignored if {@code null}.
-     * @return List of groups with the given string in name.
-     * @deprecated Use {@link #searchForGroupByNameStream(RealmModel, String, Integer, Integer) searchForGroupByNameStream} instead.
-     */
-    @Deprecated
-    default List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        return searchForGroupByNameStream(realm, search, firstResult, maxResults).collect(Collectors.toList());
-    }
 
     /**
      * Returns the group hierarchy with the given string in name for the given realm.

@@ -18,6 +18,7 @@
 package org.keycloak.models.map.user;
 
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.map.annotations.CollectionKey;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
@@ -28,7 +29,7 @@ public interface MapUserFederatedIdentityEntity extends UpdatableEntity {
 
     public static MapUserFederatedIdentityEntity fromModel(FederatedIdentityModel model) {
         if (model == null) return null;
-        MapUserFederatedIdentityEntity entity = new MapUserFederatedIdentityEntityImpl();
+        MapUserFederatedIdentityEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapUserFederatedIdentityEntity.class);
         entity.setIdentityProvider(model.getIdentityProvider());
         entity.setUserId(model.getUserId());
         entity.setUserName(model.getUserName().toLowerCase());
@@ -48,6 +49,7 @@ public interface MapUserFederatedIdentityEntity extends UpdatableEntity {
     String getUserId();
     void setUserId(String userId);
 
+    @CollectionKey
     String getIdentityProvider();
     void setIdentityProvider(String identityProvider);
 
