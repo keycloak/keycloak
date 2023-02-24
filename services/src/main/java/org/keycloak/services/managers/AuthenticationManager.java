@@ -909,7 +909,6 @@ public class AuthenticationManager {
         AuthResult authResult = verifyIdentityToken(session, realm, session.getContext().getUri(), session.getContext().getConnection(), checkActive, false, null, true, tokenString, session.getContext().getRequestHeaders(), VALIDATE_IDENTITY_COOKIE);
         if (authResult == null) {
             expireIdentityCookie(realm, session.getContext().getUri(), session);
-            expireOldIdentityCookie(realm, session.getContext().getUri(), session);
             return null;
         }
         authResult.getSession().setLastSessionRefresh(Time.currentTime());
