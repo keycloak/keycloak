@@ -16,20 +16,25 @@
  */
 package org.keycloak.testsuite.cookies;
 
+import org.apache.http.Header;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -40,7 +45,10 @@ import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.openqa.selenium.Cookie;
 
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -55,6 +63,8 @@ import static org.keycloak.services.managers.AuthenticationSessionManager.AUTH_S
 import static org.keycloak.services.util.CookieHelper.LEGACY_COOKIE;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+
+import javax.ws.rs.core.HttpHeaders;
 
 /**
  *
@@ -184,6 +194,48 @@ public class CookieTest extends AbstractKeycloakTest {
         assertSameSiteCookies(sameSiteIdentityCookie, legacyIdentityCookie);
         assertSameSiteCookies(sameSiteSessionCookie, legacySessionCookie);
         assertSameSiteCookies(sameSiteAuthSessionIdCookie, legacyAuthSessionIdCookie);
+    }
+
+    @Test
+    public void testNoDuplicationsWhenExpiringCookies() throws IOException {
+        ContainerAssume.assumeAuthServerSSL();
+
+        accountPage.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(accountPage);
+
+        loginPage.login("test-user@localhost", "password");
+
+        UsersResource usersResource = realmsResouce().realm(AuthRealm.TEST).users();
+        UserRepresentation user = usersResource.search("test-user@localhost").get(0);
+
+        usersResource.get(user.getId()).logout();
+
+        Cookie invalidIdentityCookie = driver.manage().getCookieNamed(KEYCLOAK_IDENTITY_COOKIE);
+        CookieStore cookieStore = new BasicCookieStore();
+
+        BasicClientCookie invalidClientIdentityCookie = new BasicClientCookie(invalidIdentityCookie.getName(), invalidIdentityCookie.getValue());
+
+        invalidClientIdentityCookie.setDomain(invalidIdentityCookie.getDomain());
+        invalidClientIdentityCookie.setPath(invalidClientIdentityCookie.getPath());
+
+        cookieStore.addCookie(invalidClientIdentityCookie);
+
+        try (CloseableHttpClient client = HttpClients.custom().setDefaultCookieStore(cookieStore).build()) {
+            HttpGet get = new HttpGet(
+                    suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/" + AuthRealm.TEST + "/protocol/openid-connect/auth?response_type=code&client_id=" + Constants.ACCOUNT_CONSOLE_CLIENT_ID +
+                            "&redirect_uri=" + suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/" + AuthRealm.TEST + "/account&scope=openid");
+
+            try (CloseableHttpResponse response = client.execute(get)) {
+                Header[] headers = response.getHeaders(HttpHeaders.SET_COOKIE);
+                Set<String> cookies = new HashSet<>();
+
+                for (Header header : headers) {
+                    assertTrue("Cookie '" + header.getValue() + "' is duplicated", cookies.add(header.getValue()));
+                }
+
+                assertFalse(cookies.isEmpty());
+            }
+        }
     }
 
     private void assertSameSiteCookies(Cookie sameSiteCookie, Cookie legacyCookie) {
