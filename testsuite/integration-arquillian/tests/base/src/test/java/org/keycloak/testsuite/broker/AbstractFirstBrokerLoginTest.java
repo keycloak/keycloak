@@ -1010,7 +1010,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         RealmRepresentation consumerRealmRep = adminClient.realm(bc.consumerRealmName()).toRepresentation();
 
         events.expectAccount(EventType.IDENTITY_PROVIDER_FIRST_LOGIN).realm(consumerRealmRep).user((String)null)
-                .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
+                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
                 .assertEvent(getFirstConsumerEvent());
 
@@ -1057,7 +1057,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         RealmRepresentation consumerRealmRep = adminClient.realm(bc.consumerRealmName()).toRepresentation();
 
         events.expectAccount(EventType.IDENTITY_PROVIDER_FIRST_LOGIN).realm(consumerRealmRep).user((String)null)
-                .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
+                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
                 .assertEvent(getFirstConsumerEvent());
 
