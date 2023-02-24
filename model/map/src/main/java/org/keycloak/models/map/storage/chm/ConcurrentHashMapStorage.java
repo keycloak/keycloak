@@ -42,14 +42,14 @@ import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.SearchableModelField;
 import java.util.function.Consumer;
 
-public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M>, KeycloakTransaction, HasRealmId {
+public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M, CRUD extends CrudOperations<V, M>> implements MapStorage<V, M>, KeycloakTransaction, HasRealmId {
 
     private final static Logger log = Logger.getLogger(ConcurrentHashMapStorage.class);
 
     protected boolean active;
     protected boolean rollback;
     protected final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
-    protected final CrudOperations<V, M> map;
+    protected final CRUD map;
     protected final StringKeyConverter<K> keyConverter;
     protected final DeepCloner cloner;
     protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
@@ -61,11 +61,11 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapStorage(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
+    public ConcurrentHashMapStorage(CRUD map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
         this(map, keyConverter, cloner, fieldPredicates, null);
     }
 
-    public ConcurrentHashMapStorage(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, EntityField<V> realmIdEntityField) {
+    public ConcurrentHashMapStorage(CRUD map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, EntityField<V> realmIdEntityField) {
         this.map = map;
         this.keyConverter = keyConverter;
         this.cloner = cloner;
@@ -248,7 +248,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
 
     @Override
     public V create(V value) {
-        String key = map.determineKeyFromValue(value, true);
+        String key = map.determineKeyFromValue(value);
         if (key == null) {
             K newKey = keyConverter.yieldNewUniqueKey();
             key = keyConverter.keyToString(newKey);

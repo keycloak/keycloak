@@ -50,7 +50,7 @@ import java.util.function.Function;
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
-  extends ConcurrentHashMapStorage<String, V, M> {
+  extends ConcurrentHashMapStorage<String, V, M, FileCrudOperations<V, M>> {
 
     private static final Logger LOG = Logger.getLogger(FileMapStorage.class);
 
@@ -203,7 +203,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
 
     private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileCrudOperations<V, M> {
 
-        private FileMapStorage store;
+        private FileMapStorage<V, M> store;
 
         public Crud(Class<V> entityClass, Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath, boolean isExpirableEntity) {
             super(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity);
@@ -250,7 +250,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
         public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<V>> & org.keycloak.models.map.common.EntityField<V>> void set(EF field, T value) {
             String id = entity.getId();
             super.set(field, value);
-            if (! Objects.equals(id, map.determineKeyFromValue(entity, false))) {
+            if (! Objects.equals(id, map.determineKeyFromValue(entity, "RAND"))) {
                 throw new ReadOnlyException("Cannot change " + field + " as that would change primary key");
             }
         }
