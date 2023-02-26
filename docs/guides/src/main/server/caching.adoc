@@ -204,7 +204,7 @@ For more details, see https://infinispan.org/docs/stable/titles/server/server.ht
     <SSL_KEY_EXCHANGE keystore_name="server.jks"
         keystore_password="password"
         stack.combine="INSERT_AFTER"
-        stack.position="VERIFY_SUSPECT"/>
+        stack.position="VERIFY_SUSPECT2"/>
         <ASYM_ENCRYPT asym_keylength="2048"
         asym_algorithm="RSA"
         change_key_on_coord_leave = "false"
