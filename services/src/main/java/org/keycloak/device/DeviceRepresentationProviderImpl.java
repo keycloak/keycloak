@@ -7,7 +7,7 @@ import org.keycloak.representations.account.DeviceRepresentation;
 import ua_parser.Client;
 import ua_parser.Parser;
 
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.HttpHeaders;
 
 public class DeviceRepresentationProviderImpl implements DeviceRepresentationProvider {
     private static final Logger logger = Logger.getLogger(DeviceActivityManager.class);
