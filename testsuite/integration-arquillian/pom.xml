@@ -57,6 +57,7 @@
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
         <appium.client.version>6.1.0</appium.client.version>
+        <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>
