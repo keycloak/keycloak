@@ -95,7 +95,7 @@ For more control over the protocol mapper, you can create the protocol mapper on
 .Audience protocol mapper
 image:images/audience_mapper.png[]
 
-* From the <<_client_installation, Installation tab>> of the *good-service* client, you can generate the adapter configuration and you can confirm that _verify-token-audience_ option will be set to *true*. This forces the adapter to verify the audience if you use this configuration.
+* From the <<_client_installation, Client details tab>> of the *good-service* client, you can generate the adapter configuration and confirm that _verify-token-audience_  is set to *true*. This action forces the adapter to verify the audience if you use this configuration.
 
 * You need to ensure that the confidential client is able to request *good-service* as an audience in its tokens.
 +

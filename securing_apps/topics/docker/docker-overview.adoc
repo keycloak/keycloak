@@ -29,7 +29,7 @@ WARNING: Don't forget to configure the `rootcertbundle` field with the location 
 
 === Docker registry environment variable override installation
 
-Often times it is appropriate to use a simple environment variable override for develop or POC Docker registries.  While this approach is usually not recommended for production use, it can be helpful when one requires quick-and-dirty way to stand up a registry.  Simply use the _Variable Override_ Format Option from the client installation tab, and an output should appear like the one below:
+Often times it is appropriate to use a simple environment variable override for develop or POC Docker registries. While this approach is usually not recommended for production use, it can be helpful when one requires quick-and-dirty way to stand up a registry. Simply use the _Variable Override_ Format Option from the client details, and an output should appear like the one below:
 
 [source,subs="attributes+"]
 ----
@@ -49,8 +49,8 @@ The zip file installation mechanism provides a quickstart for developers who wan
 
 .Procedure
 
-1. From the desired realm, create a client configuration.  At this point you won't have a Docker registry - the quickstart will take care of that part.
- 2. Choose the "Docker Compose YAML" option from the installation tab and download the .zip file
+ 1. From the desired realm, create a client configuration. At this point you will not have a Docker registry - the quickstart will take care of that part.
+ 2. Choose the "Docker Compose YAML" option from the from _Action_ menu and select the *Download adapter config* option to download the ZIP file.
  3. Unzip the archive to the desired location, and open the directory.
  4. Start the Docker registry with `docker-compose up`
 

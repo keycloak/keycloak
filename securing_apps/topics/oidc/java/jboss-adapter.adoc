@@ -223,7 +223,7 @@ Its value is the `module-name` defined in `web.xml` with `.war` appended. The re
 
 The exception is the `credential` element.
 
-To make it easier for you, you can go to the {project_name} Admin Console and go to the Client/Installation tab of the application this WAR is aligned with.
+To simplify this change, log into the Admin Console and go to the Client details of the application this WAR is aligned with. Then, from the _Action_ menu, select the *Download adapter config* option.
 It provides an example XML file you can cut and paste.
 
 If you have multiple deployments secured by the same realm you can share the realm configuration in a separate element. For example:
