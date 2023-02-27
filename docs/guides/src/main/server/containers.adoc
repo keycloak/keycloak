@@ -16,7 +16,7 @@ The default Keycloak container image ships ready to be configured and optimized.
 For the best start up of your Keycloak container, build an image by running the `build` step during the container build.
 This step will save time in every subsequent start phase of the container image.
 
-=== Building your optimized Keycloak docker image
+=== Writing your optimized Keycloak Dockerfile
 The following `Dockerfile` creates a pre-configured Keycloak image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
 
 .Dockerfile:
@@ -61,6 +61,44 @@ To install custom providers, you just need to define a step to include the JAR f
 # A example build step that downloads a JAR file from a URL and adds it to the providers directory
 RUN curl -sL <MY_PROVIDER_JAR_URL> -o /opt/keycloak/providers/myprovider.jar
 ----
+
+=== Installing additional RPM packages
+
+If you try to install new software in a stage `+FROM quay.io/keycloak/keycloak+`, you will notice that `+microdnf+`, `+dnf+`, and even `+rpm+` are not installed. Also, very few packages are available, only enough for a `+bash+` shell, and to run Keycloak itself. This is due to security hardening measures, which reduce the attack surface of the Keycloak container.
+
+First, consider if your use case can be implemented in a different way, and so avoid installing new RPMs into the final container:
+
+* A `+RUN curl+` instruction in your Dockerfile can be replaced with `+ADD+`, since that instruction natively supports remote URLs.
+* Some common CLI tools can be replaced by creative use of the Linux filesystem. For example, `+ip addr show tap0+` becomes `+cat /sys/class/net/tap0/address+`
+* Tasks that need RPMs can be moved to a former stage of an image build, and the results copied across instead.
+
+Here is an example. Running `+update-ca-trust+` in a former build stage, then copying the result forward:
+
+[source, dockerfile]
+----
+FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+COPY mycertificate.crt /etc/pki/ca-trust/source/anchors/mycertificate.crt
+RUN update-ca-trust
+
+FROM quay.io/keycloak/keycloak
+COPY --from=ubi-micro-build /etc/pki /etc/pki
+----
+
+It is possible to install new RPMs if absolutely required, following this two-stage pattern established by ubi-micro:
+
+[source, dockerfile]
+----
+FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+RUN mkdir -p /mnt/rootfs
+RUN dnf install --installroot /mnt/rootfs <package names go here> --releasever 9 --setopt install_weak_deps=false --nodocs -y; dnf --installroot /mnt/rootfs clean all
+
+FROM quay.io/keycloak/keycloak
+COPY --from=ubi-micro-build /mnt/rootfs /
+----
+
+This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you specify and their dependencies are installed, and so can be easily copied into the second stage without guesswork.
+
+WARNING: Some packages have a large tree of dependencies. By installing new RPMs you may unintentionally increase the container's attack surface. Check the list of installed packages carefully.
 
 === Building the docker image
 To build the actual docker image, run the following command from the directory containing your Dockerfile:
