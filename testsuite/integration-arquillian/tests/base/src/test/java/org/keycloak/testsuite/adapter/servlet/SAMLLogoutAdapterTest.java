@@ -49,7 +49,8 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
  *
  * @author hmlnarik
  */
-@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
+/* App server must run with different version of Undertow - not possible right now */
+@AppServerContainer(value = ContainerConstants.APP_SERVER_UNDERTOW, skip = true)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)

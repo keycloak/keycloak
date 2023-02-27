@@ -31,7 +31,8 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
+/* App server must run with different version of Undertow - not possible right now */
+@AppServerContainer(value = ContainerConstants.APP_SERVER_UNDERTOW, skip = true)
 public class PhotozExampleNoLazyLoadPathsAdapterTest extends AbstractPhotozExampleAdapterTest {
 
     @Deployment(name = PhotozClientAuthzTestApp.DEPLOYMENT_NAME)
