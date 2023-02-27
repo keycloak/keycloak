@@ -201,6 +201,12 @@
             <version>${wildfly.core.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Embedded Distribution -->
         <dependency>
             <groupId>org.keycloak</groupId>
