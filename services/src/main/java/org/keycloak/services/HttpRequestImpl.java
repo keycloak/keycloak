@@ -59,6 +59,10 @@ public class HttpRequestImpl implements HttpRequest {
         if (delegate == null) {
             return null;
         }
+        MediaType mediaType = getHttpHeaders().getMediaType();
+        if (mediaType == null || !mediaType.isCompatible(MediaType.valueOf("application/x-www-form-urlencoded"))) {
+            return new MultivaluedHashMap<>();
+        }
         return delegate.getDecodedFormParameters();
     }
 

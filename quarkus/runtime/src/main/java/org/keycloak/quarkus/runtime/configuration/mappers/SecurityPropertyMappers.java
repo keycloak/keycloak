@@ -25,16 +25,16 @@ final class SecurityPropertyMappers {
 
     private static Optional<String> resolveFipsMode(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (value.isEmpty()) {
-            return of(FipsMode.disabled.toString());
+            return of(FipsMode.DISABLED.toString());
         }
 
-        return of(FipsMode.valueOf(value.get()).toString());
+        return of(FipsMode.valueOfOption(value.get()).toString());
     }
 
     private static Optional<String> resolveSecurityProvider(Optional<String> value,
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        FipsMode fipsMode = value.map(FipsMode::valueOf)
-                .orElse(FipsMode.disabled);
+        FipsMode fipsMode = value.map(FipsMode::valueOfOption)
+                .orElse(FipsMode.DISABLED);
 
         if (fipsMode.isFipsEnabled()) {
             return of("BCFIPS");

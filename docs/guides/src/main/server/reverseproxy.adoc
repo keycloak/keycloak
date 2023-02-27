@@ -33,13 +33,15 @@ To select the proxy mode, enter this command:
 == Configure the reverse proxy
 Some Keycloak features rely on the assumption that the remote address of the HTTP request connecting to Keycloak is the real IP address of the clients machine.
 
-When you have a reverse proxy or a load balancer in front of Keycloak, this might not be the case, so please make sure your reverse proxy is configured correctly by performing these actions:
+When you have a reverse proxy or a load balancer in front of Keycloak, please make sure your reverse proxy is overriding the following headers:
 
-* Set the X-Forwarded-For, X-Forwarded-Proto, and X-Forwarded-Host HTTP headers.
+* `Forwarded` as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239]
+* Non-standard `X-Forwarded`
+* Non-standard `X-Forwarded-*`, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`
 
 To set these headers, consult the documentation for your reverse proxy.
 
-Take extra precautions to ensure that the X-Forwarded-For header is set by your reverse proxy.
+Take extra precautions to ensure that the client address is properly set by your reverse proxy via the `Forwarded` or `X-Forwarded-For` headers.
 If this header is incorrectly configured, rogue clients can set this header and trick Keycloak into thinking the client is connected from a different IP address than the actual address.
 This precaution can be more critical if you do any deny or allow listing of IP addresses.
 
@@ -216,7 +218,7 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 
 The NGINX SSL/TLS module does not expose the client certificate chain. Keycloak’s NGINX certificate lookup provider rebuilds it by using the Keycloak truststore.
 
-If you are using this provider, please take a look at the <@links.server id="keycloak-truststore"/> guide about how
+If you are using this provider, see <@links.server id="keycloak-truststore"/> for how
 to configure a Keycloak Truststore.
 
 </@tmpl.guide>

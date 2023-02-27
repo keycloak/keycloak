@@ -260,6 +260,7 @@ public class LoginActionsService {
             @Override
             public Response runInternal(KeycloakSession session) {
                 // create another instance of the endpoint to isolate each run.
+                session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
                 LoginActionsService other = new LoginActionsService(session, new EventBuilder(session.getContext().getRealm(), session, clientConnection));
                 // process the request in the created instance.
                 return other.authenticateInternal(authSessionId, code, execution, clientId, tabId);

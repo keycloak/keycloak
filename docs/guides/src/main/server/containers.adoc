@@ -119,7 +119,7 @@ podman|docker run --name mykeycloak -p 8080:8080 \
 Invoking this command starts the Keycloak server in development mode.
 
 This mode should be strictly avoided in production environments because it has insecure defaults.
-For more information about running Keycloak in production, take a look at the <@links.server id="configuration-production"/> guide.
+For more information about running Keycloak in production, see <@links.server id="configuration-production"/>.
 
 == Running a standard keycloak container
 In keeping with concepts such as immutable infrastructure, containers need to be re-provisioned routinely.

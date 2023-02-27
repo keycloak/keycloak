@@ -28,6 +28,8 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @LegacyStore
 public class FeaturesDistTest {
 
+    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: admin-fine-grained-authz, client-secret-rotation, declarative-user-profile, openshift-integration, recovery-codes, scripts, token-exchange, update-email";
+
     @Test
     public void testEnableOnBuild(KeycloakDistribution dist) {
         CLIResult cliResult = dist.run(Build.NAME, "--features=preview");
@@ -45,6 +47,18 @@ public class FeaturesDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         assertPreviewFeaturesEnabled((CLIResult) result);
+    }
+
+    // Should enable "fips" together with all other "preview" features
+    @Test
+    @Launch({StartDev.NAME, "--features=preview,fips"})
+    public void testEnablePreviewFeaturesAndFips(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+
+        String previewFeaturesWithFipsIncluded = PREVIEW_FEATURES_EXPECTED_LOG.replace("declarative-user-profile", "declarative-user-profile, fips");
+        assertThat(result.getOutput(), CoreMatchers.allOf(
+                containsString(previewFeaturesWithFipsIncluded)));
+        cliResult.assertError("Failed to configure FIPS.");
     }
 
     @Test
@@ -87,6 +101,6 @@ public class FeaturesDistTest {
 
     private void assertPreviewFeaturesEnabled(CLIResult result) {
         assertThat(result.getOutput(), CoreMatchers.allOf(
-                containsString("Preview features enabled: admin-fine-grained-authz, client-secret-rotation, declarative-user-profile, openshift-integration, recovery-codes, scripts, token-exchange, update-email")));
+                containsString(PREVIEW_FEATURES_EXPECTED_LOG)));
     }
 }

@@ -39,6 +39,10 @@ For HTTPS requests, this option verifies the hostname of the server's certificat
 * `WILDCARD` allows wildcards in subdomain names, such as *.foo.com.
 * When using `STRICT`, the Common Name (CN) must match the hostname exactly.
 
+type::
+The type of truststore, such as `jks`, `pkcs12` or `bcfks`. If not provided, the type would be detected based on the truststore
+file extension or platform default type.
+
 === Example of a truststore configuration
 The following is an example configuration for a truststore that allows you to create trustful connections to all `mycompany.org` domains and its subdomains:
 

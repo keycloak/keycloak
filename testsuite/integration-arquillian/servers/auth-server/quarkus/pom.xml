@@ -304,7 +304,7 @@
         <profile>
             <id>auth-server-fips140-2</id>
             <properties>
-                <auth.server.fips.mode>enabled</auth.server.fips.mode>
+                <auth.server.fips.mode>non-strict</auth.server.fips.mode>
             </properties>
 
             <dependencies>

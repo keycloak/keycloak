@@ -131,7 +131,7 @@ public class AuthServerTestEnricher {
 
     public static final String AUTH_SERVER_FIPS_MODE_PROPERTY = "auth.server.fips.mode";
 
-    public static final FipsMode AUTH_SERVER_FIPS_MODE = FipsMode.valueOf(System.getProperty(AUTH_SERVER_FIPS_MODE_PROPERTY, FipsMode.disabled.toString()));
+    public static final FipsMode AUTH_SERVER_FIPS_MODE = FipsMode.valueOfOption(System.getProperty(AUTH_SERVER_FIPS_MODE_PROPERTY, FipsMode.DISABLED.toString()));
 
     public static final String CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY = "cache.server.lifecycle.skip";
     public static final boolean CACHE_SERVER_LIFECYCLE_SKIP = Boolean.parseBoolean(System.getProperty(CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY, "false"));

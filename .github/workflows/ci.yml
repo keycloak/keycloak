@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  DEFAULT_JDK_VERSION: 11
+  DEFAULT_JDK_VERSION: 17
   DEFAULT_JDK_DIST: temurin
   SUREFIRE_RERUN_FAILING_COUNT: 2
 
@@ -174,7 +174,7 @@ jobs:
     strategy:
       matrix:
         dist: [temurin]
-        version: [17, 19]
+        version: [11, 19]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -194,6 +194,10 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
           ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+      - name: Build with JDK
+        run:
+          ./mvnw install -nsu -B -e -DskipTests -DskipExamples
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -473,23 +477,17 @@ jobs:
     timeout-minutes: 75
     strategy:
       matrix:
-        browser: [firefox] # Chrome not working for now
+        browser: [chrome]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-
-      - name: Setup firefox
-        uses: browser-actions/setup-firefox@latest
-        with:
-          firefox-version: latest
-      - run: firefox --version
 
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
       - name: Run Account Console IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -506,26 +504,20 @@ jobs:
     name: WebAuthn IT
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       matrix:
-        browser: [firefox] # Chrome not working for now
+        browser: [chrome]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-
-      - name: Setup firefox
-        uses: browser-actions/setup-firefox@latest
-        with:
-          firefox-version: latest
-      - run: firefox --version
 
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
       - name: Run WebAuthn IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()

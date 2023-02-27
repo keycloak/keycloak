@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.userSession;
 
+import org.keycloak.models.map.annotations.CollectionKey;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 
@@ -66,6 +67,7 @@ public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, Upd
     String getRealmId();
     void setRealmId(String realmId);
 
+    @CollectionKey(priority = 1)
     String getClientId();
     void setClientId(String clientId);
 

@@ -132,6 +132,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
             @Override
             public Response runInternal(KeycloakSession session) {
+                session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
                 // create another instance of the endpoint to isolate each run.
                 AuthorizationEndpoint other = new AuthorizationEndpoint(session,
                         new EventBuilder(session.getContext().getRealm(), session, clientConnection), action);
