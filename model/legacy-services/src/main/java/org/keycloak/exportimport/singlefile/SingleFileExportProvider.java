@@ -28,11 +28,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.ObjectMapperResolver;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -44,38 +46,48 @@ public class SingleFileExportProvider implements ExportProvider {
 
     private File file;
 
-    public SingleFileExportProvider(File file) {
-        this.file = file;
+    private final KeycloakSessionFactory factory;
+    private String realmName;
+
+    public SingleFileExportProvider(KeycloakSessionFactory factory) {
+        this.factory = factory;
     }
 
-    public void setFile(File file) {
+    public SingleFileExportProvider withFile(File file) {
         this.file = file;
+        return this;
     }
 
     @Override
-    public void exportModel(KeycloakSessionFactory factory) throws IOException {
-        logger.infof("Exporting model into file %s", this.file.getAbsolutePath());
-        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+    public void exportModel() {
+        if (realmName != null) {
+            ServicesLogger.LOGGER.realmExportRequested(realmName);
+            exportRealm(realmName);
+        } else {
+            ServicesLogger.LOGGER.fullModelExportRequested();
+            logger.infof("Exporting model into file %s", this.file.getAbsolutePath());
+            KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
-            @Override
-            protected void runExportImportTask(KeycloakSession session) throws IOException {
-                Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
-                        .map(realm -> ExportUtils.exportRealm(session, realm, true, true));
+                @Override
+                protected void runExportImportTask(KeycloakSession session) throws IOException {
+                    Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
+                            .map(realm -> ExportUtils.exportRealm(session, realm, true, true));
 
-                writeToFile(realms);
-            }
-        });
-
+                    writeToFile(realms);
+                }
+            });
+        }
+        ServicesLogger.LOGGER.exportSuccess();
     }
 
-    @Override
-    public void exportRealm(KeycloakSessionFactory factory, final String realmName) throws IOException {
+    private void exportRealm(final String realmName) {
         logger.infof("Exporting realm '%s' into file %s", realmName, this.file.getAbsolutePath());
         KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
             protected void runExportImportTask(KeycloakSession session) throws IOException {
                 RealmModel realm = session.realms().getRealmByName(realmName);
+                Objects.requireNonNull(realm, "realm not found by realm name '" + realmName + "'");
                 RealmRepresentation realmRep = ExportUtils.exportRealm(session, realm, true, true);
                 writeToFile(realmRep);
             }
@@ -97,5 +109,10 @@ public class SingleFileExportProvider implements ExportProvider {
     private void writeToFile(Object reps) throws IOException {
         FileOutputStream stream = new FileOutputStream(this.file);
         getObjectMapper().writeValue(stream, reps);
+    }
+
+    public ExportProvider withRealmName(String realmName) {
+        this.realmName = realmName;
+        return this;
     }
 }
