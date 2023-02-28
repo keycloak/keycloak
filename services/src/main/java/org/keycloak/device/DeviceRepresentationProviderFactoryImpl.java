@@ -1,6 +1,7 @@
 package org.keycloak.device;
 
 import org.keycloak.models.KeycloakSession;
+import ua_parser.CachingParser;
 import ua_parser.Parser;
 
 public class DeviceRepresentationProviderFactoryImpl implements DeviceRepresentationProviderFactory {
@@ -23,7 +24,7 @@ public class DeviceRepresentationProviderFactoryImpl implements DeviceRepresenta
     private void lazyInit(KeycloakSession session) {
         if(parser == null) {
             synchronized (this) {
-                parser = new Parser();
+                parser = new CachingParser();
             }
         }
     }
