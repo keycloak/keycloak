@@ -207,21 +207,21 @@ public class UserResource {
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             session.getTransactionManager().setRollbackOnly();
-            return ErrorResponse.exists("User exists with same username or email");
+            throw ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
             session.getTransactionManager().setRollbackOnly();
-            return ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
+            throw ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
             session.getTransactionManager().setRollbackOnly();
-            return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
+            throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         } catch (ForbiddenException fe) {
             session.getTransactionManager().setRollbackOnly();
             throw fe;
         } catch (Exception me) { // JPA
             session.getTransactionManager().setRollbackOnly();
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
-            return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
+            throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         }
     }
 
@@ -235,7 +235,7 @@ public class UserResource {
                 errors.add(new ErrorRepresentation(error.getFormattedMessage(new AdminMessageFormatter(session, user))));
             }
 
-            return ErrorResponse.errors(errors, Status.BAD_REQUEST);
+            throw ErrorResponse.errors(errors, Status.BAD_REQUEST);
         }
 
         return null;
@@ -428,7 +428,7 @@ public class UserResource {
     public Response addFederatedIdentity(final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
         auth.users().requireManage(user);
         if (session.users().getFederatedIdentity(realm, user, provider) != null) {
-            return ErrorResponse.exists("User is already linked with provider");
+            throw ErrorResponse.exists("User is already linked with provider");
         }
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
@@ -578,7 +578,7 @@ public class UserResource {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
             return Response.noContent().build();
         } else {
-            return ErrorResponse.error("User couldn't be deleted", Status.BAD_REQUEST);
+            throw ErrorResponse.error("User couldn't be deleted", Status.BAD_REQUEST);
         }
     }
 
@@ -788,17 +788,15 @@ public class UserResource {
         auth.users().requireManage(user);
 
         if (user.getEmail() == null) {
-            return ErrorResponse.error("User email missing", Status.BAD_REQUEST);
+            throw ErrorResponse.error("User email missing", Status.BAD_REQUEST);
         }
 
         if (!user.isEnabled()) {
-            throw new WebApplicationException(
-                ErrorResponse.error("User is disabled", Status.BAD_REQUEST));
+            throw ErrorResponse.error("User is disabled", Status.BAD_REQUEST);
         }
 
         if (redirectUri != null && clientId == null) {
-            throw new WebApplicationException(
-                ErrorResponse.error("Client id missing", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Client id missing", Status.BAD_REQUEST);
         }
 
         if (clientId == null) {
@@ -806,28 +804,24 @@ public class UserResource {
         }
 
         if (CollectionUtil.isNotEmpty(actions) && !RequiredActionsValidator.validRequiredActions(session, actions)) {
-            throw new WebApplicationException(
-                ErrorResponse.error("Provided invalid required actions", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Provided invalid required actions", Status.BAD_REQUEST);
         }
 
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             logger.debugf("Client %s doesn't exist", clientId);
-            throw new WebApplicationException(
-                ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST);
         }
         if (!client.isEnabled()) {
             logger.debugf("Client %s is not enabled", clientId);
-            throw new WebApplicationException(
-                    ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST);
         }
 
         String redirect;
         if (redirectUri != null) {
             redirect = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
             if (redirect == null) {
-                throw new WebApplicationException(
-                    ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST));
+                throw ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST);
             }
         }
 
@@ -856,7 +850,7 @@ public class UserResource {
             return Response.noContent().build();
         } catch (EmailException e) {
             ServicesLogger.LOGGER.failedToSendActionsEmail(e);
-            return ErrorResponse.error("Failed to send execute actions email", Status.INTERNAL_SERVER_ERROR);
+            throw ErrorResponse.error("Failed to send execute actions email", Status.INTERNAL_SERVER_ERROR);
         }
     }
 

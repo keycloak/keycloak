@@ -204,11 +204,11 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
 
         if (flow.getAlias() == null || flow.getAlias().isEmpty()) {
-            return ErrorResponse.exists("Failed to create flow with empty alias name");
+            throw ErrorResponse.exists("Failed to create flow with empty alias name");
         }
 
         if (realm.getFlowByAlias(flow.getAlias()) != null) {
-            return ErrorResponse.exists("Flow " + flow.getAlias() + " already exists");
+            throw ErrorResponse.exists("Flow " + flow.getAlias() + " already exists");
         }
         
         ReservedCharValidator.validate(flow.getAlias());
@@ -257,7 +257,7 @@ public class AuthenticationManagementResource {
         AuthenticationFlowRepresentation existingFlow = getFlow(id);
 
         if (flow.getAlias() == null || flow.getAlias().isEmpty()) {
-            return ErrorResponse.exists("Failed to update flow with empty alias name");
+            throw ErrorResponse.exists("Failed to update flow with empty alias name");
         }
 
         //check if updating a correct flow
@@ -269,7 +269,7 @@ public class AuthenticationManagementResource {
 
         //if a different flow with the same name does already exist, throw an exception
         if (realm.getFlowByAlias(flow.getAlias()) != null && !checkFlow.getAlias().equals(flow.getAlias())) {
-            return ErrorResponse.exists("Flow alias name already exists");
+            throw ErrorResponse.exists("Flow alias name already exists");
         }
 
         //if the name changed
@@ -344,7 +344,7 @@ public class AuthenticationManagementResource {
 
         String newName = data.get("newName");
         if (realm.getFlowByAlias(newName) != null) {
-            return ErrorResponse.exists("New flow alias name already exists");
+            throw ErrorResponse.exists("New flow alias name already exists");
         }
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
@@ -408,7 +408,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
         if (parentFlow == null) {
-            return ErrorResponse.error("Parent flow doesn't exist", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Parent flow doesn't exist", Response.Status.BAD_REQUEST);
         }
         String alias = data.get("alias");
         String type = data.get("type");
@@ -418,7 +418,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel newFlow = realm.getFlowByAlias(alias);
         if (newFlow != null) {
-            return ErrorResponse.exists("New flow alias name already exists");
+            throw ErrorResponse.exists("New flow alias name already exists");
         }
         newFlow = new AuthenticationFlowModel();
         newFlow.setAlias(alias);
@@ -663,7 +663,7 @@ public class AuthenticationManagementResource {
 
         //if a different flow with the same name does already exist, throw an exception
         if (realm.getFlowByAlias(rep.getDisplayName()) != null && !checkFlow.getAlias().equals(rep.getDisplayName())) {
-            return ErrorResponse.exists("Flow alias name already exists");
+            throw ErrorResponse.exists("Flow alias name already exists");
         }
 
         //if the name changed
@@ -876,7 +876,7 @@ public class AuthenticationManagementResource {
         }
         AuthenticatorConfigModel config = RepresentationToModel.toModel(json);
         if (config.getAlias() == null) {
-            return ErrorResponse.error("Alias missing", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Alias missing", Response.Status.BAD_REQUEST);
         }
         config = realm.addAuthenticatorConfig(config);
         model.setAuthenticatorConfig(config.getId());

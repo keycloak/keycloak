@@ -116,7 +116,7 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
             RepresentationToModel.importRoles(rep.getRoles(), realm);
         } catch (Exception e) {
             ServicesLogger.LOGGER.roleImportError(e);
-            throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         // add "add" results for new roles created

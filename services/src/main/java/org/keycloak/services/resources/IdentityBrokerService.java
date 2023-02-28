@@ -1175,7 +1175,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return webEx.getResponse();
         }
 
-        return ErrorPage.error(this.session, authSession, status, message, parameters);
+        throw new ErrorPageException(this.session, authSession, status, message, parameters);
     }
 
     private Response redirectToAccountErrorPage(AuthenticationSessionModel authSession, String message, Object ... parameters) {
@@ -1222,17 +1222,17 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private Response badRequest(String message) {
         fireErrorEvent(message);
-        return ErrorResponse.error(message, Response.Status.BAD_REQUEST);
+        throw ErrorResponse.error(message, Response.Status.BAD_REQUEST);
     }
 
     private Response forbidden(String message) {
         fireErrorEvent(message);
-        return ErrorResponse.error(message, Response.Status.FORBIDDEN);
+        throw ErrorResponse.error(message, Response.Status.FORBIDDEN);
     }
 
     private Response notFound(String message) {
         fireErrorEvent(message);
-        return ErrorResponse.error(message, Response.Status.NOT_FOUND);
+        throw ErrorResponse.error(message, Response.Status.NOT_FOUND);
     }
 
     public static IdentityProvider getIdentityProvider(KeycloakSession session, RealmModel realm, String alias) {

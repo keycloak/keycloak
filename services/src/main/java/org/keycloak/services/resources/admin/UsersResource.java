@@ -126,20 +126,20 @@ public class UsersResource {
             username = rep.getEmail();
         }
         if (ObjectUtil.isBlank(username)) {
-            return ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
         }
 
         // Double-check duplicated username and email here due to federation
         if (session.users().getUserByUsername(realm, username) != null) {
-            return ErrorResponse.exists("User exists with same username");
+            throw ErrorResponse.exists("User exists with same username");
         }
         if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
             try {
                 if(session.users().getUserByEmail(realm, rep.getEmail()) != null) {
-                    return ErrorResponse.exists("User exists with same email");
+                    throw ErrorResponse.exists("User exists with same email");
                 }
             } catch (ModelDuplicateException e) {
-                return ErrorResponse.exists("User exists with same email");
+                throw ErrorResponse.exists("User exists with same email");
             }
         }
 
@@ -171,18 +171,18 @@ public class UsersResource {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
-            return ErrorResponse.exists("User exists with same username or email");
+            throw ErrorResponse.exists("User exists with same username or email");
         } catch (PasswordPolicyNotMetException e) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
-            return ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
         } catch (ModelException me){
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
             logger.warn("Could not create user", me);
-            return ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }
     }
 

@@ -77,7 +77,7 @@ public class LdapServerCapabilitiesResource {
             Set<LDAPCapabilityRepresentation> ldapCapabilities = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
             return Response.ok().entity(ldapCapabilities).build();
         } catch (Exception e) {
-            return ErrorResponse.error("ldapServerCapabilities error", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("ldapServerCapabilities error", Response.Status.BAD_REQUEST);
         }
     }
 

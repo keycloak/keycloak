@@ -76,8 +76,8 @@ public class EventQueryTest extends KeycloakModelTest {
         });
     }
 
-    private Event createAuthEventForUser(RealmModel realm, String user) {
-        return new EventBuilder(realm, null, DummyClientConnection.DUMMY_CONNECTION)
+    private Event createAuthEventForUser(KeycloakSession session, RealmModel realm, String user) {
+        return new EventBuilder(realm, session, DummyClientConnection.DUMMY_CONNECTION)
                 .event(EventType.LOGIN)
                 .user(user)
                 .getEvent();
@@ -88,10 +88,10 @@ public class EventQueryTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
-            eventStore.onEvent(createAuthEventForUser(realm,"u1"));
-            eventStore.onEvent(createAuthEventForUser(realm,"u2"));
-            eventStore.onEvent(createAuthEventForUser(realm,"u3"));
-            eventStore.onEvent(createAuthEventForUser(realm,"u4"));
+            eventStore.onEvent(createAuthEventForUser(session, realm, "u1"));
+            eventStore.onEvent(createAuthEventForUser(session, realm, "u2"));
+            eventStore.onEvent(createAuthEventForUser(session, realm, "u3"));
+            eventStore.onEvent(createAuthEventForUser(session, realm, "u4"));
 
             return realm.getId();
         });
@@ -115,9 +115,9 @@ public class EventQueryTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
-            Event firstEvent = createAuthEventForUser(realm, "u1");
+            Event firstEvent = createAuthEventForUser(session, realm, "u1");
             firstEvent.setTime(1L);
-            Event secondEvent = createAuthEventForUser(realm, "u2");
+            Event secondEvent = createAuthEventForUser(session, realm, "u2");
             secondEvent.setTime(2L);
             eventStore.onEvent(firstEvent);
             eventStore.onEvent(secondEvent);
@@ -158,12 +158,12 @@ public class EventQueryTest extends KeycloakModelTest {
 
             // Set expiration so no event is valid
             realm.setEventsExpiration(5);
-            Event e = createAuthEventForUser(realm, "u1");
+            Event e = createAuthEventForUser(session, realm, "u1");
             eventStore.onEvent(e);
 
             // Set expiration to 1000 seconds
             realm.setEventsExpiration(1000);
-            e = createAuthEventForUser(realm, "u2");
+            e = createAuthEventForUser(session, realm, "u2");
             eventStore.onEvent(e);
 
             return null;
@@ -199,7 +199,7 @@ public class EventQueryTest extends KeycloakModelTest {
             realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
 
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            Event e = createAuthEventForUser(realm, "u1");
+            Event e = createAuthEventForUser(session, realm, "u1");
             eventStore.onEvent(e);
 
             AdminEvent ae = new AdminEvent();
