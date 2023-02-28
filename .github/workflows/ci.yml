@@ -452,7 +452,7 @@ jobs:
           jdk-version: 17
 
       - name: Prepare Quarkus distribution with BCFIPS
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/undertow -Pauth-server-fips140-2
+        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
 
       - name: Run base tests
         run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
