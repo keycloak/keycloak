@@ -80,7 +80,7 @@
     "react-dropzone": "^14.2.3",
     "react-error-boundary": "^3.1.4",
     "react-hook-form": "^7.43.1",
-    "react-i18next": "^12.1.5",
+    "react-i18next": "^12.2.0",
     "react-router-dom": "6.8.1",
     "reactflow": "^11.5.6",
     "use-react-router-breadcrumbs": "^4.0.1"
