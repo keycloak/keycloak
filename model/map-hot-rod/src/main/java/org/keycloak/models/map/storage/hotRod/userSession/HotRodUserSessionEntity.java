@@ -167,25 +167,6 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
         }
 
         @Override
-        public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
-            Set<HotRodAuthenticatedClientSessionEntityReference> acss = getHotRodEntity().authenticatedClientSessions;
-            if (acss == null || acss.isEmpty()) return Optional.empty();
-
-            return acss.stream()
-                    .filter(acs -> Objects.equals(acs.clientId, clientUUID))
-                    .findFirst()
-                    .map(HotRodTypesUtils::migrateHotRodAuthenticatedClientSessionEntityReferenceToMapAuthenticatedClientSessionEntity);
-        }
-
-        @Override
-        public Boolean removeAuthenticatedClientSession(String clientUUID) {
-            Set<HotRodAuthenticatedClientSessionEntityReference> acss = getHotRodEntity().authenticatedClientSessions;
-            boolean removed = acss != null && acss.removeIf(uc -> Objects.equals(uc.clientId, clientUUID));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
         public void clearAuthenticatedClientSessions() {
             HotRodUserSessionEntity entity = getHotRodEntity();
             entity.updated = entity.authenticatedClientSessions != null;

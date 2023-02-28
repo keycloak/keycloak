@@ -155,6 +155,11 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 .options(Arrays.stream(HostnameVerificationPolicy.values()).map(HostnameVerificationPolicy::name).map(String::toLowerCase).toArray(String[]::new))
                 .defaultValue(HostnameVerificationPolicy.WILDCARD.name().toLowerCase())
                 .add()
+                .property()
+                .name("type")
+                .type("string")
+                .helpText("Type of the truststore. If not provided, the type would be detected based on the truststore file extension or platform default type.")
+                .add()
                 .build();
     }
 

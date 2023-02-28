@@ -60,7 +60,6 @@ final class ServerOptions extends ArrayList<String> {
     private Map<String, Predicate<String>> getDefaultOptions(LegacyStore legacyStoreConfig, WithDatabase withDatabase) {
         Map<String, Predicate<String>> defaultOptions = new HashMap<>();
 
-        defaultOptions.put("--storage=chm", ignoreStorageChm(legacyStoreConfig, withDatabase));
         defaultOptions.put("--cache=local", ignoreCacheLocal(legacyStoreConfig));
 
         return defaultOptions;

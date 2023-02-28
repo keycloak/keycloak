@@ -78,13 +78,13 @@ import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
 import io.quarkus.runtime.configuration.ProfileManager;
+import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
 import io.smallrye.config.ConfigValue;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
-import org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ClassInfo;
@@ -180,6 +180,10 @@ class KeycloakProcessor {
             ClasspathThemeResourceProviderFactory.class,
             JarThemeProviderFactory.class,
             JpaMapStorageProviderFactory.class);
+    public static final String QUARKUS_HEALTH_ROOT_PROPERTY = "quarkus.smallrye-health.root-path";
+    public static final String QUARKUS_METRICS_PATH_PROPERTY = "quarkus.micrometer.export.prometheus.path";
+    public static final String QUARKUS_DEFAULT_HEALTH_PATH = "health";
+    public static final String QUARKUS_DEFAULT_METRICS_PATH = "metrics";
 
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
@@ -217,9 +221,7 @@ class KeycloakProcessor {
         return new ConfigBuildItem();
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    @Consume(ConfigBuildItem.class)
+    // called from setCryptoProvider now
     ProfileBuildItem configureProfile(KeycloakRecorder recorder) {
         Profile profile = Profile.configure(
                 new QuarkusProfileConfigResolver(),
@@ -565,17 +567,20 @@ class KeycloakProcessor {
 
     @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, HttpBuildTimeConfig httpBuildConfig,
-            ExecutorBuildItem executor) {
-        String rootPath = httpBuildConfig.rootPath;
+    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, ExecutorBuildItem executor, NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem) {
+
         List<String> ignoredPaths = new ArrayList<>();
 
         if (isHealthEnabled()) {
-            ignoredPaths.add(rootPath + "health");
+            ignoredPaths.add(nonApplicationRootPathBuildItem.
+                    resolvePath(Configuration.getOptionalValue(QUARKUS_HEALTH_ROOT_PROPERTY)
+                            .orElse(QUARKUS_DEFAULT_HEALTH_PATH)));
         }
 
         if (isMetricsEnabled()) {
-            ignoredPaths.add(rootPath + "metrics");
+            ignoredPaths.add(nonApplicationRootPathBuildItem.
+                    resolvePath(Configuration.getOptionalValue(QUARKUS_METRICS_PATH_PROPERTY)
+                            .orElse(QUARKUS_DEFAULT_METRICS_PATH)));
         }
 
         filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths, executor.getExecutorProxy()),FilterBuildItem.AUTHORIZATION - 10));
@@ -625,9 +630,16 @@ class KeycloakProcessor {
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void setCryptoProvider(KeycloakRecorder recorder) {
-        FipsMode fipsMode = Configuration.getOptionalValue(
-                NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
-                FipsMode::valueOf).orElse(FipsMode.disabled);
+        configureProfile(recorder);
+        FipsMode fipsMode = Configuration.getOptionalValue(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey())
+                .map(FipsMode::valueOfOption)
+                .orElse(FipsMode.DISABLED);
+        if (Profile.isFeatureEnabled(Profile.Feature.FIPS) && !fipsMode.isFipsEnabled()) {
+            // default to non strict when fips feature enabled
+            fipsMode = FipsMode.NON_STRICT;
+        } else if (fipsMode.isFipsEnabled() && !Profile.isFeatureEnabled(Profile.Feature.FIPS)) {
+            throw new RuntimeException("FIPS mode cannot be enabled without enabling the FIPS feature --features=fips");
+        }
 
         recorder.setCryptoProvider(fipsMode);
     }

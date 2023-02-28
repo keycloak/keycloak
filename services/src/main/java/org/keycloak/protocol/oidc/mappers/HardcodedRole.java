@@ -26,6 +26,7 @@ import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.utils.RoleResolveUtil;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
+public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, UserInfoTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -88,8 +89,24 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
     }
 
     @Override
+    public AccessToken transformUserInfoToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                              UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        // the mapper is always executed and then other role mappers decide if the claims are really set to the token
+        setClaim(token, mappingModel, userSession, session, clientSessionCtx);
+        return token;
+    }
+
+    @Override
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        // the mapper is always executed and then other role mappers decide if the claims are really set to the token
+        setClaim(token, mappingModel, userSession, session, clientSessionCtx);
+        return token;
+    }
+
+    @Override
+    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession session,
+                            ClientSessionContext clientSessionCtx) {
 
         String role = mappingModel.getConfig().get(ROLE_CONFIG);
         String[] scopedRole = KeycloakModelUtils.parseRole(role);
@@ -102,8 +119,6 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
             AccessToken.Access access = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, true);
             access.addRole(role);
         }
-
-        return token;
     }
 
     public static ProtocolMapperModel create(String name,

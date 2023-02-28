@@ -115,6 +115,15 @@ public class ApiUtil {
         return null;
     }
 
+    public static ProtocolMapperRepresentation findProtocolMapperByName(ClientScopeResource scope, String name) {
+        for (ProtocolMapperRepresentation p : scope.getProtocolMappers().getMappers()) {
+            if (p.getName().equals(name)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
     public static ClientScopeResource findClientScopeByName(RealmResource realm, String clientScopeName) {
         for (ClientScopeRepresentation clientScope : realm.clientScopes().findAll()) {
             if (clientScopeName.equals(clientScope.getName())) {
