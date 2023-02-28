@@ -18,6 +18,8 @@
 package org.keycloak.testsuite.federation.ldap.noimport;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
@@ -96,22 +98,37 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username2", "John2", "Doel2", "user2@email.org", null, "122");
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username3", "John3", "Doel3", "user3@email.org", null, "123");
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username4", "John4", "Doel4", "user4@email.org", null, "124");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username8", "John8", "Doel8", "user8@email.org", null, "124");
 
             // search by username
-            UserModel user = session.users().searchForUserStream(appRealm, "username1").findFirst().get();
+            List<UserModel> users = session.users().searchForUserStream(appRealm, "username1").collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            UserModel user = users.get(0);
             LDAPTestAsserts.assertLoaded(user, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email
-            user = session.users().searchForUserStream(appRealm, "user2@email.org").findFirst().get();
+            users = session.users().searchForUserStream(appRealm, "user2@email.org").collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            user = users.get(0);
             LDAPTestAsserts.assertLoaded(user, "username2", "John2", "Doel2", "user2@email.org", "122");
 
             // search by lastName
-            user = session.users().searchForUserStream(appRealm, "Doel3").findFirst().get();
+            users = session.users().searchForUserStream(appRealm, "Doel3").collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            user = users.get(0);
             LDAPTestAsserts.assertLoaded(user, "username3", "John3", "Doel3", "user3@email.org", "123");
 
             // search by firstName + lastName
-            user = session.users().searchForUserStream(appRealm, "John4 Doel4").findFirst().get();
+            users = session.users().searchForUserStream(appRealm, "John4 Doel4").collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            user = users.get(0);
             LDAPTestAsserts.assertLoaded(user, "username4", "John4", "Doel4", "user4@email.org", "124");
+
+            // search by a string that matches multiple fields. Should still return the one entity it matches
+            users = session.users().searchForUserStream(appRealm, "*8*").collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            user = users.get(0);
+            LDAPTestAsserts.assertLoaded(user, "username8", "John8", "Doel8", "user8@email.org", "124");
         });
     }
 
