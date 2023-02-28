@@ -23,7 +23,6 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -66,7 +65,6 @@ import org.keycloak.testsuite.model.RequireProvider;
 @RequireProvider(value=UserSessionProvider.class, only={"infinispan"})
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
-@RequireProvider(DeviceRepresentationProvider.class)
 public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
     private String realmId;
