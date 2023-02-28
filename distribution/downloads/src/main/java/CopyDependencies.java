@@ -22,14 +22,12 @@ public class CopyDependencies {
     }
 
     private final String version;
-    private final String npmVersion;
     private final Path targetDir;
     private final Path projectDir;
     private final Path mavenRepository;
 
     public CopyDependencies(String version, Path projectDir, Path targetDir, Path mavenRepository) {
         this.version = version;
-        this.npmVersion = version.equals("999-SNAPSHOT") ? "999.0.0-dev" : version;
         this.targetDir = targetDir;
         this.projectDir = projectDir;
         this.mavenRepository = mavenRepository;
@@ -78,7 +76,7 @@ public class CopyDependencies {
     }
 
     private String replaceVariables(String input) {
-        return input.replaceAll("\\$\\$NPM_VERSION\\$\\$", npmVersion);
+        return input.replaceAll("\\$\\$VERSION\\$\\$", version);
     }
 
 }
