@@ -17,15 +17,19 @@
 
 package org.keycloak.it.cli.dist;
 
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @DistributionTest
@@ -62,5 +66,35 @@ public class BuildAndStartDistTest {
         cliResult = rawDist.run("start");
         cliResult.assertBuild();
         cliResult.assertStarted();
+    }
+
+    @Test
+    @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
+    @Launch({"start-dev"})
+    void testCreateAdmin(KeycloakDistribution dist, LaunchResult result) {
+        assertTrue(result.getOutput().contains("Added user 'admin123' to realm 'master'"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+
+        dist.setEnvVar("KEYCLOAK_ADMIN","admin123");
+        dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD","admin123");
+        CLIResult cliResult = dist.run("start-dev");
+
+        cliResult.assertMessage("Failed to add user 'admin123' to realm 'master'");
+        cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
+    @Launch({"start-dev"})
+    void testCreateDifferentAdmin(KeycloakDistribution dist, LaunchResult result) {
+        assertTrue(result.getOutput().contains("Added user 'admin123' to realm 'master'"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+
+        dist.setEnvVar("KEYCLOAK_ADMIN","new-admin");
+        dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD","new-admin");
+        CLIResult cliResult = dist.run("start-dev");
+
+        cliResult.assertNoMessage("Failed to add user 'new-admin' to realm 'master'");
+        cliResult.assertStartedDevMode();
     }
 }
