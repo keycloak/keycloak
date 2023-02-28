@@ -154,10 +154,10 @@ public class LinkedAccountsResource {
         
         String errorMessage = checkCommonPreconditions(providerId);
         if (errorMessage != null) {
-            return ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
         }
         if (auth.getSession() == null) {
-            return ErrorResponse.error(Messages.SESSION_NOT_ACTIVE, Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(Messages.SESSION_NOT_ACTIVE, Response.Status.BAD_REQUEST);
         }
         
         try {
@@ -184,7 +184,7 @@ public class LinkedAccountsResource {
             return Cors.add(request, Response.ok(rep)).auth().allowedOrigins(auth.getToken()).build();
         } catch (Exception spe) {
             spe.printStackTrace();
-            return ErrorResponse.error(Messages.FAILED_TO_PROCESS_RESPONSE, Response.Status.INTERNAL_SERVER_ERROR);
+            throw ErrorResponse.error(Messages.FAILED_TO_PROCESS_RESPONSE, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -196,17 +196,17 @@ public class LinkedAccountsResource {
         
         String errorMessage = checkCommonPreconditions(providerId);
         if (errorMessage != null) {
-            return ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
         }
         
         FederatedIdentityModel link = session.users().getFederatedIdentity(realm, user, providerId);
         if (link == null) {
-            return ErrorResponse.error(Messages.FEDERATED_IDENTITY_NOT_ACTIVE, Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(Messages.FEDERATED_IDENTITY_NOT_ACTIVE, Response.Status.BAD_REQUEST);
         }
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
         if (!(session.users().getFederatedIdentitiesStream(realm, user).count() > 1 || user.getFederationLink() != null || isPasswordSet())) {
-            return ErrorResponse.error(Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER, Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER, Response.Status.BAD_REQUEST);
         }
         
         session.users().removeFederatedIdentity(realm, user, providerId);

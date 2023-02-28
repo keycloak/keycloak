@@ -108,8 +108,8 @@ public class RoleByIdResource extends RoleResource {
         if (realm.getDefaultRole() == null) {
             logger.warnf("Default role for realm with id '%s' doesn't exist.", realm.getId());
         } else if (realm.getDefaultRole().getId().equals(id)) {
-            throw new ErrorResponseException(ErrorResponse.error(realm.getDefaultRole().getName() + " is default role of the realm and cannot be removed.", 
-                    Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(realm.getDefaultRole().getName() + " is default role of the realm and cannot be removed.",
+                    Response.Status.BAD_REQUEST);
         }
 
         RoleModel role = getRoleModel(id);

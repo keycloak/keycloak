@@ -65,7 +65,7 @@ public class ClientPoliciesResource {
         try {
             return session.clientPolicy().getClientPolicies(realm);
         } catch (ClientPolicyException e) {
-            throw new BadRequestException(ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -77,7 +77,7 @@ public class ClientPoliciesResource {
         try {
             session.clientPolicy().updateClientPolicies(realm, clientPolicies);
         } catch (ClientPolicyException e) {
-            return ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST);
         }
         return Response.noContent().build();
     }
