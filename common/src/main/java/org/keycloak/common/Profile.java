@@ -254,7 +254,7 @@ public class Profile {
 
     private static void verifyConfig(Map<Feature, Boolean> features) {
         for (Feature f : features.keySet()) {
-            if (f.getDependencies() != null) {
+            if (features.get(f) && f.getDependencies() != null) {
                 for (Feature d : f.getDependencies()) {
                     if (!features.get(d)) {
                         throw new ProfileException("Feature " + f.getKey() + " depends on disabled feature " + d.getKey());
