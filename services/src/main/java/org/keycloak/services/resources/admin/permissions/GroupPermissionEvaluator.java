@@ -46,7 +46,7 @@ public interface GroupPermissionEvaluator {
 
     void requireView();
 
-    boolean getGroupsWithViewPermission(GroupModel group);
+    boolean canViewMembers(GroupModel group);
 
     void requireViewMembers(GroupModel group);
 
