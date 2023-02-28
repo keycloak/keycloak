@@ -137,7 +137,7 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
 
     // Percent sign + Unix (/) and https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file reserved characters
     private static final Pattern RESERVED_CHARACTERS = Pattern.compile("[%<:>\"/\\\\|?*=]");
-    private static final String ID_COMPONENT_SEPARATOR = ":";
+    public static final String ID_COMPONENT_SEPARATOR = ":";
     private static final String ESCAPING_CHARACTER = "=";
     private static final Pattern ID_COMPONENT_SEPARATOR_PATTERN = Pattern.compile(Pattern.quote(ID_COMPONENT_SEPARATOR) + "+");
 

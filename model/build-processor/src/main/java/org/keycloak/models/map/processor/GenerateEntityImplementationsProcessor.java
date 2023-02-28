@@ -579,6 +579,10 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 pw.println("        entityFieldDelegate.clearUpdatedFlag();");
                 pw.println("    }");
 
+                pw.println("    @Override public String toString() {");
+                pw.println("        return \"%\" + String.valueOf(entityFieldDelegate);");
+                pw.println("    }");
+
                 getAllAbstractMethods(e)
                   .forEach(ee -> {
                       String originalField = m2field.get(ee);
@@ -699,6 +703,10 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 pw.println("    }");
                 pw.println("    public org.keycloak.models.map.common.delegate.DelegateProvider<" + className + "> getDelegateProvider() {");
                 pw.println("        return this.delegateProvider;");
+                pw.println("    }");
+
+                pw.println("    @Override public String toString() {");
+                pw.println("        return \"/\" + String.valueOf(this.delegateProvider);");
                 pw.println("    }");
 
                 getAllAbstractMethods(e)
