@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.storage.hotRod;
 
+import org.infinispan.client.hotrod.MetadataValue;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.Search;
 import org.infinispan.commons.util.CloseableIterator;
@@ -26,6 +27,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.ExpirableEntity;
@@ -50,7 +52,9 @@ import org.keycloak.models.map.storage.hotRod.transaction.NoActionHotRodTransact
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.utils.LockObjectsForModification;
 
+import javax.persistence.OptimisticLockException;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterators;
@@ -79,6 +83,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
     private final Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates;
     private final Long lockTimeout;
     private final RemoteCache<String, String> locksCache;
+    private final Map<K, Long> entityVersionCache = new HashMap<>();
 
     public HotRodMapStorage(KeycloakSession session, RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner, AllAreasHotRodTransactionsWrapper txWrapper, Long lockTimeout) {
         this.session = session;
@@ -146,11 +151,15 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
         }
 
         // Obtain value from Infinispan
-        E hotRodEntity = remoteCache.get(k);
-        if (hotRodEntity == null) return null;
+        MetadataValue<E> entityWithMetadata = remoteCache.getWithMetadata(k);
+        if (entityWithMetadata == null) return null;
+
+        // store entity version
+        LOG.tracef("Entity %s read in version %s", key, entityWithMetadata.getVersion(), getShortStackTrace());
+        entityVersionCache.put(k, entityWithMetadata.getVersion());
 
         // Create delegate that implements Map*Entity
-        return delegateProducer.apply(hotRodEntity);
+        return entityWithMetadata.getValue() != null ? delegateProducer.apply(entityWithMetadata.getValue()) : null;
     }
 
     @Override
@@ -160,23 +169,37 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
         if (isExpirableEntity) {
             Long lifespan = getLifespan(value);
             if (lifespan != null) {
-                E previousValue;
                 if (lifespan > 0) {
-                    previousValue = remoteCache.replace(key, value.getHotRodEntity(), lifespan, TimeUnit.MILLISECONDS);
+                    if (!remoteCache.replaceWithVersion(key, value.getHotRodEntity(), entityVersionCache.get(key), lifespan, TimeUnit.MILLISECONDS, -1, TimeUnit.MILLISECONDS)) {
+                        throw new OptimisticLockException("Entity " + key + " with version " + entityVersionCache.get(key) + " already changed by a different transaction.");
+                    }
                 } else {
+                    if (!remoteCache.removeWithVersion(key, entityVersionCache.get(key))) {
+                        throw new OptimisticLockException("Entity " + key + " with version " + entityVersionCache.get(key) + " already changed by a different transaction.");
+                    }
                     LOG.warnf("Removing entity %s from storage due to negative/zero lifespan.", key);
-                    previousValue = remoteCache.remove(key);
                 }
-                return previousValue == null ? null : delegateProducer.apply(previousValue);
+
+                return delegateProducer.apply(value.getHotRodEntity());
             }
         }
-        E previousValue = remoteCache.replace(key, value.getHotRodEntity());
-        return previousValue == null ? null : delegateProducer.apply(previousValue);
+        if (!remoteCache.replaceWithVersion(key, value.getHotRodEntity(), entityVersionCache.get(key))) {
+            throw new OptimisticLockException("Entity " + key + " with version " + entityVersionCache.get(key) + " already changed by a different transaction.");
+        }
+        return delegateProducer.apply(value.getHotRodEntity());
     }
 
     @Override
     public boolean delete(String key) {
         K k = keyConverter.fromStringSafe(key);
+
+        Long entityVersion = entityVersionCache.get(k);
+        if (entityVersion != null) {
+            if (!remoteCache.removeWithVersion(k, entityVersion))  {
+                throw new OptimisticLockException("Entity " + key + " with version " + entityVersion + " already changed by a different transaction.");
+            }
+            return true;
+        }
         return remoteCache.remove(k) != null;
     }
 
@@ -190,20 +213,6 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
 
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        if (LockObjectsForModification.isEnabled(session, storedEntityDescriptor.getModelTypeClass())) {
-            return pessimisticQueryRead(queryParameters);
-        }
-
-        Query<E> query = prepareQueryWithPrefixAndParameters(null, queryParameters);
-        CloseableIterator<E> iterator = paginateQuery(query, queryParameters.getOffset(),
-                queryParameters.getLimit()).iterator();
-        return closing(StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false))
-                .onClose(iterator::close)
-                .filter(Objects::nonNull) // see https://github.com/keycloak/keycloak/issues/9271
-                .map(this.delegateProducer);
-    }
-
-    private Stream<V> pessimisticQueryRead(QueryParameters<M> queryParameters) {
         DefaultModelCriteria<M> dmc = queryParameters.getModelCriteriaBuilder();
 
         // Optimization if the criteria contains only one id
@@ -216,17 +225,33 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
             if (entity == null) {
                 return Stream.empty();
             }
-            boolean fulfillsQueryCriteria = mapMcb.getKeyFilter().test(keyConverter.fromString(id)) && mapMcb.getEntityFilter().test(entity);
+            K k = keyConverter.fromString(id);
+            boolean fulfillsQueryCriteria = mapMcb.getKeyFilter().test(k) && mapMcb.getEntityFilter().test(entity);
             if (!fulfillsQueryCriteria) {
                 // entity does not fulfill whole criteria, we can release lock now
-                HotRodLocksUtils.removeWithInstanceIdentifier(locksCache, getLockName(id));
+                if (LockObjectsForModification.isEnabled(session, storedEntityDescriptor.getModelTypeClass())) {
+                    HotRodLocksUtils.removeWithInstanceIdentifier(locksCache, getLockName(id));
+                    entityVersionCache.remove(k);
+                }
                 return Stream.empty();
             }
 
             return Stream.of(entity);
         }
 
-        // Criteria does not contain only one id, we need to read ids non-pessimistically and then read entities one by one pessimistically
+        // workaround if the query contains us.clientId field, in which case don't read by id => read without optimistic locking.
+        // See https://issues.redhat.com/browse/ISPN-14537
+        if (!dmc.isEmpty() && dmc.partiallyEvaluate((field,  op, arg) -> field == UserSessionModel.SearchableFields.CLIENT_ID).toString().contains("__TRUE__")) {
+            Query<E> query = prepareQueryWithPrefixAndParameters(null, queryParameters);
+            CloseableIterator<E> iterator = paginateQuery(query, queryParameters.getOffset(),
+                    queryParameters.getLimit()).iterator();
+            return closing(StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false))
+                    .onClose(iterator::close)
+                    .filter(Objects::nonNull) // see https://github.com/keycloak/keycloak/issues/9271
+                    .map(this.delegateProducer);
+        }
+
+        // Criteria does not contain only one id, we need to read ids without locking and then read entities one by one pessimistically or optimistically
         Query<Object[]> query = prepareQueryWithPrefixAndParameters("SELECT id ", queryParameters);
         CloseableIterator<Object[]> iterator = paginateQuery(query, queryParameters.getOffset(),
                 queryParameters.getLimit()).iterator();
@@ -236,11 +261,10 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
                 // Extract ids from the result
                 .map(a -> a[0])
                 .map(String.class::cast)
-                // Pessimistically read
+                // read by id => this will register the entity in an ISPN transaction
                 .map(this::read)
                 // Entity can be removed in the meanwhile, we need to check for null
                 .filter(Objects::nonNull);
-
     }
 
     private <T> Query<T> prepareQueryWithPrefixAndParameters(String prefix, QueryParameters<M> queryParameters) {
