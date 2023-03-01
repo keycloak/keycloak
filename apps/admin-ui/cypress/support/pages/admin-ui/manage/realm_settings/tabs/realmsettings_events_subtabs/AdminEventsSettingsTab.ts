@@ -13,7 +13,7 @@ export default class AdminEventsSettingsTab extends PageObject {
   clearAdminEvents() {
     cy.get(this.clearAdminEventsBtn).click();
     modal.checkModalTitle("Clear events");
-    cy.intercept("/admin/realms/master/admin-events").as("clearEvents");
+    cy.intercept("/admin/realms/*/admin-events").as("clearEvents");
     modal.confirmModal();
     cy.wait("@clearEvents");
     masthead.checkNotificationMessage("The admin events have been cleared");
@@ -42,9 +42,9 @@ export default class AdminEventsSettingsTab extends PageObject {
       waitForConfig: false,
     }
   ) {
-    waitForRealm && cy.intercept("/admin/realms/master").as("saveRealm");
+    waitForRealm && cy.intercept("/admin/realms/*").as("saveRealm");
     waitForConfig &&
-      cy.intercept("/admin/realms/master/events/config").as("saveConfig");
+      cy.intercept("/admin/realms/*/events/config").as("saveConfig");
 
     cy.get(this.saveBtn).click();
 

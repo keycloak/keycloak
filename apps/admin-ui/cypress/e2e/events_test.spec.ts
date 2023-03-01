@@ -250,9 +250,15 @@ describe("Events tests", () => {
   });
 
   describe("Admin events list", () => {
+    const realmName = crypto.randomUUID();
+
+    before(() => adminClient.createRealm(realmName));
+    after(() => adminClient.deleteRealm(realmName));
+
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      sidebarPage.goToRealm(realmName);
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
     });
