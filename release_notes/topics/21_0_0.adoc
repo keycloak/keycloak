@@ -76,6 +76,16 @@ For more details, see the https://www.keycloak.org/server/reverseproxy[Using a r
 
 Please, make sure your proxy is also overriding the `Forwarded` header when making requests to Keycloak nodes.
 
+= The container image is now based on ubi9-micro
+
+To enhance security, the https://quay.io/repository/keycloak/keycloak?tab=info[Keycloak Container Image] has been modified in two ways: First, it is now based on UBI9, rather than UBI8. Second, we have switched to `+-micro+`, whereas `+-minimal+` was used before.
+
+The change to UBI9 will not have any impact on most users. In rare cases the glibc error https://github.com/keycloak/keycloak/issues/17290[CPU does not support x86-64-v2] may appear. `+x86-64-v2+` has been available from processors since 2009. You're most likely to encounter this issue when your virtualization environment is misconfigured.
+
+The change from `+-minimal+` to `+-micro+` has more potential impact. Users making simple customizations to the image won't notice any difference, however any user that installs RPMs will need to change how they do that. The https://www.keycloak.org/server/containers[container guide] has been updated to show you how.
+
+As a result of these changes, there has been an 82% reduction in known CVEs affecting the Keycloak Container Image!
+
 = Other improvements
 
 * Option to disable client registration access token rotation. Thanks to https://github.com/reda-alaoui[Réda Housni Alaoui]

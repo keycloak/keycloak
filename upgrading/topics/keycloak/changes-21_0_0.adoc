@@ -62,3 +62,7 @@ and now has been removed. Javadoc of these methods contained a corresponding rep
 The old admin console, which was deprecated in previous versions, was finally removed. This also means that your custom themes, which were using it as parent theme or importing from it, won't work.
 It is highly recommended to not deploy such themes at all as extending old admin console is not applicable anymore and there can be issues in Keycloak (at least warnings or errors in the logs) with
 such themes deployed.
+
+= Curl has been removed from the container
+
+The https://quay.io/repository/keycloak/keycloak?tab=info[Keycloak Container Image] has been modified to enhance security. As a result, `+curl+` and other CLI tools have been removed, which you may have been using in your customized image. See the updated https://www.keycloak.org/server/containers[container guide] for information on how to handle this change.
