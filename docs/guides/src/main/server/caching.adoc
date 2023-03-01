@@ -230,7 +230,7 @@ The current Infinispan cache implementation should be secured by various securit
 == Exposing metrics from caches
 
 By default, metrics from caches are not automatically exposed when the metrics are enabled.
-For more details about how to enable metrics, see the <@links.server id="configuration-metrics"/> guide.
+For more details about how to enable metrics, see <@links.server id="configuration-metrics"/>.
 
 To enable global metrics for all caches within the `cache-container`, you need to change your cache configuration file (e.g.: `conf/cache-ispn.xml`) to enable `statistics` at the `cache-container` level as follows:
 

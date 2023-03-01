@@ -124,8 +124,8 @@ public class JWKBuilder {
         k.setAlgorithm(algorithm);
         k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
         k.setCrv("P-" + fieldSize);
-        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX())));
-        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY())));
+        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
+        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
         
         return k;
     }

@@ -20,7 +20,6 @@ import org.hamcrest.Matchers;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -70,7 +69,6 @@ import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderT
 @RequireProvider(UserSessionProvider.class)
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
-@RequireProvider(DeviceRepresentationProvider.class)
 public class UserSessionProviderModelTest extends KeycloakModelTest {
 
     private String realmId;
