@@ -903,13 +903,27 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Optional<MapAuthenticationFlowEntity> getAuthenticationFlow(String p0) {
+        return metadata.getAuthenticationFlow(p0);
+    }
+
+    @Override
     public void addAuthenticationFlow(MapAuthenticationFlowEntity authenticationFlow) {
         this.metadata.addAuthenticationFlow(authenticationFlow);
     }
 
     @Override
+    public Boolean removeAuthenticationFlow(String p0) {
+        return metadata.removeAuthenticationFlow(p0);
+    }
+
+    @Override
     public Set<MapAuthenticationExecutionEntity> getAuthenticationExecutions() {
         return this.metadata.getAuthenticationExecutions();
+    }
+
+    public Optional<MapAuthenticationExecutionEntity> getAuthenticationExecution(String p0) {
+        return metadata.getAuthenticationExecution(p0);
     }
 
     @Override
@@ -918,8 +932,18 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Boolean removeAuthenticationExecution(String p0) {
+        return metadata.removeAuthenticationExecution(p0);
+    }
+
+    @Override
     public Set<MapAuthenticatorConfigEntity> getAuthenticatorConfigs() {
         return this.metadata.getAuthenticatorConfigs();
+    }
+
+    @Override
+    public Optional<MapAuthenticatorConfigEntity> getAuthenticatorConfig(String p0) {
+        return metadata.getAuthenticatorConfig(p0);
     }
 
     @Override
@@ -928,13 +952,28 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Boolean removeAuthenticatorConfig(String p0) {
+        return metadata.removeAuthenticatorConfig(p0);
+    }
+
+    @Override
     public Set<MapRequiredActionProviderEntity> getRequiredActionProviders() {
         return this.metadata.getRequiredActionProviders();
     }
 
     @Override
+    public Optional<MapRequiredActionProviderEntity> getRequiredActionProvider(String requiredActionProviderId) {
+        return this.metadata.getRequiredActionProvider(requiredActionProviderId);
+    }
+
+    @Override
     public void addRequiredActionProvider(MapRequiredActionProviderEntity requiredActionProvider) {
         this.metadata.addRequiredActionProvider(requiredActionProvider);
+    }
+
+    @Override
+    public Boolean removeRequiredActionProvider(String requiredActionProviderId) {
+        return this.metadata.removeRequiredActionProvider(requiredActionProviderId);
     }
 
     @Override
@@ -948,6 +987,11 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Boolean removeIdentityProvider(String p0) {
+        return metadata.removeIdentityProvider(p0);
+    }
+
+    @Override
     public void addIdentityProviderMapper(MapIdentityProviderMapperEntity identityProviderMapper) {
         this.metadata.addIdentityProviderMapper(identityProviderMapper);
     }
@@ -958,13 +1002,33 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Optional<MapIdentityProviderMapperEntity> getIdentityProviderMapper(String p0) {
+        return metadata.getIdentityProviderMapper(p0);
+    }
+
+    @Override
+    public Boolean removeIdentityProviderMapper(String p0) {
+        return metadata.removeIdentityProviderMapper(p0);
+    }
+
+    @Override
     public Set<MapClientInitialAccessEntity> getClientInitialAccesses() {
         return this.metadata.getClientInitialAccesses();
     }
 
     @Override
+    public Optional<MapClientInitialAccessEntity> getClientInitialAccess(String p0) {
+        return metadata.getClientInitialAccess(p0);
+    }
+
+    @Override
     public void addClientInitialAccess(MapClientInitialAccessEntity clientInitialAccess) {
         this.metadata.addClientInitialAccess(clientInitialAccess);
+    }
+
+    @Override
+    public Boolean removeClientInitialAccess(String p0) {
+        return metadata.removeClientInitialAccess(p0);
     }
 
     @Override

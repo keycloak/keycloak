@@ -59,7 +59,7 @@ To install custom providers, you just need to define a step to include the JAR f
 [source, dockerfile]
 ----
 # A example build step that downloads a JAR file from a URL and adds it to the providers directory
-RUN curl -sL <MY_PROVIDER_JAR_URL> -o /opt/keycloak/providers/myprovider.jar
+ADD <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
 ----
 
 === Building the docker image
@@ -119,7 +119,7 @@ podman|docker run --name mykeycloak -p 8080:8080 \
 Invoking this command starts the Keycloak server in development mode.
 
 This mode should be strictly avoided in production environments because it has insecure defaults.
-For more information about running Keycloak in production, take a look at the <@links.server id="configuration-production"/> guide.
+For more information about running Keycloak in production, see <@links.server id="configuration-production"/>.
 
 == Running a standard keycloak container
 In keeping with concepts such as immutable infrastructure, containers need to be re-provisioned routinely.

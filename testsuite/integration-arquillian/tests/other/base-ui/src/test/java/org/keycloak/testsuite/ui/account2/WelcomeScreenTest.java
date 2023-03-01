@@ -19,7 +19,6 @@ package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ui.account2.page.ApplicationsPage;
 import org.keycloak.testsuite.ui.account2.page.DeviceActivityPage;
@@ -28,7 +27,6 @@ import org.keycloak.testsuite.ui.account2.page.MyResourcesPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
@@ -143,10 +141,10 @@ public class WelcomeScreenTest extends AbstractAccountTest {
 
         // test my resources appeared
         accountWelcomeScreen.navigateTo();
-        Retry.execute(() -> accountWelcomeScreen.assertMyResourcesCardVisible(true), 10, 500);
+        accountWelcomeScreen.assertMyResourcesCardVisible(true);
         accountWelcomeScreen.clickMyResourcesLink();
         loginToAccount();
-        Retry.execute(() -> myResourcesPage.assertCurrent(), 10, 500);
+        myResourcesPage.assertCurrent();
         // no need to disable user managed access
     }
 }
