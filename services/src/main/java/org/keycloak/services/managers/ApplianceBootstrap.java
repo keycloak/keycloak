@@ -30,8 +30,6 @@ import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 
-import org.keycloak.models.ModelDuplicateException;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -101,7 +99,7 @@ public class ApplianceBootstrap {
         if (existingUser != null) {
             RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
             if (existingUser.hasRole(adminRole)) {
-               ServicesLogger.LOGGER.addUserFailedUserExists(username, Config.getAdminRealm());
+               ServicesLogger.LOGGER.addAdminUserUserExists(username, Config.getAdminRealm());
             } else {
                ServicesLogger.LOGGER.userNotAssignedRole(username, Config.getAdminRealm(), AdminRoles.ADMIN);
             }

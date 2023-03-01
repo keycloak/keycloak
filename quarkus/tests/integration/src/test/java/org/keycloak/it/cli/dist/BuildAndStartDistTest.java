@@ -71,7 +71,7 @@ public class BuildAndStartDistTest {
     @Test
     @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
     @Launch({"start-dev"})
-    void testCreateAdmin(KeycloakDistribution dist, LaunchResult result) {
+    void testCreateExistingAdmin(KeycloakDistribution dist, LaunchResult result) {
         assertTrue(result.getOutput().contains("Added user 'admin123' to realm 'master'"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
 
@@ -79,14 +79,14 @@ public class BuildAndStartDistTest {
         dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD","admin123");
         CLIResult cliResult = dist.run("start-dev");
 
-        cliResult.assertMessage("Failed to add user 'admin123' to realm 'master'");
+        cliResult.assertMessage("Skipping create admin user.  User 'admin123' already exists in realm 'master'.");
         cliResult.assertStartedDevMode();
     }
 
     @Test
     @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
     @Launch({"start-dev"})
-    void testCreateDifferentAdmin(KeycloakDistribution dist, LaunchResult result) {
+    void testCreateNewAdmin(KeycloakDistribution dist, LaunchResult result) {
         assertTrue(result.getOutput().contains("Added user 'admin123' to realm 'master'"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
 
@@ -94,7 +94,7 @@ public class BuildAndStartDistTest {
         dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD","new-admin");
         CLIResult cliResult = dist.run("start-dev");
 
-        cliResult.assertNoMessage("Failed to add user 'new-admin' to realm 'master'");
+        cliResult.assertNoMessage("Added user 'new-admin' to realm 'master'");
         cliResult.assertStartedDevMode();
     }
 }

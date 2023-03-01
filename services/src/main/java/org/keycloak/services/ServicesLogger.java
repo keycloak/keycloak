@@ -85,7 +85,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=9, value="Added user '%s' to realm '%s'")
     void addUserSuccess(String user, String realm);
 
-    @LogMessage(level = INFO)
+    @LogMessage(level = ERROR)
     @Message(id=10, value="Failed to add user '%s' to realm '%s': user with username exists")
     void addUserFailedUserExists(String user, String realm);
 
@@ -472,4 +472,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=107, value="User '%s' in realm '%s' is not assigned %s role")
     void userNotAssignedRole(String user, String realm, String role);
 
+    @LogMessage(level = INFO)
+    @Message(id=108, value="Skipping create admin user.  User '%s' already exists in realm '%s'.")
+    void addAdminUserUserExists(String user, String realm);
 }
