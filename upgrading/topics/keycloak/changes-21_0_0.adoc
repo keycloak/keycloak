@@ -56,3 +56,9 @@ In Keycloak 13 there was introduced `UserLoginFailureProvider` and some methods 
 `UserSessionProvider` were moved there. The methods in `UserSessionProvider` were deprecated 
 and now has been removed. Javadoc of these methods contained a corresponding replacement 
 (see Javadoc of Keycloak 20 release).
+
+= Custom themes using old admin console won't work
+
+The old admin console, which was deprecated in previous versions, was finally removed. This also means that your custom themes, which were using it as parent theme or importing from it, won't work.
+It is highly recommended to not deploy such themes at all as extending old admin console is not applicable anymore and there can be issues in Keycloak (at least warnings or errors in the logs) with
+such themes deployed.
