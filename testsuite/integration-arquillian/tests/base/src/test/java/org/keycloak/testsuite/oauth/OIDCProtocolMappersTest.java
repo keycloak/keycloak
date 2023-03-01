@@ -73,10 +73,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -1472,6 +1474,157 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             adminClient.realm("test").groups().group(group2.getId()).remove();
             adminClient.realm("test").groups().group(group1.getId()).remove();
             deleteMappers(protocolMappers);
+        }
+    }
+
+    private void checkRealmAccessInOtherClaims(Map<String, Object> otherClaims, String shouldExistRole, String shouldNotExistRole) {
+        assertThat(otherClaims.get("realm_access"), CoreMatchers.instanceOf(Map.class));
+        Map<?, ?> access = (Map<?, ?>) otherClaims.get("realm_access");
+        assertThat(access.get("roles"), CoreMatchers.instanceOf(Collection.class));
+        Collection<String> roles = (Collection<String>) access.get("roles");
+        if (shouldExistRole != null) {
+            assertThat(roles, hasItem(shouldExistRole));
+        }
+        if (shouldNotExistRole != null) {
+            assertThat(roles, not(hasItem(shouldNotExistRole)));
+        }
+    }
+
+    private void checkClientAccessInOtherClaims(Map<String, Object> otherClaims, String app, String shouldExistRole, String shouldNotExistRole) {
+        assertThat(otherClaims.get("resource_access"), CoreMatchers.instanceOf(Map.class));
+        Map<?, ?> access = (Map<?, ?>) otherClaims.get("resource_access");
+        assertThat(access.get(app), CoreMatchers.instanceOf(Map.class));
+        access = (Map<?, ?>) access.get(app);
+        assertThat(access.get("roles"), CoreMatchers.instanceOf(Collection.class));
+        Collection<String> roles = (Collection<String>) access.get("roles");
+        if (shouldExistRole != null) {
+            assertThat(roles, hasItem(shouldExistRole));
+        }
+        if (shouldNotExistRole != null) {
+            assertThat(roles, not(hasItem(shouldNotExistRole)));
+        }
+    }
+
+    private Map<String, String> modifyScopeRolesMapperToBeIncludedInAll(ClientScopeResource rolesScope, ProtocolMapperRepresentation mapper) {
+        Map<String, String> config = new HashMap<>(mapper.getConfig());
+        mapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+        mapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        mapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        rolesScope.getProtocolMappers().update(mapper.getId(), mapper);
+        return config;
+    }
+
+    @Test
+    public void testHardcodeRoleAll() throws Exception {
+        RealmResource testRealm = adminClient.realm("test");
+        ClientResource app = findClientResourceByClientId(testRealm, "test-app");
+        // create two hardcoded realm mappers for realm and client
+        String hardcodedRoleRealmMapperId, hardcodedRoleClientMapperId;
+        try (Response resp = app.getProtocolMappers().createMapper(createHardcodedRole("hardcoded-realm", "hardcoded"))) {
+            hardcodedRoleRealmMapperId = ApiUtil.getCreatedId(resp);
+        }
+        try (Response resp = app.getProtocolMappers().createMapper(createHardcodedRole("hardcoded-app", "test-app.hardcoded"))) {
+            hardcodedRoleClientMapperId = ApiUtil.getCreatedId(resp);
+        }
+        // modify the default role mappers to be included in access, ID and user-info
+        ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(testRealm, OIDCLoginProtocolFactory.ROLES_SCOPE);
+        ProtocolMapperRepresentation realmRolesMapper = ApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.REALM_ROLES);
+        Map<String, String> configRealmRoles = modifyScopeRolesMapperToBeIncludedInAll(rolesScope, realmRolesMapper);
+        ProtocolMapperRepresentation clientRolesMapper = ApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.CLIENT_ROLES);
+        Map<String, String> configClientRoles = modifyScopeRolesMapperToBeIncludedInAll(rolesScope, clientRolesMapper);
+
+        // check that the hardcoded mappers are in the three responses
+        try {
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            // check hardcoded roles in access token
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            assertThat(accessToken.getRealmAccess().getRoles(), hasItem("hardcoded"));
+            assertNotNull(accessToken.getResourceAccess("test-app"));
+            assertThat(accessToken.getResourceAccess("test-app").getRoles(), hasItem("hardcoded"));
+
+            // in ID token
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            checkRealmAccessInOtherClaims(idToken.getOtherClaims(), "hardcoded", null);
+            checkClientAccessInOtherClaims(idToken.getOtherClaims(), "test-app", "hardcoded", null);
+
+            // in the user info
+            Client client = AdminClientUtil.createResteasyClient();
+            try {
+                Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, response.getAccessToken());
+                UserInfo userInfo = userInfoResponse.readEntity(UserInfo.class);
+                assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+                checkRealmAccessInOtherClaims(userInfo.getOtherClaims(), "hardcoded", null);
+                checkClientAccessInOtherClaims(userInfo.getOtherClaims(), "test-app", "hardcoded", null);
+            } finally {
+                client.close();
+            }
+        } finally {
+            // reset the roles client scopes
+            app.getProtocolMappers().delete(hardcodedRoleRealmMapperId);
+            app.getProtocolMappers().delete(hardcodedRoleClientMapperId);
+            realmRolesMapper.setConfig(configRealmRoles);
+            rolesScope.getProtocolMappers().update(realmRolesMapper.getId(), realmRolesMapper);
+            clientRolesMapper.setConfig(configClientRoles);
+            rolesScope.getProtocolMappers().update(clientRolesMapper.getId(), clientRolesMapper);
+        }
+    }
+
+    @Test
+    public void testRoleNameMapperAll() throws Exception {
+        RealmResource testRealm = adminClient.realm("test");
+        ClientResource app = findClientResourceByClientId(testRealm, "test-app");
+        // create two role name mappers for realm and client
+        String realmRoleNameMapperId, clientRoleNameMapperId;
+        try (Response resp = app.getProtocolMappers().createMapper(createRoleNameMapper("rename-realm-role", "user", "realm-user"))) {
+            realmRoleNameMapperId = ApiUtil.getCreatedId(resp);
+        }
+        try (Response resp = app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "test-app.test-app-user"))) {
+            clientRoleNameMapperId = ApiUtil.getCreatedId(resp);
+        }
+        // modify the default role mappers to be included in access, ID and user-info
+        ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(testRealm, OIDCLoginProtocolFactory.ROLES_SCOPE);
+        ProtocolMapperRepresentation realmRolesMapper = ApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.REALM_ROLES);
+        Map<String, String> configRealmRoles = modifyScopeRolesMapperToBeIncludedInAll(rolesScope, realmRolesMapper);
+        ProtocolMapperRepresentation clientRolesMapper = ApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.CLIENT_ROLES);
+        Map<String, String> configClientRoles = modifyScopeRolesMapperToBeIncludedInAll(rolesScope, clientRolesMapper);
+
+        // check that the role mappers are executed in the three responses
+        try {
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            // check mapped roles are in access token and not the original ones
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            assertThat(accessToken.getRealmAccess().getRoles(), hasItem("realm-user"));
+            assertThat(accessToken.getRealmAccess().getRoles(), not(hasItem("user")));
+            assertNotNull(accessToken.getResourceAccess("test-app"));
+            assertThat(accessToken.getResourceAccess("test-app").getRoles(), hasItem("test-app-user"));
+            assertThat(accessToken.getResourceAccess("test-app").getRoles(), not(hasItem("customer-user")));
+
+            // same in ID token
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            checkRealmAccessInOtherClaims(idToken.getOtherClaims(), "realm-user", "user");
+            checkClientAccessInOtherClaims(idToken.getOtherClaims(), "test-app", "test-app-user", "customer-user");
+
+            // same in user info
+            Client client = AdminClientUtil.createResteasyClient();
+            try {
+                Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, response.getAccessToken());
+                UserInfo userInfo = userInfoResponse.readEntity(UserInfo.class);
+                assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+                checkRealmAccessInOtherClaims(userInfo.getOtherClaims(), "realm-user", "user");
+                checkClientAccessInOtherClaims(userInfo.getOtherClaims(), "test-app", "test-app-user", "customer-user");
+            } finally {
+                client.close();
+            }
+        } finally {
+            // reset the roles client scopes
+            app.getProtocolMappers().delete(realmRoleNameMapperId);
+            app.getProtocolMappers().delete(clientRoleNameMapperId);
+            realmRolesMapper.setConfig(configRealmRoles);
+            rolesScope.getProtocolMappers().update(realmRolesMapper.getId(), realmRolesMapper);
+            clientRolesMapper.setConfig(configClientRoles);
+            rolesScope.getProtocolMappers().update(clientRolesMapper.getId(), clientRolesMapper);
         }
     }
 

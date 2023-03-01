@@ -320,6 +320,46 @@ public class SyncFederationTest extends AbstractAuthTest {
         });
     }
 
+    @Test
+    public void test04IgnoredSync() throws Exception {
+        // Add IgnoredDummyUserFederationProviderFactory provider
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel model = new UserStorageProviderModel();
+            model.setProviderId(IgnoredDummyUserFederationProviderFactory.IGNORED_PROVIDER_ID);
+            model.setPriority(1);
+            model.setName("test-sync-dummy");
+            model.setFullSyncPeriod(-1);
+            model.setChangedSyncPeriod(-1);
+            model.setLastSync(0);
+            appRealm.addComponentModel(model);
+        });
+
+        // run both sync methods that will be ignored
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            SynchronizationResult syncResult = UserStorageSyncManager.syncAllUsers(sessionFactory, appRealm.getId(), dummyModel);
+            Assert.assertTrue(syncResult.isIgnored());
+            syncResult = UserStorageSyncManager.syncChangedUsers(sessionFactory, appRealm.getId(), dummyModel);
+            Assert.assertTrue(syncResult.isIgnored());
+        });
+
+        // assert the last sync is not updated
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            Assert.assertEquals(0, dummyModel.getLastSync());
+        });
+
+        // remove provider
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            appRealm.removeComponent(dummyModel);
+        });
+    }
 
     private static void sleep(long ms) {
         try {

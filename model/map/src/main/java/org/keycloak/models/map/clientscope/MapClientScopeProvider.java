@@ -30,6 +30,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -48,17 +49,26 @@ public class MapClientScopeProvider implements ClientScopeProvider {
     private static final Logger LOG = Logger.getLogger(MapClientScopeProvider.class);
     private final KeycloakSession session;
     private final MapKeycloakTransaction<MapClientScopeEntity, ClientScopeModel> tx;
+    private final boolean txHasRealmId;
 
     public MapClientScopeProvider(KeycloakSession session, MapStorage<MapClientScopeEntity, ClientScopeModel> clientScopeStore) {
         this.session = session;
         this.tx = clientScopeStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
+        this.txHasRealmId = tx instanceof HasRealmId;
     }
 
     private Function<MapClientScopeEntity, ClientScopeModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
         return origEntity -> new MapClientScopeAdapter(session, realm, origEntity);
+    }
+
+    private MapKeycloakTransaction<MapClientScopeEntity, ClientScopeModel> txInRealm(RealmModel realm) {
+        if (txHasRealmId) {
+            ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
+        }
+        return tx;
     }
 
     private Predicate<MapClientScopeEntity> entityRealmFilter(RealmModel realm) {
@@ -74,7 +84,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
         DefaultModelCriteria<ClientScopeModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return tx.read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
+        return txInRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
           .map(entityToAdapterFunc(realm));
     }
 
@@ -84,11 +94,11 @@ public class MapClientScopeProvider implements ClientScopeProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
             .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        if (tx.getCount(withCriteria(mcb)) > 0) {
+        if (txInRealm(realm).exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("Client scope with name '" + name + "' in realm " + realm.getName());
         }
 
-        if (id != null && tx.read(id) != null) {
+        if (id != null && txInRealm(realm).exists(id)) {
             throw new ModelDuplicateException("Client scope exists: " + id);
         }
 
@@ -99,7 +109,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
         entity.setRealmId(realm.getId());
         entity.setName(KeycloakModelUtils.convertClientScopeName(name));
         
-        entity = tx.create(entity);
+        entity = txInRealm(realm).create(entity);
         return entityToAdapterFunc(realm).apply(entity);
     }
 
@@ -111,7 +121,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
 
         session.invalidate(CLIENT_SCOPE_BEFORE_REMOVE, realm, clientScope);
 
-        tx.delete(id);
+        txInRealm(realm).delete(id);
 
         session.invalidate(CLIENT_SCOPE_AFTER_REMOVE, clientScope);
 
@@ -136,7 +146,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
 
         LOG.tracef("getClientScopeById(%s, %s)%s", realm, id, getShortStackTrace());
 
-        MapClientScopeEntity entity = tx.read(id);
+        MapClientScopeEntity entity = txInRealm(realm).read(id);
         return (entity == null || ! entityRealmFilter(realm).test(entity))
           ? null
           : entityToAdapterFunc(realm).apply(entity);
@@ -147,7 +157,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
         DefaultModelCriteria<ClientScopeModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        tx.delete(withCriteria(mcb));
+        txInRealm(realm).delete(withCriteria(mcb));
     }
 
     @Override

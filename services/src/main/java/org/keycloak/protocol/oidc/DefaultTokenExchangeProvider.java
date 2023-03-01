@@ -74,6 +74,7 @@ import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -410,7 +411,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         AccessTokenResponse res = responseBuilder.build();
-        event.detail(Details.AUDIENCE, targetClient.getClientId());
+        event.detail(Details.AUDIENCE, targetClient.getClientId())
+            .user(targetUser);
 
         event.success();
 
@@ -459,7 +461,9 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         res.setExpiresIn(assertionLifespan <= 0 ? realm.getAccessCodeLifespan() : assertionLifespan);
         res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
 
-        event.detail(Details.AUDIENCE, targetClient.getClientId());
+        event.detail(Details.AUDIENCE, targetClient.getClientId())
+            .user(targetUser);
+
         event.success();
 
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
@@ -607,6 +611,14 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realm, user, mapper, context, target);
             }
         }
+
+        // make sure user attributes are updated based on attributes set to the context
+        for (Map.Entry<String, List<String>> attr : context.getAttributes().entrySet()) {
+            if (!UserModel.USERNAME.equalsIgnoreCase(attr.getKey())) {
+                user.setAttribute(attr.getKey(), attr.getValue());
+            }
+        }
+
         return user;
     }
 

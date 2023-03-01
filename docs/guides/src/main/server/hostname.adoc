@@ -18,7 +18,7 @@ can be categorized into three main groups:
 
 The base URL for each group has an important impact on how tokens are issued and validated, on how links are created for actions that require the user
 to be redirected to Keycloak (for example, when resetting password through email links), and, most importantly, how applications will
-discover these endpoints when fetching the OpenID Connect Discovery Document from `realms/{realm-name}/.well-known/openid-configuration`.
+discover these endpoints when fetching the OpenID Connect Discovery Document from `realms/++{realm-name}++/.well-known/openid-configuration`.
 
 === Frontend
 
@@ -83,13 +83,12 @@ Note that the `hostname-admin` and `hostname-admin-url` are mutually exclusive.
 
 To reduce attack surface, the administration endpoints for Keycloak and the Admin Console should not be publicly accessible.
 Therefore, you can secure them by using a reverse proxy.
-For more information about which paths to expose using a reverse proxy, see the <@links.server id="reverseproxy"/> Guide.
+For more information about which paths to expose using a reverse proxy, see <@links.server id="reverseproxy"/>.
 
 == Example Scenarios
 The following are more example scenarios and the corresponding commands for setting up a hostname.
 
-Note that the `start` command requires setting up TLS. The corresponding options are not shown for example purposes. For more details,
-see <@links.server id="enabletls"/> guide.
+Note that the `start` command requires setting up TLS. The corresponding options are not shown for example purposes. For more details, see <@links.server id="enabletls"/>.
 
 === Exposing the server behind a TLS termination proxy
 
@@ -106,7 +105,7 @@ In this example, the server is running without a proxy and exposed using a URL u
 <@kc.start parameters="--hostname-url=https://mykeycloak"/>
 
 It is highly recommended using a TLS termination proxy in front of the server for security and availability reasons. For more details,
-see the <@links.server id="reverseproxy"/> guide.
+see <@links.server id="reverseproxy"/>.
 
 === Forcing backend endpoints to use the same URL the server is exposed
 

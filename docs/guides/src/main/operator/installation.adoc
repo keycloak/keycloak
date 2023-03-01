@@ -27,11 +27,11 @@ On OpenShift, use the built-in OLM UI to install the Keycloak Operator.
 Navigate to `Home`, `Operators`, `OperatorHub` using the menu on the left side of the OpenShift Console.
 Search for "keycloak" on the search input box:
 
-image::{generatedGuideImages}/select-operator.jpeg["Select the Keycloak Operator in the UI"]
+image::select-operator.jpeg["Select the Keycloak Operator in the UI"]
 
 Select the Keycloak Operator from the list of results. After that, follow the instructions on the screen. Make sure you are installing from the `fast` channel:
 
-image::{generatedGuideImages}/configure-operator.jpeg["Configure Keycloak Operator"]
+image::configure-operator.jpeg["Configure Keycloak Operator"]
 
 === Vanilla Kubernetes Installation
 

@@ -11,7 +11,6 @@ summary="How to customize and optimize the Keycloak Container">
 
 The Keycloak Custom Resource (CR) give you the possibility to specify a custom container image for the Keycloak server.
 
-.Note:
 [NOTE]
 To ensure full compatibility of Operator and Operand,
 make sure that the version of Keycloak release used in the custom image is aligned with the version of the operator.
@@ -44,7 +43,6 @@ spec:
     hostname: test.keycloak.org
 ----
 
-.Note:
 [NOTE]
 Using custom images, every build time option passed either through a dedicated field or the `additionalOptions` key will be ignored.
 

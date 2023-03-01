@@ -23,7 +23,6 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <excludes>
-                    <exclude>**/node_modules/rcue/**</exclude>
                     <exclude>**/node_modules/**/node_modules/**</exclude>
                     <exclude>**/minimist/**</exclude>
                     <exclude>**/mkdirp/**</exclude>
@@ -63,9 +62,6 @@
                     <exclude>**/Gemfile*</exclude>
                     <exclude>**/.*</exclude>
 
-                    <!-- Remove once rcue stops shipping this file -->
-                    <exclude>**/git-Logo.svg</exclude>
-
                     <exclude>**/keycloak.v2/account/src/**</exclude>
                 </excludes>
             </resource>
@@ -73,6 +69,17 @@
                 <directory>src/main/resources-community</directory>
             </resource>
         </resources>
+        <plugins>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/node_modules/**/*</exclude>
+                        <exclude>**/web_modules/**/*</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>

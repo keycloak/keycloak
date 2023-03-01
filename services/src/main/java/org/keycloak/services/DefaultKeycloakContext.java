@@ -176,6 +176,6 @@ public class DefaultKeycloakContext implements KeycloakContext {
     }
 
     protected HttpResponse createHttpResponse() {
-        return new HttpResponseImpl(getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
+        return new HttpResponseImpl(session, getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
     }
 }

@@ -67,6 +67,11 @@
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-tasks-api</artifactId>
+            <version>${infinispan.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

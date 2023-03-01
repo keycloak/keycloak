@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  DEFAULT_JDK_VERSION: 11
+  DEFAULT_JDK_VERSION: 17
   DEFAULT_JDK_DIST: temurin
   MINIKUBE_VERSION: v1.28.0
   KUBERNETES_VERSION: v1.22.3
@@ -26,10 +26,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build distribution
+
+  conditional:
+    name: Check conditional workflows and jobs
     if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
+    outputs:
+      operator: ${{ steps.conditional.outputs.operator }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+
+  build:
+    name: Build distribution
+    if: needs.conditional.outputs.operator == 'true'
+    runs-on: ubuntu-latest
+    needs: conditional
     steps:
       - uses: actions/checkout@v3
 
@@ -213,7 +227,9 @@ jobs:
   check:
     name: Status Check - Keycloak Operator CI
     if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
-    needs: [check-set-status]
+    needs:
+      - conditional
+      - check-set-status
     runs-on: ubuntu-latest
 
     steps:
@@ -222,4 +238,5 @@ jobs:
       - name: Check status
         uses: ./.github/actions/checks-job-pass
         with:
+          required: ${{ needs.conditional.outputs.operator }}
           conclusion: ${{ needs.check-set-status.outputs.conclusion }}

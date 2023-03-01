@@ -21,13 +21,23 @@ public abstract class RoleMappingResource {
         this.auth = auth;
     }
 
-    public final Stream<ClientRole> mapping(Predicate<RoleModel> predicate) {
+    protected final Stream<ClientRole> mapping(Predicate<RoleModel> predicate) {
         return realm.getClientsStream().flatMap(RoleContainerModel::getRolesStream).filter(predicate)
-                .filter(auth.roles()::canMapClientScope).map(roleModel -> convertToModel(roleModel, realm.getClientsStream()));
+                .filter(auth.roles()::canMapRole).map(roleModel -> convertToModel(roleModel, realm.getClientsStream()));
     }
 
-    public final List<ClientRole> mapping(Predicate<RoleModel> predicate, long first, long max, final String search) {
+    protected final Stream<ClientRole> mapping(Predicate<RoleModel> predicate, Predicate<RoleModel> authPredicate) {
+        return realm.getClientsStream().flatMap(RoleContainerModel::getRolesStream).filter(predicate)
+                .filter(authPredicate).map(roleModel -> convertToModel(roleModel, realm.getClientsStream()));
+    }
+
+    protected final List<ClientRole> mapping(Predicate<RoleModel> predicate, long first, long max, final String search) {
         return mapping(predicate).filter(clientRole -> clientRole.getClient().contains(search) || clientRole.getRole().contains(search))
+                .skip(first).limit(max).collect(Collectors.toList());
+    }
+
+    protected final List<ClientRole> mapping(Predicate<RoleModel> predicate, Predicate<RoleModel> authPredicate, long first, long max, final String search) {
+        return mapping(predicate, authPredicate).filter(clientRole -> clientRole.getClient().contains(search) || clientRole.getRole().contains(search))
                 .skip(first).limit(max).collect(Collectors.toList());
     }
 }

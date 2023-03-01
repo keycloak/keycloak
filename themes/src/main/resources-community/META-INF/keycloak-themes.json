@@ -4,7 +4,7 @@
         "types": [ "admin", "account", "login", "email" ]
     }, {
         "name" : "keycloak",
-        "types": [ "admin", "account", "login", "common", "email", "welcome" ]
+        "types": [ "account", "login", "common", "email", "welcome" ]
     }, {
         "name" : "keycloak.v2",
         "types": [ "account", "admin" ]

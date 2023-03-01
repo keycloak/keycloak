@@ -11,13 +11,14 @@ import org.keycloak.common.profile.ProfileException;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
@@ -27,7 +28,7 @@ public class ProfileTest {
     private static final Profile.Feature DISABLED_BY_DEFAULT_FEATURE = Profile.Feature.DOCKER;
     private static final Profile.Feature PREVIEW_FEATURE = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ;
     private static final Profile.Feature EXPERIMENTAL_FEATURE = Profile.Feature.DYNAMIC_SCOPES;
-    private static final Profile.Feature DEPRECATED_FEATURE = Profile.Feature.ADMIN;
+    private static Profile.Feature DEPRECATED_FEATURE = null;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -38,7 +39,17 @@ public class ProfileTest {
         Assert.assertEquals(Profile.Feature.Type.DISABLED_BY_DEFAULT, DISABLED_BY_DEFAULT_FEATURE.getType());
         Assert.assertEquals(Profile.Feature.Type.PREVIEW, PREVIEW_FEATURE.getType());
         Assert.assertEquals(Profile.Feature.Type.EXPERIMENTAL, EXPERIMENTAL_FEATURE.getType());
-        Assert.assertEquals(Profile.Feature.Type.DEPRECATED, DEPRECATED_FEATURE.getType());
+
+        for (Profile.Feature feature : Profile.Feature.values()) {
+            if (feature.getType().equals(Profile.Feature.Type.DEPRECATED)) {
+                DEPRECATED_FEATURE = feature;
+                break;
+            }
+        }
+
+        if (DEPRECATED_FEATURE != null) {
+            Assert.assertEquals(Profile.Feature.Type.DEPRECATED, DEPRECATED_FEATURE.getType());
+        }
     }
 
     @After
@@ -54,11 +65,18 @@ public class ProfileTest {
         Assert.assertFalse(Profile.isFeatureEnabled(DISABLED_BY_DEFAULT_FEATURE));
         Assert.assertFalse(Profile.isFeatureEnabled(PREVIEW_FEATURE));
         Assert.assertFalse(Profile.isFeatureEnabled(EXPERIMENTAL_FEATURE));
-        Assert.assertFalse(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        if (DEPRECATED_FEATURE != null) {
+            Assert.assertFalse(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        }
 
         Assert.assertEquals(Profile.ProfileName.DEFAULT, profile.getName());
-        assertEquals(profile.getDisabledFeatures(), Profile.Feature.ADMIN, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DYNAMIC_SCOPES, Profile.Feature.DOCKER, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.MAP_STORAGE, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL);
-        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL);
+        Set<Profile.Feature> disabledFeatutes = new HashSet<>(Arrays.asList(Profile.Feature.FIPS, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DYNAMIC_SCOPES, Profile.Feature.DOCKER, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.MAP_STORAGE, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL));
+        // KERBEROS can be disabled (i.e. FIPS mode disables SunJGSS provider)
+        if (Profile.Feature.KERBEROS.getType() == Profile.Feature.Type.DISABLED_BY_DEFAULT) {
+            disabledFeatutes.add(Profile.Feature.KERBEROS);
+        }
+        assertEquals(profile.getDisabledFeatures(), disabledFeatutes);
+        assertEquals(profile.getPreviewFeatures(), Profile.Feature.FIPS, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL);
     }
 
     @Test
@@ -129,7 +147,11 @@ public class ProfileTest {
 
     @Test
     public void configWithCommaSeparatedList() {
-        String enabledFeatures = DISABLED_BY_DEFAULT_FEATURE.getKey() + "," + PREVIEW_FEATURE.getKey() + "," + EXPERIMENTAL_FEATURE.getKey() + "," + DEPRECATED_FEATURE.getKey();
+        String enabledFeatures = DISABLED_BY_DEFAULT_FEATURE.getKey() + "," + PREVIEW_FEATURE.getKey() + "," + EXPERIMENTAL_FEATURE.getKey();
+        if (DEPRECATED_FEATURE != null) {
+            enabledFeatures += "," + DEPRECATED_FEATURE.getKey();
+        }
+
         String disabledFeatures = DEFAULT_FEATURE.getKey();
         Profile.configure(new CommaSeparatedListProfileConfigResolver(enabledFeatures, disabledFeatures));
 
@@ -137,7 +159,9 @@ public class ProfileTest {
         Assert.assertTrue(Profile.isFeatureEnabled(DISABLED_BY_DEFAULT_FEATURE));
         Assert.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
         Assert.assertTrue(Profile.isFeatureEnabled(EXPERIMENTAL_FEATURE));
-        Assert.assertTrue(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        if (DEPRECATED_FEATURE != null) {
+            Assert.assertTrue(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        }
     }
 
     @Test
@@ -147,7 +171,9 @@ public class ProfileTest {
         properties.setProperty("keycloak.profile.feature." + DISABLED_BY_DEFAULT_FEATURE.name().toLowerCase(), "enabled");
         properties.setProperty("keycloak.profile.feature." + PREVIEW_FEATURE.name().toLowerCase(), "enabled");
         properties.setProperty("keycloak.profile.feature." + EXPERIMENTAL_FEATURE.name().toLowerCase(), "enabled");
-        properties.setProperty("keycloak.profile.feature." + DEPRECATED_FEATURE.name().toLowerCase(), "enabled");
+        if (DEPRECATED_FEATURE != null) {
+            properties.setProperty("keycloak.profile.feature." + DEPRECATED_FEATURE.name().toLowerCase(), "enabled");
+        }
 
         Profile.configure(new PropertiesProfileConfigResolver(properties));
 
@@ -155,7 +181,9 @@ public class ProfileTest {
         Assert.assertTrue(Profile.isFeatureEnabled(DISABLED_BY_DEFAULT_FEATURE));
         Assert.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
         Assert.assertTrue(Profile.isFeatureEnabled(EXPERIMENTAL_FEATURE));
-        Assert.assertTrue(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        if (DEPRECATED_FEATURE != null) {
+            Assert.assertTrue(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        }
     }
 
     @Test
@@ -165,7 +193,9 @@ public class ProfileTest {
         properties.setProperty("feature." + DISABLED_BY_DEFAULT_FEATURE.name().toLowerCase(), "enabled");
         properties.setProperty("feature." + PREVIEW_FEATURE.name().toLowerCase(), "enabled");
         properties.setProperty("feature." + EXPERIMENTAL_FEATURE.name().toLowerCase(), "enabled");
-        properties.setProperty("feature." + DEPRECATED_FEATURE.name().toLowerCase(), "enabled");
+        if (DEPRECATED_FEATURE != null) {
+            properties.setProperty("feature." + DEPRECATED_FEATURE.name().toLowerCase(), "enabled");
+        }
 
         Path tempDirectory = Files.createTempDirectory("jboss-config");
         System.setProperty("jboss.server.config.dir", tempDirectory.toString());
@@ -182,7 +212,9 @@ public class ProfileTest {
         Assert.assertTrue(Profile.isFeatureEnabled(DISABLED_BY_DEFAULT_FEATURE));
         Assert.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
         Assert.assertTrue(Profile.isFeatureEnabled(EXPERIMENTAL_FEATURE));
-        Assert.assertTrue(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        if (DEPRECATED_FEATURE != null) {
+            Assert.assertTrue(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        }
 
         Files.delete(profileProperties);
         Files.delete(tempDirectory);
@@ -200,8 +232,12 @@ public class ProfileTest {
         Assert.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
     }
 
+    public static void assertEquals(Set<Profile.Feature> actual, Collection<Profile.Feature> expected) {
+        assertEquals(actual, expected.toArray(new Profile.Feature[0]));
+    }
+
     public static void assertEquals(Set<Profile.Feature> actual, Profile.Feature... expected) {
-        Profile.Feature[] a = actual.toArray(new Profile.Feature[actual.size()]);
+        Profile.Feature[] a = actual.toArray(new Profile.Feature[0]);
         Arrays.sort(a, new FeatureComparator());
         Arrays.sort(expected, new FeatureComparator());
         Assert.assertArrayEquals(a, expected);

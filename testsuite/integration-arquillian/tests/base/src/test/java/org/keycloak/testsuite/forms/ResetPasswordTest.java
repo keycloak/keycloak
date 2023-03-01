@@ -55,6 +55,7 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -1094,6 +1095,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-15239
     @Test
     public void resetPasswordWithSpnegoEnabled() throws IOException, MessagingException {
+        KerberosUtils.assumeKerberosSupportExpected();
+
         // Just switch SPNEGO authenticator requirement to alternative. No real usage of SPNEGO needed for this test
         AuthenticationExecutionModel.Requirement origRequirement = AbstractKerberosTest.updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE, testRealm());
 

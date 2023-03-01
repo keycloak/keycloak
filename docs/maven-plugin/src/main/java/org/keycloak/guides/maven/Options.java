@@ -14,6 +14,7 @@ import org.keycloak.quarkus.runtime.Providers;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,10 +34,14 @@ public class Options {
         options = PropertyMappers.getMappers().stream()
                 .filter(m -> !m.isHidden())
                 .filter(propertyMapper -> Objects.nonNull(propertyMapper.getDescription()))
-                .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), m.getDescription(), (String) m.getDefaultValue().map(Object::toString).orElse(null), m.getExpectedValues()))
+                .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), null, m.getDescription(), (String) m.getDefaultValue().map(Object::toString).orElse(null), m.getExpectedValues()))
                 .sorted(Comparator.comparing(Option::getKey))
                 .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1, LinkedHashMap::new)); // Need to ignore duplicate keys??
         ProviderManager providerManager = Providers.getProviderManager(Thread.currentThread().getContextClassLoader());
+
+        options.forEach((s, option) -> {
+            option.description = option.description.replaceAll("'([^ ]*)'", "`$1`");
+        });
 
         for (Spi loadSpi : providerManager.loadSpis().stream().sorted(Comparator.comparing(Spi::getName)).collect(Collectors.toList())) {
             for (ProviderFactory providerFactory : providerManager.load(loadSpi).stream().sorted(Comparator.comparing(ProviderFactory::getId)).collect(Collectors.toList())) {
@@ -49,10 +54,21 @@ public class Options {
                 String optionPrefix = NS_KEYCLOAK_PREFIX + String.join(OPTION_PART_SEPARATOR, ArrayUtils.insert(0, new String[] {loadSpi.getName(), providerFactory.getId()}, "spi"));
                 List<Option> options = configMetadata.stream()
                         .map(m -> new Option(Configuration.toDashCase(optionPrefix.concat("-") + m.getName()), OptionCategory.GENERAL, false,
+                                m.getType(),
                                 m.getHelpText(),
-                                m.getDefaultValue() == null ? "none" : m.getDefaultValue().toString(),
-                                m.getOptions() == null ? (m.getType() == null ? Collections.emptyList() : Collections.singletonList(m.getType())) : m.getOptions()))
+                                m.getDefaultValue() == null ? null : m.getDefaultValue().toString(),
+                                m.getOptions() == null ? Collections.emptyList() : m.getOptions()))
                         .sorted(Comparator.comparing(Option::getKey)).collect(Collectors.toList());
+
+                ArrayList<String> booleanValues = new ArrayList<>();
+                booleanValues.add("true");
+                booleanValues.add("false");
+                options.forEach(option -> {
+                    if (option.type.equals("boolean")) {
+                        option.expectedValues = booleanValues;
+                    }
+                    option.description = option.description.replaceAll("'([^ ]*)'", "`$1`");
+                });
 
                 if (!options.isEmpty()) {
                     providerOptions.computeIfAbsent(toDashCase(loadSpi.getName()), k -> new LinkedHashMap<>()).put(toDashCase(providerFactory.getId()), options);
@@ -91,14 +107,16 @@ public class Options {
         private String key;
         private OptionCategory category;
         private boolean build;
+        private String type;
         private String description;
         private String defaultValue;
         private List<String> expectedValues;
 
-        public Option(String key, OptionCategory category, boolean build, String description, String defaultValue, Iterable<String> expectedValues) {
+        public Option(String key, OptionCategory category, boolean build, String type, String description, String defaultValue, Iterable<String> expectedValues) {
             this.key = key;
             this.category = category;
             this.build = build;
+            this.type = type;
             this.description = description;
             this.defaultValue = defaultValue;
             this.expectedValues = StreamSupport.stream(expectedValues.spliterator(), false).collect(Collectors.toList());
@@ -110,6 +128,10 @@ public class Options {
 
         public String getKey() {
             return key.substring(3);
+        }
+
+        public String getType() {
+            return type;
         }
 
         public String getKeyCli() {

@@ -57,15 +57,12 @@ public class GroupsResource {
                                                         @QueryParam("exact") @DefaultValue("false") boolean exact) {
         this.auth.groups().requireList();
         final Stream<GroupModel> stream;
-        if (!"".equals(search)) {
-            if (global) {
-                stream = session.groups().searchForGroupByNameStream(realm, search, exact, first, max);
-            } else {
-                stream = this.realm.getTopLevelGroupsStream().filter(g -> g.getName().contains(search)).skip(first).limit(max);
-            }
+        if (global) {
+            stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, first, max);
         } else {
-            stream = this.realm.getTopLevelGroupsStream(first, max);
+            stream = this.realm.getTopLevelGroupsStream().filter(g -> g.getName().contains(search)).skip(first).limit(max);
         }
+
         return stream.map(g -> toGroupHierarchy(g, search, exact));
     }
 
@@ -76,10 +73,13 @@ public class GroupsResource {
                 groupMatchesSearchOrIsPathElement(
                         g, search
                 )
-        ).map(subGroup ->
-                ModelToRepresentation.toGroupHierarchy(
-                        subGroup, true, search, exact
-                )
+        ).map(subGroup -> {
+                    final GroupRepresentation subRep = ModelToRepresentation.toGroupHierarchy(
+                            subGroup, true, search, exact
+                    );
+                    subRep.setAccess(auth.groups().getAccess(subGroup));
+                    return subRep;
+                }
         ).collect(Collectors.toList()));
 
         return rep;

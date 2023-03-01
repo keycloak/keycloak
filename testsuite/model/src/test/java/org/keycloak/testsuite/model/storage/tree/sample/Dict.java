@@ -130,6 +130,17 @@ public class Dict<E> extends UpdatableEntity.Impl implements EntityFieldDelegate
         return null;
     }
 
+
+    @Override
+    public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<E>> & org.keycloak.models.map.common.EntityField<E>> void collectionAdd(EF field, T value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<E>> & org.keycloak.models.map.common.EntityField<E>> Object collectionRemove(EF field, T value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     protected boolean isKeyAllowed(String key) {
         return allowedKeys.contains(key);
     }

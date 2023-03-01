@@ -38,6 +38,6 @@ public class RejectRequestExecutor implements ClientPolicyExecutorProvider<Clien
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
-        throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "request not allowed");
+        throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Request not allowed");
     }
 }

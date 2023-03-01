@@ -119,11 +119,6 @@ They are designed to work with most of the desktop browsers (HtmlUnit included) 
 
 The tests are place in a separate module (`tests/other/base-ui`) and are disabled by default.
 
-### Old Admin Console UI Tests
-
-Tests for the old Keycloak Admin Console are located in a separate module `tests/other/old-admin-console` 
-and are **disabled** by default. Can be enabled by `-Pold-admin-console`.
-
 #### Types of adapter tests
 
 1. Using *custom test servlets*

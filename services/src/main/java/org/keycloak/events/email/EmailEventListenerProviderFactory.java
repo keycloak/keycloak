@@ -40,6 +40,9 @@ import java.util.Set;
 public class EmailEventListenerProviderFactory implements EventListenerProviderFactory {
 
     private static final Set<EventType> SUPPORTED_EVENTS = new HashSet<>();
+
+    public static final String ID = "email";
+
     static {
         Collections.addAll(SUPPORTED_EVENTS, EventType.LOGIN_ERROR, EventType.UPDATE_PASSWORD, EventType.REMOVE_TOTP, EventType.UPDATE_TOTP);
     }
@@ -48,8 +51,7 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        EmailTemplateProvider emailTemplateProvider = session.getProvider(EmailTemplateProvider.class);
-        return new EmailEventListenerProvider(session, emailTemplateProvider, includedEvents);
+        return new EmailEventListenerProvider(session, includedEvents);
     }
 
     @Override
@@ -82,7 +84,7 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
 
     @Override
     public String getId() {
-        return "email";
+        return ID;
     }
 
     @Override

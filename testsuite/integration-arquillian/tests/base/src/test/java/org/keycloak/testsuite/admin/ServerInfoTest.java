@@ -29,6 +29,7 @@ import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
 
 import java.util.List;
@@ -36,7 +37,6 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -67,10 +67,6 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getCryptoInfo());
         Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), KeystoreUtils.getSupportedKeystoreTypes());
 
-        String expectedSupportedRsaKeySizes = System.getProperty("auth.server.supported.rsa.key.sizes");
-        if (expectedSupportedRsaKeySizes == null || expectedSupportedRsaKeySizes.trim().isEmpty()) {
-            fail("Property 'auth.server.supported.rsa.key.sizes' not set");
-        }
         ComponentTypeRepresentation rsaGeneratedProviderInfo = info.getComponentTypes().get(KeyProvider.class.getName())
                 .stream()
                 .filter(componentType -> GeneratedRsaKeyProviderFactory.ID.equals(componentType.getId()))
@@ -79,7 +75,7 @@ public class ServerInfoTest extends AbstractKeycloakTest {
                 .stream()
                 .filter(configProp -> Attributes.KEY_SIZE_KEY.equals(configProp.getName()))
                 .findFirst().orElseThrow(() -> new RuntimeException("Not found provider with ID 'rsa-generated'"));
-        Assert.assertNames(keySizeRep.getOptions(), expectedSupportedRsaKeySizes.split(","));
+        Assert.assertNames(keySizeRep.getOptions(), KeyUtils.getExpectedSupportedRsaKeySizes());
 
         assertEquals(Version.VERSION, info.getSystemInfo().getVersion());
         assertNotNull(info.getSystemInfo().getServerTime());

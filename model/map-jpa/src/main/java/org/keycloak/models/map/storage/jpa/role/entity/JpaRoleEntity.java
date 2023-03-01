@@ -178,11 +178,6 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootVersione
     }
 
     @Override
-    public void setClientRole(Boolean clientRole) {
-        // intentionally do nothing, assuming the role is client-role when this.getClientId() != null;
-    }
-
-    @Override
     public void setRealmId(String realmId) {
         metadata.setRealmId(realmId);
     }

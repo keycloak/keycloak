@@ -16,6 +16,8 @@
   -->
 <distributed-cache name="admin-events" mode="SYNC">
     <encoding media-type="application/x-protostream"/>
+    <locking isolation="REPEATABLE_READ" />
+    <transaction mode="FULL_XA"/>
     <indexing>
         <indexed-entities>
             <indexed-entity>kc.HotRodAdminEventEntity</indexed-entity>

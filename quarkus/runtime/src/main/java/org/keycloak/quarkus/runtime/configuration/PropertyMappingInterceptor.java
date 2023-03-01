@@ -16,14 +16,16 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import javax.annotation.Priority;
 
-import io.quarkus.runtime.configuration.AbstractRawDefaultConfigSource;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.quarkus.runtime.Environment;
+import io.smallrye.config.Priorities;
+
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -36,31 +38,16 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  * <p>The {@link PropertyMapper} can either perform a 1:1 mapping where the value of a property from
  * Keycloak (e.g.: https.port) is mapped to a single properties in Quarkus, or perform a 1:N mapping where the value of a property
  * from Keycloak (e.g.: database) is mapped to multiple properties in Quarkus.
+ *
+ * <p>This interceptor should execute between the {@link io.smallrye.config.ExpressionConfigSourceInterceptor} and the {@link io.smallrye.config.ProfileConfigSourceInterceptor}
+ * so that expressions are properly resolved after executing this interceptor while still able to resolve properties based on the current
+ * profile.
  */
+@Priority(Priorities.LIBRARY + 201)
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        ConfigValue value = PropertyMappers.getValue(context, name);
-        
-        if (value == null || value.getValue() == null) {
-            return null;
-        }
-
-        if (value.getValue().indexOf("${") == -1) {
-            return value;
-        }
-        
-        return value.withValue(
-                StringPropertyReplacer.replaceProperties(value.getValue(),
-                        property -> {
-                            ConfigValue prop = context.proceed(property);
-                            
-                            if (prop == null) {
-                                return null;
-                            }
-                            
-                            return prop.getValue();
-                        }));
+        return PropertyMappers.getValue(context, name);
     }
 }

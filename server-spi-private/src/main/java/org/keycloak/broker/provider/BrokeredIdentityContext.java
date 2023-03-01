@@ -186,6 +186,25 @@ public class BrokeredIdentityContext {
         }
     }
 
+    public Map<String, List<String>> getAttributes() {
+        Map<String, List<String>> result = new HashMap<>();
+
+        for (Map.Entry<String, Object> entry : this.contextData.entrySet()) {
+            if (entry.getKey().startsWith(Constants.USER_ATTRIBUTES_PREFIX)) {
+                String attrName = entry.getKey().substring(Constants.USER_ATTRIBUTES_PREFIX.length());
+                List<String> asList = (List<String>) getContextData().get(Constants.USER_ATTRIBUTES_PREFIX + attrName);
+
+                if (asList.isEmpty()) {
+                    continue;
+                }
+
+                result.put(attrName, asList);
+            }
+        }
+
+        return result;
+    }
+
     public String getFirstName() {
         return firstName;
     }

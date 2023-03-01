@@ -23,24 +23,23 @@ import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventType;
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
-import org.keycloak.common.Profile;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaAutoFlushListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
 
+import java.util.Objects;
+
 /**
  * Adding listeners to Hibernate's entity manager for the JPA Map store.
- * This used to be a JPA map storage specific configuration via the Hibernate option <code>hibernate.integrator_provider</code>
- * which worked in an Undertow setup but not in a Quarkus setup.
- * As this will be called for both the legacy store and the new JPA Map store, it first checks if the JPA Map store has been enabled.
- * A follow-up issue to track this is here: <a href="https://github.com/keycloak/keycloak/issues/13219">#13219</a>
  */
 public class EventListenerIntegrator implements Integrator {
+
+    public static String JPA_MAP_STORAGE_ENABLED = "kc.jpa-map-storage-enabled";
 
     @Override
     public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactoryImplementor,
             SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
-        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+        if (Objects.equals(sessionFactoryImplementor.getProperties().get(JPA_MAP_STORAGE_ENABLED), Boolean.TRUE.toString())) {
             final EventListenerRegistry eventListenerRegistry =
                     sessionFactoryServiceRegistry.getService(EventListenerRegistry.class);
 

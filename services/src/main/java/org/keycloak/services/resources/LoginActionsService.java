@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -255,6 +256,21 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
+        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+            @Override
+            public Response runInternal(KeycloakSession session) {
+                // create another instance of the endpoint to isolate each run.
+                session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
+                LoginActionsService other = new LoginActionsService(session, new EventBuilder(session.getContext().getRealm(), session, clientConnection));
+                // process the request in the created instance.
+                return other.authenticateInternal(authSessionId, code, execution, clientId, tabId);
+            }
+        }, 10, 100);
+
+    }
+
+    private Response authenticateInternal(final String authSessionId, final String code, final String execution,
+                                          final String clientId, final String tabId) {
         event.event(EventType.LOGIN);
 
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, AUTHENTICATE_PATH);

@@ -17,7 +17,10 @@
 
 package org.keycloak.events.email;
 
+import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
+
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Event;
@@ -25,7 +28,12 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
@@ -41,17 +49,16 @@ public class EmailEventListenerProvider implements EventListenerProvider {
 
     private KeycloakSession session;
     private RealmProvider model;
-    private EmailTemplateProvider emailTemplateProvider;
     private Set<EventType> includedEvents;
     private EventListenerTransaction tx = new EventListenerTransaction(null, this::sendEmail);
+    private final KeycloakSessionFactory sessionFactory;
 
-    public EmailEventListenerProvider(KeycloakSession session, EmailTemplateProvider emailTemplateProvider, Set<EventType> includedEvents) {
+    public EmailEventListenerProvider(KeycloakSession session, Set<EventType> includedEvents) {
         this.session = session;
         this.model = session.realms();
-        this.emailTemplateProvider = emailTemplateProvider;
         this.includedEvents = includedEvents;
-
         this.session.getTransactionManager().enlistAfterCompletion(tx);
+        this.sessionFactory = session.getKeycloakSessionFactory();
     }
 
     @Override
@@ -64,15 +71,37 @@ public class EmailEventListenerProvider implements EventListenerProvider {
     }
     
     private void sendEmail(Event event) {
-        RealmModel realm = model.getRealm(event.getRealmId());
-        UserModel user = session.users().getUserById(realm, event.getUserId());
-        if (user != null && user.getEmail() != null && user.isEmailVerified()) {
-            try {
-                emailTemplateProvider.setRealm(realm).setUser(user).sendEvent(event);
-            } catch (EmailException e) {
-                log.error("Failed to send type mail", e);
+        HttpRequest request = session.getContext().getHttpRequest();
+
+        runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+            @Override
+            public void run(KeycloakSession session) {
+                KeycloakContext context = session.getContext();
+                RealmModel realm = session.realms().getRealm(event.getRealmId());
+
+                context.setRealm(realm);
+
+                String clientId = event.getClientId();
+
+                if (clientId != null) {
+                    ClientModel client = realm.getClientByClientId(clientId);
+                    context.setClient(client);
+                }
+
+                Resteasy.pushContext(HttpRequest.class, request);
+
+                UserModel user = session.users().getUserById(realm, event.getUserId());
+
+                if (user != null && user.getEmail() != null && user.isEmailVerified()) {
+                    try {
+                        EmailTemplateProvider emailTemplateProvider = session.getProvider(EmailTemplateProvider.class);
+                        emailTemplateProvider.setRealm(realm).setUser(user).sendEvent(event);
+                    } catch (EmailException e) {
+                        log.error("Failed to send type mail", e);
+                    }
+                }
             }
-        }
+        });
     }
 
     @Override

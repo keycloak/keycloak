@@ -46,7 +46,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -125,25 +124,60 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testConfigInCRTakesPrecedence() {
         try {
-            var kc = getDefaultKeycloakDeployment();
-            var health = new ValueOrSecret("health-enabled", "false");
-            var e = new EnvVarBuilder()
-                    .withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(health.getName()))
-                    .withValue(health.getValue())
-                    .build();
-            kc.getSpec().getAdditionalOptions().add(health);
-            deployKeycloak(k8sclient, kc, false);
+            var defaultKCDeploy = getDefaultKeycloakDeployment();
 
-            assertThat(Constants.DEFAULT_DIST_CONFIG.get(health.getName())).isEqualTo("true"); // just a sanity check default values did not change
+            var valueSecretHealthProp = new ValueOrSecret("health-enabled", "false");
+            var valueSecretProxyProp = new ValueOrSecret("proxy", "reencrypt");
+
+            var healthEnvVar = new EnvVarBuilder()
+                    .withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(valueSecretHealthProp.getName()))
+                    .withValue(valueSecretHealthProp.getValue())
+                    .build();
+
+            var proxyEnvVar = new EnvVarBuilder()
+                    .withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(valueSecretProxyProp.getName()))
+                    .withValue(valueSecretProxyProp.getValue())
+                    .build();
+
+            defaultKCDeploy.getSpec().getAdditionalOptions().add(valueSecretHealthProp);
+            defaultKCDeploy.getSpec().getAdditionalOptions().add(valueSecretProxyProp);
+
+            deployKeycloak(k8sclient, defaultKCDeploy, false);
+
+            assertThat(
+                    Constants.DEFAULT_DIST_CONFIG.get(valueSecretHealthProp.getName())
+            ).isEqualTo("true"); // just a sanity check default values did not change
+
+            assertThat(
+                    Constants.DEFAULT_DIST_CONFIG.get(valueSecretProxyProp.getName())
+            ).isEqualTo("passthrough"); // just a sanity check default values did not change
 
             Awaitility.await()
                     .ignoreExceptions()
                     .untilAsserted(() -> {
-                        Log.info("Asserting default value was overwritten by CR value");
-                        var c = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName()).get()
-                                .getSpec().getTemplate().getSpec().getContainers().get(0);
 
-                        assertThat(c.getEnv()).contains(e);
+                        Log.info("Asserting default value was overwritten by CR value");
+
+                        var deployedKCStatefullSet = k8sclient.apps()
+                                .statefulSets()
+                                .inNamespace(namespace)
+                                .withName(defaultKCDeploy.getMetadata().getName());
+
+                        var firstKCContainer = deployedKCStatefullSet.get()
+                                .getSpec()
+                                .getTemplate()
+                                .getSpec()
+                                .getContainers()
+                                .get(0);
+
+                        assertThat(firstKCContainer.getEnv().stream()
+                                .filter(oneEnvVar -> oneEnvVar.getName().equalsIgnoreCase(healthEnvVar.getName())))
+                                .containsExactly(healthEnvVar);
+
+                        assertThat(firstKCContainer.getEnv().stream()
+                                .filter(oneEnvVar -> oneEnvVar.getName().equalsIgnoreCase(proxyEnvVar.getName())))
+                                .containsExactly(proxyEnvVar);
+
                     });
         } catch (Exception e) {
             savePodLogs();
@@ -493,7 +527,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .list()
                     .getItems();
 
-            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getExec().getCommand().stream().collect(Collectors.joining()).contains("foobar"));
+            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPath().contains("foobar"));
         } catch (Exception e) {
             savePodLogs();
             throw e;
@@ -529,7 +563,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .list()
                     .getItems();
 
-            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getExec().getCommand().stream().collect(Collectors.joining()).contains("barfoo"));
+            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPath().contains("barfoo"));
         } catch (Exception e) {
             savePodLogs();
             throw e;

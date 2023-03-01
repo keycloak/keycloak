@@ -55,7 +55,6 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
         SETTERS.put(MapRoleEntityFields.ID, (e, v) -> e.setId((String) v));
         SETTERS.put(MapRoleEntityFields.REALM_ID, (e, v) -> e.setRealmId((String) v));
         SETTERS.put(MapRoleEntityFields.CLIENT_ID, (e, v) -> e.setClientId((String) v));
-        SETTERS.put(MapRoleEntityFields.CLIENT_ROLE, (e, v) -> e.setClientRole((Boolean) v));
         //noinspection unchecked
         SETTERS.put(MapRoleEntityFields.ATTRIBUTES, (e, v) -> e.setAttributes((Map<String, List<String>>) v));
         //noinspection unchecked
@@ -69,7 +68,6 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
         GETTERS.put(MapRoleEntityFields.ID, LdapRoleEntity::getId);
         GETTERS.put(MapRoleEntityFields.REALM_ID, LdapRoleEntity::getRealmId);
         GETTERS.put(MapRoleEntityFields.CLIENT_ID, LdapRoleEntity::getClientId);
-        GETTERS.put(MapRoleEntityFields.CLIENT_ROLE, LdapRoleEntity::isClientRole);
         GETTERS.put(MapRoleEntityFields.ATTRIBUTES, LdapRoleEntity::getAttributes);
         GETTERS.put(MapRoleEntityFields.COMPOSITE_ROLES, LdapRoleEntity::getCompositeRoles);
         GETTERS.put(MapRoleEntityFields.NAME, LdapRoleEntity::getName);
@@ -184,16 +182,6 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
         return ldapMapObject.getAttributeAsString("description");
     }
 
-    public void setClientRole(Boolean clientRole) {
-        if (!Objects.equals(this.isClientRole(), clientRole)) {
-            throw new NotImplementedException();
-        }
-    }
-
-    public boolean isClientRole() {
-        return clientId != null;
-    }
-
     public void setRealmId(String realmId) {
         // we'll not store this information, as LDAP store might be used from different realms
     }
@@ -207,7 +195,7 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
     public void setName(String name) {
         this.updated |= !Objects.equals(getName(), name);
         ldapMapObject.setSingleAttribute(roleMapperConfig.getRoleNameLdapAttribute(), name);
-        LdapMapDn dn = LdapMapDn.fromString(roleMapperConfig.getRolesDn(clientId != null, clientId));
+        LdapMapDn dn = LdapMapDn.fromString(roleMapperConfig.getRolesDn(clientId));
         dn.addFirst(roleMapperConfig.getRoleNameLdapAttribute(), name);
         ldapMapObject.setDn(dn);
     }
@@ -330,6 +318,21 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
             throw new ModelException("unsupported field for getters " + field);
         }
         return consumer.apply(this);
+    }
+
+    @Override
+    public <K, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> Object mapGet(EF field, K key) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <K, T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> void mapPut(EF field, K key, T value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <K, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> & org.keycloak.models.map.common.EntityField<org.keycloak.models.map.role.MapRoleEntity>> Object mapRemove(EF field, K key) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
 }

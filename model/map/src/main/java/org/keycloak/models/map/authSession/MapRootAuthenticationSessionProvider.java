@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
@@ -54,6 +55,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     private final KeycloakSession session;
     protected final MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
     private int authSessionsLimit;
+    private final boolean txHasRealmId;
 
     public MapRootAuthenticationSessionProvider(KeycloakSession session,
                                                 MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore,
@@ -63,17 +65,25 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         this.authSessionsLimit = authSessionsLimit;
 
         session.getTransactionManager().enlistAfterCompletion(tx);
+        this.txHasRealmId = tx instanceof HasRealmId;
     }
 
     private Function<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> entityToAdapterFunc(RealmModel realm) {
         return origEntity -> {
             if (isExpired(origEntity, true)) {
-                tx.delete(origEntity.getId());
+                txInRealm(realm).delete(origEntity.getId());
                 return null;
             } else {
                 return new MapRootAuthenticationSessionAdapter(session, realm, origEntity, authSessionsLimit);
             }
         };
+    }
+
+    private MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> txInRealm(RealmModel realm) {
+        if (txHasRealmId) {
+            ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
+        }
+        return tx;
     }
 
     private Predicate<MapRootAuthenticationSessionEntity> entityRealmFilter(String realmId) {
@@ -105,11 +115,11 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         int authSessionLifespanSeconds = getAuthSessionLifespan(realm);
         entity.setExpiration(timestamp + TimeAdapter.fromSecondsToMilliseconds(authSessionLifespanSeconds));
 
-        if (id != null && tx.read(id) != null) {
+        if (id != null && txInRealm(realm).exists(id)) {
             throw new ModelDuplicateException("Root authentication session exists: " + entity.getId());
         }
 
-        entity = tx.create(entity);
+        entity = txInRealm(realm).create(entity);
 
         return entityToAdapterFunc(realm).apply(entity);
     }
@@ -123,7 +133,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
         LOG.tracef("getRootAuthenticationSession(%s, %s)%s", realm.getName(), authenticationSessionId, getShortStackTrace());
 
-        MapRootAuthenticationSessionEntity entity = tx.read(authenticationSessionId);
+        MapRootAuthenticationSessionEntity entity = txInRealm(realm).read(authenticationSessionId);
         return (entity == null || !entityRealmFilter(realm.getId()).test(entity))
                 ? null
                 : entityToAdapterFunc(realm).apply(entity);
@@ -132,7 +142,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
         Objects.requireNonNull(authenticationSession, "The provided root authentication session can't be null!");
-        tx.delete(authenticationSession.getId());
+        txInRealm(realm).delete(authenticationSession.getId());
     }
 
     @Override
@@ -153,7 +163,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         DefaultModelCriteria<RootAuthenticationSessionModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        tx.delete(withCriteria(mcb));
+        txInRealm(realm).delete(withCriteria(mcb));
     }
 
     @Override

@@ -69,7 +69,7 @@ public class HealthDistTest {
 
     @Test
     void testUsingRelativePath(KeycloakDistribution distribution) {
-        for (String relativePath : List.of("/auth", "/auth/")) {
+        for (String relativePath : List.of("/auth", "/auth/", "auth")) {
             distribution.run("start-dev", "--health-enabled=true", "--http-relative-path=" + relativePath);
             if (!relativePath.endsWith("/")) {
                 relativePath = relativePath + "/";
@@ -81,7 +81,7 @@ public class HealthDistTest {
 
     @Test
     void testMultipleRequests(KeycloakDistribution distribution) throws Exception {
-        for (String relativePath : List.of("/", "/auth/")) {
+        for (String relativePath : List.of("/", "/auth/", "auth")) {
             distribution.run("start-dev", "--health-enabled=true", "--http-relative-path=" + relativePath);
             CompletableFuture future = CompletableFuture.completedFuture(null);
 
@@ -90,7 +90,13 @@ public class HealthDistTest {
                     @Override
                     public void run() {
                         for (int i = 0; i < 200; i++) {
-                            when().get(relativePath + "health").then().statusCode(200);
+                            String healthPath = "health";
+
+                            if (!relativePath.endsWith("/")) {
+                                healthPath = "/" + healthPath;
+                            }
+
+                            when().get(relativePath + healthPath).then().statusCode(200);
                         }
                     }
                 }), future);

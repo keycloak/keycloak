@@ -37,6 +37,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.validators.DestinationValidator;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.w3c.dom.Document;
@@ -68,8 +69,19 @@ public class SamlEcpProfileService extends SamlService {
     public Response authenticate(Document soapMessage) {
         try {
             return new PostBindingProtocol() {
+
+                @Override
+                protected Response error(KeycloakSession session, AuthenticationSessionModel authenticationSession, Response.Status status, String message, Object... parameters) {
+                    return Soap.createFault().code("error").reason(message).build();
+                }
+
                 @Override
                 protected String getBindingType(AuthnRequestType requestAbstractType) {
+                    return SamlProtocol.SAML_SOAP_BINDING;
+                }
+
+                @Override
+                protected String getBindingType() {
                     return SamlProtocol.SAML_SOAP_BINDING;
                 }
 

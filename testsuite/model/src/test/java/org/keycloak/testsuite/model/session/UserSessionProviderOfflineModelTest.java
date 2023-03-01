@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.model.session;
 
-import org.hamcrest.Matchers;
 import org.infinispan.Cache;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -51,9 +50,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -163,7 +160,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 // sessions are in persister too
                 Assert.assertEquals(3, persister.getUserSessionsCount(true));
 
-                Time.setOffset(300);
+                setTimeOffset(300);
                 log.infof("Set time offset to 300. Time is: %d", Time.currentTime());
 
                 // Set lastSessionRefresh to currentSession[0] to 0
@@ -178,7 +175,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 int timeOffset = 1728000 + (i * 86400);
 
                 RealmModel realm = session.realms().getRealm(realmId);
-                Time.setOffset(timeOffset);
+                setTimeOffset(timeOffset);
                 log.infof("Set time offset to %d. Time is: %d", timeOffset, Time.currentTime());
 
                 UserSessionModel session0 = session.sessions().getOfflineUserSession(realm, origSessions[0].getId());
@@ -192,7 +189,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 // Increase timeOffset - 40 days
-                Time.setOffset(3456000);
+                setTimeOffset(3456000);
                 log.infof("Set time offset to 3456000. Time is: %d", Time.currentTime());
 
                 // Expire and ensure that all sessions despite session0 were removed
@@ -211,7 +208,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 Assert.assertEquals(1, persister.getUserSessionsCount(true));
 
                 // Expire everything and assert nothing found
-                Time.setOffset(7000000);
+                setTimeOffset(7000000);
 
                 persister.removeExpired(realm);
             });
@@ -228,7 +225,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             });
 
         } finally {
-            Time.setOffset(0);
+            setTimeOffset(0);
             kcSession.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             if (timer != null) {
                 timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
@@ -278,7 +275,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 // Expire everything except offline client sessions
-                Time.setOffset(7000000);
+                setTimeOffset(7000000);
 
                 persister.removeExpired(realm);
             });
@@ -300,7 +297,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             });
 
         } finally {
-            Time.setOffset(0);
+            setTimeOffset(0);
             kcSession.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             if (timer != null) {
                 timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);

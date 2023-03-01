@@ -60,7 +60,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
         }
 
         this.auth.clients().requireView(clientScope);
-        return this.mapping(clientScope::hasScope).collect(Collectors.toList());
+        return this.mapping(clientScope::hasScope, auth.roles()::canMapClientScope).collect(Collectors.toList());
     }
 
     @GET

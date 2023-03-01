@@ -65,7 +65,7 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
             throw new NotFoundException("Could not find client scope");
         } else {
             this.auth.clients().requireView(scopeModel);
-            return this.mapping(((Predicate<RoleModel>) scopeModel::hasDirectScope).negate(), first, max, search);
+            return this.mapping(((Predicate<RoleModel>) scopeModel::hasDirectScope).negate(), auth.roles()::canMapClientScope, first, max, search);
         }
     }
 

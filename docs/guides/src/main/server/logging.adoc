@@ -85,7 +85,7 @@ The format string supports the symbols in the following table:
 |Symbol|Summary|Description
 |%%|%|Renders a simple % character.
 |%c|Category|Renders the log category name.
-|%d{xxx}|Date|Renders a date with the given date format string.String syntax defined by `java.text.SimpleDateFormat`
+|++%d{xxx}++|Date|Renders a date with the given date format string.String syntax defined by `java.text.SimpleDateFormat`
 |%e|Exception|Renders a thrown exception.
 |%h|Hostname|Renders the simple host name.
 |%H|Qualified host name|Renders the fully qualified hostname, which may be the same as the simple host name, depending on the OS configuration.
@@ -172,7 +172,7 @@ To configure a different logging format for the file log handler, enter the foll
 
 <@kc.start parameters="--log-file-format=<pattern>"/>
 
-Please see the <<Configuring the console log format>> section in this guide for more information and a table of the available pattern configuration.
+See <<Configuring the console log format>> for more information and a table of the available pattern configuration.
 
 == Centralized logging using GELF
 Keycloak can send logs to a centralized log management system such as the following:
@@ -491,6 +491,6 @@ nothing below the error level will be sent to your logging stack. That means tha
 === Configure additional key values
 Currently, the Keycloak configuration does not support partly dynamic configuration keys, as they are used in quarkus properties. For example, they are used when defining `quarkus.log.handler.gelf.additional-field.<my-name>.value`.
 
-To add user-defined fields, you can provide these fields through a quarkus.properties file. Refer to the <@links.server id="configuration"/> guide and the _Using unsupported server options_ section.
+To add user-defined fields, you can provide these fields through a quarkus.properties file. See <@links.server id="configuration"/> and the _Using raw Quarkus properties_ section.
 
 </@tmpl.guide>

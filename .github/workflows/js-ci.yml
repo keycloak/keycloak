@@ -1,0 +1,80 @@
+name: Keycloak JavaScript CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+  pull_request:
+  schedule:
+    - cron: 0 20,23,2,5 * * *
+  workflow_dispatch:
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: js-ci-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+    working-directory: js
+
+jobs:
+  conditional:
+    name: Check conditional workflows and jobs
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
+    runs-on: ubuntu-latest
+    outputs:
+      js-ci: ${{ steps.conditional.outputs.js }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+
+  admin-client:
+    name: Admin Client
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-admin-client"
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+
+  check-set-status:
+    name: Set check conclusion
+    needs:
+      - admin-client
+    runs-on: ubuntu-latest
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: check
+        uses: ./.github/actions/checks-success
+
+  check:
+    name: Status Check - Keycloak JavaScript CI
+    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    needs:
+      - conditional
+      - check-set-status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check status
+        uses: ./.github/actions/checks-job-pass
+        with:
+          required: ${{ needs.conditional.outputs.js-ci }}
+          conclusion: ${{ needs.check-set-status.outputs.conclusion }}

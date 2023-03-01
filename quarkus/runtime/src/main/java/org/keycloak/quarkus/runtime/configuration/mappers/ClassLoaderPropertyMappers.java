@@ -2,17 +2,13 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-import java.util.Optional;
-
-import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.config.ClassLoaderOptions;
-import org.keycloak.config.SecurityOptions;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
-
 import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
+import java.util.Optional;
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
+import org.keycloak.config.ClassLoaderOptions;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.QuarkusProfileConfigResolver;
 
 final class ClassLoaderPropertyMappers {
 
@@ -29,10 +25,9 @@ final class ClassLoaderPropertyMappers {
 
     private static Optional<String> resolveIgnoredArtifacts(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (Environment.isRebuildCheck() || Environment.isRebuild()) {
-            ConfigValue fipsEnabled = Configuration.getConfigValue(
-                    MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey());
+            Profile profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesFileProfileConfigResolver());
 
-            if (fipsEnabled != null && FipsMode.valueOf(fipsEnabled.getValue()).isFipsEnabled()) {
+            if (profile.getFeatures().get(Profile.Feature.FIPS)) {
                 return Optional.of(
                         "org.bouncycastle:bcprov-jdk15on,org.bouncycastle:bcpkix-jdk15on,org.bouncycastle:bcutil-jdk15on,org.keycloak:keycloak-crypto-default");
             }

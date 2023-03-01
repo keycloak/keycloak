@@ -29,6 +29,8 @@ body:
         - admin/cli
         - admin/fine-grained-permissions
         - admin/ui
+        - admin/client/node
+        - admin/client/java
         - authentication
         - authentication/webauthn
         - authorization-services

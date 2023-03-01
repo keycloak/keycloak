@@ -105,6 +105,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -1559,7 +1560,25 @@ public class UserTest extends AbstractAdminTest {
             userRep.setEnabled(true);
             updateUser(user, userRep);
 
-            user.executeActionsEmail("invalidClientId", "invalidUri", actions);
+            user.executeActionsEmail(Arrays.asList(
+                    UserModel.RequiredAction.UPDATE_PASSWORD.name(),
+                    "invalid\"<img src=\"alert(0)\">")
+            );
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Provided invalid required actions", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
+        }
+
+        try {
+            user.executeActionsEmail(
+                    "invalidClientId",
+                    "invalidUri",
+                    Collections.singletonList(UserModel.RequiredAction.UPDATE_PASSWORD.name())
+            );
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(400, e.getResponse().getStatus());
@@ -2896,6 +2915,42 @@ public class UserTest extends AbstractAdminTest {
 
             assertFalse(userGroups.isEmpty());
             assertTrue(userGroups.get(0).getAttributes().containsKey("attribute1"));
+        }
+    }
+
+    @Test
+    public void testGetSearchedGroupsForUserFullRepresentation() {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        String userName = "averagejoe";
+        String groupName1 = "group1WithAttribute";
+        String groupName2 = "group2WithAttribute";
+        Map<String, List<String>> attributes1 = new HashMap<String, List<String>>();
+        attributes1.put("attribute1", Arrays.asList("attribute1"));
+        Map<String, List<String>> attributes2 = new HashMap<String, List<String>>();
+        attributes2.put("attribute2", Arrays.asList("attribute2"));
+
+        UserRepresentation userRepresentation = UserBuilder
+                .edit(createUserRepresentation(userName, "joe@average.com", "average", "joe", true))
+                .addPassword("password")
+                .build();
+
+        try (Creator<UserResource> u = Creator.create(realm, userRepresentation);
+             Creator<GroupResource> g1 = Creator.create(realm, GroupBuilder.create().name(groupName1).attributes(attributes1).build());
+             Creator<GroupResource> g2 = Creator.create(realm, GroupBuilder.create().name(groupName2).attributes(attributes2).build())) {
+
+            String group1Id = g1.id();
+            String group2Id = g2.id();
+            UserResource user = u.resource();
+            user.joinGroup(group1Id);
+            user.joinGroup(group2Id);
+
+            List<GroupRepresentation> userGroups = user.groups("group2", false);
+            assertFalse(userGroups.isEmpty());
+            assertTrue(userGroups.stream().collect(Collectors.toMap(GroupRepresentation::getName, Function.identity())).get(groupName2).getAttributes().containsKey("attribute2"));
+
+            userGroups = user.groups("group3", false);
+            assertTrue(userGroups.isEmpty());
         }
     }
 

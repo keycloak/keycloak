@@ -22,6 +22,7 @@ import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDP
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
 import static org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
@@ -77,13 +78,13 @@ import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
 import io.quarkus.runtime.configuration.ProfileManager;
+import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
 import io.smallrye.config.ConfigValue;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
-import org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ClassInfo;
@@ -95,12 +96,11 @@ import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
-import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.StorageOptions;
-import org.keycloak.config.TransactionOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
+import org.keycloak.models.map.storage.jpa.EventListenerIntegrator;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
 import org.keycloak.quarkus.runtime.QuarkusProfileConfigResolver;
@@ -180,6 +180,10 @@ class KeycloakProcessor {
             ClasspathThemeResourceProviderFactory.class,
             JarThemeProviderFactory.class,
             JpaMapStorageProviderFactory.class);
+    public static final String QUARKUS_HEALTH_ROOT_PROPERTY = "quarkus.smallrye-health.root-path";
+    public static final String QUARKUS_METRICS_PATH_PROPERTY = "quarkus.micrometer.export.prometheus.path";
+    public static final String QUARKUS_DEFAULT_HEALTH_PATH = "health";
+    public static final String QUARKUS_DEFAULT_METRICS_PATH = "metrics";
 
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
@@ -217,9 +221,7 @@ class KeycloakProcessor {
         return new ConfigBuildItem();
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    @Consume(ConfigBuildItem.class)
+    // called from setCryptoProvider now
     ProfileBuildItem configureProfile(KeycloakRecorder recorder) {
         Profile profile = Profile.configure(
                 new QuarkusProfileConfigResolver(),
@@ -280,7 +282,7 @@ class KeycloakProcessor {
     @BuildStep(onlyIf = IsJpaStoreEnabled.class)
     void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
         String storage = Configuration.getRawValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
+                NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
         ParsedPersistenceXmlDescriptor descriptor;
 
         if (storage == null) {
@@ -305,21 +307,20 @@ class KeycloakProcessor {
         unitProperties.setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
         if (Objects.equals(getConfig().getConfigValue("kc.transaction-jta-enabled").getValue(), "disabled")) {
             unitProperties.setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.RESOURCE_LOCAL.name());
-
-            // Only changing this for the new map storage to keep the legacy JPA store untouched as it wasn't tested for the legacy store.
-            // follow-up on this in https://github.com/keycloak/keycloak/issues/13222 to re-visit the auto-commit handling
-            String storage = Configuration.getRawValue(
-                    MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
-            if (storage != null) {
-                // Needed to change the connection handling to avoid Hibernate returning the connection too early,
-                // which then interfered with the auto-commit reset that's done at the end of the transaction and PgConnection throwing a "Cannot commit when autoCommit is enabled."
-                // The current default is DELAYED_ACQUISITION_AND_RELEASE_BEFORE_TRANSACTION_COMPLETION which would only make sense for JTA IMHO.
-                // https://github.com/quarkusio/quarkus/blob/8d89101ffa65465b33d06360047095046bb726e4/extensions/hibernate-orm/runtime/src/main/java/io/quarkus/hibernate/orm/runtime/boot/FastBootMetadataBuilder.java#L287-L288
-                unitProperties.setProperty(AvailableSettings.CONNECTION_HANDLING, PhysicalConnectionHandlingMode.DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION.name());
-            }
         } else {
             // will happen for both "enabled" and "xa"
             unitProperties.setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
+        }
+
+        ConfigValue lockTimeoutConfigValue = getConfig().getConfigValue("kc.spi-map-storage-jpa-lock-timeout");
+        if (lockTimeoutConfigValue != null && lockTimeoutConfigValue.getValue() != null) {
+            unitProperties.setProperty(AvailableSettings.JPA_LOCK_TIMEOUT, lockTimeoutConfigValue.getValue());
+        }
+
+        ConfigValue storage = getConfig().getConfigValue(NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
+        if (storage != null && Objects.equals(storage.getValue(), StorageOptions.StorageType.jpa.name())) {
+            // if JPA map storage is enabled, pass on the property to 'EventListenerIntegrator' to activate the necessary event listeners for JPA map storage
+            unitProperties.setProperty(EventListenerIntegrator.JPA_MAP_STORAGE_ENABLED, Boolean.TRUE.toString());
         }
 
         unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
@@ -566,17 +567,20 @@ class KeycloakProcessor {
 
     @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, HttpBuildTimeConfig httpBuildConfig,
-            ExecutorBuildItem executor) {
-        String rootPath = httpBuildConfig.rootPath;
+    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, ExecutorBuildItem executor, NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem) {
+
         List<String> ignoredPaths = new ArrayList<>();
 
         if (isHealthEnabled()) {
-            ignoredPaths.add(rootPath + "health");
+            ignoredPaths.add(nonApplicationRootPathBuildItem.
+                    resolvePath(Configuration.getOptionalValue(QUARKUS_HEALTH_ROOT_PROPERTY)
+                            .orElse(QUARKUS_DEFAULT_HEALTH_PATH)));
         }
 
         if (isMetricsEnabled()) {
-            ignoredPaths.add(rootPath + "metrics");
+            ignoredPaths.add(nonApplicationRootPathBuildItem.
+                    resolvePath(Configuration.getOptionalValue(QUARKUS_METRICS_PATH_PROPERTY)
+                            .orElse(QUARKUS_DEFAULT_METRICS_PATH)));
         }
 
         filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths, executor.getExecutorProxy()),FilterBuildItem.AUTHORIZATION - 10));
@@ -626,9 +630,16 @@ class KeycloakProcessor {
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void setCryptoProvider(KeycloakRecorder recorder) {
-        FipsMode fipsMode = Configuration.getOptionalValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
-                FipsMode::valueOf).orElse(FipsMode.disabled);
+        configureProfile(recorder);
+        FipsMode fipsMode = Configuration.getOptionalValue(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey())
+                .map(FipsMode::valueOfOption)
+                .orElse(FipsMode.DISABLED);
+        if (Profile.isFeatureEnabled(Profile.Feature.FIPS) && !fipsMode.isFipsEnabled()) {
+            // default to non strict when fips feature enabled
+            fipsMode = FipsMode.NON_STRICT;
+        } else if (fipsMode.isFipsEnabled() && !Profile.isFeatureEnabled(Profile.Feature.FIPS)) {
+            throw new RuntimeException("FIPS mode cannot be enabled without enabling the FIPS feature --features=fips");
+        }
 
         recorder.setCryptoProvider(fipsMode);
     }
@@ -824,11 +835,11 @@ class KeycloakProcessor {
     }
 
     private boolean isMetricsEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
+        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
     }
 
     private boolean isHealthEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
+        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
     }
 
     static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {

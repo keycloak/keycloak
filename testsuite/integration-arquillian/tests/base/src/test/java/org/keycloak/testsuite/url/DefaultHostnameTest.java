@@ -105,25 +105,6 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
         }
     }
 
-    @Test
-    @DisableFeature(value = Profile.Feature.ADMIN2, skipRestart = true)
-    @EnableFeature(value = Profile.Feature.ADMIN, skipRestart = true)
-    public void fixedFrontendUrlOldAdminPage() throws Exception {
-        expectedBackendUrl = transformUrlIfQuarkusServer(AUTH_SERVER_ROOT);
-
-        oauth.clientId("direct-grant");
-
-        try (Keycloak testAdminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), getAuthServerContextRoot())) {
-
-            configureDefault(globalFrontEndUrl, false, null);
-
-            assertOldAdminPageJsPathSetCorrectly("master", transformUrlIfQuarkusServer(globalFrontEndUrl, true));
-
-        } finally {
-            reset();
-        }
-    }
-
     // KEYCLOAK-12953
     @Test
     public void emptyRealmFrontendUrl() throws Exception {

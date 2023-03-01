@@ -311,6 +311,7 @@ public final class KeycloakModelUtils {
                 } else {
                     if (retryCount == attemptsCount) {
                         logger.debug("Exhausted all retry attempts for request.");
+                        throw new RuntimeException("retries exceeded", re);
                     }
                     throw re;
                 }

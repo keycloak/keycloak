@@ -22,9 +22,7 @@ import java.time.Instant;
 /**
  * This exception is thrown when acquiring a lock times out.
  */
-public final class LockAcquiringTimeoutException extends Exception {
-
-    private LockAcquiringTimeoutException() {}
+public final class LockAcquiringTimeoutException extends RuntimeException {
 
     /**
      *
