@@ -224,7 +224,7 @@
         <firefoxUserPreferences/>
         <firefoxHeadless>true</firefoxHeadless>
         <chromeBinary/>
-        <chromeArguments>--headless</chromeArguments>
+        <chromeArguments>--headless --window-size=1920,1080</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>
@@ -1569,7 +1569,7 @@
         <profile>
             <id>auth-server-fips140-2</id>
             <properties>
-                <auth.server.fips.mode>enabled</auth.server.fips.mode>
+                <auth.server.fips.mode>non-strict</auth.server.fips.mode>
 
                 <auth.server.supported.keystore.types>PKCS12,BCFKS</auth.server.supported.keystore.types>
                 <auth.server.kerberos.supported>false</auth.server.kerberos.supported>

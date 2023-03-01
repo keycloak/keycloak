@@ -56,6 +56,12 @@ public class ProxyDistTest {
     }
 
     @Test
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=edge" })
+    public void testForwardedHeadersWithEdge() {
+        given().header("Forwarded", "for=12.34.56.78;host=test:1234;proto=https, for=23.45.67.89").when().get("http://mykeycloak.org:8080").then().body(containsString("https://test:1234/admin"));
+    }
+
+    @Test
     @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=reencrypt" })
     public void testXForwardedHeadersWithReencrypt() {
         assertXForwardedHeaders();

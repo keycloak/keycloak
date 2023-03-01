@@ -18,11 +18,10 @@
 package org.keycloak.services.util;
 
 import org.jboss.logging.Logger;
+import org.keycloak.http.HttpCookie;
 import org.keycloak.http.HttpResponse;
 import org.jboss.resteasy.util.CookieParser;
-import org.keycloak.common.util.ServerCookie;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -67,10 +66,9 @@ public class CookieHelper {
         boolean secure_sameSite = sameSite == SameSiteAttributeValue.NONE || secure; // when SameSite=None, Secure attribute must be set
 
         HttpResponse response = session.getContext().getHttpResponse();
-        StringBuffer cookieBuf = new StringBuffer();
-        ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure_sameSite, httpOnly, sameSite);
-        String cookie = cookieBuf.toString();
-        session.getTransactionManager().enlistAfterCompletion(new CookieTransaction(response, cookie));
+        HttpCookie cookie = new HttpCookie(1, name, value, path, domain, comment, maxAge, secure_sameSite, httpOnly, sameSite);
+
+        response.setCookieIfAbsent(cookie);
 
         // a workaround for browser in older Apple OSs – browsers ignore cookies with SameSite=None
         if (sameSiteParam == SameSiteAttributeValue.NONE) {
@@ -149,51 +147,6 @@ public class CookieHelper {
             String legacy = name + LEGACY_COOKIE;
             logger.debugv("Could not find cookie {0}, trying {1}", name, legacy);
             return cookies.get(legacy);
-        }
-    }
-
-    /**
-     * Ensure that cookies are only added when the transaction is complete, as otherwise cookies will be set for error pages,
-     * or will be added twice when running retries.
-     */
-    private static class CookieTransaction implements KeycloakTransaction {
-        private final HttpResponse response;
-        private final String cookie;
-        private boolean transactionActive;
-
-        public CookieTransaction(HttpResponse response, String cookie) {
-            this.response = response;
-            this.cookie = cookie;
-        }
-
-        @Override
-        public void begin() {
-            transactionActive = true;
-        }
-
-        @Override
-        public void commit() {
-            response.addHeader(HttpHeaders.SET_COOKIE, cookie);
-            transactionActive = false;
-        }
-
-        @Override
-        public void rollback() {
-            transactionActive = false;
-        }
-
-        @Override
-        public void setRollbackOnly() {
-        }
-
-        @Override
-        public boolean getRollbackOnly() {
-            return false;
-        }
-
-        @Override
-        public boolean isActive() {
-            return transactionActive;
         }
     }
 }
