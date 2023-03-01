@@ -108,7 +108,7 @@ const ValueInput = ({
           control={control}
           render={({ field }) => (
             <Select
-              id={`${attribute.id}-value`}
+              toggleId={`${attribute.id}-value`}
               className="kc-attribute-value-selectable"
               name={`${name}[${rowIndex}].value`}
               chipGroupProps={{
@@ -116,7 +116,6 @@ const ValueInput = ({
                 expandedText: t("common:hide"),
                 collapsedText: t("common:showRemaining"),
               }}
-              toggleId={`group-${name}`}
               onToggle={(open) => toggleValueSelect(rowIndex, open)}
               isOpen={isValueOpenArray[rowIndex]}
               variant={SelectVariant.typeahead}
@@ -139,6 +138,7 @@ const ValueInput = ({
           className="value-input"
           defaultValue={attribute.value}
           data-testid="attribute-value-input"
+          aria-label={t("common:value")}
           {...register(`${name}.${rowIndex}.value`)}
         />
       )}
@@ -181,12 +181,8 @@ export const KeyBasedAttributeInput = ({
     >
       <Thead>
         <Tr>
-          <Th id="key" width={40}>
-            {t("key")}
-          </Th>
-          <Th id="value" width={40}>
-            {t("value")}
-          </Th>
+          <Th width={40}>{t("key")}</Th>
+          <Th width={40}>{t("value")}</Th>
         </Tr>
       </Thead>
       <Tbody>
@@ -199,10 +195,9 @@ export const KeyBasedAttributeInput = ({
                 control={control}
                 render={({ field }) => (
                   <Select
-                    id={`${name}[${rowIndex}].key`}
+                    toggleId={`${name}[${rowIndex}].key`}
                     className="kc-attribute-key-selectable"
                     name={`${name}[${rowIndex}].key`}
-                    toggleId={`group-${name}`}
                     onToggle={(open) => toggleKeySelect(rowIndex, open)}
                     isOpen={isKeyOpenArray[rowIndex]}
                     variant={SelectVariant.typeahead}
@@ -235,12 +230,13 @@ export const KeyBasedAttributeInput = ({
               selectableValues={selectableValues}
               resources={resources}
             />
-            <Td key="minus-button" id={`kc-minus-button-${rowIndex}`}>
+            <Td>
               <Button
-                id={`minus-button-${rowIndex}`}
+                id={`${name}-minus-button-${rowIndex}`}
                 variant="link"
                 className="kc-attributes__minus-icon"
                 onClick={() => remove(rowIndex)}
+                aria-label={t("common:remove")}
               >
                 <MinusCircleIcon />
               </Button>
@@ -251,7 +247,7 @@ export const KeyBasedAttributeInput = ({
           <Td>
             <Button
               aria-label={t("addAttribute")}
-              id="plus-icon"
+              id={`${name}-plus-icon`}
               variant="link"
               className="kc-attributes__plus-icon"
               onClick={() => {

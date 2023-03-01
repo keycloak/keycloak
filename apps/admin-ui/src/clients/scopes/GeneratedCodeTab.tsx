@@ -36,7 +36,7 @@ export const GeneratedCodeTab = ({
       <KeycloakTextArea id={`text-area-${label}`} rows={20} value={text} />
     </CodeBlock>
   ) : (
-    <EmptyState variant="large">
+    <EmptyState variant="large" id={label}>
       <Title headingLevel="h4" size="lg">
         {t(`${label}No`)}
       </Title>

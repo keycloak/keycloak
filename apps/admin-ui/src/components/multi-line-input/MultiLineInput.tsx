@@ -32,6 +32,7 @@ export const MultiLineInput = ({
   isDisabled = false,
   defaultValue,
   stringify = false,
+  id,
   ...rest
 }: MultiLineInputProps) => {
   const { t } = useTranslation();
@@ -77,7 +78,7 @@ export const MultiLineInput = ({
   }, [register]);
 
   return (
-    <>
+    <div id={id}>
       {fields.map((value, index) => (
         <Fragment key={index}>
           <InputGroup>
@@ -114,6 +115,6 @@ export const MultiLineInput = ({
           )}
         </Fragment>
       ))}
-    </>
+    </div>
   );
 };

@@ -97,7 +97,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
               setSearch("");
               field.onChange([]);
             }}
-            aria-label={t("authorizationScopes")}
+            typeAheadAriaLabel={t("authorizationScopes")}
           >
             {renderScopes(scopes)}
           </Select>

@@ -99,7 +99,7 @@ export const ClientSelect = ({
               field.onChange(value.toString());
               setOpen(false);
             }}
-            aria-label={t(label!)}
+            typeAheadAriaLabel={t(label!)}
           >
             {convert(clients)}
           </Select>

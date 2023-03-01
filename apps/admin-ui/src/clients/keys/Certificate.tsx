@@ -14,15 +14,19 @@ type CertificateDisplayProps = {
   keyInfo?: CertificateRepresentation;
 };
 
-const CertificateDisplay = ({ id, keyInfo }: CertificateDisplayProps) => (
-  <KeycloakTextArea
-    readOnly
-    rows={5}
-    id={id}
-    data-testid="certificate"
-    value={keyInfo?.certificate}
-  />
-);
+const CertificateDisplay = ({ id, keyInfo }: CertificateDisplayProps) => {
+  const { t } = useTranslation("clients");
+  return (
+    <KeycloakTextArea
+      readOnly
+      rows={5}
+      id={id}
+      data-testid="certificate"
+      value={keyInfo?.certificate}
+      aria-label={t("certificate")}
+    />
+  );
+};
 
 export const Certificate = ({ keyInfo, plain = false }: CertificateProps) => {
   const { t } = useTranslation("clients");
