@@ -180,15 +180,18 @@ public class ServerInfoAdminResource {
             for (String name : themeNames) {
                 try {
                     Theme theme = session.theme().getTheme(name, type);
-                    ThemeInfoRepresentation ti = new ThemeInfoRepresentation();
-                    ti.setName(name);
+                    // Different name means the theme itself was not found and fallback to default theme was needed
+                    if (theme != null && name.equals(theme.getName())) {
+                        ThemeInfoRepresentation ti = new ThemeInfoRepresentation();
+                        ti.setName(name);
 
-                    String locales = theme.getProperties().getProperty("locales");
-                    if (locales != null) {
-                        ti.setLocales(locales.replaceAll(" ", "").split(","));
+                        String locales = theme.getProperties().getProperty("locales");
+                        if (locales != null) {
+                            ti.setLocales(locales.replaceAll(" ", "").split(","));
+                        }
+
+                        themes.add(ti);
                     }
-
-                    themes.add(ti);
                 } catch (IOException e) {
                     throw new WebApplicationException("Failed to load themes", e);
                 }
