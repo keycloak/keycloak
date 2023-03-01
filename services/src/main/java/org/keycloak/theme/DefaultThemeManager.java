@@ -63,22 +63,13 @@ public class DefaultThemeManager implements ThemeManager {
 
     @Override
     public Theme getTheme(String name, Theme.Type type) {
-        return getTheme(name, type, true);
-    }
-
-    @Override
-    public Theme getTheme(String name, Theme.Type type, boolean fallbackToDefaultTheme) {
         Theme theme = factory.getCachedTheme(name, type);
         if (theme == null) {
             theme = loadTheme(name, type);
             if (theme == null) {
-                if (fallbackToDefaultTheme) {
-                    String defaultThemeName = session.getProvider(ThemeSelectorProvider.class).getDefaultThemeName(type);
-                    theme = loadTheme(defaultThemeName, type);
-                    log.errorv("Failed to find or load {0} theme {1}, using built-in themes", type, name);
-                } else {
-                    log.warnv("Failed to find or load {0} theme {1}, ignoring", type, name);
-                }
+                String defaultThemeName = session.getProvider(ThemeSelectorProvider.class).getDefaultThemeName(type);
+                theme = loadTheme(defaultThemeName, type);
+                log.errorv("Failed to find {0} theme {1}, using built-in themes", type, name);
             } else {
                 theme = factory.addCachedTheme(name, type, theme);
             }
