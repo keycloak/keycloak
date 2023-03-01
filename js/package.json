@@ -1,7 +1,8 @@
 {
   "name": "root",
   "workspaces": [
-    "libs/keycloak-admin-client"
+    "libs/keycloak-admin-client",
+    "libs/keycloak-js"
   ],
   "scripts": {
     "prepare": "cd .. && husky install js/.husky"

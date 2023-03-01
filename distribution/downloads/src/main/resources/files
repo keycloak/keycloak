@@ -2,7 +2,6 @@ mvn:keycloak-quarkus-dist:keycloak
 mvn:keycloak-api-docs-dist:keycloak-api-docs
 
 mvn:keycloak-jetty94-adapter-dist:keycloak-oidc-jetty94-adapter
-mvn:keycloak-js-adapter-npm-dist:keycloak-oidc-js-adapter
 mvn:keycloak-tomcat-adapter-dist:keycloak-oidc-tomcat-adapter
 mvn:keycloak-wildfly-adapter-dist:keycloak-oidc-wildfly-adapter
 
@@ -11,3 +10,4 @@ mvn:keycloak-saml-tomcat-adapter-dist:keycloak-saml-tomcat-adapter
 mvn:keycloak-saml-wildfly-adapter-dist:keycloak-saml-wildfly-adapter
 
 npm:js/libs/keycloak-admin-client/target/keycloak-keycloak-admin-client-$$VERSION$$.tgz:keycloak-admin-client-$$VERSION$$.tgz
+npm:js/libs/keycloak-js/target/keycloak-js-$$VERSION$$.tgz:keycloak-js-$$VERSION$$.tgz
