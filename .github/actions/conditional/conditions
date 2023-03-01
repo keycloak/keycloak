@@ -13,6 +13,8 @@
 */src/test/                                 ci operator
 pom.xml                                     ci operator
 
+docs/guides/                                docs
+
 js/                                         js
 
 *.java                                      codeql-java
