@@ -59,9 +59,9 @@ const Applications = () => {
     try {
       await deleteConsent(id);
       refresh();
-      addAlert("removeConsentSuccess");
+      addAlert(t("removeConsentSuccess"));
     } catch (error) {
-      addError("removeConsentError", error);
+      addError(t("removeConsentError", { error }).toString());
     }
   };
 

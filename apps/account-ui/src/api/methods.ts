@@ -25,8 +25,19 @@ export type PaginationParams = {
 export async function getPersonalInfo({
   signal,
 }: CallOptions = {}): Promise<UserRepresentation> {
-  const response = await request("/", { signal });
+  const response = await request("/?userProfileMetadata=true", { signal });
   return parseResponse<UserRepresentation>(response);
+}
+
+export async function savePersonalInfo(
+  info: UserRepresentation
+): Promise<void> {
+  const response = await request("/", { body: info, method: "POST" });
+  if (!response.ok) {
+    const { errors } = await response.json();
+    throw errors;
+  }
+  return undefined;
 }
 
 export async function getPermissionRequests(

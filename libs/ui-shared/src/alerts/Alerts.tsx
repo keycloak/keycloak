@@ -5,7 +5,6 @@ import {
   AlertVariant,
 } from "@patternfly/react-core";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 export type AddAlertFunction = (
   message: string,
@@ -13,7 +12,7 @@ export type AddAlertFunction = (
   description?: string
 ) => void;
 
-export type AddErrorFunction = (message: string, error: any) => void;
+export type AddErrorFunction = (message: string) => void;
 
 export type AlertProps = {
   addAlert: AddAlertFunction;
@@ -32,7 +31,6 @@ export type AlertType = {
 };
 
 export const AlertProvider = ({ children }: PropsWithChildren) => {
-  const { t } = useTranslation();
   const [alerts, setAlerts] = useState<AlertType[]>([]);
 
   const hideAlert = (id: string) => {
@@ -47,8 +45,7 @@ export const AlertProvider = ({ children }: PropsWithChildren) => {
     setAlerts([
       {
         id: crypto.randomUUID(),
-        //@ts-ignore
-        message: t(message),
+        message,
         variant,
         description,
       },
@@ -56,14 +53,8 @@ export const AlertProvider = ({ children }: PropsWithChildren) => {
     ]);
   };
 
-  const addError = (message: string, error: Error | string) => {
-    addAlert(
-      //@ts-ignore
-      t(message, {
-        error,
-      }),
-      AlertVariant.danger
-    );
+  const addError = (message: string) => {
+    addAlert(message, AlertVariant.danger);
   };
 
   return (

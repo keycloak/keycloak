@@ -42,10 +42,10 @@ export const EditTheResource = ({
           updatePermissions(resource._id, [permission])
         )
       );
-      addAlert("updateSuccess");
+      addAlert(t("updateSuccess"));
       onClose();
     } catch (error) {
-      addError("updateError", error);
+      addError(t("updateError", { error }).toString());
     }
   };
 

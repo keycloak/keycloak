@@ -14,6 +14,7 @@
     "i18next-http-backend": "^2.1.1",
     "keycloak-js": "999.0.0-dev",
     "keycloak-masthead": "999.0.0-dev",
+    "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.1",
@@ -22,6 +23,7 @@
     "ui-shared": "999.0.0-dev"
   },
   "devDependencies": {
+    "@types/lodash-es": "^4.17.6",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react-swc": "^3.2.0",

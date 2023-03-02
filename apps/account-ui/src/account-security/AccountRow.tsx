@@ -28,9 +28,9 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
   const unLink = async (account: LinkedAccountRepresentation) => {
     try {
       await unLinkAccount(account);
-      addAlert("unLinkSuccess");
+      addAlert(t("unLinkSuccess"));
     } catch (error) {
-      addError("unLinkError", error);
+      addError(t("unLinkError", { error }).toString());
     }
   };
 
@@ -39,7 +39,7 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
       const { accountLinkUri } = await linkAccount(account);
       location.href = accountLinkUri;
     } catch (error) {
-      addError("linkError", error);
+      addError(t("linkError", { error }).toString());
     }
   };
 

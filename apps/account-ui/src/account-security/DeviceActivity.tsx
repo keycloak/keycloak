@@ -76,7 +76,7 @@ const DeviceActivity = () => {
       addAlert(t("signedOutSession", [session.browser, device.os]));
       refresh();
     } catch (error) {
-      addError("errorSignOutMessage", error);
+      addError(t("errorSignOutMessage", { error }).toString());
     }
   };
 

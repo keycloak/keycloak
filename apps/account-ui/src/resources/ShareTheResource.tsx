@@ -82,10 +82,10 @@ export const ShareTheResource = ({
             updateRequest(resource._id, username, permissions)
           )
       );
-      addAlert("shareSuccess");
+      addAlert(t("shareSuccess"));
       onClose();
     } catch (error) {
-      addError("shareError", error);
+      addError(t("shareError", { error }).toString());
     }
     reset({});
   };

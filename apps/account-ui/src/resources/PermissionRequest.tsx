@@ -55,11 +55,11 @@ export const PermissionRequest = ({
           ? [...(scopes as string[]), ...(shareRequest.scopes as string[])]
           : scopes
       );
-      addAlert("shareSuccess");
+      addAlert(t("shareSuccess"));
       toggle();
       refresh();
     } catch (error) {
-      addError("shareError", error);
+      addError(t("shareError", { error }).toString());
     }
   };
 

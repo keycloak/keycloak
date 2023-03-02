@@ -106,9 +106,9 @@ export const ResourcesTab = () => {
       )!;
       await updatePermissions(resource._id, permissions);
       setDetails({});
-      addAlert("unShareSuccess");
+      addAlert(t("unShareSuccess"));
     } catch (error) {
-      addError("updateError", error);
+      addError(t("unShareError", { error }).toString());
     }
   };
 

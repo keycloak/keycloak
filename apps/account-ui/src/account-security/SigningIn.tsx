@@ -185,10 +185,19 @@ const SigningIn = () => {
                               onContinue={async () => {
                                 try {
                                   await deleteCredentials(meta.credential);
-                                  addAlert("successRemovedMessage");
+                                  addAlert(
+                                    t("successRemovedMessage", {
+                                      userLabel: label(meta.credential),
+                                    })
+                                  );
                                   refresh();
                                 } catch (error) {
-                                  addError("errorRemovedMessage", error);
+                                  addError(
+                                    t("errorRemovedMessage", {
+                                      userLabel: label(meta.credential),
+                                      error,
+                                    }).toString()
+                                  );
                                 }
                               }}
                             />
