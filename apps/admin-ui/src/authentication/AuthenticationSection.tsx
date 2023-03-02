@@ -1,7 +1,3 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
-import { sortBy } from "lodash-es";
 import {
   AlertVariant,
   Button,
@@ -12,39 +8,46 @@ import {
   TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { sortBy } from "lodash-es";
+import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
-import useToggle from "../utils/useToggle";
-import { DuplicateFlowModal } from "./DuplicateFlowModal";
-import { toCreateFlow } from "./routes/CreateFlow";
-import { toFlow } from "./routes/Flow";
-import { RequiredActions } from "./RequiredActions";
-import { Policies } from "./policies/Policies";
-import helpUrls from "../help-urls";
-import { BindFlowDialog } from "./BindFlowDialog";
-import { UsedBy } from "./components/UsedBy";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import helpUrls from "../help-urls";
 import { addTrailingSlash } from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
+import useToggle from "../utils/useToggle";
+import { BindFlowDialog } from "./BindFlowDialog";
+import { UsedBy } from "./components/UsedBy";
+import { DuplicateFlowModal } from "./DuplicateFlowModal";
+import { Policies } from "./policies/Policies";
+import { RequiredActions } from "./RequiredActions";
+import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
+import { toCreateFlow } from "./routes/CreateFlow";
+import { toFlow } from "./routes/Flow";
 
 import "./authentication-section.css";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 type UsedBy = "SPECIFIC_CLIENTS" | "SPECIFIC_PROVIDERS" | "DEFAULT";
 
 export type AuthenticationType = AuthenticationFlowRepresentation & {
   usedBy?: { type?: UsedBy; values: string[] };
+  realm: RealmRepresentation;
 };
 
 export const REALM_FLOWS = new Map<string, string>([
@@ -55,10 +58,6 @@ export const REALM_FLOWS = new Map<string, string>([
   ["clientAuthenticationFlow", "clients"],
   ["dockerAuthenticationFlow", "docker auth"],
 ]);
-
-const UsedByRenderer = (authType: AuthenticationType) => (
-  <UsedBy authType={authType} />
-);
 
 const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
   const { t } = useTranslation("authentication");
@@ -85,20 +84,29 @@ const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
 export default function AuthenticationSection() {
   const { t } = useTranslation("authentication");
   const { adminClient } = useAdminClient();
-  const { realm } = useRealm();
+  const { realm: realmName } = useRealm();
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(key + 1);
+  const refresh = () => {
+    setRealm(undefined);
+    setKey(key + 1);
+  };
   const { addAlert, addError } = useAlerts();
   const localeSort = useLocaleSort();
   const [selectedFlow, setSelectedFlow] = useState<AuthenticationType>();
   const [open, toggleOpen] = useToggle();
   const [bindFlowOpen, toggleBindFlow] = useToggle();
 
+  const [realm, setRealm] = useState<RealmRepresentation>();
+
+  useFetch(() => adminClient.realms.findOne({ realm: realmName }), setRealm, [
+    key,
+  ]);
+
   const loader = async () => {
     const flowsRequest = await fetch(
       `${addTrailingSlash(
         adminClient.baseUrl
-      )}admin/realms/${realm}/ui-ext/authentication-management/flows`,
+      )}admin/realms/${realmName}/ui-ext/authentication-management/flows`,
       {
         method: "GET",
         headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
@@ -117,7 +125,7 @@ export default function AuthenticationSection() {
   };
 
   const useTab = (tab: AuthenticationTab) =>
-    useRoutableTab(toAuthentication({ realm, tab }));
+    useRoutableTab(toAuthentication({ realm: realmName, tab }));
 
   const flowsTab = useTab("flows");
   const requiredActionsTab = useTab("required-actions");
@@ -145,6 +153,8 @@ export default function AuthenticationSection() {
       }
     },
   });
+
+  if (!realm) return <KeycloakSpinner />;
 
   return (
     <>
@@ -178,7 +188,7 @@ export default function AuthenticationSection() {
       <PageSection variant="light" className="pf-u-p-0">
         <RoutableTabs
           isBox
-          defaultLocation={toAuthentication({ realm, tab: "flows" })}
+          defaultLocation={toAuthentication({ realm: realmName, tab: "flows" })}
         >
           <Tab
             data-testid="flows"
@@ -194,7 +204,10 @@ export default function AuthenticationSection() {
                 <ToolbarItem>
                   <Button
                     component={(props) => (
-                      <Link {...props} to={toCreateFlow({ realm })} />
+                      <Link
+                        {...props}
+                        to={toCreateFlow({ realm: realmName })}
+                      />
                     )}
                   >
                     {t("createFlow")}
@@ -241,7 +254,9 @@ export default function AuthenticationSection() {
                 {
                   name: "usedBy",
                   displayKey: "authentication:usedBy",
-                  cellRenderer: (row) => <UsedByRenderer {...row} />,
+                  cellRenderer: (row) => (
+                    <UsedBy authType={row} realm={realm} />
+                  ),
                 },
                 {
                   name: "description",
