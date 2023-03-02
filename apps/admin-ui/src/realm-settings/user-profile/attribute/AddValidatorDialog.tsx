@@ -67,11 +67,13 @@ export const AddValidatorDialog = ({
         onClose={toggleDialog}
       >
         {validators.length !== 0 ? (
-          <TableComposable>
+          <TableComposable variant="compact">
             <Thead>
               <Tr>
-                <Th>{t("validatorDialogColNames.colName")}</Th>
-                <Th>{t("validatorDialogColNames.colDescription")}</Th>
+                <Th width={30}>{t("validatorDialogColNames.colName")}</Th>
+                <Th width={70} modifier="fitContent">
+                  {t("validatorDialogColNames.colDescription")}
+                </Th>
               </Tr>
             </Thead>
             <Tbody>
