@@ -22,7 +22,7 @@ export const OpenIdConnectCompatibilityModes = ({
   const { control } = useFormContext();
   return (
     <FormAccess
-      role="manage-realm"
+      role="manage-clients"
       fineGrainedAccess={hasConfigureAccess}
       isHorizontal
     >
