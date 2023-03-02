@@ -106,7 +106,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       setRealmId(clients[0]?.id!);
       setPermission(permission);
     },
-    []
+    [id]
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
