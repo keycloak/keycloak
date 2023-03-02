@@ -96,9 +96,7 @@ export const UserSelect = ({
         rules={
           isRequired && variant === SelectVariant.typeaheadMulti
             ? { validate: (value) => value.length > 0 }
-            : isRequired
-            ? { required: true }
-            : {}
+            : { required: isRequired }
         }
         render={({ field }) => (
           <Select
@@ -115,13 +113,16 @@ export const UserSelect = ({
             onSelect={(_, v) => {
               const option = v.toString();
               if (variant !== SelectVariant.typeaheadMulti) {
-                field.onChange([option]);
-              } else if (field.value.includes(option)) {
-                field.onChange(
-                  field.value.filter((item: string) => item !== option)
-                );
+                field.value.includes(option)
+                  ? field.onChange([])
+                  : field.onChange([option]);
               } else {
-                field.onChange([...field.value, option]);
+                const changedValue = field.value.find(
+                  (v: string) => v === option
+                )
+                  ? field.value.filter((v: string) => v !== option)
+                  : [...field.value, option];
+                field.onChange(changedValue);
               }
               toggleOpen();
             }}
