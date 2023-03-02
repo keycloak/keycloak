@@ -20,7 +20,7 @@ type IconMapperProps = {
 
 export const IconMapper = ({ icon }: IconMapperProps) => {
   const Icon = getIcon(icon);
-  return <Icon size="lg" />;
+  return <Icon size="lg" alt={icon} />;
 };
 
 function getIcon(icon: string) {

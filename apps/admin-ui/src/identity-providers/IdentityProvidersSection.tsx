@@ -1,7 +1,3 @@
-import { Fragment, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { sortBy, groupBy } from "lodash-es";
 import {
   AlertVariant,
   Badge,
@@ -22,22 +18,54 @@ import {
   TextVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { groupBy, sortBy } from "lodash-es";
+import { Fragment, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
 
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useFetch, useAdminClient } from "../context/auth/AdminClient";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useRealm } from "../context/realm-context/RealmContext";
+import { IconMapper } from "ui-shared";
 import { useAlerts } from "../components/alert/Alerts";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { upperCaseFormatter } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ProviderIconMapper } from "./ProviderIconMapper";
+import { ClickableCard } from "../components/keycloak-card/ClickableCard";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import helpUrls from "../help-urls";
+import { upperCaseFormatter } from "../util";
 import { ManageOrderDialog } from "./ManageOrderDialog";
 import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
-import helpUrls from "../help-urls";
-import { ClickableCard } from "../components/keycloak-card/ClickableCard";
+
+const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
+  const { t } = useTranslation("identity-providers");
+  const { realm } = useRealm();
+
+  return (
+    <Link
+      key={identityProvider.providerId}
+      to={toIdentityProvider({
+        realm,
+        providerId: identityProvider.providerId!,
+        alias: identityProvider.alias!,
+        tab: "settings",
+      })}
+    >
+      {identityProvider.displayName || identityProvider.alias}
+      {!identityProvider.enabled && (
+        <Badge
+          key={`${identityProvider.providerId}-disabled`}
+          isRead
+          className="pf-u-ml-sm"
+        >
+          {t("common:disabled")}
+        </Badge>
+      )}
+    </Link>
+  );
+};
 
 export default function IdentityProvidersSection() {
   const { t } = useTranslation("identity-providers");
@@ -72,29 +100,6 @@ export default function IdentityProvidersSection() {
       setProviders(sortBy(providers, ["config.guiOrder", "alias"]));
     },
     [key]
-  );
-
-  const DetailLink = (identityProvider: IdentityProviderRepresentation) => (
-    <Link
-      key={identityProvider.providerId}
-      to={toIdentityProvider({
-        realm,
-        providerId: identityProvider.providerId!,
-        alias: identityProvider.alias!,
-        tab: "settings",
-      })}
-    >
-      {identityProvider.displayName || identityProvider.alias}
-      {!identityProvider.enabled && (
-        <Badge
-          key={`${identityProvider.providerId}-disabled`}
-          isRead
-          className="pf-u-ml-sm"
-        >
-          {t("common:disabled")}
-        </Badge>
-      )}
-    </Link>
   );
 
   const navigateToCreate = (providerId: string) =>
@@ -197,7 +202,7 @@ export default function IdentityProvidersSection() {
                       <CardTitle>
                         <Split hasGutter>
                           <SplitItem>
-                            <ProviderIconMapper provider={provider} />
+                            <IconMapper icon={provider.id} />
                           </SplitItem>
                           <SplitItem isFilled>{provider.name}</SplitItem>
                         </Split>
