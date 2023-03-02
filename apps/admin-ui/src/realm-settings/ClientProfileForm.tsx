@@ -388,6 +388,7 @@ export default function ClientProfileForm() {
                                               name: type.id,
                                             });
                                           }}
+                                          aria-label={t("common:remove")}
                                         />
                                       )}
                                     </Fragment>
