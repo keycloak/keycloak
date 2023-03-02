@@ -198,7 +198,9 @@ export const GroupTree = ({
             isChecked={exact}
             onChange={(value) => setExact(value)}
           />
-          <span className="pf-u-pl-sm">{t("exactSearch")}</span>
+          <label htmlFor="exact" className="pf-u-pl-sm">
+            {t("exactSearch")}
+          </label>
         </InputGroup>
       }
     >
