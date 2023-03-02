@@ -104,9 +104,7 @@ export const SamlConfig = () => {
         />
       </FormGroup>
       <Toggle
-        name={convertAttributeNameToForm(
-          "attributes.saml.force.name.id.format"
-        )}
+        name="attributes.saml_force_name_id_format"
         label="forceNameIdFormat"
       />
       <Toggle
