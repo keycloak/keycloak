@@ -136,14 +136,16 @@ export const GroupTree = ({
       id: group.id,
       name: (
         <Tooltip content={group.name}>
-          {(canViewDetails && (
+          {canViewDetails ? (
             <Link
               to={`/${realm}/groups/${joinPath(...groups.map((g) => g.id!))}`}
               onClick={() => setSubGroups(groups)}
             >
               {group.name}
             </Link>
-          )) || <span>{group.name}</span>}
+          ) : (
+            <span>{group.name}</span>
+          )}
         </Tooltip>
       ),
       children:

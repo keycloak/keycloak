@@ -56,6 +56,7 @@ export const GroupPickerDialog = ({
   const [filter, setFilter] = useState("");
   const [joinedGroups, setJoinedGroups] = useState<GroupRepresentation[]>([]);
   const [groupId, setGroupId] = useState<string>();
+  const [isSearching, setIsSearching] = useState(false);
 
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
@@ -71,7 +72,7 @@ export const GroupPickerDialog = ({
         groups = await adminClient.groups.find({
           first,
           max: max + 1,
-          search: filter,
+          search: isSearching ? filter : "",
         });
       } else {
         group = await adminClient.groups.findOne({ id: groupId });
@@ -113,7 +114,7 @@ export const GroupPickerDialog = ({
   const hasSubgroups = (group: GroupRepresentation) =>
     group.subGroups?.length !== 0;
 
-  const findSubGroup = (
+  const expandGroup = (
     group: GroupRepresentation,
     name: string
   ): GroupRepresentation => {
@@ -122,7 +123,7 @@ export const GroupPickerDialog = ({
     }
     if (group.subGroups) {
       for (const g of group.subGroups) {
-        const found = findSubGroup(g, name);
+        const found = expandGroup(g, name);
         return found;
       }
     }
@@ -131,7 +132,7 @@ export const GroupPickerDialog = ({
 
   return (
     <Modal
-      variant={filter ? ModalVariant.medium : ModalVariant.small}
+      variant={isSearching ? ModalVariant.medium : ModalVariant.small}
       title={t(text.title, {
         group1: filterGroups?.[0]?.name,
         group2: navigation.length ? currentGroup().name : t("root"),
@@ -172,9 +173,11 @@ export const GroupPickerDialog = ({
         inputGroupName={"common:search"}
         inputGroupOnEnter={(search) => {
           setFilter(search);
+          setIsSearching(search !== "");
           setFirst(0);
           setMax(10);
           setNavigation([]);
+          setGroupId(undefined);
         }}
         inputGroupPlaceholder={t("users:searchForGroups")}
       >
@@ -219,16 +222,18 @@ export const GroupPickerDialog = ({
               key={group.id}
               id={group.id}
               onClick={(e) => {
-                const g = filter !== "" ? findSubGroup(group, filter) : group;
+                const g = isSearching ? expandGroup(group, filter) : group;
                 if (isRowDisabled(g)) return;
                 if (type === "selectOne") {
                   setGroupId(g.id);
                 } else if (
                   hasSubgroups(group) &&
-                  filter === "" &&
                   (e.target as HTMLInputElement).type !== "checkbox"
                 ) {
-                  setGroupId(group.id);
+                  setGroupId(
+                    isSearching ? expandGroup(group, filter).id : group.id
+                  );
+                  setIsSearching(false);
                 }
               }}
             >
@@ -255,7 +260,7 @@ export const GroupPickerDialog = ({
                       } else {
                         newSelectedRows = [
                           ...selectedRows,
-                          filter === "" ? group : findSubGroup(group, filter),
+                          isSearching ? expandGroup(group, filter) : group,
                         ];
                       }
 
@@ -271,13 +276,13 @@ export const GroupPickerDialog = ({
                       key={`name-${group.id}`}
                       className="keycloak-groups-group-path"
                     >
-                      {filter === "" ? (
-                        <span id={`select-${group.name}`}>{group.name}</span>
-                      ) : (
+                      {isSearching ? (
                         <GroupPath
                           id={`select-${group.name}`}
-                          group={findSubGroup(group, filter)}
+                          group={expandGroup(group, filter)}
                         />
+                      ) : (
+                        <span id={`select-${group.name}`}>{group.name}</span>
                       )}
                     </DataListCell>,
                   ]}
@@ -288,7 +293,7 @@ export const GroupPickerDialog = ({
                   aria-label={t("groupName")}
                   isPlainButtonAction
                 >
-                  {((hasSubgroups(group) && filter === "" && canBrowse) ||
+                  {((hasSubgroups(group) && canBrowse) ||
                     type === "selectOne") && (
                     <Button
                       isDisabled
@@ -302,14 +307,14 @@ export const GroupPickerDialog = ({
               </DataListItemRow>
             </DataListItem>
           ))}
-          {groups.length === 0 && filter === "" && (
+          {groups.length === 0 && !isSearching && (
             <ListEmptyState
               hasIcon={false}
               message={t("groups:moveGroupEmpty")}
               instructions={t("groups:moveGroupEmptyInstructions")}
             />
           )}
-          {groups.length === 0 && filter !== "" && (
+          {groups.length === 0 && isSearching && (
             <ListEmptyState
               message={t("common:noSearchResults")}
               instructions={t("common:noSearchResultsInstructions")}
