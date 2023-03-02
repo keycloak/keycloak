@@ -92,6 +92,16 @@ public class ProfileTest {
     }
 
     @Test
+    public void checkSuccessIfFeatureDisabledWithDisabledDependencies() {
+        Properties properties = new Properties();
+        properties.setProperty("keycloak.profile.feature.account2", "disabled");
+        properties.setProperty("keycloak.profile.feature.account_api", "disabled");
+        Profile.configure(new PropertiesProfileConfigResolver(properties));
+        Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2));
+        Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API));
+    }
+
+    @Test
     public void checkErrorOnBadConfig() {
         Properties properties = new Properties();
         properties.setProperty("keycloak.profile.feature.account_api", "invalid");
