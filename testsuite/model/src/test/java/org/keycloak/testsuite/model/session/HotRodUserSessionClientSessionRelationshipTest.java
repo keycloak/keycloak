@@ -125,7 +125,7 @@ public class HotRodUserSessionClientSessionRelationshipTest extends KeycloakMode
 
     private void prepareSessions(AtomicReference<String> uSessionId, AtomicReference<String> cSessionId) {
         withRealm(realmId, (session, realm) -> {
-            UserSessionModel uSession = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null);
+            UserSessionModel uSession = session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
             ClientModel client = realm.getClientByClientId(CLIENT0_CLIENT_ID);
 
             AuthenticatedClientSessionModel cSession = session.sessions().createClientSession(realm, client, uSession);

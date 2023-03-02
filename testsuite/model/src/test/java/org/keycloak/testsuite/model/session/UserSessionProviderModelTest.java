@@ -301,7 +301,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
         inIndependentFactories(4, 30, () -> {
             withRealm(realmId, (session, realm) -> {
                 UserModel user = session.users().getUserByUsername(realm, "user1");
-                UserSessionModel userSession = session.sessions().createUserSession(realm, user, "user1", "", "", false, null, null);
+                UserSessionModel userSession = session.sessions().createUserSession(null, realm, user, "user1", "", "", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
                 userSessionIds.add(userSession.getId());
 
                 latch.countDown();

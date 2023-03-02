@@ -99,7 +99,7 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
                 (evMapStorageProvider == null || FileMapStorageProviderFactory.PROVIDER_ID.equals(evMapStorageProvider)));
 
         // Create user session
-        String uId = withRealm(this.realmId, (session, realm) -> session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null)).getId();
+        String uId = withRealm(this.realmId, (session, realm) -> session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT)).getId();
 
         // Create/Update client session's notes concurrently
         CountDownLatch cdl = new CountDownLatch(200 * CLIENTS_COUNT);
