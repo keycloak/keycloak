@@ -47,8 +47,29 @@ public interface UserSessionProvider extends Provider {
     }
     AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline);
 
-    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
+    /**
+     * @deprecated Use {@link #createUserSession(String, RealmModel, UserModel, String, String, String, boolean, String, String, UserSessionModel.SessionPersistenceState)} instead.
+     */
+    default UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        return createUserSession(null, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId,
+                brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
+    }
 
+    /**
+     * Creates a new user session with the given parameters.
+     *
+     * @param id identifier. Is generated if {@code null}
+     * @param realm the realm
+     * @param user user associated with the created user session
+     * @param loginUsername
+     * @param ipAddress
+     * @param authMethod
+     * @param rememberMe
+     * @param brokerSessionId
+     * @param brokerUserId
+     * @param persistenceState
+     * @return Model of the created user session
+     */
     UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
                                        String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState);
 

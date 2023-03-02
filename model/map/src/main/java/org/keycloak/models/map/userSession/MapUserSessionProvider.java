@@ -147,13 +147,6 @@ public class MapUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress,
-                                              String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-        return createUserSession(null, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId,
-                brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
-    }
-
-    @Override
     public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername,
                                               String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId,
                                               String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState) {
@@ -177,10 +170,6 @@ public class MapUserSessionProvider implements UserSessionProvider {
         entity.setPersistenceState(persistenceState);
         setUserSessionExpiration(entity, realm);
         UserSessionModel userSession = userEntityToAdapterFunc(realm).apply(entity);
-
-        if (userSession != null) {
-            DeviceActivityManager.attachDevice(userSession, session);
-        }
 
         return userSession;
     }

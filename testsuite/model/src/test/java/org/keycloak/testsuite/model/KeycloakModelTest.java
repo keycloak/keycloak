@@ -254,7 +254,6 @@ public abstract class KeycloakModelTest {
       .add(UserSessionSpi.class)
       .add(UserSpi.class)
       .add(DatastoreSpi.class)
-      .add(DeviceRepresentationSpi.class)
       .build();
 
     private static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -264,7 +263,6 @@ public abstract class KeycloakModelTest {
       .add(DefaultExecutorsProviderFactory.class)
       .add(DeploymentStateProviderFactory.class)
       .add(DatastoreProviderFactory.class)
-      .add(DeviceRepresentationProviderFactoryImpl.class)
       .build();
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;
