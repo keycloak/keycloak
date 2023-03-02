@@ -39,6 +39,7 @@ import { FormFields } from "../ClientDetails";
 import { defaultContextAttributes } from "../utils";
 import { Results } from "./evaluate/Results";
 import { KeyBasedAttributeInput } from "./KeyBasedAttributeInput";
+import { useAlerts } from "../../components/alert/Alerts";
 
 import "./auth-evaluate.css";
 
@@ -91,6 +92,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
   } = form;
   const { t } = useTranslation("clients");
   const { adminClient } = useAdminClient();
+  const { addError } = useAlerts();
   const realm = useRealm();
 
   const [scopesDropdownOpen, setScopesDropdownOpen] = useState(false);
@@ -143,7 +145,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
     const resEval: ResourceEvaluation = {
       roleIds: formValues.roleIds ?? [],
       clientId: formValues.client.id!,
-      userId: formValues.user[0],
+      userId: formValues.user![0],
       resources: resources
         .filter((resource) => Object.keys(keys).includes(resource.name!))
         .map((r) => ({
@@ -164,13 +166,16 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
       },
     };
 
-    const evaluation = await adminClient.clients.evaluateResource(
-      { id: client.id!, realm: realm.realm },
-      resEval
-    );
+    try {
+      const evaluation = await adminClient.clients.evaluateResource(
+        { id: client.id!, realm: realm.realm },
+        resEval
+      );
 
-    setEvaluateResult(evaluation);
-    return evaluation;
+      setEvaluateResult(evaluation);
+    } catch (error) {
+      addError("clients:evaluateError", error);
+    }
   };
 
   if (evaluateResult) {

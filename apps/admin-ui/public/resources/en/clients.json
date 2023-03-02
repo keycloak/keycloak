@@ -46,6 +46,7 @@
   "selectAUser": "Select a user",
   "selectARole": "Select a role",
   "client": "Client",
+  "evaluateError": "Could not evaluate due to: {{error}}",
   "evaluate": "Evaluate",
   "reevaluate": "Re-evaluate",
   "showAuthData": "Show authorization data",
