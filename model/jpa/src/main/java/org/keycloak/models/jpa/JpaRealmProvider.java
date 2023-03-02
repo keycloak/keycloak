@@ -23,6 +23,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
@@ -41,6 +43,8 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.hibernate.Session;
+import org.hibernate.query.internal.NativeQueryImpl;
+import org.hibernate.transform.Transformers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -68,6 +72,7 @@ import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
@@ -1136,5 +1141,249 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     public Set<String> getClientSearchableAttributes() {
         return clientSearchableAttributes;
+    }
+
+    public List<RealmModel> getRealmsFromDB(boolean briefRepresentation) {
+        String sql = "SELECT id, access_code_lifespan, user_action_lifespan, access_token_lifespan, "
+                + "enabled, events_enabled, events_expiration, login_theme, name, not_before, "
+                + "registration_allowed, remember_me, reset_password_allowed, social, ssl_required, sso_idle_timeout, "
+                + "sso_max_lifespan, update_profile_on_soc_login, verify_email, master_admin_client, login_lifespan, "
+                + "internationalization_enabled, default_locale, reg_email_as_username, admin_events_enabled, admin_events_details_enabled, "
+                + "edit_username_allowed, otp_policy_counter, otp_policy_window, otp_policy_period, otp_policy_digits, otp_policy_alg, "
+                + "otp_policy_type, browser_flow, registration_flow, direct_grant_flow, reset_credentials_flow, client_auth_flow, "
+                + "offline_session_idle_timeout, revoke_refresh_token, access_token_life_implicit, login_with_email_allowed, "
+                + "duplicate_emails_allowed, docker_auth_flow, refresh_token_max_reuse, allow_user_managed_access, sso_max_lifespan_remember_me, "
+                + "sso_idle_timeout_remember_me, default_role FROM realm";
+        if (briefRepresentation){
+            sql = "select id, name, enabled,master_admin_client,default_role from realm";
+        }
+        Query query = em.createNativeQuery(sql);
+        List list = query.unwrap(NativeQueryImpl.class).setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP).list();
+        List<RealmModel> models = new ArrayList<>();
+        Map<String, RealmEntity> entityMap = new HashMap<>();
+        for (Object obj : list){
+            Map map = (Map) obj;
+            RealmEntity entity;
+            if (briefRepresentation){
+                entity = covertBriefFromMap(map);
+            } else {
+                entity = covertAllFromMap(map);
+
+            }
+            models.add(new RealmAdapter(session, em, entity));
+            entityMap.put(entity.getId(), entity);
+        }
+        if (!briefRepresentation){
+            queryAllAttributes(entityMap);
+        }
+        return models;
+    }
+
+    
+    private void queryAllAttributes(Map<String, RealmEntity> realmMap){
+        Query query = em.createNativeQuery("select realm_id, name, value from realm_attribute");
+        List list = query.unwrap(NativeQueryImpl.class).setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP).list();
+        List<RealmAttributeEntity> models = new ArrayList<>();
+        for (Object obj : list){
+            Map map = (Map) obj;
+            String realmId = map.get("realm_id").toString();
+            String name = map.get("name").toString();
+            String value = map.get("value").toString();
+            RealmAttributeEntity entity = new RealmAttributeEntity();
+            RealmEntity realm = realmMap.get(realmId);
+            if (realm != null){
+                entity.setRealm(realm);
+                entity.setName(name);
+                entity.setValue(value);
+                realm.getAttributes().add(entity);
+            }
+        }
+    }
+
+    private RealmEntity covertBriefFromMap(Map map){
+        RealmEntity entity = new RealmEntity();
+        String realmId = map.get("id").toString();
+        String name = map.get("name").toString();
+        String defaultRole = map.get("default_role").toString();
+        String masterAdminClient = map.get("master_admin_client").toString();
+        boolean enabled = Boolean.getBoolean(map.get("enabled").toString());
+        entity.setId(realmId);
+        entity.setName(name);
+        entity.setEnabled(enabled);
+        entity.setMasterAdminClient(masterAdminClient);
+        entity.setDefaultRoleId(defaultRole);
+
+        return entity;
+    }
+    private RealmEntity covertAllFromMap(Map map){
+        RealmEntity entity = new RealmEntity();
+
+        String realmId = map.get("id").toString();
+        entity.setId(realmId);
+
+        int accessCodeLifespan = Integer.parseInt(map.get("access_code_lifespan").toString());
+        entity.setAccessCodeLifespan(accessCodeLifespan);
+
+        int userActionLifespan = Integer.parseInt(map.get("user_action_lifespan").toString());
+        entity.setAccessCodeLifespanUserAction(userActionLifespan);
+
+        int accessTokenLifespan = Integer.parseInt(map.get("access_token_lifespan").toString());
+        entity.setAccessTokenLifespan(accessTokenLifespan);
+
+        boolean enabled = Boolean.getBoolean(map.get("enabled").toString());
+        entity.setEnabled(enabled);
+
+        boolean eventsEnabled = Boolean.getBoolean(map.get("events_enabled").toString());
+        entity.setEventsEnabled(eventsEnabled);
+
+        int eventsExpiration = Integer.parseInt(map.get("events_expiration").toString());
+        entity.setEventsExpiration(eventsExpiration);
+
+        String loginTheme = (String) map.get("login_theme");
+        entity.setLoginTheme(loginTheme);
+
+        String name = map.get("name").toString();
+        entity.setName(name);
+
+        int notBefore = Integer.parseInt(map.get("not_before").toString());
+        entity.setNotBefore(notBefore);
+
+        boolean registrationAllowed = Boolean.getBoolean(map.get("registration_allowed").toString());
+        entity.setRegistrationAllowed(registrationAllowed);
+
+        boolean rememberMe = Boolean.getBoolean(map.get("remember_me").toString());
+        entity.setRememberMe(rememberMe);
+
+        boolean resetPasswordAllowed = Boolean.getBoolean(map.get("reset_password_allowed").toString());
+        entity.setResetPasswordAllowed(resetPasswordAllowed);
+
+        boolean social = Boolean.getBoolean(map.get("social").toString());
+
+        String sslRequired = map.get("ssl_required").toString();
+        entity.setSslRequired(sslRequired);
+
+        int ssoIdleTimeout = Integer.parseInt(map.get("sso_idle_timeout").toString());
+        entity.setSsoSessionIdleTimeout(ssoIdleTimeout);
+
+        int ssoMaxLifespan = Integer.parseInt(map.get("sso_max_lifespan").toString());
+        entity.setSsoSessionMaxLifespan(ssoMaxLifespan);
+
+        boolean updateProfileOnSocLogin = Boolean.getBoolean(map.get("update_profile_on_soc_login").toString());
+
+        boolean verifyEmail = Boolean.getBoolean(map.get("verify_email").toString());
+        entity.setVerifyEmail(verifyEmail);
+
+        String masterAdminClient = map.get("master_admin_client").toString();
+        entity.setMasterAdminClient(masterAdminClient);
+
+        int loginLifespan = Integer.parseInt(map.get("login_lifespan").toString());
+        entity.setAccessCodeLifespanLogin(loginLifespan);
+
+        boolean internationalizationEnabled = Boolean.getBoolean(map.get("internationalization_enabled").toString());
+        entity.setInternationalizationEnabled(internationalizationEnabled);
+
+        String defaultLocale = (String) map.get("default_locale");
+        entity.setDefaultLocale(defaultLocale);
+
+        boolean regEmailAsUsername = Boolean.getBoolean(map.get("reg_email_as_username").toString());
+        entity.setRegistrationEmailAsUsername(regEmailAsUsername);
+
+        boolean adminEventsEnabled = Boolean.getBoolean(map.get("admin_events_enabled").toString());
+        entity.setAdminEventsEnabled(adminEventsEnabled);
+        boolean adminEventsDetailsEnabled = Boolean.getBoolean(map.get("admin_events_details_enabled").toString());
+        entity.setAdminEventsDetailsEnabled(adminEventsDetailsEnabled);
+
+        boolean editUsernameAllowed = Boolean.getBoolean(map.get("edit_username_allowed").toString());
+        entity.setEditUsernameAllowed(editUsernameAllowed);
+
+        int otpPolicyCounter = Integer.parseInt(map.get("otp_policy_counter").toString());
+        entity.setOtpPolicyInitialCounter(otpPolicyCounter);
+
+        int otpPolicyWindow = Integer.parseInt(map.get("otp_policy_window").toString());
+        entity.setOtpPolicyLookAheadWindow(otpPolicyWindow);
+
+        int otpPolicyPeriod = Integer.parseInt(map.get("otp_policy_period").toString());
+        entity.setOtpPolicyPeriod(otpPolicyPeriod);
+
+        int otpPolicyDigits = Integer.parseInt(map.get("otp_policy_digits").toString());
+        entity.setOtpPolicyDigits(otpPolicyDigits);
+
+        String otpPolicyAlg = map.get("otp_policy_alg").toString();
+        entity.setOtpPolicyAlgorithm(otpPolicyAlg);
+
+        String otpPolicyType = map.get("otp_policy_type").toString();
+        entity.setOtpPolicyType(otpPolicyType);
+
+        String browserFlow = map.get("browser_flow").toString();
+        entity.setBrowserFlow(browserFlow);
+
+        String registrationFlow = map.get("registration_flow").toString();
+        entity.setRegistrationFlow(registrationFlow);
+
+        String directGrantFlow = map.get("direct_grant_flow").toString();
+        entity.setDirectGrantFlow(directGrantFlow);
+
+        String resetCredentialsFlow = map.get("reset_credentials_flow").toString();
+        entity.setResetCredentialsFlow(resetCredentialsFlow);
+
+        String clientAuthFlow = map.get("client_auth_flow").toString();
+        entity.setClientAuthenticationFlow(clientAuthFlow);
+
+        int offlineSessionIdleTimeout = Integer.parseInt(map.get("offline_session_idle_timeout").toString());
+        entity.setOfflineSessionIdleTimeout(offlineSessionIdleTimeout);
+
+        boolean revokeRefreshToken = Boolean.getBoolean(map.get("revoke_refresh_token").toString());
+        entity.setRevokeRefreshToken(revokeRefreshToken);
+
+        int accessTokenLifeImplicit = Integer.parseInt(map.get("access_token_life_implicit").toString());
+        entity.setAccessTokenLifespanForImplicitFlow(accessTokenLifeImplicit);
+
+        boolean loginWithEmailAllowed = Boolean.getBoolean(map.get("login_with_email_allowed").toString());
+        entity.setLoginWithEmailAllowed(loginWithEmailAllowed);
+
+        boolean duplicateEmailsAllowed = Boolean.getBoolean(map.get("duplicate_emails_allowed").toString());
+        entity.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
+
+        String dockerAuthFlow = map.get("docker_auth_flow").toString();
+        entity.setDockerAuthenticationFlow(dockerAuthFlow);
+
+        int refreshTokenMaxReuse = Integer.parseInt(map.get("refresh_token_max_reuse").toString());
+        entity.setRefreshTokenMaxReuse(refreshTokenMaxReuse);
+
+        boolean allowUserManagedAccess = Boolean.getBoolean(map.get("allow_user_managed_access").toString());
+        entity.setAllowUserManagedAccess(allowUserManagedAccess);
+
+        int ssoMaxLifespanRememberMe = Integer.parseInt(map.get("sso_max_lifespan_remember_me").toString());
+        entity.setSsoSessionMaxLifespanRememberMe(ssoMaxLifespanRememberMe);
+
+        int ssoIdleTimeoutRememberMe = Integer.parseInt(map.get("sso_idle_timeout_remember_me").toString());
+        entity.setSsoSessionIdleTimeout(ssoIdleTimeoutRememberMe);
+
+        String defaultRole = map.get("default_role").toString();
+        entity.setDefaultRoleId(defaultRole);
+
+        return entity;
+    }
+
+    public Map<String, Set<String>> getAllRoleName() {
+        Query query = em.createNativeQuery("select r.name as realm_name, kr.name as role_name from KEYCLOAK_ROLE kr "
+                + "left join realm r on kr.client=r.master_admin_client group by r.name, kr.name order by r.name");
+        List list = query.unwrap(NativeQueryImpl.class).setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP).list();
+        Map<String, Set<String>> retMap = new HashMap<>();
+        for (Object obj : list){
+            Map map = (Map) obj;
+            String realmName = (String) map.get("realm_name");
+            if (realmName == null){
+                continue;
+            }
+            String roleName = (String) map.get("role_name");
+            Set<String> tmpSet = retMap.get(realmName);
+            if (tmpSet == null){
+                tmpSet = new HashSet<>();
+            }
+            tmpSet.add(roleName);
+            retMap.put(realmName, tmpSet);
+        }
+        return retMap;
     }
 }

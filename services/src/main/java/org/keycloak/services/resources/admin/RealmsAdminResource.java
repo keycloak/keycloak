@@ -19,11 +19,13 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.jpa.JpaRealmProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -36,6 +38,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
 
+import javax.persistence.EntityManager;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -50,8 +53,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
@@ -96,10 +103,33 @@ public class RealmsAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<RealmRepresentation> getRealms(@DefaultValue("false") @QueryParam("briefRepresentation") boolean briefRepresentation) {
-        Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
-                .map(realm -> toRealmRep(realm, briefRepresentation))
-                .filter(Objects::nonNull);
-        return throwIfEmpty(realms, new ForbiddenException());
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        JpaRealmProvider roleProvider = new JpaRealmProvider(session, em, null, null);
+
+        List<RealmModel> modelList = roleProvider.getRealmsFromDB(briefRepresentation);
+        List<RealmRepresentation> retList = new ArrayList<>();
+        Map<String, Set<String>> realmRoleMap = roleProvider.getAllRoleName();
+        for (RealmModel realmModel : modelList){
+            Set<String> roleSet = realmRoleMap.get(realmModel.getName());
+            if (hasOneAdminRole(roleSet, AdminRoles.VIEW_REALM, AdminRoles.MANAGE_REALM)){
+                retList.add(briefRepresentation ? ModelToRepresentation.toBriefRepresentation(realmModel) :
+                        ModelToRepresentation.toRepresentation(session, realmModel, false));
+            } else if (hasOneAdminRole(roleSet, AdminRoles.ALL_REALM_ROLES)){
+                RealmRepresentation rep = new RealmRepresentation();
+                rep.setRealm(realmModel.getName());
+                retList.add(rep);
+            }
+        }
+        return retList.stream();
+    }
+
+    private boolean hasOneAdminRole(Set<String> roleSet, String... adminRoles){
+        for (String adminRole : adminRoles){
+            if (roleSet.contains(adminRole)){
+                return true;
+            }
+        }
+        return false;
     }
 
     protected RealmRepresentation toRealmRep(RealmModel realm, boolean briefRep) {
