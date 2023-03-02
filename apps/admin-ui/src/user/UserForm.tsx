@@ -321,7 +321,7 @@ export const UserForm = ({
           )}
           <FormGroup
             label={t("email")}
-            fieldId="kc-description"
+            fieldId="kc-email"
             validated={errors.email ? "error" : "default"}
             helperTextInvalid={t("users:emailInvalid")}
           >
@@ -337,19 +337,19 @@ export const UserForm = ({
           <EmailVerified />
           <FormGroup
             label={t("firstName")}
-            fieldId="kc-firstname"
+            fieldId="kc-firstName"
             validated={errors.firstName ? "error" : "default"}
             helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
               data-testid="firstName-input"
-              id="kc-firstname"
+              id="kc-firstName"
               {...register("firstName")}
             />
           </FormGroup>
           <FormGroup
             label={t("lastName")}
-            fieldId="kc-name"
+            fieldId="kc-lastName"
             validated={errors.lastName ? "error" : "default"}
           >
             <KeycloakTextInput
