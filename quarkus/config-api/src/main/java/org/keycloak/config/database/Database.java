@@ -107,11 +107,21 @@ public final class Database {
                     @Override
                     public String apply(String alias) {
                         if ("dev-file".equalsIgnoreCase(alias)) {
-                            return addH2NonKeywords("jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + System.getProperty("user.home") + "}}" + File.separator + "${kc.data.dir:data}"
-                                    + File.separator + "h2" + File.separator
+                            return addH2NonKeywords("jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + escapeReplacements(System.getProperty("user.home")) + "}}" + escapeReplacements(File.separator) + "${kc.data.dir:data}"
+                                    + escapeReplacements(File.separator) + "h2" + escapeReplacements(File.separator)
                                     + "keycloakdb${kc.db-url-properties:;;AUTO_SERVER=TRUE}");
                         }
                         return addH2NonKeywords("jdbc:h2:mem:keycloakdb${kc.db-url-properties:}");
+                    }
+
+                    private String escapeReplacements(String snippet) {
+                        if (File.separator.equals("\\")) {
+                            // SmallRye will do replacements of "${...}", but a "\" must not escape such an expression.
+                            // As we nest multiple expressions, and each nested expression must re-escape the backslashes,
+                            // the simplest way is to replace a backslash with a slash, as those are processed nicely on Windows.
+                            return snippet.replace("\\", "/");
+                        }
+                        return snippet;
                     }
 
                     /**
