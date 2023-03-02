@@ -305,7 +305,7 @@ public class HttpClientBuilder {
             HttpClientConnectionManager cm;
 
             if (connectionPoolSize > 0) {
-                PoolingHttpClientConnectionManager tcm = new PoolingHttpClientConnectionManager(sf.build());
+                PoolingHttpClientConnectionManager tcm = new PoolingHttpClientConnectionManager(sf.build(), null, null, null, connectionTTL, connectionTTLUnit);
                 tcm.setMaxTotal(connectionPoolSize);
                 if (maxPooledPerRoute == 0) maxPooledPerRoute = connectionPoolSize;
                 tcm.setDefaultMaxPerRoute(maxPooledPerRoute);
