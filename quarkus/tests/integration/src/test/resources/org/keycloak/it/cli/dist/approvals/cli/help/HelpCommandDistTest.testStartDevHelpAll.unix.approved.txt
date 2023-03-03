@@ -158,6 +158,9 @@ Hostname:
 --hostname-admin-url <url>
                      Set the base URL for accessing the administration console, including scheme,
                        host, port and path
+--hostname-debug <true|false>
+                     Toggle the hostname debug page that is accessible at
+                       /realms/master/hostname-debug Default: false.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>
