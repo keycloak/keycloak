@@ -10,4 +10,4 @@ mvn:keycloak-saml-jetty94-adapter-dist:keycloak-saml-jetty94-adapter
 mvn:keycloak-saml-tomcat-adapter-dist:keycloak-saml-tomcat-adapter
 mvn:keycloak-saml-wildfly-adapter-dist:keycloak-saml-wildfly-adapter
 
-npm:js/libs/keycloak-admin-client/target/keycloak-keycloak-admin-client-$$NPM_VERSION$$.tgz:keycloak-admin-client-$$NPM_VERSION$$.tgz
+npm:js/libs/keycloak-admin-client/target/keycloak-keycloak-admin-client-$$VERSION$$.tgz:keycloak-admin-client-$$VERSION$$.tgz
