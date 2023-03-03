@@ -11,13 +11,14 @@ import org.keycloak.common.profile.ProfileException;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
@@ -69,8 +70,13 @@ public class ProfileTest {
         }
 
         Assert.assertEquals(Profile.ProfileName.DEFAULT, profile.getName());
-        assertEquals(profile.getDisabledFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DYNAMIC_SCOPES, Profile.Feature.DOCKER, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.MAP_STORAGE, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL);
-        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL);
+        Set<Profile.Feature> disabledFeatutes = new HashSet<>(Arrays.asList(Profile.Feature.FIPS, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DYNAMIC_SCOPES, Profile.Feature.DOCKER, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.MAP_STORAGE, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL));
+        // KERBEROS can be disabled (i.e. FIPS mode disables SunJGSS provider)
+        if (Profile.Feature.KERBEROS.getType() == Profile.Feature.Type.DISABLED_BY_DEFAULT) {
+            disabledFeatutes.add(Profile.Feature.KERBEROS);
+        }
+        assertEquals(profile.getDisabledFeatures(), disabledFeatutes);
+        assertEquals(profile.getPreviewFeatures(), Profile.Feature.FIPS, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL);
     }
 
     @Test
@@ -83,6 +89,16 @@ public class ProfileTest {
         } catch (ProfileException e) {
             Assert.assertEquals("Feature account2 depends on disabled feature account-api", e.getMessage());
         }
+    }
+
+    @Test
+    public void checkSuccessIfFeatureDisabledWithDisabledDependencies() {
+        Properties properties = new Properties();
+        properties.setProperty("keycloak.profile.feature.account2", "disabled");
+        properties.setProperty("keycloak.profile.feature.account_api", "disabled");
+        Profile.configure(new PropertiesProfileConfigResolver(properties));
+        Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2));
+        Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API));
     }
 
     @Test
@@ -226,8 +242,12 @@ public class ProfileTest {
         Assert.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
     }
 
+    public static void assertEquals(Set<Profile.Feature> actual, Collection<Profile.Feature> expected) {
+        assertEquals(actual, expected.toArray(new Profile.Feature[0]));
+    }
+
     public static void assertEquals(Set<Profile.Feature> actual, Profile.Feature... expected) {
-        Profile.Feature[] a = actual.toArray(new Profile.Feature[actual.size()]);
+        Profile.Feature[] a = actual.toArray(new Profile.Feature[0]);
         Arrays.sort(a, new FeatureComparator());
         Arrays.sort(expected, new FeatureComparator());
         Assert.assertArrayEquals(a, expected);

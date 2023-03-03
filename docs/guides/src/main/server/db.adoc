@@ -40,8 +40,7 @@ This command includes the minimum settings needed to connect to the database.
 
 The default schema is `keycloak`, but you can change it by using the `db-schema` configuration option.
 
-.Warning:
-[NOTE]
+[WARNING]
 Do NOT use the `--optimized` flag for the `start` command if you want to use a particular DB (except the H2).
 Executing the build phase before starting the server instance is necessary.
 You can achieve it either by starting the instance without the `--optimized` flag,

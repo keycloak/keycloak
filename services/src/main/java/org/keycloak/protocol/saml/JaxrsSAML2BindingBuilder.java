@@ -19,6 +19,7 @@ package org.keycloak.protocol.saml;
 
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -95,6 +96,22 @@ public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2
 
     }
 
+    public static class SoapBindingBuilder extends BaseSoapBindingBuilder {
+        public SoapBindingBuilder(JaxrsSAML2BindingBuilder builder, Document document) throws ProcessingException {
+            super(builder, document);
+        }
+
+        public Response response() throws ConfigurationException, ProcessingException, IOException {
+            try {
+                Soap.SoapMessageBuilder messageBuilder = Soap.createMessage();
+                messageBuilder.addToBody(document);
+                return messageBuilder.build();
+            } catch (Exception e) {
+                throw new RuntimeException("Error while creating SAML response.", e);
+            }
+        }
+    }
+
     @Override
     public RedirectBindingBuilder redirectBinding(Document document) throws ProcessingException  {
         return new RedirectBindingBuilder(this, document);
@@ -105,7 +122,8 @@ public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2
         return new PostBindingBuilder(this, document);
     }
 
-
-
-
+    @Override
+    public SoapBindingBuilder soapBinding(Document document) throws ProcessingException {
+        return new SoapBindingBuilder(this, document);
+    }
 }

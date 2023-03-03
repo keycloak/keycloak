@@ -206,15 +206,20 @@ public class UserResource {
             }
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
+            session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
+            session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
+            session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         } catch (ForbiddenException fe) {
+            session.getTransactionManager().setRollbackOnly();
             throw fe;
         } catch (Exception me) { // JPA
+            session.getTransactionManager().setRollbackOnly();
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
             return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         }
@@ -885,12 +890,10 @@ public class UserResource {
                                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.users().requireView(user);
 
-        if (Objects.nonNull(search) && Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+        if (Objects.nonNull(search)) {
             return ModelToRepresentation.searchForGroupByName(user, !briefRepresentation, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         } else {
-            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation);
+            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         }
     }
 

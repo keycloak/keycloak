@@ -22,11 +22,13 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.StringKeyConverter.StringKey;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.common.delegate.EntityFieldDelegate;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.SearchableModelField;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,10 +36,11 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -49,7 +52,7 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
   extends ConcurrentHashMapKeycloakTransaction<String, V, M> {
 
     private final List<Path> pathsToDelete = new LinkedList<>();
-    private Map<Path, Path> renameOnCommit = new IdentityHashMap<>();
+    private final Map<Path, Path> renameOnCommit = new HashMap<>();
 
     private final String txId = StringKey.INSTANCE.yieldNewUniqueKey();
 
@@ -82,11 +85,11 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
     @Override
     public void commit() {
         super.commit();
-        this.renameOnCommit.forEach(FileMapKeycloakTransaction::silentMove);
+        this.renameOnCommit.forEach(FileMapKeycloakTransaction::move);
         this.pathsToDelete.forEach(FileMapKeycloakTransaction::silentDelete);
     }
 
-    private static void silentMove(Path from, Path to) {
+    private static void move(Path from, Path to) {
         try {
             Files.move(from, to, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {
@@ -121,6 +124,12 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
         this.pathsToDelete.add(from);
     }
 
+    @Override
+    public V registerEntityForChanges(V origEntity) {
+        final V watchedValue = super.registerEntityForChanges(origEntity);
+        return DeepCloner.DUMB_CLONER.entityFieldDelegate(watchedValue, new IdProtector(watchedValue));
+    }
+
     private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileMapStorage.Crud<V, M> {
 
         private FileMapKeycloakTransaction tx;
@@ -148,6 +157,26 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
         protected String getTxId() {
             return tx.txId;
         }
+    }
 
+    private class IdProtector extends EntityFieldDelegate.WithEntity<V> {
+
+        public IdProtector(V entity) {
+            super(entity);
+        }
+
+        @Override
+        public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<V>> & org.keycloak.models.map.common.EntityField<V>> void set(EF field, T value) {
+            String id = entity.getId();
+            super.set(field, value);
+            if (! Objects.equals(id, map.determineKeyFromValue(entity, false))) {
+                throw new ReadOnlyException("Cannot change " + field + " as that would change primary key");
+            }
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + " [protected ID]";
+        }
     }
 }

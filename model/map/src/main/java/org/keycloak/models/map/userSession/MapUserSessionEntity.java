@@ -70,22 +70,6 @@ public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity, E
         }
 
         @Override
-        public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
-            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
-            if (acss == null || acss.isEmpty()) return Optional.empty();
-
-            return acss.stream().filter(acs -> Objects.equals(acs.getClientId(), clientUUID)).findFirst();
-        }
-
-        @Override
-        public Boolean removeAuthenticatedClientSession(String clientUUID) {
-            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
-            boolean removed = acss != null && acss.removeIf(uc -> Objects.equals(uc.getClientId(), clientUUID));
-            this.updated |= removed;
-            return removed;
-        }
-
-        @Override
         public void clearAuthenticatedClientSessions() {
             Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
             if (acss != null) {

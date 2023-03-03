@@ -12,29 +12,29 @@ Keycloak has packed some functionality in features, including some disabled feat
 
 Some supported features, and all preview features, are disabled by default. To enable a feature, enter this command:
 
-<@kc.build parameters="--features=<name>[,<name>]"/>
+<@kc.build parameters="--features=\"<name>[,<name>]\""/>
 
 For example, to enable `docker` and `token-exchange`, enter this command:
 
-<@kc.build parameters="--features=docker,token-exchange"/>
+<@kc.build parameters="--features=\"docker,token-exchange\""/>
 
 To enable all preview features, enter this command:
 
-<@kc.build parameters="--features=preview"/>
+<@kc.build parameters="--features=\"preview\""/>
 
 == Disabling features
 
 To disable a feature that is enabled by default, enter this command:
 
-<@kc.build parameters="--features-disabled=<name>[,<name>]"/>
+<@kc.build parameters="--features-disabled=\"<name>[,<name>]\""/>
 
 For example to disable `impersonation`, enter this command:
 
-<@kc.build parameters="--features-disabled=impersonation"/>
+<@kc.build parameters="--features-disabled=\"impersonation\""/>
 
 You can disable all default features by entering this command:
 
-<@kc.build parameters="--features-disabled=default"/>
+<@kc.build parameters="--features-disabled=\"default\""/>
 
 This command can be used in combination with `features` to explicitly set what features should be available.
 If a feature is added both to the `features-disabled` list and the `features` list, it will be enabled.
@@ -60,19 +60,23 @@ These features may change or be removed at a future release.
 
 == Deprecated features
 
+<#if ctx.features.deprecated?has_content>
+
 The following list contains deprecated features that will be removed in a future release. These features are disabled by default.
 
 <@showFeatures ctx.features.deprecated/>
 
+<#else>
+
+There are no deprecated features in this Keycloak release.
+
+</#if>
+
 </@tmpl.guide>
 
 <#macro showFeatures features>
-[cols="1,3",role="features"]
-|===
 <#list features as feature>
-
-|[.features-name]#${feature.name}#
-|[.features-description]#${feature.description}#
+[.features-name]#${feature.name}#::
+[.features-description]#${feature.description}#
 </#list>
-|===
 </#macro>

@@ -7,7 +7,7 @@ import org.keycloak.models.map.common.UpdatableEntity;
 public interface EntityFieldDelegate<E> extends UpdatableEntity {
 
     public abstract class WithEntity<E extends UpdatableEntity> implements EntityFieldDelegate<E> {
-        private final E entity;
+        protected final E entity;
 
         public WithEntity(E entity) {
             this.entity = entity;
@@ -51,6 +51,11 @@ public interface EntityFieldDelegate<E> extends UpdatableEntity {
         @Override
         public boolean isUpdated() {
             return entity.isUpdated();
+        }
+
+        @Override
+        public String toString() {
+            return "&" + String.valueOf(entity);
         }
     }
 

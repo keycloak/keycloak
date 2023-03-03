@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.file;
 
+import org.keycloak.common.util.StackUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -44,6 +45,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +53,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
@@ -149,79 +153,77 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
               .ifPresent(key -> this.fieldPredicates.replace(key, (builder, op, params) -> builder));
         }
 
-        protected Path getPathForSanitizedId(Path sanitizedIdPath) {
-            final Path dataDirectory = getDataDirectory();
-            final Path dataDirectoryWithChildren = dataDirectory.resolve(sanitizedIdPath).getParent();
-
-            if (! Files.isDirectory(dataDirectoryWithChildren)) {
-                try {
-                    Files.createDirectories(dataDirectoryWithChildren);
-                } catch (IOException ex) {
-                    throw new IllegalStateException("Directory does not exist and cannot be created: " + dataDirectory, ex);
+        protected Path getPathForEscapedId(String[] escapedIdPathArray) {
+            Path parentDirectory = getDataDirectory();
+            Path targetPath = parentDirectory;
+            for (String path : escapedIdPathArray) {
+                targetPath = targetPath.resolve(path).normalize();
+                if (! targetPath.getParent().equals(parentDirectory)) {
+                    LOG.warnf("Path traversal detected: %s", Arrays.toString(escapedIdPathArray));
+                    return null;
                 }
-            }
-            return dataDirectoryWithChildren.resolve(sanitizedIdPath.getFileName() + FILE_SUFFIX);
-        }
-
-        protected Path getPathForSanitizedId(String sanitizedId) {
-            if (sanitizedId == null) {
-                throw new IllegalStateException("Invalid ID to sanitize");
+                parentDirectory = targetPath;
             }
 
-            return getPathForSanitizedId(Path.of(sanitizedId));
+            return targetPath.resolveSibling(targetPath.getFileName() + FILE_SUFFIX);
         }
 
-        protected String sanitizeId(String id) {
-            Objects.requireNonNull(id, "ID must be non-null");
-
-            // TODO: sanitize
-//            id = id
-//              .replaceAll("=", "=e")
-//              .replaceAll(":", "=c")
-//              .replaceAll("/", "=s")
-//              .replaceAll("\\\\", "=b")
-//            ;
-            final Path pId = Path.of(id);
-
-            // Do not allow absolute paths
-            if (pId.isAbsolute()) {
-                throw new IllegalStateException("Illegal ID requested: " + id);
+        protected Path getPathForEscapedId(String escapedId) {
+            if (escapedId == null) {
+                throw new IllegalStateException("Invalid ID to escape");
             }
 
-            return id;
+            String[] escapedIdArray = ID_COMPONENT_SEPARATOR_PATTERN.split(escapedId);
+            return getPathForEscapedId(escapedIdArray);
         }
 
-        protected String desanitizeId(String sanitizedId) {
-            if (sanitizedId == null) {
+        // Percent sign + Unix (/) and https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file reserved characters
+        private static final Pattern RESERVED_CHARACTERS = Pattern.compile("[%<:>\"/\\\\|?*=]");
+        private static final String ID_COMPONENT_SEPARATOR = ":";
+        private static final String ESCAPING_CHARACTER = "=";
+        private static final Pattern ID_COMPONENT_SEPARATOR_PATTERN = Pattern.compile(Pattern.quote(ID_COMPONENT_SEPARATOR) + "+");
+
+        private static String[] escapeId(String[] idArray) {
+            if (idArray == null || idArray.length == 0 || idArray.length == 1 && idArray[0] == null) {
                 return null;
             }
+            return Stream.of(idArray)
+              .map(Crud::escapeId)
+              .toArray(String[]::new);
+        }
 
-            return sanitizedId
-              .replaceAll("=c", ":")
-              .replaceAll("=s", "/")
-              .replaceAll("=b", "\\\\")
-              .replaceAll("=e", "=")
-            ;
+        private static String escapeId(String id) {
+            Objects.requireNonNull(id, "ID must be non-null");
 
+            StringBuilder idEscaped = new StringBuilder();
+            Matcher m = RESERVED_CHARACTERS.matcher(id);
+            while (m.find()) {
+                m.appendReplacement(idEscaped, String.format(ESCAPING_CHARACTER + "%02x", (int) m.group().charAt(0)));
+            }
+            m.appendTail(idEscaped);
+            final Path pId = Path.of(idEscaped.toString());
+
+            return pId.toString();
         }
 
         protected V parse(Path fileName) {
             final V parsedObject = YamlParser.parse(fileName, new MapEntityContext<>(entityClass));
             if (parsedObject == null) {
+                LOG.debugf("Could not parse %s%s", fileName, StackUtil.getShortStackTrace());
                 return null;
             }
 
+            String escapedId = determineKeyFromValue(parsedObject, false);
             final String fileNameStr = fileName.getFileName().toString();
-            String id = determineKeyFromValue(parsedObject, false);
-            final String desanitizedId = desanitizeId(fileNameStr.substring(0, fileNameStr.length() - FILE_SUFFIX.length()));
-            if (id == null) {
-                LOG.debugf("Determined ID from filename: %s", desanitizedId);
-                id = desanitizedId;
-            } else if (! id.endsWith(desanitizedId)) {
-                LOG.warnf("Filename \"%s\" does not end with expected id \"%s\". Fix the file name.", fileNameStr, id);
+            final String idFromFilename = fileNameStr.substring(0, fileNameStr.length() - FILE_SUFFIX.length());
+            if (escapedId == null) {
+                LOG.debugf("Determined ID from filename: %s%s", idFromFilename);
+                escapedId = idFromFilename;
+            } else if (! escapedId.endsWith(idFromFilename)) {
+                LOG.warnf("Id \"%s\" does not conform with filename \"%s\", expected: %s", escapedId, fileNameStr, escapeId(escapedId));
             }
 
-            parsedObject.setId(id);
+            parsedObject.setId(escapedId);
             parsedObject.clearUpdatedFlag();
 
             return parsedObject;
@@ -230,21 +232,31 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
         @Override
         public V create(V value) {
             // TODO: Lock realm directory for changes (e.g. on realm deletion)
-            // TODO: Sanitize ID
-            String sanitizedId = sanitizeId(value.getId());
+            String escapedId = value.getId();
 
-            writeYamlContents(getPathForSanitizedId(sanitizedId), value);
+            writeYamlContents(getPathForEscapedId(escapedId), value);
 
             return value;
         }
 
+        /**
+         * Returns escaped ID - relative file name in the file system with path separator {@link #ID_COMPONENT_SEPARATOR}.
+         * @param value Object
+         * @param forCreate Whether this is for create operation ({@code true}) or
+         * @return
+         */
         @Override
         public String determineKeyFromValue(V value, boolean forCreate) {
             final boolean randomId;
             String[] proposedId = suggestedPath.apply(value);
 
             if (! forCreate) {
-                return proposedId == null ? null : String.join("/", proposedId);
+                String[] escapedProposedId = escapeId(proposedId);
+                final String res = proposedId == null ? null : String.join(ID_COMPONENT_SEPARATOR, escapedProposedId);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debugf("determineKeyFromValue: got %s (%s) for %s", res, res == null ? null : String.join(" [/] ", proposedId), value);
+                }
+                return res;
             }
 
             if (proposedId == null || proposedId.length == 0) {
@@ -254,25 +266,32 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
                 randomId = false;
             }
 
-            Path sanitizedId = Path.of(
-              sanitizeId(proposedId[0]),
-              Stream.of(proposedId).skip(1).map(this::sanitizeId).toArray(String[]::new)
-            );
+            String[] escapedProposedId = escapeId(proposedId);
+            Path sp = getPathForEscapedId(escapedProposedId);   // sp will never be null
 
-            Path sp = getPathForSanitizedId(sanitizedId);
+            final Path parentDir = sp.getParent();
+            if (! Files.isDirectory(parentDir)) {
+                try {
+                    Files.createDirectories(parentDir);
+                } catch (IOException ex) {
+                    throw new IllegalStateException("Directory does not exist and cannot be created: " + parentDir, ex);
+                }
+            }
+
             for (int counter = 0; counter < 100; counter++) {
-                LOG.tracef("Attempting to create file %s", sp);
+                LOG.tracef("Attempting to create file %s", sp, StackUtil.getShortStackTrace());
                 try {
                     touch(sp);
-                    return String.join("/", proposedId);
+                    final String res = String.join(ID_COMPONENT_SEPARATOR, escapedProposedId);
+                    LOG.debugf("determineKeyFromValue: got %s for created %s", res, value);
+                    return res;
                 } catch (FileAlreadyExistsException ex) {
                     if (! randomId) {
                         throw new ModelDuplicateException("File " + sp + " already exists!");
                     }
                     final String lastComponent = StringKey.INSTANCE.yieldNewUniqueKey();
-                    proposedId[proposedId.length - 1] = lastComponent;
-                    sanitizedId = sanitizedId.resolveSibling(sanitizeId(lastComponent));
-                    sp = getPathForSanitizedId(sanitizedId);
+                    escapedProposedId[escapedProposedId.length - 1] = lastComponent;
+                    sp = getPathForEscapedId(escapedProposedId);
                 } catch (IOException ex) {
                     throw new IllegalStateException("Could not create file " + sp, ex);
                 }
@@ -283,8 +302,8 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
 
         @Override
         public V read(String key) {
-            return Optional.ofNullable(sanitizeId(key))
-              .map(this::getPathForSanitizedId)
+            return Optional.ofNullable(key)
+              .map(this::getPathForEscapedId)
               .filter(Files::isReadable)
               .map(this::parse)
               .orElse(null);
@@ -318,7 +337,8 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
             }
             Stream<V> res = paths.stream()
               .filter(FileMapStorage::canParseFile)
-              .map(this::parse).filter(Objects::nonNull);
+              .map(this::parse)
+              .filter(Objects::nonNull);
 
             MapModelCriteriaBuilder<String,V,M> mcb = queryParameters.getModelCriteriaBuilder().flashToModelCriteriaBuilder(createCriteriaBuilder());
 
@@ -342,10 +362,12 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
 
         @Override
         public V update(V value) {
-            String proposedId = value.getId();
-            String sanitizedId = sanitizeId(proposedId);
+            String escapedId = value.getId();
 
-            Path sp = getPathForSanitizedId(sanitizedId);
+            Path sp = getPathForEscapedId(escapedId);
+            if (sp == null) {
+                throw new IllegalArgumentException("Invalid path: " + escapedId);
+            }
 
             // TODO: improve locking
             synchronized (FileMapStorageProviderFactory.class) {
@@ -357,8 +379,8 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
 
         @Override
         public boolean delete(String key) {
-            return Optional.ofNullable(sanitizeId(key))
-              .map(this::getPathForSanitizedId)
+            return Optional.ofNullable(key)
+              .map(this::getPathForEscapedId)
               .map(this::removeIfExists)
               .orElse(false);
         }
@@ -384,7 +406,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
         }
 
         private Path getDataDirectory() {
-            return dataDirectoryFunc.apply(defaultRealmId == null ? null : sanitizeId(defaultRealmId));
+            return dataDirectoryFunc.apply(defaultRealmId == null ? null : escapeId(defaultRealmId));
         }
 
         private void writeYamlContents(Path sp, V value) {

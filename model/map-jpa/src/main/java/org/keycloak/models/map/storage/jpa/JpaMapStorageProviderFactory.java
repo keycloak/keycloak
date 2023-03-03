@@ -26,6 +26,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -146,6 +147,8 @@ import org.keycloak.models.map.storage.jpa.user.entity.JpaUserFederatedIdentityE
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
@@ -160,6 +163,8 @@ public class JpaMapStorageProviderFactory implements
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
 
     public static final String HIBERNATE_DEFAULT_SCHEMA = "hibernate.default_schema";
+
+    private static final long DEFAULT_LOCK_TIMEOUT = 10000;
 
     private volatile EntityManagerFactory emf;
     private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
@@ -290,10 +295,10 @@ public class JpaMapStorageProviderFactory implements
         EntityManager em = emf.createEntityManager();
 
         // This is a workaround for Hibernate not supporting javax.persistence.lock.timeout
-        //   config option for Postgresql/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16071
+        //   config option for Postgresql/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16181
         if ("postgresql".equals(databaseShortName) || "cockroachdb".equals(databaseShortName)) {
-            Long lockTimeout = config.getLong("lockTimeout");
-            if (lockTimeout != null) {
+            Long lockTimeout = config.getLong("lockTimeout", DEFAULT_LOCK_TIMEOUT);
+            if (lockTimeout >= 0) {
                 em.unwrap(SessionImpl.class)
                         .doWork(connection -> {
                             // 'SET LOCAL lock_timeout = ...' can't be used with parameters in a prepared statement, leads to an
@@ -307,8 +312,6 @@ public class JpaMapStorageProviderFactory implements
                                 resultSet.close();
                             }
                         });
-            } else {
-                logger.warnf("Database %s used without lockTimeout option configured. This can result in deadlock where one connection waits for a pessimistic write lock forever.", databaseShortName);
             }
         }
         return em;
@@ -403,11 +406,16 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
-        Integer lockTimeout = config.getInt("lockTimeout");
-        if (lockTimeout != null) {
-            // This property does not work for PostgreSQL/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16071
-            properties.put("javax.persistence.lock.timeout", lockTimeout);
+        Long lockTimeout = config.getLong("lockTimeout", DEFAULT_LOCK_TIMEOUT);
+        if (lockTimeout >= 0) {
+            // This property does not work for PostgreSQL/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16181
+            properties.put(AvailableSettings.JPA_LOCK_TIMEOUT, String.valueOf(lockTimeout));
+        } else {
+            logger.warnf("Database %s used without lockTimeout option configured. This can result in deadlock where one connection waits for a pessimistic write lock forever.", databaseShortName);
         }
+
+        // Pass on the property to 'EventListenerIntegrator' to activate the necessary event listeners for JPA map storage
+        properties.put(EventListenerIntegrator.JPA_MAP_STORAGE_ENABLED, Boolean.TRUE.toString());
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
@@ -535,5 +543,16 @@ public class JpaMapStorageProviderFactory implements
             lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
             return null;
         });
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("lockTimeout")
+                .type("long")
+                .defaultValue(10000L)
+                .helpText("The maximum time to wait in milliseconds when waiting for acquiring a pessimistic read lock. If set to negative there is no timeout configured.")
+                .add().build();
     }
 }

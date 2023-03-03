@@ -49,7 +49,10 @@ Values that go into the configuration file are following the `<key-with-dashes>=
 
 You can easily translate a Key/Value pair from one configuration source to the other.
 
-You will find the relevant configuration options for a specific guide in all three formats on the table at the bottom of each guide. You can find all available options at the <@links.server id="all-config"/> guide.
+At the end of each configuration guide, look for the _Relevant
+options_ heading for a table with the three relevant configuration
+formats. For all configuration options, see <@links.server
+id="all-config"/>.
 
 The configuration source and the corresponding format you should use is use-case specific.
 
@@ -72,7 +75,7 @@ db-url-host=mykeycloakdb
 ----
 
 === Using environment variables for configuration values
-It is possible to use placeholders to resolve an environment specific value from environment variables inside the keycloak.conf file by using the `${r"${ENV_VAR}"}` syntax:
+It is possible to use placeholders to resolve an environment specific value from environment variables inside the keycloak.conf file by using the `${r"++${ENV_VAR}++"}` syntax:
 
 [source]
 ----
@@ -98,7 +101,7 @@ Keycloak is packed with a CLI that helps you to configure Keycloak. To find out 
 
 <@kc.start parameters="--help"/>
 
-Alternatively, you can find all server options at the <@links.server id="all-config"/> guide.
+Alternatively, you can find all server options at <@links.server id="all-config"/>.
 
 === Using raw Quarkus properties
 In most cases, the available configuration options should suffice to configure the server.
@@ -151,7 +154,7 @@ The production mode sets the following defaults:
 * Hostname configuration is expected
 * HTTPS/TLS configuration is expected
 
-Make sure to follow the steps outlined in the <@links.server id="configuration-production"/> guide before deploying Keycloak to production environments.
+Make sure to follow the steps outlined in <@links.server id="configuration-production"/> before deploying Keycloak to production environments.
 
 By default, example configuration options for the production mode are commented out in the default `conf/keycloak.conf` file. These give you an idea about the main configuration to consider when running Keycloak in production.
 
@@ -181,7 +184,7 @@ As you may notice, the command above shows `build options` that should be invoke
 
 For a non-optimized startup of Keycloak, this distinction has no effect, but when a build is invoked beforehand, there's only a subset of Options available to the build command. The reason is, that build options get persisted into Keycloaks classpath, so configuration for e.g. credentials like `db-password` must not get persisted for security reasons.
 
-Build options are marked in the <@links.server id="all-config"/> guide with a tool icon.
+Build options are marked in <@links.server id="all-config"/> with a tool icon.
 Find available build options either by looking at the https://www.keycloak.org/server/all-config?f=build[All configuration page with build options selected] or by invoking the following command:
 
 <@kc.build parameters="--help"/>
@@ -196,7 +199,7 @@ After a successful build, you can start Keycloak and turn off the default startu
 
 The `--optimized` parameter tells Keycloak to assume a pre-built, already optimized Keycloak image is used. As a result, Keycloak avoids checking for and running a build directly at startup to save the time to walk through this process.
 
-You can invoke all configuration options at startup - these are all options in the <@links.server id="all-config"/> guide that are **not** marked with a tool icon.
+You can invoke all configuration options at startup; these options are the ones in <@links.server id="all-config"/> that are **not** marked with a tool icon.
 
 If a build option is found at startup with an equal value to the value used when invoking the `build`, it gets silently ignored when using the `--optimized` flag. If it has a different value than the value used when a build was invoked, a warning is shown in the logs and the previously built value is used. In order for this value to take effect, you have to run a new `build` before starting.
 

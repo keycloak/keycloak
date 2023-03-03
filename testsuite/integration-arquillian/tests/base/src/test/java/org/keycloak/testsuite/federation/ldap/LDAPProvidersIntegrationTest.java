@@ -57,6 +57,7 @@ import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPGroupStorageMapper;
@@ -83,6 +84,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.naming.directory.SearchControls;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 
@@ -189,16 +191,33 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         Assert.assertTrue(testRealm().users().search("newuser1").isEmpty());
     }
 
+    private static LDAPObject searchObjectInBase(LDAPStorageProvider ldapProvider, String dn, String... attrs) {
+        LDAPQuery q = new LDAPQuery(ldapProvider)
+                            .setSearchDn(dn)
+                            .setSearchScope(SearchControls.OBJECT_SCOPE);
+        if (attrs != null) {
+            for (String attr: attrs) {
+                q.addReturningLdapAttribute(attr);
+            }
+        }
+        return q.getFirstResult();
+    }
+
+
     @Test
     public void testSyncRegistrationEmailRDNNoDefault() {
         testingClient.server().run(session -> {
-            // configure mail as mandatory but not forcing default
+            // configure mail as mandatory but not forcing default and create a hardcoded attribute for description
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(ctx.getRealm());
             ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "email");
             emailMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
             emailMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.FORCE_DEFAULT_VALUE, "false");
             ctx.getRealm().updateComponent(emailMapper);
+            ComponentModel hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcodedAttr-description", ctx.getLdapModel().getId(), HardcodedLDAPAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_NAME, "description",
+                HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_VALUE, "some-${RANDOM}");
+            ctx.getRealm().addComponentModel(hardcodedMapperModel);
         });
         try {
             // test the user cannot be created without email
@@ -219,7 +238,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             newUser1 = testRealm().users().get(userId).toRepresentation();
             assertFederatedUserLink(newUser1);
             Assert.assertNotNull(newUser1.getAttributes().get(LDAPConstants.LDAP_ID));
-            MatcherAssert.assertThat(newUser1.firstAttribute(LDAPConstants.LDAP_ENTRY_DN), Matchers.containsString("=newuser1,"));
+            final String userDN = newUser1.firstAttribute(LDAPConstants.LDAP_ENTRY_DN);
+            MatcherAssert.assertThat(userDN, Matchers.containsString("=newuser1,"));
             Assert.assertEquals("newuser1@keycloak.org", newUser1.getEmail());
             String emailValueInLdap = testingClient.server().fetch(session -> {
                 LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -229,6 +249,13 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 return userLdap.getAttributeAsString(emailMapper.get(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE));
             }, String.class);
             Assert.assertEquals("newuser1@keycloak.org", emailValueInLdap);
+            // check description is in ldap assigned
+            String description = testingClient.server().fetch(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                LDAPObject ldapUser = searchObjectInBase(ctx.getLdapProvider(), userDN, "description");
+                return ldapUser.getAttributeAsString("description");
+            }, String.class);
+            MatcherAssert.assertThat(description, Matchers.startsWith("some-"));
 
             // remove the created user
             try (Response resp = testRealm().users().delete(userId)) {
@@ -244,6 +271,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 emailMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "false");
                 emailMapper.getConfig().remove(UserAttributeLDAPStorageMapper.FORCE_DEFAULT_VALUE);
                 ctx.getRealm().updateComponent(emailMapper);
+                ComponentModel hardcodedMapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "hardcodedAttr-description");
+                ctx.getRealm().removeComponent(hardcodedMapperModel);
             });
         }
     }
@@ -968,6 +997,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username2", "John2", "Doel2", "user2@email.org", null, "122");
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username3", "John3", "Doel3", "user3@email.org", null, "123");
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username4", "John4", "Doel4", "user4@email.org", null, "124");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username11", "John11", "Doel11", "user11@email.org", null, "124");
 
             // Users are not at local store at this moment
             Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "username1"));
@@ -976,20 +1006,24 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "username4"));
 
             // search by username (we use a terminal operation on the stream to ensure it is consumed)
-            session.users().searchForUserStream(appRealm, "username1").count();
+            Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "username1").count());
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email (we use a terminal operation on the stream to ensure it is consumed)
-            session.users().searchForUserStream(appRealm, "user2@email.org").count();
+            Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "user2@email.org").count());
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username2", "John2", "Doel2", "user2@email.org", "122");
 
             // search by lastName (we use a terminal operation on the stream to ensure it is consumed)
-            session.users().searchForUserStream(appRealm, "Doel3").count();
+            Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "Doel3").count());
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username3", "John3", "Doel3", "user3@email.org", "123");
 
             // search by firstName + lastName (we use a terminal operation on the stream to ensure it is consumed)
-            session.users().searchForUserStream(appRealm, "John4 Doel4").count();
+            Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "John4 Doel4").count());
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username4", "John4", "Doel4", "user4@email.org", "124");
+
+            // search by a string that matches multiple fields. Should still return the one entity it matches.
+            Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "*11*").count());
+            LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username11", "John11", "Doel11", "user11@email.org", "124");
         });
     }
 

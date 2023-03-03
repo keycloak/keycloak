@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -86,7 +87,9 @@ public class Profile {
 
         UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
 
-        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT);
+        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT),
+
+        FIPS("FIPS 140-2 mode", Type.PREVIEW_DISABLED_BY_DEFAULT);
 
         private final Type type;
         private String label;
@@ -123,6 +126,7 @@ public class Profile {
             DEFAULT("Default"),
             DISABLED_BY_DEFAULT("Disabled by default"),
             PREVIEW("Preview"),
+            PREVIEW_DISABLED_BY_DEFAULT("Preview disabled by default"), // Preview features, which are not automatically enabled even with enabled preview profile (Needs to be enabled explicitly)
             EXPERIMENTAL("Experimental"),
             DEPRECATED("Deprecated");
 
@@ -197,8 +201,12 @@ public class Profile {
         return features.entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
+    /**
+     * @return all features of type "preview" or "preview_disabled_by_default"
+     */
     public Set<Feature> getPreviewFeatures() {
-        return getFeatures(Feature.Type.PREVIEW);
+        return Stream.concat(getFeatures(Feature.Type.PREVIEW).stream(), getFeatures(Feature.Type.PREVIEW_DISABLED_BY_DEFAULT).stream())
+                .collect(Collectors.toSet());
     }
 
     public Set<Feature> getExperimentalFeatures() {
@@ -246,7 +254,7 @@ public class Profile {
 
     private static void verifyConfig(Map<Feature, Boolean> features) {
         for (Feature f : features.keySet()) {
-            if (f.getDependencies() != null) {
+            if (features.get(f) && f.getDependencies() != null) {
                 for (Feature d : f.getDependencies()) {
                     if (!features.get(d)) {
                         throw new ProfileException("Feature " + f.getKey() + " depends on disabled feature " + d.getKey());
@@ -257,14 +265,18 @@ public class Profile {
     }
 
     private void logUnsupportedFeatures() {
-        logUnsuportedFeatures(Feature.Type.PREVIEW, Logger.Level.INFO);
-        logUnsuportedFeatures(Feature.Type.EXPERIMENTAL, Logger.Level.WARN);
-        logUnsuportedFeatures(Feature.Type.DEPRECATED, Logger.Level.WARN);
+        logUnsuportedFeatures(Feature.Type.PREVIEW, getPreviewFeatures(), Logger.Level.INFO);
+        logUnsuportedFeatures(Feature.Type.EXPERIMENTAL, getExperimentalFeatures(), Logger.Level.WARN);
+        logUnsuportedFeatures(Feature.Type.DEPRECATED, getDeprecatedFeatures(), Logger.Level.WARN);
     }
 
-    private void logUnsuportedFeatures(Feature.Type type, Logger.Level level) {
+    private void logUnsuportedFeatures(Feature.Type type, Set<Feature> checkedFeatures, Logger.Level level) {
+        Set<Feature.Type> checkedFeatureTypes = checkedFeatures.stream()
+                .map(Feature::getType)
+                .collect(Collectors.toSet());
+
         String enabledFeaturesOfType = features.entrySet().stream()
-                .filter(e -> e.getValue() && e.getKey().getType().equals(type))
+                .filter(e -> e.getValue() && checkedFeatureTypes.contains(e.getKey().getType()))
                 .map(e -> e.getKey().getKey()).sorted().collect(Collectors.joining(", "));
 
         if (!enabledFeaturesOfType.isEmpty()) {

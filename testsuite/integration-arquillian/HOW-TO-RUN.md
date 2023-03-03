@@ -948,8 +948,22 @@ networks dns configuration and run the tests.
 
 ## FIPS 140-2 testing
 
-On the FIPS enabled platform with FIPS enabled OpenJDK 11, you can run this to test against Keycloak server on Quarkus
-with FIPS 140.2 integration enabled
+### Unit tests
+
+```
+mvn clean install -f crypto/fips1402
+```
+
+To run unit tests with the BouncyCastle approved mode, which is more strict in the used crypto algorithms:
+```
+mvn clean install -f crypto/fips1402 -Dorg.bouncycastle.fips.approved_only=true
+```
+
+### Integration tests
+
+On the FIPS enabled platform with FIPS enabled OpenJDK 17, you can run this to test against a Keycloak server on Quarkus
+with FIPS 140-2 integration enabled
+
 ```
 mvn -B -f testsuite/integration-arquillian/pom.xml \
   clean install \
@@ -962,7 +976,7 @@ there should be messages similar to those:
 ```
 2022-10-11 19:34:29,521 DEBUG [org.keycloak.common.crypto.CryptoIntegration] (main) Using the crypto provider: org.keycloak.crypto.fips.FIPS1402Provider
 2022-10-11 19:34:31,072 TRACE [org.keycloak.common.crypto.CryptoIntegration] (main) Java security providers: [ 
- KC(BCFIPS version 1.000203) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
+ KC(BCFIPS version 1.000203, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
  BCFIPS version 1.000203 - class org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider, 
  BCJSSE version 1.001202 - class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider,
 ]
@@ -979,5 +993,5 @@ For running testsuite with server using BCFIPS approved mode, those additional p
 ```
 The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
 ```
-KC(BCFIPS version 1.000203 Approved Mode) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
+KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
 ```

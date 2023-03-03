@@ -101,12 +101,16 @@ public class IdpReviewProfileAuthenticatorFactory implements AuthenticatorFactor
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
         property.setName(UPDATE_PROFILE_ON_FIRST_LOGIN);
-        property.setLabel("updateProfileOnFirstLogin");
+        property.setLabel("Update Profile on First Login");
         property.setType(ProviderConfigProperty.LIST_TYPE);
         List<String> updateProfileValues = Arrays.asList(IdentityProviderRepresentation.UPFLM_ON, IdentityProviderRepresentation.UPFLM_MISSING, IdentityProviderRepresentation.UPFLM_OFF);
         property.setOptions(updateProfileValues);
         property.setDefaultValue(IdentityProviderRepresentation.UPFLM_MISSING);
-        property.setHelpText("updateProfileOnFirstLoginTooltip");
+        property.setHelpText("Define conditions under which a user has to review and update his profile after first-time login. Value 'On' means that"
+                + " page for reviewing profile will be displayed and user can review and update his profile. Value 'off' means that page won't be displayed."
+                + " Value 'missing' means that page is displayed just when some required attribute is missing (wasn't downloaded from identity provider). Value 'missing' is the default one."
+                + " WARN: In case that user clicks 'Review profile info' on link duplications page, the update page will be always displayed. You would need to disable this authenticator to never display the page.");
+
         configProperties.add(property);
     }
 

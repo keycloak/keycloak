@@ -107,7 +107,7 @@
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.2.19.Final</undertow.version>
-        <wildfly-elytron.version>1.20.1.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>1.20.3.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
@@ -187,9 +187,10 @@
         <osgi.bundle.plugin.version>2.4.0</osgi.bundle.plugin.version>
         <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
-        <frontend.plugin.version>1.12.0</frontend.plugin.version>
+        <frontend.plugin.version>1.12.1</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
+        <shade.plugin.version>3.4.1</shade.plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -226,7 +227,7 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v16.16.0</node.version>
+        <node.version>v18.14.2</node.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -288,6 +289,7 @@
         <module>adapters</module>
         <module>authz</module>
         <module>misc</module>
+        <module>js</module>
         <module>quarkus</module>
     </modules>
 
@@ -1805,6 +1807,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${shade.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <configuration>
                         <tarLongFileMode>posix</tarLongFileMode>
@@ -1829,7 +1836,6 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${surefire-plugin.version}</version>
                     <configuration>
-                        <forkMode>once</forkMode>
                         <argLine>-Djava.awt.headless=true ${surefire.memory.settings} ${surefire.system.args} -Duser.language=en -Duser.region=US -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError</argLine>
                         <runOrder>alphabetical</runOrder>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
@@ -1956,6 +1962,11 @@
                             <phase>process-resources</phase>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.asciidoctor</groupId>
+                    <artifactId>asciidoctor-maven-plugin</artifactId>
+                    <version>1.5.8</version>
                 </plugin>
             </plugins>
         </pluginManagement>

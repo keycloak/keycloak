@@ -35,7 +35,7 @@
         <quarkus.operator.sdk.version>4.0.7</quarkus.operator.sdk.version>
         <quarkus.version>2.13.7.Final</quarkus.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
-        <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi8/openjdk-11-runtime</quarkus.jib.base-jvm-image>
+        <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi9/openjdk-11-runtime</quarkus.jib.base-jvm-image>
     </properties>
     
     <dependencyManagement>

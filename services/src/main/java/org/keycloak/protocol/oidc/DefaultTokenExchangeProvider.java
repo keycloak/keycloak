@@ -411,7 +411,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         AccessTokenResponse res = responseBuilder.build();
-        event.detail(Details.AUDIENCE, targetClient.getClientId());
+        event.detail(Details.AUDIENCE, targetClient.getClientId())
+            .user(targetUser);
 
         event.success();
 
@@ -460,7 +461,9 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         res.setExpiresIn(assertionLifespan <= 0 ? realm.getAccessCodeLifespan() : assertionLifespan);
         res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
 
-        event.detail(Details.AUDIENCE, targetClient.getClientId());
+        event.detail(Details.AUDIENCE, targetClient.getClientId())
+            .user(targetUser);
+
         event.success();
 
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();

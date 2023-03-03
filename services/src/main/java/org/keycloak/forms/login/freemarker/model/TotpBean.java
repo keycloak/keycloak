@@ -47,10 +47,12 @@ public class TotpBean {
     private UriBuilder uriBuilder;
     private final List<CredentialModel> otpCredentials;
     private final List<String> supportedApplications;
+    private final UserModel user;
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, UriBuilder uriBuilder) {
         this.session = session;
         this.realm = realm;
+        this.user = user;
         this.uriBuilder = uriBuilder;
         this.enabled = user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE);
         if (enabled) {
@@ -105,6 +107,10 @@ public class TotpBean {
 
     public List<CredentialModel> getOtpCredentials() {
         return otpCredentials;
+    }
+
+    public String getUsername() {
+        return user.getUsername();
     }
 
 }

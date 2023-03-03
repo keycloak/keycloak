@@ -17,9 +17,13 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import java.util.Collections;
 import java.util.Optional;
 
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import org.junit.jupiter.api.Test;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakIngress;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
@@ -39,6 +43,7 @@ public class IngressLogicTest {
 
         private static Keycloak getKeycloak(Boolean defaultIngressEnabled, boolean ingressSpecDefined, boolean tlsConfigured) {
             var kc = K8sUtils.getDefaultKeycloakDeployment();
+            kc.getMetadata().setUid("this-is-a-fake-uid");
             if (ingressSpecDefined) {
                 kc.getSpec().setIngressSpec(new IngressSpec());
                 if (defaultIngressEnabled != null) kc.getSpec().getIngressSpec().setIngressEnabled(defaultIngressEnabled);
@@ -80,7 +85,23 @@ public class IngressLogicTest {
         @Override
         protected Ingress fetchExistingIngress() {
             if (ingressExists) {
-                return new IngressBuilder().withNewMetadata().endMetadata().build();
+
+                OwnerReference sameCROwnerRef = new OwnerReferenceBuilder()
+                        .withApiVersion(cr.getApiVersion())
+                        .withKind(cr.getKind())
+                        .withName(cr.getMetadata().getName())
+                        .withUid(cr.getMetadata().getUid())
+                        .withBlockOwnerDeletion(true)
+                        .withController(true)
+                        .build();
+
+                return new IngressBuilder()
+                        .withNewMetadata()
+                            .withName(getName())
+                            .withNamespace(cr.getMetadata().getNamespace())
+                            .withOwnerReferences(Collections.singletonList(sameCROwnerRef))
+                        .endMetadata()
+                        .build();
             } else {
                 return null;
             }

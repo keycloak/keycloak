@@ -7,27 +7,26 @@
 title="Using custom Keycloak images"
 summary="How to customize and optimize the Keycloak Container">
 
-== Keycloak custom image with Operator
+== Keycloak custom image with the Operator
 
-The Keycloak Custom Resource (CR) give you the possibility to specify a custom container image for the Keycloak server.
+With the Keycloak Custom Resource (CR), you can specify a custom container image for the Keycloak server.
 
-.Note:
 [NOTE]
 To ensure full compatibility of Operator and Operand,
 make sure that the version of Keycloak release used in the custom image is aligned with the version of the operator.
 
-=== Best Practice
+=== Best practice
 
-When using the default Keycloak image the server will perform a costly re-augmentation every time a Pod starts.
-This can be avoided by providing a Custom Image where the augmentation already happened during the build time of the image.
+When using the default Keycloak image, the server will perform a costly re-augmentation every time a Pod starts.
+To avoid this delay, you can provide a custom image with the augmentation built-in from the build time of the image.
 
-A custom image additionally allows to specify Keycloak's "build-time" configurations and extensions during the build of the container.
+With a custom image, you can also specify the Keycloak _build-time_ configurations and extensions during the build of the container.
 
-For instructions on how to build such image refer to <@links.server id="containers"/>.
+For instructions on how to build such an image, see <@links.server id="containers"/>.
 
-=== Providing Custom Keycloak image
+=== Providing a custom Keycloak image
 
-To provide a custom image you have to define the `image` field in the Keycloak CR, for example:
+To provide a custom image, you define the `image` field in the Keycloak CR as shown in this example:
 
 [source,yaml]
 ----
@@ -44,8 +43,9 @@ spec:
     hostname: test.keycloak.org
 ----
 
-.Note:
 [NOTE]
-Using custom images, every build time option passed either through a dedicated field or the `additionalOptions` key will be ignored.
+====
+With custom images, every build time option passed either through a dedicated field or the `additionalOptions` is ignored.
+====
 
 </@tmpl.guide>

@@ -1,6 +1,6 @@
-## Create an admin user
+== Create an admin user
 
-Keycloak does not come with a default admin user, which means before you can start using Keycloak you need to create
-an admin user.
+Keycloak has no default admin user. You need to create an admin user before you can start Keycloak.
 
-To do this open http://localhost:8080/[http://localhost:8080/], then fill in the form with your preferred username and password.
+. Open http://localhost:8080/[http://localhost:8080/].
+. Fill in the form with your preferred username and password.

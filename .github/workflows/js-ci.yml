@@ -10,9 +10,6 @@ on:
     - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
-env:
-  NODE_VERSION: 18
-
 concurrency:
   # Only cancel jobs for PR updates
   group: js-ci-${{ github.head_ref || github.run_id }}
@@ -21,6 +18,7 @@ concurrency:
 defaults:
   run:
     shell: bash
+    working-directory: js
 
 jobs:
   conditional:
@@ -35,41 +33,27 @@ jobs:
       - id: conditional
         uses: ./.github/actions/conditional
 
-  npm-run:
+  admin-client:
+    name: Admin Client
     needs: conditional
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          # Keycloak Admin Client
-          - workspace: "@keycloak/keycloak-admin-client"
-            command: lint
-          - workspace: "@keycloak/keycloak-admin-client"
-            command: build
+    env:
+      WORKSPACE: "@keycloak/keycloak-admin-client"
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - uses: ./.github/actions/npm-setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          check-latest: true
-          cache: npm
-          cache-dependency-path: js/package-lock.json
+          working-directory: js
 
-      - name: Install dependencies
-        working-directory: js
-        run: npm ci
-
-      - name: Run ${{ matrix.command }} task
-        working-directory: js
-        run: npm run ${{ matrix.command }} --workspace=${{ matrix.workspace }}
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
 
   check-set-status:
     name: Set check conclusion
     needs:
-      - npm-run
+      - admin-client
     runs-on: ubuntu-latest
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}

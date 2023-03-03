@@ -44,17 +44,17 @@ Use these guidelines for this command:
 
 * For `_<root-level>_`, supply a level defined in the preceding table.
 * The log level is case-insensitive. For example, you could either use `DEBUG` or `debug`.
-* If you were to accidentally set the log level twice, the last occurrence in the list becomes the log level. For example, if you included the syntax `--log-level=info,...,DEBUG,...`, the root logger would be `DEBUG`.
+* If you were to accidentally set the log level twice, the last occurrence in the list becomes the log level. For example, if you included the syntax `--log-level="info,...,DEBUG,..."`, the root logger would be `DEBUG`.
 
 === Configuring category-specific log levels
 You can set different log levels for specific areas in Keycloak. Use this command to provide a comma-separated list of categories for which you want a different log level:
 
-<@kc.start parameters="--log-level=<root-level>,<org.category1>:<org.category1-level>"/>
+<@kc.start parameters="--log-level=\"<root-level>,<org.category1>:<org.category1-level>\""/>
 
 A configuration that applies to a category also applies to its sub-categories unless you include a more specific matching sub-category.
 
 .Example
-<@kc.start parameters="--log-level=INFO,org.hibernate:debug,org.hibernate.hql.internal.ast:info"/>
+<@kc.start parameters="--log-level=\"INFO,org.hibernate:debug,org.hibernate.hql.internal.ast:info\""/>
 
 This example sets the following log levels:
 
@@ -65,7 +65,7 @@ This example sets the following log levels:
 == Enabling log handlers
 To enable log handlers, enter the following command:
 
-<@kc.start parameters="--log=<handler1>,<handler2>"/>
+<@kc.start parameters="--log=\"<handler1>,<handler2>\""/>
 
 The available handlers are `console`, `file` and `gelf`. The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
 
@@ -85,7 +85,7 @@ The format string supports the symbols in the following table:
 |Symbol|Summary|Description
 |%%|%|Renders a simple % character.
 |%c|Category|Renders the log category name.
-|%d{xxx}|Date|Renders a date with the given date format string.String syntax defined by `java.text.SimpleDateFormat`
+|++%d{xxx}++|Date|Renders a date with the given date format string.String syntax defined by `java.text.SimpleDateFormat`
 |%e|Exception|Renders a thrown exception.
 |%h|Hostname|Renders the simple host name.
 |%H|Qualified host name|Renders the fully qualified hostname, which may be the same as the simple host name, depending on the OS configuration.
@@ -151,7 +151,7 @@ As an alternative to logging to the console, you can use unstructured logging to
 === Enable file logging
 Logging to a file is disabled by default. To enable it, enter the following command:
 
-<@kc.start parameters="--log=console,file"/>
+<@kc.start parameters="--log=\"console,file\""/>
 
 A log file named `keycloak.log` is created inside the `data/log` directory of your Keycloak installation.
 
@@ -165,14 +165,14 @@ If the directory is not writable, Keycloak will start correctly, but it will iss
 
 . Enter this command:
 +
-<@kc.start parameters="--log=console,file --log-file=<path-to>/<your-file.log>"/>
+<@kc.start parameters="--log=\"console,file\" --log-file=<path-to>/<your-file.log>"/>
 
 === Configuring the file handler format
 To configure a different logging format for the file log handler, enter the following command:
 
-<@kc.start parameters="--log-file-format=<pattern>"/>
+<@kc.start parameters="--log-file-format=\"<pattern>\""/>
 
-Please see the <<Configuring the console log format>> section in this guide for more information and a table of the available pattern configuration.
+See <<Configuring the console log format>> for more information and a table of the available pattern configuration.
 
 == Centralized logging using GELF
 Keycloak can send logs to a centralized log management system such as the following:
@@ -187,25 +187,25 @@ Keycloak uses the https://quarkus.io/guides/centralized-log-management[Quarkus L
 To enable logging using GELF, add it to the list of activated log handlers.
 
 .Example:
-<@kc.start parameters="--log=console,gelf"/>
+<@kc.start parameters="--log=\"console,gelf\""/>
 
 === Configuring the GELF handler
 
 To configure the Host and Port of your centralized logging system, enter the following command and substitute the values with your specific values:
 .Host and port of the GELF server:
-<@kc.start parameters="--log=console,gelf --log-gelf-host=myhost --log-gelf-port=12345"/>
+<@kc.start parameters="--log=\"console,gelf\" --log-gelf-host=myhost --log-gelf-port=12345"/>
 
 When the GELF handler is enabled, the host is using `localhost` as host value and UDP for communication. To use TCP instead of UDP, prefix the host value with `tcp:`. The Default port is `12201`.
 
 .Include or exclude Stacktraces
 Keycloak includes the complete Stacktrace inside the `StackTrace` field. To exclude this field, enter the following command:
 
-<@kc.start parameters="--log=console,gelf --log-gelf-include-stack-trace=false"/>
+<@kc.start parameters="--log=\"console,gelf\" --log-gelf-include-stack-trace=false"/>
 
 .Configure the timestamp format
 You can change the format of the `timestamp` field. For example, you can include the date and time down to seconds by entering the following command:
 
-<@kc.start parameters="--log=console,gelf --log-gelf-timestamp-format=\"\'yyyy-MM-dd HH:mm:ss\'\""/>
+<@kc.start parameters="--log=\"console,gelf\" --log-gelf-timestamp-format=\"\'yyyy-MM-dd HH:mm:ss\'\""/>
 
 Alternatively, you could use the config file to avoid escaping:
 
@@ -219,11 +219,11 @@ The default timestamp format is `yyyy-MM-dd HH:mm:ss,SSS`. You can use the https
 .Configure the facility
 The `facility` field is an indicator of the process or program that is the source of log messages. The default value is `keycloak`. To set this field to your preferred identifier, enter the following command:
 
-<@kc.start parameters="--log=console,gelf --log-gelf-facility=MyKeycloak"/>
+<@kc.start parameters="--log=\"console,gelf\" --log-gelf-facility=MyKeycloak"/>
 
 To use the CLI to configure Keycloak and use whitespaces for `facility`, enter the following command:
 
-<@kc.start parameters="--log=console,gelf --log-gelf-facility=\"\'my keycloak\'\""/>
+<@kc.start parameters="--log=\"console,gelf\" --log-gelf-facility=\"\'my keycloak\'\""/>
 
 Alternatively, you could use the config file to avoid escaping:
 
@@ -235,7 +235,7 @@ log-gelf-facility=my keycloak
 .Configure the default message size
 To change the default message size of 8kb (8192 bytes) of GELF log messages for Keycloak, enter the following command:
 
-<@kc.start parameters="--log=console,gelf --log-gelf-max-message-size=16384"/>
+<@kc.start parameters="--log=\"console,gelf\" --log-gelf-max-message-size=16384"/>
 
 The maximum size of one GELF log message is set in Bytes. The preceding example increases the size to 16kb. When messages exceed the maximum size, GELF submits the message in multiple chunks.
 
@@ -243,12 +243,12 @@ The maximum size of one GELF log message is set in Bytes. The preceding example 
 Keycloak includes message parameters of the occurred log event. These fields appear in the output as `MessageParam0`, `MessageParam1`, and so on, depending on the parameter length.
 To switch off this behavior, enter the following command:
 
-<@kc.start parameters="--log=console,gelf --log-gelf-include-message-parameters=false"/>
+<@kc.start parameters="--log=\"console,gelf\" --log-gelf-include-message-parameters=false"/>
 
 .Configure sending of source code location
 Keycloak includes the `SourceClassName`, `SourceMethodName` and `SourceSimpleClassName` fields in the GELF log messages. These fields provide detail on the location of an exception that occurred. To stop sending these fields, enter the following command:
 
-<@kc.start parameters="--log=console,gelf --log-gelf-include-location=false"/>
+<@kc.start parameters="--log=\"console,gelf\" --log-gelf-include-location=false"/>
 
 === Example: Send logs to Graylog
 The following example shows how to send Keycloak logs to the Graylog centralized logging stack. This example assumes you have a container tool such as https://www.docker.com/[docker] installed to start the `compose.yml`.
@@ -484,13 +484,13 @@ Looking at your ingested logs, you will see only messages of level warn or above
 
 Keep in mind that `--log-level` is setting the leading log level, so for example when you invoke the following command:
 
-<@kc.start parameters="--log=console,gelf, log-level=error, log-gelf-level=info"/>
+<@kc.start parameters="--log=\"console,gelf\" --log-level=error --log-gelf-level=info"/>
 
 nothing below the error level will be sent to your logging stack. That means that even GELF in this example will receive only error level log messages.
 
 === Configure additional key values
 Currently, the Keycloak configuration does not support partly dynamic configuration keys, as they are used in quarkus properties. For example, they are used when defining `quarkus.log.handler.gelf.additional-field.<my-name>.value`.
 
-To add user-defined fields, you can provide these fields through a quarkus.properties file. Refer to the <@links.server id="configuration"/> guide and the _Using unsupported server options_ section.
+To add user-defined fields, you can provide these fields through a quarkus.properties file. See <@links.server id="configuration"/> and the _Using raw Quarkus properties_ section.
 
 </@tmpl.guide>

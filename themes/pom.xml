@@ -69,6 +69,17 @@
                 <directory>src/main/resources-community</directory>
             </resource>
         </resources>
+        <plugins>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/node_modules/**/*</exclude>
+                        <exclude>**/web_modules/**/*</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>
