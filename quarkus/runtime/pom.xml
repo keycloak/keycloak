@@ -116,7 +116,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-js-adapter</artifactId>
+            <artifactId>keycloak-js-adapter-jar</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

@@ -17,6 +17,7 @@
 
     <modules>
         <module>libs/keycloak-admin-client</module>
+        <module>libs/keycloak-js</module>
     </modules>
 
     <build>

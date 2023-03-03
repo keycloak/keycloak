@@ -1,10 +1,10 @@
 import commonjs from "@rollup/plugin-commonjs";
 import inject from "@rollup/plugin-inject";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
+import terser from '@rollup/plugin-terser';
 import path from "node:path";
 import type { OutputOptions, RollupOptions } from "rollup";
 import { defineConfig } from "rollup";
-import { terser } from "rollup-plugin-terser";
 
 interface DefineOptionsArgs {
   file: string;
@@ -19,10 +19,10 @@ function defineOptions({
 }: DefineOptionsArgs): RollupOptions[] {
   const sourceDir = "src";
   const targetDir = "dist";
-  const commonOptions: RollupOptions = {
+  const commonOptions = {
     input: path.join(sourceDir, `${file}.js`),
     plugins: [commonjs(), nodeResolve()],
-  };
+  } satisfies RollupOptions;
 
   const umdOutput: OutputOptions = {
     format: "umd",
