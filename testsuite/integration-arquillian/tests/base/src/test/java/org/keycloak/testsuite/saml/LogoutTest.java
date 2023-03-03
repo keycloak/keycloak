@@ -57,7 +57,7 @@ import java.util.function.Consumer;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilderException;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.ws.soap.SOAPFaultException;
+import jakarta.xml.ws.soap.SOAPFaultException;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
