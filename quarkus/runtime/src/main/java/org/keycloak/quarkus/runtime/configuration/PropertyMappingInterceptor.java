@@ -19,7 +19,7 @@ package org.keycloak.quarkus.runtime.configuration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
