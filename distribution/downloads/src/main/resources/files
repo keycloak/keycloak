@@ -3,7 +3,6 @@ mvn:keycloak-api-docs-dist:keycloak-api-docs
 
 mvn:keycloak-jetty94-adapter-dist:keycloak-oidc-jetty94-adapter
 mvn:keycloak-js-adapter-npm-dist:keycloak-oidc-js-adapter
-mvn:keycloak-js-admin-client:keycloak-js-admin-client
 mvn:keycloak-tomcat-adapter-dist:keycloak-oidc-tomcat-adapter
 mvn:keycloak-wildfly-adapter-dist:keycloak-oidc-wildfly-adapter
 

@@ -63,6 +63,9 @@ public class CopyDependencies {
 
     private void copyMaven(String artifactName, String destinationName) throws IOException {
         File artifactDir = mavenRepository.resolve(artifactName).resolve(version).toFile();
+        if (!artifactDir.isDirectory()) {
+            throw new RuntimeException(artifactName + " (" + artifactDir + ") not found");
+        }
 
         File[] files = artifactDir.listFiles((file, name) -> name.contains(".tar.gz") || name.contains(".tgz") || name.contains(".zip"));
 
@@ -72,6 +75,11 @@ public class CopyDependencies {
     }
 
     private void copyNpm(String artifactName, String destinationName) throws IOException {
+        Path artifactPath = projectDir.resolve(artifactName);
+        if (!artifactPath.toFile().isFile()) {
+            throw new RuntimeException(artifactName + " (" + artifactPath + ") not found");
+        }
+
         Files.copy(projectDir.resolve(artifactName), targetDir.resolve(destinationName));
     }
 
