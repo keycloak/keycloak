@@ -24,7 +24,7 @@ import org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
  * An extension of {@link javax.ws.rs.core.Cookie} in order to support additional
  * fields and behavior.
  */
-public final class HttpCookie extends javax.ws.rs.core.Cookie {
+public final class HttpCookie extends jakarta.ws.rs.core.Cookie {
 
     private final String comment;
     private final int maxAge;
