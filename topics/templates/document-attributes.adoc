@@ -3,8 +3,8 @@
 :project_community: true
 :project_product: false
 :project_version: DEV
-:project_versionMvn: 999-SNAPSHOT
-:project_versionNpm: 999
+:project_versionMvn: 999.0.0-SNAPSHOT
+:project_versionNpm: 999.0.0-SNAPSHOT
 :project_versionDoc: DEV
 
 :standalone:
