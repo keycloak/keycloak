@@ -67,7 +67,7 @@ async function getNightlyAsset() {
   });
 
   return release.data.assets.find(
-    ({ name }) => name === "keycloak-999-SNAPSHOT.tar.gz"
+    ({ name }) => name === "keycloak-999.0.0-SNAPSHOT.tar.gz"
   );
 }
 

@@ -67,7 +67,7 @@
     }
   },
   "dependencies": {
-    "@keycloak/keycloak-admin-client": "999.0.0-dev",
+    "@keycloak/keycloak-admin-client": "999.0.0-SNAPSHOT",
     "@patternfly/patternfly": "^4.224.2",
     "@patternfly/react-code-editor": "^4.82.113",
     "@patternfly/react-core": "^4.276.6",
@@ -78,7 +78,7 @@
     "flat": "^5.0.2",
     "i18next": "^22.4.10",
     "i18next-http-backend": "^2.1.1",
-    "keycloak-js": "999.0.0-dev",
+    "keycloak-js": "999.0.0-SNAPSHOT",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -88,7 +88,7 @@
     "react-i18next": "^12.2.0",
     "react-router-dom": "6.8.2",
     "reactflow": "^11.5.6",
-    "ui-shared": "999.0.0-dev",
+    "ui-shared": "999.0.0-SNAPSHOT",
     "use-react-router-breadcrumbs": "^4.0.1"
   },
   "devDependencies": {

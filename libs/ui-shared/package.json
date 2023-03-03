@@ -1,6 +1,6 @@
 {
   "name": "ui-shared",
-  "version": "999.0.0-dev",
+  "version": "999.0.0-SNAPSHOT",
   "type": "module",
   "main": "./dist/ui-shared.js",
   "types": "./dist/ui-shared.d.ts",

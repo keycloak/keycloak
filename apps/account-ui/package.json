@@ -12,15 +12,15 @@
     "@patternfly/react-icons": "^4.93.6",
     "i18next": "^22.4.10",
     "i18next-http-backend": "^2.1.1",
-    "keycloak-js": "999.0.0-dev",
-    "keycloak-masthead": "999.0.0-dev",
+    "keycloak-js": "999.0.0-SNAPSHOT",
+    "keycloak-masthead": "999.0.0-SNAPSHOT",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.1",
     "react-i18next": "^12.2.0",
     "react-router-dom": "6.8.2",
-    "ui-shared": "999.0.0-dev"
+    "ui-shared": "999.0.0-SNAPSHOT"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.6",

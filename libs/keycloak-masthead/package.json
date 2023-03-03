@@ -1,6 +1,6 @@
 {
   "name": "keycloak-masthead",
-  "version": "999.0.0-dev",
+  "version": "999.0.0-SNAPSHOT",
   "type": "module",
   "main": "./dist/keycloak-masthead.js",
   "types": "./dist/keycloak-masthead.d.ts",
@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@patternfly/react-core": "^4.276.6",
-    "keycloak-js": "999.0.0-dev",
+    "keycloak-js": "999.0.0-SNAPSHOT",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

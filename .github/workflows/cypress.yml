@@ -52,13 +52,13 @@ jobs:
         working-directory: keycloak-repo
         run: |
           mvn clean install --no-snapshot-updates --batch-mode --errors -DskipTests -DskipCommon -DskipAccount2 -Pdistribution
-          mv quarkus/dist/target/keycloak-999-SNAPSHOT.tar.gz ../keycloak-999-SNAPSHOT.tar.gz
+          mv quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ../keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak server
         uses: actions/upload-artifact@v3
         with:
           name: keycloak
-          path: keycloak-999-SNAPSHOT.tar.gz
+          path: keycloak-999.0.0-SNAPSHOT.tar.gz
 
   install-nightly:
     if: ${{ github.event_name == 'schedule' }}
@@ -69,13 +69,13 @@ jobs:
         - name: Download Keycloak
           id: extract-server
           run: |
-            gh release -R keycloak/keycloak download nightly -p keycloak-999-SNAPSHOT.tar.gz
+            gh release -R keycloak/keycloak download nightly -p keycloak-999.0.0-SNAPSHOT.tar.gz
 
         - name: Upload Keycloak server
           uses: actions/upload-artifact@v3
           with:
             name: keycloak
-            path: keycloak-999-SNAPSHOT.tar.gz
+            path: keycloak-999.0.0-SNAPSHOT.tar.gz
 
   test:
     needs: [build-keycloak, install-nightly]
@@ -113,8 +113,8 @@ jobs:
 
       - name: Start Keycloak Server
         run: |
-          tar xfvz keycloak-999-SNAPSHOT.tar.gz
-          keycloak-999-SNAPSHOT/bin/kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
