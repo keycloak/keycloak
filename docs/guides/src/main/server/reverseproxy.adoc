@@ -49,7 +49,7 @@ This precaution can be more critical if you do any deny or allow listing of IP a
 
 Keycloak assumes it is exposed through the reverse proxy under the same context path as Keycloak is configured for. By default Keycloak is exposed through the root (`/`), which means it expects to be exposed through the reverse proxy on `/` as well.
 You can use `hostname-path` or `hostname-url` in these cases, for example using `--hostname-path=/auth` if Keycloak is exposed through the reverse proxy on `/auth`.
- 
+
 Alternatively you can also change the context path of Keycloak itself to match the context path for the reverse proxy using the `http-relative-path` option, which will change the context-path of Keycloak itself to match the context path used by the reverse proxy.
 
 == Trust the proxy to set hostname
@@ -72,11 +72,11 @@ It is beneficial if particular session entity is always available locally, which
 
 * User sends initial request to see the Keycloak login screen
 
-* This request is served by the frontend load balancer, which forwards it to some random node (eg. node1). Strictly said, the node doesn’t need to be random, but can be chosen according to some other criterias (client IP address etc). It all depends on the implementation and configuration of underlying load balancer (reverse proxy).
+* This request is served by the frontend load balancer, which forwards it to some random node (eg. node1). Strictly said, the node doesn't need to be random, but can be chosen according to some other criterias (client IP address etc). It all depends on the implementation and configuration of underlying load balancer (reverse proxy).
 
 * Keycloak creates authentication session with random ID (eg. 123) and saves it to the Infinispan cache.
 
-* Infinispan distributed cache assigns the primary owner of the session based on the hash of session ID. See Infinispan documentation for more details around this. Let’s assume that Infinispan assigned node2 to be the owner of this session.
+* Infinispan distributed cache assigns the primary owner of the session based on the hash of session ID. See Infinispan documentation for more details around this. Let's assume that Infinispan assigned node2 to be the owner of this session.
 
 * Keycloak creates the cookie AUTH_SESSION_ID with the format like <session-id>.<owner-node-id> . In our example case, it will be 123.node2 .
 
@@ -216,7 +216,7 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 
 ==== Configuring the NGINX provider
 
-The NGINX SSL/TLS module does not expose the client certificate chain. Keycloak’s NGINX certificate lookup provider rebuilds it by using the Keycloak truststore.
+The NGINX SSL/TLS module does not expose the client certificate chain. Keycloak's NGINX certificate lookup provider rebuilds it by using the Keycloak truststore.
 
 If you are using this provider, please take a look at the <@links.server id="keycloak-truststore"/> guide about how
 to configure a Keycloak Truststore.
