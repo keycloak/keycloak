@@ -169,3 +169,5 @@ export const prettyPrintJSON = (value: any) => JSON.stringify(value, null, 2);
 
 export const addTrailingSlash = (url: string) =>
   url.endsWith("/") ? url : url + "/";
+
+export const generateId = () => Math.floor(Math.random() * 1000);

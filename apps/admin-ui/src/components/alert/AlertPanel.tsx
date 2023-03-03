@@ -8,7 +8,7 @@ import type { AlertEntry } from "./Alerts";
 
 type AlertPanelProps = {
   alerts: AlertEntry[];
-  onCloseAlert: (id: string) => void;
+  onCloseAlert: (id: number) => void;
 };
 
 export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {

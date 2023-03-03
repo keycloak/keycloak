@@ -11,6 +11,7 @@ import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { generateId } from "../../util";
 
 import { HelpItem } from "../help-enabler/HelpItem";
 import { KeyValueType } from "../key-value-form/key-value-convert";
@@ -18,7 +19,7 @@ import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
 type IdKeyValueType = KeyValueType & {
-  id: string;
+  id: number;
 };
 
 export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
@@ -34,7 +35,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
     if (!values.length) {
       values.push({ key: "", value: "" });
     }
-    setMap(values.map((value) => ({ ...value, id: crypto.randomUUID() })));
+    setMap(values.map((value) => ({ ...value, id: generateId() })));
   }, [register, getValues]);
 
   const update = (val = map) => {
@@ -128,7 +129,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             variant="link"
             icon={<PlusCircleIcon />}
             onClick={() =>
-              setMap([...map, { key: "", value: "", id: crypto.randomUUID() }])
+              setMap([...map, { key: "", value: "", id: generateId() }])
             }
           >
             {t("common:addAttribute")}
