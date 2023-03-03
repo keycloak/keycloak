@@ -285,6 +285,8 @@ public class Messages {
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";
 
+    public static final String ACCESS_DENIED_WHEN_IDP_AUTH = "access-denied-when-idp-auth";
+
     public static final String DELETE_ACCOUNT_LACK_PRIVILEDGES = "deletingAccountForbidden";
     public static final String DELETE_ACCOUNT_ERROR = "errorDeletingAccount";
 

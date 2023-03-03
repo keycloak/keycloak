@@ -202,7 +202,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(state, tabId, session, realm, client, event, AuthenticationSessionModel.class);
 
             if (denied != null) {
-                return callback.cancelled();
+                return callback.cancelled(provider.getConfig());
             }
 
             OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
