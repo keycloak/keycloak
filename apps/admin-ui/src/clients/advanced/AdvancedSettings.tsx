@@ -142,7 +142,9 @@ export const AdvancedSettings = ({
             }
           >
             <Controller
-              name="attributes.tls-client-certificate-bound-access-tokens"
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.tls.client.certificate.bound.access.tokens"
+              )}
               defaultValue={false}
               control={control}
               render={({ field }) => (
