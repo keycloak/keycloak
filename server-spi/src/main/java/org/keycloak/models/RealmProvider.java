@@ -287,4 +287,8 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
      * @deprecated Use the corresponding method from {@link GroupProvider}. */
     @Override
     void addTopLevelGroup(RealmModel realm, GroupModel subGroup);
+
+    List<RealmModel> getRealmsFromDB(boolean briefRepresentation);
+
+    Map<String, Set<String>> getAllRoleName();
 }

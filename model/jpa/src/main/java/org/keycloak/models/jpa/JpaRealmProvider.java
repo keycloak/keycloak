@@ -1142,7 +1142,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public Set<String> getClientSearchableAttributes() {
         return clientSearchableAttributes;
     }
-
+    
+    @Override
     public List<RealmModel> getRealmsFromDB(boolean briefRepresentation) {
         List list;
         if (briefRepresentation){
@@ -1209,6 +1210,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         return entity;
     }
 
+    @Override
     public Map<String, Set<String>> getAllRoleName() {
         Query query = em.createNativeQuery("select r.name as realm_name, kr.name as role_name from KEYCLOAK_ROLE kr "
                 + "left join realm r on kr.client=r.master_admin_client group by r.name, kr.name order by r.name");

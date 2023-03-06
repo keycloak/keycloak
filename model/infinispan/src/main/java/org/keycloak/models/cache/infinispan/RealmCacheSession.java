@@ -1447,4 +1447,14 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
         return null;
     }
+
+    @Override
+    public List<RealmModel> getRealmsFromDB(boolean briefRepresentation) {
+        throw new RuntimeException("This method does not support-----getRealmsFromDB");
+    }
+
+    @Override
+    public Map<String, Set<String>> getAllRoleName() {
+        throw new RuntimeException("This method does not support-----getAllRoleName");
+    }
 }

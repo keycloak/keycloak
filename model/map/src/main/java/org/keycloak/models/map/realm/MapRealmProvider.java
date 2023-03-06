@@ -18,6 +18,7 @@
 package org.keycloak.models.map.realm;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -482,5 +483,15 @@ public class MapRealmProvider implements RealmProvider {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public List<RealmModel> getRealmsFromDB(boolean briefRepresentation) {
+        throw new RuntimeException("This method does not support-----getRealmsFromDB");
+    }
+
+    @Override
+    public Map<String, Set<String>> getAllRoleName() {
+        throw new RuntimeException("This method does not support-----getAllRoleName");
     }
 }

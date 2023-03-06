@@ -19,11 +19,9 @@ package org.keycloak.services.resources.admin;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 
-import javax.persistence.EntityManager;
 import javax.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
@@ -36,9 +34,9 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.JpaRealmProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
@@ -254,9 +252,8 @@ public class AdminConsole {
     }
 
     private void addMasterRealmAccess(UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        JpaRealmProvider roleProvider = new JpaRealmProvider(session, em, null, null);
-        Map<String, Set<String>> realmRoles = roleProvider.getAllRoleName();
+        RealmProvider realmProvider = session.getProvider(RealmProvider.class);
+        Map<String, Set<String>> realmRoles = realmProvider.getAllRoleName();
         Set<String> roleMappingSet = user.getRoleMappingsStream().map(RoleModel::getName).collect(Collectors.toSet());
         Set<String> groupSet = user.getGroupsStream().map(GroupModel::getName).collect(Collectors.toSet());
         for(Map.Entry<String, Set<String>> entry : realmRoles.entrySet()){
