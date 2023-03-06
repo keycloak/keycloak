@@ -110,6 +110,16 @@ public interface UserSessionPersisterProvider extends Provider {
                                                     String lastUserSessionId);
 
     /**
+     * Loads client session from the db by provided user session and client.
+     * @param realm RealmModel Realm for the associated client session.
+     * @param client ClientModel Client used for the creation of client session.
+     * @param userSession UserSessionModel User session for the associated client session.
+     * @param offline boolean Flag that indicates the client session should be online/offline.
+     * @return Client session according the provided criteria or {@code null} if not found.
+     */
+    AuthenticatedClientSessionModel loadClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, boolean offline);
+
+    /**
      * Retrieves the count of user sessions for all realms.
      *
      * @param offline
