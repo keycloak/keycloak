@@ -98,7 +98,7 @@ public final class Configuration {
     }
 
     public static String getMappedPropertyName(String key) {
-        PropertyMapper mapper = PropertyMappers.getMapper(key);
+        PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
         if (mapper == null) {
             return key;

@@ -19,11 +19,13 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 public abstract class AbstractCommand {
+    private static final PropertyMapper<?>[] EMPTY_MAPPERS = new PropertyMapper<?>[]{};
 
     @Spec
     protected CommandSpec spec;
@@ -34,5 +36,14 @@ public abstract class AbstractCommand {
 
     protected void executionError(CommandLine cmd, String message, Throwable cause) {
         cliExecutionError(cmd, message, cause);
+    }
+
+    /**
+     * Get property mappers associated to particular command
+     *
+     * @return array of property mappers
+     */
+    public PropertyMapper<?>[] getMappers() {
+        return EMPTY_MAPPERS;
     }
 }

@@ -121,8 +121,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             throw new RuntimeException("Failed to start the server", cause);
         } finally {
             if (arguments.contains(Build.NAME) && removeBuildOptionsAfterBuild) {
-                for (List<PropertyMapper> mappers : PropertyMappers.getBuildTimeMappers().values()) {
-                    for (PropertyMapper mapper : mappers) {
+                for (List<PropertyMapper<?>> mappers : PropertyMappers.getBuildTimeMappers().values()) {
+                    for (PropertyMapper<?> mapper : mappers) {
                         removeProperty(mapper.getFrom().substring(3));
                     }
                 }

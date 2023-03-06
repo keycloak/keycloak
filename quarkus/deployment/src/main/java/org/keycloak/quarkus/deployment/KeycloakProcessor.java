@@ -461,7 +461,7 @@ class KeycloakProcessor {
             Map<String, String> configProperties = dbConfig.getDefaultDatasource().getConfigProperties();
 
             for (Entry<String, String> dbConfigProperty : configProperties.entrySet()) {
-                PropertyMapper mapper = PropertyMappers.getMapper(dbConfigProperty.getKey());
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(dbConfigProperty.getKey());
 
                 if (mapper == null) {
                     continue;
@@ -515,7 +515,7 @@ class KeycloakProcessor {
     }
 
     private void putPersistedProperty(Properties properties, String name) {
-        PropertyMapper mapper = PropertyMappers.getMapper(name);
+        PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
         ConfigValue value = null;
 
         if (mapper == null) {
