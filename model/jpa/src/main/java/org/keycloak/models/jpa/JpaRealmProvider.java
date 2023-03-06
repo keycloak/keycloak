@@ -1200,7 +1200,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         String name = (String) map.get("name");
         String defaultRole = (String) map.get("default_role");
         String masterAdminClient = (String) map.get("master_admin_client");
-        boolean enabled = Boolean.getBoolean((String) map.get("enabled"));
+        boolean enabled = (Boolean) map.get("enabled");
         entity.setId(realmId);
         entity.setName(name);
         entity.setEnabled(enabled);
