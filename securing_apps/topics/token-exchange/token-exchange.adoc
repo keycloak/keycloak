@@ -177,7 +177,7 @@ image:images/exchange-target-client-exchange-apply-policy.png[Apply Client Polic
 Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you
 try to make an exchange.
 
-[[_internal_external_making_request]]
+[[_internal_internal_making_request]]
 ==== Making the request
 
 When your client is exchanging an existing token for a token targeting another client, you use the `audience` parameter.
