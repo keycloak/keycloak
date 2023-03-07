@@ -450,6 +450,12 @@ public class RealmAdminResource {
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
         }
+
+        // The delete event is associated with the realm of the user executing the operation,
+        // instead of the realm being deleted.
+        AdminEventBuilder deleteAdminEvent = new AdminEventBuilder(auth.adminAuth().getRealm(), auth.adminAuth(), session, connection);
+        deleteAdminEvent.operation(OperationType.DELETE).resource(ResourceType.REALM)
+                .realm(auth.adminAuth().getRealm().getId()).resourcePath(realm.getName()).success();
     }
 
     /**
