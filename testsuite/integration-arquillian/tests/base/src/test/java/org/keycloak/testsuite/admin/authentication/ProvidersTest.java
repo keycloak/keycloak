@@ -228,6 +228,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "custom-callback-authenticator", "Custom callback Factory",
                 "Used for testing purposes of Callback factory");
 
+        addProviderInfo(result, "mfa-enrollment", "Multi factor enrollment",
+                "Allows user to enroll for multi factor authentication");
+
         return result;
     }
 
