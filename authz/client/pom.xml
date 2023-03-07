@@ -14,7 +14,7 @@
     <artifactId>keycloak-authz-client</artifactId>
     <packaging>jar</packaging>
 
-    <name>KeyCloak Authz: Client API</name>
+    <name>Keycloak Authz: Client API</name>
     <description>KeyCloak AuthZ: Client API</description>
 
     <properties>

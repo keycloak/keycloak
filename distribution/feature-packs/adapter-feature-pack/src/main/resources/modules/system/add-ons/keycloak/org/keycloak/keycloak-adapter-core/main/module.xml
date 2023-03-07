@@ -36,6 +36,7 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-crypto-default" services="import"/>
         <module name="org.keycloak.keycloak-authz-client"/>
+        <module name="org.keycloak.keycloak-policy-enforcer"/>
     </dependencies>
 
 </module>
