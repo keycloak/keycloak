@@ -1,8 +1,8 @@
-# Keycloak UI
+# Keycloak JavaScript
 
-This repository contains the UIs and related libraries of the Keycloak project.
+This directory contains the UIs and related libraries of the Keycloak project written in JavaScript (and TypeScript).
 
-## Repository structure
+## Directory structure
 
     ├── apps
     │   ├── account-ui                 # Account UI for account management i.e controlling password and account access, tracking and managing permissions
@@ -19,7 +19,3 @@ This repository contains the UIs and related libraries of the Keycloak project.
 ## Data processing
 
 Red Hat may process information including business contact information and code contributions as part of its participation in the project, data is processed in accordance with [Red Hat Privacy Statement](https://www.redhat.com/en/about/privacy-policy).
-
-## License
-
-- [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
