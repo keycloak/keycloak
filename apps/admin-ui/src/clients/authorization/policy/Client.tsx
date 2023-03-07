@@ -9,7 +9,7 @@ import {
 
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { useTranslation } from "react-i18next";
 
@@ -68,7 +68,7 @@ export const Client = () => {
       label={t("clients")}
       labelIcon={
         <HelpItem
-          helpText="clients-help:policyClient"
+          helpText={t("clients-help:policyClient")}
           fieldLabelId="clients:client"
         />
       }

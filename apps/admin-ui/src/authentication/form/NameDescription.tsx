@@ -3,7 +3,7 @@ import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
@@ -24,7 +24,10 @@ export const NameDescription = () => {
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
         labelIcon={
-          <HelpItem helpText="authentication-help:name" fieldLabelId="name" />
+          <HelpItem
+            helpText={t("authentication-help:name")}
+            fieldLabelId="name"
+          />
         }
         isRequired
       >
@@ -42,7 +45,7 @@ export const NameDescription = () => {
         fieldId="kc-description"
         labelIcon={
           <HelpItem
-            helpText="authentication-help:description"
+            helpText={t("authentication-help:description")}
             fieldLabelId="description"
           />
         }

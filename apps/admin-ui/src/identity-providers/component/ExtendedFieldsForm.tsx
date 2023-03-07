@@ -3,7 +3,7 @@ import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type ExtendedFieldsFormProps = {
@@ -41,7 +41,7 @@ const FacebookFields = () => {
       label={t("facebook.fetchedFields")}
       labelIcon={
         <HelpItem
-          helpText="identity-providers-help:facebook:fetchedFields"
+          helpText={t("identity-providers-help:facebook:fetchedFields")}
           fieldLabelId="identity-providers:facebook:fetchedFields"
         />
       }
@@ -65,7 +65,7 @@ const GithubFields = () => {
         label={t("baseUrl")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:baseUrl"
+            helpText={t("identity-providers-help:baseUrl")}
             fieldLabelId="identity-providers:baseUrl"
           />
         }
@@ -81,7 +81,7 @@ const GithubFields = () => {
         label={t("apiUrl")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:apiUrl"
+            helpText={t("identity-providers-help:apiUrl")}
             fieldLabelId="identity-providers:apiUrl"
           />
         }
@@ -107,7 +107,7 @@ const GoogleFields = () => {
         label={t("google.hostedDomain")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:google:hostedDomain"
+            helpText={t("identity-providers-help:google:hostedDomain")}
             fieldLabelId="identity-providers:google:hostedDomain"
           />
         }
@@ -122,7 +122,7 @@ const GoogleFields = () => {
         label={t("google.userIp")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:google:userIp"
+            helpText={t("identity-providers-help:google:userIp")}
             fieldLabelId="identity-providers:google:userIp"
           />
         }
@@ -148,7 +148,7 @@ const GoogleFields = () => {
         label={t("google.offlineAccess")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:google:offlineAccess"
+            helpText={t("identity-providers-help:google:offlineAccess")}
             fieldLabelId="identity-providers:google:offlineAccess"
           />
         }
@@ -186,7 +186,7 @@ const OpenshiftFields = () => {
       label={t("baseUrl")}
       labelIcon={
         <HelpItem
-          helpText="identity-providers-help:openshift:baseUrl"
+          helpText={t("identity-providers-help:openshift:baseUrl")}
           fieldLabelId="identity-providers:baseUrl"
         />
       }
@@ -218,7 +218,7 @@ const PaypalFields = () => {
       label={t("paypal.sandbox")}
       labelIcon={
         <HelpItem
-          helpText="identity-providers-help:paypal:sandbox"
+          helpText={t("identity-providers-help:paypal:sandbox")}
           fieldLabelId="identity-providers:paypal:sandbox"
         />
       }
@@ -255,7 +255,7 @@ const StackoverflowFields = () => {
       label={t("stackoverflow.key")}
       labelIcon={
         <HelpItem
-          helpText="identity-providers-help:stackoverflow:key"
+          helpText={t("identity-providers-help:stackoverflow:key")}
           fieldLabelId="identity-providers:stackoverflow:key"
         />
       }
@@ -284,7 +284,7 @@ const LinkedInFields = () => {
       label={t("linkedin.profileProjection")}
       labelIcon={
         <HelpItem
-          helpText="identity-providers-help:linkedin.profileProjection"
+          helpText={t("identity-providers-help:linkedin.profileProjection")}
           fieldLabelId="identity-providers:linkedin.profileProjection"
         />
       }

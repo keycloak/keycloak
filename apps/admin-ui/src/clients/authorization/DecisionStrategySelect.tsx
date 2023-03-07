@@ -2,7 +2,7 @@ import { FormGroup, Radio } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 const DECISION_STRATEGY = ["UNANIMOUS", "AFFIRMATIVE", "CONSENSUS"] as const;
 
@@ -23,7 +23,7 @@ export const DecisionStrategySelect = ({
       label={t("decisionStrategy")}
       labelIcon={
         <HelpItem
-          helpText={`clients-help:${helpLabel || "decisionStrategy"}`}
+          helpText={t(`clients-help:${helpLabel || "decisionStrategy"}`)}
           fieldLabelId="clients:decisionStrategy"
         />
       }

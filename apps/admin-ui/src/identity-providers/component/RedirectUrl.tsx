@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { ClipboardCopy, FormGroup } from "@patternfly/react-core";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { addTrailingSlash } from "../../util";
@@ -20,7 +20,7 @@ export const RedirectUrl = ({ id }: { id: string }) => {
       label={t("redirectURI")}
       labelIcon={
         <HelpItem
-          helpText="identity-providers-help:redirectURI"
+          helpText={t("identity-providers-help:redirectURI")}
           fieldLabelId="identity-providers:redirectURI"
         />
       }

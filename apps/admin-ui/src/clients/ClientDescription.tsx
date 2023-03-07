@@ -1,9 +1,9 @@
 import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "../components/help-enabler/HelpItem";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { FormFields } from "./ClientDetails";
@@ -47,7 +47,10 @@ export const ClientDescription = ({
       </FormGroup>
       <FormGroup
         labelIcon={
-          <HelpItem helpText="clients-help:clientName" fieldLabelId="name" />
+          <HelpItem
+            helpText={t("clients-help:clientName")}
+            fieldLabelId="name"
+          />
         }
         label={t("common:name")}
         fieldId="kc-name"
@@ -57,7 +60,7 @@ export const ClientDescription = ({
       <FormGroup
         labelIcon={
           <HelpItem
-            helpText="clients-help:description"
+            helpText={t("clients-help:description")}
             fieldLabelId="description"
           />
         }
@@ -87,7 +90,7 @@ export const ClientDescription = ({
         label={t("alwaysDisplayInUI")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:alwaysDisplayInUI"
+            helpText={t("clients-help:alwaysDisplayInUI")}
             fieldLabelId="clients:alwaysDisplayInUI"
           />
         }

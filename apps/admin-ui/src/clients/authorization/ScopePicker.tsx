@@ -10,7 +10,7 @@ import {
 
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 type Scope = {
   id: string;
@@ -54,7 +54,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
       label={t("authorizationScopes")}
       labelIcon={
         <HelpItem
-          helpText="clients-help:scopes"
+          helpText={t("clients-help:scopes")}
           fieldLabelId="clients:scopes"
         />
       }

@@ -29,7 +29,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
@@ -532,7 +532,7 @@ export default function NewClientPolicyForm() {
                   <Text className="kc-conditions" component={TextVariants.h1}>
                     {t("conditions")}
                     <HelpItem
-                      helpText="realm-settings-help:conditions"
+                      helpText={t("realm-settings-help:conditions")}
                       fieldLabelId="realm-settings:conditions"
                     />
                   </Text>
@@ -649,7 +649,7 @@ export default function NewClientPolicyForm() {
                   >
                     {t("clientProfiles")}
                     <HelpItem
-                      helpText="realm-settings-help:clientProfiles"
+                      helpText={t("realm-settings-help:clientProfiles")}
                       fieldLabelId="realm-settings:clientProfiles"
                     />
                   </Text>

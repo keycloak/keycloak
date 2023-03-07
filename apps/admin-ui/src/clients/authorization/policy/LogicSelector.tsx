@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup, Radio } from "@patternfly/react-core";
 
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 const LOGIC_TYPES = ["POSITIVE", "NEGATIVE"] as const;
 
@@ -14,7 +14,10 @@ export const LogicSelector = () => {
     <FormGroup
       label={t("logic")}
       labelIcon={
-        <HelpItem helpText="clients-help:logic" fieldLabelId="clients:logic" />
+        <HelpItem
+          helpText={t("clients-help:logic")}
+          fieldLabelId="clients:logic"
+        />
       }
       fieldId="logic"
       hasNoPaddingTop

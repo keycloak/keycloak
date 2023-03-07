@@ -8,12 +8,14 @@ import {
 } from "react-hook-form";
 
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
+import { HelpItem } from "./HelpItem";
 
 export type TextControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>
 > = UseControllerProps<T, P> & {
   label: string;
+  labelIcon?: string;
 };
 
 export const TextControl = <
@@ -34,6 +36,11 @@ export const TextControl = <
     <FormGroup
       isRequired={required}
       label={props.label}
+      labelIcon={
+        props.labelIcon ? (
+          <HelpItem helpText={props.labelIcon} fieldLabelId={props.name} />
+        ) : undefined
+      }
       fieldId={props.name}
       helperTextInvalid={fieldState.error?.message}
       validated={

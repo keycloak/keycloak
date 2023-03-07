@@ -25,7 +25,7 @@ import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
@@ -150,7 +150,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               fieldId="kc-client-authenticator-type"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:client-authenticator-type"
+                  helpText={t("clients-help:client-authenticator-type")}
                   fieldLabelId="clients:clientAuthenticator"
                 />
               }
@@ -223,7 +223,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               fieldId="kc-access-token"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:registration-access-token"
+                  helpText={t("clients-help:registration-access-token")}
                   fieldLabelId="clients:registrationAccessToken"
                 />
               }

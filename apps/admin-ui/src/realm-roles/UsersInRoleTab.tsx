@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import type { ClientRoleParams } from "../clients/routes/ClientRole";
-import { useHelp } from "../components/help-enabler/HelpHeader";
+import { useHelp } from "ui-shared";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";

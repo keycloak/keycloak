@@ -14,7 +14,7 @@ import {
 
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { AddScopeDialog } from "../../scopes/AddScopeDialog";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
@@ -59,7 +59,7 @@ export const ClientScope = () => {
       label={t("clientScopes")}
       labelIcon={
         <HelpItem
-          helpText="clients-help:clientScopes"
+          helpText={t("clients-help:clientScopes")}
           fieldLabelId="clients:clientScopes"
         />
       }

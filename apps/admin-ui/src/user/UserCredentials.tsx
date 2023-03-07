@@ -26,7 +26,7 @@ import { useTranslation } from "react-i18next";
 import { useAlerts } from "../components/alert/Alerts";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
@@ -380,7 +380,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                 <Tr className="kc-table-header">
                   <Th>
                     <HelpItem
-                      helpText="users:userCredentialsHelpText"
+                      helpText={t("users:userCredentialsHelpText")}
                       fieldLabelId="users:userCredentialsHelpTextLabel"
                     />
                   </Th>

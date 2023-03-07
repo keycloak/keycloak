@@ -13,7 +13,7 @@ import {
 } from "@patternfly/react-table";
 
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
@@ -67,7 +67,7 @@ export const Group = () => {
         label={t("groupsClaim")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:groupsClaim"
+            helpText={t("clients-help:groupsClaim")}
             fieldLabelId="clients:groupsClaim"
           />
         }
@@ -84,7 +84,7 @@ export const Group = () => {
         label={t("groups")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:policyGroups"
+            helpText={t("clients-help:policyGroups")}
             fieldLabelId="clients:groups"
           />
         }

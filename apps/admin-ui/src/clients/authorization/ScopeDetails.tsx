@@ -16,7 +16,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
@@ -134,7 +134,10 @@ export default function ScopeDetails() {
             label={t("common:name")}
             fieldId="name"
             labelIcon={
-              <HelpItem helpText="clients-help:scopeName" fieldLabelId="name" />
+              <HelpItem
+                helpText={t("clients-help:scopeName")}
+                fieldLabelId="name"
+              />
             }
             helperTextInvalid={t("common:required")}
             validated={
@@ -156,7 +159,7 @@ export default function ScopeDetails() {
             fieldId="displayName"
             labelIcon={
               <HelpItem
-                helpText="clients-help:scopeDisplayName"
+                helpText={t("clients-help:scopeDisplayName")}
                 fieldLabelId="displayName"
               />
             }
@@ -168,7 +171,7 @@ export default function ScopeDetails() {
             fieldId="iconUri"
             labelIcon={
               <HelpItem
-                helpText="clients-help:iconUri"
+                helpText={t("clients-help:iconUri")}
                 fieldLabelId="clients:iconUri"
               />
             }

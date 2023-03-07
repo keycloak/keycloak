@@ -2,7 +2,7 @@ import { FormGroup } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { credResetFormDefaultValues } from "./ResetCredentialDialog";
 
@@ -16,7 +16,10 @@ export const LifespanField = () => {
       label={t("lifespan")}
       isStack
       labelIcon={
-        <HelpItem helpText="clients-help:lifespan" fieldLabelId="lifespan" />
+        <HelpItem
+          helpText={t("clients-help:lifespan")}
+          fieldLabelId="lifespan"
+        />
       }
     >
       <Controller

@@ -3,7 +3,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
 import { beerify, convertAttributeNameToForm } from "../../util";
@@ -40,7 +40,7 @@ export const LogoutPanel = ({
         label={t("frontchannelLogout")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:frontchannelLogout"
+            helpText={t("clients-help:frontchannelLogout")}
             fieldLabelId="clients:frontchannelLogout"
           />
         }
@@ -69,7 +69,7 @@ export const LogoutPanel = ({
           fieldId="frontchannelLogoutUrl"
           labelIcon={
             <HelpItem
-              helpText="clients-help:frontchannelLogoutUrl"
+              helpText={t("clients-help:frontchannelLogoutUrl")}
               fieldLabelId="clients:frontchannelLogoutUrl"
             />
           }
@@ -113,7 +113,7 @@ export const LogoutPanel = ({
             fieldId="backchannelLogoutUrl"
             labelIcon={
               <HelpItem
-                helpText="clients-help:backchannelLogoutUrl"
+                helpText={t("clients-help:backchannelLogoutUrl")}
                 fieldLabelId="clients:backchannelLogoutUrl"
               />
             }
@@ -154,7 +154,7 @@ export const LogoutPanel = ({
             label={t("backchannelLogoutSessionRequired")}
             labelIcon={
               <HelpItem
-                helpText="clients-help:backchannelLogoutSessionRequired"
+                helpText={t("clients-help:backchannelLogoutSessionRequired")}
                 fieldLabelId="clients:backchannelLogoutSessionRequired"
               />
             }
@@ -183,7 +183,9 @@ export const LogoutPanel = ({
             label={t("backchannelLogoutRevokeOfflineSessions")}
             labelIcon={
               <HelpItem
-                helpText="clients-help:backchannelLogoutRevokeOfflineSessions"
+                helpText={t(
+                  "clients-help:backchannelLogoutRevokeOfflineSessions"
+                )}
                 fieldLabelId="clients:backchannelLogoutRevokeOfflineSessions"
               />
             }

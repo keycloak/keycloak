@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { ClientIdSecret } from "../component/ClientIdSecret";
 import { sortProviders } from "../../util";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -39,7 +39,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         label={t("clientAuthentication")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:clientAuthentication"
+            helpText={t("identity-providers-help:clientAuthentication")}
             fieldLabelId="identity-providers:clientAuthentication"
           />
         }
@@ -84,7 +84,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         label={t("clientAssertionSigningAlg")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:clientAssertionSigningAlg"
+            helpText={t("identity-providers-help:clientAssertionSigningAlg")}
             fieldLabelId="identity-providers:clientAssertionSigningAlg"
           />
         }

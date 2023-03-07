@@ -3,7 +3,7 @@ import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 
@@ -27,7 +27,7 @@ export const ClientIdSecret = ({
         label={t("clientId")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:clientId"
+            helpText={t("identity-providers-help:clientId")}
             fieldLabelId="identity-providers:clientId"
           />
         }
@@ -51,7 +51,7 @@ export const ClientIdSecret = ({
         label={t("clientSecret")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:clientSecret"
+            helpText={t("identity-providers-help:clientSecret")}
             fieldLabelId="identity-providers:clientSecret"
           />
         }

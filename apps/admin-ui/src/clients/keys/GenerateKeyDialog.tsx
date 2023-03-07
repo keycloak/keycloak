@@ -21,7 +21,7 @@ import {
 } from "@patternfly/react-core";
 
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { StoreSettings } from "./StoreSettings";
 import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -77,7 +77,7 @@ export const KeyForm = ({
         label={t("archiveFormat")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:archiveFormat"
+            helpText={t("clients-help:archiveFormat")}
             fieldLabelId="clients:archiveFormat"
           />
         }
@@ -116,7 +116,7 @@ export const KeyForm = ({
           label={t("importFile")}
           labelIcon={
             <HelpItem
-              helpText="clients-help:importFile"
+              helpText={t("clients-help:importFile")}
               fieldLabelId="clients:importFile"
             />
           }

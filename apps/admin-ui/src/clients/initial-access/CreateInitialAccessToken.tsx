@@ -13,7 +13,7 @@ import {
 import type ClientInitialAccessPresentation from "@keycloak/keycloak-admin-client/lib/defs/clientInitialAccessPresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { Link, useNavigate } from "react-router-dom";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -76,7 +76,7 @@ export default function CreateInitialAccessToken() {
             fieldId="expiration"
             labelIcon={
               <HelpItem
-                helpText="clients-help:expiration"
+                helpText={t("clients-help:expiration")}
                 fieldLabelId="clients:expiration"
               />
             }
@@ -104,7 +104,7 @@ export default function CreateInitialAccessToken() {
             fieldId="count"
             labelIcon={
               <HelpItem
-                helpText="clients-help:count"
+                helpText={t("clients-help:count")}
                 fieldLabelId="clients:count"
               />
             }

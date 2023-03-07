@@ -20,7 +20,7 @@ import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { FormPanel } from "../../components/scroll-form/FormPanel";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { convertAttributeNameToForm } from "../../util";
@@ -91,7 +91,7 @@ const KeySection = ({
           <FormGroup
             labelIcon={
               <HelpItem
-                helpText={`clients-help:${key}`}
+                helpText={t(`clients-help:${key}`)}
                 fieldLabelId={`clients:${key}`}
               />
             }

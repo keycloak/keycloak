@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -82,7 +82,7 @@ export const RevocationPanel = ({
           fieldId="kc-not-before"
           labelIcon={
             <HelpItem
-              helpText="clients-help:notBefore"
+              helpText={t("clients-help:notBefore")}
               fieldLabelId="clients:notBefore"
             />
           }

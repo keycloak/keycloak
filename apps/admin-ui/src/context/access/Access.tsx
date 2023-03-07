@@ -2,8 +2,7 @@ import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmI
 import { PropsWithChildren, useEffect, useState } from "react";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
-import { createNamedContext } from "../../utils/createNamedContext";
-import useRequiredContext from "../../utils/useRequiredContext";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 
 type AccessContextProps = {
   hasAccess: (...types: AccessType[]) => boolean;

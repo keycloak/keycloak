@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
@@ -141,7 +141,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           label={t("pkceMethod")}
           labelIcon={
             <HelpItem
-              helpText="identity-providers-help:pkceMethod"
+              helpText={t("identity-providers-help:pkceMethod")}
               fieldLabelId="identity-providers:pkceMethod"
             />
           }

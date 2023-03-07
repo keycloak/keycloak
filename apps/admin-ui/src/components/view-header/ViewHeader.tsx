@@ -24,8 +24,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { FormattedLink } from "../external-link/FormattedLink";
-import { useHelp } from "../help-enabler/HelpHeader";
-import { HelpItem } from "../help-enabler/HelpItem";
+import { useHelp, HelpItem } from "ui-shared";
 import "../../help-urls";
 
 export type ViewHeaderProps = {

@@ -11,7 +11,7 @@ import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
@@ -48,7 +48,7 @@ export const LdapSettingsSearching = ({
           label={t("editMode")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:editModeLdapHelp"
+              helpText={t("user-federation-help:editModeLdapHelp")}
               fieldLabelId="user-federation:editMode"
             />
           }
@@ -100,7 +100,7 @@ export const LdapSettingsSearching = ({
           label={t("usersDN")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:usersDNHelp"
+              helpText={t("user-federation-help:usersDNHelp")}
               fieldLabelId="user-federation:usersDn"
             />
           }
@@ -131,7 +131,7 @@ export const LdapSettingsSearching = ({
           label={t("usernameLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:usernameLdapAttributeHelp"
+              helpText={t("user-federation-help:usernameLdapAttributeHelp")}
               fieldLabelId="user-federation:usernameLdapAttribute"
             />
           }
@@ -168,7 +168,7 @@ export const LdapSettingsSearching = ({
           label={t("rdnLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:rdnLdapAttributeHelp"
+              helpText={t("user-federation-help:rdnLdapAttributeHelp")}
               fieldLabelId="user-federation:rdnLdapAttribute"
             />
           }
@@ -205,7 +205,7 @@ export const LdapSettingsSearching = ({
           label={t("uuidLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:uuidLdapAttributeHelp"
+              helpText={t("user-federation-help:uuidLdapAttributeHelp")}
               fieldLabelId="user-federation:uuidLdapAttribute"
             />
           }
@@ -242,7 +242,7 @@ export const LdapSettingsSearching = ({
           label={t("userObjectClasses")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:userObjectClassesHelp"
+              helpText={t("user-federation-help:userObjectClassesHelp")}
               fieldLabelId="user-federation:userObjectClasses"
             />
           }
@@ -279,7 +279,7 @@ export const LdapSettingsSearching = ({
           label={t("userLdapFilter")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:userLdapFilterHelp"
+              helpText={t("user-federation-help:userLdapFilterHelp")}
               fieldLabelId="user-federation:userLdapFilter"
             />
           }
@@ -314,7 +314,7 @@ export const LdapSettingsSearching = ({
           label={t("searchScope")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:searchScopeHelp"
+              helpText={t("user-federation-help:searchScopeHelp")}
               fieldLabelId="user-federation:searchScope"
             />
           }
@@ -353,7 +353,7 @@ export const LdapSettingsSearching = ({
           label={t("readTimeout")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:readTimeoutHelp"
+              helpText={t("user-federation-help:readTimeoutHelp")}
               fieldLabelId="user-federation:readTimeout"
             />
           }
@@ -371,7 +371,7 @@ export const LdapSettingsSearching = ({
           label={t("pagination")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:paginationHelp"
+              helpText={t("user-federation-help:paginationHelp")}
               fieldLabelId="user-federation:pagination"
             />
           }

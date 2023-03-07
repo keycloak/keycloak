@@ -9,9 +9,7 @@ import { isDefined } from "./isDefined";
  * @param context The context to pass to `useContext`
  * @returns
  */
-export default function useRequiredContext<T>(
-  context: Context<T>
-): NonNullable<T> {
+export function useRequiredContext<T>(context: Context<T>): NonNullable<T> {
   const resolved = useContext(context);
 
   if (isDefined(resolved)) {

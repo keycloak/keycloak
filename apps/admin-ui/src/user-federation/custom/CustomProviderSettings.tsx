@@ -14,7 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -123,7 +123,7 @@ export default function CustomProviderSettings() {
             label={t("uiDisplayName")}
             labelIcon={
               <HelpItem
-                helpText="user-federation-help:uiDisplayNameHelp"
+                helpText={t("user-federation-help:uiDisplayNameHelp")}
                 fieldLabelId="user-federation:uiDisplayName"
               />
             }

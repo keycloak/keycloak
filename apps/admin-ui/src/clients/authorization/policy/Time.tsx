@@ -14,7 +14,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 const DATE_TIME_FORMAT = /(\d\d\d\d-\d\d-\d\d)? (\d\d?):(\d\d?)/;
 const padDateSegment = (value: number) => value.toString().padStart(2, "0");
@@ -134,7 +134,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
       fieldId={name}
       labelIcon={
         <HelpItem
-          helpText={`clients-help:${name}`}
+          helpText={t(`clients-help:${name}`)}
           fieldLabelId={`clients:${name}`}
         />
       }
@@ -166,7 +166,7 @@ export const Time = () => {
         fieldId="repeat"
         labelIcon={
           <HelpItem
-            helpText="clients-help:repeat"
+            helpText={t("clients-help:repeat")}
             fieldLabelId="clients:repeat"
           />
         }
@@ -209,7 +209,7 @@ export const Time = () => {
         fieldId="notBefore"
         labelIcon={
           <HelpItem
-            helpText="clients-help:startTime"
+            helpText={t("clients-help:startTime")}
             fieldLabelId="clients:startTime"
           />
         }
@@ -226,7 +226,7 @@ export const Time = () => {
         fieldId="notOnOrAfter"
         labelIcon={
           <HelpItem
-            helpText="clients-help:expireTime"
+            helpText={t("clients-help:expireTime")}
             fieldLabelId="clients:expireTime"
           />
         }

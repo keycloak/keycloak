@@ -23,7 +23,7 @@ import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/s
 
 import { ClientSelect } from "../../components/client/ClientSelect";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import {
   keyValueToArray,
   KeyValueType,
@@ -209,7 +209,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
             <UserSelect
               name="user"
               label="users"
-              helpText="clients-help:selectUser"
+              helpText={t("clients-help:selectUser")}
               defaultValue={[]}
               variant={SelectVariant.typeahead}
               isRequired={roles?.length === 0}
@@ -218,7 +218,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
               label={t("roles")}
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:roles"
+                  helpText={t("clients-help:roles")}
                   fieldLabelId="clients:roles"
                 />
               }
@@ -280,7 +280,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
               fieldId="applyToResourceType"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:applyToResourceType"
+                  helpText={t("clients-help:applyToResourceType")}
                   fieldLabelId="clients:applyToResourceType"
                 />
               }
@@ -323,7 +323,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                   isRequired
                   labelIcon={
                     <HelpItem
-                      helpText="clients-help:resourceType"
+                      helpText={t("clients-help:resourceType")}
                       fieldLabelId="clients:resourceType"
                     />
                   }
@@ -341,7 +341,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                   label={t("authScopes")}
                   labelIcon={
                     <HelpItem
-                      helpText="clients-help:scopesSelect"
+                      helpText={t("clients-help:scopesSelect")}
                       fieldLabelId="clients:client"
                     />
                   }

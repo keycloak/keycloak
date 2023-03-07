@@ -21,7 +21,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";

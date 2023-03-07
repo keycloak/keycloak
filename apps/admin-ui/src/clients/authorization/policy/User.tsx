@@ -1,11 +1,15 @@
+import { useTranslation } from "react-i18next";
 import { UserSelect } from "../../../components/users/UserSelect";
 
-export const User = () => (
-  <UserSelect
-    name="users"
-    label="users"
-    helpText="clients-help:policyUsers"
-    defaultValue={[]}
-    isRequired
-  />
-);
+export const User = () => {
+  const { t } = useTranslation();
+  return (
+    <UserSelect
+      name="users"
+      label="users"
+      helpText={t("clients-help:policyUsers")}
+      defaultValue={[]}
+      isRequired
+    />
+  );
+};

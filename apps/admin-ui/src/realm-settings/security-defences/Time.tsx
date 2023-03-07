@@ -3,7 +3,7 @@ import { CSSProperties } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 
 export const Time = ({
@@ -25,7 +25,7 @@ export const Time = ({
       fieldId={name}
       labelIcon={
         <HelpItem
-          helpText={`realm-settings-help:${name}`}
+          helpText={t(`realm-settings-help:${name}`)}
           fieldLabelId={`realm-settings:${name}`}
         />
       }

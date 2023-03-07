@@ -116,7 +116,7 @@ export default function ImportForm() {
               id="realm-file"
               language={Language.json}
               extension=".json,.xml"
-              helpText="common-help:helpFileUploadClient"
+              helpText={t("common-help:helpFileUploadClient")}
               onChange={handleFileChange}
             />
             <ClientDescription hasConfigureAccess />

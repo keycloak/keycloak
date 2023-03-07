@@ -21,7 +21,7 @@ import {
   clientScopeTypesSelectOptions,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -70,7 +70,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       <FormGroup
         label={t("common:name")}
         labelIcon={
-          <HelpItem helpText="client-scopes-help:name" fieldLabelId="name" />
+          <HelpItem
+            helpText={t("client-scopes-help:name")}
+            fieldLabelId="name"
+          />
         }
         fieldId="kc-name"
         validated={
@@ -92,7 +95,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("common:description")}
         labelIcon={
           <HelpItem
-            helpText="client-scopes-help:description"
+            helpText={t("client-scopes-help:description")}
             fieldLabelId="description"
           />
         }
@@ -118,7 +121,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("type")}
         labelIcon={
           <HelpItem
-            helpText="client-scopes-help:type"
+            helpText={t("client-scopes-help:type")}
             fieldLabelId="client-scopes:type"
           />
         }
@@ -150,7 +153,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           label={t("protocol")}
           labelIcon={
             <HelpItem
-              helpText="client-scopes-help:protocol"
+              helpText={t("client-scopes-help:protocol")}
               fieldLabelId="client-scopes:protocol"
             />
           }
@@ -192,7 +195,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("displayOnConsentScreen")}
         labelIcon={
           <HelpItem
-            helpText="client-scopes-help:displayOnConsentScreen"
+            helpText={t("client-scopes-help:displayOnConsentScreen")}
             fieldLabelId="client-scopes:displayOnConsentScreen"
           />
         }
@@ -220,7 +223,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           label={t("consentScreenText")}
           labelIcon={
             <HelpItem
-              helpText="client-scopes-help:consentScreenText"
+              helpText={t("client-scopes-help:consentScreenText")}
               fieldLabelId="client-scopes:consentScreenText"
             />
           }
@@ -241,7 +244,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("includeInTokenScope")}
         labelIcon={
           <HelpItem
-            helpText="client-scopes-help:includeInTokenScope"
+            helpText={t("client-scopes-help:includeInTokenScope")}
             fieldLabelId="client-scopes:includeInTokenScope"
           />
         }
@@ -268,7 +271,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("guiOrder")}
         labelIcon={
           <HelpItem
-            helpText="client-scopes-help:guiOrder"
+            helpText={t("client-scopes-help:guiOrder")}
             fieldLabelId="client-scopes:guiOrder"
           />
         }

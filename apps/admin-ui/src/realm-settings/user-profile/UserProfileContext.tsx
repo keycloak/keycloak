@@ -6,8 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { createNamedContext } from "../../utils/createNamedContext";
-import useRequiredContext from "../../utils/useRequiredContext";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 
 type UserProfileProps = {
   config: UserProfileConfig | null;

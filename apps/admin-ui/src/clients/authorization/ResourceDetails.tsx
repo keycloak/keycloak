@@ -21,7 +21,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -195,7 +195,7 @@ export default function ResourceDetails() {
               fieldId="owner"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:owner"
+                  helpText={t("clients-help:owner")}
                   fieldLabelId="clients:owner"
                 />
               }
@@ -211,7 +211,7 @@ export default function ResourceDetails() {
               fieldId="name"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:resourceName"
+                  helpText={t("clients-help:resourceName")}
                   fieldLabelId="name"
                 />
               }
@@ -236,7 +236,7 @@ export default function ResourceDetails() {
               fieldId="displayName"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:displayName"
+                  helpText={t("clients-help:displayName")}
                   fieldLabelId="name"
                 />
               }
@@ -250,7 +250,10 @@ export default function ResourceDetails() {
               label={t("type")}
               fieldId="type"
               labelIcon={
-                <HelpItem helpText="clients-help:type" fieldLabelId="type" />
+                <HelpItem
+                  helpText={t("clients-help:type")}
+                  fieldLabelId="type"
+                />
               }
             >
               <KeycloakTextInput id="type" {...register("type")} />
@@ -260,7 +263,7 @@ export default function ResourceDetails() {
               fieldId="uris"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:uris"
+                  helpText={t("clients-help:uris")}
                   fieldLabelId="clients:uris"
                 />
               }
@@ -278,7 +281,7 @@ export default function ResourceDetails() {
               fieldId="iconUri"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:iconUri"
+                  helpText={t("clients-help:iconUri")}
                   fieldLabelId="clients:iconUri"
                 />
               }
@@ -294,7 +297,7 @@ export default function ResourceDetails() {
               label={t("ownerManagedAccess")}
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:ownerManagedAccess"
+                  helpText={t("clients-help:ownerManagedAccess")}
                   fieldLabelId="clients:ownerManagedAccess"
                 />
               }
@@ -322,7 +325,7 @@ export default function ResourceDetails() {
               label={t("resourceAttribute")}
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:resourceAttribute"
+                  helpText={t("clients-help:resourceAttribute")}
                   fieldLabelId="clients:resourceAttribute"
                 />
               }

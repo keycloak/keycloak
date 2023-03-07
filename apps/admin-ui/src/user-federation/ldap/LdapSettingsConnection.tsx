@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
@@ -107,7 +107,9 @@ export const LdapSettingsConnection = ({
           label={t("connectionURL")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:consoleDisplayConnectionUrlHelp"
+              helpText={t(
+                "user-federation-help:consoleDisplayConnectionUrlHelp"
+              )}
               fieldLabelId="user-federation:connectionURL"
             />
           }
@@ -144,7 +146,7 @@ export const LdapSettingsConnection = ({
           label={t("enableStartTls")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:enableStartTlsHelp"
+              helpText={t("user-federation-help:enableStartTlsHelp")}
               fieldLabelId="user-federation:enableStartTls"
             />
           }
@@ -174,7 +176,7 @@ export const LdapSettingsConnection = ({
           label={t("useTruststoreSpi")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:useTruststoreSpiHelp"
+              helpText={t("user-federation-help:useTruststoreSpiHelp")}
               fieldLabelId="user-federation:useTruststoreSpi"
             />
           }
@@ -208,7 +210,7 @@ export const LdapSettingsConnection = ({
           label={t("connectionPooling")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:connectionPoolingHelp"
+              helpText={t("user-federation-help:connectionPoolingHelp")}
               fieldLabelId="user-federation:connectionPooling"
             />
           }
@@ -237,7 +239,7 @@ export const LdapSettingsConnection = ({
           label={t("connectionTimeout")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:connectionTimeoutHelp"
+              helpText={t("user-federation-help:connectionTimeoutHelp")}
               fieldLabelId="user-federation:consoleTimeout"
             />
           }
@@ -265,7 +267,7 @@ export const LdapSettingsConnection = ({
           label={t("bindType")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:bindTypeHelp"
+              helpText={t("user-federation-help:bindTypeHelp")}
               fieldLabelId="user-federation:bindType"
             />
           }
@@ -305,7 +307,7 @@ export const LdapSettingsConnection = ({
               label={t("bindDn")}
               labelIcon={
                 <HelpItem
-                  helpText="user-federation-help:bindDnHelp"
+                  helpText={t("user-federation-help:bindDnHelp")}
                   fieldLabelId="user-federation:bindDn"
                 />
               }
@@ -334,7 +336,7 @@ export const LdapSettingsConnection = ({
               label={t("bindCredentials")}
               labelIcon={
                 <HelpItem
-                  helpText="user-federation-help:bindCredentialsHelp"
+                  helpText={t("user-federation-help:bindCredentialsHelp")}
                   fieldLabelId="user-federation:bindCredentials"
                 />
               }

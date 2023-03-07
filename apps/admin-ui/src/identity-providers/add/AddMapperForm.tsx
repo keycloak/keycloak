@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import type { IdPMapperRepresentationWithAttributes } from "./AddMapper";
 
@@ -51,7 +51,7 @@ export const AddMapperForm = ({
         label={t("common:name")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:addIdpMapperName"
+            helpText={t("identity-providers-help:addIdpMapperName")}
             fieldLabelId="name"
           />
         }
@@ -76,7 +76,7 @@ export const AddMapperForm = ({
         isRequired
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:syncModeOverride"
+            helpText={t("identity-providers-help:syncModeOverride")}
             fieldLabelId="identity-providers:syncModeOverride"
           />
         }

@@ -1,6 +1,6 @@
 import { Tab, TabTitleText } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -34,7 +34,7 @@ export const ClientRegistration = () => {
             {t("anonymousAccessPolicies")}{" "}
             <HelpItem
               fieldLabelId=""
-              helpText="clients-help:anonymousAccessPolicies"
+              helpText={t("clients-help:anonymousAccessPolicies")}
               noVerticalAlign={false}
               unWrap
             />
@@ -51,7 +51,7 @@ export const ClientRegistration = () => {
             {t("authenticatedAccessPolicies")}{" "}
             <HelpItem
               fieldLabelId=""
-              helpText="clients-help:authenticatedAccessPolicies"
+              helpText={t("clients-help:authenticatedAccessPolicies")}
               noVerticalAlign={false}
               unWrap
             />

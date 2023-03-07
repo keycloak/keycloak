@@ -11,7 +11,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, sortProviders } from "../../util";
@@ -165,7 +165,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="accessTokenSignatureAlgorithm"
         labelIcon={
           <HelpItem
-            helpText="clients-help:accessTokenSignatureAlgorithm"
+            helpText={t("clients-help:accessTokenSignatureAlgorithm")}
             fieldLabelId="clients:accessTokenSignatureAlgorithm"
           />
         }
@@ -198,7 +198,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="kc-id-token-signature"
         labelIcon={
           <HelpItem
-            helpText="clients-help:idTokenSignatureAlgorithm"
+            helpText={t("clients-help:idTokenSignatureAlgorithm")}
             fieldLabelId="clients:idTokenSignatureAlgorithm"
           />
         }
@@ -231,7 +231,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="idTokenEncryptionKeyManagementAlgorithm"
         labelIcon={
           <HelpItem
-            helpText="clients-help:idTokenEncryptionKeyManagementAlgorithm"
+            helpText={t("clients-help:idTokenEncryptionKeyManagementAlgorithm")}
             fieldLabelId="clients:idTokenEncryptionKeyManagementAlgorithm"
           />
         }
@@ -264,7 +264,9 @@ export const FineGrainOpenIdConnect = ({
         fieldId="idTokenEncryptionContentEncryptionAlgorithm"
         labelIcon={
           <HelpItem
-            helpText="clients-help:idTokenEncryptionContentEncryptionAlgorithm"
+            helpText={t(
+              "clients-help:idTokenEncryptionContentEncryptionAlgorithm"
+            )}
             fieldLabelId="clients:idTokenEncryptionContentEncryptionAlgorithm"
           />
         }
@@ -297,7 +299,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="userInfoSignedResponseAlgorithm"
         labelIcon={
           <HelpItem
-            helpText="clients-help:userInfoSignedResponseAlgorithm"
+            helpText={t("clients-help:userInfoSignedResponseAlgorithm")}
             fieldLabelId="clients:userInfoSignedResponseAlgorithm"
           />
         }
@@ -330,7 +332,9 @@ export const FineGrainOpenIdConnect = ({
         fieldId="userInfoResponseEncryptionKeyManagementAlgorithm"
         labelIcon={
           <HelpItem
-            helpText="clients-help:userInfoResponseEncryptionKeyManagementAlgorithm"
+            helpText={t(
+              "clients-help:userInfoResponseEncryptionKeyManagementAlgorithm"
+            )}
             fieldLabelId="clients:userInfoResponseEncryptionKeyManagementAlgorithm"
           />
         }
@@ -363,7 +367,9 @@ export const FineGrainOpenIdConnect = ({
         fieldId="userInfoResponseEncryptionContentEncryptionAlgorithm"
         labelIcon={
           <HelpItem
-            helpText="clients-help:userInfoResponseEncryptionContentEncryptionAlgorithm"
+            helpText={t(
+              "clients-help:userInfoResponseEncryptionContentEncryptionAlgorithm"
+            )}
             fieldLabelId="clients:userInfoResponseEncryptionContentEncryptionAlgorithm"
           />
         }
@@ -396,7 +402,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectSignatureAlgorithm"
         labelIcon={
           <HelpItem
-            helpText="clients-help:requestObjectSignatureAlgorithm"
+            helpText={t("clients-help:requestObjectSignatureAlgorithm")}
             fieldLabelId="clients:requestObjectSignatureAlgorithm"
           />
         }
@@ -429,7 +435,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectEncryption"
         labelIcon={
           <HelpItem
-            helpText="clients-help:requestObjectEncryption"
+            helpText={t("clients-help:requestObjectEncryption")}
             fieldLabelId="clients:requestObjectEncryption"
           />
         }
@@ -462,7 +468,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectEncoding"
         labelIcon={
           <HelpItem
-            helpText="clients-help:requestObjectEncoding"
+            helpText={t("clients-help:requestObjectEncoding")}
             fieldLabelId="clients:requestObjectEncoding"
           />
         }
@@ -495,7 +501,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectRequired"
         labelIcon={
           <HelpItem
-            helpText="clients-help:requestObjectRequired"
+            helpText={t("clients-help:requestObjectRequired")}
             fieldLabelId="clients:requestObjectRequired"
           />
         }
@@ -528,7 +534,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="validRequestURIs"
         labelIcon={
           <HelpItem
-            helpText="clients-help:validRequestURIs"
+            helpText={t("clients-help:validRequestURIs")}
             fieldLabelId="clients:validRequestURIs"
           />
         }
@@ -545,7 +551,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="authorizationSignedResponseAlg"
         labelIcon={
           <HelpItem
-            helpText="clients-help:authorizationSignedResponseAlg"
+            helpText={t("clients-help:authorizationSignedResponseAlg")}
             fieldLabelId="clients:authorizationSignedResponseAlg"
           />
         }
@@ -578,7 +584,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="authorizationEncryptedResponseAlg"
         labelIcon={
           <HelpItem
-            helpText="clients-help:authorizationEncryptedResponseAlg"
+            helpText={t("clients-help:authorizationEncryptedResponseAlg")}
             fieldLabelId="clients:authorizationEncryptedResponseAlg"
           />
         }
@@ -611,7 +617,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="authorizationEncryptedResponseEnc"
         labelIcon={
           <HelpItem
-            helpText="clients-help:authorizationEncryptedResponseEnc"
+            helpText={t("clients-help:authorizationEncryptedResponseEnc")}
             fieldLabelId="clients:authorizationEncryptedResponseEnc"
           />
         }

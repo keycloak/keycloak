@@ -2,7 +2,7 @@ import { FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const SyncSettings = () => {
@@ -17,7 +17,7 @@ export const SyncSettings = () => {
         label={t("periodicFullSync")}
         labelIcon={
           <HelpItem
-            helpText="user-federation-help:periodicFullSyncHelp"
+            helpText={t("user-federation-help:periodicFullSyncHelp")}
             fieldLabelId="user-federation:periodicFullSync"
           />
         }
@@ -49,7 +49,7 @@ export const SyncSettings = () => {
           label={t("fullSyncPeriod")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:fullSyncPeriodHelp"
+              helpText={t("user-federation-help:fullSyncPeriodHelp")}
               fieldLabelId="user-federation:fullSyncPeriod"
             />
           }
@@ -69,7 +69,7 @@ export const SyncSettings = () => {
         label={t("periodicChangedUsersSync")}
         labelIcon={
           <HelpItem
-            helpText="user-federation-help:periodicChangedUsersSyncHelp"
+            helpText={t("user-federation-help:periodicChangedUsersSyncHelp")}
             fieldLabelId="user-federation:periodicChangedUsersSync"
           />
         }
@@ -100,7 +100,7 @@ export const SyncSettings = () => {
           label={t("changedUsersSyncPeriod")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:changedUsersSyncHelp"
+              helpText={t("user-federation-help:changedUsersSyncHelp")}
               fieldLabelId="user-federation:changedUsersSyncPeriod"
             />
           }

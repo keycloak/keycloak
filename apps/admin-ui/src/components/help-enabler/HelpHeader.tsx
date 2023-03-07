@@ -9,41 +9,13 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
-import { PropsWithChildren, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import helpUrls from "../../help-urls";
-import { createNamedContext } from "../../utils/createNamedContext";
-import useRequiredContext from "../../utils/useRequiredContext";
-import { useStoredState } from "../../utils/useStoredState";
+import { useHelp } from "ui-shared";
 
 import "./help-header.css";
-
-type HelpContextProps = {
-  enabled: boolean;
-  toggleHelp: () => void;
-};
-
-export const HelpContext = createNamedContext<HelpContextProps | undefined>(
-  "HelpContext",
-  undefined
-);
-
-export const useHelp = () => useRequiredContext(HelpContext);
-
-export const Help = ({ children }: PropsWithChildren) => {
-  const [enabled, setHelp] = useStoredState(localStorage, "helpEnabled", true);
-
-  function toggleHelp() {
-    setHelp(!enabled);
-  }
-
-  return (
-    <HelpContext.Provider value={{ enabled, toggleHelp }}>
-      {children}
-    </HelpContext.Provider>
-  );
-};
 
 export const HelpHeader = () => {
   const [open, setOpen] = useState(false);

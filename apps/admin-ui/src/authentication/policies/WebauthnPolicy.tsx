@@ -26,8 +26,7 @@ import { useTranslation } from "react-i18next";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { useHelp } from "../../components/help-enabler/HelpHeader";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { useHelp, HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
@@ -92,7 +91,7 @@ const WebauthnSelect = ({
       label={t(label)}
       labelIcon={
         <HelpItem
-          helpText={`authentication-help:${label}`}
+          helpText={t(`authentication-help:${label}`)}
           fieldLabelId={`authentication:${label}`}
         />
       }
@@ -219,7 +218,7 @@ export const WebauthnPolicy = ({
           isRequired
           labelIcon={
             <HelpItem
-              helpText="authentication-help:webAuthnPolicyRpEntityName"
+              helpText={t("authentication-help:webAuthnPolicyRpEntityName")}
               fieldLabelId="authentication:webAuthnPolicyRpEntityName"
             />
           }
@@ -242,7 +241,7 @@ export const WebauthnPolicy = ({
             label={t("webAuthnPolicyRpId")}
             labelIcon={
               <HelpItem
-                helpText="authentication-help:webAuthnPolicyRpId"
+                helpText={t("authentication-help:webAuthnPolicyRpId")}
                 fieldLabelId="authentication:webAuthnPolicyRpId"
               />
             }
@@ -285,7 +284,7 @@ export const WebauthnPolicy = ({
             validated={errors.webAuthnPolicyCreateTimeout ? "error" : "default"}
             labelIcon={
               <HelpItem
-                helpText="authentication-help:webAuthnPolicyCreateTimeout"
+                helpText={t("authentication-help:webAuthnPolicyCreateTimeout")}
                 fieldLabelId="authentication:webAuthnPolicyCreateTimeout"
               />
             }
@@ -314,7 +313,9 @@ export const WebauthnPolicy = ({
             fieldId="webAuthnPolicyAvoidSameAuthenticatorRegister"
             labelIcon={
               <HelpItem
-                helpText="authentication-help:webAuthnPolicyAvoidSameAuthenticatorRegister"
+                helpText={t(
+                  "authentication-help:webAuthnPolicyAvoidSameAuthenticatorRegister"
+                )}
                 fieldLabelId="authentication:webAuthnPolicyAvoidSameAuthenticatorRegister"
               />
             }
@@ -340,7 +341,9 @@ export const WebauthnPolicy = ({
             fieldId="webAuthnPolicyAcceptableAaguids"
             labelIcon={
               <HelpItem
-                helpText="authentication-help:webAuthnPolicyAcceptableAaguids"
+                helpText={t(
+                  "authentication-help:webAuthnPolicyAcceptableAaguids"
+                )}
                 fieldLabelId="authentication:webAuthnPolicyAcceptableAaguids"
               />
             }

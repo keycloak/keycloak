@@ -20,7 +20,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
@@ -215,7 +215,7 @@ export default function PermissionDetails() {
               fieldId="name"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:permissionName"
+                  helpText={t("clients-help:permissionName")}
                   fieldLabelId="name"
                 />
               }
@@ -231,7 +231,7 @@ export default function PermissionDetails() {
               fieldId="description"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:permissionDescription"
+                  helpText={t("clients-help:permissionDescription")}
                   fieldLabelId="description"
                 />
               }
@@ -254,7 +254,7 @@ export default function PermissionDetails() {
               fieldId="applyToResourceTypeFlag"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:applyToResourceTypeFlag"
+                  helpText={t("clients-help:applyToResourceTypeFlag")}
                   fieldLabelId="clients:applyToResourceTypeFlag"
                 />
               }
@@ -275,7 +275,7 @@ export default function PermissionDetails() {
                 fieldId="name"
                 labelIcon={
                   <HelpItem
-                    helpText="clients-help:resourceType"
+                    helpText={t("clients-help:resourceType")}
                     fieldLabelId="resourceType"
                   />
                 }
@@ -294,7 +294,7 @@ export default function PermissionDetails() {
                 fieldId="resources"
                 labelIcon={
                   <HelpItem
-                    helpText="clients-help:permissionResources"
+                    helpText={t("clients-help:permissionResources")}
                     fieldLabelId="clients:resources"
                   />
                 }
@@ -324,7 +324,7 @@ export default function PermissionDetails() {
                 fieldId="scopes"
                 labelIcon={
                   <HelpItem
-                    helpText="clients-help:permissionScopes"
+                    helpText={t("clients-help:permissionScopes")}
                     fieldLabelId="clients:scopesSelect"
                   />
                 }
@@ -344,7 +344,7 @@ export default function PermissionDetails() {
               fieldId="policies"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:permissionPolicies"
+                  helpText={t("clients-help:permissionPolicies")}
                   fieldLabelId="clients:policies"
                 />
               }
@@ -359,7 +359,7 @@ export default function PermissionDetails() {
               label={t("decisionStrategy")}
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:permissionDecisionStrategy"
+                  helpText={t("clients-help:permissionDecisionStrategy")}
                   fieldLabelId="clients:decisionStrategy"
                 />
               }

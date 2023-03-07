@@ -4,7 +4,7 @@ import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
@@ -43,7 +43,9 @@ export const LdapSettingsKerberosIntegration = ({
           label={t("allowKerberosAuthentication")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:allowKerberosAuthenticationHelp"
+              helpText={t(
+                "user-federation-help:allowKerberosAuthenticationHelp"
+              )}
               fieldLabelId="user-federation:allowKerberosAuthentication"
             />
           }
@@ -75,7 +77,7 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("kerberosRealm")}
               labelIcon={
                 <HelpItem
-                  helpText="user-federation-help:kerberosRealmHelp"
+                  helpText={t("user-federation-help:kerberosRealmHelp")}
                   fieldLabelId="user-federation:kerberosRealm"
                 />
               }
@@ -112,7 +114,7 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("serverPrincipal")}
               labelIcon={
                 <HelpItem
-                  helpText="user-federation-help:serverPrincipalHelp"
+                  helpText={t("user-federation-help:serverPrincipalHelp")}
                   fieldLabelId="user-federation:serverPrincipal"
                 />
               }
@@ -149,7 +151,7 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("keyTab")}
               labelIcon={
                 <HelpItem
-                  helpText="user-federation-help:keyTabHelp"
+                  helpText={t("user-federation-help:keyTabHelp")}
                   fieldLabelId="user-federation:keyTab"
                 />
               }
@@ -184,7 +186,7 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("debug")}
               labelIcon={
                 <HelpItem
-                  helpText="user-federation-help:debugHelp"
+                  helpText={t("user-federation-help:debugHelp")}
                   fieldLabelId="user-federation:debug"
                 />
               }
@@ -216,7 +218,9 @@ export const LdapSettingsKerberosIntegration = ({
           label={t("useKerberosForPasswordAuthentication")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:useKerberosForPasswordAuthenticationHelp"
+              helpText={t(
+                "user-federation-help:useKerberosForPasswordAuthenticationHelp"
+              )}
               fieldLabelId="user-federation:useKerberosForPasswordAuthentication"
             />
           }

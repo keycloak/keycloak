@@ -3,8 +3,7 @@ import { useMatch } from "react-router-dom";
 
 import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";
 import environment from "../../environment";
-import { createNamedContext } from "../../utils/createNamedContext";
-import useRequiredContext from "../../utils/useRequiredContext";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 import { useAdminClient } from "../auth/AdminClient";
 
 type RealmContextType = {

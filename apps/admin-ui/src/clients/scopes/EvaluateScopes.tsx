@@ -26,8 +26,7 @@ import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { useHelp } from "../../components/help-enabler/HelpHeader";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { useHelp, HelpItem } from "ui-shared";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
@@ -235,7 +234,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             fieldId="scopeParameter"
             labelIcon={
               <HelpItem
-                helpText="clients-help:scopeParameter"
+                helpText={t("clients-help:scopeParameter")}
                 fieldLabelId="clients:scopeParameter"
               />
             }
@@ -278,7 +277,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <UserSelect
               name="user"
               label="users"
-              helpText="clients-help:user"
+              helpText={t("clients-help:user")}
               defaultValue=""
               variant={SelectVariant.typeahead}
               isRequired
@@ -363,7 +362,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("effectiveProtocolMappers")}{" "}
                   <HelpItem
                     fieldLabelId="clients:effectiveProtocolMappers"
-                    helpText="clients-help:effectiveProtocolMappers"
+                    helpText={t("clients-help:effectiveProtocolMappers")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -380,7 +379,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("effectiveRoleScopeMappings")}{" "}
                   <HelpItem
                     fieldLabelId="clients:effectiveRoleScopeMappings"
-                    helpText="clients-help:effectiveRoleScopeMappings"
+                    helpText={t("clients-help:effectiveRoleScopeMappings")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -397,7 +396,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("generatedAccessToken")}{" "}
                   <HelpItem
                     fieldLabelId="clients:generatedAccessToken"
-                    helpText="clients-help:generatedAccessToken"
+                    helpText={t("clients-help:generatedAccessToken")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -414,7 +413,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("generatedIdToken")}{" "}
                   <HelpItem
                     fieldLabelId="clients:generatedIdToken"
-                    helpText="clients-help:generatedIdToken"
+                    helpText={t("clients-help:generatedIdToken")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -431,7 +430,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("generatedUserInfo")}{" "}
                   <HelpItem
                     fieldLabelId="clients:generatedUserInfo"
-                    helpText="clients-help:generatedUserInfo"
+                    helpText={t("clients-help:generatedUserInfo")}
                     noVerticalAlign={false}
                     unWrap
                   />

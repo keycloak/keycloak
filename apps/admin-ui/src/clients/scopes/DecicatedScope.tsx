@@ -10,7 +10,7 @@ import {
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
@@ -88,7 +88,7 @@ export const DedicatedScope = ({
           label={t("fullScopeAllowed")}
           labelIcon={
             <HelpItem
-              helpText="clients-help:fullScopeAllowed"
+              helpText={t("clients-help:fullScopeAllowed")}
               fieldLabelId="clients:fullScopeAllowed"
             />
           }

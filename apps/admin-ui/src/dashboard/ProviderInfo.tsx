@@ -12,7 +12,7 @@ import {
 
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
-import { isDefined } from "../utils/isDefined";
+import { isDefined } from "ui-shared";
 
 export const ProviderInfo = () => {
   const { t } = useTranslation("dashboard");

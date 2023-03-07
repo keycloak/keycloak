@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
@@ -48,7 +48,7 @@ export const CapabilityConfig = ({
             fieldId="kc-authentication"
             labelIcon={
               <HelpItem
-                helpText="clients-help:authentication"
+                helpText={t("clients-help:authentication")}
                 fieldLabelId="clients:authentication"
               />
             }
@@ -88,7 +88,7 @@ export const CapabilityConfig = ({
             fieldId="kc-authorization"
             labelIcon={
               <HelpItem
-                helpText="clients-help:authorization"
+                helpText={t("clients-help:authorization")}
                 fieldLabelId="clients:authorization"
               />
             }
@@ -137,7 +137,7 @@ export const CapabilityConfig = ({
                         onChange={field.onChange}
                       />
                       <HelpItem
-                        helpText="clients-help:standardFlow"
+                        helpText={t("clients-help:standardFlow")}
                         fieldLabelId="clients:standardFlow"
                       />
                     </InputGroup>
@@ -159,7 +159,7 @@ export const CapabilityConfig = ({
                         onChange={field.onChange}
                       />
                       <HelpItem
-                        helpText="clients-help:directAccess"
+                        helpText={t("clients-help:directAccess")}
                         fieldLabelId="clients:directAccess"
                       />
                     </InputGroup>
@@ -181,7 +181,7 @@ export const CapabilityConfig = ({
                         onChange={field.onChange}
                       />
                       <HelpItem
-                        helpText="clients-help:implicitFlow"
+                        helpText={t("clients-help:implicitFlow")}
                         fieldLabelId="clients:implicitFlow"
                       />
                     </InputGroup>
@@ -210,7 +210,7 @@ export const CapabilityConfig = ({
                         }
                       />
                       <HelpItem
-                        helpText="clients-help:serviceAccount"
+                        helpText={t("clients-help:serviceAccount")}
                         fieldLabelId="clients:serviceAccount"
                       />
                     </InputGroup>
@@ -235,7 +235,9 @@ export const CapabilityConfig = ({
                         onChange={field.onChange}
                       />
                       <HelpItem
-                        helpText="clients-help:oauthDeviceAuthorizationGrant"
+                        helpText={t(
+                          "clients-help:oauthDeviceAuthorizationGrant"
+                        )}
                         fieldLabelId="clients:oauthDeviceAuthorizationGrant"
                       />
                     </InputGroup>
@@ -261,7 +263,7 @@ export const CapabilityConfig = ({
                         isDisabled={clientAuthentication}
                       />
                       <HelpItem
-                        helpText="clients-help:oidcCibaGrant"
+                        helpText={t("clients-help:oidcCibaGrant")}
                         fieldLabelId="clients:oidcCibaGrant"
                       />
                     </InputGroup>
@@ -277,7 +279,7 @@ export const CapabilityConfig = ({
           <FormGroup
             labelIcon={
               <HelpItem
-                helpText="clients-help:encryptAssertions"
+                helpText={t("clients-help:encryptAssertions")}
                 fieldLabelId="clients:encryptAssertions"
               />
             }
@@ -307,7 +309,7 @@ export const CapabilityConfig = ({
           <FormGroup
             labelIcon={
               <HelpItem
-                helpText="clients-help:clientSignature"
+                helpText={t("clients-help:clientSignature")}
                 fieldLabelId="clients:clientSignature"
               />
             }

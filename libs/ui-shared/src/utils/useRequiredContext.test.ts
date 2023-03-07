@@ -1,7 +1,7 @@
 import type { Context } from "react";
 import { useContext } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import useRequiredContext from "./useRequiredContext";
+import { useRequiredContext } from "./useRequiredContext";
 
 vi.mock("react");
 

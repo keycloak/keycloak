@@ -1,9 +1,11 @@
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { PropsWithChildren, useEffect, useMemo } from "react";
 
-import { createNamedContext } from "../utils/createNamedContext";
-import useRequiredContext from "../utils/useRequiredContext";
-import { useStoredState } from "../utils/useStoredState";
+import {
+  createNamedContext,
+  useRequiredContext,
+  useStoredState,
+} from "ui-shared";
 import { useRealm } from "./realm-context/RealmContext";
 import { useRealms } from "./RealmsContext";
 

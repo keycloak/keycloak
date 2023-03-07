@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
 import { FormGroup } from "@patternfly/react-core";
 
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 
 export const Regex = () => {
@@ -22,7 +22,7 @@ export const Regex = () => {
         isRequired
         labelIcon={
           <HelpItem
-            helpText="clients-help:targetClaim"
+            helpText={t("clients-help:targetClaim")}
             fieldLabelId="clients:targetClaim"
           />
         }
@@ -39,7 +39,7 @@ export const Regex = () => {
         fieldId="pattern"
         labelIcon={
           <HelpItem
-            helpText="clients-help:regexPattern"
+            helpText={t("clients-help:regexPattern")}
             fieldLabelId="clients:regexPattern"
           />
         }

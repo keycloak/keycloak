@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 type EventListenersFormProps = {

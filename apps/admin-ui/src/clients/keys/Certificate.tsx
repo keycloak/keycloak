@@ -3,7 +3,7 @@ import { FormGroup } from "@patternfly/react-core";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 
 type CertificateProps = Omit<CertificateDisplayProps, "id"> & {
@@ -41,7 +41,7 @@ export const Certificate = ({ keyInfo, plain = false }: CertificateProps) => {
       fieldId={id}
       labelIcon={
         <HelpItem
-          helpText="clients-help:certificate"
+          helpText={t("clients-help:certificate")}
           fieldLabelId={`clients:${id}`}
         />
       }

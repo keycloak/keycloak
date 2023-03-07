@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 
@@ -99,7 +99,10 @@ export const AddSubFlowModal = ({
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
           labelIcon={
-            <HelpItem helpText="authentication-help:name" fieldLabelId="name" />
+            <HelpItem
+              helpText={t("authentication-help:name")}
+              fieldLabelId="name"
+            />
           }
           isRequired
         >
@@ -117,7 +120,7 @@ export const AddSubFlowModal = ({
           fieldId="description"
           labelIcon={
             <HelpItem
-              helpText="authentication-help:description"
+              helpText={t("authentication-help:description")}
               fieldLabelId="description"
             />
           }
@@ -133,7 +136,7 @@ export const AddSubFlowModal = ({
           fieldId="flowType"
           labelIcon={
             <HelpItem
-              helpText="authentication-help:flowType"
+              helpText={t("authentication-help:flowType")}
               fieldLabelId="authentication:flowType"
             />
           }
@@ -173,7 +176,7 @@ export const AddSubFlowModal = ({
             label={t("flowType")}
             labelIcon={
               <HelpItem
-                helpText="authentication-help:flowType"
+                helpText={t("authentication-help:flowType")}
                 fieldLabelId="authentication:flowType"
               />
             }

@@ -2,8 +2,7 @@ import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/l
 import { PropsWithChildren, useState } from "react";
 
 import { sortProviders } from "../../util";
-import { createNamedContext } from "../../utils/createNamedContext";
-import useRequiredContext from "../../utils/useRequiredContext";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
 
 export const ServerInfoContext = createNamedContext<

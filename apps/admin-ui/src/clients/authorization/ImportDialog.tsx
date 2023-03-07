@@ -14,7 +14,7 @@ import {
 
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 type ImportDialogProps = {
   onConfirm: (value: ResourceServerRepresentation) => void;
@@ -67,7 +67,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               label={t("policyEnforcementMode")}
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:policyEnforcementMode"
+                  helpText={t("clients-help:policyEnforcementMode")}
                   fieldLabelId="clients:policyEnforcementMode"
                 />
               }
@@ -89,7 +89,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               label={t("decisionStrategy")}
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:decisionStrategy"
+                  helpText={t("clients-help:decisionStrategy")}
                   fieldLabelId="clients:decisionStrategy"
                 />
               }

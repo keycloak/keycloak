@@ -13,7 +13,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { convertToFormValues } from "../util";
 
@@ -54,7 +54,7 @@ export const RealmSettingsThemesTab = ({
           fieldId="kc-login-theme"
           labelIcon={
             <HelpItem
-              helpText="realm-settings-help:loginTheme"
+              helpText={t("realm-settings-help:loginTheme")}
               fieldLabelId="realm-settings:loginTheme"
             />
           }
@@ -96,7 +96,7 @@ export const RealmSettingsThemesTab = ({
           fieldId="kc-account-theme"
           labelIcon={
             <HelpItem
-              helpText="realm-settings-help:accountTheme"
+              helpText={t("realm-settings-help:accountTheme")}
               fieldLabelId="realm-settings:accountTheme"
             />
           }
@@ -138,7 +138,7 @@ export const RealmSettingsThemesTab = ({
           fieldId="kc-admin-ui-theme"
           labelIcon={
             <HelpItem
-              helpText="realm-settings-help:adminUITheme"
+              helpText={t("realm-settings-help:adminUITheme")}
               fieldLabelId="realm-settings:adminTheme"
             />
           }
@@ -180,7 +180,7 @@ export const RealmSettingsThemesTab = ({
           fieldId="kc-email-theme"
           labelIcon={
             <HelpItem
-              helpText="realm-settings-help:emailTheme"
+              helpText={t("realm-settings-help:emailTheme")}
               fieldLabelId="realm-settings:emailTheme"
             />
           }

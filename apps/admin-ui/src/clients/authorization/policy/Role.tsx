@@ -14,7 +14,7 @@ import {
 
 import { Row, ServiceRole } from "../../../components/role-mapping/RoleMapping";
 import type { RequiredIdValue } from "./ClientScope";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMappingModal";
 
@@ -63,7 +63,7 @@ export const Role = () => {
       label={t("roles")}
       labelIcon={
         <HelpItem
-          helpText="clients-help:policyRoles"
+          helpText={t("clients-help:policyRoles")}
           fieldLabelId="clients:roles"
         />
       }

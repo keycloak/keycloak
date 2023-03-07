@@ -2,7 +2,7 @@ import { FormGroup } from "@patternfly/react-core";
 import { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 export type FieldProps = { label: string; field: string; isReadOnly?: boolean };
 export type FormGroupFieldProps = { label: string };
@@ -18,7 +18,7 @@ export const FormGroupField = ({
       fieldId={label}
       labelIcon={
         <HelpItem
-          helpText={`identity-providers-help:${label}`}
+          helpText={t(`identity-providers-help:${label}`)}
           fieldLabelId={`identity-providers:${label}`}
         />
       }

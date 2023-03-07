@@ -13,7 +13,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
@@ -62,7 +62,7 @@ export const AdvancedSettings = ({
           fieldId="assertionLifespan"
           labelIcon={
             <HelpItem
-              helpText="clients-help:assertionLifespan"
+              helpText={t("clients-help:assertionLifespan")}
               fieldLabelId="clients:assertionLifespan"
             />
           }
@@ -136,7 +136,7 @@ export const AdvancedSettings = ({
             hasNoPaddingTop
             labelIcon={
               <HelpItem
-                helpText="clients-help:oAuthMutual"
+                helpText={t("clients-help:oAuthMutual")}
                 fieldLabelId="clients:oAuthMutual"
               />
             }
@@ -165,7 +165,7 @@ export const AdvancedSettings = ({
             hasNoPaddingTop
             labelIcon={
               <HelpItem
-                helpText="clients-help:keyForCodeExchange"
+                helpText={t("clients-help:keyForCodeExchange")}
                 fieldLabelId="clients:keyForCodeExchange"
               />
             }
@@ -202,7 +202,7 @@ export const AdvancedSettings = ({
             fieldId="pushedAuthorizationRequestRequired"
             labelIcon={
               <HelpItem
-                helpText="clients-help:pushedAuthorizationRequestRequired"
+                helpText={t("clients-help:pushedAuthorizationRequestRequired")}
                 fieldLabelId="clients:pushedAuthorizationRequestRequired"
               />
             }
@@ -230,7 +230,7 @@ export const AdvancedSettings = ({
             fieldId="acrToLoAMapping"
             labelIcon={
               <HelpItem
-                helpText="clients-help:acrToLoAMapping"
+                helpText={t("clients-help:acrToLoAMapping")}
                 fieldLabelId="clients:acrToLoAMapping"
               />
             }
@@ -244,7 +244,7 @@ export const AdvancedSettings = ({
             fieldId="defaultACRValues"
             labelIcon={
               <HelpItem
-                helpText="clients-help:defaultACRValues"
+                helpText={t("clients-help:defaultACRValues")}
                 fieldLabelId="clients:defaultACRValues"
               />
             }

@@ -2,7 +2,7 @@ import { FormGroup, Title } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -80,7 +80,7 @@ export const OpenIdConnectSettings = () => {
             fieldId="kc-import-config"
             labelIcon={
               <HelpItem
-                helpText="identity-providers-help:importConfig"
+                helpText={t("identity-providers-help:importConfig")}
                 fieldLabelId="identity-providers:importConfig"
               />
             }
@@ -89,7 +89,7 @@ export const OpenIdConnectSettings = () => {
           >
             <JsonFileUpload
               id="kc-import-config"
-              helpText="identity=providers-help:jsonFileUpload"
+              helpText={t("identity=providers-help:jsonFileUpload")}
               hideDefaultPreview
               unWrap
               validated={errors.discoveryError ? "error" : "default"}

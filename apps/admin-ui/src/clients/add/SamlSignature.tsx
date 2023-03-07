@@ -9,7 +9,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 import { Toggle } from "./SamlConfig";
@@ -79,7 +79,7 @@ export const SamlSignature = () => {
             fieldId="signatureAlgorithm"
             labelIcon={
               <HelpItem
-                helpText="clients-help:signatureAlgorithm"
+                helpText={t("clients-help:signatureAlgorithm")}
                 fieldLabelId="clients:signatureAlgorithm"
               />
             }
@@ -119,7 +119,7 @@ export const SamlSignature = () => {
             fieldId="signatureKeyName"
             labelIcon={
               <HelpItem
-                helpText="clients-help:signatureKeyName"
+                helpText={t("clients-help:signatureKeyName")}
                 fieldLabelId="clients:signatureKeyName"
               />
             }
@@ -159,7 +159,7 @@ export const SamlSignature = () => {
             fieldId="canonicalization"
             labelIcon={
               <HelpItem
-                helpText="clients-help:canonicalization"
+                helpText={t("clients-help:canonicalization")}
                 fieldLabelId="clients:canonicalization"
               />
             }

@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 export const CredentialsResetActionMultiSelect = () => {
@@ -34,7 +34,7 @@ export const CredentialsResetActionMultiSelect = () => {
       label={t("resetActions")}
       labelIcon={
         <HelpItem
-          helpText="clients-help:resetActions"
+          helpText={t("clients-help:resetActions")}
           fieldLabelId="resetActions"
         />
       }

@@ -14,7 +14,7 @@ import type { UserQuery } from "@keycloak/keycloak-admin-client/lib/resources/us
 import type { ComponentProps } from "../dynamic/components";
 
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { HelpItem } from "../help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import useToggle from "../../utils/useToggle";
 
 type UserSelectProps = ComponentProps & {

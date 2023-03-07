@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form-access/FormAccess";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
@@ -104,7 +104,7 @@ export const KeyProviderForm = ({
           label={t("providerId")}
           labelIcon={
             <HelpItem
-              helpText="client-scopes-help:mapperName"
+              helpText={t("client-scopes-help:mapperName")}
               fieldLabelId="providerId"
             />
           }
@@ -123,7 +123,7 @@ export const KeyProviderForm = ({
         label={t("common:name")}
         labelIcon={
           <HelpItem
-            helpText="client-scopes-help:mapperName"
+            helpText={t("client-scopes-help:mapperName")}
             fieldLabelId="name"
           />
         }

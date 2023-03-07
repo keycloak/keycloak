@@ -12,7 +12,7 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { FormGroupField } from "../component/FormGroupField";
@@ -67,7 +67,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="kc-saml-service-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:serviceProviderEntityId"
+            helpText={t("identity-providers-help:serviceProviderEntityId")}
             fieldLabelId="identity-providers:serviceProviderEntityId"
           />
         }
@@ -83,7 +83,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="kc-identity-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:identityProviderEntityId"
+            helpText={t("identity-providers-help:identityProviderEntityId")}
             fieldLabelId="identity-providers:identityProviderEntityId"
           />
         }

@@ -4,8 +4,7 @@ import { PropsWithChildren, useState } from "react";
 
 import environment from "../../environment";
 import i18n, { DEFAULT_LOCALE } from "../../i18n";
-import { createNamedContext } from "../../utils/createNamedContext";
-import useRequiredContext from "../../utils/useRequiredContext";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
 
 export class WhoAmI {

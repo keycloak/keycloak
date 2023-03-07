@@ -9,7 +9,7 @@ import {
 } from "@patternfly/react-core";
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm, sortProviders } from "../../util";
 import { FormFields } from "../ClientDetails";
 
@@ -27,7 +27,7 @@ export const SignedJWT = () => {
       fieldId="kc-signature-algorithm"
       labelIcon={
         <HelpItem
-          helpText="clients-help:signature-algorithm"
+          helpText={t("clients-help:signature-algorithm")}
           fieldLabelId="clients:signatureAlgorithm"
         />
       }

@@ -3,7 +3,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../../components/form-access/FormAccess";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 import "../../realm-settings-section.css";
 
@@ -70,7 +70,7 @@ export const AttributePermission = () => {
         label={t("whoCanEdit")}
         labelIcon={
           <HelpItem
-            helpText="realm-settings-help:whoCanEditHelp"
+            helpText={t("realm-settings-help:whoCanEditHelp")}
             fieldLabelId="realm-settings:whoCanEdit"
           />
         }
@@ -83,7 +83,7 @@ export const AttributePermission = () => {
         label={t("whoCanView")}
         labelIcon={
           <HelpItem
-            helpText="realm-settings-help:whoCanViewHelp"
+            helpText={t("realm-settings-help:whoCanViewHelp")}
             fieldLabelId="realm-settings:whoCanView"
           />
         }

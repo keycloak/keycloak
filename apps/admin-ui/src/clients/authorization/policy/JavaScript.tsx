@@ -3,7 +3,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup } from "@patternfly/react-core";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 export const JavaScript = () => {
   const { t } = useTranslation("clients");
@@ -14,7 +14,7 @@ export const JavaScript = () => {
       label={t("code")}
       labelIcon={
         <HelpItem
-          helpText="clients-help:policyCode"
+          helpText={t("clients-help:policyCode")}
           fieldLabelId="clients:code"
         />
       }

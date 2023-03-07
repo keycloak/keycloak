@@ -3,7 +3,7 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ApplicationUrls } from "./ApplicationUrls";
 
@@ -26,7 +26,7 @@ export const FineGrainSamlEndpointConfig = ({
         fieldId="assertionConsumerServicePostBindingURL"
         labelIcon={
           <HelpItem
-            helpText="clients-help:assertionConsumerServicePostBindingURL"
+            helpText={t("clients-help:assertionConsumerServicePostBindingURL")}
             fieldLabelId="clients:assertionConsumerServicePostBindingURL"
           />
         }
@@ -42,7 +42,9 @@ export const FineGrainSamlEndpointConfig = ({
         fieldId="assertionConsumerServiceRedirectBindingURL"
         labelIcon={
           <HelpItem
-            helpText="clients-help:assertionConsumerServiceRedirectBindingURL"
+            helpText={t(
+              "clients-help:assertionConsumerServiceRedirectBindingURL"
+            )}
             fieldLabelId="clients:assertionConsumerServiceRedirectBindingURL"
           />
         }
@@ -58,7 +60,7 @@ export const FineGrainSamlEndpointConfig = ({
         fieldId="logoutServicePostBindingURL"
         labelIcon={
           <HelpItem
-            helpText="clients-help:logoutServicePostBindingURL"
+            helpText={t("clients-help:logoutServicePostBindingURL")}
             fieldLabelId="clients:logoutServicePostBindingURL"
           />
         }
@@ -74,7 +76,7 @@ export const FineGrainSamlEndpointConfig = ({
         fieldId="logoutServiceRedirectBindingURL"
         labelIcon={
           <HelpItem
-            helpText="clients-help:logoutServiceRedirectBindingURL"
+            helpText={t("clients-help:logoutServiceRedirectBindingURL")}
             fieldLabelId="clients:logoutServiceRedirectBindingURL"
           />
         }
@@ -90,7 +92,7 @@ export const FineGrainSamlEndpointConfig = ({
         fieldId="logoutServiceArtifactBindingUrl"
         labelIcon={
           <HelpItem
-            helpText="clients-help:logoutServiceArtifactBindingUrl"
+            helpText={t("clients-help:logoutServiceArtifactBindingUrl")}
             fieldLabelId="clients:logoutServiceArtifactBindingUrl"
           />
         }
@@ -106,7 +108,7 @@ export const FineGrainSamlEndpointConfig = ({
         fieldId="artifactBindingUrl"
         labelIcon={
           <HelpItem
-            helpText="clients-help:artifactBindingUrl"
+            helpText={t("clients-help:artifactBindingUrl")}
             fieldLabelId="clients:artifactBindingUrl"
           />
         }
@@ -122,7 +124,7 @@ export const FineGrainSamlEndpointConfig = ({
         fieldId="artifactResolutionService"
         labelIcon={
           <HelpItem
-            helpText="clients-help:artifactResolutionService"
+            helpText={t("clients-help:artifactResolutionService")}
             fieldLabelId="clients:artifactResolutionService"
           />
         }

@@ -1,8 +1,7 @@
 import { Popover } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
-import { isValidElement, ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { useHelp } from "./HelpHeader";
+import { ReactNode } from "react";
+import { useHelp } from "../context/HelpContext";
 
 type HelpItemProps = {
   helpText: string | ReactNode;
@@ -17,19 +16,14 @@ export const HelpItem = ({
   noVerticalAlign = true,
   unWrap = false,
 }: HelpItemProps) => {
-  const { t } = useTranslation();
   const { enabled } = useHelp();
   return enabled ? (
-    <Popover
-      bodyContent={isValidElement(helpText) ? helpText : t(helpText as string)}
-    >
+    <Popover bodyContent={helpText}>
       <>
         {!unWrap && (
           <button
-            data-testid={`help-label-${t(fieldLabelId)
-              .toLowerCase()
-              .replace(/\s/g, "-")}`}
-            aria-label={t("helpLabel", { label: t(fieldLabelId) })}
+            data-testid={`help-label-${fieldLabelId}`}
+            aria-label={fieldLabelId}
             onClick={(e) => e.preventDefault()}
             className="pf-c-form__group-label-help"
           >

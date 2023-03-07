@@ -10,7 +10,7 @@ import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import useToggle from "../../utils/useToggle";
 
@@ -79,7 +79,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
         label={t("cachePolicy")}
         labelIcon={
           <HelpItem
-            helpText="user-federation-help:cachePolicyHelp"
+            helpText={t("user-federation-help:cachePolicyHelp")}
             fieldLabelId="user-federation:cachePolicy"
           />
         }
@@ -117,7 +117,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("evictionDay")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:evictionDayHelp"
+              helpText={t("user-federation-help:evictionDayHelp")}
               fieldLabelId="user-federation:evictionDay"
             />
           }
@@ -175,7 +175,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionHour")}
             labelIcon={
               <HelpItem
-                helpText="user-federation-help:evictionHourHelp"
+                helpText={t("user-federation-help:evictionHourHelp")}
                 fieldLabelId="user-federation:evictionHour"
               />
             }
@@ -207,7 +207,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionMinute")}
             labelIcon={
               <HelpItem
-                helpText="user-federation-help:evictionMinuteHelp"
+                helpText={t("user-federation-help:evictionMinuteHelp")}
                 fieldLabelId="user-federation:evictionMinute"
               />
             }
@@ -242,7 +242,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("maxLifespan")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:maxLifespanHelp"
+              helpText={t("user-federation-help:maxLifespanHelp")}
               fieldLabelId="user-federation:maxLifespan"
             />
           }

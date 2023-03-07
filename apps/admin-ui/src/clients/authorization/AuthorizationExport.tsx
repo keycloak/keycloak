@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
@@ -70,7 +70,7 @@ export const AuthorizationExport = () => {
           label={t("authDetails")}
           labelIcon={
             <HelpItem
-              helpText="clients-help:authDetails"
+              helpText={t("clients-help:authDetails")}
               fieldLabelId="clients:authDetails"
             />
           }

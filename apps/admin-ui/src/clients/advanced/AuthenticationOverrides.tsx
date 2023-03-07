@@ -12,7 +12,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 type AuthenticationOverridesProps = {
@@ -68,7 +68,7 @@ export const AuthenticationOverrides = ({
         fieldId="browserFlow"
         labelIcon={
           <HelpItem
-            helpText="clients-help:browserFlow"
+            helpText={t("clients-help:browserFlow")}
             fieldLabelId="clients:browserFlow"
           />
         }
@@ -100,7 +100,7 @@ export const AuthenticationOverrides = ({
           fieldId="directGrant"
           labelIcon={
             <HelpItem
-              helpText="clients-help:directGrant"
+              helpText={t("clients-help:directGrant")}
               fieldLabelId="clients:directGrant"
             />
           }

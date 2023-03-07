@@ -3,7 +3,7 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormattedLink } from "../../components/external-link/FormattedLink";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";
@@ -41,7 +41,7 @@ export const SamlGeneralSettings = ({
         label={t("alias")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:alias"
+            helpText={t("identity-providers-help:alias")}
             fieldLabelId="identity-providers:alias"
           />
         }
@@ -75,7 +75,7 @@ export const SamlGeneralSettings = ({
         fieldId="endpoints"
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:alias"
+            helpText={t("identity-providers-help:alias")}
             fieldLabelId="identity-providers:alias"
           />
         }

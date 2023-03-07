@@ -14,7 +14,7 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { StoreSettings } from "./StoreSettings";
 import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -96,7 +96,7 @@ export const ImportKeyDialog = ({
           label={t("archiveFormat")}
           labelIcon={
             <HelpItem
-              helpText="clients-help:archiveFormat"
+              helpText={t("clients-help:archiveFormat")}
               fieldLabelId="clients:archiveFormat"
             />
           }

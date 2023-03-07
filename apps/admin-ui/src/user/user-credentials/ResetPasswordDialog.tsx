@@ -15,7 +15,7 @@ import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../../components/confirm-dialog/ConfirmDialog";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import useToggle from "../../utils/useToggle";
@@ -192,7 +192,7 @@ export const ResetPasswordDialog = ({
             label={t("common:temporaryPassword")}
             labelIcon={
               <HelpItem
-                helpText="temporaryPasswordHelpText"
+                helpText={t("temporaryPasswordHelpText")}
                 fieldLabelId="temporaryPassword"
               />
             }

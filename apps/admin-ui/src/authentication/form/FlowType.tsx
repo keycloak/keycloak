@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 const TYPES = ["basic-flow", "client-flow"] as const;
 
@@ -23,7 +23,7 @@ export const FlowType = () => {
       label={t("flowType")}
       labelIcon={
         <HelpItem
-          helpText="authentication-help:topLevelFlowType"
+          helpText={t("authentication-help:topLevelFlowType")}
           fieldLabelId="authentication:flowType"
         />
       }

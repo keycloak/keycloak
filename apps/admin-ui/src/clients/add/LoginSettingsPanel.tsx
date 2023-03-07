@@ -10,7 +10,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm } from "../../util";
@@ -35,7 +35,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("loginTheme")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:loginTheme"
+            helpText={t("clients-help:loginTheme")}
             fieldLabelId="clients:loginTheme"
           />
         }
@@ -78,7 +78,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("consentRequired")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:consentRequired"
+            helpText={t("clients-help:consentRequired")}
             fieldLabelId="clients:consentRequired"
           />
         }
@@ -105,7 +105,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("displayOnClient")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:displayOnClient"
+            helpText={t("clients-help:displayOnClient")}
             fieldLabelId="clients:displayOnClient"
           />
         }
@@ -135,7 +135,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("consentScreenText")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:consentScreenText"
+            helpText={t("clients-help:consentScreenText")}
             fieldLabelId="clients:consentScreenText"
           />
         }

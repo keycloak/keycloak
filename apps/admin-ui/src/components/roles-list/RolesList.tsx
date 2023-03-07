@@ -11,7 +11,7 @@ import { toRealmSettings } from "../../realm-settings/routes/RealmSettings";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
-import { HelpItem } from "../help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
@@ -69,7 +69,7 @@ export const RolesList = ({
           {role.name}{" "}
         </Link>
         <HelpItem
-          helpText={`${messageBundle}:defaultRole`}
+          helpText={t(`${messageBundle}:defaultRole`)}
           fieldLabelId="defaultRole"
         />
       </>

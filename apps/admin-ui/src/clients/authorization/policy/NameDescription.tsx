@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { KeycloakTextArea } from "../../../components/keycloak-text-area/KeycloakTextArea";
 
@@ -29,7 +29,7 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         isRequired
         labelIcon={
           <HelpItem
-            helpText={`clients-help:${prefix}-name`}
+            helpText={t(`clients-help:${prefix}-name`)}
             fieldLabelId="name"
           />
         }
@@ -48,7 +48,7 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         fieldId="kc-description"
         labelIcon={
           <HelpItem
-            helpText={`clients-help:${prefix}-description`}
+            helpText={t(`clients-help:${prefix}-description`)}
             fieldLabelId="description"
           />
         }

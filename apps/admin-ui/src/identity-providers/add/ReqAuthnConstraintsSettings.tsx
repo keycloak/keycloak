@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 
 const comparisonValues = ["exact", "minimum", "maximum", "better"];
@@ -23,7 +23,7 @@ export const ReqAuthnConstraints = () => {
         label={t("comparison")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:comparison"
+            helpText={t("identity-providers-help:comparison")}
             fieldLabelId="identity-providers:comparison"
           />
         }
@@ -66,7 +66,7 @@ export const ReqAuthnConstraints = () => {
         fieldId="kc-authnContextClassRefs"
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:authnContextClassRefs"
+            helpText={t("identity-providers-help:authnContextClassRefs")}
             fieldLabelId="authnContextClassRefs"
           />
         }
@@ -83,7 +83,7 @@ export const ReqAuthnConstraints = () => {
         fieldId="kc-authnContextDeclRefs"
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:authnContextDeclRefs"
+            helpText={t("identity-providers-help:authnContextDeclRefs")}
             fieldLabelId="authnContextDeclRefs"
           />
         }

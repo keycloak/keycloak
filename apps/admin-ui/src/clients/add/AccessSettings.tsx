@@ -3,7 +3,7 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
 import { SaveReset } from "../advanced/SaveReset";
@@ -37,7 +37,7 @@ export const AccessSettings = ({
           fieldId="kc-admin-url"
           labelIcon={
             <HelpItem
-              helpText="clients-help:adminURL"
+              helpText={t("clients-help:adminURL")}
               fieldLabelId="clients:adminURL"
             />
           }

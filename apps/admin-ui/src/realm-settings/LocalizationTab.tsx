@@ -37,7 +37,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { FormPanel } from "../components/scroll-form/FormPanel";
@@ -365,7 +365,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
             fieldId="kc-internationalization"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:internationalization"
+                helpText={t("realm-settings-help:internationalization")}
                 fieldLabelId="realm-settings:internationalization"
               />
             }

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -67,7 +67,7 @@ export const LdapSettingsAdvanced = ({
           label={t("enableLdapv3Password")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:enableLdapv3PasswordHelp"
+              helpText={t("user-federation-help:enableLdapv3PasswordHelp")}
               fieldLabelId="user-federation:enableLdapv3Password"
             />
           }
@@ -97,7 +97,7 @@ export const LdapSettingsAdvanced = ({
           label={t("validatePasswordPolicy")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:validatePasswordPolicyHelp"
+              helpText={t("user-federation-help:validatePasswordPolicyHelp")}
               fieldLabelId="user-federation:validatePasswordPolicy"
             />
           }
@@ -127,7 +127,7 @@ export const LdapSettingsAdvanced = ({
           label={t("trustEmail")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:trustEmailHelp"
+              helpText={t("user-federation-help:trustEmailHelp")}
               fieldLabelId="user-federation:trustEmail"
             />
           }

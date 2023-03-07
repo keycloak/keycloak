@@ -3,8 +3,7 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { sortBy } from "lodash-es";
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 
-import { createNamedContext } from "../utils/createNamedContext";
-import useRequiredContext from "../utils/useRequiredContext";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 import { useAdminClient, useFetch } from "./auth/AdminClient";
 
 type RealmsContextProps = {

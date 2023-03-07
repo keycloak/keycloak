@@ -8,7 +8,7 @@ import { HashRouter as Router, Route, Routes } from "react-router-dom";
 import { AlertProvider } from "./components/alert/Alerts";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";
-import { Help } from "./components/help-enabler/HelpHeader";
+import { Help } from "ui-shared";
 import { KeycloakSpinner } from "./components/keycloak-spinner/KeycloakSpinner";
 import { AccessContextProvider, useAccess } from "./context/access/Access";
 import { AdminClientContext } from "./context/auth/AdminClient";

@@ -9,7 +9,7 @@ import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 
 export type EventsType = "admin" | "user";
@@ -53,7 +53,7 @@ export const EventConfigForm = ({
         fieldId={eventKey}
         labelIcon={
           <HelpItem
-            helpText={`realm-settings-help:save-${type}-events`}
+            helpText={t(`realm-settings-help:save-${type}-events`)}
             fieldLabelId="realm-settings:saveEvents"
           />
         }
@@ -90,7 +90,7 @@ export const EventConfigForm = ({
               fieldId="includeRepresentation"
               labelIcon={
                 <HelpItem
-                  helpText="realm-settings-help:includeRepresentation"
+                  helpText={t("realm-settings-help:includeRepresentation")}
                   fieldLabelId="realm-settings:includeRepresentation"
                 />
               }
@@ -118,7 +118,7 @@ export const EventConfigForm = ({
             fieldId="expiration"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:expiration"
+                helpText={t("realm-settings-help:expiration")}
                 fieldLabelId="realm-settings:expiration"
               />
             }
@@ -160,7 +160,7 @@ export const EventConfigForm = ({
         fieldId={`clear-${type}-events`}
         labelIcon={
           <HelpItem
-            helpText={`realm-settings-help:${type}-clearEvents`}
+            helpText={t(`realm-settings-help:${type}-clearEvents`)}
             fieldLabelId={`realm-settings:clear-${type}-events`}
           />
         }

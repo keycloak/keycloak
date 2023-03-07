@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -95,7 +95,9 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaBackchannelTokenDeliveryMode")}
           labelIcon={
             <HelpItem
-              helpText="authentication-help:cibaBackchannelTokenDeliveryMode"
+              helpText={t(
+                "authentication-help:cibaBackchannelTokenDeliveryMode"
+              )}
               fieldLabelId="authentication:cibaBackchannelTokenDeliveryMode"
             />
           }
@@ -136,7 +138,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaExpiresIn")}
           labelIcon={
             <HelpItem
-              helpText="authentication-help:cibaExpiresIn"
+              helpText={t("authentication-help:cibaExpiresIn")}
               fieldLabelId="authentication:cibaExpiresIn"
             />
           }
@@ -180,7 +182,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaInterval")}
           labelIcon={
             <HelpItem
-              helpText="authentication-help:cibaInterval"
+              helpText={t("authentication-help:cibaInterval")}
               fieldLabelId="authentication:cibaInterval"
             />
           }
@@ -222,7 +224,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaAuthRequestedUserHint")}
           labelIcon={
             <HelpItem
-              helpText="authentication-help:cibaAuthRequestedUserHint"
+              helpText={t("authentication-help:cibaAuthRequestedUserHint")}
               fieldLabelId="authentication:cibaAuthRequestedUserHint"
             />
           }

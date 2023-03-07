@@ -1,7 +1,7 @@
 import { FormGroup } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useParams } from "../../../utils/useParams";
 import type { PolicyDetailsParams } from "../../routes/PolicyDetails";
 import { DecisionStrategySelect } from "../DecisionStrategySelect";
@@ -18,7 +18,7 @@ export const Aggregate = () => {
         fieldId="policies"
         labelIcon={
           <HelpItem
-            helpText="clients-help:applyPolicy"
+            helpText={t("clients-help:applyPolicy")}
             fieldLabelId="clients:policies"
           />
         }

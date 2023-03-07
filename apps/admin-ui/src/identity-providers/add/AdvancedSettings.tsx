@@ -9,7 +9,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import type { FieldProps } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
@@ -39,7 +39,7 @@ const LoginFlow = ({
       label={t(label)}
       labelIcon={
         <HelpItem
-          helpText={`identity-providers-help:${label}`}
+          helpText={t(`identity-providers-help:${label}`)}
           fieldLabelId={`identity-providers:${label}`}
         />
       }
@@ -141,7 +141,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         label={t("syncMode")}
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:syncMode"
+            helpText={t("identity-providers-help:syncMode")}
             fieldLabelId="identity-providers:syncMode"
           />
         }

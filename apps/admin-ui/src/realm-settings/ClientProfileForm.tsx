@@ -30,7 +30,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
@@ -293,7 +293,7 @@ export default function ClientProfileForm() {
                   <Text className="kc-executors" component={TextVariants.h1}>
                     {t("executors")}
                     <HelpItem
-                      helpText="realm-settings:executorsHelpText"
+                      helpText={t("realm-settings:executorsHelpText")}
                       fieldLabelId="realm-settings:executors"
                     />
                   </Text>

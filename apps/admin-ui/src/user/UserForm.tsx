@@ -22,7 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../context/access/Access";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
@@ -55,7 +55,7 @@ const EmailVerified = () => {
       helperTextInvalid={t("common:required")}
       labelIcon={
         <HelpItem
-          helpText="users-help:emailVerified"
+          helpText={t("users-help:emailVerified")}
           fieldLabelId="users:emailVerified"
         />
       }
@@ -240,7 +240,7 @@ export const UserForm = ({
         helperTextInvalid={t("common:required")}
         labelIcon={
           <HelpItem
-            helpText="users-help:requiredUserActions"
+            helpText={t("users-help:requiredUserActions")}
             fieldLabelId="users:requiredUserActions"
           />
         }
@@ -288,7 +288,7 @@ export const UserForm = ({
           label={t("federationLink")}
           labelIcon={
             <HelpItem
-              helpText="users-help:federationLink"
+              helpText={t("users-help:federationLink")}
               fieldLabelId="users:federationLink"
             />
           }
@@ -366,7 +366,7 @@ export const UserForm = ({
           fieldId="temporaryLocked"
           labelIcon={
             <HelpItem
-              helpText="users-help:temporaryLocked"
+              helpText={t("users-help:temporaryLocked")}
               fieldLabelId="users:temporaryLocked"
             />
           }
@@ -392,7 +392,7 @@ export const UserForm = ({
           validated={errors.requiredActions ? "error" : "default"}
           helperTextInvalid={t("common:required")}
           labelIcon={
-            <HelpItem helpText="users-help:groups" fieldLabelId="groups" />
+            <HelpItem helpText={t("users-help:groups")} fieldLabelId="groups" />
           }
         >
           <Controller

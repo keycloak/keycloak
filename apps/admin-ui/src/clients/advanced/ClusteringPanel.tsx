@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
@@ -87,7 +87,7 @@ export const ClusteringPanel = ({
           fieldId="kc-node-reregistration-timeout"
           labelIcon={
             <HelpItem
-              helpText="clients-help:nodeReRegistrationTimeout"
+              helpText={t("clients-help:nodeReRegistrationTimeout")}
               fieldLabelId="clients:nodeReRegistrationTimeout"
             />
           }

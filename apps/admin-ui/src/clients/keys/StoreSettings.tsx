@@ -3,7 +3,7 @@ import { useFormContext } from "react-hook-form";
 import { FormGroup } from "@patternfly/react-core";
 
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
@@ -28,7 +28,7 @@ export const StoreSettings = ({
         isRequired
         labelIcon={
           <HelpItem
-            helpText="clients-help:keyAlias"
+            helpText={t("clients-help:keyAlias")}
             fieldLabelId="clients:keyAlias"
           />
         }
@@ -49,7 +49,7 @@ export const StoreSettings = ({
           isRequired
           labelIcon={
             <HelpItem
-              helpText="clients-help:keyPassword"
+              helpText={t("clients-help:keyPassword")}
               fieldLabelId="clients:keyPassword"
             />
           }
@@ -70,7 +70,7 @@ export const StoreSettings = ({
           fieldId="realmCertificateAlias"
           labelIcon={
             <HelpItem
-              helpText="clients-help:realmCertificateAlias"
+              helpText={t("clients-help:realmCertificateAlias")}
               fieldLabelId="clients:realmCertificateAlias"
             />
           }
@@ -88,7 +88,7 @@ export const StoreSettings = ({
         isRequired
         labelIcon={
           <HelpItem
-            helpText="clients-help:storePassword"
+            helpText={t("clients-help:storePassword")}
             fieldLabelId="clients:storePassword"
           />
         }

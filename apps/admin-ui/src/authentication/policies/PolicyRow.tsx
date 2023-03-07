@@ -12,7 +12,7 @@ import { MinusCircleIcon } from "@patternfly/react-icons";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./policy-row.css";
@@ -44,7 +44,7 @@ export const PolicyRow = ({
       }
       labelIcon={
         <HelpItem
-          helpText={`authentication-help:passwordPolicies.${id}`}
+          helpText={t(`authentication-help:passwordPolicies.${id}`)}
           fieldLabelId={`authentication:${id}`}
         />
       }

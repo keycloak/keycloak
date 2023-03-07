@@ -9,7 +9,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import useToggle from "../../utils/useToggle";
-import { HelpItem } from "../help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { AddRoleMappingModal } from "../role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../role-mapping/RoleMapping";
 import type { ComponentProps } from "./components";

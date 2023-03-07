@@ -11,7 +11,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
 import { convertToFormValues } from "../util";
@@ -59,7 +59,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionIdle"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:ssoSessionIdle"
+                helpText={t("realm-settings-help:ssoSessionIdle")}
                 fieldLabelId="realm-settings:SSOSessionIdle"
               />
             }
@@ -85,7 +85,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionMax"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:ssoSessionMax"
+                helpText={t("realm-settings-help:ssoSessionMax")}
                 fieldLabelId="realm-settings:SSOSessionMax"
               />
             }
@@ -110,7 +110,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionIdleRememberMe"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:ssoSessionIdleRememberMe"
+                helpText={t("realm-settings-help:ssoSessionIdleRememberMe")}
                 fieldLabelId="realm-settings:SSOSessionIdleRememberMe"
               />
             }
@@ -135,7 +135,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionMaxRememberMe"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:ssoSessionMaxRememberMe"
+                helpText={t("realm-settings-help:ssoSessionMaxRememberMe")}
                 fieldLabelId="realm-settings:SSOSessionMaxRememberMe"
               />
             }
@@ -171,7 +171,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="clientSessionIdle"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:clientSessionIdle"
+                helpText={t("realm-settings-help:clientSessionIdle")}
                 fieldLabelId="realm-settings:clientSessionIdle"
               />
             }
@@ -196,7 +196,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="clientSessionMax"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:clientSessionMax"
+                helpText={t("realm-settings-help:clientSessionMax")}
                 fieldLabelId="realm-settings:clientSessionMax"
               />
             }
@@ -232,7 +232,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="offlineSessionIdle"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:offlineSessionIdle"
+                helpText={t("realm-settings-help:offlineSessionIdle")}
                 fieldLabelId="realm-settings:offlineSessionIdle"
               />
             }
@@ -259,7 +259,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="kc-offlineSessionMaxLimited"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:offlineSessionMaxLimited"
+                helpText={t("realm-settings-help:offlineSessionMaxLimited")}
                 fieldLabelId="realm-settings:offlineSessionMaxLimited"
               />
             }
@@ -288,7 +288,7 @@ export const RealmSettingsSessionsTab = ({
               id="offline-session-max-label"
               labelIcon={
                 <HelpItem
-                  helpText="realm-settings-help:offlineSessionMax"
+                  helpText={t("realm-settings-help:offlineSessionMax")}
                   fieldLabelId="realm-settings:offlineSessionMax"
                 />
               }
@@ -326,7 +326,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="offlineSessionIdle"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:loginTimeout"
+                helpText={t("realm-settings-help:loginTimeout")}
                 fieldLabelId="realm-settings:loginTimeout"
               />
             }
@@ -352,7 +352,7 @@ export const RealmSettingsSessionsTab = ({
             id="login-action-timeout-label"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:loginActionTimeout"
+                helpText={t("realm-settings-help:loginActionTimeout")}
                 fieldLabelId="realm-settings:loginActionTimeout"
               />
             }

@@ -18,7 +18,7 @@ import { Link } from "react-router-dom";
 
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../components/password-input/PasswordInput";
 import { FormPanel } from "../components/scroll-form/FormPanel";
@@ -146,7 +146,7 @@ export const RealmSettingsEmailTab = ({
             fieldId="kc-from-display-name"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:fromDisplayName"
+                helpText={t("realm-settings-help:fromDisplayName")}
                 fieldLabelId="realm-settings:authentication"
               />
             }
@@ -179,7 +179,7 @@ export const RealmSettingsEmailTab = ({
             fieldId="kc-reply-to-display-name"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:replyToDisplayName"
+                helpText={t("realm-settings-help:replyToDisplayName")}
                 fieldLabelId="realm-settings:replyToDisplayName"
               />
             }
@@ -195,7 +195,7 @@ export const RealmSettingsEmailTab = ({
             fieldId="kc-envelope-from"
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:envelopeFrom"
+                helpText={t("realm-settings-help:envelopeFrom")}
                 fieldLabelId="realm-settings:envelopeFrom"
               />
             }
@@ -318,7 +318,7 @@ export const RealmSettingsEmailTab = ({
                 helperTextInvalid={t("common:required")}
                 labelIcon={
                   <HelpItem
-                    helpText="realm-settings-help:password"
+                    helpText={t("realm-settings-help:password")}
                     fieldLabelId="realm-settings:password"
                   />
                 }

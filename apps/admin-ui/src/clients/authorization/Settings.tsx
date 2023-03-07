@@ -15,7 +15,7 @@ import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/l
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { SaveReset } from "../advanced/SaveReset";
 import { ImportDialog } from "./ImportDialog";
 import useToggle from "../../utils/useToggle";
@@ -97,7 +97,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           fieldId="import"
           labelIcon={
             <HelpItem
-              helpText="clients-help:import"
+              helpText={t("clients-help:import")}
               fieldLabelId="clients:import"
             />
           }
@@ -111,7 +111,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           label={t("policyEnforcementMode")}
           labelIcon={
             <HelpItem
-              helpText="clients-help:policyEnforcementMode"
+              helpText={t("clients-help:policyEnforcementMode")}
               fieldLabelId="clients:policyEnforcementMode"
             />
           }
@@ -150,7 +150,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           fieldId="allowRemoteResourceManagement"
           labelIcon={
             <HelpItem
-              helpText="clients-help:allowRemoteResourceManagement"
+              helpText={t("clients-help:allowRemoteResourceManagement")}
               fieldLabelId="clients:allowRemoteResourceManagement"
             />
           }

@@ -21,7 +21,7 @@ import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keysto
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { convertAttributeNameToForm } from "../../util";
@@ -144,7 +144,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
               fieldId="useJwksUrl"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:useJwksUrl"
+                  helpText={t("clients-help:useJwksUrl")}
                   fieldLabelId="clients:useJwksUrl"
                 />
               }
@@ -177,7 +177,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 fieldId="jwksUrl"
                 labelIcon={
                   <HelpItem
-                    helpText="clients-help:jwksUrl"
+                    helpText={t("clients-help:jwksUrl")}
                     fieldLabelId="clients:jwksUrl"
                   />
                 }

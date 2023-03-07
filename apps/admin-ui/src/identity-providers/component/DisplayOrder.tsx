@@ -2,7 +2,7 @@ import { FormGroup, TextInput } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 export const DisplayOrder = () => {
   const { t } = useTranslation("identity-providers");
@@ -14,7 +14,7 @@ export const DisplayOrder = () => {
       label={t("displayOrder")}
       labelIcon={
         <HelpItem
-          helpText="identity-providers-help:displayOrder"
+          helpText={t("identity-providers-help:displayOrder")}
           fieldLabelId="identity-providers:displayOrder"
         />
       }

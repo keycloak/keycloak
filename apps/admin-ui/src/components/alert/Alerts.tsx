@@ -4,8 +4,7 @@ import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { generateId } from "../../util";
 
-import { createNamedContext } from "../../utils/createNamedContext";
-import useRequiredContext from "../../utils/useRequiredContext";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 import useSetTimeout from "../../utils/useSetTimeout";
 import { AlertPanel } from "./AlertPanel";
 

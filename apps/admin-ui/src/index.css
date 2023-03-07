@@ -13,17 +13,6 @@ input[type="checkbox"] {
   vertical-align: baseline;
 }
 
-.pf-c-select__toggle:before {
-  border-top: var(--pf-c-select__toggle--before--BorderTopWidth) solid
-    var(--pf-c-select__toggle--before--BorderTopColor);
-  border-right: var(--pf-c-select__toggle--before--BorderRightWidth) solid
-    var(--pf-c-select__toggle--before--BorderRightColor);
-  border-bottom: var(--pf-c-select__toggle--before--BorderBottomWidth) solid
-    var(--pf-c-select__toggle--before--BorderBottomColor);
-  border-left: var(--pf-c-select__toggle--before--BorderLeftWidth) solid
-    var(--pf-c-select__toggle--before--BorderLeftColor);
-}
-
 .keycloak__form_actions {
   position: fixed;
   bottom: 0px;
@@ -34,27 +23,6 @@ input[type="checkbox"] {
   width: 100%;
   border-top: 1px solid var(--pf-global--BorderColor--100);
   margin-left: calc(-1 * var(--pf-global--spacer--lg));
-}
-
-.keycloak-empty-state-card:hover {
-  cursor: pointer;
-}
-
-td.pf-c-table__check > input[type="checkbox"] {
-  vertical-align: text-bottom;
-}
-
-.pf-c-table.tbody.pf-c-table__check > input {
-  margin-top: var(--pf-c-table__check--input--MarginTop);
-  vertical-align: baseline;
-}
-
-.pf-c-pagination.pf-m-bottom.pf-m-compact {
-  padding: 0px;
-}
-
-.kc-time-select-dropdown {
-  min-width: 170px;
 }
 
 .keycloak__section_intro__help {

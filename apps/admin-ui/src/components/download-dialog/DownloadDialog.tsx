@@ -17,8 +17,7 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
-import { useHelp } from "../help-enabler/HelpHeader";
-import { HelpItem } from "../help-enabler/HelpItem";
+import { useHelp, HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 
 type DownloadDialogProps = {

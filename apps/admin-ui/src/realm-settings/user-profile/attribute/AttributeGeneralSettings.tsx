@@ -15,7 +15,7 @@ import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../../components/form-access/FormAccess";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
@@ -75,7 +75,7 @@ export const AttributeGeneralSettings = () => {
         label={t("attributeName")}
         labelIcon={
           <HelpItem
-            helpText="realm-settings-help:attributeNameHelp"
+            helpText={t("realm-settings-help:attributeNameHelp")}
             fieldLabelId="realm-settings:attributeName"
           />
         }
@@ -98,7 +98,7 @@ export const AttributeGeneralSettings = () => {
         label={t("attributeDisplayName")}
         labelIcon={
           <HelpItem
-            helpText="realm-settings-help:attributeDisplayNameHelp"
+            helpText={t("realm-settings-help:attributeDisplayNameHelp")}
             fieldLabelId="realm-settings:attributeDisplayName"
           />
         }
@@ -115,7 +115,7 @@ export const AttributeGeneralSettings = () => {
         label={t("attributeGroup")}
         labelIcon={
           <HelpItem
-            helpText="realm-setting-help:attributeGroupHelp"
+            helpText={t("realm-setting-help:attributeGroupHelp")}
             fieldLabelId="realm-setting:attributeGroup"
           />
         }
@@ -250,7 +250,7 @@ export const AttributeGeneralSettings = () => {
             label={t("required")}
             labelIcon={
               <HelpItem
-                helpText="realm-settings-help:requiredHelp"
+                helpText={t("realm-settings-help:requiredHelp")}
                 fieldLabelId="realm-settings:required"
               />
             }

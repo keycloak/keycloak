@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
@@ -124,7 +124,7 @@ export default function AttributesGroupForm() {
             validated={form.formState.errors.name ? "error" : "default"}
             labelIcon={
               <HelpItem
-                helpText="realm-settings:nameHint"
+                helpText={t("realm-settings:nameHint")}
                 fieldLabelId="realm-settings:nameField"
               />
             }
@@ -143,7 +143,7 @@ export default function AttributesGroupForm() {
             fieldId="kc-display-header"
             labelIcon={
               <HelpItem
-                helpText="realm-settings:displayHeaderHint"
+                helpText={t("realm-settings:displayHeaderHint")}
                 fieldLabelId="realm-settings:displayHeaderField"
               />
             }
@@ -158,7 +158,7 @@ export default function AttributesGroupForm() {
             fieldId="kc-display-description"
             labelIcon={
               <HelpItem
-                helpText="realm-settings:displayDescriptionHint"
+                helpText={t("realm-settings:displayDescriptionHint")}
                 fieldLabelId="realm-settings:displayDescriptionField"
               />
             }

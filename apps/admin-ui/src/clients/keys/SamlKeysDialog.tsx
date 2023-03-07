@@ -23,7 +23,7 @@ import {
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import type { KeyTypes } from "./SamlKeys";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeyForm } from "./GenerateKeyDialog";
@@ -187,7 +187,7 @@ export const SamlKeysDialog = ({
               fieldId="certificate"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:certificate"
+                  helpText={t("clients-help:certificate")}
                   fieldLabelId="clients:certificate"
                 />
               }

@@ -12,7 +12,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import type { ComponentProps } from "../dynamic/components";
-import { HelpItem } from "../help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 
 type ClientSelectProps = ComponentProps & {
   namespace: string;

@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import {
   TimeSelector,
   Unit,
@@ -52,7 +52,7 @@ export const TokenLifespan = ({
       fieldId={id}
       labelIcon={
         <HelpItem
-          helpText={`clients-help:${id}`}
+          helpText={t(`clients-help:${id}`)}
           fieldLabelId={`clients:${id}`}
         />
       }

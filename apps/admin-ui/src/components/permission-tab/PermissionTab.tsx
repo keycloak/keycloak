@@ -25,7 +25,7 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toPermissionDetails } from "../../clients/routes/PermissionDetails";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 
@@ -138,7 +138,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
               fieldId="permissionsEnabled"
               labelIcon={
                 <HelpItem
-                  helpText="clients-help:permissionsEnabled"
+                  helpText={t("clients-help:permissionsEnabled")}
                   fieldLabelId="clients:permissionsEnabled"
                 />
               }

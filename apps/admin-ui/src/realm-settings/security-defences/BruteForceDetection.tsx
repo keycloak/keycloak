@@ -11,7 +11,7 @@ import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { convertToFormValues } from "../../util";
 import { Time } from "./Time";
 
@@ -79,7 +79,7 @@ export const BruteForceDetection = ({
               label={t("failureFactor")}
               labelIcon={
                 <HelpItem
-                  helpText="realm-settings-help:failureFactor"
+                  helpText={t("realm-settings-help:failureFactor")}
                   fieldLabelId="realm-settings:failureFactor"
                 />
               }
@@ -140,7 +140,9 @@ export const BruteForceDetection = ({
               label={t("quickLoginCheckMilliSeconds")}
               labelIcon={
                 <HelpItem
-                  helpText="realm-settings-help:quickLoginCheckMilliSeconds"
+                  helpText={t(
+                    "realm-settings-help:quickLoginCheckMilliSeconds"
+                  )}
                   fieldLabelId="realm-settings:quickLoginCheckMilliSeconds"
                 />
               }

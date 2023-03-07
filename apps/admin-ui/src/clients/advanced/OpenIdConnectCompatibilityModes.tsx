@@ -3,7 +3,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
@@ -32,7 +32,9 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText="clients-help:excludeSessionStateFromAuthenticationResponse"
+            helpText={t(
+              "clients-help:excludeSessionStateFromAuthenticationResponse"
+            )}
             fieldLabelId="clients:excludeSessionStateFromAuthenticationResponse"
           />
         }
@@ -61,7 +63,7 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText="clients-help:useRefreshTokens"
+            helpText={t("clients-help:useRefreshTokens")}
             fieldLabelId="clients:useRefreshTokens"
           />
         }
@@ -90,7 +92,9 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText="clients-help:useRefreshTokenForClientCredentialsGrant"
+            helpText={t(
+              "clients-help:useRefreshTokenForClientCredentialsGrant"
+            )}
             fieldLabelId="clients:useRefreshTokenForClientCredentialsGrant"
           />
         }
@@ -119,7 +123,7 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText="clients-help:useLowerCaseBearerType"
+            helpText={t("clients-help:useLowerCaseBearerType")}
             fieldLabelId="clients:useLowerCaseBearerType"
           />
         }

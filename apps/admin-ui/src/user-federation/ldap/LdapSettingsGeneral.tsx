@@ -10,7 +10,7 @@ import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
@@ -108,7 +108,7 @@ export const LdapSettingsGeneral = ({
           label={t("uiDisplayName")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:uiDisplayNameHelp"
+              helpText={t("user-federation-help:uiDisplayNameHelp")}
               fieldLabelId="user-federation:uiDisplayName"
             />
           }
@@ -154,7 +154,7 @@ export const LdapSettingsGeneral = ({
           label={t("vendor")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:vendorHelp"
+              helpText={t("user-federation-help:vendorHelp")}
               fieldLabelId="user-federation:vendor"
             />
           }

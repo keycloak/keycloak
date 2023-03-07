@@ -16,7 +16,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { GroupPath } from "../components/group/GroupPath";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { useHelp } from "../components/help-enabler/HelpHeader";
+import { useHelp } from "ui-shared";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";

@@ -26,7 +26,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { useFetch } from "../../context/auth/AdminClient";
-import { useStoredState } from "../../utils/useStoredState";
+import { useStoredState } from "ui-shared";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";

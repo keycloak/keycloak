@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -141,7 +141,7 @@ export const ExecutionConfigModal = ({
               isRequired
               labelIcon={
                 <HelpItem
-                  helpText="authentication-help:alias"
+                  helpText={t("authentication-help:alias")}
                   fieldLabelId="authentication:alias"
                 />
               }

@@ -13,7 +13,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import useToggle from "../../utils/useToggle";
@@ -97,7 +97,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               }
               labelIcon={
                 <HelpItem
-                  helpText="authentication-help:name"
+                  helpText={t("authentication-help:name")}
                   fieldLabelId="name"
                 />
               }
@@ -120,7 +120,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               fieldId="kc-description"
               labelIcon={
                 <HelpItem
-                  helpText="authentication-help:description"
+                  helpText={t("authentication-help:description")}
                   fieldLabelId="description"
                 />
               }

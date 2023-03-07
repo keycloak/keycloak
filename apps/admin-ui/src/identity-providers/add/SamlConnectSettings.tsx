@@ -3,7 +3,7 @@ import { useFormContext } from "react-hook-form";
 
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { useAdminClient } from "../../context/auth/AdminClient";
 
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
@@ -87,7 +87,7 @@ export const SamlConnectSettings = () => {
         fieldId="kc-service-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:serviceProviderEntityId"
+            helpText={t("identity-providers-help:serviceProviderEntityId")}
             fieldLabelId="identity-providers:serviceProviderEntityId"
           />
         }
@@ -112,7 +112,7 @@ export const SamlConnectSettings = () => {
             fieldId="kc-import-config"
             labelIcon={
               <HelpItem
-                helpText="identity-providers-help:importConfig"
+                helpText={t("identity-providers-help:importConfig")}
                 fieldLabelId="identity-providers:importConfig"
               />
             }

@@ -26,7 +26,7 @@ import { toUserFederation } from "../user-federation/routes/UserFederation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { useHelp } from "../components/help-enabler/HelpHeader";
+import { useHelp } from "ui-shared";
 
 export const DefaultsGroupsTab = () => {
   const { t } = useTranslation("realm-settings");

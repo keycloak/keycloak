@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { beerify, convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
@@ -19,7 +19,7 @@ export const X509 = () => {
         label={t("allowRegexComparison")}
         labelIcon={
           <HelpItem
-            helpText="clients-help:allowRegexComparison"
+            helpText={t("clients-help:allowRegexComparison")}
             fieldLabelId="clients:allowRegexComparison"
           />
         }
@@ -49,7 +49,7 @@ export const X509 = () => {
         fieldId="kc-subject"
         labelIcon={
           <HelpItem
-            helpText="clients-help:subject"
+            helpText={t("clients-help:subject")}
             fieldLabelId="clients:subject"
           />
         }
