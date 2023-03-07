@@ -25,8 +25,10 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.messages.Messages;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
 
@@ -46,6 +48,12 @@ public class DenyAccessAuthenticator implements Authenticator {
                 .orElse(Messages.ACCESS_DENIED);
 
         context.getEvent().error(Errors.ACCESS_DENIED);
+        if(context.getFlowPath()==null){
+            OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(Errors.GENERIC_AUTHENTICATION_ERROR, errorMessage);
+            Response challenge = Response.status(Response.Status.UNAUTHORIZED.getStatusCode()).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build();
+            context.failure(AuthenticationFlowError.ACCESS_DENIED, challenge);
+            return;
+        }
         Response challenge = context.form()
                 .setError(errorMessage)
                 .createErrorPage(Response.Status.UNAUTHORIZED);
