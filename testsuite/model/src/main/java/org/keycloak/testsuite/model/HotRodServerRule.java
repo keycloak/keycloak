@@ -15,7 +15,6 @@ import org.infinispan.server.hotrod.configuration.HotRodServerConfigurationBuild
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.models.map.storage.hotRod.common.HotRodUtils;
 
 import java.io.IOException;
 
@@ -99,10 +98,10 @@ public class HotRodServerRule extends ExternalResource {
 
         sessionConfigBuilder1.sites().addBackup()
                 .site("site-2").backupFailurePolicy(BackupFailurePolicy.IGNORE).strategy(BackupConfiguration.BackupStrategy.SYNC)
-                .replicationTimeout(15000).enabled(true);
+                .replicationTimeout(15000);
         sessionConfigBuilder2.sites().addBackup()
                 .site("site-1").backupFailurePolicy(BackupFailurePolicy.IGNORE).strategy(BackupConfiguration.BackupStrategy.SYNC)
-                .replicationTimeout(15000).enabled(true);
+                .replicationTimeout(15000);
 
         Configuration sessionCacheConfiguration1 = sessionConfigBuilder1.build();
         Configuration sessionCacheConfiguration2 = sessionConfigBuilder2.build();
