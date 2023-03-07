@@ -14,11 +14,12 @@
     <artifactId>keycloak-authz-parent</artifactId>
     <packaging>pom</packaging>
 
-    <name>KeyCloak Authz: Parent</name>
+    <name>Keycloak Authz: Parent</name>
     <description>KeyCloak AuthZ: Parent</description>
 
     <modules>
         <module>policy</module>
         <module>client</module>
+        <module>policy-enforcer</module>
     </modules>
 </project>
