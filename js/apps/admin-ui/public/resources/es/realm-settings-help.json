@@ -1,0 +1,18 @@
+{
+  "requireSsl": "¿Es HTTP obligatorio? ''ninguna'' significa que HTTPS no es obligatorio para ninguna direcicón IP de cliente, ''peticiones externas'' indica que localhost y las direcciones IP privadas pueden acceder sin HTTPS, ''todas las peticiones'' significa que HTTPS es obligatorio para todas las direcciones IP.",
+  "accountTheme": "Selecciona el tema para las páginas de gestión de la cuenta de usuario.",
+  "adminUITheme": "Selecciona el tema para la consola de administración.",
+  "emailTheme": "Selecciona el tema para los emails que son enviados por el servidor.",
+  "failureFactor": "Indica cuantos fallos se permiten antes de que se dispare una espera.",
+  "waitIncrementSeconds": "Cuando se ha alcanzado el umbral de fallo, ¿cuanto tiempo debe estar un usuario bloqueado?",
+  "maxFailureWaitSeconds": "Tiempo máximo que un usuario quedará bloqueado.",
+  "maxDeltaTimeSeconds": "¿Cuando se debe reiniciar el contador de errores?",
+  "quickLoginCheckMilliSeconds": "Si ocurren errores de forma concurrente y muy rápida, bloquear al usuario.",
+  "minimumQuickLoginWaitSeconds": "Cuanto tiempo se debe esperar tras un fallo en un intento rápido de identificación",
+  "ssoSessionIdle": "Tiempo máximo que una sesión puede estar inactiva antes de que expire. Los tokens y sesiones de navegador son invalidadas cuando la sesión expira.",
+  "ssoSessionMax": "Tiempo máximo antes de que una sesión expire. Los tokens y sesiones de navegador son invalidados cuando una sesión expira.",
+  "offlineSessionIdle": "Tiempo máximo inactivo de una sesión sin conexión antes de que expire. Necesitas usar un token sin conexión para refrescar al menos una vez dentro de este periodo, en otro caso la sesión sin conexión expirará.",
+  "revokeRefreshToken": "Si está activado los tokens de actualización solo pueden usarse una vez. En otro caso los tokens de actualización no se revocan cuando se utilizan y pueden ser usado múltiples veces.",
+  "clientLoginTimeout": "Tiempo máximo que un cliente tiene para finalizar el protocolo de obtención del token de acceso. Debería ser normalmente del orden de 1 minuto.",
+  "editUsername": "Si está habilitado, el nombre de usuario es editable, en otro caso es de solo lectura."
+}

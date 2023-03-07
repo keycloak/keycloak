@@ -1,0 +1,53 @@
+{
+  "userId": "1b635073-7ac8-49db-8eb9-f9fa9cd15bf5",
+  "realm": "master",
+  "displayName": "Stan Silvert",
+  "locale": "en",
+  "createRealm": false,
+  "realm_access": {
+    "test": [
+      "query-clients",
+      "view-clients"
+    ],
+    "aaa": [
+      "view-identity-providers",
+      "view-realm",
+      "manage-identity-providers",
+      "impersonation",
+      "create-client",
+      "manage-users",
+      "query-realms",
+      "view-authorization",
+      "query-clients",
+      "query-users",
+      "manage-events",
+      "manage-realm",
+      "view-events",
+      "view-users",
+      "view-clients",
+      "manage-authorization",
+      "manage-clients",
+      "query-groups"
+    ],
+    "master": [
+      "view-realm",
+      "view-identity-providers",
+      "manage-identity-providers",
+      "impersonation",
+      "create-client",
+      "manage-users",
+      "query-realms",
+      "view-authorization",
+      "query-clients",
+      "query-users",
+      "manage-events",
+      "manage-realm",
+      "view-events",
+      "view-users",
+      "view-clients",
+      "manage-authorization",
+      "manage-clients",
+      "query-groups"
+    ]
+  }
+}

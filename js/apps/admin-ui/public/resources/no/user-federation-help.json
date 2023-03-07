@@ -1,0 +1,12 @@
+{
+  "vendorHelp": "LDAP leverandør (provider)",
+  "consoleDisplayConnectionUrlHelp": "Tilkoblings URL din til LDAP-server",
+  "bindCredentialsHelp": "Passord for LDAP administrator",
+  "editModeLdapHelp": "READ_ONLY er et skrivebeskyttet LDAP-lager. WRITABLE betyr at data vil bli synkronisert tilbake til LDAP på forespørsel. UNSYNCED betyr at brukerdata vil bli importert, men vil ikke bli synkronisert tilbake til LDAP.",
+  "fullSyncPeriodHelp": "Periode for fullstendig synkronisering i sekunder",
+  "changedUsersSyncHelp": "Tidsperiode for synkronisering av endrede eller nylig opprettede LDAP-brukere i sekunder.",
+  "trustEmailHelp": "Hvis aktivert vil ikke e-post levert av denne leverandøren bli verifisert selv om verifisering er aktivert for sikkerhetsdomenet.",
+  "debugHelp": "Aktiver/deaktiver logging av feilsøking til standard output for Krb5LoginModule.",
+  "allowPasswordAuthenticationHelp": "Aktiver/deaktivert muligheten for autentisering med brukernavn/passord mot databasen til Kerberos",
+  "updateFirstLoginHelp": "Oppdater profil ved første innlogging"
+}

@@ -1,0 +1,12 @@
+{
+  "vendorHelp": "LDAP gamintojas (teikėjas)",
+  "consoleDisplayConnectionUrlHelp": "Jungties į LDAP serverį URL",
+  "bindCredentialsHelp": "LDAP administratoriaus slaptažodis",
+  "editModeLdapHelp": "READ_ONLY reiškia, kad LDAP saugykla bus naudojama vien tik skaitymo rėžimu. WRITABLE reiškia, kad duomenys sinchronizuojami atgal į LDAP pagal poreikį. UNSYNCED reiškia, kad naudotojų duomenys bus importuoti, tačiau niekuomet nesinchronizuojami atgal į LDAP.",
+  "fullSyncPeriodHelp": "Laikas sekundėmis, kas kurį atliekamas pilnas naudotojų sinchronizavimas į Keycloak sistemą",
+  "changedUsersSyncHelp": "Intervalas sekundėmis, kas kurį atliekamas periodinis naujai registruotų arba su pakeistais duomenimis LDAP naudotojų sinchronizavimas į Keycloak",
+  "trustEmailHelp": "Jei įgalintas, tuomet šio tapatybės teikėjo pateiktas el. pašto adresas laikomas patikimu ir, nepaisant bendrųjų srities nustatymų, nėra papildomai tikrinamas.",
+  "debugHelp": "Ar įgalinti Krb5LoginModule veikimo pranešimų rašymą į standarinę išvestį derinimo rėžimu?",
+  "allowPasswordAuthenticationHelp": "Ar suteikti galimybę naudotojui prisijungti prie Kerberos naudojant naudotojo vardą ir slaptažodį?",
+  "updateFirstLoginHelp": "Pirmojo prisijungimo metu atnaujinti naudotojo profilio duomenis"
+}
