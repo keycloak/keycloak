@@ -368,6 +368,7 @@
   "user": "User",
   "admin": "Admin",
   "addValidator": "Add validator",
+  "validatorType": "Validator type",
   "addValidatorRole": "Add {{validatorName}} validator",
   "validatorDialogColNames": {
     "colName": "Role name",

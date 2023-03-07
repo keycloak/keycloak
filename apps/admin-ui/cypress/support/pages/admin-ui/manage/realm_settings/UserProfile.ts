@@ -1,3 +1,5 @@
+import Select from "../../../../forms/Select";
+
 export default class UserProfile {
   private userProfileTab = "rs-user-profile-tab";
   private attributesTab = "attributesTab";
@@ -17,7 +19,7 @@ export default class UserProfile {
   private newAttributeEmptyValidators = ".kc-emptyValidators";
   private newAttributeAnnotationKey = 'input[name="annotations[0].key"]';
   private newAttributeAnnotationValue = 'input[name="annotations[0].value"]';
-  private validatorRolesList = 'tbody [data-label="Role name"]';
+  private validatorRolesList = "#validator";
   private validatorsList = 'tbody [data-label="name"]';
   private saveNewAttributeBtn = "attribute-create";
   private addValidatorBtn = "addValidator";
@@ -110,9 +112,9 @@ export default class UserProfile {
   }
 
   addValidator() {
-    cy.get(this.validatorRolesList).contains("email").click();
+    cy.findByTestId(this.addValidatorBtn).click();
+    Select.selectItem(cy.get(this.validatorRolesList), "email");
     cy.findByTestId(this.saveValidatorBtn).click();
-    cy.get(this.validatorDialogCloseBtn).click();
     return this;
   }
 
@@ -124,7 +126,7 @@ export default class UserProfile {
 
   cancelAddingValidator() {
     cy.findByTestId(this.addValidatorBtn).click();
-    cy.get(this.validatorRolesList).contains("email").click();
+    Select.selectItem(cy.get(this.validatorRolesList), "email");
     cy.findByTestId(this.cancelAddingValidatorBtn).click();
     return this;
   }
