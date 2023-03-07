@@ -45,6 +45,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -207,6 +208,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
         }
 
         protected V parse(Path fileName) {
+            getLastModifiedTime(fileName);
             final V parsedObject = YamlParser.parse(fileName, new MapEntityContext<>(entityClass));
             if (parsedObject == null) {
                 LOG.debugf("Could not parse %s%s", fileName, StackUtil.getShortStackTrace());
@@ -368,7 +370,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
             if (sp == null) {
                 throw new IllegalArgumentException("Invalid path: " + escapedId);
             }
-
+            checkIsSafeToModify(sp);
             // TODO: improve locking
             synchronized (FileMapStorageProviderFactory.class) {
                 writeYamlContents(sp, value);
@@ -430,6 +432,22 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> imple
 
         protected abstract String getTxId();
 
+        /**
+         * Hook to obtain the last modified time of the file identified by the supplied {@link Path}.
+         *
+         * @param path the {@link Path} to the file whose last modified time it to be obtained.
+         * @return the {@link FileTime} corresponding to the file's last modified time.
+         */
+        protected abstract FileTime getLastModifiedTime(final Path path);
+
+        /**
+         * Hook to validate that it is safe to modify the file identified by the supplied {@link Path}. The primary
+         * goal is to identify if other transactions have modified the file after it was read by the current transaction,
+         * preventing updates to a stale entity.
+         *
+         * @param path the {@link Path} to the file that is to be modified.
+         */
+        protected abstract void checkIsSafeToModify(final Path path);
     }
 
 }

@@ -17,6 +17,7 @@
 package org.keycloak.models.map.storage.file;
 
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
@@ -32,15 +33,18 @@ import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.SearchableModelField;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -51,8 +55,12 @@ import java.util.function.Function;
 public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEntity, M>
   extends ConcurrentHashMapKeycloakTransaction<String, V, M> {
 
+    private static final Logger LOG = Logger.getLogger(FileMapKeycloakTransaction.class);
+
+    private final List<Path> createdPaths = new LinkedList<>();
     private final List<Path> pathsToDelete = new LinkedList<>();
     private final Map<Path, Path> renameOnCommit = new HashMap<>();
+    private final Map<Path, FileTime> lastModified = new HashMap<>();
 
     private final String txId = StringKey.INSTANCE.yieldNewUniqueKey();
 
@@ -77,16 +85,30 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
 
     @Override
     public void rollback() {
+        // remove all temporary and empty files that were created.
         this.renameOnCommit.keySet().forEach(FileMapKeycloakTransaction::silentDelete);
-        this.pathsToDelete.forEach(FileMapKeycloakTransaction::silentDelete);
+        this.createdPaths.forEach(FileMapKeycloakTransaction::silentDelete);
         super.rollback();
     }
 
     @Override
     public void commit() {
         super.commit();
-        this.renameOnCommit.forEach(FileMapKeycloakTransaction::move);
-        this.pathsToDelete.forEach(FileMapKeycloakTransaction::silentDelete);
+        // check it is still safe to update/delete before moving the temp files into the actual files or deleting them.
+        Set<Path> allChangedPaths = new HashSet<>();
+        allChangedPaths.addAll(this.renameOnCommit.values());
+        allChangedPaths.addAll(this.pathsToDelete);
+        allChangedPaths.forEach(this::checkIsSafeToModify);
+        try {
+            this.renameOnCommit.forEach(FileMapKeycloakTransaction::move);
+            this.pathsToDelete.forEach(FileMapKeycloakTransaction::silentDelete);
+            // TODO: catch exception thrown by move and try to restore any previously completed moves.
+        } finally {
+            // ensure all temp files are removed.
+            this.renameOnCommit.keySet().forEach(FileMapKeycloakTransaction::silentDelete);
+            // remove any created files that may have been left empty.
+            this.createdPaths.forEach(path -> silenteDelete(path, true));
+        }
     }
 
     private static void move(Path from, Path to) {
@@ -98,18 +120,24 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
     }
 
     private static void silentDelete(Path p) {
+        silenteDelete(p, false);
+    }
+
+    private static void silenteDelete(final Path path, final boolean checkEmpty) {
         try {
-            if (Files.exists(p)) {
-                Files.delete(p);
+            if (Files.exists(path)) {
+                if (!checkEmpty || Files.size(path) == 0) {
+                    Files.delete(path);
+                }
             }
-        } catch (IOException e) {
-            // Swallow the exception
+        } catch(IOException e) {
+            // swallow the exception.
         }
     }
 
-    public void touch(Path path) throws FileAlreadyExistsException, IOException {
+    public void touch(Path path) throws IOException {
         Files.createFile(path);
-        pathsToDelete.add(path);
+        createdPaths.add(path);
     }
 
     public boolean removeIfExists(Path path) {
@@ -120,9 +148,55 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
 
     void registerRenameOnCommit(Path from, Path to) {
         this.renameOnCommit.put(from, to);
-        this.pathsToDelete.remove(to);
-        this.pathsToDelete.add(from);
     }
+
+    /**
+     * Obtains and stores the last modified time of the file identified by the supplied {@link Path}. This value is used
+     * to determine if the file was changed by another transaction after it was read by this transaction.
+     *
+     * @param path the {@link Path} to the file.
+     */
+    FileTime getLastModifiedTime(final Path path) {
+        try {
+            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+            FileTime lastModifiedTime = attr.lastModifiedTime();
+            this.lastModified.put(path, lastModifiedTime);
+            return lastModifiedTime;
+        } catch (IOException ex) {
+            throw new IllegalStateException("Could not read file attributes " + path, ex);
+        }
+    }
+
+    /**
+     * Checks if it is safe to modify the file identified by the supplied {@link Path}. In particular, this method
+     * verifies if the file was changed (removed, updated) after it was read by this transaction. Being it the case, this
+     * transaction should refrain from performing further updates as it must assume its data has become stale.
+     *
+     * @param path the {@link Path} to the file that will be updated.
+     * @throws IllegalStateException if the file was altered by another transaction.
+     */
+    void checkIsSafeToModify(final Path path) {
+        try {
+            // path wasn't previously loaded - log a message and return.
+            if (this.lastModified.get(path) == null) {
+                LOG.debugf("File %s was not previously loaded, skipping validation prior to writing", path);
+                return;
+            }
+            // check if the original file was deleted by another transaction.
+            if (!Files.exists(path)) {
+                throw new IllegalStateException("File " + path + " was removed by another transaction");
+            }
+            // check if the original file was modified by another transaction.
+            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+            long lastModifiedTime = attr.lastModifiedTime().toMillis();
+            if (this.lastModified.get(path).toMillis() < lastModifiedTime) {
+                throw new IllegalStateException("File " + path + " was changed by another transaction");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     @Override
     public V registerEntityForChanges(V origEntity) {
@@ -156,6 +230,16 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
         @Override
         protected String getTxId() {
             return tx.txId;
+        }
+
+        @Override
+        protected FileTime getLastModifiedTime(final Path sp) {
+            return tx.getLastModifiedTime(sp);
+        }
+
+        @Override
+        protected void checkIsSafeToModify(final Path sp) {
+            tx.checkIsSafeToModify(sp);
         }
     }
 
