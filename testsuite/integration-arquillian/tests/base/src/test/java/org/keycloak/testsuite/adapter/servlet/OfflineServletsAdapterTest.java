@@ -1,34 +1,30 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import javax.ws.rs.core.UriBuilder;
-import java.util.List;
+import java.util.*;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.OfflineToken;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.TokenUtil;
-import org.hamcrest.Matchers;
 import org.openqa.selenium.By;
 
 import java.io.Closeable;
@@ -54,7 +50,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Rule
@@ -63,8 +58,6 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
     protected OfflineToken offlineTokenPage;
     @Page
     protected LoginPage loginPage;
-    @Page
-    protected AccountApplicationsPage accountAppPage;
     @Page
     protected OAuthGrantPage oauthGrantPage;
 
@@ -181,19 +174,17 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
 
             events.clear();
 
-            // Go to account service and revoke grant
-            accountAppPage.open();
+            // Check that Offline Token is granted
+            List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+            String actualValue = String.valueOf(((LinkedHashMap) ((ArrayList) userConsents.get(0).get("additionalGrants")).get(0)).get("key"));
+            Assert.assertEquals("Offline Token", actualValue);
 
-            List<String> additionalGrants = accountAppPage.getApplications().get(OFFLINE_CLIENT_ID).getAdditionalGrants();
-            assertThat(additionalGrants.size(), is(1));
-            assertThat(additionalGrants.get(0), is("Offline Token"));
-
-            accountAppPage.revokeGrant(OFFLINE_CLIENT_ID);
+            // Revoke consents
+            AccountHelper.revokeConsents(adminClient.realm(TEST), DEFAULT_USERNAME, OFFLINE_CLIENT_ID);
             pause(500);
-            assertThat(accountAppPage.getApplications().get(OFFLINE_CLIENT_ID).getAdditionalGrants().size(), is(0));
 
-            events.expect(EventType.REVOKE_GRANT)
-                    .client("account").detail(Details.REVOKED_CLIENT, OFFLINE_CLIENT_ID).assertEvent();
+            userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+            assertThat(userConsents.size(), is(0));
 
             // Assert refresh doesn't work now (increase time one more time)
             setAdapterAndServerTimeOffset(19999);
@@ -238,15 +229,13 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             assertThat(offlineTokenPage.getRefreshToken(), notNullValue());
             assertThat(offlineTokenPage.getRefreshToken().getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
 
-            accountAppPage.open();
-            AccountApplicationsPage.AppEntry offlineClient = accountAppPage.getApplications().get(OFFLINE_CLIENT_ID);
-            assertThat(offlineClient.getClientScopesGranted(), Matchers.hasItem(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT));
-            assertThat(offlineClient.getAdditionalGrants(), Matchers.hasItem("Offline Token"));
+            // Check that the client scopes have been granted by the user
+            List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+            Assert.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("offline_access")));
+            String actualValue = String.valueOf(((LinkedHashMap) ((ArrayList) userConsents.get(0).get("additionalGrants")).get(0)).get("key"));
+            Assert.assertEquals("Offline Token", actualValue);
 
-            //This was necessary to be introduced, otherwise other testcases will fail
-            accountAppPage.logout();
-            assertCurrentUrlDoesntStartWith(offlineTokenPage);
-            loginPage.assertCurrent();
+            AccountHelper.logout(adminClient.realm(TEST), DEFAULT_USERNAME);
         } finally {
             events.clear();
             resetTimeOffsetAuthenticated();
@@ -260,7 +249,6 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
     private void resetTimeOffsetAuthenticated() {
         resetTimeOffsetAuthenticated(DEFAULT_USERNAME, DEFAULT_PASSWORD);
     }
-
     /**
      * Reset time offset for remote environment.
      * After the token expiration, process of re-authentication is necessary.
@@ -278,9 +266,9 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
         if (loginPage.isCurrent()) {
             loginPage.login(username, password);
             waitForPageToLoad();
-            accountAppPage.open();
-            accountAppPage.logout();
+            AccountHelper.logout(adminClient.realm(TEST), DEFAULT_USERNAME);
         }
         setTimeOffset(0);
     }
+    
 }

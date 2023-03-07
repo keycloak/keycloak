@@ -44,10 +44,6 @@ public class UrlBean {
         this.idTokenHint = idTokenHint;
     }
 
-    public String getApplicationsUrl() {
-        return Urls.accountApplicationsPage(baseQueryURI, realm).toString();
-    }
-
     public String getAccountUrl() {
         return Urls.accountPage(baseQueryURI, realm).toString();
     }

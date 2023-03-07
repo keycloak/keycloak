@@ -42,10 +42,6 @@ public class Urls {
         return UriBuilder.fromUri(baseUri).path(AdminRoot.class).path("{realm}/console/").build(realmName);
     }
 
-    public static URI accountApplicationsPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountFormService.class, "applicationsPage").build(realmName);
-    }
-
     public static UriBuilder accountBase(URI baseUri) {
         return realmBase(baseUri).path(RealmsResource.class, "getAccountService");
     }
