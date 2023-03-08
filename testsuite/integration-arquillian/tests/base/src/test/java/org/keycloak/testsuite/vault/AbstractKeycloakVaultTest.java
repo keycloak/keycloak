@@ -17,12 +17,11 @@
 
 package org.keycloak.testsuite.vault;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.vault.VaultStringSecret;
@@ -37,20 +36,12 @@ import java.util.Optional;
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-@EnableVault
-public class KeycloakVaultTest extends AbstractKeycloakTest {
+
+public abstract class AbstractKeycloakVaultTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(IOUtil.loadRealm("/testrealm.json"));
-    }
-
-
-    @Test
-    public void testKeycloakVault() throws Exception {
-        // run the test in two different realms to test the provider's ability to retrieve secrets with the same key in different realms.
-        testingClient.server().run(new KeycloakVaultServerTest("${vault.smtp_key}", "secure_master_smtp_secret"));
-        testingClient.server("test").run(new KeycloakVaultServerTest("${vault.smtp_key}", "secure_test_smtp_secret"));
     }
 
     static class KeycloakVaultServerTest implements RunOnServer {
@@ -65,31 +56,30 @@ public class KeycloakVaultTest extends AbstractKeycloakTest {
 
         @Override
         public void run(KeycloakSession session) {
-            VaultTranscriber transcriber = session.vault();
-            Assert.assertNotNull(transcriber);
-
-            // use the transcriber to obtain a secret from the vault.
-            try (VaultStringSecret secret = transcriber.getStringSecret(testKey)){
-                Optional<String> optional = secret.get();
-                Assert.assertTrue(optional.isPresent());
-                String secretString = optional.get();
-                Assert.assertEquals(expectedSecret, secretString);
-            }
+            VaultTranscriber transcriber = getVaultTranscriber(session);
+            // obtain an existing secret from the vault.
+            Optional<String> optional = getSecret(transcriber, testKey);
+            Assert.assertTrue(optional.isPresent());
+            Assert.assertEquals(expectedSecret, optional.get());
 
             // try obtaining a secret using a key that does not exist in the vault.
-            String invalidEntry = "${vault.invalid_entry}";
-            try (VaultStringSecret secret = transcriber.getStringSecret(invalidEntry)) {
-                Optional<String> optional = secret.get();
-                Assert.assertFalse(optional.isPresent());
-            }
+            optional = getSecret(transcriber, "${vault.invalid_entry}");
+            Assert.assertFalse(optional.isPresent());
 
             // invoke the transcriber using a string that is not a vault expression.
-            try (VaultStringSecret secret = transcriber.getStringSecret("mysecret")) {
-                Optional<String> optional = secret.get();
-                Assert.assertTrue(optional.isPresent());
-                String secretString = optional.get();
-                Assert.assertEquals("mysecret", secretString);
-            }
+            optional = getSecret(transcriber, "mysecret");
+            Assert.assertTrue(optional.isPresent());
+            Assert.assertEquals("mysecret", optional.get());
         }
+
+        private Optional<String> getSecret(VaultTranscriber transcriber, String testKey) {
+            VaultStringSecret secret = transcriber.getStringSecret(testKey);
+            return secret.get();
+        }
+    }
+
+    @NotNull
+    private static VaultTranscriber getVaultTranscriber(KeycloakSession session) throws RuntimeException {
+        return session.vault();
     }
 }

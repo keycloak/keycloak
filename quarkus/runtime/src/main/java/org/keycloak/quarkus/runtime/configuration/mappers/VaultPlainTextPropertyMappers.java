@@ -4,9 +4,9 @@ import org.keycloak.config.VaultOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class VaultPropertyMappers {
+final class VaultPlainTextPropertyMappers {
 
-    private VaultPropertyMappers() {
+    private VaultPlainTextPropertyMappers() {
     }
 
     public static PropertyMapper[] getVaultPropertyMappers() {
