@@ -1,0 +1,10 @@
+{
+  "name": "Nome do modelo de cliente. Deve ser único neste Realm.",
+  "description": "Descrição do modelo de cliente.",
+  "protocol": "Qual configuração de protocolo SSO será provida por este modelo de cliente.",
+  "prefix": "Um prefixo para cada Realm Role (opcional).",
+  "multiValued": "Indica se um atributo suporta múltiplos valores. Se verdadeiro, então a lista de todos os valores desse atributo será definida como o claim. Se falso, então apenas o primeiro valor será utilizado.",
+  "tokenClaimName": "Nome do claim para inserir no token. Pode ser um nome completo (fully qualified) como 'address.street'. Neste caso, um objeto json aninhado será criado.",
+  "claimJsonType": "Tipo JSON que deve ser utilizado para popular o claim json no token. Os valores válidos são Long, int boolean e String.",
+  "protocolMapper": "Protocolo..."
+}

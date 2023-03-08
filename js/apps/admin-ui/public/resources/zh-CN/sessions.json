@@ -1,0 +1,10 @@
+{
+  "title": "会话",
+  "lastAccess": "最后访问",
+  "revocation": "回收",
+  "notBefore": "不早于",
+  "setToNow": "设置到现在",
+  "clear": "清除",
+  "push": "推送",
+  "none": "none"
+}
