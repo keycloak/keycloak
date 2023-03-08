@@ -7,7 +7,11 @@ import { KeycloakTextInput } from "../../components/keycloak-text-input/Keycloak
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
-export const ApplicationUrls = () => {
+type ApplicationUrlsProps = {
+  isDisabled?: boolean;
+};
+
+export const ApplicationUrls = (props: ApplicationUrlsProps) => {
   const { t } = useTranslation("clients");
   const { register } = useFormContext();
 
@@ -30,6 +34,7 @@ export const ApplicationUrls = () => {
           {...register(
             convertAttributeNameToForm<FormFields>("attributes.logoUri")
           )}
+          {...props}
         />
       </FormGroup>
       <FormGroup
@@ -49,6 +54,7 @@ export const ApplicationUrls = () => {
           {...register(
             convertAttributeNameToForm<FormFields>("attributes.policyUri")
           )}
+          {...props}
         />
       </FormGroup>
       <FormGroup
@@ -68,6 +74,7 @@ export const ApplicationUrls = () => {
           {...register(
             convertAttributeNameToForm<FormFields>("attributes.tosUri")
           )}
+          {...props}
         />
       </FormGroup>
     </>
