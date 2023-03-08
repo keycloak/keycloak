@@ -7,13 +7,18 @@ import { PropsWithChildren, ReactNode } from "react";
 
 import { TableToolbar } from "./TableToolbar";
 
-type TableToolbarProps = {
+type KeycloakPaginationProps = {
+  id?: string;
   count: number;
   first: number;
   max: number;
   onNextClick: (page: number) => void;
   onPreviousClick: (page: number) => void;
   onPerPageSelect: (max: number, first: number) => void;
+  variant?: "top" | "bottom";
+};
+
+type TableToolbarProps = KeycloakPaginationProps & {
   searchTypeComponent?: ReactNode;
   toolbarItem?: ReactNode;
   subToolbar?: ReactNode;
@@ -22,28 +27,20 @@ type TableToolbarProps = {
   inputGroupOnEnter?: (value: string) => void;
 };
 
-export const PaginatingTableToolbar = ({
+const KeycloakPagination = ({
+  id,
+  variant = "top",
   count,
   first,
   max,
   onNextClick,
   onPreviousClick,
   onPerPageSelect,
-  searchTypeComponent,
-  toolbarItem,
-  subToolbar,
-  children,
-  inputGroupName,
-  inputGroupPlaceholder,
-  inputGroupOnEnter,
-}: PropsWithChildren<TableToolbarProps>) => {
+}: KeycloakPaginationProps) => {
   const page = Math.round(first / max);
-  const KeycloakPagination = ({
-    variant = "top",
-  }: {
-    variant?: "top" | "bottom";
-  }) => (
+  return (
     <Pagination
+      widgetId={id}
       isCompact
       toggleTemplate={({ firstIndex, lastIndex }: ToggleTemplateProps) => (
         <b>
@@ -59,7 +56,19 @@ export const PaginatingTableToolbar = ({
       variant={variant}
     />
   );
+};
 
+export const PaginatingTableToolbar = ({
+  count,
+  searchTypeComponent,
+  toolbarItem,
+  subToolbar,
+  children,
+  inputGroupName,
+  inputGroupPlaceholder,
+  inputGroupOnEnter,
+  ...rest
+}: PropsWithChildren<TableToolbarProps>) => {
   return (
     <TableToolbar
       searchTypeComponent={searchTypeComponent}
@@ -67,7 +76,7 @@ export const PaginatingTableToolbar = ({
         <>
           {toolbarItem}
           <ToolbarItem variant="pagination">
-            <KeycloakPagination />
+            <KeycloakPagination count={count} {...rest} />
           </ToolbarItem>
         </>
       }
@@ -75,7 +84,7 @@ export const PaginatingTableToolbar = ({
       toolbarItemFooter={
         count !== 0 ? (
           <ToolbarItem>
-            <KeycloakPagination variant="bottom" />
+            <KeycloakPagination count={count} variant="bottom" {...rest} />
           </ToolbarItem>
         ) : null
       }

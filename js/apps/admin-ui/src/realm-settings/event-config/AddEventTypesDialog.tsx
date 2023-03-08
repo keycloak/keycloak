@@ -46,6 +46,7 @@ export const AddEventTypesDialog = ({
       ]}
     >
       <EventsTypeTable
+        ariaLabelKey="addTypes"
         onSelect={(selected) => setSelectedTypes(selected)}
         eventTypes={enums!["eventType"].filter(
           (type) => !configured.includes(type)
