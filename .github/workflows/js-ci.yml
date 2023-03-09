@@ -83,6 +83,23 @@ jobs:
       - run: npm run lint --workspace=${{ env.WORKSPACE }}
       - run: npm run build --workspace=${{ env.WORKSPACE }}
 
+  ui-shared:
+    name: UI Shared
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: ui-shared
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+
   account-ui:
     name: Account UI
     needs: conditional
@@ -126,6 +143,7 @@ jobs:
       - admin-client
       - keycloak-js
       - keycloak-masthead
+      - ui-shared
       - account-ui
       - admin-ui
     runs-on: ubuntu-latest
