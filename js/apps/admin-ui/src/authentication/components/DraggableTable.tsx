@@ -222,12 +222,12 @@ export function DraggableTable<T>({
           >
             <Td
               draggableRow={{
-                id: `draggable-row-${get(row, "id")}`,
+                id: `draggable-row-${get(row, keyField)}`,
               }}
             />
             {columns.map((column) => (
               <Td
-                key={`${get(row, "id")}_${column.name}`}
+                key={`${get(row, keyField)}_${column.name}`}
                 dataLabel={column.name}
               >
                 {column.cellRenderer
