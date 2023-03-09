@@ -50,6 +50,23 @@ jobs:
       - run: npm run lint --workspace=${{ env.WORKSPACE }}
       - run: npm run build --workspace=${{ env.WORKSPACE }}
 
+  account-ui:
+    name: Account UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: account-ui
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+
   admin-ui:
     name: Admin UI
     needs: conditional
@@ -74,6 +91,7 @@ jobs:
     name: Set check conclusion
     needs:
       - admin-client
+      - account-ui
       - admin-ui
     runs-on: ubuntu-latest
     outputs:
