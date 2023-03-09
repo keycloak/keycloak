@@ -56,8 +56,6 @@
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
 
-        <keycloak.admin-ui.version>${project.version}</keycloak.admin-ui.version>
-
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
         <aesh.version>2.4</aesh.version>
@@ -179,7 +177,7 @@
         <testcontainers.version>1.17.5</testcontainers.version>
 
         <!-- Maven Plugins -->
-        <replacer.plugin.version>1.3.5</replacer.plugin.version>
+        <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
@@ -315,12 +313,6 @@
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
                 <version>${org.snakeyaml.snakeyaml-engine.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
-                <version>${project.version}</version>
-                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
@@ -1471,7 +1463,7 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-ui</artifactId>
-                <version>${keycloak.admin-ui.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
