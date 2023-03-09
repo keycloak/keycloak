@@ -50,6 +50,22 @@ jobs:
       - run: npm run lint --workspace=${{ env.WORKSPACE }}
       - run: npm run build --workspace=${{ env.WORKSPACE }}
 
+  keycloak-js:
+    name: Keycloak JS
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-js
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+
   account-ui:
     name: Account UI
     needs: conditional
@@ -90,6 +106,7 @@ jobs:
   check-set-status:
     name: Set check conclusion
     needs:
+      - keycloak-js
       - admin-client
       - account-ui
       - admin-ui
