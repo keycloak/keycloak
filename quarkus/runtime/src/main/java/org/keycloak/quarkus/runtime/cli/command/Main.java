@@ -19,14 +19,15 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
+import org.keycloak.quarkus.runtime.Environment;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ScopeType;
 
 @Command(name = "keycloak",
         header = {
@@ -88,7 +89,9 @@ public final class Main {
 
     @Option(names = { "-v", "--verbose" },
             description = "Print out error details when running this command.",
-            paramLabel = NO_PARAM_LABEL)
+            paramLabel = NO_PARAM_LABEL,
+            // Set verbose flag as global option (shared with all subcommands)
+            scope = ScopeType.INHERIT)
     public void setVerbose(boolean verbose) {
         ExecutionExceptionHandler exceptionHandler = (ExecutionExceptionHandler) spec.commandLine().getExecutionExceptionHandler();
         exceptionHandler.setVerbose(verbose);
