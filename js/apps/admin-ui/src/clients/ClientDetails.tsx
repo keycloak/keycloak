@@ -412,7 +412,12 @@ export default function ClientDetails() {
       />
       <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...form}>
-          <RoutableTabs data-testid="client-tabs" isBox mountOnEnter>
+          <RoutableTabs
+            data-testid="client-tabs"
+            aria-label="client-tabs"
+            isBox
+            mountOnEnter
+          >
             <Tab
               id="settings"
               data-testid="clientSettingsTab"

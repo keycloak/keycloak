@@ -33,6 +33,7 @@ export const ChangeTypeDropdown = ({
   return (
     <Select
       toggleId="change-type-dropdown"
+      aria-label="change-type-to"
       isOpen={open}
       selections={[]}
       isDisabled={selectedRows.length === 0}
