@@ -59,7 +59,7 @@ To install custom providers, you just need to define a step to include the JAR f
 [source, dockerfile]
 ----
 # A example build step that downloads a JAR file from a URL and adds it to the providers directory
-ADD <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
+ADD --chown=keycloak:keycloak <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
 ----
 
 === Installing additional RPM packages
