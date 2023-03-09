@@ -11,8 +11,6 @@ on:
   workflow_dispatch:
 
 env:
-  DEFAULT_JDK_VERSION: 17
-  DEFAULT_JDK_DIST: temurin
   SUREFIRE_RERUN_FAILING_COUNT: 2
 
 concurrency:
@@ -348,8 +346,6 @@ jobs:
       - id: unit-test-setup
         name: Unit test setup
         uses: ./.github/actions/unit-test-setup
-        with:
-          jdk-version: 17
 
       - name: Run crypto tests
         run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-ut.sh
