@@ -723,9 +723,7 @@ public class XMLSignatureUtil {
 
         if (x509Certificate != null) {
             items.add(keyInfoFactory.newX509Data(Collections.singletonList(x509Certificate)));
-        }
-
-        if (publicKey != null) {
+        } else if (publicKey != null) {
             items.add(keyInfoFactory.newKeyValue(publicKey));
         }
 
