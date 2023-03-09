@@ -9,6 +9,7 @@ export type EventType = {
 };
 
 type EventsTypeTableProps = {
+  ariaLabelKey?: string;
   eventTypes: string[];
   addTypes?: () => void;
   onSelect?: (value: EventType[]) => void;
@@ -16,6 +17,7 @@ type EventsTypeTableProps = {
 };
 
 export function EventsTypeTable({
+  ariaLabelKey = "userEventsRegistered",
   eventTypes,
   addTypes,
   onSelect,
@@ -29,7 +31,7 @@ export function EventsTypeTable({
   }));
   return (
     <KeycloakDataTable
-      ariaLabelKey="userEventsRegistered"
+      ariaLabelKey={ariaLabelKey}
       searchPlaceholderKey="realm-settings:searchEventType"
       loader={data}
       onSelect={onSelect ? onSelect : undefined}

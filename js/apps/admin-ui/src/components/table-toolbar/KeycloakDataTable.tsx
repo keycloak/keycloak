@@ -407,6 +407,7 @@ export function KeycloakDataTable<T>({
     <>
       {(loading || !noData || searching) && (
         <PaginatingTableToolbar
+          id={ariaLabelKey}
           count={rowLength}
           first={first}
           max={max}
