@@ -127,6 +127,7 @@ public class ComponentExportImportTest extends AbstractAuthTest {
             new ExportImportManager(session).runExport();
         });
 
+        getCleanup().addCleanup(testRealmResource()::remove);
         testRealmResource().remove();
 
         try {
