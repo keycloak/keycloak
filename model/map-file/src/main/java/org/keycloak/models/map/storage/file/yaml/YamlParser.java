@@ -46,6 +46,9 @@ import org.snakeyaml.engine.v2.resolver.ScalarResolver;
 import org.snakeyaml.engine.v2.scanner.StreamReader;
 import org.keycloak.models.map.storage.file.common.BlockContext;
 
+import java.util.Map;
+import org.snakeyaml.engine.v2.constructor.ConstructScalar;
+import org.snakeyaml.engine.v2.nodes.Node;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 
 /**
@@ -73,15 +76,24 @@ public class YamlParser<E> {
         public Object constructStandardJavaInstance(ScalarNode node) {
             return findConstructorFor(node)
                 .map(constructor -> constructor.construct(node))
-                .orElseThrow(() -> new ConstructorException(null, Optional.empty(), "could not determine a constructor for the tag " + node.getTag(), node.getStartMark()));
+                .orElseThrow(() -> new ConstructorException(null, Optional.empty(), "Could not determine a constructor for the tag " + node.getTag(), node.getStartMark()));
         }
 
         public static final MiniConstructor INSTANCE = new MiniConstructor();
     }
 
+    private static final class NullConstructor extends ConstructScalar {
+
+        @Override
+        public Object construct(Node node) {
+            return null;
+        }
+    }
+
     private static final LoadSettings SETTINGS = LoadSettings.builder()
       .setAllowRecursiveKeys(false)
       .setParseComments(false)
+      .setTagConstructors(Map.of(Tag.NULL, new NullConstructor()))
       .build();
 
     public static <E> E parse(Path path, BlockContext<E> initialContext) {
