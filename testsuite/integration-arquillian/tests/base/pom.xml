@@ -1137,10 +1137,10 @@
         <profile>
             <id>auth-server-quarkus-embedded</id>
             <properties>
-                <surefire.memory.Xms>1024m</surefire.memory.Xms>
-                <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
+                <surefire.memory.Xms>2048m</surefire.memory.Xms>
+                <surefire.memory.Xmx>2048m</surefire.memory.Xmx>
                 <surefire.memory.metaspace>512m</surefire.memory.metaspace>
-                <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
+                <surefire.memory.metaspace.max>1024m</surefire.memory.metaspace.max>
             </properties>
             <dependencies>
                 <dependency>

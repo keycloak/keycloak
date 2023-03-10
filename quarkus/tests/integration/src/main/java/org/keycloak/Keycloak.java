@@ -64,7 +64,6 @@ public class Keycloak {
         System.setProperty("quarkus.http.test-ssl-port", "${kc.https-port}");
     }
 
-
     public static void main(String[] args) {
         Keycloak.builder().start(args);
     }
@@ -187,6 +186,7 @@ public class Keycloak {
         return new Builder();
     }
 
+    private CuratedApplication curated;
     private RunningQuarkusApplication application;
     private ApplicationModel applicationModel;
     private Path homeDir;
@@ -214,9 +214,11 @@ public class Keycloak {
                 .setApplicationRoot(applicationModel.getApplicationModule().getModuleDir().toPath())
                 .setTargetDirectory(applicationModel.getApplicationModule().getModuleDir().toPath())
                 .setIsolateDeployment(true)
+                .setFlatClassPath(true)
                 .setMode(QuarkusBootstrap.Mode.TEST);
 
-        try (CuratedApplication curated = builder.build().bootstrap()) {
+        try {
+            curated = builder.build().bootstrap();
             AugmentAction action = curated.createAugmentor();
             Environment.setHomeDir(homeDir);
             ConfigArgsConfigSource.setCliArgs(args.toArray(new String[0]));
@@ -309,14 +311,11 @@ public class Keycloak {
 
     private void closeApplication() {
         if (application != null) {
-            ClassLoader old = Thread.currentThread().getContextClassLoader();
-            Thread.currentThread().setContextClassLoader(application.getClassLoader());
             try {
+                // curated application is also closed
                 application.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                Thread.currentThread().setContextClassLoader(old);
+            } catch (Exception cause) {
+                cause.printStackTrace();
             }
         }
 
@@ -334,5 +333,6 @@ public class Keycloak {
         }
 
         application = null;
+        curated = null;
     }
 }
