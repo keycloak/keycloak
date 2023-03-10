@@ -333,6 +333,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                 >
                   <KeycloakTextInput
                     id="alias"
+                    aria-label="resource-type"
                     data-testid="alias"
                     {...register("alias", { required: true })}
                   />
@@ -370,7 +371,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                         }}
                         selections={field.value}
                         variant={SelectVariant.typeaheadMulti}
-                        aria-label={t("authScopes")}
+                        typeAheadAriaLabel={t("authScopes")}
                         isOpen={scopesDropdownOpen}
                       >
                         {scopes.map((scope) => (

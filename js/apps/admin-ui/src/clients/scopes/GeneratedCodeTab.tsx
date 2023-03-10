@@ -37,7 +37,7 @@ export const GeneratedCodeTab = ({
     </CodeBlock>
   ) : (
     <EmptyState variant="large" id={label}>
-      <Title headingLevel="h4" size="lg">
+      <Title headingLevel="h2" size="lg">
         {t(`${label}No`)}
       </Title>
       <EmptyStateBody>{t(`${label}IsDisabled`)}</EmptyStateBody>
