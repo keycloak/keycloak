@@ -53,10 +53,10 @@ const EmptyDashboard = () => {
           alt="Keycloak icon"
           className="keycloak__dashboard_icon"
         />
-        <Title headingLevel="h4" size="3xl">
+        <Title headingLevel="h2" size="3xl">
           {t("welcome")}
         </Title>
-        <Title headingLevel="h4" size="4xl">
+        <Title headingLevel="h1" size="4xl">
           {realm}
         </Title>
         <EmptyStateBody>{t("introduction")}</EmptyStateBody>
