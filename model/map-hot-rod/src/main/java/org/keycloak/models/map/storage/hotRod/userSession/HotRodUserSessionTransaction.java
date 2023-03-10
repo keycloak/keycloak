@@ -37,7 +37,6 @@ import org.keycloak.storage.SearchableModelField;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -66,7 +65,6 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
     }
 
     private MapAuthenticatedClientSessionEntity wrapClientSessionEntityToClientSessionAwareDelegate(MapAuthenticatedClientSessionEntity d) {
-        if (!clientSessionTransaction.exists(d.getId())) return null;
         return new MapAuthenticatedClientSessionEntityDelegate(new HotRodAuthenticatedClientSessionEntityDelegateProvider(d) {
             @Override
             public MapAuthenticatedClientSessionEntity loadClientSessionFromDatabase() {
@@ -79,20 +77,33 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
         if (entity == null) return null;
 
         return new MapUserSessionEntityDelegate(new SimpleDelegateProvider<>(entity)) {
+
+            private boolean filterAndRemoveNotExpired(MapAuthenticatedClientSessionEntity clientSession) {
+                if (!clientSessionTransaction.exists(clientSession.getId())) {
+                    // If client session does not exist, remove the reference to it from userSessionEntity loaded in this transaction
+                    entity.removeAuthenticatedClientSession(clientSession.getClientId());
+                    return false;
+                }
+
+                return true;
+            }
+
             @Override
             public Set<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSessions() {
                 Set<MapAuthenticatedClientSessionEntity> clientSessions = super.getAuthenticatedClientSessions();
                 return clientSessions == null ? null : clientSessions.stream()
+                        // Find whether client session still exists in Infinispan and if not, remove the reference from user session
+                        .filter(this::filterAndRemoveNotExpired)
                         .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate)
-                        .filter(Objects::nonNull)
                         .collect(Collectors.toSet());
             }
 
             @Override
             public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
                 return super.getAuthenticatedClientSession(clientUUID)
-                        .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate)
-                        .filter(Objects::nonNull);
+                        // Find whether client session still exists in Infinispan and if not, remove the reference from user sessionZ
+                        .filter(this::filterAndRemoveNotExpired)
+                        .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate);
             }
 
             @Override
