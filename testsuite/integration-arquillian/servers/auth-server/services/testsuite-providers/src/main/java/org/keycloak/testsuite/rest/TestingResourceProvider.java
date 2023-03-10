@@ -309,15 +309,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/clear-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore() {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clear();
-        return Response.noContent().build();
-    }
-
-    @GET
     @Path("/clear-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventStore(@QueryParam("realmId") String realmId) {
@@ -435,15 +426,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         event.setType(EventType.valueOf(rep.getType()));
         event.setUserId(rep.getUserId());
         return event;
-    }
-
-    @GET
-    @Path("/clear-admin-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore() {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clearAdmin();
-        return Response.noContent().build();
     }
 
     @GET
