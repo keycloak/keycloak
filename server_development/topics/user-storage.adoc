@@ -19,6 +19,19 @@ WARNING: If your user provider implementation is using some user attributes as t
 then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. The example is the `LDAP_ID` attribute, which the built-in {project_name}
 LDAP provider is using for to store the ID of the user on the LDAP server side. See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
 
+There are two sample projects in link:{quickstartRepo_link}[{quickstartRepo_name}]. Each quickstart has a `README` file with instructions on how to build, deploy, and test the sample project. The following table provides a brief description of the available User Storage SPI quickstarts:
+
+.User Storage SPI Quickstarts
+|===
+|Name |Description
+
+| https://github.com/keycloak/keycloak-quickstarts/tree/latest/user-storage-jpa[user-storage-jpa]
+| Demonstrates implementing a user storage provider using EJB and JPA.
+
+| https://github.com/keycloak/keycloak-quickstarts/tree/latest/user-storage-simple[user-storage-simple]
+| Demonstrates implementing a user storage provider using a simple properties file that contains username/password key pairs.
+
+|===
 
 
 
