@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.file.yaml;
 
+import org.keycloak.models.map.common.CastUtils;
 import org.keycloak.models.map.storage.file.common.BlockContextStack;
 import org.keycloak.models.map.storage.file.common.BlockContext.DefaultListContext;
 import org.keycloak.models.map.storage.file.common.BlockContext.DefaultMapContext;
@@ -187,7 +188,11 @@ public class YamlParser<E> {
             Object key = parseNodeInFreshContext();
             LOG.tracef("Parsed mapping key: %s", key);
             if (! (key instanceof String)) {
-                throw new IllegalStateException("Invalid key in map: " + key);
+                try {
+                    key = CastUtils.cast(key, String.class);
+                } catch (IllegalStateException ex) {
+                    throw new IllegalStateException("Invalid key in map: " + key);
+                }
             }
             Object value = parseNodeInFreshContext((String) key);
             LOG.tracef("Parsed mapping value: %s", value);
