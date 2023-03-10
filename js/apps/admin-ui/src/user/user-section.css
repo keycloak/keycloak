@@ -91,7 +91,7 @@ div.pf-c-chip-group.kc-consents-chip-group
 
 .kc-search-users-text {
   margin-left: var(--pf-global--spacer--md);
-  color: var(--pf-global--Color--400);
+  color: var(--pf-global--Color--200);
 }
 
 article.pf-c-card.pf-m-flat.kc-linked-idps,
