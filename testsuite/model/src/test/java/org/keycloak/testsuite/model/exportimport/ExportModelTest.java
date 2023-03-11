@@ -34,6 +34,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -77,9 +78,12 @@ public class ExportModelTest extends KeycloakModelTest {
                     .config(SingleFileExportProviderFactory.REALM_NAME, REALM_NAME);
 
             inComittedTransaction(session -> {
-                ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
-                ExportImportManager exportImportManager = new ExportImportManager(session);
-                exportImportManager.runExport();
+                try (Closeable c = ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT)) {
+                    ExportImportManager exportImportManager = new ExportImportManager(session);
+                    exportImportManager.runExport();
+                } catch (IOException ex) {
+                    log.error(ex.getMessage(), ex);
+                }
             });
 
             // file will exist if export was successful
@@ -112,9 +116,12 @@ public class ExportModelTest extends KeycloakModelTest {
                     .config(DirExportProviderFactory.REALM_NAME, REALM_NAME);
 
             inComittedTransaction(session -> {
-                ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
-                ExportImportManager exportImportManager = new ExportImportManager(session);
-                exportImportManager.runExport();
+                try (Closeable c = ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT)) {
+                    ExportImportManager exportImportManager = new ExportImportManager(session);
+                    exportImportManager.runExport();
+                } catch (IOException ex) {
+                    log.error(ex.getMessage(), ex);
+                }
             });
 
             // file will exist if export was successful
