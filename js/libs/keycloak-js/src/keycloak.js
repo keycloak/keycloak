@@ -1374,7 +1374,13 @@ function Keycloak (config) {
                     } else if (kc.redirectUri) {
                         return kc.redirectUri;
                     } else {
-                        return location.href;
+                        var callback = parseCallback(location.href);
+
+                        if (callback) {
+                            return callback.newUrl;
+                        } else {
+                            return location.href;
+                        }
                     }
                 }
             };
