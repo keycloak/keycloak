@@ -1,4 +1,4 @@
-.keycloak_groups_treeview .pf-c-tree-view__node {
+.keycloak_groups_treeview .pf-c-tree-view__node-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -164,6 +164,8 @@ export default function GroupsSection() {
                       activeKey={activeTab}
                       onSelect={(_, key) => setActiveTab(key as number)}
                       isBox
+                      mountOnEnter
+                      unmountOnExit
                     >
                       <Tab
                         data-testid="groups"

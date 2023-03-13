@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Checkbox,
@@ -26,6 +26,7 @@ import { useSubGroups } from "../SubGroupsContext";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { joinPath } from "../../utils/joinPath";
+import { toGroups } from "../routes/Groups";
 
 import "./group-tree.css";
 
@@ -111,14 +112,17 @@ export const GroupTree = ({
   const { t } = useTranslation("groups");
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
+  const navigate = useNavigate();
 
   const [data, setData] = useState<TreeViewDataItem[]>();
+  const [groups, setGroups] = useState<GroupRepresentation[]>([]);
   const { subGroups, setSubGroups } = useSubGroups();
 
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
   const [first, setFirst] = useState(0);
   const [exact, setExact] = useState(false);
+  const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
 
   const [key, setKey] = useState(0);
   const refresh = () => {
@@ -133,19 +137,10 @@ export const GroupTree = ({
   ): TreeViewDataItem => {
     const groups = [...parents, group];
     return {
-      id: group.id,
+      id: joinPath(...groups.map((g) => g.id!)),
       name: (
         <Tooltip content={group.name}>
-          {canViewDetails ? (
-            <Link
-              to={`/${realm}/groups/${joinPath(...groups.map((g) => g.id!))}`}
-              onClick={() => setSubGroups(groups)}
-            >
-              {group.name}
-            </Link>
-          ) : (
-            <span>{group.name}</span>
-          )}
+          <span>{group.name}</span>
         </Tooltip>
       ),
       children:
@@ -173,9 +168,30 @@ export const GroupTree = ({
           search === "" ? null : { search }
         )
       ),
-    (groups) => setData(groups.map((g) => mapGroup(g, [], refresh))),
+    (groups) => {
+      setGroups(groups);
+      setData(groups.map((g) => mapGroup(g, [], refresh)));
+    },
     [key, first, max, search, exact]
   );
+
+  const findGroup = (
+    groups: GroupRepresentation[],
+    id: string,
+    path: GroupRepresentation[],
+    found: GroupRepresentation[]
+  ) => {
+    return groups.map((group) => {
+      if (found.length > 0) return;
+
+      if (group.subGroups && group.subGroups.length > 0)
+        findGroup(group.subGroups, id, [...path, group], found);
+
+      if (group.id === id) {
+        found.push(...path, group);
+      }
+    });
+  };
 
   return data ? (
     <PaginatingTableToolbar
@@ -210,8 +226,20 @@ export const GroupTree = ({
         <TreeView
           data={data}
           allExpanded={search.length > 0}
+          activeItems={activeItem ? [activeItem] : undefined}
           hasGuides
+          hasSelectableNodes
           className="keycloak_groups_treeview"
+          onSelect={(_, item) => {
+            setActiveItem(item);
+            if (canViewDetails) {
+              const id = item.id?.substring(item.id.lastIndexOf("/") + 1);
+              const subGroups: GroupRepresentation[] = [];
+              findGroup(groups, id!, [], subGroups);
+              setSubGroups(subGroups);
+              navigate(toGroups({ realm, id: item.id }));
+            }
+          }}
         />
       )}
     </PaginatingTableToolbar>
