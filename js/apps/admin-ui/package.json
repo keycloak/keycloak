@@ -104,7 +104,7 @@
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react-swc": "^3.2.0",
     "cypress": "^12.7.0",
-    "jsdom": "^21.1.0",
+    "jsdom": "^21.1.1",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
     "vite": "^4.1.4",
