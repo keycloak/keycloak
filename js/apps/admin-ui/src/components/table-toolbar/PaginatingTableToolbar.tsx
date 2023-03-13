@@ -4,6 +4,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { PropsWithChildren, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { TableToolbar } from "./TableToolbar";
 
@@ -37,10 +38,14 @@ const KeycloakPagination = ({
   onPreviousClick,
   onPerPageSelect,
 }: KeycloakPaginationProps) => {
+  const { t } = useTranslation("user-federation");
   const page = Math.round(first / max);
   return (
     <Pagination
       widgetId={id}
+      titles={{
+        paginationTitle: `${t("pagination")} ${variant} `,
+      }}
       isCompact
       toggleTemplate={({ firstIndex, lastIndex }: ToggleTemplateProps) => (
         <b>
