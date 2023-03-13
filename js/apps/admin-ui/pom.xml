@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>keycloak-js-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>999.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>keycloak-admin-ui</artifactId>
+
+    <name>Keycloak Admin UI</name>
+    <description>The user inferface to administrate the Keycloak server.</description>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>maven-resources</directory>
+            </resource>
+            <resource>
+                <directory>dist</directory>
+                <targetPath>theme/keycloak.v2/admin/resources</targetPath>
+                <excludes>
+                    <exclude>index.html</exclude>
+                </excludes>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>npm-build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run build --workspace=admin-ui</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <workingDirectory>../..</workingDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>maven-replacer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <file>dist/index.html</file>
+                    <outputFile>target/classes/theme/keycloak.v2/admin/index.ftl</outputFile>
+                    <regex>false</regex>
+                    <replacements>
+                        <replacement>
+                            <token>src="./</token>
+                            <value>src="${resourceUrl}/</value>
+                        </replacement>
+                        <replacement>
+                            <token>href="./</token>
+                            <value>href="${resourceUrl}/</value>
+                        </replacement>
+                        <replacement>
+                            <token><![CDATA[</body>]]></token>
+                            <value xml:space="preserve">
+<![CDATA[
+  <script id="environment" type="application/json">
+    {
+      "loginRealm": "${loginRealm!"master"}",
+      "authServerUrl": "${authServerUrl}",
+      "authUrl": "${authUrl}",
+      "consoleBaseUrl": "${consoleBaseUrl}",
+      "resourceUrl": "${resourceUrl}",
+      "masterRealm": "${masterRealm}",
+      "resourceVersion": "${resourceVersion}",
+      "isRunningAsTheme": true
+    }
+  </script>
+</body>
+]]>
+</value>
+                        </replacement>
+                        <replacement>
+                            <token><![CDATA[</head>]]></token>
+                            <value xml:space="preserve">
+<![CDATA[
+    <#if properties.styles?has_content>
+      <#list properties.styles?split(' ') as style>
+      <link href="${resourceUrl}/${style}" rel="stylesheet"/>
+      </#list>
+    </#if>
+  </head>
+]]>	
+</value>
+                        </replacement>
+                    </replacements>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
