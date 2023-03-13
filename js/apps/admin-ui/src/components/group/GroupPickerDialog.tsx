@@ -307,20 +307,20 @@ export const GroupPickerDialog = ({
               </DataListItemRow>
             </DataListItem>
           ))}
-          {groups.length === 0 && !isSearching && (
-            <ListEmptyState
-              hasIcon={false}
-              message={t("groups:moveGroupEmpty")}
-              instructions={t("groups:moveGroupEmptyInstructions")}
-            />
-          )}
-          {groups.length === 0 && isSearching && (
-            <ListEmptyState
-              message={t("common:noSearchResults")}
-              instructions={t("common:noSearchResultsInstructions")}
-            />
-          )}
         </DataList>
+        {groups.length === 0 && !isSearching && (
+          <ListEmptyState
+            hasIcon={false}
+            message={t("groups:moveGroupEmpty")}
+            instructions={t("groups:moveGroupEmptyInstructions")}
+          />
+        )}
+        {groups.length === 0 && isSearching && (
+          <ListEmptyState
+            message={t("common:noSearchResults")}
+            instructions={t("common:noSearchResultsInstructions")}
+          />
+        )}
       </PaginatingTableToolbar>
     </Modal>
   );
