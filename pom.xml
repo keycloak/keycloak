@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.0.0.Alpha2</quarkus.version>
+        <quarkus.version>3.0.0.Alpha6</quarkus.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -76,7 +76,7 @@
         <cxf.undertow.version>3.3.10</cxf.undertow.version>
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>2.1.214</h2.version>
-        <hibernate-orm.version>6.1.6.Final</hibernate-orm.version>
+        <hibernate-orm.version>6.2.0.CR3</hibernate-orm.version>
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
         <infinispan.version>14.0.4.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.0.Final</infinispan.protostream.processor.version>
@@ -106,11 +106,11 @@
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <resteasy-legacy.version>4.7.7.Final</resteasy-legacy.version>
-        <resteasy.version>6.2.2.Final</resteasy.version>
+        <resteasy.version>6.2.3.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20211018.2</owasp.html.sanitizer.version>
-        <slf4j-api.version>1.7.30</slf4j-api.version>
-        <slf4j.version>1.7.30</slf4j.version>
+        <slf4j-api.version>2.0.6</slf4j-api.version>
+        <slf4j.version>2.0.6</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
         <sun.saaj.version>2.0.1</sun.saaj.version>
         <sun.xml.bind.version>2.3.3-b02</sun.xml.bind.version>
