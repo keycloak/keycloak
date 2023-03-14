@@ -174,5 +174,6 @@
   "providerType": "Provider Type",
   "parentId": "Parent ID",
   "kerberosPrincipal": "Kerberos Principal",
-  "kerberosKeyTab": "Kerberos Key Tab"
+  "kerberosKeyTab": "Kerberos Key Tab",
+  "enableAdUser": "Force enable AD user upon creation"
 }

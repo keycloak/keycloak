@@ -105,5 +105,6 @@
   "roleHelp": "Role to grant to user. Click 'Select Role' button to browse roles, or just type it in the textbox. To reference an application role the syntax is appname.approle, i.e. myapp.myrole.",
   "groupHelp": "Group to add the user in. Fill the full path of the group including path. For example: '/root-group/child-group'.",
   "ldapAttributeNameHelp": "Name of the LDAP attribute, which will be added to the new user during registration",
-  "ldapAttributeValueHelp": "Value of the LDAP attribute, which will be added to the new user during registration. You can either hardcode any value like 'foo' but you can also use some special tokens. Only supported token right now is '${RANDOM}', which will be replaced with some randomly generated string."
+  "ldapAttributeValueHelp": "Value of the LDAP attribute, which will be added to the new user during registration. You can either hardcode any value like 'foo' but you can also use some special tokens. Only supported token right now is '${RANDOM}', which will be replaced with some randomly generated string.",
+  "enableAdUserHelp": "Create a random value for 'unicodePwd' and set the 'userAccountControl' attribute to 512 immediately after the user is registered, so that new users are enabled by default. This setting applies only to Active Directory."
 }

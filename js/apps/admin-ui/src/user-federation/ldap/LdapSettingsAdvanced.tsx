@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -67,7 +67,7 @@ export const LdapSettingsAdvanced = ({
           label={t("enableLdapv3Password")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:enableLdapv3PasswordHelp")}
+              helpText="user-federation-help:enableLdapv3PasswordHelp"
               fieldLabelId="user-federation:enableLdapv3Password"
             />
           }
@@ -92,12 +92,39 @@ export const LdapSettingsAdvanced = ({
             )}
           ></Controller>
         </FormGroup>
-
+        <FormGroup
+          hasNoPaddingTop
+          label={t("enableAdUser")}
+          labelIcon={
+            <HelpItem
+              helpText="user-federation-help:enableAdUserHelp"
+              fieldLabelId="user-federation:enableAdUser"
+            />
+          }
+          fieldId="kc-enable-ad-user"
+        >
+          <Controller
+            name="config.enableAdUser"
+            defaultValue={["false"]}
+            control={form.control}
+            render={({ field }) => (
+              <Switch
+                id="kc-enable-ad-user"
+                data-testid="enable-ad-user"
+                label={t("common:on")}
+                labelOff={t("common:off")}
+                onChange={(value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
+                aria-label={t("enableAdUser")}
+              />
+            )}
+          />
+        </FormGroup>
         <FormGroup
           label={t("validatePasswordPolicy")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:validatePasswordPolicyHelp")}
+              helpText="user-federation-help:validatePasswordPolicyHelp"
               fieldLabelId="user-federation:validatePasswordPolicy"
             />
           }
@@ -127,7 +154,7 @@ export const LdapSettingsAdvanced = ({
           label={t("trustEmail")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:trustEmailHelp")}
+              helpText="user-federation-help:trustEmailHelp"
               fieldLabelId="user-federation:trustEmail"
             />
           }
