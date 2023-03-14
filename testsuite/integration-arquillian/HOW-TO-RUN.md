@@ -448,7 +448,7 @@ To run tests using a different database such as PostgreSQL, add the following pr
 
 ```
 # HA using PostgreSQL
-%ha.datasource.dialect=org.hibernate.dialect.PostgreSQL9Dialect
+%ha.datasource.dialect=org.hibernate.dialect.PostgreSQLDialect
 %ha.datasource.driver = org.postgresql.xa.PGXADataSource
 %ha.datasource.url = jdbc:postgresql://localhost/keycloak
 %ha.datasource.username = keycloak

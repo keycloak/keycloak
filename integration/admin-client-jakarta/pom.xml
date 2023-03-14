@@ -31,7 +31,7 @@
     <description/>
 
     <properties>
-        <resteasy.versions>6.0.0.Final</resteasy.versions>
+        <resteasy.versions>6.2.3.Final</resteasy.versions>
 
         <jakarta-transformer-sources>${project.basedir}/../admin-client/src</jakarta-transformer-sources>
         <jakarta-transformer-target>${project.basedir}/src</jakarta-transformer-target>
