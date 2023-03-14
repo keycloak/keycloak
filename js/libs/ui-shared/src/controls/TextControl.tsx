@@ -16,6 +16,7 @@ export type TextControlProps<
 > = UseControllerProps<T, P> & {
   label: string;
   labelIcon?: string;
+  isDisabled?: boolean;
 };
 
 export const TextControl = <
@@ -53,6 +54,7 @@ export const TextControl = <
         validated={
           fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
         }
+        isDisabled={props.isDisabled}
         {...field}
       />
     </FormGroup>
