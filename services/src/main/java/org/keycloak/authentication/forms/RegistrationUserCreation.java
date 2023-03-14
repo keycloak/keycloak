@@ -18,6 +18,8 @@
 package org.keycloak.authentication.forms;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormContext;
@@ -111,6 +113,11 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     @Override
     public void success(FormContext context) {
+//         fail early, fail fast
+        if (context.getUser() != null) {
+            throw new AuthenticationFlowException(AuthenticationFlowError.USER_CONFLICT);
+        }
+
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
 
         String email = formData.getFirst(UserModel.EMAIL);

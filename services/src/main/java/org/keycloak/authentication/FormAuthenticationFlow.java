@@ -26,6 +26,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -101,7 +102,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
         @Override
         public void setUser(UserModel user) {
-            processor.setAutheticatedUser(user);
+            processor.setAuthenticatedUser(user);
         }
 
         @Override
@@ -248,8 +249,16 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
             return renderForm(first.formData, messages);
         }
 
-        for (ValidationContextImpl context : successes) {
-            context.action.success(context);
+        KeycloakTransactionManager transaction = processor.getSession().getTransactionManager();
+        transaction.begin();
+        try {
+            for (ValidationContextImpl context : successes) {
+                context.action.success(context);
+            }
+            transaction.commit();
+        } catch (Exception e) {
+            transaction.rollback();
+            throw e;
         }
         // set status and required actions only if form is fully successful
         for (Map.Entry<String, AuthenticationSessionModel.ExecutionStatus> entry : executionStatus.entrySet()) {

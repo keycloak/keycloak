@@ -44,7 +44,9 @@ import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -73,12 +75,12 @@ import java.util.stream.Stream;
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -112,6 +114,12 @@ public class UserStorageTest extends AbstractAuthTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected LoginPasswordResetPage resetPage;
+    
+    @Page
+    protected ErrorPage errorPage;
 
     @Page
     protected RegisterPage registerPage;
@@ -364,6 +372,58 @@ public class UserStorageTest extends AbstractAuthTest {
             }
         }
         assertFalse(foundRole);
+    }
+    
+    @Test
+    public void testRegisterShouldFailBeforeUserCreationWhenUserIsInContext() throws Exception {
+        try (AutoCloseable c = new RealmAttributeUpdater(testRealmResource())
+            .updateWith(r -> {
+                Map<String, String> config = new HashMap<>();
+                config.put("from", "auto@keycloak.org");
+                config.put("host", "localhost");
+                config.put("port", "3025");
+                r.setSmtpServer(config);
+                r.setRegistrationAllowed(true);
+                r.setVerifyEmail(true);
+                r.setResetPasswordAllowed(true);
+                r.setRegistrationEmailAsUsername(true);
+            })
+            .update()) {
+
+            UserRepresentation userWhoPreExistsInRealm = new UserRepresentation();
+            userWhoPreExistsInRealm.setEmail("keycloak-dev@realcity.io");
+            String uid = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealmResource(), userWhoPreExistsInRealm, "password");
+
+            testRealmAccountPage.navigateTo();
+            loginPage.clickRegister();
+            registerPage.clickBackToLogin();
+            loginPage.assertCurrent(testRealmResource().toRepresentation().getRealm());
+            
+            loginPage.resetPassword();
+            resetPage.assertCurrent();
+            resetPage.changePassword("keycloak-dev@realcity.io");
+            
+            driver.navigate().back();
+            driver.navigate().back();
+            driver.navigate().back();
+            registerPage.assertCurrent();
+            
+            registerPage.registerWithEmailAsUsername(
+                "Vilmos", 
+                "Szabó-Nagy", 
+                "vilmos.nagy@realcity.io",
+                "TestPassword123",
+                "TestPassword123"
+            );
+
+            errorPage.assertCurrent();
+            assertNotNull("Some error happens", errorPage.getError());
+
+            // the user entity should not be created if the registration flow is not executed till the end
+            final UserRepresentation userByUsername = ApiUtil.findUserByUsername(testRealmResource(), "vilmos.nagy@realcity.io");
+            assertNull(userByUsername);
+        }
+        
     }
 
     @Test
