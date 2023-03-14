@@ -67,7 +67,9 @@ public class UserSessionCrossDCManager {
     public UserSessionModel getUserSessionIfExistsRemotely(AuthenticationSessionManager asm, RealmModel realm) {
         List<String> sessionCookies = asm.getAuthSessionCookies(realm);
 
+        boolean noAuthCookie = false;
         if (sessionCookies.isEmpty()) {
+            noAuthCookie=true;
             // ideally, we should not rely on auth session id to retrieve user sessions
             // in case the auth session was removed, we fall back to the identity cookie
             // we are here doing the user session lookup twice, however the second lookup is going to make sure the
@@ -79,6 +81,7 @@ public class UserSessionCrossDCManager {
             }
         }
 
+        boolean finalNoAuthCookie = noAuthCookie;
         return sessionCookies.stream().map(oldEncodedId -> {
             AuthSessionId authSessionId = asm.decodeAuthSessionId(oldEncodedId);
             String sessionId = authSessionId.getDecodedId();
@@ -89,7 +92,11 @@ public class UserSessionCrossDCManager {
             UserSessionModel userSession = lockUserSessionsForModification(kcSession, () -> kcSession.sessions().getUserSession(realm, sessionId));
 
             if (userSession != null) {
-                asm.reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
+                if (finalNoAuthCookie)
+                    // In then fallback, we recreate the auth Session Id cookie
+                    asm.setAuthSessionCookie(authSessionId.getDecodedId(), realm);
+                else
+                    asm.reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
                 return userSession;
             }
 
