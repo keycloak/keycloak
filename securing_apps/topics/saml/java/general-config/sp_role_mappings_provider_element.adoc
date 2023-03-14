@@ -63,7 +63,7 @@ using the `properties.resource.location` to load the `roles.properties` file fro
 
 The `properties` file can contain both roles and principals as keys, and a list of zero or more roles separated by comma
 as values. When invoked, the implementation iterates through the set of roles that were extracted from the assertion and checks,
-for each role, if a mapping exists. If the role maps to an empty role, it is discarded. If it maps to a set of one ore more
+for each role, if a mapping exists. If the role maps to an empty role, it is discarded. If it maps to a set of one or more
 different roles, then these roles are set in the result set. If no mapping is found for the role then it is included as is
 in the result set.
 
