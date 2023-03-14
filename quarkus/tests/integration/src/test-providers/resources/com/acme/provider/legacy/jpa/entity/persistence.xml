@@ -23,7 +23,7 @@
     <persistence-unit name="user-store" transaction-type="JTA">
         <class>com.acme.provider.legacy.jpa.entity.Realm</class>
         <properties>
-            <property name="hibernate.dialect" value="io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect" />
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
             <!-- Sets the name of the datasource to be the same as the datasource name in quarkus.properties-->
             <property name="hibernate.connection.datasource" value="user-store" />
             <property name="jakarta.persistence.transactionType" value="JTA" />
