@@ -195,7 +195,7 @@ public final class Database {
                 Enabled.MAP_STORE_ONLY,
                 POSTGRES.xaDriver,
                 POSTGRES.nonXaDriver,
-                "org.hibernate.dialect.CockroachDB201Dialect",
+                "org.hibernate.dialect.CockroachDialect",
                 "jdbc:postgresql://${kc.db-url-host:localhost}:${kc.db-url-port:26257}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 List.of("liquibase.database.core.CockroachDatabase"),
                 "cockroach"
