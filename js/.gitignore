@@ -29,6 +29,9 @@ assets
 # Optional eslint cache
 .eslintcache
 
+# Keycloak server
+server
+
 # Wireit
 .wireit
 

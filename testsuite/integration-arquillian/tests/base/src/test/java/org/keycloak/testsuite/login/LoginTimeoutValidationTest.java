@@ -72,10 +72,10 @@ public class LoginTimeoutValidationTest extends AbstractTestRealmKeycloakTest {
         RealmModel realm = keycloakSession.realms().getRealmByName("test");
         UserSessionModel userSession =
             keycloakSession.sessions().createUserSession(
-                                                 realm,
+                                                 null, realm,
                                                  keycloakSession.users().getUserByUsername(realm, "user1"),
-                                                 "user1", "127.0.0.1", "form", true, null, null
-                                                 );
+                                                 "user1", "127.0.0.1", "form", true, null, null,
+                                                 UserSessionModel.SessionPersistenceState.PERSISTENT);
         ClientModel client = realm.getClientByClientId("account");
         AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(realm)
             .createAuthenticationSession(client);

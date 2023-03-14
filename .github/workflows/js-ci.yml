@@ -50,10 +50,102 @@ jobs:
       - run: npm run lint --workspace=${{ env.WORKSPACE }}
       - run: npm run build --workspace=${{ env.WORKSPACE }}
 
+  keycloak-js:
+    name: Keycloak JS
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-js
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+
+  keycloak-masthead:
+    name: Keycloak Masthead
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-masthead
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+
+  ui-shared:
+    name: UI Shared
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: ui-shared
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+
+  account-ui:
+    name: Account UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: account-ui
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+
+  admin-ui:
+    name: Admin UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: admin-ui
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: npm run test --workspace=${{ env.WORKSPACE }}
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+      - run: npm run cy:check-types --workspace=${{ env.WORKSPACE }}
+      - run: npm run cy:run-component --workspace=${{ env.WORKSPACE }}
+
   check-set-status:
     name: Set check conclusion
     needs:
       - admin-client
+      - keycloak-js
+      - keycloak-masthead
+      - ui-shared
+      - account-ui
+      - admin-ui
     runs-on: ubuntu-latest
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}

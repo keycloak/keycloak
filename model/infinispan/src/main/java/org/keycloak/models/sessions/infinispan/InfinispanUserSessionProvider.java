@@ -214,14 +214,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-        final String userSessionId = keyGenerator.generateKeyString(session, sessionCache);
-        return createUserSession(userSessionId, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
-    }
-
-    @Override
     public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
                                               String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState) {
+        if (id == null) {
+            id = keyGenerator.generateKeyString(session, sessionCache);
+        }
+
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(id);
         updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
@@ -231,11 +229,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         UserSessionAdapter adapter = wrap(realm, entity, false);
         adapter.setPersistenceState(persistenceState);
-        
-        if (adapter != null) {
-            DeviceActivityManager.attachDevice(adapter, session);
-        }
-        
         return adapter;
     }
 

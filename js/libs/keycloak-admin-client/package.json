@@ -1,6 +1,6 @@
 {
   "name": "@keycloak/keycloak-admin-client",
-  "version": "999.0.0-dev",
+  "version": "999.0.0-SNAPSHOT",
   "description": "A client to interact with Keycloak's Administration API",
   "type": "module",
   "main": "lib/index.js",
@@ -47,7 +47,7 @@
     "@types/chai": "^4.3.4",
     "@types/lodash-es": "^4.17.6",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^18.14.2",
+    "@types/node": "^18.15.1",
     "chai": "^4.3.7",
     "mocha": "^10.2.0",
     "ts-node": "^10.9.1"

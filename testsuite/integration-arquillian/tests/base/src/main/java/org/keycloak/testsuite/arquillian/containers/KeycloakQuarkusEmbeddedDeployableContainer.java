@@ -42,7 +42,7 @@ public class KeycloakQuarkusEmbeddedDeployableContainer extends AbstractQuarkusD
                 .setHomeDir(configuration.getProvidersPath())
                 .setVersion(KEYCLOAK_VERSION)
                 .addDependency("org.keycloak.testsuite", "integration-arquillian-testsuite-providers", KEYCLOAK_VERSION)
-                .addDependency("org.keycloak.testsuite", "integration-arquillian-testsuite-providers", KEYCLOAK_VERSION)
+                .addDependency("org.keycloak.testsuite", "integration-arquillian-testsuite-providers-deployment", KEYCLOAK_VERSION)
                 .addDependency("org.keycloak.testsuite", "integration-arquillian-tests-base", KEYCLOAK_VERSION)
                 .addDependency("org.keycloak.testsuite", "integration-arquillian-tests-base", KEYCLOAK_VERSION, "tests");
     }

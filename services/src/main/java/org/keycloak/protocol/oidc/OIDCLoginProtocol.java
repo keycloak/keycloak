@@ -325,8 +325,13 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (state != null) {
             redirectUri.addParam(OAuth2Constants.STATE, state);
         }
-        
-        new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+
+        if (error == Error.PASSIVE_LOGIN_REQUIRED || error == Error.PASSIVE_INTERACTION_REQUIRED) {
+            // passive check error, just delete the tabId maintaining session and don't reset the restart cookie
+            new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
+        } else {
+            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+        }
         return redirectUri.build();
     }
 

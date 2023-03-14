@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
+import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -159,5 +160,24 @@ public class UserSessionManager {
             logger.tracef("Removing offline userSession for user %s as it doesn't have any client sessions attached. UserSessionID: %s", user.getUsername(), userSession.getId());
         }
         kcSession.sessions().removeOfflineUserSession(realm, userSession);
+    }
+
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress,
+                                              String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        return createUserSession(null, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
+    }
+
+    public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
+                                              String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId,
+                                              UserSessionModel.SessionPersistenceState persistenceState) {
+        // Create user session in store
+        UserSessionModel userSession = kcSession.sessions().createUserSession(id, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId, persistenceState);
+
+        // Attach device info into user session notes
+        if (userSession != null) {
+            DeviceActivityManager.attachDevice(userSession, kcSession);
+        }
+
+        return userSession;
     }
 }

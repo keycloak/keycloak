@@ -1,0 +1,20 @@
+{
+  "title": "Įvykiai",
+  "adminEvents": "Administravimo įvykiai",
+  "time": "Laikas",
+  "user": "Naudotojas",
+  "username": "User Name",
+  "email": "El. paštas",
+  "eventType": "Įvykio tipas",
+  "ipAddress": "IP adresas",
+  "client": "client",
+  "realm": "Sritis",
+  "resourcePath": "Resurso kelias",
+  "resourceType": "Resurso tipas",
+  "resourceTypes": "Resurso tipas",
+  "operationType": "Veiksmo tipas",
+  "operationTypes": "Veiksmas",
+  "auth": "Autentifikacijos informacija",
+  "value": "Reikšmė",
+  "representation": "Reprezentacija"
+}

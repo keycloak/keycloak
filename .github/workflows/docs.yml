@@ -1,0 +1,80 @@
+name: Keycloak Docs
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DEFAULT_JDK_VERSION: 17
+  DEFAULT_JDK_DIST: temurin
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: docs-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  conditional:
+    name: Check conditional workflows and jobs
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
+    runs-on: ubuntu-latest
+    outputs:
+      docs: ${{ steps.conditional.outputs.docs }}
+      ci: ${{ steps.conditional.outputs.ci }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+
+  build:
+    name: Build
+    # will only build the docs if the general CI doesn't run, which will also build the docs
+    if: ${{ needs.conditional.outputs.docs == 'true' && needs.conditional.outputs.ci != 'true' }}
+    runs-on: ubuntu-latest
+    needs: conditional
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+  check-set-status:
+    name: Set check conclusion
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: check
+        uses: ./.github/actions/checks-success
+
+  check:
+    name: Status Check - Keycloak Docs
+    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    needs:
+      - conditional
+      - check-set-status
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check status
+        uses: ./.github/actions/checks-job-pass
+        with:
+          required: ${{ needs.conditional.outputs.docs == 'true' && needs.conditional.outputs.ci != 'true' }}
+          conclusion: ${{ needs.check-set-status.outputs.conclusion }}

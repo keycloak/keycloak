@@ -288,7 +288,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 Assert.assertEquals(0, persister.getUserSessionsCount(true));
 
                 // create two offline user sessions
-                UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "ip1", null, false, null, null);
+                UserSessionModel userSession = session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "ip1", null, false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
                 session.sessions().createOfflineUserSession(userSession);
                 session.sessions().createOfflineUserSession(origSessions[0]);
 
@@ -392,7 +392,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             ClientModel thirdPartyClient = realm.getClientByClientId("third-party");
 
             IntStream.range(0, sessionsPerUser)
-                    .mapToObj(index -> session.sessions().createUserSession(realm, user, username + index, "ip" + index, "auth", false, null, null))
+                    .mapToObj(index -> session.sessions().createUserSession(null, realm, user, username + index, "ip" + index, "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT))
                     .forEach(userSession -> {
                         AuthenticatedClientSessionModel testAppClientSession = session.sessions().createClientSession(realm, testAppClient, userSession);
                         AuthenticatedClientSessionModel thirdPartyClientSession = session.sessions().createClientSession(realm, thirdPartyClient, userSession);

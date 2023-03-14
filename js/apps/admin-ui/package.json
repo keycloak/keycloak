@@ -1,0 +1,114 @@
+{
+  "name": "admin-ui",
+  "scripts": {
+    "dev": "wireit",
+    "build": "wireit",
+    "preview": "wireit",
+    "lint": "wireit",
+    "test": "wireit",
+    "cy:open": "cypress open --e2e --browser chrome",
+    "cy:run": "cypress run --browser chrome",
+    "cy:run-component": "wireit",
+    "cy:check-types": "wireit",
+    "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json"
+  },
+  "wireit": {
+    "dev": {
+      "command": "vite --host",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "preview": {
+      "command": "vite preview",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "build": {
+      "command": "vite build",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "lint": {
+      "command": "eslint . --ext js,jsx,mjs,ts,tsx",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "test": {
+      "command": "vitest",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "cy:run-component": {
+      "command": "cypress run --browser chrome --component",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "cy:check-types": {
+      "command": "tsc --project cypress/tsconfig.json",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
+      ]
+    }
+  },
+  "dependencies": {
+    "@keycloak/keycloak-admin-client": "999.0.0-SNAPSHOT",
+    "@patternfly/patternfly": "^4.224.2",
+    "@patternfly/react-code-editor": "^4.82.113",
+    "@patternfly/react-core": "^4.276.6",
+    "@patternfly/react-icons": "^4.93.6",
+    "@patternfly/react-table": "^4.112.39",
+    "dagre": "^0.8.5",
+    "file-saver": "^2.0.5",
+    "flat": "^5.0.2",
+    "i18next": "^22.4.11",
+    "i18next-http-backend": "^2.1.1",
+    "keycloak-js": "999.0.0-SNAPSHOT",
+    "lodash-es": "^4.17.21",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-error-boundary": "^3.1.4",
+    "react-hook-form": "^7.43.5",
+    "react-i18next": "^12.2.0",
+    "react-router-dom": "6.9.0",
+    "reactflow": "^11.6.0",
+    "ui-shared": "999.0.0-SNAPSHOT",
+    "use-react-router-breadcrumbs": "^4.0.1"
+  },
+  "devDependencies": {
+    "@4tw/cypress-drag-drop": "^2.2.3",
+    "@testing-library/cypress": "^9.0.0",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^14.0.0",
+    "@types/dagre": "^0.7.48",
+    "@types/file-saver": "^2.0.5",
+    "@types/flat": "^5.0.2",
+    "@types/lodash-es": "^4.17.6",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@vitejs/plugin-react-swc": "^3.2.0",
+    "cypress": "^12.7.0",
+    "jsdom": "^21.1.1",
+    "ldap-server-mock": "^6.0.1",
+    "ts-node": "^10.9.1",
+    "vite": "^4.1.4",
+    "vite-plugin-checker": "^0.5.6",
+    "vitest": "^0.29.2"
+  }
+}

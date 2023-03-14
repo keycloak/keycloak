@@ -16,7 +16,12 @@
  */
 package org.keycloak.testsuite.model.parameters;
 
+import org.keycloak.exportimport.ExportSpi;
+import org.keycloak.exportimport.dir.DirExportProviderFactory;
+import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
+import org.keycloak.services.clientpolicy.ClientPolicyManagerFactory;
+import org.keycloak.services.clientpolicy.ClientPolicyManagerSpi;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.provider.ProviderFactory;
@@ -32,10 +37,15 @@ import java.util.Set;
 public class ConcurrentHashMapStorage extends KeycloakModelParameters {
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
+      .add(ExportSpi.class)
+      .add(ClientPolicyManagerSpi.class)
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
       .add(ConcurrentHashMapStorageProviderFactory.class)
+      .add(SingleFileExportProviderFactory.class)
+      .add(DirExportProviderFactory.class)
+      .add(ClientPolicyManagerFactory.class)
       .build();
 
     @Override

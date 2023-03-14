@@ -31,7 +31,6 @@ python3-libs
 python3-pip-wheel
 python3-setuptools-wheel
 p11-kit
-sqlite-libs
 
 EOF
 

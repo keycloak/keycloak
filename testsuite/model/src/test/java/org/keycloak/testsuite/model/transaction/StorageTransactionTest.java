@@ -23,8 +23,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorageSpi;
+import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -34,7 +37,10 @@ import org.keycloak.utils.LockObjectsForModification;
 import javax.persistence.OptimisticLockException;
 import javax.persistence.PessimisticLockException;
 
+import java.util.function.Function;
+
 import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -56,6 +62,10 @@ public class StorageTransactionTest extends KeycloakModelTest {
         RealmModel r = s.realms().createRealm("1");
         r.setDefaultRole(s.roles().addRealmRole(r, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + r.getName()));
         r.setAttribute("k1", "v1");
+
+        r.setSsoSessionIdleTimeout(1000);
+        r.setSsoSessionMaxLifespan(2000);
+
         realmId = r.getId();
     }
 
@@ -71,92 +81,109 @@ public class StorageTransactionTest extends KeycloakModelTest {
 
     @Test
     public void testTwoTransactionsSequentially() throws Exception {
-        TransactionController tx1 = new TransactionController(getFactory());
-        TransactionController tx2 = new TransactionController(getFactory());
+        try (TransactionController tx1 = new TransactionController(getFactory());
+             TransactionController tx2 = new TransactionController(getFactory())) {
+            tx1.begin();
+            assertThat(
+                    tx1.runStep(session -> {
+                        session.realms().getRealm(realmId).setAttribute("k2", "v1");
+                        return session.realms().getRealm(realmId).getAttribute("k2");
+                    }), equalTo("v1"));
+            tx1.commit();
 
-        tx1.begin();
-        assertThat(
-                tx1.runStep(session -> {
-                    session.realms().getRealm(realmId).setAttribute("k2", "v1");
-                    return session.realms().getRealm(realmId).getAttribute("k2");
-                }), equalTo("v1"));
-        tx1.commit();
-
-        tx2.begin();
-        assertThat(
-                tx2.runStep(session -> session.realms().getRealm(realmId).getAttribute("k2")),
-                equalTo("v1"));
-        tx2.commit();
-
+            tx2.begin();
+            assertThat(
+                    tx2.runStep(session -> session.realms().getRealm(realmId).getAttribute("k2")),
+                    equalTo("v1"));
+            tx2.commit();
+        }
     }
 
     @Test
-    public void testRepeatableRead() {
-        TransactionController tx1 = new TransactionController(getFactory());
-        TransactionController tx2 = new TransactionController(getFactory());
-        TransactionController tx3 = new TransactionController(getFactory());
+    public void testRepeatableRead() throws Exception {
+        try (TransactionController tx1 = new TransactionController(getFactory());
+             TransactionController tx2 = new TransactionController(getFactory());
+             TransactionController tx3 = new TransactionController(getFactory())) {
 
-        tx1.begin();
-        tx2.begin();
-        tx3.begin();
+            tx1.begin();
+            tx2.begin();
+            tx3.begin();
 
-        // Read original value in tx1
-        assertThat(
-                tx1.runStep(session -> session.realms().getRealm(realmId).getAttribute("k1")),
-                equalTo("v1"));
+            // Read original value in tx1
+            assertThat(
+                    tx1.runStep(session -> session.realms().getRealm(realmId).getAttribute("k1")),
+                    equalTo("v1"));
 
-        // change value to new in tx2
-        tx2.runStep(session -> {
-            session.realms().getRealm(realmId).setAttribute("k1", "v2");
-            return null;
+            // change value to new in tx2
+            tx2.runStep(session -> {
+                session.realms().getRealm(realmId).setAttribute("k1", "v2");
+                return null;
+            });
+            tx2.commit();
+
+            // tx1 should still return the value that already read
+            assertThat(
+                    tx1.runStep(session -> session.realms().getRealm(realmId).getAttribute("k1")),
+                    equalTo("v1"));
+
+            // tx3 should return the new value
+            assertThat(
+                    tx3.runStep(session -> session.realms().getRealm(realmId).getAttribute("k1")),
+                    equalTo("v2"));
+            tx1.commit();
+            tx3.commit();
+        }
+    }
+
+    @Test
+    // LockObjectForModification currently works only in map-jpa and map-hotrod
+    @RequireProvider(value = MapStorageProvider.class, only = { JpaMapStorageProviderFactory.PROVIDER_ID, HotRodMapStorageProviderFactory.PROVIDER_ID})
+    public void testLockObjectForModificationById() throws Exception {
+        testLockObjectForModification(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId)));
+    }
+
+    @Test
+    // LockObjectForModification currently works only in map-jpa and map-hotrod
+    @RequireProvider(value = MapStorageProvider.class, only = { JpaMapStorageProviderFactory.PROVIDER_ID, HotRodMapStorageProviderFactory.PROVIDER_ID})
+    public void testLockUserSessionForModificationByQuery() throws Exception {
+        // Create user session
+        final String sessionId = withRealm(realmId, (session, realm) -> {
+            UserModel myUser = session.users().addUser(realm, "myUser");
+            return session.sessions().createUserSession(realm, myUser, "myUser", "127.0.0.1", "form", true, null, null).getId();
         });
-        tx2.commit();
 
-        // tx1 should still return the value that already read
-        assertThat(
-                tx1.runStep(session -> session.realms().getRealm(realmId).getAttribute("k1")),
-                equalTo("v1"));
-
-        // tx3 should return the new value
-        assertThat(
-                tx3.runStep(session -> session.realms().getRealm(realmId).getAttribute("k1")),
-                equalTo("v2"));
-        tx1.commit();
-        tx3.commit();
+        testLockObjectForModification(session -> LockObjectsForModification.lockUserSessionsForModification(session, readUserSessionByIdUsingQueryParameters(session, sessionId)));
     }
 
-    @Test
-    // LockObjectForModification is currently used only in map-jpa
-    @RequireProvider(value = MapStorageProvider.class, only = JpaMapStorageProviderFactory.PROVIDER_ID)
-    public void testLockObjectForModification() {
+    private <R> void testLockObjectForModification(Function<KeycloakSession, R> lockedExecution) throws Exception {
         String originalTimeoutValue = System.getProperty(LOCK_TIMEOUT_SYSTEM_PROPERTY);
         try {
             System.setProperty(LOCK_TIMEOUT_SYSTEM_PROPERTY, "300");
             reinitializeKeycloakSessionFactory();
+            try (TransactionController tx1 = new TransactionController(getFactory());
+                 TransactionController tx2 = new TransactionController(getFactory());
+                 TransactionController tx3 = new TransactionController(getFactory())) {
 
-            TransactionController tx1 = new TransactionController(getFactory());
-            TransactionController tx2 = new TransactionController(getFactory());
-            TransactionController tx3 = new TransactionController(getFactory());
+                tx1.begin();
+                tx2.begin();
 
-            tx1.begin();
-            tx2.begin();
+                // tx1 acquires lock
+                tx1.runStep(lockedExecution);
 
-            // tx1 acquires lock
-            tx1.runStep(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId)));
+                // tx2 should fail as tx1 locked the realm
+                assertException(() -> tx2.runStep(lockedExecution),
+                        anyOf(allOf(instanceOf(ModelException.class), hasCause(anyOf(instanceOf(PessimisticLockException.class), instanceOf(org.hibernate.PessimisticLockException.class)))),
+                                instanceOf(LockAcquiringTimeoutException.class)));
 
-            // tx2 should fail as tx1 locked the realm
-            assertException(() -> tx2.runStep(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId))),
-                    allOf(instanceOf(ModelException.class),
-                            hasCause(instanceOf(PessimisticLockException.class))));
+                // end both transactions
+                tx2.rollback();
+                tx1.commit();
 
-            // end both transactions
-            tx2.rollback();
-            tx1.commit();
-
-            // start new transaction and read again, it should be successful
-            tx3.begin();
-            tx3.runStep(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId)));
-            tx3.commit();
+                // start new transaction and read again, it should be successful
+                tx3.begin();
+                tx3.runStep(lockedExecution);
+                tx3.commit();
+            }
         } finally {
             if (originalTimeoutValue == null) {
                 System.clearProperty(LOCK_TIMEOUT_SYSTEM_PROPERTY);
@@ -167,38 +194,44 @@ public class StorageTransactionTest extends KeycloakModelTest {
         }
     }
 
+    private LockObjectsForModification.CallableWithoutThrowingAnException<UserSessionModel> readUserSessionByIdUsingQueryParameters(KeycloakSession session, String sessionId) {
+        RealmModel realm = session.realms().getRealm(realmId);
+        return () -> session.sessions().getUserSession(realm, sessionId);
+    }
+
     @Test
     // Optimistic locking works only with map-jpa
     @RequireProvider(value = MapStorageProvider.class, only = JpaMapStorageProviderFactory.PROVIDER_ID)
-    public void testOptimisticLockingException() {
+    public void testOptimisticLockingException() throws Exception {
         withRealm(realmId, (session, realm) -> {
             realm.setDisplayName("displayName1");
             return null;
         });
 
-        TransactionController tx1 = new TransactionController(getFactory());
-        TransactionController tx2 = new TransactionController(getFactory());
+        try (TransactionController tx1 = new TransactionController(getFactory());
+             TransactionController tx2 = new TransactionController(getFactory())) {
 
-        // tx1 acquires lock
-        tx1.begin();
-        tx2.begin();
+            // tx1 acquires lock
+            tx1.begin();
+            tx2.begin();
 
-        // both transactions touch the same entity
-        tx1.runStep(session -> {
-            session.realms().getRealm(realmId).setDisplayName("displayName2");
-            return null;
-        });
-        tx2.runStep(session -> {
-            session.realms().getRealm(realmId).setDisplayName("displayName3");
-            return null;
-        });
+            // both transactions touch the same entity
+            tx1.runStep(session -> {
+                session.realms().getRealm(realmId).setDisplayName("displayName2");
+                return null;
+            });
+            tx2.runStep(session -> {
+                session.realms().getRealm(realmId).setDisplayName("displayName3");
+                return null;
+            });
 
-        // tx1 transaction should be successful
-        tx1.commit();
+            // tx1 transaction should be successful
+            tx1.commit();
 
-        // tx2 should fail as tx1 already changed the value
-        assertException(tx2::commit,
-                allOf(instanceOf(ModelException.class),
-                        hasCause(instanceOf(OptimisticLockException.class))));
+            // tx2 should fail as tx1 already changed the value
+            assertException(tx2::commit,
+                    allOf(instanceOf(ModelException.class),
+                            hasCause(instanceOf(OptimisticLockException.class))));
+        }
     }
 }
