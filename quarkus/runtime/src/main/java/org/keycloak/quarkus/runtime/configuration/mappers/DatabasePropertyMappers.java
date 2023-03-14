@@ -189,7 +189,7 @@ final class DatabasePropertyMappers {
 
     private static Optional<String> transformDialect(Optional<String> db, ConfigSourceInterceptorContext context) {
         if (isJpaStore()) {
-            return of("org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
+            return Database.getDialect(getJpaStoreDbVendor().name().toLowerCase());
         }
 
         Optional<String> databaseKind = Database.getDatabaseKind(db.get());
