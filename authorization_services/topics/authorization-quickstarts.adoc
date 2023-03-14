@@ -17,19 +17,19 @@ table provides a brief description of the available authorization quickstarts:
 |===
 |Name |Description
 
-| https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-jee-servlet[app-authz-jee-servlet]
+| {quickstartRepo_link}/tree/latest/app-authz-jee-servlet[app-authz-jee-servlet]
 | Demonstrates how to enable fine-grained authorization to a Jakarta EE application in order to protect specific resources and build a dynamic menu based on the permissions obtained from a {Project_Name} Server.
 
-| https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-jee-vanilla[app-authz-jee-vanilla]
+| {quickstartRepo_link}/tree/latest/app-authz-jee-vanilla[app-authz-jee-vanilla]
 | Demonstrates how to enable fine-grained authorization to a Jakarta EE application and use the default authorization settings to protect all resources in the application.
 
-| https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-rest-springboot[app-authz-rest-springboot]
+| {quickstartRepo_link}/tree/latest/app-authz-rest-springboot[app-authz-rest-springboot]
 | Demonstrates how to protect a SpringBoot REST service using {Project_Name} Authorization Services.
 
-| https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-springboot[app-authz-springboot]
+| {quickstartRepo_link}/tree/latest/app-authz-springboot[app-authz-springboot]
 | Demonstrates how to write a SpringBoot Web application where both authentication and authorization aspects are managed by {Project_Name}.
 
-| https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-uma-photoz[app-authz-uma-photoz]
-| A simple application based on HTML5+AngularJS+JAX-RS that demonstrates how to enable User-Managed Access to your application and let users to manage permissions for their resources.
+| {quickstartRepo_link}/tree/latest/app-authz-uma-photoz[app-authz-uma-photoz]
+| A simple application based on HTML5+AngularJS+JAX-RS that demonstrates how to enable User-Managed Access to your application and let users manage permissions for their resources.
 
 |===
