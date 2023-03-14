@@ -26,7 +26,10 @@ import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -40,7 +43,13 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -156,4 +165,36 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
 
     }
 
+    @Test
+    public void testLowercaseTermsAndConditionRequiredActionAliasInRealmAndUser() {
+        // Change required action to the old required action name
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            RequiredActionProviderModel requiredActionProviderByAlias = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+            requiredActionProviderByAlias.setProviderId(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name().toLowerCase());
+            requiredActionProviderByAlias.setAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name().toLowerCase());
+            realm.updateRequiredActionProvider(requiredActionProviderByAlias);
+
+            UserModel userByUsername = session.users().getUserByUsername(realm, "test-user@localhost");
+            userByUsername.removeRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+            userByUsername.addRequiredAction(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS);
+        });
+
+        // Should still behave the same way as before
+        termsAccepted();
+
+        // Test the values were migrated to new one
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            RequiredActionProviderModel requiredActionProviderByAlias = realm.getRequiredActionProviderByAlias(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS);
+            assertThat(requiredActionProviderByAlias, nullValue());
+
+            requiredActionProviderByAlias = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+            assertThat(requiredActionProviderByAlias.getAlias(), equalTo(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()));
+            assertThat(requiredActionProviderByAlias.getProviderId(), equalTo(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()));
+
+            UserModel userByUsername = session.users().getUserByUsername(realm, "test-user@localhost");
+            assertThat(userByUsername.getRequiredActionsStream().collect(Collectors.toList()), not(hasItem(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS)));
+        });
+    }
 }

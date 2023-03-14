@@ -30,6 +30,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.ComponentUtil;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -1855,6 +1856,12 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     }
 
     public RequiredActionProviderModel entityToModel(RequiredActionProviderEntity entity) {
+        // Check if entity needs migration for TERMS_AND_CONDITION legacy alias/providerId
+        if (DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS.equals(entity.getAlias())) {
+            entity.setAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+            entity.setProviderId(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+        }
+
         RequiredActionProviderModel model = new RequiredActionProviderModel();
         model.setId(entity.getId());
         model.setProviderId(entity.getProviderId());

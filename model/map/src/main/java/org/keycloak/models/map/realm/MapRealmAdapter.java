@@ -26,6 +26,7 @@ import static java.util.Objects.nonNull;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,6 +56,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
@@ -69,6 +71,7 @@ import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.utils.ComponentUtil;
+import org.keycloak.models.utils.DefaultRequiredActions;
 
 public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implements RealmModel {
 
@@ -934,10 +937,21 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
         Set<MapRequiredActionProviderEntity> raps = entity.getRequiredActionProviders();
         return raps == null ? null : raps.stream()
-                .filter(actionProvider -> Objects.equals(actionProvider.getAlias(), alias))
+                .filter(requiredActionsPredicateConsideringLegacyTermsAndConditionAlias(alias))
                 .findFirst()
                 .map(MapRequiredActionProviderEntity::toModel)
                 .orElse(null);
+    }
+
+    public Predicate<MapRequiredActionProviderEntity> requiredActionsPredicateConsideringLegacyTermsAndConditionAlias(String requestedAlias) {
+        return actionProvider -> {
+            String actualAlias = actionProvider.getAlias();
+            boolean result = Objects.equals(actualAlias, requestedAlias);
+            if (!result && UserModel.RequiredAction.TERMS_AND_CONDITIONS.name().equals(requestedAlias)) {
+                result = Objects.equals(actualAlias, DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS);
+            }
+            return result;
+        };
     }
 
     @Override

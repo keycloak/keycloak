@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.model;
+package org.keycloak.testsuite.model.realm;
 
 import org.junit.Test;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -25,20 +25,28 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @RequireProvider(RealmProvider.class)
@@ -182,5 +190,34 @@ public class RealmModelTest extends KeycloakModelTest {
                 getFactory().unregister(providerEventListener);
             }
         }
+    }
+
+    @Test
+    public void testTermsAndConditionRequiredActionMigration() {
+        // Change store to contain old version of TERMS_AND_CONDITIONS action
+        withRealm(realmId, (session, realm) -> {
+            DefaultRequiredActions.addTermsAndConditionsAction(realm);
+            RequiredActionProviderModel tac = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+            tac.setProviderId(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS);
+            tac.setAlias(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS);
+            realm.updateRequiredActionProvider(tac);
+            return null;
+        });
+
+
+        withRealm(realmId, (session, realm) -> {
+            assertThat(realm.getRequiredActionProvidersStream().map(RequiredActionProviderModel::getAlias).collect(Collectors.toList()),
+                    allOf(not(hasItem(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS)),
+                            hasItem(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name())));
+
+            assertThat(realm.getRequiredActionProvidersStream().map(RequiredActionProviderModel::getProviderId).collect(Collectors.toList()),
+                    allOf(not(hasItem(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS)),
+                    hasItem(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name())));
+
+            assertThat(realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()), notNullValue());
+            return null;
+        });
+
+
     }
 }

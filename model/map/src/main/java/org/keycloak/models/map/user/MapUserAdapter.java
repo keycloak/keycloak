@@ -26,6 +26,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
@@ -176,16 +177,26 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
     @Override
     public Stream<String> getRequiredActionsStream() {
         Set<String> requiredActions = entity.getRequiredActions();
-        return requiredActions == null ? Stream.empty() : requiredActions.stream();
+        return requiredActions == null ? Stream.empty() : requiredActions
+                .stream()
+                .map(DefaultRequiredActions::getDefaultRequiredActionCaseInsensitively);
     }
 
     @Override
     public void addRequiredAction(String action) {
+        if (RequiredAction.TERMS_AND_CONDITIONS.name().equals(action)) {
+            entity.removeRequiredAction(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS);
+        }
+
         entity.addRequiredAction(action);
     }
 
     @Override
     public void removeRequiredAction(String action) {
+        if (RequiredAction.TERMS_AND_CONDITIONS.name().equals(action)) {
+            entity.removeRequiredAction(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS);
+        }
+
         entity.removeRequiredAction(action);
     }
 

@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.model.user;
 
+import org.hamcrest.CoreMatchers;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
@@ -23,10 +24,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.map.realm.MapRealmProviderFactory;
 import org.keycloak.models.map.user.MapUserProviderFactory;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -46,12 +49,16 @@ import java.util.stream.IntStream;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -346,6 +353,69 @@ public class UserModelTest extends KeycloakModelTest {
             final GroupModel group = session.groups().getGroupById(realm, groupId);
             assertThat(session.users().getGroupMembersStream(realm, group).collect(Collectors.toList()), Matchers.empty());
             return null;
+        });
+    }
+
+    @Test
+    public void testTermsAndConditionRequiredActionMigrationReadingAll() {
+        // Change store to contain old version of TERMS_AND_CONDITIONS action
+        String userId = prepareUserWithLegacyRequiredAction();
+
+        withRealm(realmId, (session, realm) -> {
+            final UserModel user = session.users().getUserById(realm, userId);
+            assertThat(user.getRequiredActionsStream().collect(Collectors.toList()),
+                    contains(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()));
+            return null;
+        });
+    }
+
+    @Test
+    public void testTermsAndConditionAddNewNameWhenOldAlreadyExists() {
+        String userId = prepareUserWithLegacyRequiredAction();
+
+        // Try to add new required action when old exists
+        withRealm(realmId, (session, realm) -> {
+            final UserModel user = session.users().getUserById(realm, userId);
+            user.addRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+            return null;
+        });
+
+        // Test only one exists
+        withRealm(realmId, (session, realm) -> {
+            final UserModel user = session.users().getUserById(realm, userId);
+
+            assertThat(user.getRequiredActionsStream().collect(Collectors.toList()),
+                    contains(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()));
+            return null;
+        });
+    }
+
+    @Test
+    public void testRemoveNewTermsAndConditionWhenOldExists() {
+        String userId = prepareUserWithLegacyRequiredAction();
+
+        // Test remove new name removes also legacy
+        withRealm(realmId, (session, realm) -> {
+            final UserModel user = session.users().getUserById(realm, userId);
+            // Try to add both version of terms and conditions, none should succeed and there should be still only one action
+            user.removeRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+            return null;
+        });
+        withRealm(realmId, (session, realm) -> {
+            final UserModel user = session.users().getUserById(realm, userId);
+
+            assertThat(user.getRequiredActionsStream().collect(Collectors.toList()),
+                    emptyIterable());
+            return null;
+        });
+
+    }
+
+    private String prepareUserWithLegacyRequiredAction() {
+        return withRealm(realmId, (session, realm) -> {
+            final UserModel user = session.users().addUser(realm, "user_with_terms_and_condition_required");
+            user.addRequiredAction(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS);
+            return user.getId();
         });
     }
 

@@ -18,10 +18,12 @@
 package org.keycloak.models.map.realm.entity;
 
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashMap;
@@ -47,6 +49,13 @@ public interface MapRequiredActionProviderEntity extends UpdatableEntity, Abstra
 
     static RequiredActionProviderModel toModel(MapRequiredActionProviderEntity entity) {
         if (entity == null) return null;
+
+        // Check if entity needs migration for TERMS_AND_CONDITION legacy alias/providerId
+        if (DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS.equals(entity.getAlias())) {
+            entity.setAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+            entity.setProviderId(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+        }
+
         RequiredActionProviderModel model = new RequiredActionProviderModel();
         model.setId(entity.getId());
         model.setAlias(entity.getAlias());

@@ -32,6 +32,7 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
@@ -50,6 +51,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import static org.keycloak.models.utils.DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -265,13 +267,20 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public Stream<String> getRequiredActionsStream() {
-        return user.getRequiredActions().stream().map(action -> action.getAction()).distinct();
+        return user.getRequiredActions()
+                .stream()
+                .map(UserRequiredActionEntity::getAction)
+                .map(DefaultRequiredActions::getDefaultRequiredActionCaseInsensitively)
+                .distinct();
     }
 
     @Override
     public void addRequiredAction(String actionName) {
         for (UserRequiredActionEntity attr : user.getRequiredActions()) {
-            if (attr.getAction().equals(actionName)) {
+            if (attr.getAction().equals(actionName)
+                || (RequiredAction.TERMS_AND_CONDITIONS.name().equals(actionName)
+                    && attr.getAction().equals(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS))
+            ) {
                 return;
             }
         }
@@ -287,7 +296,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         Iterator<UserRequiredActionEntity> it = user.getRequiredActions().iterator();
         while (it.hasNext()) {
             UserRequiredActionEntity attr = it.next();
-            if (attr.getAction().equals(actionName)) {
+            if (attr.getAction().equals(actionName)
+                    || (RequiredAction.TERMS_AND_CONDITIONS.name().equals(actionName)
+                    && attr.getAction().equals(DefaultRequiredActions.TERMS_AND_CONDITIONS_LEGACY_ALIAS))
+            ) {
                 it.remove();
                 em.remove(attr);
             }

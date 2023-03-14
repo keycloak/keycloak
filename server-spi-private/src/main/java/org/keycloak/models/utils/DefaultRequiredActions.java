@@ -36,6 +36,8 @@ import static org.keycloak.common.Profile.isFeatureEnabled;
  */
 public class DefaultRequiredActions {
 
+    public static final String TERMS_AND_CONDITIONS_LEGACY_ALIAS = "terms_and_conditions";
+
     /**
      * Check whether the action is the default one used in a realm and is available in the application
      * Often, the default actions can be disabled due to the fact a particular feature is disabled
