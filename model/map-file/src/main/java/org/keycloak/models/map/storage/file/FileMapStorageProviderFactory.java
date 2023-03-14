@@ -35,6 +35,7 @@ import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.file.locking.FileLockManager;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
@@ -111,6 +112,8 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
         if (rootAreaDirectories != null) {
             rootAreaDirectories.put(getModelName(RealmModel.class), realmId -> realmId == null ? rootRealmsDirectory : rootRealmsDirectory.resolve(realmId) );
         }
+
+        FileLockManager.init(config, rootAreaDirectories);
     }
 
     private static final Pattern FORBIDDEN_CHARACTERS = Pattern.compile("[\\.\\" + File.separator + "]");

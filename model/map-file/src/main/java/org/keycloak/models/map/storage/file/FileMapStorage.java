@@ -27,6 +27,8 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
+import org.keycloak.models.map.storage.file.locking.FileLockManager;
+import org.keycloak.models.map.storage.file.locking.Lock;
 import org.keycloak.storage.ReadOnlyException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -35,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -45,7 +48,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelName;
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelType;
 import static org.keycloak.models.map.storage.file.FileCrudOperations.ID_COMPONENT_SEPARATOR;
 
 /**
@@ -62,6 +68,8 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
     private final List<Path> pathsToDelete = new LinkedList<>();
     private final Map<Path, Path> renameOnCommit = new LinkedHashMap<>();
     private final Map<Path, FileTime> lastModified = new HashMap<>();
+    private final Map<Path, String> pathsToRealm = new HashMap<>();
+    private final Class<V> entityClass;
 
     private final String txId = StringKey.INSTANCE.yieldNewUniqueKey();
 
@@ -82,6 +90,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
           MapFieldPredicates.getPredicates(ModelEntityUtil.getModelType(entityClass)),
           ModelEntityUtil.getRealmIdField(entityClass)
         );
+        this.entityClass = entityClass;
     }
 
     @Override
@@ -94,13 +103,18 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
 
     @Override
     public void commit() {
-        super.commit();
-        // check it is still safe to update/delete before moving the temp files into the actual files or deleting them.
-        Set<Path> allChangedPaths = new HashSet<>();
-        allChangedPaths.addAll(this.renameOnCommit.values());
-        allChangedPaths.addAll(this.pathsToDelete);
-        allChangedPaths.forEach(this::checkIsSafeToModify);
+        Collection<Lock> locks = null;
         try {
+            super.commit();
+            Set<Path> allChangedPaths = new HashSet<>();
+            allChangedPaths.addAll(this.renameOnCommit.values());
+            allChangedPaths.addAll(this.pathsToDelete);
+            // before doing anything, check if all changes can be performed (i.e. files were not changed by other transactions).
+            allChangedPaths.forEach(this::checkIsSafeToModify);
+            // lock all files that will be changed.
+            locks = this.createAndAcquireLocks(allChangedPaths);
+            // now that we have exclusive access to the files, re-check it is still safe to write the changes.
+            allChangedPaths.forEach(this::checkIsSafeToModify);
             this.renameOnCommit.forEach(FileMapStorage::move);
             this.pathsToDelete.forEach(FileMapStorage::silentDelete);
             // TODO: catch exception thrown by move and try to restore any previously completed moves.
@@ -109,6 +123,8 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
             this.renameOnCommit.keySet().forEach(FileMapStorage::silentDelete);
             // remove any created files that may have been left empty.
             this.createdPaths.forEach(path -> silenteDelete(path, true));
+            // release all locks.
+            releaseLocks(locks);
         }
     }
 
@@ -145,14 +161,16 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
         createdPaths.add(path);
     }
 
-    public boolean removeIfExists(Path path) {
+    public boolean removeIfExists(Path path, String realmId) {
         final boolean res = ! pathsToDelete.contains(path) && Files.exists(path);
         pathsToDelete.add(path);
+        pathsToRealm.put(path, realmId);
         return res;
     }
 
-    void registerRenameOnCommit(Path from, Path to) {
+    void registerRenameOnCommit(Path from, Path to, String realmId) {
         pathsToDelete.remove(to);
+        pathsToRealm.put(to, realmId);
         this.renameOnCommit.put(from, to);
     }
 
@@ -203,11 +221,37 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
         }
     }
 
-
     @Override
     public V registerEntityForChanges(V origEntity) {
         final V watchedValue = super.registerEntityForChanges(origEntity);
         return DeepCloner.DUMB_CLONER.entityFieldDelegate(watchedValue, new IdProtector(watchedValue));
+    }
+
+    Collection<Lock> createAndAcquireLocks(Collection<Path> paths) {
+        Collection<Lock> locks = null;
+        try {
+            locks = paths.stream()
+                    .map(path -> FileLockManager.createLock(getModelName(getModelType(this.entityClass)), pathsToRealm.get(path), path))
+                    .collect(Collectors.toList());
+            locks.forEach(Lock::acquire);
+            return locks;
+        } catch(RuntimeException re) {
+            // release any locks that might have been acquired.
+            releaseLocks(locks);
+            throw re;
+        }
+    }
+
+    void releaseLocks(Collection<Lock> locks) {
+        if (locks != null) {
+            locks.forEach(lock -> {
+                try {
+                    lock.release();
+                } catch (RuntimeException re) {
+                    LOG.debug("Failed to remove lock %s, manual removal might be required", lock, re);
+                }
+            });
+        }
     }
 
     private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileCrudOperations<V, M> {
@@ -225,12 +269,12 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
 
         @Override
         protected void registerRenameOnCommit(Path from, Path to) {
-            store.registerRenameOnCommit(from, to);
+            store.registerRenameOnCommit(from, to, getRealmId() != null ? escapeId(getRealmId()) : null);
         }
 
         @Override
         protected boolean removeIfExists(Path sp) {
-            return store.removeIfExists(sp);
+            return store.removeIfExists(sp, getRealmId() != null ? escapeId(getRealmId()) : null);
         }
 
         @Override

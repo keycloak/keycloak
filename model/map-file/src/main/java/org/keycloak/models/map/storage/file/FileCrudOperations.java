@@ -34,6 +34,8 @@ import org.keycloak.models.map.storage.CrudOperations;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.file.common.MapEntityContext;
+import org.keycloak.models.map.storage.file.locking.FileLockManager;
+import org.keycloak.models.map.storage.file.locking.Lock;
 import org.keycloak.models.map.storage.file.yaml.PathWriter;
 import org.keycloak.models.map.storage.file.yaml.YamlParser;
 import org.keycloak.models.map.storage.file.yaml.YamlWritingMechanism;
@@ -41,6 +43,7 @@ import org.keycloak.storage.SearchableModelField;
 import org.snakeyaml.engine.v2.emitter.Emitter;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -61,6 +64,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.snakeyaml.engine.v2.api.DumpSettings;
+
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelName;
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelType;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEntity, M> implements CrudOperations<V, M>, HasRealmId {
@@ -141,7 +147,7 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
     private static final String ESCAPING_CHARACTER = "=";
     private static final Pattern ID_COMPONENT_SEPARATOR_PATTERN = Pattern.compile(Pattern.quote(ID_COMPONENT_SEPARATOR) + "+");
 
-    private static String[] escapeId(String[] idArray) {
+    protected static String[] escapeId(String[] idArray) {
         if (idArray == null || idArray.length == 0 || idArray.length == 1 && idArray[0] == null) {
             return null;
         }
@@ -150,7 +156,7 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
                 .toArray(String[]::new);
     }
 
-    private static String escapeId(String id) {
+    protected static String escapeId(String id) {
         Objects.requireNonNull(id, "ID must be non-null");
 
         StringBuilder idEscaped = new StringBuilder();
@@ -179,7 +185,24 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
 
     protected V parse(Path fileName) {
         getLastModifiedTime(fileName);
-        final V parsedObject = YamlParser.parse(fileName, new MapEntityContext<>(entityClass));
+        V parsedObject = null;
+        Lock lock = FileLockManager.createLock(getModelName(getModelType(entityClass)), this.defaultRealmId, fileName)
+                .acquire();
+        try (InputStream is = Files.newInputStream(fileName)) {
+            // we have the input stream, safe to release the read lock.
+            lock.release();
+            if (Files.size(fileName) > 0) {
+                parsedObject = YamlParser.parse(is, fileName, new MapEntityContext<>(entityClass));
+            }
+        } catch (IOException ex) {
+            LOG.warn(ex);
+            return null;
+        } finally {
+            // ensure the lock is released
+            if (lock.isActive())
+                lock.release();
+        }
+
         if (parsedObject == null) {
             LOG.debugf("Could not parse %s%s", fileName, StackUtil.getShortStackTrace());
             return null;
@@ -232,7 +255,6 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
      * Returns escaped ID - relative file name in the file system with path separator {@link #ID_COMPONENT_SEPARATOR}.
      *
      * @param value     Object
-     * @param forCreate Whether this is for create operation ({@code true}) or
      * @return
      */
     @Override

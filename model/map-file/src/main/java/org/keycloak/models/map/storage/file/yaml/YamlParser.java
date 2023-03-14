@@ -97,20 +97,12 @@ public class YamlParser<E> {
       .setTagConstructors(Map.of(Tag.NULL, new NullConstructor()))
       .build();
 
-    public static <E> E parse(Path path, BlockContext<E> initialContext) {
+    public static <E> E parse(InputStream is, Path path, BlockContext<E> initialContext) {
         LOG.tracef("parse(%s,%s)%s", path, initialContext, getShortStackTrace());
 
         Objects.requireNonNull(path, "Path invalid");
-        try (InputStream is = Files.newInputStream(path)) {
-            if (Files.size(path) == 0) {
-                return null;
-            }
-            Parser p = new ParserImpl(SETTINGS, new StreamReader(SETTINGS, new YamlUnicodeReader(is)));
-            return new YamlParser<>(p, initialContext).parse();
-        } catch (IOException ex) {
-            LOG.warn(ex);
-            return null;
-        }
+        Parser p = new ParserImpl(SETTINGS, new StreamReader(SETTINGS, new YamlUnicodeReader(is)));
+        return new YamlParser<>(p, initialContext).parse();
     }
 
     protected YamlParser(Parser p, BlockContext<E> initialContext) {
