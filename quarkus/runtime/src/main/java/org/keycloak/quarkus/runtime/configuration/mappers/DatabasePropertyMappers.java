@@ -27,7 +27,6 @@ final class DatabasePropertyMappers {
         return new PropertyMapper[] {
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom("db")
-                        .to("quarkus.hibernate-orm.dialect")
                         .transformer(DatabasePropertyMappers::transformDialect)
                         .build(),
                 fromOption(DatabaseOptions.DB_DRIVER)
@@ -78,7 +77,6 @@ final class DatabasePropertyMappers {
                         .isMasked(true)
                         .build(),
                 fromOption(DatabaseOptions.DB_SCHEMA)
-                        .to("quarkus.hibernate-orm.database.default-schema")
                         .paramLabel("schema")
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_INITIAL_SIZE)
