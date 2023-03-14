@@ -108,6 +108,10 @@ public class ClaimsRepresentation {
         }
     }
 
+    public void addIdTokenClaim(String claimName, ClaimValue<String> claimValue) {
+        idTokenClaims.put(claimName, claimValue);
+    }
+
     public enum ClaimContext {
         ID_TOKEN, USERINFO
     }

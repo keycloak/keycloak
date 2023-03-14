@@ -35,8 +35,8 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
-import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -44,6 +44,7 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.executor.LoAEnforcerExecutor;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
@@ -57,11 +58,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
+import java.util.stream.IntStream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -300,19 +300,23 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(authenticationSession.getClient());
         List<String> acrValues = AcrUtils.getRequiredAcrValues(request.getClaims());
 
+        if (request.getContextData().containsKey(LoAEnforcerExecutor.CONTEXT_DATA_ENFORCED_ACR)) {
+            acrValues.add(request.getContextData().get(LoAEnforcerExecutor.CONTEXT_DATA_ENFORCED_ACR).toString());
+        }
+
         if (acrValues.isEmpty()) {
             acrValues = AcrUtils.getAcrValues(request.getClaims(), request.getAcr(), authenticationSession.getClient());
         } else {
             authenticationSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
         }
 
-        acrValues.stream().mapToInt(acr -> {
+        boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
+        IntStream requestedLoas = acrValues.stream().mapToInt(acr -> {
             try {
                 Integer loa = acrLoaMap.get(acr);
                 return loa == null ? Integer.parseInt(acr) : loa;
             } catch (NumberFormatException e) {
                 // this is an unknown acr. In case of an essential claim, we directly reject authentication as we cannot met the specification requirement. Otherwise fallback to minimum LoA
-                boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
                 if (essential) {
                     logger.errorf("Requested essential acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct ACR passed in the 'claims' parameter.", acr);
                     event.error(Errors.INVALID_REQUEST);
@@ -322,7 +326,16 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                     return Constants.MINIMUM_LOA;
                 }
             }
-        }).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+        });
+
+        OptionalInt requestedLoa;
+        if (essential) {
+            requestedLoa = requestedLoas.max();
+        } else {
+            requestedLoa = requestedLoas.min();
+        }
+
+        requestedLoa.ifPresent(loa ->authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
 
         if (request.getAdditionalReqParams() != null) {
             for (String paramName : request.getAdditionalReqParams().keySet()) {

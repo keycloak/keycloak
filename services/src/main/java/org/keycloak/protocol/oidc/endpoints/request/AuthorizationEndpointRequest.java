@@ -45,6 +45,7 @@ public class AuthorizationEndpointRequest {
     String claims;
     String uiLocales;
     Map<String, String> additionalReqParams = new HashMap<>();
+    Map<String, Object> contextData = new HashMap<>();
 
     // https://tools.ietf.org/html/rfc7636#section-6.1
     String codeChallenge;
@@ -146,5 +147,13 @@ public class AuthorizationEndpointRequest {
 
     public void setAuthorizationRequestContext(AuthorizationRequestContext authorizationRequestContext) {
         this.authorizationRequestContext = authorizationRequestContext;
+    }
+
+    public Map<String, Object> getContextData() {
+        return contextData;
+    }
+
+    public void addContextData(String key, Object value) {
+        contextData.put(key, value);
     }
 }
