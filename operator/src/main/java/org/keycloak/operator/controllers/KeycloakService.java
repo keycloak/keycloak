@@ -48,6 +48,7 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
               .addNewPort()
               .withPort(getServicePort(keycloak))
               .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+              .withAppProtocol(Constants.KEYCLOAK_SERVICE_APP_PROTOCOL)
               .endPort()
               .withSelector(Constants.DEFAULT_LABELS)
               .build();

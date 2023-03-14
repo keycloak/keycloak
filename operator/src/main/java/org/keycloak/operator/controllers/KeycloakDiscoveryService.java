@@ -41,6 +41,7 @@ public class KeycloakDiscoveryService extends OperatorManagedResource implements
       return new ServiceSpecBuilder()
               .addNewPort()
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
+              .withAppProtocol(Constants.KEYCLOAK_DISCOVERY_APP_PROTOCOL)
               .endPort()
               .withSelector(Constants.DEFAULT_LABELS)
               .withClusterIP("None")
