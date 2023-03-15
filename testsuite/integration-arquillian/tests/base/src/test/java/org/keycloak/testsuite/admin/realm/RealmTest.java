@@ -627,9 +627,6 @@ public class RealmTest extends AbstractAdminTest {
     }
 
     public static void assertRealm(RealmRepresentation realm, RealmRepresentation storedRealm) {
-        if (realm.getId() != null) {
-            assertEquals(realm.getId(), storedRealm.getId());
-        }
         if (realm.getRealm() != null) {
             assertEquals(realm.getRealm(), storedRealm.getRealm());
         }

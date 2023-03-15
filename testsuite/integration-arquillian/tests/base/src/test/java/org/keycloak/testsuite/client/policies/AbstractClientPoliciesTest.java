@@ -1502,7 +1502,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         AccessToken token = oauth.verifyToken(res.getAccessToken());
         String userId = findUserByUsername(adminClient.realm(REALM_NAME), userName).getId();
         assertEquals(userId, token.getSubject());
-        Assert.assertNotEquals(userName, token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals(userName, token.getSubject());
         assertEquals(sessionId, token.getSessionState());
         assertEquals(clientId, token.getIssuedFor());
 
