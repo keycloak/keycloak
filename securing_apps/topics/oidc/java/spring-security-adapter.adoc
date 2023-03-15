@@ -279,17 +279,23 @@ If you are using the Keycloak Spring Boot Starter to make use of the Spring Secu
 
 ====== Using Spring Boot Configuration
 
-By Default, the Spring Security Adapter looks for a `keycloak.json` configuration file. You can make sure it looks at the configuration provided by the Spring Boot Adapter by adding this bean :
+By Default, the Spring Security Adapter looks for a `keycloak.json` configuration file. You can make sure it looks at the configuration provided by the Spring Boot Adapter by adding this bean:
 
 [source,java]
 ----
 
-@Bean
-public KeycloakConfigResolver keycloakConfigResolver() {
-    return new KeycloakSpringBootConfigResolver();
+@Configuration
+public class CustomKeycloakConfig {
+
+  @Bean
+  public KeycloakConfigResolver keycloakConfigResolver() {
+      return new KeycloakSpringBootConfigResolver();
+  }
 }
 
 ----
+
+Do not declare the `KeycloakConfigResolver` bean in a configuration class that extends `KeycloakWebSecurityConfigurerAdapter` as this will cause a `Circular References` problem in Spring Boot starting with version 2.6.0.
 
 ====== Avoid double bean registration
 
