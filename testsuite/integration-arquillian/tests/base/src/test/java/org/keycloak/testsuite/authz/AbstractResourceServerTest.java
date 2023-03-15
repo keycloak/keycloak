@@ -52,6 +52,8 @@ import org.keycloak.testsuite.util.UserBuilder;
 public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
 
     protected static final String REALM_NAME = "authz-test";
+    protected String martaId;
+    protected String koloId;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -79,6 +81,13 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
                         .publicClient())
                 .testEventListener()
                 .build());
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        koloId = adminClient.realm(REALM_NAME).users().search("kolo", true).get(0).getId();
+        martaId = adminClient.realm(REALM_NAME).users().search("marta", true).get(0).getId();
     }
 
     protected AuthorizationResponse authorize(String resourceName, String[] scopeNames, String claimToken) {

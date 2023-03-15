@@ -101,22 +101,18 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = UserBuilder.create()
-                                             .id(UUID.randomUUID().toString())
                                              .username("login-test")
                                              .email("login@test.com")
                                              .enabled(true)
                                              .password("password")
                                              .build();
-        userId = user.getId();
 
         UserRepresentation user2 = UserBuilder.create()
-                                              .id(UUID.randomUUID().toString())
                                               .username("login-test2")
                                               .email("login2@test.com")
                                               .enabled(true)
                                               .password("password")
                                               .build();
-        user2Id = user2.getId();
 
         UserRepresentation admin = UserBuilder.create()
                 .username("admin")
@@ -160,6 +156,13 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     private static String userId;
 
     private static String user2Id;
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = testRealm().users().search("login-test", Boolean.TRUE).get(0).getId();
+        user2Id = testRealm().users().search("login-test2", Boolean.TRUE).get(0).getId();
+    }
 
     @Test
     public void testBrowserSecurityHeaders() {

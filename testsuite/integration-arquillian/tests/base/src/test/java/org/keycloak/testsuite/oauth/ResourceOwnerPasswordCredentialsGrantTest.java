@@ -133,25 +133,20 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .password("password");
         realm.user(defaultUser);
 
-        userId = KeycloakModelUtils.generateId();
         UserRepresentation user = UserBuilder.create()
-                .id(userId)
                 .username("direct-login")
                 .email("direct-login@localhost")
                 .password("password")
                 .build();
         realm.user(user);
 
-        userId2 = KeycloakModelUtils.generateId();
         UserRepresentation user2 = UserBuilder.create()
-                .id(userId2)
                 .username("direct-login-otp")
                 .password("password")
                 .totpSecret("totpSecret")
                 .build();
         realm.user(user2);
 
-        userIdMultipleOTPs = KeycloakModelUtils.generateId();
         UserBuilder userBuilderMultipleOTPs = UserBuilder.create()
                 .id(userIdMultipleOTPs)
                 .username("direct-login-multiple-otps")
@@ -161,6 +156,14 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         realm.user(userBuilderMultipleOTPs.build());
 
         testRealms.add(realm.build());
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userIdMultipleOTPs = adminClient.realm("test").users().search("direct-login-multiple-otps", true).get(0).getId();
+        userId = adminClient.realm("test").users().search("direct-login", true).get(0).getId();
+        userId2 = adminClient.realm("test").users().search("direct-login-otp", true).get(0).getId();
     }
 
     @Test

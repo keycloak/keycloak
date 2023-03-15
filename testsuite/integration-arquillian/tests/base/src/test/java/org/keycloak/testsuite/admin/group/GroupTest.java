@@ -80,6 +80,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -278,18 +279,19 @@ public class GroupTest extends AbstractGroupTest {
     @Test
     @UncaughtServerErrorExpected
     public void doNotAllowSameGroupNameAtTopLevelInDatabase() throws Exception {
-        final String id = KeycloakModelUtils.generateId();
-        testingClient.server().run(session -> {
+        final String id = testingClient.server().fetch(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            realm.createGroup(id, "test-group");
-        });
+            GroupModel g = realm.createGroup("test-group");
+            return g.getId();
+        }, String.class);
         getCleanup().addGroupId(id);
         // unique key should work even in top groups
         expectedException.expect(RunOnServerException.class);
         expectedException.expectMessage(ModelDuplicateException.class.getName());
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            realm.createGroup("test-group");
+            GroupModel g = realm.createGroup("test-group");
+            realm.removeGroup(g);
         });
     }
 

@@ -164,7 +164,6 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                 .testEventListener();
 
         app1 = ClientBuilder.create()
-                .id(KeycloakModelUtils.generateId())
                 .clientId("client1")
                 .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, generatedKeystoreClient1.getCertificateInfo().getCertificate())
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
@@ -175,7 +174,6 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         realmBuilder.client(app1);
 
         app2 = ClientBuilder.create()
-                .id(KeycloakModelUtils.generateId())
                 .clientId("client2")
                 .directAccessGrants()
                 .serviceAccountsEnabled(true)
@@ -187,17 +185,13 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         realmBuilder.client(app2);
 
         defaultUser = UserBuilder.create()
-                .id(KeycloakModelUtils.generateId())
                 //.serviceAccountId(app1.getClientId())
                 .username("test-user@localhost")
                 .password("password")
                 .build();
         realmBuilder.user(defaultUser);
 
-        client1SAUserId = KeycloakModelUtils.generateId();
-
         serviceAccountUser = UserBuilder.create()
-                .id(client1SAUserId)
                 .username(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + app1.getClientId())
                 .serviceAccountId(app1.getClientId())
                 .build();
@@ -207,18 +201,29 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         testRealms.add(testRealm);
     }
 
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        app1 = adminClient.realm("test").clients().findByClientId("client1").get(0);
+        app2 = adminClient.realm("test").clients().findByClientId("client2").get(0);
+        defaultUser.setId(adminClient.realm("test").users().search("test-user@localhost", true).get(0).getId());
+        client1SAUserId = adminClient.realm("test").users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + app1.getClientId(), true).get(0).getId();
+        serviceAccountUser.setId(client1SAUserId);
+    }
+
     @Before
     public void recreateApp3() {
         app3 = ClientBuilder.create()
-                .id(KeycloakModelUtils.generateId())
                 .clientId("client3")
                 .directAccessGrants()
                 .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
                 .build();
 
-        Response resp = adminClient.realm("test").clients().create(app3);
-        getCleanup().addClientUuid(ApiUtil.getCreatedId(resp));
-        resp.close();
+        try (Response resp = adminClient.realm("test").clients().create(app3)) {
+            final String id = ApiUtil.getCreatedId(resp);
+            getCleanup().addClientUuid(id);
+            app3.setId(id);
+        }
     }
 
     // TEST SUCCESS
