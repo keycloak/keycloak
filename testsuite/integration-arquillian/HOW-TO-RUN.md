@@ -826,6 +826,19 @@ because this is not UI testing). For debugging purposes you can override the hea
 For changing the hostname in the hostname tests (e.g. [DefaultHostnameTest](https://github.com/keycloak/keycloak/blob/main/testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/url/DefaultHostnameTest.java)),
 we rely on [nip.io](https://nip.io) for DNS switching, so tests will work everywhere without fiddling with `etc/hosts` locally. 
 
+### Tips & Tricks:
+Although it _should_ work in general, you may experience an exception like this:
+```
+java.lang.RuntimeException: java.net.UnknownHostException: keycloak.127.0.0.1.nip.io: nodename nor servname provided, 
+or not known at org.keycloak.testsuite.util.OAuthClient.doWellKnownRequest(OAuthClient.java:1032)
+at org.keycloak.testsuite.url.DefaultHostnameTest.assertBackendForcedToFrontendWithMatchingHostname(
+DefaultHostnameTest.java:226)
+...
+```
+when running these tests on your local machine. This happens when something on your machine or network is blocking DNS queries to [nip.io](https://nip.io)
+In order to avoid using external services for DNS resolution, the tests are executed using a local host file by setting the `-Djdk.net.hosts.file=${project.build.testOutputDirectory}/hosts_file` 
+system property.
+
 ## Running base testsuite with Map storage
 
 To run base testsuite with new storage run the following command (this will execute testsuite with ConcurrentHashMap storage):
@@ -933,18 +946,28 @@ export TESTCONTAINERS_RYUK_DISABLED=true #not recommended - see above!
 To use Testcontainers with Docker it is necessary to
 [make Docker available for non-root users](https://docs.docker.com/engine/install/linux-postinstall/).
 
-### Tips & Tricks:
-Although it _should_ work in general, you may experience an exception like this:
-```
-java.lang.RuntimeException: java.net.UnknownHostException: keycloak.127.0.0.1.nip.io: nodename nor servname provided, 
-or not known at org.keycloak.testsuite.util.OAuthClient.doWellKnownRequest(OAuthClient.java:1032)
-at org.keycloak.testsuite.url.DefaultHostnameTest.assertBackendForcedToFrontendWithMatchingHostname(
-DefaultHostnameTest.java:226)
-...
-```
-when running these tests on your local machine. This happens when something on your machine or network is blocking DNS queries to [nip.io](https://nip.io)
-One possible workaround is to add a commonly used public dns server (e.g. 8.8.8.8 for google dns server) to your local 
-networks dns configuration and run the tests. 
+### Zero downtime tests
+
+By default tests are enabled and runs when `map-storage-hotrod`, `map-storage-postgres` or `map-storage-jpa-cockroach` profile is enabled.
+Other may be added in future. It supports both `auth-server-undertow` and `auth-server-quarkus`.
+
+#### Default behavior
+1. Before test current `auth-server` is stopped as well as ( postgres/crdb/hotrod ) container. 
+2. New ( postgres/crdb/hotrod ) container is spawned using testcontainers.
+3. Legacy keycloak (latest from https://quay.io/) is started.
+4. Test realm is imported into legacy keycloak.
+5. Current `auth-server` is started.
+
+#### Notes
+- version of legacy keycloak could be specified by `keycloak.legacy.version.zero.downtime` property
+- legacy keycloak is by default listening on http://localhost:8091 
+- when running only zero downtime tests, e.g. locally, it could be speeded up by skipping start of suite 
+( postgres/crdb/hotrod ) container by `-Dcockroachdb.start-container=false`, `-Dpostgres.start-container=false` 
+or `-Dkeycloak.testsuite.start-hotrod-container=false` and also suite `auth-server` by `-Dkeycloak.testsuite.skip.start.auth.server=true`
+- to run tests with an external instance of ( postgres/crdb/hotrod ) container
+`-Dpostgres.start-container-for-zero-downtime=false`; `-Dcockroachdb.start-container-for-zero-downtime`; `-Dstart-hotrod-container-for-zero-downtime` 
+together with appropriate properties (see sections above).
+
 
 ## FIPS 140-2 testing
 
