@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model.export;
+package org.keycloak.testsuite.model.exportimport;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -76,11 +76,10 @@ public class ExportModelTest extends KeycloakModelTest {
                     .provider(SingleFileExportProviderFactory.PROVIDER_ID)
                     .config(SingleFileExportProviderFactory.REALM_NAME, REALM_NAME);
 
-            withRealm(realmId, (session, realm) -> {
+            inComittedTransaction(session -> {
                 ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
                 ExportImportManager exportImportManager = new ExportImportManager(session);
                 exportImportManager.runExport();
-                return null;
             });
 
             // file will exist if export was successful
@@ -112,11 +111,10 @@ public class ExportModelTest extends KeycloakModelTest {
                     .provider(DirExportProviderFactory.PROVIDER_ID)
                     .config(DirExportProviderFactory.REALM_NAME, REALM_NAME);
 
-            withRealm(realmId, (session, realm) -> {
+            inComittedTransaction(session -> {
                 ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
                 ExportImportManager exportImportManager = new ExportImportManager(session);
                 exportImportManager.runExport();
-                return null;
             });
 
             // file will exist if export was successful
