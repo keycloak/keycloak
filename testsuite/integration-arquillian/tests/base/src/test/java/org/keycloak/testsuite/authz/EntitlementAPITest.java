@@ -586,6 +586,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         request.addPermission("Sensortest", "sensors:view");
 
         getTestContext().getTestingClient().testing().clearEventQueue();
+        AccessToken at = toAccessToken(accessToken);
 
         try {
             authzClient.authorization(accessToken).authorize(request);
@@ -595,11 +596,12 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("invalid_resource"));
         }
 
+
         events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(getRealm().toRepresentation().getId()).client(RESOURCE_SERVER_TEST)
                 .session((String) null)
                 .error("invalid_request")
                 .detail("reason", "Resource with id [Sensortest] does not exist.")
-                .user(isUUID())
+                .user(at.getSubject())
                 .assertEvent();
     }
 

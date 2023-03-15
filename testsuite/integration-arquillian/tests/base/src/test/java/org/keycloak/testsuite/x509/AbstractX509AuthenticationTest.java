@@ -297,8 +297,6 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .addAttribute("x509_issuer_identity", "Keycloak Intermediate CA")
                 .build();
 
-        userId2 = user.getId();
-
         ClientRepresentation client = findTestApp(testRealm);
         URI baseUri = URI.create(client.getRedirectUris().get(0));
         URI redir = URI.create("https://localhost:" + System.getProperty("auth.server.https.port", "8543") + baseUri.getRawPath());
@@ -310,6 +308,12 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         RealmBuilder.edit(testRealm)
                 .user(user)
                 .client(app);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId2 = adminClient.realm("test").users().search("keycloak", true).get(0).getId();
     }
 
     AuthenticationFlowRepresentation createFlow(AuthenticationFlowRepresentation flowRep) {

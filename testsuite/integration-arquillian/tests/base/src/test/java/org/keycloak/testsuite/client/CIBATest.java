@@ -2704,10 +2704,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
     private void verifyBackchannelAuthenticationTokenRequest(OAuthClient.AccessTokenResponse tokenRes, String clientId, String username) {
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
-        EventRepresentation event = events.expectAuthReqIdToToken(null, null).clearDetails().user(AssertEvents.isUUID()).client(clientId).assertEvent();
 
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
         assertThat(accessToken.getIssuedFor(), is(equalTo(clientId)));
+
+        EventRepresentation event = events.expectAuthReqIdToToken(null, null).clearDetails().user(accessToken.getSubject()).client(clientId).assertEvent();
 
         RefreshToken refreshToken = oauth.parseRefreshToken(tokenRes.getRefreshToken());
         assertThat(refreshToken.getIssuedFor(), is(equalTo(clientId)));
@@ -2778,7 +2779,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
         checkTokenExpiration(idToken, tokenRes.getExpiresIn());
 
-        events.expectRefresh(tokenRes.getRefreshToken(), sessionId).session(CoreMatchers.notNullValue(String.class)).user(AssertEvents.isUUID()).clearDetails().assertEvent();
+        events.expectRefresh(tokenRes.getRefreshToken(), sessionId).session(CoreMatchers.notNullValue(String.class)).user(accessToken.getSubject()).clearDetails().assertEvent();
 
         return tokenRes;
     }
@@ -2808,7 +2809,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         if (isOfflineAccess) assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));
         else assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
-        return events.expectLogout(sessionId).client(TEST_CLIENT_NAME).user(AssertEvents.isUUID()).session(AssertEvents.isUUID()).clearDetails().assertEvent();
+        RefreshToken rt = oauth.parseRefreshToken(refreshToken);
+        return events.expectLogout(sessionId).client(TEST_CLIENT_NAME).user(rt.getSubject()).session(AssertEvents.isUUID()).clearDetails().assertEvent();
     }
 
     private EventRepresentation doTokenRevokeByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {
@@ -2823,7 +2825,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         if (isOfflineAccess) assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));
         else assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
-        return events.expect(EventType.REVOKE_GRANT).clearDetails().client(TEST_CLIENT_NAME).user(AssertEvents.isUUID()).assertEvent();
+        RefreshToken rt = oauth.parseRefreshToken(refreshToken);
+        return events.expect(EventType.REVOKE_GRANT).clearDetails().client(TEST_CLIENT_NAME).user(rt.getSubject()).assertEvent();
     }
 
     private void testBackchannelAuthenticationFlow(boolean isOfflineAccess) throws Exception {

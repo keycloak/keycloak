@@ -68,12 +68,12 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  */
 public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
-    private static String userId = KeycloakModelUtils.generateId();
+    private static String userId;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = UserBuilder.create()
-                .id(userId)
+                .id(KeycloakModelUtils.generateId())
                 .username("john")
                 .enabled(true)
                 .email("john@email.cz")
@@ -148,6 +148,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .addGroups("group-role-1")
                 .build();
         testRealm.getUsers().add(user);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search("john", true).get(0).getId();
     }
 
     @Before
