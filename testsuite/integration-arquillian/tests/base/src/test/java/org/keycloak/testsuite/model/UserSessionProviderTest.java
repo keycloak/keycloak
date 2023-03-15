@@ -301,12 +301,18 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     @Test
     @ModelTest
     public void testRemoveUserSession(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName("test");
-        UserSessionModel userSession = createSessions(session)[0];
+        String userSessionId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
+            RealmModel realm = kcSession.realms().getRealmByName("test");
+            UserSessionModel userSession = createSessions(kcSession)[0];
 
-        session.sessions().removeUserSession(realm, userSession);
+            kcSession.sessions().removeUserSession(realm, userSession);
+            return userSession.getId();
+        });
 
-        assertNull(session.sessions().getUserSession(realm, userSession.getId()));
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+            RealmModel realm = kcSession.realms().getRealmByName("test");
+            assertNull(kcSession.sessions().getUserSession(realm, userSessionId));
+        });
     }
 
     @Test
@@ -330,33 +336,40 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     public void testOnClientRemoved(KeycloakSession session) {
         UserSessionModel[] sessions = createSessions(session);
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            String thirdPartyClientUUID = realm.getClientByClientId("third-party").getId();
-            Map<String, Set<String>> clientSessionsKept = new HashMap<>();
+        boolean clientRemoved = false;
+        try {
+            clientRemoved = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
+                RealmModel realm = kcSession.realms().getRealmByName("test");
+                String thirdPartyClientUUID = realm.getClientByClientId("third-party").getId();
+                Map<String, Set<String>> clientSessionsKept = new HashMap<>();
 
-            for (UserSessionModel s : sessions) {
-                // session associated with the model was closed, load it by id into a new session
-                s = kcSession.sessions().getUserSession(realm, s.getId());
-                Set<String> clientUUIDS = new HashSet<>(s.getAuthenticatedClientSessions().keySet());
-                clientUUIDS.remove(thirdPartyClientUUID); // This client will be later removed, hence his clientSessions too
-                clientSessionsKept.put(s.getId(), clientUUIDS);
-            }
+                for (UserSessionModel s : sessions) {
+                    // session associated with the model was closed, load it by id into a new session
+                    s = kcSession.sessions().getUserSession(realm, s.getId());
+                    Set<String> clientUUIDS = new HashSet<>(s.getAuthenticatedClientSessions().keySet());
+                    clientUUIDS.remove(thirdPartyClientUUID); // This client will be later removed, hence his clientSessions too
+                    clientSessionsKept.put(s.getId(), clientUUIDS);
+                }
 
-            boolean clientRemoved = false;
-            try {
-                clientRemoved = realm.removeClient(thirdPartyClientUUID);
+                boolean cr = realm.removeClient(thirdPartyClientUUID);
 
                 for (UserSessionModel s : sessions) {
                     s = kcSession.sessions().getUserSession(realm, s.getId());
                     Set<String> clientUUIDS = s.getAuthenticatedClientSessions().keySet();
                     assertEquals(clientUUIDS, clientSessionsKept.get(s.getId()));
                 }
-            } finally {
-                // Revert client
-                if (clientRemoved) realm.addClient("third-party");
+
+                return cr;
+            });
+        } finally {
+            if (clientRemoved) {
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+                    // Revert client
+                    RealmModel realm = kcSession.realms().getRealmByName("test");
+                    realm.addClient("third-party");
+                });
             }
-        });
+        }
     }
 
     @Test
