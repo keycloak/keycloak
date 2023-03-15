@@ -221,7 +221,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
-        assertNotEquals("test-user@localhost", token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // assertNotEquals("test-user@localhost", token.getSubject());
 
         assertEquals(sessionId, token.getSessionState());
 
@@ -1389,7 +1390,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
-        assertNotEquals("test-user@localhost", token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // assertNotEquals("test-user@localhost", token.getSubject());
 
         assertEquals(sessionId, token.getSessionState());
 

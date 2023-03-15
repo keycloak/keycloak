@@ -264,7 +264,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals("Bearer", response.getTokenType());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
-        Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
 
         assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
 
@@ -1529,7 +1530,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals("Bearer", response.getTokenType());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
-        Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
 
         EventRepresentation refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));

@@ -922,8 +922,9 @@ public class PartialImportTest extends AbstractAuthTest {
         piRep.setRoles(roles);
 
         Assert.assertEquals("default role should have been overwritten", 1, doImport().getOverwritten());
-        Assert.assertNotEquals("when overwriting, the ID of the role changes",
-                testRealmResource().toRepresentation().getDefaultRole().getId(), oldDefaultRole.getId());
+        // The following check is not valid anymore since file store does have the same ID
+        // Assert.assertNotEquals("when overwriting, the ID of the role changes",
+        //        testRealmResource().toRepresentation().getDefaultRole().getId(), oldDefaultRole.getId());
     }
 
 }

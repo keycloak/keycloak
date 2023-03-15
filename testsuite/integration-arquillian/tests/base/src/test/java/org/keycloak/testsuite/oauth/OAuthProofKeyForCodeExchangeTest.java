@@ -445,7 +445,8 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
-        Assert.assertNotEquals("test-user@localhost", token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals("test-user@localhost", token.getSubject());
         assertEquals(sessionId, token.getSessionState());
         assertEquals(2, token.getRealmAccess().getRoles().size());
         assertTrue(token.getRealmAccess().isUserInRole("user"));
@@ -492,7 +493,8 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals("Bearer", refreshResponse.getTokenType());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
-        Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
 
         assertEquals(2, refreshedToken.getRealmAccess().getRoles().size());
         Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));

@@ -183,7 +183,8 @@ public class ParTest extends AbstractClientPoliciesTest {
             String userId = findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId();
             assertEquals(userId, token.getSubject());
             assertEquals(sessionId, token.getSessionState());
-            Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
+            // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+            // Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
             assertEquals(clientId, token.getIssuedFor());
 
             // Token Refresh
@@ -567,7 +568,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         String userId = findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER2_NAME).getId();
         assertEquals(userId, token.getSubject());
         assertEquals(sessionId, token.getSessionState());
-        Assert.assertNotEquals(TEST_USER2_NAME, token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals(TEST_USER2_NAME, token.getSubject());
         assertEquals(clientId, token.getIssuedFor());
         assertTrue(token.getScope().contains("openid"));
         assertTrue(token.getScope().contains("microprofile-jwt"));
@@ -598,7 +600,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         userId = findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId();
         assertEquals(userId, token.getSubject());
         assertEquals(sessionId, token.getSessionState());
-        Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
         assertEquals(clientId, token.getIssuedFor());
         assertFalse(token.getScope().contains("microprofile-jwt"));
         assertTrue(token.getScope().contains("openid"));
@@ -667,7 +670,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         String userId = findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER2_NAME).getId();
         assertEquals(userId, token.getSubject());
         assertEquals(sessionId, token.getSessionState());
-        Assert.assertNotEquals(TEST_USER2_NAME, token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
         assertEquals(client2Id, token.getIssuedFor());
         assertTrue(token.getScope().contains("openid"));
         assertTrue(token.getScope().contains("microprofile-jwt"));
@@ -699,7 +703,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         userId = findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId();
         assertEquals(userId, token.getSubject());
         assertEquals(sessionId, token.getSessionState());
-        Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
         assertEquals(clientId, token.getIssuedFor());
         assertFalse(token.getScope().contains("microprofile-jwt"));
         assertTrue(token.getScope().contains("openid"));
@@ -1201,7 +1206,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         String userId = findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId();
         assertEquals(userId, token.getSubject());
         assertEquals(sessionId, token.getSessionState());
-        Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
         assertEquals(clientId, token.getIssuedFor());
 
         // Token Refresh
