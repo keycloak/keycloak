@@ -24,7 +24,8 @@ export const CredentialsResetActionMultiSelect = () => {
   useFetch(
     () => adminClient.authenticationManagement.getRequiredActions(),
     (actions) => {
-      setRequiredActions(actions);
+      const enabledUserActions = actions.filter((action) => { return action.enabled; });
+      setRequiredActions(enabledUserActions);
     },
     []
   );
