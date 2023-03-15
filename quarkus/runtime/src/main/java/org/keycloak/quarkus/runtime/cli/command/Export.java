@@ -19,8 +19,11 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
 
+import org.keycloak.config.OptionCategory;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Command(name = Export.NAME,
         header = "Export data from realms to a file or directory.",
@@ -31,6 +34,12 @@ public final class Export extends AbstractExportImportCommand implements Runnabl
 
     public Export() {
         super(ACTION_EXPORT);
+    }
+
+    @Override
+    public List<OptionCategory> getOptionCategories() {
+        return super.getOptionCategories().stream().filter(optionCategory ->
+                optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
     }
 
 }
