@@ -115,6 +115,7 @@
   "assertionConsumerServiceRedirectBindingURL": "SAML Redirect Binding URL for the client's assertion consumer service (login responses). You can leave this blank if you do not have a URL for this binding.",
   "logoutServicePostBindingURL": "SAML POST Binding URL for the client's single logout service. You can leave this blank if you are using a different binding",
   "logoutServiceRedirectBindingURL": "SAML Redirect Binding URL for the client's single logout service. You can leave this blank if you are using a different binding.",
+  "logoutServiceSoapBindingUrl": "SAML SOAP Binding URL for the client's single logout service. You can leave this blank if you are using a different binding.",
   "logoutServiceArtifactBindingUrl": "SAML ARTIFACT Binding URL for the client's single logout service. You can leave this blank if you are using a different binding.",
   "artifactBindingUrl": "URL to send the HTTP ARTIFACT messages to. You can leave this blank if you are using a different binding. This value should be set when forcing ARTIFACT binding together with IdP initiated login.",
   "frontchannelLogout": "When true, logout requires a browser redirect to client. When false, server performs a background invocation for logout.",
