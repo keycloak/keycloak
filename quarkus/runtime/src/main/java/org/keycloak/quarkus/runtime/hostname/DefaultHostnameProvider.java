@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.hostname;
 
+import static org.keycloak.common.util.UriUtils.checkUrl;
 import static org.keycloak.urls.UrlType.ADMIN;
 import static org.keycloak.urls.UrlType.BACKEND;
 import static org.keycloak.urls.UrlType.FRONTEND;
@@ -31,6 +32,7 @@ import java.util.function.Function;
 import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.HostnameOptions;
 import org.keycloak.models.KeycloakSession;
@@ -185,9 +187,14 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
             String frontendUrl = realm.getAttribute("frontendUrl");
 
             if (isNotBlank(frontendUrl)) {
-                realmUrl = URI.create(frontendUrl);
-                session.setAttribute(realmUriKey, realmUrl);
-                return realmUrl;
+                try {
+                    checkUrl(SslRequired.NONE, frontendUrl, "frontendUrl");
+                    realmUrl = URI.create(frontendUrl);
+                    session.setAttribute(realmUriKey, realmUrl);
+                    return realmUrl;
+                } catch (IllegalArgumentException e) {
+                    LOGGER.errorf(e, "Failed to parse realm frontendUrl '%s'. Falling back to global value.", frontendUrl);
+                }
             }
         }
 
