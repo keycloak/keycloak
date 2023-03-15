@@ -12,6 +12,17 @@ type ClientProfile = ClientProfileRepresentation & {
   global: boolean;
 };
 
+const AliasRenderer = ({ name, global }: ClientProfile) => {
+  const { t } = useTranslation("roles");
+
+  return (
+    <>
+      {name}{" "}
+      {global && <Label color="blue">{t("realm-settings:global")}</Label>}
+    </>
+  );
+};
+
 export type AddClientProfileModalProps = {
   open: boolean;
   toggleDialog: () => void;
@@ -56,13 +67,6 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
   if (!tableProfiles) {
     return <KeycloakSpinner />;
   }
-
-  const AliasRenderer = ({ name, global }: ClientProfile) => (
-    <>
-      {name}{" "}
-      {global && <Label color="blue">{t("realm-settings:global")}</Label>}
-    </>
-  );
 
   return (
     <Modal

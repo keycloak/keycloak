@@ -158,30 +158,6 @@ export const RoleMapping = ({
     },
   });
 
-  const ManagerToolbarItems = () => {
-    if (!isManager) return <span />;
-
-    return (
-      <>
-        <ToolbarItem>
-          <Button data-testid="assignRole" onClick={() => setShowAssign(true)}>
-            {t("common:assignRole")}
-          </Button>
-        </ToolbarItem>
-        <ToolbarItem>
-          <Button
-            variant="link"
-            data-testid="unAssignRole"
-            onClick={toggleDeleteDialog}
-            isDisabled={selected.length === 0}
-          >
-            {t("common:unAssignRole")}
-          </Button>
-        </ToolbarItem>
-      </>
-    );
-  };
-
   return (
     <>
       {showAssign && (
@@ -219,7 +195,28 @@ export const RoleMapping = ({
                 }}
               />
             </ToolbarItem>
-            <ManagerToolbarItems />
+            {isManager && (
+              <>
+                <ToolbarItem>
+                  <Button
+                    data-testid="assignRole"
+                    onClick={() => setShowAssign(true)}
+                  >
+                    {t("common:assignRole")}
+                  </Button>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button
+                    variant="link"
+                    data-testid="unAssignRole"
+                    onClick={toggleDeleteDialog}
+                    isDisabled={selected.length === 0}
+                  >
+                    {t("common:unAssignRole")}
+                  </Button>
+                </ToolbarItem>
+              </>
+            )}
           </>
         }
         actions={
