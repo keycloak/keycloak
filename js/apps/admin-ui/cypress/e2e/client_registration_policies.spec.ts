@@ -18,6 +18,13 @@ describe("Client registration policies subtab", () => {
     sidebarPage.goToClients();
     clientRegistrationPage.goToClientRegistrationTab();
     sidebarPage.waitForPageLoad();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("add anonymous client registration policy", () => {

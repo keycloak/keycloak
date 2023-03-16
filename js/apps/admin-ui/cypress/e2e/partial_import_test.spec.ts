@@ -19,6 +19,7 @@ describe("Partial import test", () => {
     sidebarPage.goToRealm(TEST_REALM);
     sidebarPage.goToRealmSettings();
     realmSettings.clickActionMenu();
+    cy.injectAxe();
   });
 
   before(() =>
@@ -33,6 +34,12 @@ describe("Partial import test", () => {
       adminClient.deleteRealm(TEST_REALM),
       adminClient.deleteRealm(TEST_REALM_2),
     ]);
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("Opens and closes partial import dialog", () => {

@@ -17,6 +17,7 @@ describe("Realm settings general tab tests", () => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToRealm(realmName);
+    cy.injectAxe();
   });
 
   before(async () => {
@@ -25,6 +26,12 @@ describe("Realm settings general tab tests", () => {
 
   after(async () => {
     await adminClient.deleteRealm(realmName);
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("Test all general tab switches", () => {

@@ -39,6 +39,13 @@ describe("User profile tabs", () => {
     keycloakBefore();
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToRealmSettings();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   describe("Attributes sub tab tests", () => {

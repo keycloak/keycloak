@@ -22,6 +22,13 @@ describe("Partial realm export", () => {
     sidebarPage.goToRealm(REALM_NAME).goToRealmSettings();
     realmSettings.clickActionMenu();
     modal.open();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("Closes the dialog", () => {

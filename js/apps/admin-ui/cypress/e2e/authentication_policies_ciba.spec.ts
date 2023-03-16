@@ -22,6 +22,13 @@ describe("Authentication - Policies - CIBA", () => {
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToAuthentication();
     CIBAPolicyPage.goToTab();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("displays the initial state", () => {

@@ -34,6 +34,13 @@ describe("Clients SAML tests", () => {
       keycloakBefore();
       sidebarPage.goToClients();
       listingPage.searchItem(samlClientName).goToItemDetails(samlClientName);
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("should display the saml sections on details screen", () => {
@@ -75,6 +82,13 @@ describe("Clients SAML tests", () => {
       sidebarPage.goToClients();
       listingPage.searchItem(clientId).goToItemDetails(clientId);
       cy.findByTestId("keysTab").click();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("should doesn't disable signature when cancel", () => {
@@ -134,6 +148,13 @@ describe("Clients SAML tests", () => {
       keycloakBefore();
       sidebarPage.goToClients();
       listingPage.searchItem(clientId).goToItemDetails(clientId);
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("should check SAML capabilities", () => {

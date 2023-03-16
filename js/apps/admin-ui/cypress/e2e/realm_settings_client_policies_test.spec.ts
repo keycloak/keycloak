@@ -24,12 +24,19 @@ describe("Realm settings client policies tab tests", () => {
       .goToRealmSettings()
       .waitForPageLoad();
     realmSettingsPage.goToClientPoliciesTab().goToClientPoliciesList();
+    cy.injectAxe();
   });
 
   before(() => adminClient.createRealm(realmName));
 
   after(() => {
     adminClient.deleteRealm(realmName);
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("Complete new client form and cancel", () => {

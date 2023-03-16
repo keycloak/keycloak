@@ -33,6 +33,13 @@ describe("Authentication test", () => {
     keycloakBefore();
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToAuthentication();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("authentication empty search test", () => {
@@ -197,9 +204,16 @@ describe("Required actions", () => {
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToAuthentication();
     requiredActionsPage.goToTab();
+    cy.injectAxe();
   });
 
   after(() => adminClient.deleteRealm(realmName));
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
+  });
 
   it("should enable delete account", () => {
     const action = "Delete Account";
@@ -237,6 +251,13 @@ describe("Password policies tab", () => {
     keycloakBefore();
     sidebarPage.goToAuthentication();
     passwordPoliciesPage.goToTab();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("should add password policies", () => {

@@ -17,6 +17,13 @@ describe("Policies", () => {
       keycloakBefore();
       sidebarPage.goToAuthentication();
       otpPoliciesPage.goToTab();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("should change to hotp", () => {
@@ -37,6 +44,13 @@ describe("Policies", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToAuthentication();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("should fill webauthn settings", () => {

@@ -44,6 +44,7 @@ describe("Identity provider test", () => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToIdentityProviders();
+    cy.injectAxe();
   });
 
   const socialLoginIdentityProvidersWithCustomFiels = {
@@ -68,6 +69,12 @@ describe("Identity provider test", () => {
     );
     return instance;
   }
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
+  });
 
   describe("Identity provider creation", () => {
     const identityProviderName = "github";

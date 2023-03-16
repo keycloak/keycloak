@@ -21,6 +21,7 @@ describe("Realm settings events tab tests", () => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToRealm(realmName);
+    cy.injectAxe();
   });
 
   before(async () => {
@@ -94,6 +95,12 @@ describe("Realm settings events tab tests", () => {
 
     return this;
   };
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
+  });
 
   it("Enable user events", () => {
     cy.intercept("GET", `/admin/realms/${realmName}/events/config`).as("load");
@@ -429,6 +436,13 @@ describe("Realm settings events tab tests", () => {
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-realm-events-tab").click();
     cy.findByTestId("rs-event-listeners-tab").click();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("Should display event listeners form", () => {

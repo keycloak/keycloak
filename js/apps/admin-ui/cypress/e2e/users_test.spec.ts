@@ -47,9 +47,16 @@ describe("User creation", () => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToUsers();
+    cy.injectAxe();
   });
 
   after(() => adminClient.deleteGroups());
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
+  });
 
   it("Go to create User page", () => {
     createUserPage.goToCreateUser();
@@ -255,6 +262,13 @@ describe("User creation", () => {
     beforeEach(() => {
       usersPage.goToUserListTab().goToUserDetailsPage(usernameIdpLinksTest);
       userDetailsPage.goToIdentityProviderLinksTab();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     identityProviders.forEach(($idp, linkedIdpsCount) => {

@@ -43,6 +43,13 @@ describe("Client authentication subtab", () => {
     sidebarPage.goToClients();
     listingPage.searchItem(clientId).goToItemDetails(clientId);
     clientDetailsPage.goToAuthorizationTab();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("Should update the resource server settings", () => {

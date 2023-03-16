@@ -22,11 +22,18 @@ describe("Realm settings client profiles tab tests", () => {
     keycloakBefore();
     sidebarPage.waitForPageLoad().goToRealm(realmName).goToRealmSettings();
     realmSettingsPage.goToClientPoliciesTab().goToClientProfilesList();
+    cy.injectAxe();
   });
 
   before(() => adminClient.createRealm(realmName));
 
   after(() => adminClient.deleteRealm(realmName));
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
+  });
 
   it("Go to client policies profiles tab", () => {
     realmSettingsPage.shouldDisplayProfilesTab();

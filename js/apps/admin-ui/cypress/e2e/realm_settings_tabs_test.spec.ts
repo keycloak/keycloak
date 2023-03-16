@@ -17,6 +17,7 @@ describe("Realm settings tabs tests", () => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToRealm(realmName);
+    cy.injectAxe();
   });
 
   before(async () => {
@@ -25,6 +26,12 @@ describe("Realm settings tabs tests", () => {
 
   after(async () => {
     await adminClient.deleteRealm(realmName);
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   it("shows the 'user profile' tab if enabled", () => {

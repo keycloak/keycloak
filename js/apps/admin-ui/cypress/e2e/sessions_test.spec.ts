@@ -21,6 +21,13 @@ describe("Sessions test", () => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToSessions();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   describe("Sessions list view", () => {

@@ -12,6 +12,13 @@ describe("Masthead tests", () => {
   beforeEach(() => {
     loginPage.logIn();
     keycloakBefore();
+    cy.injectAxe();
+  });
+
+  it("Should have no detectable a11y violations on load", () => {
+    cy.checkA11y(undefined, {
+      includedImpacts: ["critical", "serious"],
+    });
   });
 
   describe("Desktop view", () => {

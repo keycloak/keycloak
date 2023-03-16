@@ -56,6 +56,13 @@ describe("Events tests", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToEvents();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("Show empty when no save events", () => {
@@ -92,6 +99,13 @@ describe("Events tests", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToEvents();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("Check search dropdown display", () => {
@@ -261,6 +275,13 @@ describe("Events tests", () => {
       sidebarPage.goToRealm(realmName);
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("Show events", () => {
@@ -299,6 +320,13 @@ describe("Events tests", () => {
       keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("Search by resource types", () => {
@@ -372,6 +400,13 @@ describe("Events tests", () => {
       keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("Check admin events search form fields display", () => {
@@ -424,6 +459,13 @@ describe("Events tests", () => {
       keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
+      cy.injectAxe();
+    });
+
+    it("Should have no detectable a11y violations on load", () => {
+      cy.checkA11y(undefined, {
+        includedImpacts: ["critical", "serious"],
+      });
     });
 
     it("Check auth dialog opens and is not empty", () => {
