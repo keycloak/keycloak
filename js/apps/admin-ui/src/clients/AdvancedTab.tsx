@@ -106,11 +106,14 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "id.token.encrypted.response.alg",
                       "id.token.encrypted.response.enc",
                       "user.info.response.signature.alg",
+                      "user.info.encrypted.response.alg",
+                      "user.info.encrypted.response.enc",
                       "request.object.signature.alg",
                       "request.object.encryption.alg",
                       "request.object.encryption.enc",
                       "request.object.required",
                       "request.uris",
+                      "authorization.signed.response.alg",
                       "authorization.encrypted.response.alg",
                       "authorization.encrypted.response.enc",
                     ]);
@@ -130,7 +133,12 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                 <OpenIdConnectCompatibilityModes
                   save={() => save()}
                   reset={() =>
-                    resetFields(["exclude.session.state.from.auth.response"])
+                    resetFields([
+                      "exclude.session.state.from.auth.response",
+                      "use.refresh.tokens",
+                      "client_credentials.use_refresh_token",
+                      "token.response.type.bearer.lower-case",
+                    ])
                   }
                 />
               </>
