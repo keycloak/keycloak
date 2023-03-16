@@ -361,6 +361,10 @@ public class RealmAdminResource {
             rep.setRealm(realm.getName());
             rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
 
+            if (auth.users().canView()) {
+                rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
+            }
+
             if (auth.realm().canViewIdentityProviders()) {
                 RealmRepresentation r = ModelToRepresentation.toRepresentation(session, realm, false);
                 rep.setIdentityProviders(r.getIdentityProviders());
