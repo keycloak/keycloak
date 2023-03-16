@@ -12,7 +12,17 @@ import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
-export const CredentialsResetActionMultiSelect = () => {
+type RequiredActionMultiSelectProps = {
+  name: string;
+  label: string;
+  help: string;
+};
+
+export const RequiredActionMultiSelect = ({
+  name,
+  label,
+  help,
+}: RequiredActionMultiSelectProps) => {
   const { t } = useTranslation("users");
   const { adminClient } = useAdminClient();
   const { control } = useFormContext();
@@ -34,17 +44,12 @@ export const CredentialsResetActionMultiSelect = () => {
 
   return (
     <FormGroup
-      label={t("resetActions")}
-      labelIcon={
-        <HelpItem
-          helpText={t("clients-help:resetActions")}
-          fieldLabelId="resetActions"
-        />
-      }
+      label={t(label)}
+      labelIcon={<HelpItem helpText={t(help)} fieldLabelId="resetActions" />}
       fieldId="actions"
     >
       <Controller
-        name="actions"
+        name={name}
         defaultValue={[]}
         control={control}
         render={({ field }) => (
@@ -55,6 +60,7 @@ export const CredentialsResetActionMultiSelect = () => {
             chipGroupProps={{
               numChips: 3,
             }}
+            placeholderText={t("requiredActionPlaceholder")}
             menuAppendTo="parent"
             onToggle={(open) => setOpen(open)}
             isOpen={open}
