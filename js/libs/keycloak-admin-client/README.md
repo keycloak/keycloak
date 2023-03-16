@@ -37,8 +37,8 @@ await kcAdminClient.auth({
   totp: '123456', // optional Time-based One-time Password if OTP is required in authentication flow
 });
 
-// List all users
-const users = await kcAdminClient.users.find();
+// List of users, by default first 100 users will be returned if `max` option is not specified
+const users = await kcAdminClient.users.find({max: 100});
 
 // Override client configuration for all further requests:
 kcAdminClient.setConfig({
