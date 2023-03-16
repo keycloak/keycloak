@@ -138,11 +138,7 @@
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>30.1-jre</google.guava.version>
         <xstream.version>1.4.20</xstream.version>
-        <okhttp.version>4.10.0</okhttp.version>
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
-
-        <!-- Openshift -->
-        <version.com.openshift.openshift-restclient-java>9.0.5.Final</version.com.openshift.openshift-restclient-java>
 
         <!-- Others -->
         <commons-lang.version>2.6</commons-lang.version>
@@ -322,16 +318,6 @@
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
                 <version>${org.snakeyaml.snakeyaml-engine.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${okhttp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>logging-interceptor</artifactId>
-                <version>${okhttp.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>
@@ -1587,13 +1573,6 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-rest-admin-ui-ext</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-
-            <!-- Openshift -->
-            <dependency>
-                <groupId>com.openshift</groupId>
-                <artifactId>openshift-restclient-java</artifactId>
-                <version>${version.com.openshift.openshift-restclient-java}</version>
             </dependency>
 
             <dependency>

@@ -43,10 +43,6 @@
             <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.openshift</groupId>
-            <artifactId>openshift-restclient-java</artifactId>
-        </dependency>
     </dependencies>
 
 </project>
