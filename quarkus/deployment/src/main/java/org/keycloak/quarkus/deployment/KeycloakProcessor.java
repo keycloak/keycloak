@@ -312,13 +312,7 @@ class KeycloakProcessor {
         final Optional<String> defaultSchema = getOptionalKcValue(DatabaseOptions.DB_SCHEMA.getKey());
         defaultSchema.ifPresent(ds -> unitProperties.setProperty(AvailableSettings.DEFAULT_SCHEMA, ds));
 
-        final Optional<Boolean> transactionJtaEnabled = getOptionalKcBooleanValue(TransactionOptions.TRANSACTION_JTA_ENABLED.getKey());
-        if (transactionJtaEnabled.isPresent() && !transactionJtaEnabled.get()) {
-            unitProperties.setProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE, PersistenceUnitTransactionType.RESOURCE_LOCAL.name());
-        } else {
-            // will happen for both "enabled" and "xa"
-            unitProperties.setProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
-        }
+        unitProperties.setProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
 
         final Optional<String> lockTimeoutConfigValue = getOptionalValue("spi-map-storage-jpa-lock-timeout");
         lockTimeoutConfigValue.ifPresent(v -> unitProperties.setProperty(AvailableSettings.JAKARTA_LOCK_TIMEOUT, v));
