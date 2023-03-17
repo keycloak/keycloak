@@ -575,6 +575,10 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 pw.println("        return entityFieldDelegate.isUpdated();");
                 pw.println("    }");
 
+                pw.println("    @Override public void markUpdatedFlag() {");
+                pw.println("        entityFieldDelegate.markUpdatedFlag();");
+                pw.println("    }");
+
                 pw.println("    @Override public void clearUpdatedFlag() {");
                 pw.println("        entityFieldDelegate.clearUpdatedFlag();");
                 pw.println("    }");
