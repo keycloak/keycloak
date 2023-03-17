@@ -448,6 +448,10 @@ to {project_name} will contain the scope parameter `scope=openid address phone`.
 * enableLogging - Enables logging messages from Keycloak to the console (default is `false`).
 * pkceMethod - The method for Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism. Available options:
     - "S256" - The SHA256 based PKCE method
+* scope - Used to forward the scope parameter to the {project_name} login endpoint. Use a space-delimited list of scopes. Those typically
+reference link:{adminguide_link}#_client_scopes[Client scopes] defined on a particular client. Note that the scope `openid` is
+always added to the list of scopes by the adapter. For example, if you enter the scope options `address phone`, then the request
+to {project_name} will contain the scope parameter `scope=openid address phone`.
 * messageReceiveTimeout - Set a timeout in milliseconds for waiting for message responses from the Keycloak server. This is used, for example, when waiting for a message during 3rd party cookies check. The default value is 10000.
 
 Returns a promise that resolves when initialization completes.
@@ -464,10 +468,7 @@ For example enforce displaying the login screen in case of value `login`. See li
 for the details and all the possible values of the `prompt` parameter.
 * maxAge - Used just if user is already authenticated. Specifies maximum time since the authentication of user happened. If user is already authenticated for longer time than `maxAge`, the SSO is ignored and he will need to re-authenticate again.
 * loginHint - Used to pre-fill the username/email field on the login form.
-* scope - Used to forward the scope parameter to the {project_name} login endpoint. Use a space-delimited list of scopes. Those typically
-reference link:{adminguide_link}#_client_scopes[Client scopes] defined on particular client. Note that the scope `openid` will be
-always be added to the list of scopes by the adapter. For example, if you enter the scope options `address phone`, then the request
-to {project_name} will contain the scope parameter `scope=openid address phone`.
+* scope - Override the scope configured in `init` with a different value for this specific login.
 * idpHint - Used to tell {project_name} to skip showing the login page and automatically redirect to the specified identity
 provider instead. More info in the link:{adminguide_link}#_client_suggested_idp[Identity Provider documentation].
 * acr - Contains the information about `acr` claim, which will be sent inside `claims` parameter to the {project_name} server. Typical usage
