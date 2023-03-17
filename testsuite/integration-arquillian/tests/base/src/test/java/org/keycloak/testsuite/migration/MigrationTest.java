@@ -69,5 +69,6 @@ public class MigrationTest extends AbstractMigrationTest {
         testExtremelyLongClientAttribute(migrationRealm);
 
         testMigrationTo20_x();
+        testMigrationTo21_x();
     }
 }
