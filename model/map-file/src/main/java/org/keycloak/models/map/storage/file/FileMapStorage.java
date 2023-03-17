@@ -37,10 +37,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -58,7 +60,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
 
     private final List<Path> createdPaths = new LinkedList<>();
     private final List<Path> pathsToDelete = new LinkedList<>();
-    private final Map<Path, Path> renameOnCommit = new HashMap<>();
+    private final Map<Path, Path> renameOnCommit = new LinkedHashMap<>();
     private final Map<Path, FileTime> lastModified = new HashMap<>();
 
     private final String txId = StringKey.INSTANCE.yieldNewUniqueKey();
@@ -134,7 +136,11 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
         }
     }
 
-    public void touch(Path path) throws IOException {
+    public void touch(String proposedId, Path path) throws IOException {
+        if (Optional.ofNullable(tasks.get(proposedId)).map(MapTaskWithValue::getOperation).orElse(null) == MapOperation.DELETE) {
+            // If deleted in the current transaction before this operation, then do not touch
+            return;
+        }
         Files.createFile(path);
         createdPaths.add(path);
     }
@@ -146,6 +152,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
     }
 
     void registerRenameOnCommit(Path from, Path to) {
+        pathsToDelete.remove(to);
         this.renameOnCommit.put(from, to);
     }
 
@@ -212,8 +219,8 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
         }
 
         @Override
-        protected void touch(Path sp) throws IOException {
-            store.touch(sp);
+        protected void touch(String proposedId, Path sp) throws IOException {
+            store.touch(proposedId, sp);
         }
 
         @Override

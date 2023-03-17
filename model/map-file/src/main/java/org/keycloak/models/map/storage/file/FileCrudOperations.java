@@ -265,8 +265,8 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
         for (int counter = 0; counter < 100; counter++) {
             LOG.tracef("Attempting to create file %s", sp, StackUtil.getShortStackTrace());
             try {
-                touch(sp);
                 final String res = String.join(ID_COMPONENT_SEPARATOR, escapedProposedId);
+                touch(res, sp);
                 LOG.tracef("determineKeyFromValue: got %s for created %s", res, value);
                 return res;
             } catch (FileAlreadyExistsException ex) {
@@ -408,7 +408,7 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
         }
     }
 
-    protected abstract void touch(Path sp) throws IOException;
+    protected abstract void touch(String proposedId, Path sp) throws IOException;
 
     protected abstract boolean removeIfExists(Path sp);
 

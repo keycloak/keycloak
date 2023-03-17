@@ -144,7 +144,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         }
     }
 
-    enum MapOperation {
+    protected enum MapOperation {
         CREATE, UPDATE, DELETE,
     }
 
