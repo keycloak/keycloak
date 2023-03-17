@@ -19,14 +19,14 @@ Building Keycloak Documentation
 
 Ensure that you have [Maven installed](https://maven.apache.org/).
 
-First, clone the Keycloak Documentation repository:
+First, clone the Keycloak repository:
 
-    git clone https://github.com/keycloak/keycloak-documentation.git
-    cd keycloak-documentation
+    git clone https://github.com/keycloak/keycloak.git
+    cd keycloak/docs/documentation
 
 If you are using Windows, you need to run the following command with administrator privilege because this project uses symbolic links:
 
-    git clone -c core.symlinks=true https://github.com/keycloak/keycloak-documentation.git
+    git clone -c core.symlinks=true https://github.com/keycloak/keycloak.git
 
 To build Keycloak Documentation run:
 
