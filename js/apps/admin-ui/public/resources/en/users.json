@@ -162,7 +162,7 @@
   "UPDATE_PASSWORD": "Update password (UPDATE_PASSWORD)",
   "UPDATE_PROFILE": "Update Profile (UPDATE_PROFILE)",
   "CONFIGURE_TOTP": "Configure OTP (CONFIGURE_TOTP)",
-  "terms_and_conditions": "Terms and Conditions (terms_and_conditions)",
+  "TERMS_AND_CONDITIONS": "Terms and Conditions (TERMS_AND_CONDITIONS)",
   "hours": "Hours",
   "minutes": "Minutes",
   "seconds": "Seconds",

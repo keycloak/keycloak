@@ -59,6 +59,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -84,12 +85,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -320,10 +323,16 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testPostLogoutRedirectUrisSet(migrationRealm);
     }
 
-   protected void testMigrationTo20_0_0() {
+    protected void testMigrationTo20_0_0() {
         testViewGroups(masterRealm);
         testViewGroups(migrationRealm);
     }
+
+   protected void testMigrationTo21_0_2() {
+       testTermsAndConditionsMigrated(masterRealm);
+       testTermsAndConditionsMigrated(migrationRealm);
+       testTermsAndConditionsMigrated(migrationRealm2);
+   }
 
 
     protected void testDeleteAccount(RealmResource realm) {
@@ -503,6 +512,32 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ClientResource accountResource = realm.clients().get(accountClient.getId());
         RoleRepresentation viewAppRole = accountResource.roles().get(VIEW_GROUPS).toRepresentation();
         assertNotNull(viewAppRole);
+    }
+
+    protected void testTermsAndConditionsMigrated(RealmResource realmResource) {
+        final String legacyTermsAndConditionsAlias = "terms_and_conditions";
+        // Test realm RequiredAction migrated
+        RealmRepresentation realm = realmResource.toRepresentation();
+        List<RequiredActionProviderRepresentation> requiredActions = realm.getRequiredActions();
+
+        if (requiredActions != null && !requiredActions.isEmpty()) {
+            assertThat(requiredActions.stream()
+                    .map(RequiredActionProviderRepresentation::getAlias)
+                    .collect(Collectors.toList()), not(hasItem(legacyTermsAndConditionsAlias)));
+            assertThat(requiredActions.stream()
+                    .map(RequiredActionProviderRepresentation::getProviderId)
+                    .collect(Collectors.toList()), not(hasItem(legacyTermsAndConditionsAlias)));
+        }
+
+        List<UserRepresentation> users = realmResource.users().list(null, null);
+
+        if (users != null && !users.isEmpty()) {
+            // Test users required actions migrated
+            assertThat(users.stream()
+                            .flatMap(user -> user.getRequiredActions().stream())
+                            .collect(Collectors.toList()),
+                    not(hasItem(legacyTermsAndConditionsAlias)));
+        }
     }
 
     protected void testRoleManageAccountLinks(RealmResource... realms) {
@@ -970,6 +1005,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo20_x() {
         testMigrationTo20_0_0();
+    }
+
+    protected void testMigrationTo21_x() {
+        testMigrationTo21_0_2();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
