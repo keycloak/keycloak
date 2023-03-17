@@ -14,7 +14,7 @@ export default class CredentialsPage {
     "UPDATE_PROFILE-option",
     "CONFIGURE_TOTP-option",
     "UPDATE_PASSWORD-option",
-    "terms_and_conditions-option",
+    "TERMS_AND_CONDITIONS-option",
   ];
   private readonly confirmationButton = "confirm";
   private readonly editLabelBtn = "editUserLabelBtn";

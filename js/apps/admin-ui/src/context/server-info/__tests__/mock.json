@@ -883,7 +883,7 @@
     "required-action": {
       "internal": true,
       "providers": {
-        "terms_and_conditions": { "order": 0 },
+        "TERMS_AND_CONDITIONS": { "order": 0 },
         "update_user_locale": { "order": 0 },
         "CONFIGURE_TOTP": { "order": 0 },
         "VERIFY_EMAIL": { "order": 0 },
