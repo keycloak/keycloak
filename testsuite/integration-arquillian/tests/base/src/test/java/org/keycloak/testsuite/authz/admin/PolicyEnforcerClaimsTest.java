@@ -41,6 +41,8 @@ import org.junit.Test;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.pep.HttpAuthzRequest;
+import org.keycloak.adapters.pep.HttpAuthzResponse;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -132,7 +134,8 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
         headers.put("Authorization", Arrays.asList("Bearer " + token));
 
-        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
+        OIDCHttpFacade facade = createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertFalse(context.isGranted());
 
         AuthorizationRequest request = new AuthorizationRequest();
@@ -144,22 +147,26 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
         assertNotNull(token);
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("200"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertFalse(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("50"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("10"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
 
         request = new AuthorizationRequest();
 
@@ -168,7 +175,8 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
         response = authzClient.authorization("marta", "password").authorize(request);
         token = response.getToken();
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
 
         request = new AuthorizationRequest();
@@ -178,7 +186,8 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
         response = authzClient.authorization("marta", "password").authorize(request);
         token = response.getToken();
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "GET", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", "GET", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
 
         assertEquals(1, context.getPermissions().size());
@@ -199,12 +208,14 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
         AuthzClient authzClient = getAuthzClient("enforcer-entitlement-claims-test.json");
         String token = authzClient.obtainAccessToken("marta", "password").getToken();
 
-        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        OIDCHttpFacade facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertFalse(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("50"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
         assertEquals(1, context.getPermissions().size());
         Permission permission = context.getPermissions().get(0);
@@ -212,17 +223,20 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
         parameters.put("withdrawal.amount", Arrays.asList("200"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertFalse(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("50"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("10"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
 
         assertTrue(context.isGranted());
 
@@ -245,27 +259,32 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
         headers.put("Authorization", Arrays.asList("Bearer " + token));
 
-        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        OIDCHttpFacade facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertFalse(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("50"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("200"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertFalse(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("50"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("10"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
 
         assertTrue(context.isGranted());
     }
@@ -289,27 +308,32 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
         headers.put("Authorization", Arrays.asList("Bearer " + token));
 
-        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        OIDCHttpFacade facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertFalse(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("50"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("200"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertFalse(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("50"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
         assertTrue(context.isGranted());
 
         parameters.put("withdrawal.amount", Arrays.asList("10"));
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        facade = createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
 
         assertTrue(context.isGranted());
     }

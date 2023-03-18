@@ -91,7 +91,7 @@ public class UserSessionAdapter implements UserSessionModel {
                 // Check if client still exists
                 ClientModel client = realm.getClientById(key);
                 if (client != null) {
-                    final AuthenticatedClientSessionAdapter clientSession = provider.getClientSession(this, client, value, offline);
+                    final AuthenticatedClientSessionAdapter clientSession = provider.getClientSession(this, client, value.toString(), offline);
                     if (clientSession != null) {
                         result.put(key, clientSession);
                     }

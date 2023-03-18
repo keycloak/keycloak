@@ -32,7 +32,7 @@
     <artifactId>keycloak-authz-policy-common</artifactId>
     <packaging>jar</packaging>
 
-    <name>KeyCloak AuthZ: Common Policy Providers</name>
+    <name>Keycloak AuthZ: Common Policy Providers</name>
     <description>KeyCloak AuthZ: Common Policy Providers</description>
 
     <dependencies>

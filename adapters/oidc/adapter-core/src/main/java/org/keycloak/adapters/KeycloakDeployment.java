@@ -22,7 +22,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.common.enums.RelativeUrlsUsed;
@@ -30,6 +29,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.enums.TokenStore;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.JsonSerialization;
@@ -104,6 +104,7 @@ public class KeycloakDeployment {
 
     protected boolean delegateBearerErrorResponseSending = false;
     protected boolean verifyTokenAudience = false;
+    private AdapterConfig adapterConfig;
 
     public KeycloakDeployment() {
     }
@@ -159,6 +160,8 @@ public class KeycloakDeployment {
             // We have absolute URI in config
             relativeUrls = RelativeUrlsUsed.NEVER;
         }
+
+        this.adapterConfig = config;
     }
 
     /**
@@ -597,5 +600,9 @@ public class KeycloakDeployment {
 
     public void setClient(Callable<HttpClient> callable) {
         client = callable;
+    }
+
+    public AdapterConfig getAdapterConfig() {
+        return adapterConfig;
     }
 }

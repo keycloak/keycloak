@@ -21,34 +21,60 @@ import java.security.Key;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
- * Key locator that always returns a specified key.
+ * Key locator for a bunch of keys. It can be initializaed with or without
+ * key names.
  *
  * @author <a href="mailto:hmlnarik@redhat.com">Hynek Mlnařík</a>
  */
 public class HardcodedKeyLocator implements KeyLocator, Iterable<Key> {
 
-    private final Collection<? extends Key> keys;
+    private final Map<String, ? extends Key> byName;
+    private final Map<KeyHash, ? extends Key> byKey;
 
     public HardcodedKeyLocator(Key key) {
-        this.keys = Collections.singleton(key);
+        Objects.requireNonNull(key, "Key must not be null");
+        this.byName = Collections.emptyMap();
+        this.byKey = Collections.singletonMap(new KeyHash(key), key);
     }
 
     public HardcodedKeyLocator(Collection<? extends Key> keys) {
-        if (keys == null) {
-            throw new NullPointerException("keys");
-        }
-        this.keys = new LinkedList<>(keys);
+        Objects.requireNonNull(keys, "Keys must not be null");
+        this.byName = Collections.emptyMap();
+        this.byKey = Collections.unmodifiableMap(keys.stream().collect(
+                Collectors.toMap(k -> new KeyHash(k), k -> k)));
+    }
+
+    public HardcodedKeyLocator(Map<String, ? extends Key> keys) {
+        Objects.requireNonNull(keys, "Keys must not be null");
+        this.byName = Collections.unmodifiableMap(keys);
+        this.byKey = Collections.unmodifiableMap(keys.values().stream().collect(
+                Collectors.toMap(k -> new KeyHash(k), k -> k)));
     }
 
     @Override
     public Key getKey(String kid) {
-        if (this.keys.size() == 1) {
-            return this.keys.iterator().next();
-        } else {
+        if (this.byKey.size() == 1) {
+            return this.byKey.values().iterator().next();
+        } else if (kid == null) {
             return null;
+        } else {
+            return this.byName.get(kid);
+        }
+    }
+
+    @Override
+    public Key getKey(Key key) {
+        if (this.byKey.size() == 1) {
+            return this.byKey.values().iterator().next();
+        } else if (key == null) {
+            return null;
+        } else {
+            return this.byKey.get(new KeyHash(key));
         }
     }
 
@@ -59,11 +85,11 @@ public class HardcodedKeyLocator implements KeyLocator, Iterable<Key> {
 
     @Override
     public String toString() {
-        return "hardcoded keys, count: " + this.keys.size();
+        return "hardcoded keys, count: " + this.byKey.size();
     }
 
     @Override
     public Iterator<Key> iterator() {
-        return (Iterator<Key>) Collections.unmodifiableCollection(keys).iterator();
+        return (Iterator<Key>) byKey.values().iterator();
     }
 }

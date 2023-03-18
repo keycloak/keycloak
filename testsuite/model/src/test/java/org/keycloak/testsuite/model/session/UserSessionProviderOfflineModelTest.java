@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.model.session;
 
+import org.hamcrest.Matchers;
 import org.infinispan.Cache;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -51,6 +52,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -371,6 +373,42 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
         });
 
+    }
+
+    @Test
+    public void testOfflineClientSessionLoading() {
+        // create online user and client sessions
+        inComittedTransaction((Consumer<KeycloakSession>) session -> UserSessionPersisterProviderTest.createSessions(session, realmId));
+
+        // create offline user and client sessions
+        withRealm(realmId, (session, realm) -> {
+            session.sessions().getUserSessionsStream(realm, realm.getClientByClientId("test-app")).collect(Collectors.toList())
+                    .forEach(userSession -> createOfflineSessionIncludeClientSessions(session, userSession));
+            return null;
+        });
+
+        List<String> offlineUserSessionIds =  withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "user1");
+            List<String> ids = session.sessions().getOfflineUserSessionsStream(realm, user).map(UserSessionModel::getId).collect(Collectors.toList());
+            Assert.assertThat(ids, Matchers.hasSize(2));
+            return ids;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            // remove offline client sessions from the cache
+            // this simulates the cases when offline client sessions are lost from the cache due to various reasons (a cache limit/expiration/preloading issue)
+            session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).clear();
+
+            String clientUUID = realm.getClientByClientId("test-app").getId();
+
+            offlineUserSessionIds.forEach(id -> {
+                UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, id);
+
+                // each associated offline client session should be found by looking into persister
+                Assert.assertNotNull(offlineUserSession.getAuthenticatedClientSessionByClient(clientUUID));
+            });
+            return null;
+        });
     }
 
     private static Set<String> createOfflineSessionIncludeClientSessions(KeycloakSession session, UserSessionModel
