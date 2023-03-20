@@ -91,6 +91,9 @@ To disable user creation:
 This configuration also implies that {project_name} itself won't be able to determine which internal account would correspond to the external identity.
 Therefore, the `Verify Existing Account By Re-authentication` authenticator will ask the user to provide both username and password.
 
+NOTE: Enabling or disabling user creation by identity provider is completely independent on the realm <<con-user-registration_{context}, User Registration switch>>. You can have enabled user-creation
+by identity provider and at the same time disabled user self-registration in the realm login settings or vice-versa.
+
 [[_detect_existing_user_first_login_flow]]
 ==== Detect existing user first login flow
 In order to configure a first login flow in which:
