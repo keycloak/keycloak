@@ -13,3 +13,4 @@ https://access.redhat.com/documentation/en/red-hat-jboss-middleware-for-openshif
 https://access.redhat.com/login?redirectTo=https://access.redhat.com/terms-based-registry
 https://sso.redhat.com/auth/*
 REGEX:https://access.redhat.com/documentation/.*/index
+https://nodejs.org/en

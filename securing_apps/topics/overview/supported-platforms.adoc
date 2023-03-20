@@ -42,7 +42,7 @@ ifeval::[{project_community}==true]
 * https://github.com/openid/AppAuth-iOS[AppAuth] (generic)
 
 ===== Apache HTTP Server
-* https://github.com/zmartzone/mod_auth_openidc[mod_auth_openidc]
+* https://github.com/OpenIDC/mod_auth_openidc[mod_auth_openidc]
 endif::[]
 
 ==== SAML
