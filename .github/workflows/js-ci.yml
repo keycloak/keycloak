@@ -18,7 +18,6 @@ concurrency:
 defaults:
   run:
     shell: bash
-    working-directory: js
 
 jobs:
   conditional:
@@ -32,6 +31,33 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
+
+  build-keycloak:
+    name: Build Keycloak
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+          check-latest: true
+          cache: maven
+
+      - name: Build Keycloak
+        run: |
+          mvn clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipCommon -Pdistribution
+          mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
+
+      - name: Upload Keycloak dist
+        uses: actions/upload-artifact@v3
+        with:
+          name: keycloak
+          path: keycloak-999.0.0-SNAPSHOT.tar.gz
 
   admin-client:
     name: Admin Client
@@ -48,7 +74,10 @@ jobs:
           working-directory: js
 
       - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
       - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
 
   keycloak-js:
     name: Keycloak JS
@@ -65,6 +94,7 @@ jobs:
           working-directory: js
 
       - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
 
   keycloak-masthead:
     name: Keycloak Masthead
@@ -81,7 +111,10 @@ jobs:
           working-directory: js
 
       - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
       - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
 
   ui-shared:
     name: UI Shared
@@ -98,7 +131,10 @@ jobs:
           working-directory: js
 
       - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
       - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
 
   account-ui:
     name: Account UI
@@ -115,7 +151,10 @@ jobs:
           working-directory: js
 
       - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
       - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
 
   admin-ui:
     name: Admin UI
@@ -132,10 +171,79 @@ jobs:
           working-directory: js
 
       - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
       - run: npm run test --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
       - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
       - run: npm run cy:check-types --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
       - run: npm run cy:run-component --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+  admin-ui-e2e:
+    name: Admin UI E2E
+    needs:
+      - conditional
+      - build-keycloak
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: admin-ui
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Google Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - name: Compile Admin Client
+        run: npm run build --workspace=@keycloak/keycloak-admin-client
+        working-directory: js
+
+      - name: Download Keycloak server
+        uses: actions/download-artifact@v3
+        with:
+          name: keycloak
+
+      - name: Start Keycloak Server
+        run: |
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
+        env:
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: admin
+
+      - name: Start LDAP server
+        run: npm run cy:ldap-server --workspace=${{ env.WORKSPACE }} &
+        working-directory: js
+
+      - name: Run Cypress
+        uses: cypress-io/github-action@v5
+        with:
+          install: false
+          record: true
+          parallel: false
+          browser: chrome
+          wait-on: http://localhost:8080
+          working-directory: js/apps/admin-ui
+        env:
+          CYPRESS_BASE_URL: http://localhost:8080/admin/
+          CYPRESS_KEYCLOAK_SERVER: http://localhost:8080
+          CYPRESS_RECORD_KEY: b8f1d15e-eab8-4ee7-8e44-c6d7cd8fc0eb
+
+      - name: Upload server logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: server-log
+          path: ~/server.log
 
   check-set-status:
     name: Set check conclusion
@@ -146,6 +254,7 @@ jobs:
       - ui-shared
       - account-ui
       - admin-ui
+      - admin-ui-e2e
     runs-on: ubuntu-latest
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}
