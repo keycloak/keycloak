@@ -194,11 +194,16 @@ jobs:
     runs-on: ubuntu-latest
     env:
       WORKSPACE: admin-ui
+    strategy:
+      matrix:
+        container: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v3
 
       - name: Install Google Chrome
         uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
 
       - uses: ./.github/actions/npm-setup
         with:
@@ -230,7 +235,7 @@ jobs:
         with:
           install: false
           record: true
-          parallel: false
+          parallel: true
           browser: chrome
           wait-on: http://localhost:8080
           working-directory: js/apps/admin-ui
@@ -242,7 +247,7 @@ jobs:
       - name: Upload server logs
         uses: actions/upload-artifact@v3
         with:
-          name: server-log
+          name: server-log-${{ matrix.container }}
           path: ~/server.log
 
   check-set-status:
