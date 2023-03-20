@@ -1,0 +1,26 @@
+[[_getting_started_overview]]
+= Getting started
+
+Before you can use this tutorial, you need to complete the installation of {project_name} and create the initial admin user as shown in the link:{gettingstarted_link}[{gettingstarted_name}] tutorial.
+There is one caveat to this. You have to run a separate {appserver_name} instance on the same machine as {project_name} Server. This separate instance will run your Java Servlet application. Because of this you will have to run the {project_name} under a different port so that there are no port conflicts when running on the same machine. Use the `jboss.socket.binding.port-offset` system property on the command line. The value of this property is a number that will be added to the base value of every port opened by {project_name} Server.
+
+To boot {project_name} Server:
+
+.Linux/Unix
+[source]
+----
+$ .../bin/kc.sh start-dev --http-port 8180
+----
+
+.Windows
+[source]
+----
+> ...\bin\kc.bat start-dev --http-port 8180
+----
+
+After installing and booting both servers you should be able to access {project_name} Admin Console at http://localhost:8180/auth/admin/ and also the {appserver_name} instance at
+http://localhost:8080.
+
+[role="_additional-resources"]
+.Additional resources
+* For more details about installing and configuring {appserver_name} instances, see link:{adapterguide_link}[{adapterguide_name}].

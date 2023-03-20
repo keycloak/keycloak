@@ -1,0 +1,12 @@
+
+=== Packaging and deployment
+
+In order for {project_name} to recognize the provider, you need to add a file to the JAR: `META-INF/services/org.keycloak.storage.UserStorageProviderFactory`. This file must contain a line-separated list of fully qualified classnames of the `UserStorageProviderFactory` implementations:
+
+----
+org.keycloak.examples.federation.properties.ClasspathPropertiesStorageFactory
+org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
+----
+
+To deploy this jar, copy it to the `providers/` directory, then run `bin/kc.[sh|bat] build`.
+

@@ -1,0 +1,55 @@
+[id="proc-managing-groups_{context}"]
+= Groups
+[role="_abstract"]
+Groups in {project_name} manage a common set of attributes and role mappings for each user. Users can be members of any number of groups and inherit the attributes and role mappings assigned to each group.
+
+To manage groups, click *Groups* in the menu.
+
+.Groups
+image:images/groups.png[]
+
+Groups are hierarchical. A group can have multiple subgroups but a group can have only one parent. Subgroups inherit the attributes and role mappings from their parent. Users inherit the attributes and role mappings from their parent as well.
+
+If you have a parent group and a child group, and a user that belongs only to the child group, the user in the child group inherits the attributes and role mappings of both the parent group and the child group.
+
+The following example includes a top-level *Sales* group and a child *North America* subgroup.  
+
+To add a group:
+
+. Click the group.
+. Click *Create group*.
+. Enter a group name.
+. Click *Create*.
+. Click the group name.
++
+The group management page is displayed.
++
+.Group
+image:images/group.png[]
+
+Attributes and role mappings you define are inherited by the groups and users that are members of the group.
+
+To add a user to a group:
+
+. Click *Users* in the menu.
+. Click the user that you want to perform a role mapping on. If the user is not displayed, click *View all users*.
+. Click *Groups*.
++
+.User groups
+image:images/user-groups.png[]
++
+. Click *Join Group*.
+. Select a group from the dialog.
+. Select a group from the *Available Groups* tree.
+. Click *Join*.
+
+To remove a group from a user:
+
+. Click *Users* in the menu.
+. Click the user to be removed from the group.
+. Click *Leave* on the group table row.
+
+In this example, the user _jimlincoln_ is in the _North America_ group.  You can see _jimlincoln_ displayed under the *Members* tab for the group.
+
+.Group membership
+image:images/group-membership.png[]
