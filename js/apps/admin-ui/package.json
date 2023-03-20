@@ -99,7 +99,7 @@
     "@types/dagre": "^0.7.48",
     "@types/file-saver": "^2.0.5",
     "@types/flat": "^5.0.2",
-    "@types/lodash-es": "^4.17.6",
+    "@types/lodash-es": "^4.17.7",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react-swc": "^3.2.0",
