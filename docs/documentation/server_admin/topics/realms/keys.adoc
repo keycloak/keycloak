@@ -8,7 +8,7 @@ encryption.  {project_name} uses asymmetric key pairs, a private and public key,
 is used to create new signatures, while the passive keypair can be used to verify previous signatures. This makes it
 possible to regularly rotate the keys without any downtime or interruption to users.
 
-When a realm is created a key pair and a self-signed certificate is automatically generated.
+When a realm is created, a KeyPair and a self-signed certificate is automatically generated.
 
 .Procedure
 . Click *Realm settings* in the menu.
@@ -22,13 +22,11 @@ that is able to provide an active keypair.
 
 ==== Rotating keys
 
-We recommend that you regularly rotate keys. To do so, start by creating new keys with a higher priority than
-the existing active keys. Or create new keys with the same priority and making the previous keys passive.
+We recommend that you regularly rotate keys. Start by creating new keys with a higher priority than the existing active keys. You can instead create new keys with the same priority and making the previous keys passive.
 
-Once new keys are available all new tokens and cookies will be signed with the new keys. When a user authenticates to an
-application the SSO cookie is updated with the new signature. When OpenID Connect tokens are refreshed new tokens are
-signed with the new keys. This means that over time all cookies and tokens will use the new keys and after a while the
-old keys can be removed.
+Once new keys are available, all new tokens and cookies will be signed with the new keys. When a user authenticates to an
+application, the SSO cookie is updated with the new signature. When OpenID Connect tokens are refreshed new tokens are
+signed with the new keys. Eventually, all cookies and tokens use the new keys and after a while the old keys can be removed.
 
 The frequency of deleting old keys is a tradeoff between security and making sure all cookies and tokens are updated. Consider creating new keys every three to six months and deleting old keys one to two months after you create the new keys. If a user was inactive in the period between the new keys being added and the old keys being removed, that user will have to re-authenticate.
 
@@ -36,20 +34,65 @@ Rotating keys also applies to offline tokens. To make sure they are updated, the
 
 ==== Adding a generated keypair
 
+Use this procedure to generate a KeyPair including a self-signed certificate.
+
 .Procedure
 . Select the realm in the Admin Console.
 . Click *Realm settings* in the menu.
 . Click the *Keys* tab.
 . Click the *Providers* tab.
 . Click *Add provider* and select *rsa-generated*.
-. Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair.
+. Enter a number in the *Priority* field. This number determines if the new  KeyPair becomes the active KeyPair. The highest number makes the KeyPair active.
 . Select a value for *AES Key size*.
 . Click *Save*.
 
-This action will generated a new keypair including a self-signed certificate.
-
 Changing the priority for a provider will not cause the keys to be re-generated, but if you want to change the keysize
 you can edit the provider and new keys will be generated.
+
+==== Rotating keys by extracting a certificate
+
+You can rotate keys by extracting a certificate from an RSA generated KeyPair and using that certificate in a new keystore.
+
+.Prerequisites
+* A generated KeyPair 
+
+.Procedure
+. Select the realm in the Admin Console.
+. Click *Realm Settings*.
+. Click the *Keys* tab.
++
+A list of *Active* keys appears.
+. On a row with an RSA key, click *Certificate* under *Public Keys*.
++
+The certificate appears in text form.
+. Save the certificate to a file and enclose it in these lines.
++
+[Source,Bash,Subs=+Attributes]
+----
+----Begin Certificate---- 
+<Output>
+----End Certificate---- 
+----
+. Use the *keytool* command to convert the key file to PEM Format.
+
+. Remove the current RSA public key certificate from the keystore.
++
+[Source,Bash,Subs=+Attributes]
+----
+keytool -delete -keystore <keystore>.jks -storepass <password> -alias <key>
+----
+. Import the new certificate into the keystore
++
+[Source,Bash,Subs=+Attributes]
+----
+keytool -importcert -file domain.crt -keystore <keystore>.jks -storepass <password>  -alias <key>
+----
+. Rebuild the application.
++
+[Source,Bash,Subs=+Attributes]
+----
+mvn clean install wildfly:deploy
+----
 
 ==== Adding an existing keypair and certificate
 
