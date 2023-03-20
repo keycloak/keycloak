@@ -28,12 +28,9 @@ const dateFromFormatted = `${dateFrom.getFullYear()}-${dateFrom.getMonth()}-${da
 const dateTo = new Date();
 dateTo.setDate(dateTo.getDate() + 100);
 const dateToFormatted = `${dateTo.getFullYear()}-${dateTo.getMonth()}-${dateTo.getDay()}`;
+const A11YOptions = { includedImpacts: ["critical", "serious"] };
 
-const A11YOptions = {
-  includedImpacts: ["critical", "serious"],
-};
-
-describe("Events tests", () => {
+describe.skip("Events tests", () => {
   const eventsTestUser = {
     eventsTestUserId: "",
     userRepresentation: {

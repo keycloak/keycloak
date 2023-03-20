@@ -49,6 +49,8 @@ import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.CorsHeaders;
+import org.keycloak.adapters.pep.HttpAuthzRequest;
+import org.keycloak.adapters.pep.HttpAuthzResponse;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -144,7 +146,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea");
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
 
         assertFalse(context.isGranted());
         assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
@@ -159,12 +161,12 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         httpFacade = createHttpFacade("/api/resourcea", token);
 
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/api/resourceb");
 
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
         assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
     }
@@ -174,7 +176,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-paths.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea");
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
 
         assertFalse(context.isGranted());
         assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
@@ -189,12 +191,12 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         httpFacade = createHttpFacade("/api/resourcea", token);
 
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/");
 
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
     }
 
@@ -221,7 +223,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             }
         });
 
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         Permission permission = context.getPermissions().get(0);
         Map<String, Set<String>> claims = permission.getClaims();
 
@@ -245,7 +247,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea", token);
 
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         Permission permission = context.getPermissions().get(0);
         Map<String, Set<String>> claims = permission.getClaims();
 
@@ -258,7 +260,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-on-deny-redirect.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea");
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
 
         assertFalse(context.isGranted());
         TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
@@ -273,7 +275,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
         OIDCHttpFacade httpFacade = createHttpFacade("/api/unmmaped");
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
 
         assertFalse(context.isGranted());
         TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
@@ -307,11 +309,11 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
 
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/api/resourceb");
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
         TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
         assertEquals(403, response.getStatus());
@@ -322,17 +324,17 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), null).getAccessToken();
 
         httpFacade = createHttpFacade("/api/resourcea", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/api/resourceb", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
         response = TestResponse.class.cast(httpFacade.getResponse());
         assertEquals(403, response.getStatus());
 
         httpFacade = createHttpFacade("/api/resource/public", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
     }
 
@@ -342,7 +344,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
 
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
@@ -353,14 +355,14 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         // first request caches the path and the entry is invalidated due to the lifespan
         httpFacade = createHttpFacade("/api/resource/all-public");
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         WaitUtils.pause(1000);
 
         // second request can not fail because entry should not be invalidated
         httpFacade = createHttpFacade("/api/resource/all-public");
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
     }
 
@@ -389,11 +391,11 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         String token = response.getAccessToken();
 
         OIDCHttpFacade httpFacade = createHttpFacade("/api/any-resource/test", token);
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/api/any-resource/test", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         ResourceRepresentation resource = clientResource.authorization().resources()
@@ -402,7 +404,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         clientResource.authorization().resources().resource(resource.getId()).remove();
 
         httpFacade = createHttpFacade("/api/any-resource/test", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
     }
 
@@ -412,7 +414,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
 
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
-        policyEnforcer.enforce(httpFacade);
+        policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
         assertEquals(401, response.getStatus());
     }
@@ -461,7 +463,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resource-with-scope", token);
 
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
 
         assertFalse("Should fail because resource does not have any scope named GET", context.isGranted());
         assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
@@ -473,18 +475,18 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-match-http-verbs-scopes.json"));
         policyEnforcer = deployment.getPolicyEnforcer();
 
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         // create a PATCH scope without associated it with the resource so that a PATCH request is denied accordingly even though
         // the scope exists on the server
         clientResource.authorization().scopes().create(new ScopeRepresentation("PATCH"));
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "PATCH");
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
 
         ScopePermissionRepresentation postPermission = new ScopePermissionRepresentation();
@@ -496,7 +498,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         permissions.scope().create(postPermission).close();
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
 
         postPermission = permissions.scope().findByName(postPermission.getName());
@@ -511,11 +513,11 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         token = authorize.getToken();
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         postPermission = permissions.scope().findByName(postPermission.getName());
@@ -526,11 +528,11 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         token = authorize.getToken();
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         postPermission = permissions.scope().findByName(postPermission.getName());
@@ -541,11 +543,11 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         token = authorize.getToken();
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         postPermission = permissions.scope().findByName(postPermission.getName());
@@ -560,11 +562,11 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         token = authorize.getToken();
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token);
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
     }
 
@@ -585,7 +587,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
         OIDCHttpFacade httpFacade = createHttpFacade("/api/check-subject-token");
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
 
         assertFalse(context.isGranted());
         assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
@@ -600,7 +602,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         httpFacade = createHttpFacade("/api/check-subject-token", token);
 
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
     }
 
@@ -632,12 +634,12 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         httpFacade = createHttpFacade("/api/check-subject-token", token);
 
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
         
         oauth.doLogout(response.getRefreshToken(), null);
 
-        context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
     }
 
@@ -686,13 +688,15 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         String token = response.getAccessToken();
 
         for (int i = 0; i < 101; i++) {
-            policyEnforcer.enforce(createHttpFacade("/api/" + i, token));
+            OIDCHttpFacade httpFacade = createHttpFacade("/api/" + i, token);
+            policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         }
 
         assertEquals(101, policyEnforcer.getPathMatcher().getPathCache().size());
 
         for (int i = 101; i < 200; i++) {
-            policyEnforcer.enforce(createHttpFacade("/api/" + i, token));
+            OIDCHttpFacade httpFacade = createHttpFacade("/api/" + i, token);
+            policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         }
 
         assertEquals(200, policyEnforcer.getPathMatcher().getPathCache().size());
@@ -706,7 +710,8 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-lazyload-with-paths.json"));
         policyEnforcer = deployment.getPolicyEnforcer();
 
-        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/0", token));
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/0", token);
+        AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
 
         assertTrue(context.isGranted());
     }
@@ -738,7 +743,8 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             OAuthClient.AccessTokenResponse tokeResponse = oauth.doAccessTokenRequest(code, null);
             String token = tokeResponse.getAccessToken();
 
-            AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api-method/foo", token));
+            OIDCHttpFacade httpFacade = createHttpFacade("/api-method/foo", token);
+            AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
 
             // GET is disabled in the config
             assertTrue(context.isGranted());
@@ -751,7 +757,8 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             assertTrue(PolicyEnforcerConfig.ScopeEnforcementMode.DISABLED.equals(methods.get(0).getScopesEnforcementMode()));
 
             // other verbs should be protected
-            context = policyEnforcer.enforce(createHttpFacade("/api-method/foo", token, "POST"));
+            httpFacade = createHttpFacade("/api-method/foo", token, "POST");
+            context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
 
             assertFalse(context.isGranted());
         } finally {

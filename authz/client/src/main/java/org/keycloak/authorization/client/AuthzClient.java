@@ -91,18 +91,7 @@ public class AuthzClient {
      * @return a new instance
      */
     public static AuthzClient create(Configuration configuration) {
-        return new AuthzClient(configuration, configuration.getClientAuthenticator());
-    }
-
-    /**
-     * <p>Creates a new instance.
-     *
-     * @param configuration the client configuration
-     * @param authenticator the client authenticator
-     * @return a new instance
-     */
-    public static AuthzClient create(Configuration configuration, ClientAuthenticator authenticator) {
-        return new AuthzClient(configuration, authenticator);
+        return new AuthzClient(configuration);
     }
 
     private final ServerConfiguration serverConfiguration;
@@ -242,7 +231,7 @@ public class AuthzClient {
         return this.configuration;
     }
 
-    private AuthzClient(Configuration configuration, ClientAuthenticator authenticator) {
+    private AuthzClient(Configuration configuration) {
         if (configuration == null) {
             throw new IllegalArgumentException("Client configuration can not be null.");
         }
@@ -256,7 +245,7 @@ public class AuthzClient {
         configurationUrl = KeycloakUriBuilder.fromUri(configurationUrl).clone().path(AUTHZ_DISCOVERY_URL).build(configuration.getRealm()).toString(); 
         this.configuration = configuration;
 
-        this.http = new Http(configuration, authenticator != null ? authenticator : configuration.getClientAuthenticator());
+        this.http = new Http(configuration, configuration.getClientCredentialsProvider());
 
         try {
             this.serverConfiguration = this.http.<ServerConfiguration>get(configurationUrl)
@@ -265,8 +254,6 @@ public class AuthzClient {
         } catch (Exception e) {
             throw new RuntimeException("Could not obtain configuration from server [" + configurationUrl + "].", e);
         }
-
-        this.http.setServerConfiguration(this.serverConfiguration);
     }
 
     private TokenCallable createPatSupplier(String userName, String password) {

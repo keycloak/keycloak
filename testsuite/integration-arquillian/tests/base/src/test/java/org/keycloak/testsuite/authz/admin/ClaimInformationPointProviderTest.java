@@ -46,14 +46,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.pep.HttpAuthzRequest;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
-import org.keycloak.adapters.authorization.ClaimInformationPointProvider;
-import org.keycloak.adapters.authorization.ClaimInformationPointProviderFactory;
+import org.keycloak.adapters.authorization.cip.spi.ClaimInformationPointProvider;
+import org.keycloak.adapters.authorization.cip.spi.ClaimInformationPointProviderFactory;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.spi.AuthenticationError;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.HttpFacade.Cookie;
 import org.keycloak.adapters.spi.HttpFacade.Request;
 import org.keycloak.adapters.spi.HttpFacade.Response;
@@ -105,7 +105,7 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
                         exchange.setStatusCode(200);
                     } else if (exchange.getRelativePath().equals("/get-claim-information-provider")) {
-                        if (!"Bearer idTokenString".equals(exchange.getRequestHeaders().getFirst("Authorization"))
+                        if (!"Bearer tokenString".equals(exchange.getRequestHeaders().getFirst("Authorization"))
                                 || !"get".equalsIgnoreCase(exchange.getRequestMethod().toString())
                                 || !exchange.getRequestHeaders().get("header-b").contains("header-b-value1")
                                 || !exchange.getRequestHeaders().get("header-b").contains("header-b-value2")
@@ -178,8 +178,8 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testBasicClaimsInformationPoint() {
-        HttpFacade httpFacade = createHttpFacade();
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(httpFacade);
+        OIDCHttpFacade httpFacade = createHttpFacade();
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(new HttpAuthzRequest(httpFacade));
 
         assertEquals("parameter-a", claims.get("claim-from-request-parameter").get(0));
         assertEquals("header-b", claims.get("claim-from-header").get(0));
@@ -204,9 +204,9 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
         ObjectMapper mapper = JsonSerialization.mapper;
         JsonParser parser = mapper.getFactory().createParser("{\"a\": {\"b\": {\"c\": \"c-value\"}}, \"d\": [\"d-value1\", \"d-value2\"], \"e\": {\"number\": 123}}");
         TreeNode treeNode = mapper.readTree(parser);
-        HttpFacade httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
+        OIDCHttpFacade httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
 
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(httpFacade);
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(new HttpAuthzRequest(httpFacade));
 
         assertEquals("c-value", claims.get("claim-from-json-body-object").get(0));
         assertEquals("d-value2", claims.get("claim-from-json-body-array").get(0));
@@ -244,9 +244,9 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
                 + "\n"
                 + "}}");
         TreeNode treeNode = mapper.readTree(parser);
-        HttpFacade httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
+        OIDCHttpFacade httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
 
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims").resolve(httpFacade);
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims").resolve(new HttpAuthzRequest(httpFacade));
 
         assertEquals(1, claims.size());
         assertEquals(2, claims.get("individualRoles").size());
@@ -256,7 +256,7 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
         headers.put("Content-Type", Arrays.asList("application/json; charset=utf-8"));
 
         httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
-        claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims").resolve(httpFacade);
+        claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims").resolve(new HttpAuthzRequest(httpFacade));
 
         assertEquals(1, claims.size());
         assertEquals(2, claims.get("individualRoles").size());
@@ -266,18 +266,18 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testBodyClaimsInformationPoint() {
-        HttpFacade httpFacade = createHttpFacade(new HashMap<>(), new ByteArrayInputStream("raw-body-text".getBytes()));
+        OIDCHttpFacade httpFacade = createHttpFacade(new HashMap<>(), new ByteArrayInputStream("raw-body-text".getBytes()));
 
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(httpFacade);
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(new HttpAuthzRequest(httpFacade));
 
         assertEquals("raw-body-text", claims.get("claim-from-body").get(0));
     }
 
     @Test
     public void testHttpClaimInformationPointProviderWithoutClaims() {
-        HttpFacade httpFacade = createHttpFacade();
+        OIDCHttpFacade httpFacade = createHttpFacade();
 
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/http-get-claim-provider", "http").resolve(httpFacade);
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/http-get-claim-provider", "http").resolve(new HttpAuthzRequest(httpFacade));
 
         assertEquals("a-value1", claims.get("a").get(0));
         assertEquals("b-value1", claims.get("b").get(0));
@@ -292,9 +292,9 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testHttpClaimInformationPointProviderWithClaims() {
-        HttpFacade httpFacade = createHttpFacade();
+        OIDCHttpFacade httpFacade = createHttpFacade();
 
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/http-post-claim-provider", "http").resolve(httpFacade);
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/http-post-claim-provider", "http").resolve(new HttpAuthzRequest(httpFacade));
 
         assertEquals("a-value1", claims.get("claim-a").get(0));
         assertEquals("d-value1", claims.get("claim-d").get(0));
@@ -308,7 +308,7 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
         assertNull(claims.get("d"));
     }
 
-    private HttpFacade createHttpFacade(Map<String, List<String>> headers, InputStream requestBody) {
+    private OIDCHttpFacade createHttpFacade(Map<String, List<String>> headers, InputStream requestBody) {
         return new OIDCHttpFacade() {
             private Request request;
 
@@ -349,7 +349,7 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
         };
     }
 
-    private HttpFacade createHttpFacade() {
+    private OIDCHttpFacade createHttpFacade() {
         return createHttpFacade(new HashMap<>(), null);
     }
 

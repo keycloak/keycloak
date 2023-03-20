@@ -1,0 +1,34 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="proc-creating-user_{context}"]
+= Creating users
+
+[role="_abstract"]
+You create users in the realm where you intend to have applications needed by those users. Avoid creating users in the master realm, which is only intended for creating other realms.
+
+.Prerequisite
+* You are in a realm other than the master realm.
+
+.Procedure
+. Click *Users* in the menu.
+. Click *Add User*.
+. Enter the details for the new user.
+
+ifdef::standalone[]
++
+NOTE: *Username* is the only required field.
++   
+. Click *Save*. After saving the details, the *Management* page for the new user is displayed.  
+endif::[]
+
+ifdef::api-management[]
+. Toggle *Email Verified* to *ON*.
+. Click *Save*.
+. In the *Credentials* tab, set the password in both fields.
+.. Toggle *Temporary* to *OFF* to avoid resetting the password during the next login.
+.. Click *Reset Password*.
+.. Click *Change Password*.
+.. Click *Save*.
+endif::[]

@@ -1,0 +1,44 @@
+[[_email]]
+
+= Configuring email for a realm
+
+{project_name} sends emails to users to verify their email addresses, when they forget their passwords, or when an administrator needs to receive notifications about a server event. To enable {project_name} to send emails, you provide {project_name} with your SMTP server settings.
+
+.Procedure
+
+. Click *Realm settings* in the menu.
+. Click the *Email* tab.
++
+.Email tab
+image:images/email-tab.png[Email Tab]
+
+. Fill in the fields and toggle the switches as needed.
+
+.Template
+From::
+  *From* denotes the address used for the *From* SMTP-Header for the emails sent.
+
+From display name::
+  *From display name* allows to configure a user-friendly email address aliases (optional). If not set the plain *From* email address will be displayed in email clients.
+
+Reply to::
+  *Reply to* denotes the address used for the *Reply-To* SMTP-Header for the mails sent (optional). If not set the plain *From* email address will be used.
+
+Reply to display name::
+  *Reply to display name* allows to configure a user-friendly email address aliases (optional). If not set the plain *Reply To* email address will be displayed.
+
+Envelope from::
+  *Envelope from* denotes the https://en.wikipedia.org/wiki/Bounce_address[Bounce Address] used for the *Return-Path* SMTP-Header for the mails sent (optional).
+
+.Connection & Authentication
+Host::
+  *Host* denotes the SMTP server hostname used for sending emails.
+
+Port::
+  *Port* denotes the SMTP server port.
+
+Encryption::
+  Tick one of these checkboxes to support sending emails for recovering usernames and passwords, especially if the SMTP server is on an external network. You will most likely need to change the *Port* to 465, the default port for SSL/TLS.
+
+Authentication::
+  Set this switch to *ON* if your SMTP server requires authentication. When prompted, supply the *Username* and *Password*. The value of the *Password* field can refer a value from an external <<_vault-administration,vault>>.
