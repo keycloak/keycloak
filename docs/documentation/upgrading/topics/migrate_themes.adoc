@@ -1,0 +1,86 @@
+[[_migrate_themes]]
+
+== Theme migration
+
+If you have created any custom themes they must be migrated to the new server. Any changes to the built-in themes might
+need to be reflected in your custom themes, depending on which aspects you have customized.
+
+You must copy your custom themes from the old server `themes` directory to the new server `themes` directory.
+After that you need to review the changes below and consider if the changes need to be applied to your custom theme.
+
+In summary:
+
+* If you have customized any of the changed templates listed below you need to compare the template from the base theme
+  to see if there are changes you need to apply.
+* If you have customized any of the styles and are extending the {project_name} themes you need to review the changes to
+  the styles. If you are extending the base theme you can skip this step.
+* If you have customized messages you might need to change the key or value or to add additional messages.
+
+ifeval::[{project_product}==true]
+Each step is described in more detail below the list of changes.
+
+include::rhsso/migrate_themes-changes-73.adoc[leveloffset=0]
+include::rhsso/migrate_themes-changes-72.adoc[leveloffset=0]
+include::rhsso/migrate_themes-changes-71.adoc[leveloffset=0]
+endif::[]
+
+=== Migrating templates
+
+If you have customized any of the templates you need to carefully review the changes that have been made to the templates
+to decide if you need to apply these changes to your customized templates. Most likely you will need to apply the same
+changes to your customized templates. If you have not customized any of the listed templates you can skip this section.
+
+A best practice is to use a diff tool to compare the templates to see what changes you might need to make to your
+customized template. If you have only made minor changes it is simpler to compare the updated template to your
+customized template. However, if you have made many changes it might be easier to compare the new template to your
+customized old template, as this will show you what changes you need to make.
+
+The following screenshot compares the info.ftl template from the Login theme and an example custom theme:
+
+.Comparison of the updated version of a Login theme template with an example custom Login theme template
+image:images/theme-migration-meld-info-1.png[]
+
+From this comparison it is easy to identify that the first change (`Hello world!!`) was a customization, while the
+second change (`if pageRedirectUri`) is a change to the base theme. By copying the second change to your custom template,
+you have successfully updated your customized template.
+
+For the alternative approach the following screenshot compares the info.ftl template from the old installation with
+the updated info.ftl template from the new installation:
+
+.Comparison of the Login theme template from the old installation with the updated version of the Login theme template
+image:images/theme-migration-meld-info-2.png[]
+
+From this comparison it is easy to identify what has been changed in the base template. You will then manually have to
+make the same changes to your modified template. Since this approach is not as simple as the first approach, only use
+this approach if the first one is not feasible.
+
+=== Migrating messages
+
+If you have added support for another language, you need to apply all the changes listed above. If you have not added
+support for another language, you might not need to change anything; you only have to make changes if you have changed
+an affected message in your theme.
+
+For added values, review the value of the message in the base theme to determine if you need to customize that message.
+
+For renamed keys, rename the key in your custom theme.
+
+For changed values, check the value in the base theme to determine if you need to make changes to your custom theme.
+
+=== Migrating styles
+
+If you are inheriting styles from the keycloak or rh-sso themes you might need to update your custom styles to reflect
+changes made to the styles from the built-in themes.
+
+A best practice is to use a diff tool to compare the changes to stylesheets between the old server installation and the
+new server installation.
+
+For example, using the diff command:
+
+[source,bash,subs=+attributes]
+----
+$ diff {project_dirref}_OLD/themes/keycloak/login/resources/css/login.css \
+{project_dirref}_NEW/themes/keycloak/login/resources/css/login.css
+----
+
+Review the changes and determine if they affect your custom styling.
+

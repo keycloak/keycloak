@@ -1,0 +1,40 @@
+name: Bug Report
+description: Report a non-security sensitive bug in Keycloak
+labels: ["kind/bug", "status/triage"]
+body:
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: Provide a clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Version
+      description: What version of Keycloak are you running?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: Describe the expected behavior clearly and concisely.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Actual behavior
+      description: Describe the actual behavior clearly and concisely.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: How to Reproduce?
+      description: Provide clear and concise steps to reproduce the problem.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Anything else?
+      description: Links? References? Anything that will give us more context about the issue you are encountering!
+    validations:
+      required: false

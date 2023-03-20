@@ -1,0 +1,24 @@
+=== Basic steps to secure applications and services
+
+These are the basic steps for securing an application or a service in {project_name}.
+
+. Configure a client using one of these options:
+
+* A {project_name} adapter
+
+* A generic OpenID connect or SAML library 
+
+. Register a client using one of these options:
+
+* The {project_name} Admin Console
+
+* The client registration service
+
+* The CLI
+
+[role="_additional-resources"]
+
+.Additional resources
+
+* This guide provides the detailed instructions for these steps. Related information exists in the link:{adminguide_link}[Server Administration Guide]. That guide provides instructions for using Admin Console to create a client. Creating a client is the same task as registering a client using the {project_name} Client Registration Service.
+
