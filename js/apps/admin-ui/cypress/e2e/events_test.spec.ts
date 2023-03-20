@@ -29,6 +29,10 @@ const dateTo = new Date();
 dateTo.setDate(dateTo.getDate() + 100);
 const dateToFormatted = `${dateTo.getFullYear()}-${dateTo.getMonth()}-${dateTo.getDay()}`;
 
+const A11YOptions = {
+  includedImpacts: ["critical", "serious"],
+};
+
 describe("Events tests", () => {
   const eventsTestUser = {
     eventsTestUserId: "",
@@ -56,13 +60,6 @@ describe("Events tests", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToEvents();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Show empty when no save events", () => {
@@ -99,13 +96,6 @@ describe("Events tests", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToEvents();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Check search dropdown display", () => {
@@ -275,13 +265,6 @@ describe("Events tests", () => {
       sidebarPage.goToRealm(realmName);
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Show events", () => {
@@ -320,13 +303,6 @@ describe("Events tests", () => {
       keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Search by resource types", () => {
@@ -400,13 +376,6 @@ describe("Events tests", () => {
       keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Check admin events search form fields display", () => {
@@ -459,13 +428,6 @@ describe("Events tests", () => {
       keycloakBefore();
       sidebarPage.goToEvents();
       eventsPage.goToAdminEventsTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Check auth dialog opens and is not empty", () => {
@@ -476,6 +438,50 @@ describe("Events tests", () => {
     it("Check representation dialog opens and is not empty", () => {
       listingPage.clickRowDetails("UPDATE").clickDetailMenu("Representation");
       adminEventsTab.assertRepresentationDialogIsNotEmpty();
+    });
+  });
+
+  describe("Accessibility tests for events", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToEvents();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ user events tab", () => {
+      cy.checkA11y(undefined, A11YOptions);
+    });
+
+    it("Check a11y violations in user events search form", () => {
+      userEventsTab.openSearchUserEventDropdownMenu();
+      cy.checkA11y(undefined, A11YOptions);
+    });
+
+    it("Check a11y violations on admin events tab", () => {
+      eventsPage.goToAdminEventsTab;
+      cy.checkA11y(undefined, A11YOptions);
+    });
+
+    it("Check a11y violations in admin events search form", () => {
+      sidebarPage.goToEvents();
+      eventsPage.goToAdminEventsTab();
+      adminEventsTab.openSearchAdminEventDropdownMenu();
+      cy.checkA11y(undefined, A11YOptions);
+    });
+
+    it("Check a11y violations in Auth dialog", () => {
+      sidebarPage.goToEvents();
+      eventsPage.goToAdminEventsTab();
+      listingPage.clickRowDetails("CREATE").clickDetailMenu("Auth");
+      cy.checkA11y(undefined, A11YOptions);
+    });
+
+    it("Check a11y violations in Representation dialog", () => {
+      sidebarPage.goToEvents();
+      eventsPage.goToAdminEventsTab();
+      listingPage.clickRowDetails("CREATE").clickDetailMenu("Representation");
+      cy.checkA11y(undefined, A11YOptions);
     });
   });
 });
