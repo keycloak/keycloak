@@ -25,7 +25,7 @@ If you are using any of the {project_name} OIDC adapters, you can easily enable 
 }
 ```
 
-When you enable the policy enforcer all requests sent your application are intercepted and access to protected resources will be granted
+When you enable the policy enforcer all requests sent to your application are intercepted and access to protected resources will be granted
 depending on the permissions granted by {project_name} to the identity making the request.
 
 Policy enforcement is strongly linked to your application's paths and the <<_resource_overview, resources>> you created for a resource server using the {project_name} Administration Console. By default,
