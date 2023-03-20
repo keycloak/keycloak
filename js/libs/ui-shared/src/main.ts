@@ -1,6 +1,7 @@
 export { ContinueCancelModal } from "./continue-cancel/ContinueCancelModal";
 export { SelectControl } from "./controls/SelectControl";
 export { TextControl } from "./controls/TextControl";
+export { TextAreaControl } from "./controls/TextAreaControl";
 export { HelpItem } from "./controls/HelpItem";
 export { useHelp, Help } from "./context/HelpContext";
 export { KeycloakTextInput } from "./keycloak-text-input/KeycloakTextInput";

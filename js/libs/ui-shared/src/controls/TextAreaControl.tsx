@@ -7,10 +7,10 @@ import {
   UseControllerProps,
 } from "react-hook-form";
 
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { HelpItem } from "./HelpItem";
+import { KeycloakTextArea } from "./keycloak-text-area/KeycloakTextArea";
 
-export type TextControlProps<
+export type TextAreaControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>
 > = UseControllerProps<T, P> & {
@@ -19,11 +19,11 @@ export type TextControlProps<
   isDisabled?: boolean;
 };
 
-export const TextControl = <
+export const TextAreaControl = <
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>
 >(
-  props: TextControlProps<T, P>
+  props: TextAreaControlProps<T, P>
 ) => {
   const required = !!props.rules?.required;
   const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);
@@ -48,7 +48,7 @@ export const TextControl = <
         fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
       }
     >
-      <KeycloakTextInput
+      <KeycloakTextArea
         isRequired={required}
         id={props.name}
         data-testid={props.name}
