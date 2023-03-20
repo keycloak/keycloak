@@ -9,12 +9,14 @@
 .Add identity provider
 image:images/google-add-identity-provider.png[Add Identity Provider]
 +
+. Copy the value of *Redirect URI* to your clipboard.
 . In a separate browser tab open https://console.cloud.google.com/[the Google Cloud Platform console].
 . In the Google dashboard for your Google app, click the *OAuth consent screen* menu. Create a consent screen, ensuring that the user type of the consent screen is external.
 . In the Google dashboard:
 .. Click the *Credentials* menu.
 .. Click *CREATE CREDENTIALS* - *OAuth Client ID*.
 .. From the *Application type* list, select *Web application*.
+.. Use the *Redirect URI* in your clipboard as the *Authorized redirect URIs*
 .. Click *Create*.
 .. Note *Your Client ID* and *Your Client Secret*.
 . In {project_name}, paste the value of the *Your Client ID* into the *Client ID* field.
