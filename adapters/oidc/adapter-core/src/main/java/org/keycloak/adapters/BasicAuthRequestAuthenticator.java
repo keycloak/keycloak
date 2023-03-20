@@ -27,12 +27,9 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -97,7 +94,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
         formparams.add(new BasicNameValuePair("username", username));
         formparams.add(new BasicNameValuePair("password", password));
 
-        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+        AdapterUtils.setClientCredentials(deployment, post, formparams);
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);

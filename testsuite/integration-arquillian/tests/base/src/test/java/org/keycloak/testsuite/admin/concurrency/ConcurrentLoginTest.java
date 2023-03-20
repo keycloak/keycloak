@@ -54,9 +54,8 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
-import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
-import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
@@ -128,10 +127,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     @Test
     public void concurrentLoginSingleUser() throws Throwable {
         // remove this restriction once GHI #15410 is resolved.
-        Assume.assumeThat("Test runs only with InfinispanUserSessionProvider or MapUserSessionProvider using JPA",
+        Assume.assumeThat("Test does not work with ConcurrentHashMap storage",
                 userSessionProvider,
-                Matchers.either(equalTo(InfinispanUserSessionProviderFactory.PROVIDER_ID))
-                        .or(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + JpaMapStorageProviderFactory.PROVIDER_ID)));
+                not(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)));
 
         log.info("*********************************************");
         long start = System.currentTimeMillis();
@@ -174,11 +172,6 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
     @Test
     public void concurrentLoginSingleUserSingleClient() throws Throwable {
-        // remove this restriction once GHI #15410 is resolved.
-        Assume.assumeThat("Test does not run with HotRod after HotRod client transaction was enabled. This will be removed with pessimistic locking introduction.",
-                userSessionProvider,
-                not(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + HotRodMapStorageProviderFactory.PROVIDER_ID)));
-
         log.info("*********************************************");
         long start = System.currentTimeMillis();
 
@@ -203,10 +196,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     @Test
     public void concurrentLoginMultipleUsers() throws Throwable {
         // remove this restriction once GHI #15410 is resolved.
-        Assume.assumeThat("Test runs only with InfinispanUserSessionProvider or MapUserSessionProvider using JPA",
+        Assume.assumeThat("Test does not work with ConcurrentHashMap storage",
                 userSessionProvider,
-                Matchers.either(equalTo(InfinispanUserSessionProviderFactory.PROVIDER_ID))
-                        .or(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + JpaMapStorageProviderFactory.PROVIDER_ID)));
+                not(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)));
 
         log.info("*********************************************");
         long start = System.currentTimeMillis();

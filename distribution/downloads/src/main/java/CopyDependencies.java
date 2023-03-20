@@ -22,14 +22,12 @@ public class CopyDependencies {
     }
 
     private final String version;
-    private final String npmVersion;
     private final Path targetDir;
     private final Path projectDir;
     private final Path mavenRepository;
 
     public CopyDependencies(String version, Path projectDir, Path targetDir, Path mavenRepository) {
         this.version = version;
-        this.npmVersion = version.equals("999-SNAPSHOT") ? "999.0.0-dev" : version;
         this.targetDir = targetDir;
         this.projectDir = projectDir;
         this.mavenRepository = mavenRepository;
@@ -65,6 +63,9 @@ public class CopyDependencies {
 
     private void copyMaven(String artifactName, String destinationName) throws IOException {
         File artifactDir = mavenRepository.resolve(artifactName).resolve(version).toFile();
+        if (!artifactDir.isDirectory()) {
+            throw new RuntimeException(artifactName + " (" + artifactDir + ") not found");
+        }
 
         File[] files = artifactDir.listFiles((file, name) -> name.contains(".tar.gz") || name.contains(".tgz") || name.contains(".zip"));
 
@@ -74,11 +75,16 @@ public class CopyDependencies {
     }
 
     private void copyNpm(String artifactName, String destinationName) throws IOException {
+        Path artifactPath = projectDir.resolve(artifactName);
+        if (!artifactPath.toFile().isFile()) {
+            throw new RuntimeException(artifactName + " (" + artifactPath + ") not found");
+        }
+
         Files.copy(projectDir.resolve(artifactName), targetDir.resolve(destinationName));
     }
 
     private String replaceVariables(String input) {
-        return input.replaceAll("\\$\\$NPM_VERSION\\$\\$", npmVersion);
+        return input.replaceAll("\\$\\$VERSION\\$\\$", version);
     }
 
 }

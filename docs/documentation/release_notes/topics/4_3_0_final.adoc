@@ -1,0 +1,59 @@
+= Hostname SPI
+
+The hostname SPI introduces a more flexible way to configure the hostname for {project_name}. There are two
+built-in providers. The first is request, which uses the request headers to determine the hostname. The second
+is fixed, which allows configuring a fixed hostname. The latter makes sure that only valid hostnames can be
+used and also allows internal applications to invoke {project_name} through an alternative URL.
+
+For more details refer to the threat mitigation section in the link:{adminguide_link}[{adminguide_name}].
+
+= X509 Client Authenticator
+
+The newly added Client Authenticator uses X509 Client Certificates and Mutual TLS to secure a connection from the client. In addition to that
+the Keycloak Server validates Subject DN field of the client's certificate.
+
+= Performance improvements to Authorization Services
+
+For this release, we improved policy evaluation performance across the board, increasing reliability and throughput. The main
+changes we did were related with trying to optimize the policy evaluation path by avoiding unnecessary flows and collect decisions
+as soon as they happen. We also introduced a policy decision cache on a per-request basis, avoiding redundant decisions from policies
+previously evaluated.
+
+We are also working on other layers of cache which should give a much better experience. See https://issues.redhat.com/browse/KEYCLOAK-7952[KEYCLOAK-7952].
+
+= Choosing the response mode when obtaining permissions from the server
+
+In previous versions, permissions were always returned from the server using standard OAuth2 response, containing the access and refresh tokens. In this release,
+clients can use a `response_mode` parameter to specify how the server should respond to an authorization request. This parameter accepts two values:
+
+* `decision`
++
+Indicating that responses should only contain a flag indicating whether or not permissions were granted by the server. Otherwise a `403` HTTP status code is returned.
++
+* `permissions`
++
+Indicating that a response should contain every single permission granted by the server using a JSON format.
+
+= NodeJS Policy Enforcer
+
+The https://github.com/keycloak/keycloak-nodejs-connect[keycloak-nodejs-connect], an adapter for NodeJS, now supports constructs to protect
+resources based on decisions taken from the server. The new construct allows users to protect their resources using fine-grained permissions as follows:
+
+```js
+app.get('/protected/resource', keycloak.enforcer('resource:view'), function (req, res) {
+  res.json({message: 'access granted'});
+});
+```
+
+= Support hosted domain for Google logins
+
+Login with Google now supports the `hd` parameter to restrict Google logins to a specific hosted domain at Google. When
+this is specified in the identity provider any login from a different domain is rejected.
+
+Thanks to https://github.com/brushmate[brushmate] for the contribution.
+
+= Escape unsafe tags in HTML output
+
+Most HTML output is already escaped for HTML tags, but there are some places where HTML tags are permitted.
+These are only where admin access is needed to update the value. Even though it would require admin access to update such
+fields we have added an extra layer of defence and are now escaping unsafe elements like `<script>`.

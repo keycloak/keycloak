@@ -14,9 +14,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 public final class PropertyMappers {
 
@@ -40,23 +38,12 @@ public final class PropertyMappers {
         MAPPERS.addAll(StoragePropertyMappers.getMappers());
         MAPPERS.addAll(ClassLoaderPropertyMappers.getMappers());
         MAPPERS.addAll(SecurityPropertyMappers.getMappers());
+        MAPPERS.addAll(ExportPropertyMappers.getMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
         PropertyMapper mapper = MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY);
-        ConfigValue configValue = mapper.getConfigValue(name, context);
-
-        if (configValue == null) {
-            Optional<String> prefixedMapper = getPrefixedMapper(name);
-
-            if (prefixedMapper.isPresent()) {
-                return MAPPERS.get(prefixedMapper.get()).getConfigValue(name, context);
-            }
-        } else {
-            configValue.withName(mapper.getTo());
-        }
-
-        return configValue;
+        return mapper.getConfigValue(name, context);
     }
 
     public static boolean isBuildTimeProperty(String name) {
@@ -66,14 +53,6 @@ public final class PropertyMappers {
 
         PropertyMapper mapper = MAPPERS.get(name);
         boolean isBuildTimeProperty = mapper == null ? false : mapper.isBuildTime();
-
-        if (mapper == null && !isBuildTimeProperty) {
-            Optional<String> prefixedMapper = PropertyMappers.getPrefixedMapper(name);
-
-            if (prefixedMapper.isPresent()) {
-                isBuildTimeProperty = MAPPERS.get(prefixedMapper.get()).isBuildTime();
-            }
-        }
 
         return isBuildTimeProperty
                 && !"kc.version".equals(name)
@@ -134,25 +113,6 @@ public final class PropertyMappers {
 
     public static boolean isSupported(PropertyMapper mapper) {
         return mapper.getCategory().getSupportLevel().equals(ConfigSupportLevel.SUPPORTED);
-    }
-
-    private static Optional<String> getPrefixedMapper(String name) {
-        return MAPPERS.entrySet().stream().filter(
-                new Predicate<Map.Entry<String, PropertyMapper>>() {
-                    @Override
-                    public boolean test(Map.Entry<String, PropertyMapper> entry) {
-                        String key = entry.getKey();
-
-                        if (!key.endsWith(".")) {
-                            return false;
-                        }
-
-                        // checks both to and from mapping
-                        return name.startsWith(key) || name.startsWith(entry.getValue().getFrom());
-                    }
-                })
-                .map(Map.Entry::getKey)
-                .findAny();
     }
 
     private static class MappersConfig extends HashMap<String, PropertyMapper> {

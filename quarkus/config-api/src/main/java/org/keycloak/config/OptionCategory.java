@@ -15,6 +15,7 @@ public enum OptionCategory {
     VAULT("Vault", 100, ConfigSupportLevel.SUPPORTED),
     LOGGING("Logging", 110, ConfigSupportLevel.SUPPORTED),
     SECURITY("Security", 120, ConfigSupportLevel.PREVIEW),
+    EXPORT("Export", 130, ConfigSupportLevel.SUPPORTED),
     GENERAL("General", 999, ConfigSupportLevel.SUPPORTED);
 
     private String heading;

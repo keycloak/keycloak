@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -224,7 +224,7 @@
         <firefoxUserPreferences/>
         <firefoxHeadless>true</firefoxHeadless>
         <chromeBinary/>
-        <chromeArguments>--headless --window-size=1920,1080</chromeArguments>
+        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=*</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>

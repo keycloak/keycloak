@@ -21,8 +21,6 @@ import java.security.PublicKey;
 
 import org.jboss.logging.Logger;
 import org.keycloak.TokenVerifier;
-import org.keycloak.adapters.authentication.ClientCredentialsProvider;
-import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.UserSessionManagement;
@@ -31,6 +29,8 @@ import org.keycloak.common.util.StreamUtil;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientCredentialsProvider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;

@@ -60,6 +60,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
@@ -225,7 +226,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 disallowOnHolderOfTokenMismatch = false;
             }
 
-            tokenSession = session.sessions().createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+            tokenSession = new UserSessionManager(session).createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
             if (tokenUser != null) {
                 tokenSession.setNote(IMPERSONATOR_ID.toString(), tokenUser.getId());
                 tokenSession.setNote(IMPERSONATOR_USERNAME.toString(), tokenUser.getUsername());
@@ -374,7 +375,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         if (targetUserSession == null) {
             // if no session is associated with a subject_token, a stateless session is created to only allow building a token to the audience
-            targetUserSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
+            targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
                     clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
 
         }
@@ -505,7 +506,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         UserModel user = importUserFromExternalIdentity(context);
 
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
         externalIdp.get().exchangeExternalComplete(userSession, context, formParams);
 
         // this must exist so that we can obtain access token from user session if idp's store tokens is off

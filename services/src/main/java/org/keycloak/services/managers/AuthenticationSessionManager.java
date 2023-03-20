@@ -225,6 +225,14 @@ public class AuthenticationSessionManager {
         }
     }
 
+    public void removeTabIdInAuthenticationSession(RealmModel realm, AuthenticationSessionModel authSession) {
+        RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
+        rootAuthSession.removeAuthenticationSessionByTabId(authSession.getTabId());
+        if (rootAuthSession.getAuthenticationSessions().isEmpty()) {
+            // no more tabs, remove the session completely
+            removeAuthenticationSession(realm, authSession, false);
+        }
+    }
 
     // Check to see if we already have authenticationSession with same ID
     public UserSessionModel getUserSession(AuthenticationSessionModel authSession) {

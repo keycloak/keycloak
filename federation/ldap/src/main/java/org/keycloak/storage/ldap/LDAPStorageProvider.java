@@ -436,7 +436,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes) {
 
-        List<LDAPObject> results = new ArrayList<LDAPObject>();
+        // return a stable ordered result to the caller
+        List<LDAPObject> results = new ArrayList<>();
+
+        // a set to ensure fast uniqueness checks based on equals/hashCode of LDAPObject
+        Set<LDAPObject> unique = new HashSet<>();
+
         if (attributes.containsKey(UserModel.USERNAME)) {
             try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
                 LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
@@ -447,6 +452,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
                 List<LDAPObject> ldapObjects = ldapQuery.getResultList();
                 results.addAll(ldapObjects);
+                unique.addAll(ldapObjects);
             }
         }
 
@@ -459,7 +465,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 ldapQuery.addWhereCondition(emailCondition);
 
                 List<LDAPObject> ldapObjects = ldapQuery.getResultList();
-                results.addAll(ldapObjects);
+                ldapObjects.forEach(ldapObject -> {
+                    // ensure that no entity is listed twice and still preserve the order of returned entities
+                    if (!unique.contains(ldapObject)) {
+                        results.add(ldapObject);
+                        unique.add(ldapObject);
+                    }
+                });
             }
         }
 
@@ -476,7 +488,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 }
 
                 List<LDAPObject> ldapObjects = ldapQuery.getResultList();
-                results.addAll(ldapObjects);
+                ldapObjects.forEach(ldapObject -> {
+                    // ensure that no entity is listed twice and still preserve the order of returned entities
+                    if (!unique.contains(ldapObject)) {
+                        results.add(ldapObject);
+                        unique.add(ldapObject);
+                    }
+                });
             }
         }
 

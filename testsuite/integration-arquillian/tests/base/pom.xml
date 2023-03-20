@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -894,6 +894,8 @@
                                 <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
                                 <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
 
+                                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
+
                                 <keycloak.authorization.map.storage.provider>jpa</keycloak.authorization.map.storage.provider>
                                 <keycloak.authSession.map.storage.provider>jpa</keycloak.authSession.map.storage.provider>
                                 <keycloak.client.map.storage.provider>jpa</keycloak.client.map.storage.provider>
@@ -1074,6 +1076,8 @@
                                 <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
                                 <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
 
+                                <keycloak.storage.connections.vendor>cockroach</keycloak.storage.connections.vendor>
+
                                 <keycloak.authorization.map.storage.provider>jpa</keycloak.authorization.map.storage.provider>
                                 <keycloak.authSession.map.storage.provider>jpa</keycloak.authSession.map.storage.provider>
                                 <keycloak.client.map.storage.provider>jpa</keycloak.client.map.storage.provider>
@@ -1133,10 +1137,10 @@
         <profile>
             <id>auth-server-quarkus-embedded</id>
             <properties>
-                <surefire.memory.Xms>1024m</surefire.memory.Xms>
-                <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
+                <surefire.memory.Xms>2048m</surefire.memory.Xms>
+                <surefire.memory.Xmx>2048m</surefire.memory.Xmx>
                 <surefire.memory.metaspace>512m</surefire.memory.metaspace>
-                <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
+                <surefire.memory.metaspace.max>1024m</surefire.memory.metaspace.max>
             </properties>
             <dependencies>
                 <dependency>
