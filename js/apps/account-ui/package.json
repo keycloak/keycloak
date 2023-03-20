@@ -17,7 +17,7 @@
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "^7.43.5",
+    "react-hook-form": "^7.43.7",
     "react-i18next": "^12.2.0",
     "react-router-dom": "6.9.0",
     "ui-shared": "999.0.0-SNAPSHOT"
