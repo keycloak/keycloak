@@ -1,0 +1,22 @@
+
+[[_facebook]]
+==== Facebook
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Facebook`. {project_name} displays the configuration page for the Facebook identity provider.
++
+.Add identity provider
+image:images/facebook-add-identity-provider.png[Add Identity Provider]
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, follow the https://developers.facebook.com/docs/development/[Facebook Developer Guide's] instructions to create a project and client in Facebook.
+.. Ensure your app is a website-type app.
+.. Enter the *Redirect URI's* value into the `Site URL` of the Facebook `Website` settings block.
+.. Ensure the app is public.
++
+. Enter the https://developers.facebook.com/docs/facebook-login/guides/access-tokens[`Client ID` and `Client Secret`] values from your Facebook app into the `Client ID` and `Client Secret` fields in {project_name}.
+. Click *Add*
+
+. Enter the required scopes into the *Default Scopes* field. By default, {project_name} uses the `email` scope. See https://developers.facebook.com/docs/graph-api[Graph API] for more information about Facebook scopes. 
+
+{project_name} sends profile requests to `graph.facebook.com/me?fields=id,name,email,first_name,last_name` by default. The response contains the id, name, email, first_name, and last_name fields only. To fetch additional fields from the Facebook profile, add a corresponding scope and add the field name in the `Additional user's profile fields` configuration option field. 

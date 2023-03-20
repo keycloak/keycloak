@@ -18,6 +18,8 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.pep.HttpAuthzRequest;
+import org.keycloak.adapters.pep.HttpAuthzResponse;
 import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -180,8 +182,9 @@ public class BearerTokenRequestAuthenticator {
 
             @Override
             public boolean challenge(HttpFacade facade) {
+                OIDCHttpFacade oidcFacade = (OIDCHttpFacade) facade;
                 if (deployment.getPolicyEnforcer() != null) {
-                    deployment.getPolicyEnforcer().enforce(OIDCHttpFacade.class.cast(facade));
+                    deployment.getPolicyEnforcer().enforce(new HttpAuthzRequest(oidcFacade), new HttpAuthzResponse(oidcFacade));
                     return true;
                 }
                 OIDCAuthenticationError error = new OIDCAuthenticationError(reason, description);

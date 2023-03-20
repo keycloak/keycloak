@@ -20,19 +20,17 @@ package org.keycloak.adapters;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.Configurable;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.CoreConnectionPNames;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
-import org.keycloak.adapters.authentication.ClientIdAndSecretCredentialsProvider;
-import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
-import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.adapters.rotation.HardcodedPublicKeyLocator;
 import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.enums.TokenStore;
+import org.keycloak.protocol.oidc.client.authentication.ClientIdAndSecretCredentialsProvider;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientCredentialsProvider;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -40,7 +38,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
-import java.util.Optional;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

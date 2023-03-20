@@ -17,11 +17,18 @@
 
 package org.keycloak.adapters;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.representations.AccessToken;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -88,5 +95,22 @@ public class AdapterUtils {
 
     public static KeycloakPrincipal<RefreshableKeycloakSecurityContext> createPrincipal(KeycloakDeployment deployment, RefreshableKeycloakSecurityContext securityContext) {
         return new KeycloakPrincipal<>(getPrincipalName(deployment, securityContext.getToken()), securityContext);
+    }
+
+    /**
+     * Don't use directly from your JEE apps to avoid HttpClient linkage errors! Instead use the method {@link #setClientCredentials(KeycloakDeployment, Map, Map)}
+     */
+    public static void setClientCredentials(KeycloakDeployment deployment, HttpPost post, List<NameValuePair> formparams) {
+        Map<String, String> reqHeaders = new HashMap<>();
+        Map<String, String> reqParams = new HashMap<>();
+        ClientCredentialsProviderUtils.setClientCredentials(deployment.getAdapterConfig(), deployment.getClientAuthenticator(), reqHeaders, reqParams);
+
+        for (Map.Entry<String, String> header : reqHeaders.entrySet()) {
+            post.setHeader(header.getKey(), header.getValue());
+        }
+
+        for (Map.Entry<String, String> param : reqParams.entrySet()) {
+            formparams.add(new BasicNameValuePair(param.getKey(), param.getValue()));
+        }
     }
 }
