@@ -25,7 +25,10 @@ import {
   removeClientScope,
 } from "../../components/client-scope/ClientScopeTypes";
 import { useAlerts } from "../../components/alert/Alerts";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 import {
   nameFilter,
   SearchDropdown,
@@ -363,7 +366,7 @@ export const ClientScopes = ({
                     toggleDeleteDialog();
                     return true;
                   },
-                },
+                } as Action<Row>,
               ]
             : []
         }

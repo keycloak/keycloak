@@ -22,7 +22,10 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
@@ -260,7 +263,7 @@ export const PoliciesTab = () => {
                 toggleDeleteDialog();
                 setSelectedPolicy(item);
               },
-            },
+            } as Action<ClientPolicyRepresentation>,
           ]}
           columns={[
             {

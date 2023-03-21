@@ -10,7 +10,10 @@ import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toEditAttributesGroup } from "../routes/EditAttributesGroup";
 import { toNewAttributesGroup } from "../routes/NewAttributesGroup";
@@ -102,7 +105,7 @@ export const AttributesGroupTab = () => {
           {
             title: t("common:delete"),
             onRowClick: deleteAttributeGroup,
-          },
+          } as Action<UserProfileGroup>,
         ]}
         emptyState={
           <ListEmptyState

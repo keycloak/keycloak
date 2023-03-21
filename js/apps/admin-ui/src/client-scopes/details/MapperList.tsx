@@ -13,7 +13,10 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { AddMapperDialog } from "../add/MapperDialog";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 
 type MapperListProps = {
   model: ClientScopeRepresentation | ClientRepresentation;
@@ -138,7 +141,7 @@ export const MapperList = ({
           {
             title: t("common:delete"),
             onRowClick: onDelete,
-          },
+          } as Action<Row>,
         ]}
         columns={[
           {

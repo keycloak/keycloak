@@ -14,7 +14,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { AddRoleMappingModal } from "./AddRoleMappingModal";
-import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
+import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
@@ -229,7 +229,7 @@ export const RoleMapping = ({
                     toggleDeleteDialog();
                     return false;
                   },
-                },
+                } as Action<Awaited<ReturnType<typeof loader>>[0]>,
               ]
             : []
         }
