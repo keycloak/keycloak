@@ -6,7 +6,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useToggle from "../../utils/useToggle";
@@ -118,7 +121,7 @@ export const ClientRegistrationList = ({
               setSelectedPolicy(policy);
               toggleDeleteDialog();
             },
-          },
+          } as Action<ComponentRepresentation>,
         ]}
         columns={[
           {

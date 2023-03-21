@@ -12,7 +12,10 @@ import { Link, To, useNavigate, useParams } from "react-router-dom";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
@@ -111,7 +114,7 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
               setSelectedMapper(mapper);
               toggleDeleteDialog();
             },
-          },
+          } as Action<ComponentRepresentation>,
         ]}
         columns={[
           {

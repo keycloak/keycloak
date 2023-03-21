@@ -29,7 +29,10 @@ import {
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { ScrollForm } from "../../components/scroll-form/ScrollForm";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -489,7 +492,7 @@ export default function DetailSettings() {
                     setSelectedMapper(mapper);
                     toggleDeleteMapperDialog();
                   },
-                },
+                } as Action<IdPWithMapperAttributes>,
               ]}
             />
           </Tab>
