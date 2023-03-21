@@ -52,6 +52,19 @@ type ExpandablePolicyRepresentation = PolicyRepresentation & {
   isExpanded: boolean;
 };
 
+const AssociatedPoliciesRenderer = ({
+  row,
+}: {
+  row: ExpandablePolicyRepresentation;
+}) => {
+  return (
+    <>
+      {row.associatedPolicies?.[0]?.name}{" "}
+      <MoreLabel array={row.associatedPolicies} />
+    </>
+  );
+};
+
 export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
   const { t } = useTranslation("clients");
   const navigate = useNavigate();
@@ -77,19 +90,6 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
 
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
-
-  const AssociatedPoliciesRenderer = ({
-    row,
-  }: {
-    row: ExpandablePolicyRepresentation;
-  }) => {
-    return (
-      <>
-        {row.associatedPolicies?.[0]?.name}{" "}
-        <MoreLabel array={row.associatedPolicies} />
-      </>
-    );
-  };
 
   useFetch(
     async () => {
