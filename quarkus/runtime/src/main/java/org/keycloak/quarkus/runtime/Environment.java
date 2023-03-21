@@ -47,6 +47,8 @@ public final class Environment {
     public static final String DEV_PROFILE_VALUE = "dev";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
+    public static final String LAZY_LOAD_DB_DRIVERS = "kc.config.classloading.lazy-load-db-drivers";
+
     private Environment() {}
 
     public static Boolean isRebuild() {
@@ -234,5 +236,15 @@ public final class Environment {
 
     public static void setHomeDir(Path path) {
         System.setProperty("kc.home.dir", path.toFile().getAbsolutePath());
+    }
+
+    public static boolean isDbDriverLazyLoadingEnabled(boolean defaultValue) {
+        String lazyLoadProperty = System.getProperty(LAZY_LOAD_DB_DRIVERS);
+
+        if (lazyLoadProperty != null) {
+            return Boolean.parseBoolean(lazyLoadProperty);
+        }
+
+        return defaultValue;
     }
 }

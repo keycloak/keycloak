@@ -24,16 +24,20 @@ import java.util.Collections;
 import java.util.Enumeration;
 
 public class KeycloakClassLoader extends ClassLoader {
+    public static final boolean DEFAULT_LAZY_LOAD_DATABASE_DRIVERS = true;
 
-    KeycloakClassLoader() {
-        super(Thread.currentThread().getContextClassLoader());
+    private final boolean lazyLoadDatabaseDrivers;
+
+    KeycloakClassLoader(ClassLoader parent, boolean lazyLoadDatabaseDrivers) {
+        super(parent);
+        this.lazyLoadDatabaseDrivers = lazyLoadDatabaseDrivers;
     }
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         // drivers are going to be loaded lazily, and we avoid loading all available drivers
         // see https://github.com/quarkusio/quarkus/pull/7089
-        if (name.contains(Driver.class.getName())) {
+        if (lazyLoadDatabaseDrivers && name.contains(Driver.class.getName())) {
             return Collections.emptyEnumeration();
         }
 

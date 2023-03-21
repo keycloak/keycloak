@@ -97,7 +97,9 @@ public class KeycloakMain implements QuarkusApplication {
         ClassLoader originalCl = Thread.currentThread().getContextClassLoader();
 
         try {
-            Thread.currentThread().setContextClassLoader(new KeycloakClassLoader());
+            boolean lazyLoadDatabaseDrivers = Environment.isDbDriverLazyLoadingEnabled(KeycloakClassLoader.DEFAULT_LAZY_LOAD_DATABASE_DRIVERS);
+            ClassLoader kcLoader = new KeycloakClassLoader(originalCl, lazyLoadDatabaseDrivers);
+            Thread.currentThread().setContextClassLoader(kcLoader);
 
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
