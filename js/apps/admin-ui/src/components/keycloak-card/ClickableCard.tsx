@@ -21,7 +21,7 @@ export const ClickableCard = ({
       role="button"
       aria-pressed="false"
       tabIndex={0}
-      isHoverable
+      isSelectableRaised
       onKeyDown={onKeyDown}
       onClick={onClick}
       {...rest}
