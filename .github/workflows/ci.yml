@@ -105,7 +105,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Dtest=$TESTS -Papp-server-wildfly -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus,app-server-wildfly -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -187,14 +187,14 @@ jobs:
           jdk-dist: ${{ matrix.dist }}
           jdk-version: ${{ matrix.version }}
 
-      - name: Prepare Undertow distribution with current JDK
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/undertow
+      - name: Prepare Quarkus distribution with current JDK
+        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
 
       - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Build with JDK
         run:
@@ -262,8 +262,7 @@ jobs:
 
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -304,8 +303,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -449,7 +447,7 @@ jobs:
           jdk-version: 17
 
       - name: Prepare Quarkus distribution with BCFIPS
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/undertow -Pauth-server-fips140-2
+        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
 
       - name: Run base tests
         run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
