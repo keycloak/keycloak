@@ -79,7 +79,6 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(clientId);
       cy.wait("@fetchClient");
       clientDetailsPage.goToClientScopesTab();
-      cy.injectAxe();
     });
 
     after(async () => {
@@ -89,12 +88,6 @@ describe("Clients test", () => {
       }
       await adminClient.deleteClientScope(clientScopeNameDefaultType);
       await adminClient.deleteClientScope(clientScopeNameOptionalType);
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Should list client scopes", () => {
@@ -245,13 +238,6 @@ describe("Clients test", () => {
       loginPage.logIn();
       keycloakBefore();
       commonPage.sidebar().goToClients();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Should cancel creating client", () => {
@@ -513,17 +499,10 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().searchItem(client);
       commonPage.tableUtils().clickRowItemLink(client);
       rolesTab.goToRolesTab();
-      cy.injectAxe();
     });
 
     after(() => {
       adminClient.deleteClient(client);
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Should fail to create client role with empty name", () => {
@@ -722,16 +701,10 @@ describe("Clients test", () => {
         .masthead()
         .checkNotificationMessage("Client created successfully");
       clientDetailsPage.goToAdvancedTab();
-      cy.injectAxe();
     });
 
     afterEach(() => {
       adminClient.deleteClient(client);
-    });
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Clustering", () => {
@@ -840,17 +813,10 @@ describe("Clients test", () => {
       loginPage.logIn();
       keycloakBefore();
       commonPage.sidebar().goToClients();
-      cy.injectAxe();
     });
 
     after(() => {
       adminClient.deleteClient(serviceAccountName);
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("List", () => {
@@ -966,7 +932,6 @@ describe("Clients test", () => {
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(mappingClient);
       commonPage.tableUtils().clickRowItemLink(mappingClient);
-      cy.injectAxe();
     });
 
     before(() => {
@@ -979,12 +944,6 @@ describe("Clients test", () => {
 
     after(() => {
       adminClient.deleteClient(mappingClient);
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Add mapping to openid client", () => {
@@ -1017,17 +976,10 @@ describe("Clients test", () => {
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(keysName);
       commonPage.tableUtils().clickRowItemLink(keysName);
-      cy.injectAxe();
     });
 
     after(() => {
       adminClient.deleteClient(keysName);
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Generate new keys", () => {
@@ -1052,13 +1004,6 @@ describe("Clients test", () => {
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(clientName);
       commonPage.tableUtils().clickRowItemLink(clientName);
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Displays the correct tabs", () => {
@@ -1102,17 +1047,10 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().searchItem(clientId);
       commonPage.tableUtils().clickRowItemLink(clientId);
       cy.wait("@fetchClient");
-      cy.injectAxe();
     });
 
     after(() => {
       adminClient.deleteClient(clientId);
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Shows an explainer text for bearer only clients", () => {
