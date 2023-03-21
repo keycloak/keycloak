@@ -70,6 +70,16 @@ public class NoActionHotRodTransactionWrapper<K, V extends AbstractEntity & Upda
     }
 
     @Override
+    public boolean exists(String key) {
+        return actualTx.exists(key);
+    }
+
+    @Override
+    public boolean exists(QueryParameters<M> queryParameters) {
+        return actualTx.exists(queryParameters);
+    }
+
+    @Override
     public void begin() {
         // Does nothing
     }
