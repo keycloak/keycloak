@@ -186,6 +186,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                 <Tr>
                   <Th />
                   <Th>{t("common:name")}</Th>
+                  <Th>{t("displayName")}</Th>
                   <Th />
                   <Th />
                 </Tr>
@@ -217,6 +218,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                         {scope.name}
                       </Link>
                     </Td>
+                    <Td>{scope.displayName}</Td>
                     <Td width={10}>
                       <Button
                         variant="link"
