@@ -1,4 +1,4 @@
-import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
+import { ValidatedOptions } from "@patternfly/react-core";
 import {
   FieldPath,
   FieldValues,
@@ -6,8 +6,8 @@ import {
   useController,
   UseControllerProps,
 } from "react-hook-form";
+import { FormLabel } from "./FormLabel";
 
-import { HelpItem } from "./HelpItem";
 import { KeycloakTextArea } from "./keycloak-text-area/KeycloakTextArea";
 
 export type TextAreaControlProps<
@@ -34,19 +34,12 @@ export const TextAreaControl = <
   });
 
   return (
-    <FormGroup
+    <FormLabel
       isRequired={required}
       label={props.label}
-      labelIcon={
-        props.labelIcon ? (
-          <HelpItem helpText={props.labelIcon} fieldLabelId={props.name} />
-        ) : undefined
-      }
-      fieldId={props.name}
-      helperTextInvalid={fieldState.error?.message}
-      validated={
-        fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
-      }
+      labelIcon={props.labelIcon}
+      name={props.name}
+      error={fieldState.error}
     >
       <KeycloakTextArea
         isRequired={required}
@@ -58,6 +51,6 @@ export const TextAreaControl = <
         isDisabled={props.isDisabled}
         {...field}
       />
-    </FormGroup>
+    </FormLabel>
   );
 };

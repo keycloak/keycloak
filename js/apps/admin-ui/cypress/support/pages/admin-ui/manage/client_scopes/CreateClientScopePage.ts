@@ -21,7 +21,7 @@ export default class CreateClientScopePage extends CommonPage {
     this.settingsTab = ".pf-c-tabs__item:nth-child(1)";
     this.mappersTab = ".pf-c-tabs__item:nth-child(2)";
 
-    this.clientScopeNameInput = "#name";
+    this.clientScopeNameInput = "#kc-name";
     this.clientScopeNameError = "#kc-name-helper";
     this.clientScopeDescriptionInput = "#kc-description";
     this.clientScopeTypeDrpDwn = "#kc-protocol";

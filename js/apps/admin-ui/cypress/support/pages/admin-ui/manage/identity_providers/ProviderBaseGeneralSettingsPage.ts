@@ -5,7 +5,7 @@ const masthead = new Masthead();
 
 export default class ProviderBaseGeneralSettingsPage extends PageObject {
   private redirectUriGroup = ".pf-c-clipboard-copy__group";
-  protected clientIdInput = "#clientId";
+  protected clientIdInput = "#kc-clientId";
   protected clientSecretInput = "#kc-client-secret";
   private displayOrderInput = "#kc-display-order";
   private addBtn = "createProvider";

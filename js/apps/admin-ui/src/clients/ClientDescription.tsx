@@ -1,10 +1,8 @@
-import { FormGroup, Switch } from "@patternfly/react-core";
-import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl, TextAreaControl } from "ui-shared";
+import { TextControl, TextAreaControl } from "ui-shared";
 
 import { FormAccess } from "../components/form-access/FormAccess";
-import { FormFields } from "./ClientDetails";
+import { DefaultSwitchControl } from "../components/SwitchControl";
 
 type ClientDescriptionProps = {
   protocol?: string;
@@ -15,7 +13,6 @@ export const ClientDescription = ({
   hasConfigureAccess: configure,
 }: ClientDescriptionProps) => {
   const { t } = useTranslation("clients");
-  const { control } = useFormContext<FormFields>();
   return (
     <FormAccess role="manage-clients" fineGrainedAccess={configure} unWrap>
       <TextControl
@@ -40,33 +37,11 @@ export const ClientDescription = ({
           },
         }}
       />
-      <FormGroup
+      <DefaultSwitchControl
+        name="alwaysDisplayInConsole"
         label={t("alwaysDisplayInUI")}
-        labelIcon={
-          <HelpItem
-            helpText={t("clients-help:alwaysDisplayInUI")}
-            fieldLabelId="clients:alwaysDisplayInUI"
-          />
-        }
-        fieldId="kc-always-display-in-ui"
-        hasNoPaddingTop
-      >
-        <Controller
-          name="alwaysDisplayInConsole"
-          defaultValue={false}
-          control={control}
-          render={({ field }) => (
-            <Switch
-              id="kc-always-display-in-ui-switch"
-              label={t("common:on")}
-              labelOff={t("common:off")}
-              isChecked={field.value}
-              onChange={field.onChange}
-              aria-label={t("alwaysDisplayInUI")}
-            />
-          )}
-        />
-      </FormGroup>
+        labelIcon={t("clients-help:alwaysDisplayInUI")}
+      />
     </FormAccess>
   );
 };
