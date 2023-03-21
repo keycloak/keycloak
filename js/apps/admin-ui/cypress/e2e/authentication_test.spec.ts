@@ -252,18 +252,23 @@ describe("Password policies tab", () => {
     masthead.checkNotificationMessage("Password policies successfully updated");
     passwordPoliciesPage.shouldShowEmptyState();
   });
+});
 
-  describe("Accessibility tests for authentication", () => {
-    beforeEach(() => {
-      loginPage.logIn();
-      keycloakBefore();
-      sidebarPage.goToRealm(realmName);
-      sidebarPage.goToAuthentication();
-      cy.injectAxe();
-    });
+describe("Accessibility tests for authentication", () => {
+  const realmName = "a11y-realm";
 
-    it("Check a11y violations on load/ authentication", () => {
-      cy.checkA11y();
-    });
+  before(() => adminClient.createRealm(realmName));
+  after(() => adminClient.deleteRealm(realmName));
+
+  beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
+    sidebarPage.goToRealm(realmName);
+    sidebarPage.goToAuthentication();
+    cy.injectAxe();
+  });
+
+  it("Check a11y violations on load/ authentication", () => {
+    cy.checkA11y();
   });
 });
