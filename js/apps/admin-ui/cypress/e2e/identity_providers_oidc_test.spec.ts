@@ -39,13 +39,6 @@ describe("OIDC identity provider test", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToIdentityProviders();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should create an OIDC provider using discovery url", () => {

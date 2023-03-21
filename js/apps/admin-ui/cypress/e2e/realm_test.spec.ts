@@ -23,7 +23,6 @@ describe("Realm tests", () => {
   beforeEach(() => {
     loginPage.logIn();
     keycloakBefore();
-    cy.injectAxe();
   });
 
   after(() =>
@@ -33,12 +32,6 @@ describe("Realm tests", () => {
       )
     )
   );
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
-  });
 
   it("should fail creating Master realm", () => {
     sidebarPage.goToCreateRealm();

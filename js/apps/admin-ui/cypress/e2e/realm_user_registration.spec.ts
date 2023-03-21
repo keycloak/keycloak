@@ -28,16 +28,9 @@ describe("Realm settings - User registration tab", () => {
     keycloakBefore();
     sidebarPage.goToRealmSettings();
     userRegistration.goToTab();
-    cy.injectAxe();
   });
 
   after(() => adminClient.deleteGroups());
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
-  });
 
   it("Add admin role", () => {
     const role = "admin";

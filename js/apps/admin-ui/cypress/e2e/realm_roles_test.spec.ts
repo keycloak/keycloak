@@ -18,19 +18,13 @@ const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
 const associatedRolesPage = new AssociatedRolesPage();
 const rolesTab = new ClientRolesTab();
+const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Realm roles test", () => {
   beforeEach(() => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToRealmRoles();
-    cy.injectAxe();
-  });
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
   });
 
   it("should fail creating realm role", () => {
@@ -277,6 +271,19 @@ describe("Realm roles test", () => {
       createRealmRolePage.goToAttributesTab();
 
       keyValue.deleteRow(1).save().validateRows(3);
+    });
+  });
+
+  describe("Accessibility tests for realm roles", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToRealmRoles();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ realm roles", () => {
+      cy.checkA11y(undefined, a11YOptions);
     });
   });
 });

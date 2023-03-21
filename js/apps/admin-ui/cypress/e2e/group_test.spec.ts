@@ -32,6 +32,7 @@ describe("Group test", () => {
   const emptyGroup = "empty-group";
   let users: { id: string; username: string }[] = [];
   const username = "test-user";
+  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   before(async () => {
     users = await Promise.all(
@@ -57,16 +58,9 @@ describe("Group test", () => {
     sidebarPage.goToGroups();
     groupName = groupNamePrefix + crypto.randomUUID();
     groupNames.push(groupName);
-    cy.injectAxe();
   });
 
   describe("List", () => {
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
-    });
-
     it("Create group from empty option", () => {
       groupPage
         .assertNoGroupsInThisRealmEmptyStateMessageExist(true)
@@ -244,13 +238,6 @@ describe("Group test", () => {
 
     beforeEach(() => {
       groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Check empty state", () => {
@@ -340,13 +327,6 @@ describe("Group test", () => {
     beforeEach(() => {
       groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
       childGroupsTab.goToMembersTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Add member from search bar", () => {
@@ -433,13 +413,6 @@ describe("Group test", () => {
     beforeEach(() => {
       groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
       groupDetailPage.goToAttributesTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Add attribute", () => {
@@ -483,13 +456,6 @@ describe("Group test", () => {
     beforeEach(() => {
       groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
       groupDetailPage.goToRoleMappingTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Check empty state", () => {
@@ -522,17 +488,23 @@ describe("Group test", () => {
     beforeEach(() => {
       groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
       groupDetailPage.goToPermissionsTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("enable/disable permissions", () => {
       groupDetailPage.enablePermissionSwitch();
+    });
+  });
+
+  describe("Accessibility tests for groups", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToGroups();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ groups", () => {
+      cy.checkA11y(undefined, a11YOptions);
     });
   });
 });

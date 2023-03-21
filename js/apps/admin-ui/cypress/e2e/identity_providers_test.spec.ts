@@ -39,12 +39,12 @@ describe("Identity provider test", () => {
     "Successfully changed display order of identity providers";
   const deletePrompt = "Delete provider?";
   const deleteSuccessMsg = "Provider successfully deleted.";
+  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   beforeEach(() => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToIdentityProviders();
-    cy.injectAxe();
   });
 
   const socialLoginIdentityProvidersWithCustomFiels = {
@@ -69,12 +69,6 @@ describe("Identity provider test", () => {
     );
     return instance;
   }
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
-  });
 
   describe("Identity provider creation", () => {
     const identityProviderName = "github";
@@ -380,6 +374,19 @@ describe("Identity provider test", () => {
       listingPage.itemExist("github").deleteItem("github");
       modalUtils.checkModalTitle(deletePrompt).confirmModal();
       masthead.checkNotificationMessage(deleteSuccessMsg, true);
+    });
+  });
+
+  describe("Accessibility tests for identity providers", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToIdentityProviders();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ identity providers", () => {
+      cy.checkA11y(undefined, a11YOptions);
     });
   });
 });

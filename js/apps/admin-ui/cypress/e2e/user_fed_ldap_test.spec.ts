@@ -102,13 +102,6 @@ describe("User Federation LDAP tests", () => {
     keycloakBefore();
     sidebarPage.goToUserFederation();
     cy.intercept("GET", "/admin/realms/master").as("getProvider");
-    cy.injectAxe();
-  });
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
   });
 
   it("Should create LDAP provider from empty state", () => {

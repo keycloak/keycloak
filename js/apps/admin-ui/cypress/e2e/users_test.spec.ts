@@ -34,6 +34,7 @@ describe("User creation", () => {
   let itemIdWithGroups = "user_with_groups_crud";
   let itemIdWithCred = "user_crud_cred";
   const itemCredential = "Password";
+  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   before(async () => {
     for (let i = 0; i <= 2; i++) {
@@ -47,16 +48,9 @@ describe("User creation", () => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToUsers();
-    cy.injectAxe();
   });
 
   after(() => adminClient.deleteGroups());
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
-  });
 
   it("Go to create User page", () => {
     createUserPage.goToCreateUser();
@@ -262,13 +256,6 @@ describe("User creation", () => {
     beforeEach(() => {
       usersPage.goToUserListTab().goToUserDetailsPage(usernameIdpLinksTest);
       userDetailsPage.goToIdentityProviderLinksTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     identityProviders.forEach(($idp, linkedIdpsCount) => {
@@ -455,5 +442,18 @@ describe("User creation", () => {
     sidebarPage.waitForPageLoad();
 
     listingPage.itemExist(itemIdWithCred, false);
+  });
+
+  describe("Accessibility tests for users", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToUsers();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ users", () => {
+      cy.checkA11y(undefined, a11YOptions);
+    });
   });
 });

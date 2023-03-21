@@ -7,18 +7,12 @@ const loginPage = new LoginPage();
 const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 const helpLabel = ".pf-c-form__group-label-help";
+const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Masthead tests", () => {
   beforeEach(() => {
     loginPage.logIn();
     keycloakBefore();
-    cy.injectAxe();
-  });
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
   });
 
   describe("Desktop view", () => {
@@ -75,6 +69,20 @@ describe("Masthead tests", () => {
       cy.get(helpLabel).should("not.exist");
       masthead.toggleMobileViewHelp();
       cy.get(helpLabel).should("exist");
+    });
+  });
+
+  describe("Accessibility tests for masthead", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.waitForPageLoad();
+      masthead.accountManagement();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ masthead", () => {
+      cy.checkA11y(undefined, a11YOptions);
     });
   });
 });
