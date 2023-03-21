@@ -185,7 +185,9 @@ const Applications = () => {
                 {application.consent && (
                   <>
                     <DescriptionListGroup>
-                      <DescriptionListTerm>Has access to</DescriptionListTerm>
+                      <DescriptionListTerm>
+                        {t("hasAccessTo")}
+                      </DescriptionListTerm>
                       {application.consent.grantedScopes.map((scope) => (
                         <DescriptionListDescription key={`scope${scope.id}`}>
                           <CheckIcon /> {t(scope.name as TFuncKey)}
