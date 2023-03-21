@@ -21,6 +21,7 @@ describe("Client authentication subtab", () => {
   const policiesSubTab = new PoliciesTab();
   const permissionsSubTab = new PermissionsTab();
   const clientId = "client-authentication-" + crypto.randomUUID();
+  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   before(() =>
     adminClient.createClient({
@@ -43,13 +44,6 @@ describe("Client authentication subtab", () => {
     sidebarPage.goToClients();
     listingPage.searchItem(clientId).goToItemDetails(clientId);
     clientDetailsPage.goToAuthorizationTab();
-    cy.injectAxe();
-  });
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
   });
 
   it("Should update the resource server settings", () => {
@@ -199,5 +193,20 @@ describe("Client authentication subtab", () => {
       "Successfully exported authorization details.",
       true
     );
+  });
+
+  describe("Accessibility tests for authentication", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToClients();
+      listingPage.searchItem(clientId).goToItemDetails(clientId);
+      clientDetailsPage.goToAuthorizationTab();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ authentication", () => {
+      cy.checkA11y(undefined, a11YOptions);
+    });
   });
 });
