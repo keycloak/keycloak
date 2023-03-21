@@ -12,6 +12,7 @@ const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
 const modalUtils = new ModalUtils();
+const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Clients SAML tests", () => {
   describe("SAML test", () => {
@@ -34,13 +35,6 @@ describe("Clients SAML tests", () => {
       keycloakBefore();
       sidebarPage.goToClients();
       listingPage.searchItem(samlClientName).goToItemDetails(samlClientName);
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should display the saml sections on details screen", () => {
@@ -82,13 +76,6 @@ describe("Clients SAML tests", () => {
       sidebarPage.goToClients();
       listingPage.searchItem(clientId).goToItemDetails(clientId);
       cy.findByTestId("keysTab").click();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should doesn't disable signature when cancel", () => {
@@ -148,13 +135,6 @@ describe("Clients SAML tests", () => {
       keycloakBefore();
       sidebarPage.goToClients();
       listingPage.searchItem(clientId).goToItemDetails(clientId);
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should check SAML capabilities", () => {
@@ -211,6 +191,27 @@ describe("Clients SAML tests", () => {
 
       settingsTab.assertLoginThemeDropdown();
       settingsTab.assertLoginSettings();
+    });
+  });
+
+  describe("Accessibility tests for clients saml", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToClients();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ clients saml", () => {
+      const samlClient = "saml";
+      adminClient.createClient({
+        clientId: "saml",
+        protocol: samlClient,
+      });
+      listingPage.searchItem(samlClient).goToItemDetails(samlClient);
+      cy.checkA11y(undefined, a11YOptions);
+
+      adminClient.deleteClient(samlClient);
     });
   });
 });

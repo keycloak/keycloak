@@ -195,7 +195,7 @@ describe("Client authentication subtab", () => {
     );
   });
 
-  describe("Accessibility tests for authentication", () => {
+  describe("Accessibility tests for client authorization", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
@@ -205,7 +205,7 @@ describe("Client authentication subtab", () => {
       cy.injectAxe();
     });
 
-    it("Check a11y violations on load/ authentication", () => {
+    it("Check a11y violations on load/ client authorization", () => {
       cy.checkA11y(undefined, a11YOptions);
     });
   });

@@ -11,6 +11,7 @@ describe("Client registration policies subtab", () => {
   const masthead = new Masthead();
   const sidebarPage = new SidebarPage();
   const clientRegistrationPage = new ClientRegistrationPage();
+  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   beforeEach(() => {
     loginPage.logIn();
@@ -18,13 +19,6 @@ describe("Client registration policies subtab", () => {
     sidebarPage.goToClients();
     clientRegistrationPage.goToClientRegistrationTab();
     sidebarPage.waitForPageLoad();
-    cy.injectAxe();
-  });
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
   });
 
   it("add anonymous client registration policy", () => {
@@ -64,5 +58,20 @@ describe("Client registration policies subtab", () => {
       "Client registration policy deleted successfully"
     );
     listingPage.itemExist("policy 2", false);
+  });
+
+  describe("Accessibility tests for client registration policies", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToClients();
+      clientRegistrationPage.goToClientRegistrationTab();
+      sidebarPage.waitForPageLoad();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ client registration policies", () => {
+      cy.checkA11y(undefined, a11YOptions);
+    });
   });
 });

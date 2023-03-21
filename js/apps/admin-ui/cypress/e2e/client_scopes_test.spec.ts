@@ -27,6 +27,7 @@ const commonPage = new CommonPage();
 const listingPage = new ListingPage();
 const createClientScopePage = new CreateClientScopePage();
 const modalUtils = new ModalUtils();
+const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Client Scopes test", () => {
   const modalMessageDeleteConfirmation =
@@ -67,13 +68,6 @@ describe("Client Scopes test", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToClientScopes();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should filter item by name", () => {
@@ -151,13 +145,6 @@ describe("Client Scopes test", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToClientScopes();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should modify selected item type to Default from search bar", () => {
@@ -218,13 +205,6 @@ describe("Client Scopes test", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToClientScopes();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should delete item from item bar", () => {
@@ -279,13 +259,6 @@ describe("Client Scopes test", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToClientScopes();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should fail creating client scope", () => {
@@ -355,13 +328,6 @@ describe("Client Scopes test", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToClientScopes();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("Assign and unassign role", () => {
@@ -386,13 +352,6 @@ describe("Client Scopes test", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToClientScopes();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("CRUD mappers", () => {
@@ -444,6 +403,19 @@ describe("Client Scopes test", () => {
       commonPage.tableUtils().checkRowItemExists(predefinedMapperName, true);
 
       mappersTab.removeMappers([predefinedMapperName]);
+    });
+  });
+
+  describe("Accessibility tests for client scopes", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToClientScopes();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ client scopes", () => {
+      cy.checkA11y(undefined, a11YOptions);
     });
   });
 });
