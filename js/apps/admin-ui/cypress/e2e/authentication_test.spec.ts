@@ -18,7 +18,6 @@ const sidebarPage = new SidebarPage();
 const commonPage = new CommonPage();
 const listingPage = new ListingPage();
 const realmName = "test" + crypto.randomUUID();
-const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Authentication test", () => {
   const detailPage = new FlowDetails();
@@ -264,7 +263,7 @@ describe("Password policies tab", () => {
     });
 
     it("Check a11y violations on load/ authentication", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

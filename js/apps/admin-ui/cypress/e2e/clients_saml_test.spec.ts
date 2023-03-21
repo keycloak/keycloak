@@ -12,7 +12,6 @@ const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
 const modalUtils = new ModalUtils();
-const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Clients SAML tests", () => {
   describe("SAML test", () => {
@@ -209,7 +208,7 @@ describe("Clients SAML tests", () => {
         protocol: samlClient,
       });
       listingPage.searchItem(samlClient).goToItemDetails(samlClient);
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
 
       adminClient.deleteClient(samlClient);
     });

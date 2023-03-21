@@ -9,7 +9,6 @@ describe("Policies", () => {
   const masthead = new Masthead();
   const loginPage = new LoginPage();
   const sidebarPage = new SidebarPage();
-  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   describe("OTP policies tab", () => {
     const otpPoliciesPage = new OTPPolicies();
@@ -80,7 +79,7 @@ describe("Policies", () => {
     });
 
     it("Check a11y violations on load/ authentication policies", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

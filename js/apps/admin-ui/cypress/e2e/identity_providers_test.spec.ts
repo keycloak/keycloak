@@ -39,7 +39,6 @@ describe("Identity provider test", () => {
     "Successfully changed display order of identity providers";
   const deletePrompt = "Delete provider?";
   const deleteSuccessMsg = "Provider successfully deleted.";
-  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   beforeEach(() => {
     loginPage.logIn();
@@ -386,7 +385,7 @@ describe("Identity provider test", () => {
     });
 
     it("Check a11y violations on load/ identity providers", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

@@ -34,7 +34,6 @@ describe("User creation", () => {
   let itemIdWithGroups = "user_with_groups_crud";
   let itemIdWithCred = "user_crud_cred";
   const itemCredential = "Password";
-  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   before(async () => {
     for (let i = 0; i <= 2; i++) {
@@ -453,7 +452,7 @@ describe("User creation", () => {
     });
 
     it("Check a11y violations on load/ users", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

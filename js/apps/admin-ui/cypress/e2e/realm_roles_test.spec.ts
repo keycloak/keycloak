@@ -18,7 +18,6 @@ const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
 const associatedRolesPage = new AssociatedRolesPage();
 const rolesTab = new ClientRolesTab();
-const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Realm roles test", () => {
   beforeEach(() => {
@@ -283,7 +282,7 @@ describe("Realm roles test", () => {
     });
 
     it("Check a11y violations on load/ realm roles", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

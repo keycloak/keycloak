@@ -27,7 +27,6 @@ const commonPage = new CommonPage();
 const listingPage = new ListingPage();
 const createClientScopePage = new CreateClientScopePage();
 const modalUtils = new ModalUtils();
-const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Client Scopes test", () => {
   const modalMessageDeleteConfirmation =
@@ -415,7 +414,7 @@ describe("Client Scopes test", () => {
     });
 
     it("Check a11y violations on load/ client scopes", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

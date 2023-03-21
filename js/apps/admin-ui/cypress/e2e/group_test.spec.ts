@@ -32,7 +32,6 @@ describe("Group test", () => {
   const emptyGroup = "empty-group";
   let users: { id: string; username: string }[] = [];
   const username = "test-user";
-  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   before(async () => {
     users = await Promise.all(
@@ -504,7 +503,7 @@ describe("Group test", () => {
     });
 
     it("Check a11y violations on load/ groups", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

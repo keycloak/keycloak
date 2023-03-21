@@ -21,7 +21,6 @@ describe("Client authentication subtab", () => {
   const policiesSubTab = new PoliciesTab();
   const permissionsSubTab = new PermissionsTab();
   const clientId = "client-authentication-" + crypto.randomUUID();
-  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   before(() =>
     adminClient.createClient({
@@ -206,7 +205,7 @@ describe("Client authentication subtab", () => {
     });
 
     it("Check a11y violations on load/ client authorization", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

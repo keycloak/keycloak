@@ -11,7 +11,6 @@ describe("Client registration policies subtab", () => {
   const masthead = new Masthead();
   const sidebarPage = new SidebarPage();
   const clientRegistrationPage = new ClientRegistrationPage();
-  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   beforeEach(() => {
     loginPage.logIn();
@@ -71,7 +70,7 @@ describe("Client registration policies subtab", () => {
     });
 
     it("Check a11y violations on load/ client registration policies", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

@@ -9,7 +9,6 @@ import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
-const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Authentication - Policies - CIBA", () => {
   const realmName = crypto.randomUUID();
@@ -94,7 +93,7 @@ describe("Authentication - Policies - CIBA", () => {
     });
 
     it("Check a11y violations on load for authentication policies ciba", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });

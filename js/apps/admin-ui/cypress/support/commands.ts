@@ -27,3 +27,12 @@
 import "@testing-library/cypress/add-commands";
 import "@4tw/cypress-drag-drop";
 import "cypress-axe";
+
+Cypress.Commands.overwrite("checkA11y", (originalFn, options) => {
+  const mergedOptions = {
+    ...(typeof options === "object" ? options : {}),
+    includedImpacts: ["critical", "serious"],
+  };
+
+  return originalFn(undefined, mergedOptions);
+});

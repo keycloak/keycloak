@@ -7,7 +7,6 @@ const loginPage = new LoginPage();
 const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 const helpLabel = ".pf-c-form__group-label-help";
-const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Masthead tests", () => {
   beforeEach(() => {
@@ -82,7 +81,7 @@ describe("Masthead tests", () => {
     });
 
     it("Check a11y violations on load/ masthead", () => {
-      cy.checkA11y(undefined, a11YOptions);
+      cy.checkA11y();
     });
   });
 });
