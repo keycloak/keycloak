@@ -41,7 +41,7 @@
         <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!--component versions-->
-        <arquillian-core.version>1.7.0.Alpha13</arquillian-core.version>
+        <arquillian-core.version>1.7.0.Alpha14</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>3.1.4</shrinkwrap-resolver.version>
         <selenium.version>3.14.0</selenium.version>
@@ -58,6 +58,7 @@
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
         <appium.client.version>6.1.0</appium.client.version>
         <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
+        <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>
