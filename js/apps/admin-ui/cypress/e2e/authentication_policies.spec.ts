@@ -9,6 +9,7 @@ describe("Policies", () => {
   const masthead = new Masthead();
   const loginPage = new LoginPage();
   const sidebarPage = new SidebarPage();
+  const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
   describe("OTP policies tab", () => {
     const otpPoliciesPage = new OTPPolicies();
@@ -17,13 +18,6 @@ describe("Policies", () => {
       keycloakBefore();
       sidebarPage.goToAuthentication();
       otpPoliciesPage.goToTab();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should change to hotp", () => {
@@ -44,13 +38,6 @@ describe("Policies", () => {
       loginPage.logIn();
       keycloakBefore();
       sidebarPage.goToAuthentication();
-      cy.injectAxe();
-    });
-
-    it("Should have no detectable a11y violations on load", () => {
-      cy.checkA11y(undefined, {
-        includedImpacts: ["critical", "serious"],
-      });
     });
 
     it("should fill webauthn settings", () => {
@@ -81,6 +68,19 @@ describe("Policies", () => {
       masthead.checkNotificationMessage(
         "Updated webauthn policies successfully"
       );
+    });
+  });
+
+  describe("Accessibility tests for authentication policies", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToAuthentication();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ authentication policies", () => {
+      cy.checkA11y(undefined, a11YOptions);
     });
   });
 });
