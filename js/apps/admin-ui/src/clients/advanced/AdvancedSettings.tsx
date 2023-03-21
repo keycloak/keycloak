@@ -251,6 +251,7 @@ export const AdvancedSettings = ({
           >
             <MultiLineInput
               id="defaultACRValues"
+              aria-label="defaultACRValues"
               name={convertAttributeNameToForm("attributes.default.acr.values")}
               stringify
             />
