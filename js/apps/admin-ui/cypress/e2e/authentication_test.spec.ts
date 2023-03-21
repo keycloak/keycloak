@@ -18,6 +18,7 @@ const sidebarPage = new SidebarPage();
 const commonPage = new CommonPage();
 const listingPage = new ListingPage();
 const realmName = "test" + crypto.randomUUID();
+const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Authentication test", () => {
   const detailPage = new FlowDetails();
@@ -33,13 +34,6 @@ describe("Authentication test", () => {
     keycloakBefore();
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToAuthentication();
-    cy.injectAxe();
-  });
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
   });
 
   it("authentication empty search test", () => {
@@ -204,16 +198,9 @@ describe("Required actions", () => {
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToAuthentication();
     requiredActionsPage.goToTab();
-    cy.injectAxe();
   });
 
   after(() => adminClient.deleteRealm(realmName));
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
-  });
 
   it("should enable delete account", () => {
     const action = "Delete Account";
@@ -251,13 +238,6 @@ describe("Password policies tab", () => {
     keycloakBefore();
     sidebarPage.goToAuthentication();
     passwordPoliciesPage.goToTab();
-    cy.injectAxe();
-  });
-
-  it("Should have no detectable a11y violations on load", () => {
-    cy.checkA11y(undefined, {
-      includedImpacts: ["critical", "serious"],
-    });
   });
 
   it("should add password policies", () => {
@@ -272,5 +252,19 @@ describe("Password policies tab", () => {
     passwordPoliciesPage.removePolicy("remove-passwordHistory").save();
     masthead.checkNotificationMessage("Password policies successfully updated");
     passwordPoliciesPage.shouldShowEmptyState();
+  });
+
+  describe("Accessibility tests for authentication", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToRealm(realmName);
+      sidebarPage.goToAuthentication();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ authentication", () => {
+      cy.checkA11y(undefined, a11YOptions);
+    });
   });
 });
