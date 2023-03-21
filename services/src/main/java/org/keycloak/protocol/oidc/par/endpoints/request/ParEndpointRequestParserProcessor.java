@@ -96,7 +96,7 @@ public class ParEndpointRequestParserProcessor {
             }
 
             if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-                request.setAuthorizationRequestContext(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, request.getScope()));
+                request.setAuthorizationRequestContext(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, request.getScope()));
             }
 
             return request;

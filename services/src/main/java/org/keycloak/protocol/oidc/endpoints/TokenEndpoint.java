@@ -807,7 +807,7 @@ public class TokenEndpoint {
 
         boolean validScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, scope);
+            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, scope);
             validScopes = TokenManager.isValidScope(scope, authorizationRequestContext, client);
         } else {
             validScopes = TokenManager.isValidScope(scope, client);

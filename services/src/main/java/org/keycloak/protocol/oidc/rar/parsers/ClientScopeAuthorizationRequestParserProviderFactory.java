@@ -21,7 +21,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProviderFactory;
-import org.keycloak.protocol.oidc.rar.parsers.ClientScopeAuthorizationRequestParser;
 
 /**
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
@@ -32,7 +31,7 @@ public class ClientScopeAuthorizationRequestParserProviderFactory implements Aut
 
     @Override
     public AuthorizationRequestParserProvider create(KeycloakSession session) {
-        return new ClientScopeAuthorizationRequestParser(session.getContext().getClient());
+        return new ClientScopeAuthorizationRequestParser();
     }
 
     @Override

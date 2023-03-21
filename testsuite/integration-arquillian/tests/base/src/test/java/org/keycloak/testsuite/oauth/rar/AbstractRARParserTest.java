@@ -96,7 +96,7 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
             String clientUUID = client.getId();
             AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
             session.getContext().setClient(client);
-            List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE))
+            List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, clientSession.getNote(OAuth2Constants.SCOPE))
                     .getAuthorizationDetailEntries().stream()
                     .map(AuthorizationRequestContextHolder.AuthorizationRequestHolder::new)
                     .collect(Collectors.toList());

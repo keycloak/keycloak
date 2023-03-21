@@ -551,7 +551,7 @@ public class TokenManager {
 
         Set<String> clientScopeIds;
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            clientScopeIds = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE))
+            clientScopeIds = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, authSession.getClient(), authSession.getClientNote(OAuth2Constants.SCOPE))
                     .map(ClientScopeModel::getId)
                     .collect(Collectors.toSet());
         } else {

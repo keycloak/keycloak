@@ -27,14 +27,12 @@ import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.rar.AuthorizationRequestSource;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -50,28 +48,19 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
     protected static final Logger logger = Logger.getLogger(ClientScopeAuthorizationRequestParser.class);
 
     /**
-     * This parser will be created on a per-request basis. When the adapter is created, the request's client is passed
-     * as a parameter
-     */
-    private final ClientModel client;
-
-    public ClientScopeAuthorizationRequestParser(ClientModel client) {
-        this.client = client;
-    }
-
-    /**
-     * Creates a {@link AuthorizationRequestContext} with a list of {@link AuthorizationDetails} that will be parsed from
-     * the provided OAuth scopes that have been requested in a given Auth request, together with default client scopes.
+     * Creates a {@link AuthorizationRequestContext} with a list of {@link AuthorizationDetails} that will be parsed from the
+     * provided OAuth scopes and the given {@link ClientModel} that have been requested in a given Auth request, together with default client scopes.
      * <p>
      * Dynamic scopes will also be parsed with the extracted parameter, so it can be used later
      *
      * @param scopeParam the OAuth scope param for the current request
+     * @param clientModel the client to check for scopes
      * @return see description
      */
     @Override
-    public AuthorizationRequestContext parseScopes(String scopeParam) {
+    public AuthorizationRequestContext parseScopes(final ClientModel clientModel, String scopeParam) {
         // Process all the default ClientScopeModels for the current client, and maps them to the DynamicScopeRepresentation to make use of a HashSet
-        Set<IntermediaryScopeRepresentation> clientScopeModelSet = this.client.getClientScopes(true).values().stream()
+        Set<IntermediaryScopeRepresentation> clientScopeModelSet = clientModel.getClientScopes(true).values().stream()
                 .filter(clientScopeModel -> !clientScopeModel.isDynamicScope()) // not strictly needed as Dynamic Scopes are going to be Optional scopes for now
                 .map(IntermediaryScopeRepresentation::new)
                 .collect(Collectors.toSet());
@@ -80,7 +69,7 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
         if (scopeParam != null) {
             // Go through the parsed requested scopes and attempt to match them against the optional scopes list
             intermediaryScopeRepresentations = TokenManager.parseScopeParameter(scopeParam).collect(Collectors.toSet()).stream()
-                    .map((String requestScope) -> getMatchingClientScope(requestScope, this.client.getClientScopes(false).values()))
+                    .map((String requestScope) -> getMatchingClientScope(requestScope, clientModel.getClientScopes(false).values()))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toSet());

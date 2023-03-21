@@ -312,6 +312,13 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @UncaughtServerErrorExpected
+    public void testExchangeWithDynamicScopesEnabled() throws Exception {
+        testExchange();
+    }
+
+    @Test
     @UncaughtServerErrorExpected
     public void testExchangeUsingServiceAccount() throws Exception {
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
