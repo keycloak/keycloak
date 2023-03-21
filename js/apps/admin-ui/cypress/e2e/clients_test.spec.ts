@@ -18,6 +18,7 @@ import ClientDetailsPage, {
 import CommonPage from "../support/pages/CommonPage";
 import AttributesTab from "../support/pages/admin-ui/manage/AttributesTab";
 import DedicatedScopesMappersTab from "../support/pages/admin-ui/manage/clients/client_details/DedicatedScopesMappersTab";
+import { ClientRegistrationPage } from "../support/pages/admin-ui/manage/clients/ClientRegistrationPage";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -28,6 +29,7 @@ const commonPage = new CommonPage();
 const listingPage = new ListingPage();
 const attributesTab = new AttributesTab();
 const dedicatedScopesMappersTab = new DedicatedScopesMappersTab();
+const a11YOptions = { includedImpacts: ["critical", "serious"] };
 
 describe("Clients test", () => {
   describe("Client details - Client scopes subtab", () => {
@@ -1125,6 +1127,83 @@ describe("Clients test", () => {
     it("Hides the capability config section", () => {
       cy.findByTestId("capability-config-form").should("not.exist");
       cy.findByTestId("jump-link-capability-config").should("not.exist");
+    });
+  });
+
+  describe("Accessibility tests for clients", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      commonPage.sidebar().goToClients();
+      cy.injectAxe();
+    });
+
+    const clientId = "a11y-client";
+
+    it("Check a11y violations on load/ clients list tab", () => {
+      cy.checkA11y(undefined, a11YOptions);
+    });
+
+    it("Check a11y violations on create client page", () => {
+      commonPage.sidebar().goToClients();
+      commonPage.tableToolbarUtils().createClient();
+      createClientPage.fillClientData(clientId);
+      cy.checkA11y(undefined, a11YOptions);
+
+      cy.findByTestId("next").click();
+      cy.checkA11y(undefined, a11YOptions);
+
+      cy.findByTestId("next").click();
+      cy.checkA11y(undefined, a11YOptions);
+    });
+
+    it("Check a11y violations on client details page", () => {
+      const rolesTab = new ClientRolesTab();
+
+      commonPage.sidebar().goToClients();
+      commonPage.tableToolbarUtils().createClient();
+      createClientPage.fillClientData(clientId).continue().continue().save();
+      cy.checkA11y(undefined, a11YOptions);
+
+      rolesTab.goToRolesTab();
+      cy.checkA11y(undefined, a11YOptions);
+
+      clientDetailsPage.goToClientScopesTab();
+      cy.checkA11y(undefined, a11YOptions);
+
+      clientDetailsPage.goToAdvancedTab();
+      cy.checkA11y(undefined, a11YOptions);
+    });
+
+    it("Check a11y violations in delete dialog", () => {
+      commonPage.tableToolbarUtils().searchItem(clientId, false);
+      commonPage.tableUtils().selectRowItemAction(clientId, "Delete");
+      cy.checkA11y(undefined, a11YOptions);
+      cy.findAllByTestId("confirm").click();
+    });
+
+    it("Check a11y violations on import client", () => {
+      cy.findByTestId("importClient").click();
+      cy.checkA11y(undefined, a11YOptions);
+    });
+
+    it("Check a11y violations on initial access token", () => {
+      const initialAccessTokenTab = new InitialAccessTokenTab();
+      initialAccessTokenTab.goToInitialAccessTokenTab();
+      cy.checkA11y(undefined, a11YOptions);
+    });
+
+    it("Check a11y violations on client registration/ anonymous access policies tab", () => {
+      const clientRegistration = new ClientRegistrationPage();
+      clientRegistration.goToClientRegistrationTab();
+      cy.checkA11y(undefined, a11YOptions);
+    });
+
+    it("Check a11y violations on client registration/ authenticated access policies tab", () => {
+      const clientRegistration = new ClientRegistrationPage();
+      clientRegistration.goToClientRegistrationTab();
+      cy.findByTestId("authenticated").click();
+      cy.checkA11y(undefined, a11YOptions);
     });
   });
 });
