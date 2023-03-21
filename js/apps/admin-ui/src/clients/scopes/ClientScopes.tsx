@@ -176,22 +176,18 @@ export const ClientScopes = ({
     const filter =
       searchType === "name" ? nameFilter(search) : typeFilter(searchTypeType);
     const firstNum = Number(first);
-    const page = localeSort(rows.filter(filter), mapByKey("name")).slice(
-      firstNum,
-      firstNum + Number(max)
-    );
-    if (firstNum === 0 && isManager) {
-      return [
-        {
-          id: DEDICATED_ROW,
-          name: t("dedicatedScopeName", { clientName }),
-          type: AllClientScopes.none,
-          description: t("dedicatedScopeDescription"),
-        },
-        ...page,
-      ];
+    const page = localeSort(rows.filter(filter), mapByKey("name"));
+
+    if (isManager) {
+      page.unshift({
+        id: DEDICATED_ROW,
+        name: t("dedicatedScopeName", { clientName }),
+        type: AllClientScopes.none,
+        description: t("dedicatedScopeDescription"),
+      });
     }
-    return page;
+
+    return page.slice(firstNum, firstNum + Number(max));
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

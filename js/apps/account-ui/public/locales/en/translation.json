@@ -59,6 +59,7 @@
   "groupDescriptionLabel": "View groups that you are associated with",
   "groupLabel": "Groups",
   "groups": "Groups",
+  "hasAccessTo": "Has access to",
   "infoMessage": "By clicking Remove Access, you will remove granted permissions of this application. This application will no longer use your information.",
   "internalApp": "Internal",
   "inUse": "In use",

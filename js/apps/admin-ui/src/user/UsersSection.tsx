@@ -100,7 +100,9 @@ export default function UsersSection() {
       }
     },
     ([storageProviders, realm]) => {
-      setUserStorage(storageProviders);
+      setUserStorage(
+        storageProviders.filter((p) => p.config?.enabled[0] === "true")
+      );
       setRealm(realm);
     },
     []

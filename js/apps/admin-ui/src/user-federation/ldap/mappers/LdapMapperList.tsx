@@ -21,6 +21,14 @@ export type LdapMapperListProps = {
   toDetail: (mapperId: string) => To;
 };
 
+type MapperLinkProps = ComponentRepresentation & {
+  toDetail: (mapperId: string) => To;
+};
+
+const MapperLink = ({ toDetail, ...mapper }: MapperLinkProps) => (
+  <Link to={toDetail(mapper.id!)}>{mapper.name}</Link>
+);
+
 export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation("user-federation");
@@ -77,10 +85,6 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
     },
   });
 
-  const MapperLink = (mapper: ComponentRepresentation) => (
-    <Link to={toDetail(mapper.id!)}>{mapper.name}</Link>
-  );
-
   return (
     <>
       <DeleteConfirm />
@@ -112,7 +116,7 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
         columns={[
           {
             name: "name",
-            cellRenderer: MapperLink,
+            cellRenderer: (row) => <MapperLink {...row} toDetail={toDetail} />,
           },
           {
             name: "type",

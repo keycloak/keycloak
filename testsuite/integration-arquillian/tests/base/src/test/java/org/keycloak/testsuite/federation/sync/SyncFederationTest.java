@@ -279,7 +279,7 @@ public class SyncFederationTest extends AbstractAuthTest {
             model.setFullSyncPeriod(-1);
             model.setChangedSyncPeriod(1);
             model.setLastSync(0);
-            model.getConfig().putSingle(SyncDummyUserFederationProviderFactory.WAIT_TIME, "2000");
+            model.getConfig().putSingle(SyncDummyUserFederationProviderFactory.WAIT_TIME, "20");
             ComponentModel dummyModel = new UserStorageProviderModel(appRealm.addComponentModel(model));
         });
 
@@ -295,18 +295,30 @@ public class SyncFederationTest extends AbstractAuthTest {
             usersSyncManager.bootstrapPeriodic(sessionFactory, session.getProvider(TimerProvider.class));
 
             // Wait and then trigger sync manually. Assert it will be ignored
-            sleep(1800);
-            SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(sessionFactory, appRealm.getId(), dummyModel);
-            Assert.assertTrue(syncResult.isIgnored());
-
-            // Cancel timer
-            usersSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
-
-            // Signal to factory to finish waiting
-            SyncDummyUserFederationProviderFactory.latch1.countDown();
-
             try {
-                SyncDummyUserFederationProviderFactory.latch2.await(20000, TimeUnit.MILLISECONDS);
+                SyncDummyUserFederationProviderFactory.latchStarted.await(20000, TimeUnit.MILLISECONDS);
+                SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(sessionFactory, appRealm.getId(), dummyModel);
+                Assert.assertTrue(syncResult.isIgnored());
+
+                // Cancel timer
+                usersSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
+
+                // Signal to factory to finish waiting
+                SyncDummyUserFederationProviderFactory.latchWait.countDown();
+
+                // wait the task to be finished
+                SyncDummyUserFederationProviderFactory.latchFinished.await(20000, TimeUnit.MILLISECONDS);
+
+                // This sync is here just to ensure that we have lock (doublecheck that periodic sync, which was possibly triggered before canceling timer is finished too)
+                while (true) {
+                    SynchronizationResult result = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), dummyModel);
+                    if (result.isIgnored()) {
+                        log.infof("Still waiting for lock before periodic sync is finished: %s", result.toString());
+                        sleep(1000);
+                    } else {
+                        break;
+                    }
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

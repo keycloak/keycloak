@@ -1,4 +1,5 @@
 import {
+  Card,
   CardActions,
   CardBody,
   CardFooter,
@@ -11,8 +12,7 @@ import {
   Label,
 } from "@patternfly/react-core";
 import { ReactElement, useState } from "react";
-import { To, useNavigate } from "react-router-dom";
-import { ClickableCard } from "./ClickableCard";
+import { Link, To } from "react-router-dom";
 
 import "./keycloak-card.css";
 
@@ -33,19 +33,14 @@ export const KeycloakCard = ({
   footerText,
   to,
 }: KeycloakCardProps) => {
-  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const onDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  const handleCardMenuClick = (e: any) => {
-    e.stopPropagation();
-  };
-
   return (
-    <ClickableCard isSelectable onClick={() => navigate(to)}>
+    <Card isSelectable>
       <CardHeader>
         <CardActions>
           {dropdownItems && (
@@ -54,13 +49,14 @@ export const KeycloakCard = ({
               isPlain
               position={"right"}
               toggle={<KebabToggle onToggle={onDropdownToggle} />}
-              onClick={(e) => handleCardMenuClick(e)}
               isOpen={isDropdownOpen}
               dropdownItems={dropdownItems}
             />
           )}
         </CardActions>
-        <CardTitle data-testid="keycloak-card-title">{title}</CardTitle>
+        <CardTitle data-testid="keycloak-card-title">
+          <Link to={to}>{title}</Link>
+        </CardTitle>
       </CardHeader>
       <CardBody />
       <CardFooter>
@@ -75,6 +71,6 @@ export const KeycloakCard = ({
           </FlexItem>
         </Flex>
       </CardFooter>
-    </ClickableCard>
+    </Card>
   );
 };

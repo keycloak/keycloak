@@ -128,7 +128,7 @@
                 <plugin>
                     <groupId>org.keycloak.documentation</groupId>
                     <artifactId>header-maven-plugin</artifactId>
-                    <version>999.0.0-SNAPSHOT</version>
+                    <version>${project.version}</version>
                     <executions>
                         <execution>
                             <id>add-file-headers</id>
@@ -208,6 +208,14 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>${version.plugin.assembly}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <configuration>
+                        <skip>true</skip>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

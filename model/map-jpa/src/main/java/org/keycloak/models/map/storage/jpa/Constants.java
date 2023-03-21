@@ -39,4 +39,5 @@ public interface Constants {
     public static final Integer CURRENT_SCHEMA_VERSION_USER_CONSENT = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_USER_FEDERATED_IDENTITY = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_USER_SESSION = 1;
+    public static final Integer CURRENT_SCHEMA_VERSION_LOCK = 1;
 }

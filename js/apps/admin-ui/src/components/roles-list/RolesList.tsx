@@ -18,6 +18,36 @@ import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 
 import "./RolesList.css";
 
+type RoleDetailLinkProps = RoleRepresentation & {
+  defaultRoleName?: string;
+  toDetail: (roleId: string) => To;
+  messageBundle?: string;
+};
+
+const RoleDetailLink = ({
+  defaultRoleName,
+  toDetail,
+  messageBundle,
+  ...role
+}: RoleDetailLinkProps) => {
+  const { t } = useTranslation(messageBundle);
+  const { realm } = useRealm();
+
+  return role.name !== defaultRoleName ? (
+    <Link to={toDetail(role.id!)}>{role.name}</Link>
+  ) : (
+    <>
+      <Link to={toRealmSettings({ realm, tab: "user-registration" })}>
+        {role.name}{" "}
+      </Link>
+      <HelpItem
+        helpText={t(`${messageBundle}:defaultRole`)}
+        fieldLabelId="defaultRole"
+      />
+    </>
+  );
+};
+
 type RolesListProps = {
   paginated?: boolean;
   parentRoleId?: string;
@@ -57,23 +87,6 @@ export const RolesList = ({
     },
     []
   );
-
-  const RoleDetailLink = (role: RoleRepresentation) =>
-    role.name !== realm?.defaultRole?.name ? (
-      <Link to={toDetail(role.id!)}>{role.name}</Link>
-    ) : (
-      <>
-        <Link
-          to={toRealmSettings({ realm: realmName, tab: "user-registration" })}
-        >
-          {role.name}{" "}
-        </Link>
-        <HelpItem
-          helpText={t(`${messageBundle}:defaultRole`)}
-          fieldLabelId="defaultRole"
-        />
-      </>
-    );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleDeleteConfirm",
@@ -146,7 +159,14 @@ export const RolesList = ({
           {
             name: "name",
             displayKey: "roles:roleName",
-            cellRenderer: RoleDetailLink,
+            cellRenderer: (row) => (
+              <RoleDetailLink
+                {...row}
+                defaultRoleName={realm.defaultRole?.name}
+                toDetail={toDetail}
+                messageBundle={messageBundle}
+              />
+            ),
           },
           {
             name: "composite",

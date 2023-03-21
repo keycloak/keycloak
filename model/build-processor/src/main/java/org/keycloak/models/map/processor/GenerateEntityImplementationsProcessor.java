@@ -280,7 +280,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
             GenerateEntityImplementations an = e.getAnnotation(GenerateEntityImplementations.class);
             TypeElement parentTypeElement = elements.getTypeElement((an.inherits() == null || an.inherits().isEmpty()) ? "void" : an.inherits());
             if (parentTypeElement == null) {
-                return;
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Unable to find type " + an.inherits() + " for inherits parameter for annotation " + GenerateEntityImplementations.class.getTypeName(), e);
             }
             final List<? extends Element> allParentMembers = elements.getAllMembers(parentTypeElement);
             String className = e.getQualifiedName().toString();

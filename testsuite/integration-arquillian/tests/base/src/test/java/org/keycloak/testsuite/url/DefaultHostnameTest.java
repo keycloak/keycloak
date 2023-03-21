@@ -13,7 +13,6 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -26,8 +25,6 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -116,6 +113,26 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
 
         try {
             rep.getAttributes().put("frontendUrl", "");
+            realmResource.update(rep);
+
+            assertWellKnown("frontendUrl", transformUrlIfQuarkusServer(AUTH_SERVER_ROOT));
+        } finally {
+            rep.getAttributes().put("frontendUrl", realmFrontEndUrl);
+            realmResource.update(rep);
+            reset();
+        }
+    }
+
+    @Test
+    public void wrongProtocolRealmFrontendUrl() throws Exception {
+        expectedBackendUrl = transformUrlIfQuarkusServer(AUTH_SERVER_ROOT);
+        oauth.clientId("direct-grant");
+
+        RealmResource realmResource = realmsResouce().realm("frontendUrl");
+        RealmRepresentation rep = realmResource.toRepresentation();
+
+        try {
+            rep.getAttributes().put("frontendUrl", "wrong://example.com");
             realmResource.update(rep);
 
             assertWellKnown("frontendUrl", transformUrlIfQuarkusServer(AUTH_SERVER_ROOT));
