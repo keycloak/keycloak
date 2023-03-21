@@ -68,6 +68,28 @@ const defaultValues: UserEventSearchForm = {
   type: [],
 };
 
+const UserDetailLink = (event: EventRepresentation) => {
+  const { t } = useTranslation("events");
+  const { realm } = useRealm();
+  return (
+    <>
+      {event.userId && (
+        <Link
+          key={`link-${event.time}-${event.type}`}
+          to={toUser({
+            realm,
+            id: event.userId,
+            tab: "settings",
+          })}
+        >
+          {event.userId}
+        </Link>
+      )}
+      {!event.userId && t("noUserDetails")}
+    </>
+  );
+};
+
 const StatusRow = (event: EventRepresentation) =>
   !event.error ? (
     <span>
@@ -90,6 +112,12 @@ const DetailCell = (event: EventRepresentation) => (
           <DescriptionListDescription>{value}</DescriptionListDescription>
         </DescriptionListGroup>
       ))}
+    {event.error && (
+      <DescriptionListGroup key="error">
+        <DescriptionListTerm>error</DescriptionListTerm>
+        <DescriptionListDescription>{event.error}</DescriptionListDescription>
+      </DescriptionListGroup>
+    )}
   </DescriptionList>
 );
 
