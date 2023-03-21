@@ -39,14 +39,6 @@
         -->
         <wildfly.common.version>${wildfly-common.version}</wildfly.common.version>
 
-        <!--
-            Java EE dependencies. Not available from JDK 11+.
-            The dependencies and their versions are the same used by Wildfly distribution.
-         -->
-        <org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
-        <sun.saaj-impl.version>1.4.1.SP1</sun.saaj-impl.version>
-        <org.jvnet.staxex.version>1.8.3</org.jvnet.staxex.version>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
         <maven.compiler.release>11</maven.compiler.release>
@@ -84,64 +76,6 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-client-hotrod-jakarta</artifactId>
                 <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.agroal</groupId>
-                <artifactId>agroal-api</artifactId>
-                <version>${io.agroal.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.agroal</groupId>
-                <artifactId>agroal-narayana</artifactId>
-                <version>${io.agroal.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.agroal</groupId>
-                <artifactId>agroal-pool</artifactId>
-                <version>${io.agroal.version}</version>
-            </dependency>
-
-
-            <!-- Dependencies removed from JDK 11 and in compliance with those used by Wildfly. -->
-            <dependency>
-                <groupId>org.jboss.spec.javax.xml.bind</groupId>
-                <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
-                <version>${org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.messaging.saaj</groupId>
-                <artifactId>saaj-impl</artifactId>
-                <version>${sun.saaj-impl.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.soap</groupId>
-                        <artifactId>saaj-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jvnet.mimepull</groupId>
-                        <artifactId>mimepull</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jvnet.staxex</groupId>
-                        <artifactId>stax-ex</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jvnet.staxex</groupId>
-                <artifactId>stax-ex</artifactId>
-                <version>${org.jvnet.staxex.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.stream</groupId>
-                        <artifactId>stax-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.activation</groupId>
-                        <artifactId>activation</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
