@@ -14,7 +14,7 @@ import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
+import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 
 import "./RolesList.css";
 
@@ -152,7 +152,7 @@ export const RolesList = ({
                       );
                     } else toggleDeleteDialog();
                   },
-                },
+                } as Action<RoleRepresentation>,
               ]
         }
         columns={[

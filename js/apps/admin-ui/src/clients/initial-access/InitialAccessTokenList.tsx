@@ -7,7 +7,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toCreateInitialAccessToken } from "../routes/CreateInitialAccessToken";
@@ -76,7 +79,7 @@ export const InitialAccessTokenList = () => {
               setToken(token);
               toggleDeleteDialog();
             },
-          },
+          } as Action<ClientInitialAccessPresentation>,
         ]}
         columns={[
           {

@@ -16,7 +16,10 @@ import { cellWidth } from "@patternfly/react-table";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter } from "../util";
@@ -274,7 +277,7 @@ export default function ClientScopesSection() {
                 setSelectedScopes([clientScope]);
                 toggleDeleteDialog();
               },
-            },
+            } as Action<Row>,
           ]}
           columns={[
             {

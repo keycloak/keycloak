@@ -32,7 +32,10 @@ import { useTranslation } from "react-i18next";
 
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -548,16 +551,18 @@ export const AdminEvents = () => {
         isPaginated
         ariaLabelKey="events:adminEvents"
         toolbarItem={adminEventSearchFormDisplay()}
-        actions={[
-          {
-            title: t("auth"),
-            onRowClick: (event) => setAuthEvent(event),
-          },
-          {
-            title: t("representation"),
-            onRowClick: (event) => setRepresentationEvent(event),
-          },
-        ]}
+        actions={
+          [
+            {
+              title: t("auth"),
+              onRowClick: (event) => setAuthEvent(event),
+            },
+            {
+              title: t("representation"),
+              onRowClick: (event) => setRepresentationEvent(event),
+            },
+          ] as Action<AdminEventRepresentation>[]
+        }
         columns={[
           {
             name: "time",
