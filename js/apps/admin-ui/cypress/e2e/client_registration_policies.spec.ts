@@ -58,4 +58,19 @@ describe("Client registration policies subtab", () => {
     );
     listingPage.itemExist("policy 2", false);
   });
+
+  describe("Accessibility tests for client registration policies", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToClients();
+      clientRegistrationPage.goToClientRegistrationTab();
+      sidebarPage.waitForPageLoad();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ client registration policies", () => {
+      cy.checkA11y();
+    });
+  });
 });
