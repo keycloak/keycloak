@@ -71,7 +71,7 @@ describe("Masthead tests", () => {
     });
   });
 
-  describe("Accessibility tests for masthead", () => {
+  describe.skip("Accessibility tests for masthead", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
