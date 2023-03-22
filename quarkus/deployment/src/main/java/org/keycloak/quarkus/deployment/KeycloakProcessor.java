@@ -315,6 +315,7 @@ class KeycloakProcessor {
         defaultSchema.ifPresent(ds -> unitProperties.setProperty(AvailableSettings.DEFAULT_SCHEMA, ds));
 
         unitProperties.setProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
+        descriptor.setTransactionType(PersistenceUnitTransactionType.JTA);
 
         final Optional<String> lockTimeoutConfigValue = getOptionalValue("spi-map-storage-jpa-lock-timeout");
         lockTimeoutConfigValue.ifPresent(v -> unitProperties.setProperty(AvailableSettings.JAKARTA_LOCK_TIMEOUT, v));
