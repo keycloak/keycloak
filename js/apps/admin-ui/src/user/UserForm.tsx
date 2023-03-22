@@ -355,6 +355,7 @@ export const UserForm = ({
             <KeycloakTextInput
               data-testid="lastName-input"
               id="kc-lastname"
+              aria-label={t("lastName")}
               {...register("lastName")}
             />
           </FormGroup>

@@ -81,4 +81,19 @@ describe("Authentication - Policies - CIBA", () => {
     CIBAPolicyPage.getExpiresInput().should("have.value", "140");
     CIBAPolicyPage.getIntervalInput().should("have.value", "20");
   });
+
+  describe("Accessibility tests for authentication policies ciba", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToRealm(realmName);
+      sidebarPage.goToAuthentication();
+      CIBAPolicyPage.goToTab();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load for authentication policies ciba", () => {
+      cy.checkA11y();
+    });
+  });
 });

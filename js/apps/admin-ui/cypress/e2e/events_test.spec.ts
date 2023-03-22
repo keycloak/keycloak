@@ -436,4 +436,48 @@ describe.skip("Events tests", () => {
       adminEventsTab.assertRepresentationDialogIsNotEmpty();
     });
   });
+
+  describe("Accessibility tests for events", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToEvents();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ user events tab", () => {
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations in user events search form", () => {
+      userEventsTab.openSearchUserEventDropdownMenu();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on admin events tab", () => {
+      eventsPage.goToAdminEventsTab;
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations in admin events search form", () => {
+      sidebarPage.goToEvents();
+      eventsPage.goToAdminEventsTab();
+      adminEventsTab.openSearchAdminEventDropdownMenu();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations in Auth dialog", () => {
+      sidebarPage.goToEvents();
+      eventsPage.goToAdminEventsTab();
+      listingPage.clickRowDetails("CREATE").clickDetailMenu("Auth");
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations in Representation dialog", () => {
+      sidebarPage.goToEvents();
+      eventsPage.goToAdminEventsTab();
+      listingPage.clickRowDetails("CREATE").clickDetailMenu("Representation");
+      cy.checkA11y();
+    });
+  });
 });

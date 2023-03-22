@@ -193,4 +193,19 @@ describe("Client authentication subtab", () => {
       true
     );
   });
+
+  describe("Accessibility tests for client authorization", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToClients();
+      listingPage.searchItem(clientId).goToItemDetails(clientId);
+      clientDetailsPage.goToAuthorizationTab();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ client authorization", () => {
+      cy.checkA11y();
+    });
+  });
 });

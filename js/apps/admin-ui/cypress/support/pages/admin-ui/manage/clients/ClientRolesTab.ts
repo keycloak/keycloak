@@ -4,6 +4,7 @@ enum ClientRolesTabItems {
   Details = "Details",
   Attributes = "Attributes",
   UsersInRole = "Users in role",
+  Permissions = "Permissions",
 }
 
 export default class ClientRolesTab extends CommonPage {
@@ -25,6 +26,11 @@ export default class ClientRolesTab extends CommonPage {
 
   goToUsersInRoleTab() {
     this.tabUtils().clickTab(ClientRolesTabItems.UsersInRole);
+    return this;
+  }
+
+  goToPermissionsTab() {
+    this.tabUtils().clickTab(ClientRolesTabItems.Permissions);
     return this;
   }
 

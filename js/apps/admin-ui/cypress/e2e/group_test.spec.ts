@@ -493,4 +493,17 @@ describe("Group test", () => {
       groupDetailPage.enablePermissionSwitch();
     });
   });
+
+  describe("Accessibility tests for groups", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToGroups();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ groups", () => {
+      cy.checkA11y();
+    });
+  });
 });
