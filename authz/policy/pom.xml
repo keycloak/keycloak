@@ -14,8 +14,7 @@
     <artifactId>keycloak-authz-provider-parent</artifactId>
     <packaging>pom</packaging>
 
-    <name>KeyCloak AuthZ: Provider Parent</name>
-    <description>KeyCloak AuthZ: Provider Parent</description>
+    <name>Keycloak AuthZ: Policy Provider Parent</name>
 
     <modules>
         <module>common</module>

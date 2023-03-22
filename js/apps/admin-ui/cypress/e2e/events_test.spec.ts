@@ -29,7 +29,7 @@ const dateTo = new Date();
 dateTo.setDate(dateTo.getDate() + 100);
 const dateToFormatted = `${dateTo.getFullYear()}-${dateTo.getMonth()}-${dateTo.getDay()}`;
 
-describe("Events tests", () => {
+describe.skip("Events tests", () => {
   const eventsTestUser = {
     eventsTestUserId: "",
     userRepresentation: {

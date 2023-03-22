@@ -122,6 +122,8 @@
   "acceptsPromptNone": "Accepts prompt=none forward from client",
   "validateSignature": "Validate Signatures",
   "useJwksUrl": "Use JWKS URL",
+  "validatingPublicKey": "Validating public key",
+  "validatingPublicKeyId": "Validating public key id",
   "jwksUrl": "JWKS URL",
   "pkceEnabled": "Use PKCE",
   "pkceMethod": "PKCE Method",

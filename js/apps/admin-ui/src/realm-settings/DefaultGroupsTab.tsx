@@ -16,7 +16,10 @@ import {
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import useToggle from "../utils/useToggle";
@@ -194,12 +197,12 @@ export const DefaultsGroupsTab = () => {
         actions={[
           {
             title: t("common:remove"),
-            onRowClick: (group: GroupRepresentation) => {
+            onRowClick: (group) => {
               setSelectedRows([group]);
               toggleRemoveDialog();
               return Promise.resolve(false);
             },
-          },
+          } as Action<GroupRepresentation>,
         ]}
         columns={[
           {

@@ -90,6 +90,7 @@ export class PermissionSelect extends React.Component<PermissionSelectProps, Per
           <Msg msgKey='selectPermissions' />
         </span>
         <Select
+          maxHeight={300}
           direction={this.props.direction || 'down'}
           variant={SelectVariant.typeaheadMulti}
           typeAheadAriaLabel={Msg.localize("selectPermissions")}
@@ -100,6 +101,7 @@ export class PermissionSelect extends React.Component<PermissionSelectProps, Per
           isOpen={isExpanded}
           aria-labelledby={titleId}
           placeholderText={Msg.localize("selectPermissions")}
+          menuAppendTo="parent"
         >
           {this.state.scopes}
         </Select>

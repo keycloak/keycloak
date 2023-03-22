@@ -90,8 +90,37 @@ const DetailCell = (event: EventRepresentation) => (
           <DescriptionListDescription>{value}</DescriptionListDescription>
         </DescriptionListGroup>
       ))}
+    {event.error && (
+      <DescriptionListGroup key="error">
+        <DescriptionListTerm>error</DescriptionListTerm>
+        <DescriptionListDescription>{event.error}</DescriptionListDescription>
+      </DescriptionListGroup>
+    )}
   </DescriptionList>
 );
+
+const UserDetailLink = (event: EventRepresentation) => {
+  const { t } = useTranslation("events");
+  const { realm } = useRealm();
+
+  return (
+    <>
+      {event.userId && (
+        <Link
+          key={`link-${event.time}-${event.type}`}
+          to={toUser({
+            realm,
+            id: event.userId,
+            tab: "settings",
+          })}
+        >
+          {event.userId}
+        </Link>
+      )}
+      {!event.userId && t("noUserDetails")}
+    </>
+  );
+};
 
 export default function EventsSection() {
   const { t } = useTranslation("events");
@@ -192,24 +221,6 @@ export default function EventsSection() {
   function refresh() {
     commitFilters();
   }
-
-  const UserDetailLink = (event: EventRepresentation) => (
-    <>
-      {event.userId && (
-        <Link
-          key={`link-${event.time}-${event.type}`}
-          to={toUser({
-            realm,
-            id: event.userId,
-            tab: "settings",
-          })}
-        >
-          {event.userId}
-        </Link>
-      )}
-      {!event.userId && t("noUserDetails")}
-    </>
-  );
 
   const userEventSearchFormDisplay = () => {
     return (

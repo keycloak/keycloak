@@ -81,6 +81,39 @@ const ClientHomeLink = (client: ClientRepresentation) => {
   return <FormattedLink href={href} />;
 };
 
+const ToolbarItems = () => {
+  const { t } = useTranslation("clients");
+  const { realm } = useRealm();
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-clients");
+
+  if (!isManager) return <span />;
+
+  return (
+    <>
+      <ToolbarItem>
+        <Button
+          component={(props) => <Link {...props} to={toAddClient({ realm })} />}
+        >
+          {t("createClient")}
+        </Button>
+      </ToolbarItem>
+      <ToolbarItem>
+        <Button
+          component={(props) => (
+            <Link {...props} to={toImportClient({ realm })} />
+          )}
+          variant="link"
+          data-testid="importClient"
+        >
+          {t("importClient")}
+        </Button>
+      </ToolbarItem>
+    </>
+  );
+};
+
 export default function ClientsSection() {
   const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
@@ -130,35 +163,6 @@ export default function ClientsSection() {
       }
     },
   });
-
-  const ToolbarItems = () => {
-    if (!isManager) return <span />;
-
-    return (
-      <>
-        <ToolbarItem>
-          <Button
-            component={(props) => (
-              <Link {...props} to={toAddClient({ realm })} />
-            )}
-          >
-            {t("createClient")}
-          </Button>
-        </ToolbarItem>
-        <ToolbarItem>
-          <Button
-            component={(props) => (
-              <Link {...props} to={toImportClient({ realm })} />
-            )}
-            variant="link"
-            data-testid="importClient"
-          >
-            {t("importClient")}
-          </Button>
-        </ToolbarItem>
-      </>
-    );
-  };
 
   return (
     <>

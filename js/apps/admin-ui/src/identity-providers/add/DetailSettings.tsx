@@ -29,7 +29,10 @@ import {
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { ScrollForm } from "../../components/scroll-form/ScrollForm";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -128,6 +131,28 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   );
 };
 
+type MapperLinkProps = IdPWithMapperAttributes & {
+  provider?: IdentityProviderRepresentation;
+};
+
+const MapperLink = ({ name, mapperId, provider }: MapperLinkProps) => {
+  const { realm } = useRealm();
+  const { alias } = useParams<IdentityProviderParams>();
+
+  return (
+    <Link
+      to={toIdentityProviderEditMapper({
+        realm,
+        alias,
+        providerId: provider?.providerId!,
+        id: mapperId,
+      })}
+    >
+      {name}
+    </Link>
+  );
+};
+
 export default function DetailSettings() {
   const { t } = useTranslation("identity-providers");
   const { alias, providerId } = useParams<IdentityProviderParams>();
@@ -145,19 +170,6 @@ export default function DetailSettings() {
   const [key, setKey] = useState(0);
   const { profileInfo } = useServerInfo();
   const refresh = () => setKey(key + 1);
-
-  const MapperLink = ({ name, mapperId }: IdPWithMapperAttributes) => (
-    <Link
-      to={toIdentityProviderEditMapper({
-        realm,
-        alias,
-        providerId: provider?.providerId!,
-        id: mapperId,
-      })}
-    >
-      {name}
-    </Link>
-  );
 
   useFetch(
     () => adminClient.identityProviders.findOne({ alias }),
@@ -460,7 +472,9 @@ export default function DetailSettings() {
                 {
                   name: "name",
                   displayKey: "common:name",
-                  cellRenderer: MapperLink,
+                  cellRenderer: (row) => (
+                    <MapperLink {...row} provider={provider} />
+                  ),
                 },
                 {
                   name: "category",
@@ -478,7 +492,7 @@ export default function DetailSettings() {
                     setSelectedMapper(mapper);
                     toggleDeleteMapperDialog();
                   },
-                },
+                } as Action<IdPWithMapperAttributes>,
               ]}
             />
           </Tab>

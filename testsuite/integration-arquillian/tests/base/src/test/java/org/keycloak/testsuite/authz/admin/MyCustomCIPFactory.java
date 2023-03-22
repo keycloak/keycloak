@@ -21,21 +21,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.adapters.authorization.ClaimInformationPointProvider;
-import org.keycloak.adapters.authorization.ClaimInformationPointProviderFactory;
-import org.keycloak.adapters.authorization.PolicyEnforcer;
-import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.authorization.cip.spi.ClaimInformationPointProvider;
+import org.keycloak.adapters.authorization.cip.spi.ClaimInformationPointProviderFactory;
+import org.keycloak.adapters.authorization.spi.HttpRequest;
 
 public class MyCustomCIPFactory implements ClaimInformationPointProviderFactory<MyCustomCIP> {
 
     @Override
     public String getName() {
         return "my-custom-cip";
-    }
-
-    @Override
-    public void init(PolicyEnforcer policyEnforcer) {
-
     }
 
     @Override
@@ -53,7 +47,7 @@ class MyCustomCIP implements ClaimInformationPointProvider {
     }
 
     @Override
-    public Map<String, List<String>> resolve(HttpFacade httpFacade) {
+    public Map<String, List<String>> resolve(HttpRequest request) {
         Map<String, List<String>> claims = new HashMap<>();
 
         claims.put("resolved-claim", Arrays.asList(config.get("claim-value").toString()));

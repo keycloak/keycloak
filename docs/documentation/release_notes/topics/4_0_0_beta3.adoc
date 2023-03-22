@@ -1,0 +1,49 @@
+= Authorization Services
+
+== UMA 2.0
+
+UMA 2.0 is now supported for Authorization Services, including support for users to manage user access through
+the account management console. There are also other additions and improvements to authorization services.
+
+== Pushed Claims
+
+Clients can now push additional claims and have them used by policies when evaluating permissions.
+
+== Resource Attributes
+
+It is now possible to define attributes on resources in order to have them used by policies when evaluating permissions.
+
+= Themes and Theme Resources
+
+It is now possible to hot-deploy themes to Keycloak through a regular provider deployment. We have also added support for theme resources, which allows adding additional templates and resources without creating a theme. This is useful for custom authenticators that require additional pages to be added to the authentication flow.
+
+We have also added support to override the theme for specific clients. If that is not adequate for your needs, then there is also a new Theme Selector SPI that allows you to implement custom logic to select the theme.
+
+= Instagram Identity Provider
+
+We have added support to login with Instagram. Thanks to https://github.com/hguerrero[hguerrero] for the contribution.
+
+= Search by User ID in Admin Console
+
+To search for a user by id in the admin console you previously had to edit the URL. It is now possible to search
+directly in the user search field.
+
+= Adapters
+
+== Spring Boot 2
+
+We now have support for Spring Boot 2.
+
+== Fuse 7
+
+We now have support for Fuse 7.
+
+== JavaScript - Native Promise Support
+
+The JavaScript adapter now supports native promises. It retains support for the old style promises as well.
+Both can be used interchangeably.
+
+== JavaScript - Cordova Options
+
+It is now possible to pass Cordova-specific options to login and other methods in the JavaScript adapter.
+Thanks to https://github.com/looorent[loorent] for the contribution.

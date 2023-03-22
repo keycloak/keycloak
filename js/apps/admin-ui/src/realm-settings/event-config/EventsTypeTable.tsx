@@ -1,7 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Button, ToolbarItem } from "@patternfly/react-core";
 
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 
 export type EventType = {
@@ -52,7 +55,7 @@ export function EventsTypeTable({
               {
                 title: t("common:remove"),
                 onRowClick: onDelete,
-              },
+              } as Action<EventType>,
             ]
       }
       columns={[

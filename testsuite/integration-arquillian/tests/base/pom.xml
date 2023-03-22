@@ -910,7 +910,8 @@
                                 <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
                                 <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
                                 <auth.server.quarkus.mapStorage.profile.config>jpa</auth.server.quarkus.mapStorage.profile.config>
-                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
+                                <keycloak.globalLock.provider>map</keycloak.globalLock.provider>
+                                <keycloak.lock.map.storage.provider>jpa</keycloak.lock.map.storage.provider>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -1092,7 +1093,8 @@
                                 <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
                                 <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
                                 <auth.server.quarkus.mapStorage.profile.config>jpa</auth.server.quarkus.mapStorage.profile.config>
-                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
+                                <keycloak.globalLock.provider>map</keycloak.globalLock.provider>
+                                <keycloak.lock.map.storage.provider>jpa</keycloak.lock.map.storage.provider>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

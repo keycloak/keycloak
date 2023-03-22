@@ -16,7 +16,10 @@ import {
   Title,
 } from "@patternfly/react-core";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
@@ -225,7 +228,7 @@ export default function ProfilesTab() {
                 setSelectedProfile(profile);
                 toggleDeleteDialog();
               },
-            },
+            } as Action<ClientProfile>,
           ]}
           columns={[
             {

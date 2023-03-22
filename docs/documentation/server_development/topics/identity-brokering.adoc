@@ -1,0 +1,8 @@
+
+== Identity Brokering APIs
+
+{project_name} can delegate authentication to a parent IDP for login.  A typical example of this is the case
+where you want users to be able to log in through a social provider such as Facebook or Google. You can
+also link existing accounts to a brokered IDP.  This section describes some APIs that your applications
+can use as it pertains to identity brokering.
+

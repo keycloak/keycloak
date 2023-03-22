@@ -14,7 +14,10 @@ import {
 
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
@@ -32,10 +35,32 @@ type MembersOf = UserRepresentation & {
   membership: GroupRepresentation[];
 };
 
+const MemberOfRenderer = (member: MembersOf) => {
+  return (
+    <>
+      {member.membership.map((group, index) => (
+        <>
+          <GroupPath key={group.id} group={group} />
+          {member.membership[index + 1] ? ", " : ""}
+        </>
+      ))}
+    </>
+  );
+};
+
+const UserDetailLink = (user: MembersOf) => {
+  const { realm } = useRealm();
+  return (
+    <Link key={user.id} to={toUser({ realm, id: user.id!, tab: "settings" })}>
+      {user.username}
+    </Link>
+  );
+};
+
 export const Members = () => {
   const { t } = useTranslation("groups");
   const { adminClient } = useAdminClient();
-  const { realm } = useRealm();
+
   const { addAlert, addError } = useAlerts();
   const location = useLocation();
   const id = getLastId(location.pathname);
@@ -90,24 +115,6 @@ export const Members = () => {
     });
   };
 
-  const MemberOfRenderer = (member: MembersOf) => {
-    return (
-      <>
-        {member.membership.map((group, index) => (
-          <>
-            <GroupPath key={group.id} group={group} />
-            {member.membership[index + 1] ? ", " : ""}
-          </>
-        ))}
-      </>
-    );
-  };
-
-  const UserDetailLink = (user: MembersOf) => (
-    <Link key={user.id} to={toUser({ realm, id: user.id!, tab: "settings" })}>
-      {user.username}
-    </Link>
-  );
   return (
     <>
       {addMembers && (
@@ -213,7 +220,7 @@ export const Members = () => {
 
                     return true;
                   },
-                },
+                } as Action<UserRepresentation>,
               ]
             : []
         }
