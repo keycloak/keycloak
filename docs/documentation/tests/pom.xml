@@ -23,7 +23,6 @@
                 <executions>
                     <execution>
                         <id>default-jar</id>
-                        <phase>none</phase>
                     </execution>
                 </executions>
             </plugin>
