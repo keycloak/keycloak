@@ -187,6 +187,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                 <Tr>
                   <Th />
                   <Th>{t("common:name")}</Th>
+                  <Th>{t("displayName")}</Th>
                   <Th>{t("common:type")}</Th>
                   <Th>{t("owner")}</Th>
                   <Th>{t("uris")}</Th>
@@ -225,6 +226,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                         {resource.name}
                       </Link>
                     </Td>
+                    <Td>{resource.displayName}</Td>
                     <Td>{resource.type}</Td>
                     <Td>{resource.owner?.name}</Td>
                     <Td>

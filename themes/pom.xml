@@ -65,9 +65,6 @@
                     <exclude>**/keycloak.v2/account/src/**</exclude>
                 </excludes>
             </resource>
-            <resource>
-                <directory>src/main/resources-community</directory>
-            </resource>
         </resources>
         <plugins>
             <plugin>
@@ -83,6 +80,22 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>communityTranslations</id>
+            <activation>
+                <property>
+                    <name>!skipCommunityTranslations</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources-community</directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+
         <profile>
             <id>account2</id>
             <activation>
