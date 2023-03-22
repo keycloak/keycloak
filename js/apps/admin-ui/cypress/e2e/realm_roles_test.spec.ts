@@ -281,8 +281,37 @@ describe("Realm roles test", () => {
       cy.injectAxe();
     });
 
+    const role = "a11y-role";
+
     it("Check a11y violations on load/ realm roles", () => {
       cy.checkA11y();
+    });
+
+    it("Check a11y violations on empty create role form", () => {
+      rolesTab.goToCreateRoleFromToolbar();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on role details", () => {
+      const permissionSwitch = "permissionSwitch";
+      rolesTab.goToCreateRoleFromToolbar();
+      createRealmRolePage.fillRealmRoleData(role).save();
+      cy.checkA11y();
+
+      rolesTab.goToAttributesTab();
+      cy.checkA11y();
+
+      rolesTab.goToUsersInRoleTab();
+      cy.checkA11y();
+
+      rolesTab.goToPermissionsTab();
+      cy.findByTestId(permissionSwitch).parent().click();
+      cy.checkA11y();
+
+      sidebarPage.goToRealmRoles();
+      listingPage.deleteItem(role);
+      cy.checkA11y();
+      cy.findByTestId("confirm").click();
     });
   });
 });
