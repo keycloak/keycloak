@@ -27,6 +27,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -52,10 +54,23 @@ public class PersistenceExceptionConverter implements InvocationHandler {
         }
     }
 
+    // For JTA, the database operations are executed during the commit phase of a transaction, and DB exceptions can be propagated differently
     public static ModelException convert(Throwable t) {
-        if (t.getCause() != null && t.getCause() instanceof ConstraintViolationException) {
-            throw new ModelDuplicateException(t);
-        } if (t instanceof EntityExistsException) {
+        final Predicate<Throwable> checkDuplicationMessage = throwable -> {
+            final String message = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
+            return message.toLowerCase().contains("duplicate");
+        };
+
+        Predicate<Throwable> throwModelDuplicateEx = throwable ->
+                throwable instanceof EntityExistsException
+                        || throwable instanceof ConstraintViolationException
+                        || throwable instanceof SQLIntegrityConstraintViolationException;
+
+        throwModelDuplicateEx = throwModelDuplicateEx.or(checkDuplicationMessage);
+
+        if (t.getCause() != null && throwModelDuplicateEx.test(t.getCause())) {
+            throw new ModelDuplicateException(t.getCause());
+        } else if (throwModelDuplicateEx.test(t)) {
             throw new ModelDuplicateException(t);
         } else {
             throw new ModelException(t);
