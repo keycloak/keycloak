@@ -451,7 +451,17 @@ describe("User creation", () => {
       cy.injectAxe();
     });
 
-    it("Check a11y violations on load/ users", () => {
+    it("Check a11y violations on load/ users list", () => {
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on create user form", () => {
+      createUserPage.goToCreateUser();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on permissions tab", () => {
+      usersPage.goToPermissionsTab();
       cy.checkA11y();
     });
   });
