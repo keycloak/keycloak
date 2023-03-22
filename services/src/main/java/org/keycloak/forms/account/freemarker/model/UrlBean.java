@@ -17,10 +17,12 @@
 
 package org.keycloak.forms.account.freemarker.model;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
 import org.keycloak.theme.Theme;
 
+import java.io.IOException;
 import java.net.URI;
 
 /**
@@ -28,6 +30,7 @@ import java.net.URI;
  */
 public class UrlBean {
 
+    private static final Logger logger = Logger.getLogger(UrlBean.class);
     private String realm;
     private Theme theme;
     private URI baseURI;
@@ -99,6 +102,15 @@ public class UrlBean {
 
     public String getResourcesCommonPath() {
         URI uri = Urls.themeRoot(baseURI);
-        return uri.getPath() + "/common/keycloak";
+        String commonPath = "";
+        try {
+            commonPath = theme.getProperties().getProperty("import");
+        } catch (IOException ex) {
+            logger.warn("Failed to load properties", ex);
+        }
+        if (commonPath == null || commonPath.isEmpty()) {
+            commonPath = "/common/keycloak";
+        }
+        return uri.getPath() + "/" + commonPath;
     }
 }
