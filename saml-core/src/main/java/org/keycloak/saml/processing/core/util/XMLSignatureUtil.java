@@ -88,10 +88,8 @@ import javax.xml.crypto.KeySelector;
 import javax.xml.crypto.KeySelectorException;
 import javax.xml.crypto.KeySelectorResult;
 import javax.xml.crypto.XMLCryptoContext;
-import javax.xml.crypto.dsig.keyinfo.KeyName;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.util.SecurityActions;
-import org.keycloak.saml.processing.api.util.KeyInfoTools;
 
 /**
  * Utility for XML Signature <b>Note:</b> You can change the canonicalization method type by using the system property
@@ -138,9 +136,7 @@ public class XMLSignatureUtil {
         @Override
         public KeySelectorResult select(KeyInfo keyInfo, KeySelector.Purpose purpose, AlgorithmMethod method, XMLCryptoContext context) throws KeySelectorException {
             try {
-                KeyName keyNameEl = KeyInfoTools.getKeyName(keyInfo);
-                this.keyName = keyNameEl == null ? null : keyNameEl.getName();
-                final Key key = locator.getKey(keyName);
+                final Key key = locator.getKey(keyInfo);
                 this.keyLocated = key != null;
                 return new KeySelectorResult() {
                     @Override public Key getKey() {
@@ -155,24 +151,6 @@ public class XMLSignatureUtil {
 
         private boolean wasKeyLocated() {
             return this.keyLocated;
-        }
-    }
-
-    private static class KeySelectorPresetKey extends KeySelector {
-
-        private final Key key;
-
-        public KeySelectorPresetKey(Key key) {
-            this.key = key;
-        }
-
-        @Override
-        public KeySelectorResult select(KeyInfo keyInfo, KeySelector.Purpose purpose, AlgorithmMethod method, XMLCryptoContext context) {
-            return new KeySelectorResult() {
-                @Override public Key getKey() {
-                    return key;
-                }
-            };
         }
     }
 
@@ -494,20 +472,16 @@ public class XMLSignatureUtil {
 
         logger.trace("Could not validate signature using ds:KeyInfo/ds:KeyName hint.");
 
-        if (locator instanceof Iterable) {
-            Iterable<Key> availableKeys = (Iterable<Key>) locator;
+        logger.trace("Trying hard to validate XML signature using all available keys.");
 
-            logger.trace("Trying hard to validate XML signature using all available keys.");
-
-            for (Key key : availableKeys) {
-                try {
-                    if (validateUsingKeySelector(signatureNode, new KeySelectorPresetKey(key))) {
-                        return true;
-                    }
-                } catch (XMLSignatureException ex) { // pass through MarshalException
-                    logger.debug("Verification failed: " + ex);
-                    logger.trace(ex);
+        for (Key key : locator) {
+            try {
+                if (validateUsingKeySelector(signatureNode, KeySelector.singletonKeySelector(key))) {
+                    return true;
                 }
+            } catch (XMLSignatureException ex) { // pass through MarshalException
+                logger.debug("Verification failed: " + ex);
+                logger.trace(ex);
             }
         }
 
@@ -738,7 +712,7 @@ public class XMLSignatureUtil {
         signature.sign(dsc);
     }
 
-    private static KeyInfo createKeyInfo(String keyName, PublicKey publicKey, X509Certificate x509Certificate) throws KeyException {
+    public static KeyInfo createKeyInfo(String keyName, PublicKey publicKey, X509Certificate x509Certificate) throws KeyException {
         KeyInfoFactory keyInfoFactory = fac.getKeyInfoFactory();
 
         List<XMLStructure> items = new LinkedList<>();

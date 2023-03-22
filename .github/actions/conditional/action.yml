@@ -17,9 +17,9 @@ outputs:
   codeql-themes:
     description: Should "codeql-analysis.yml / themes" execute
     value: ${{ steps.changes.outputs.codeql-themes }}
-  codeql-js_adapter:
-    description: Should "codeql-analysis.yml / js-adapter" execute
-    value: ${{ steps.changes.outputs.codeql-js_adapter }}
+  docs:
+    description: Should "docs.yml" execute
+    value: ${{ steps.changes.outputs.docs }}
 
 runs:
   using: composite

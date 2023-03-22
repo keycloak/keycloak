@@ -17,18 +17,12 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.junit.Assume;
-import org.keycloak.Config;
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.RealmSpi;
-import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.realm.MapRealmProviderFactory;
-import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.components.TestProvider;
@@ -45,7 +39,6 @@ import java.util.function.BiConsumer;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -57,19 +50,8 @@ public class ComponentsTest extends AbstractAdminTest {
 
     private ComponentsResource components;
 
-    private String realmProvider;
-
     @Before
     public void before() throws Exception {
-        // realmProvider is used only to prevent tests from running in certain configs, should be removed once GHI #15410 is resolved.
-        realmProvider = testingClient.server().fetch(session -> Config.getProvider(RealmSpi.NAME), String.class);
-        if (realmProvider.equals(MapRealmProviderFactory.PROVIDER_ID)) {
-            // append the storage provider in case of map
-            String mapStorageProvider = testingClient.server().fetch(session -> Config.scope(RealmSpi.NAME,
-                    MapRealmProviderFactory.PROVIDER_ID, AbstractMapProviderFactory.CONFIG_STORAGE).get("provider"), String.class);
-            if (mapStorageProvider != null) realmProvider = realmProvider + "-" + mapStorageProvider;
-        }
-
         components = adminClient.realm(REALM_NAME).components();
     }
 
@@ -99,11 +81,6 @@ public class ComponentsTest extends AbstractAdminTest {
 
     @Test
     public void testConcurrencyWithoutChildren() throws InterruptedException {
-        // remove this restriction once GHI #15410 is resolved.
-        Assume.assumeThat("Test does not run with HotRod after HotRod client transaction was enabled. This will be removed with pessimistic locking introduction.",
-                realmProvider,
-                not(equalTo(MapRealmProviderFactory.PROVIDER_ID + "-" + HotRodMapStorageProviderFactory.PROVIDER_ID)));
-
         testConcurrency((s, i) -> s.submit(new CreateAndDeleteComponent(s, i)));
 
 //        Data consistency is not guaranteed with concurrent access to entities in map store. 
@@ -114,11 +91,6 @@ public class ComponentsTest extends AbstractAdminTest {
 
     @Test
     public void testConcurrencyWithChildren() throws InterruptedException {
-        // remove this restriction once GHI #15410 is resolved.
-        Assume.assumeThat("Test does not run with HotRod after HotRod client transaction was enabled. This will be removed with pessimistic locking introduction.",
-                realmProvider,
-                not(equalTo(MapRealmProviderFactory.PROVIDER_ID + "-" + HotRodMapStorageProviderFactory.PROVIDER_ID)));
-
         testConcurrency((s, i) -> s.submit(new CreateAndDeleteComponentWithFlatChildren(s, i)));
 
 //        Data consistency is not guaranteed with concurrent access to entities in map store. 

@@ -1,0 +1,23 @@
+{
+  "requireSsl": "Ar HTTPS privalomas? 'niekada' - HTTPS nereikalaujamas. 'išorinėms užklausoms' - jungiantis iš localhost ar serverio IP adresų galima prieiti ir per HTTP. 'visoms užklausoms' - HTTPS reikalaujamas jungiantis iš visų IP adresų.",
+  "accountTheme": "Pasirinkite kaip atrodys naudotojo profilio valdymo langai.",
+  "adminUITheme": "Pasirinkite kaip atrodys administravimo konsolės langai.",
+  "emailTheme": "Pasirinkite kaip atrodys siunčiami el. pašto laiškai.",
+  "save-user-events": "Jei įgalinta, tuomet su prisijungimu susiję veiksmai saugomi duomenų bazėje ir tampa prieinami per administravimo bei naudotojo paskyros valdymo skydus. ",
+  "save-admin-events": "Jei įgalinta, tuomet administravimo veiksmai saugomi duomenų bazėje ir tampa prieinami per administravimo valdymo skydą.",
+  "expiration": "Nustato įvykių galiojimo laiką. Nebegaliojantys įvykiai periodiškai ištrinami iš duomenų bazės.",
+  "admin-clearEvents": "Ištrina visus su administravimu susijusius veiksmus iš duomenų bazės.",
+  "includeRepresentation": "Išsaugoti kurūmo ir redagavimo užklausų JSON reprezentaciją.",
+  "failureFactor": "Pasiekus maksimalų nesėkmingų bandymų prisijungti skaičių įjungiamas specialus rėžimas, kuomet laukimo intervalas yra didinamas po kiekvieno sekančio neteisingo bandymo.",
+  "waitIncrementSeconds": "Laikas, kurį naudotojo prisijungimai yra draudžiami, kai nėsėkmingų bandymų skaičius pasiekia nustatytą ribą",
+  "maxFailureWaitSeconds": "Maksimalus laikas, kuomet naudotojo paskyra yra užrakinama po nesėkmingų bandymų prisijungti.",
+  "maxDeltaTimeSeconds": "Laikas, po kurio nepavykę prisijungimai bus pamiršti",
+  "quickLoginCheckMilliSeconds": "Jei nėsėkmingi bandymai prisijungti seka vienas kitą per greitai, tuomet naudotojo paskyra yra užrakinama.",
+  "minimumQuickLoginWaitSeconds": "Laikas, kurį naudotojo prisijungimai yra draudžiami, kai nėsėkmingi bandymai prisijungti seka vienas kitą per greitai.",
+  "ssoSessionIdle": "Laikas, po kurio neaktyvi sesija bus užbaigta. Sesijos pasibaigimo metu visi raktai (Tokens) ir naršyklių sesijos sunaikinamos.",
+  "ssoSessionMax": "Laikas, po kurio prisijungimo sesija yra sunaikinama. Sesijos pasibaigimo metu visi raktai (Tokens) ir naršyklių sesijos sunaikinamos.",
+  "offlineSessionIdle": "Darbo neprisijungus sesijos neveikimo laikas, po kurio neaktyvi sesija bus užbaigta. Darbo neprisijungus metu, prisijungimo raktai turi būti atnaujinami bent kartą per nurodytą periodą. Kitu atveju sesijos galiojmas bus sustabdytas.",
+  "revokeRefreshToken": "Jei įgalintas, tuomet atnaujinimo raktai (Refresh Token) gali būti naudojami tik vieną kartą. Kitu atveju - atnaujinimo raktai gali būti pernaudojami daugelį kartų. ",
+  "clientLoginTimeout": "Laikas, per kurį klientas turi užbaigti prisijungimo procesą. Normaliu atveju reikšmė turėtų būti 1 minutė.",
+  "editUsername": "Jei įgalintas, tuomet naudotojas gali keisti savo naudotojo vardą."
+}

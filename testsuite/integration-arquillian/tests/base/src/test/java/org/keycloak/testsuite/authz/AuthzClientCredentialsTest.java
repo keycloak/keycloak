@@ -25,18 +25,13 @@ import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -44,7 +39,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
@@ -356,16 +350,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     private AuthzClient getAuthzClient(String adapterConfig) {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getConfigurationStream(adapterConfig));
 
-        return AuthzClient.create(new Configuration(deployment.getAuthServerBaseUrl(), deployment.getRealm(), deployment.getResourceName(), deployment.getResourceCredentials(), deployment.getClient()), new ClientAuthenticator() {
-            @Override
-            public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
-                Map<String, String> formparams = new HashMap<>();
-                ClientCredentialsProviderUtils.setClientCredentials(deployment, requestHeaders, formparams);
-                for (Entry<String, String> param : formparams.entrySet()) {
-                    requestParams.put(param.getKey(), Arrays.asList(param.getValue()));
-                }
-            }
-        });
+        return AuthzClient.create(new Configuration(deployment.getAuthServerBaseUrl(), deployment.getRealm(), deployment.getResourceName(), deployment.getResourceCredentials(), deployment.getClient()));
     }
 
     private InputStream getConfigurationStream(String adapterConfig) {

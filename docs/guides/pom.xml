@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ Copyright 2023 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@
     <parent>
         <artifactId>keycloak-docs-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -46,16 +46,18 @@
                 <executions>
                     <execution>
                         <id>copy-resources</id>
-                        <!-- here the phase you need -->
+                        <!-- As of 3.3.0, if there is no phase specified, it will not execute.
+                        Even if there is a phase specified, it will always execute in phase process-resources,
+                        thereby executing before the keycloak-guides-maven-plugin -->
                         <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${basedir}/src/main/images</outputDirectory>
+                            <outputDirectory>${basedir}/target/generated-docs/images</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/target/generated-guides/images</directory>
+                                    <directory>${basedir}/images</directory>
                                 </resource>
                             </resources>
                         </configuration>
@@ -72,6 +74,9 @@
                         <goals>
                             <goal>keycloak-guide</goal>
                         </goals>
+                        <configuration>
+                            <sourceDir>${project.basedir}</sourceDir>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

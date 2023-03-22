@@ -419,7 +419,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     private UserSessionModel createOfflineSession(KeycloakSession session, RealmModel realm, String userId, int sessionIndex) {
         final UserModel user = session.users().getUserById(realm, userId);
-        UserSessionModel us = session.sessions().createUserSession(realm, user, "un" + sessionIndex, "ip1", "auth", false, null, null);
+        UserSessionModel us = session.sessions().createUserSession(null, realm, user, "un" + sessionIndex, "ip1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
         return session.sessions().createOfflineUserSession(us);
     }
 

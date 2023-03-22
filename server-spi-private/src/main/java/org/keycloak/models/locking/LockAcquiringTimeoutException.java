@@ -24,6 +24,10 @@ import java.time.Instant;
  */
 public final class LockAcquiringTimeoutException extends RuntimeException {
 
+    private final String lockName;
+    private final String keycloakInstanceIdentifier;
+    private final Instant timeWhenAcquired;
+
     /**
      *
      * @param lockName Identifier of a lock whose acquiring was unsuccessful.
@@ -31,7 +35,10 @@ public final class LockAcquiringTimeoutException extends RuntimeException {
      * @param timeWhenAcquired Time instant when the lock held by {@code keycloakInstanceIdentifier} was acquired.
      */
     public LockAcquiringTimeoutException(String lockName, String keycloakInstanceIdentifier, Instant timeWhenAcquired) {
-        super(String.format("Lock [%s] already acquired by keycloak instance [%s] at the time [%s]", lockName, keycloakInstanceIdentifier, timeWhenAcquired.toString()));
+        super(String.format("Lock [%s] already acquired by keycloak instance [%s] at the time [%s]", lockName, keycloakInstanceIdentifier, timeWhenAcquired));
+        this.lockName = lockName;
+        this.keycloakInstanceIdentifier = keycloakInstanceIdentifier;
+        this.timeWhenAcquired = timeWhenAcquired;
     }
 
     /**
@@ -42,6 +49,21 @@ public final class LockAcquiringTimeoutException extends RuntimeException {
      * @param cause The cause.
      */
     public LockAcquiringTimeoutException(String lockName, String keycloakInstanceIdentifier, Instant timeWhenAcquired, Throwable cause) {
-        super(String.format("Lock [%s] already acquired by keycloak instance [%s] at the time [%s]", lockName, keycloakInstanceIdentifier, timeWhenAcquired.toString()), cause);
+        super(String.format("Lock [%s] already acquired by keycloak instance [%s] at the time [%s]", lockName, keycloakInstanceIdentifier, timeWhenAcquired), cause);
+        this.lockName = lockName;
+        this.keycloakInstanceIdentifier = keycloakInstanceIdentifier;
+        this.timeWhenAcquired = timeWhenAcquired;
+    }
+
+    public String getLockName() {
+        return lockName;
+    }
+
+    public String getKeycloakInstanceIdentifier() {
+        return keycloakInstanceIdentifier;
+    }
+
+    public Instant getTimeWhenAcquired() {
+        return timeWhenAcquired;
     }
 }

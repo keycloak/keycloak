@@ -98,24 +98,6 @@ public class ExportImportConfig {
         System.setProperty(FILE, file);
     }
 
-    public static UsersExportStrategy getUsersExportStrategy() {
-        String usersExportStrategy = System.getProperty(USERS_EXPORT_STRATEGY, DEFAULT_USERS_EXPORT_STRATEGY.toString());
-        return Enum.valueOf(UsersExportStrategy.class, usersExportStrategy);
-    }
-
-    public static void setUsersExportStrategy(UsersExportStrategy usersExportStrategy) {
-        System.setProperty(USERS_EXPORT_STRATEGY, usersExportStrategy.toString());
-    }
-
-    public static Integer getUsersPerFile() {
-        String usersPerFile = System.getProperty(USERS_PER_FILE, String.valueOf(DEFAULT_USERS_PER_FILE));
-        return Integer.parseInt(usersPerFile.trim());
-    }
-
-    public static void setUsersPerFile(Integer usersPerFile) {
-        System.setProperty(USERS_PER_FILE, String.valueOf(usersPerFile));
-    }
-
     public static Strategy getStrategy() {
         String strategy = System.getProperty(STRATEGY, DEFAULT_STRATEGY.toString());
         return Enum.valueOf(Strategy.class, strategy);

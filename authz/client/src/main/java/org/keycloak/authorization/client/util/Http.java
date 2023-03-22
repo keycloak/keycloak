@@ -18,9 +18,9 @@
 package org.keycloak.authorization.client.util;
 
 import org.apache.http.client.methods.RequestBuilder;
-import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -28,10 +28,9 @@ import org.keycloak.authorization.client.representation.ServerConfiguration;
 public class Http {
 
     private final Configuration configuration;
-    private final ClientAuthenticator authenticator;
-    private ServerConfiguration serverConfiguration;
+    private final ClientCredentialsProvider authenticator;
 
-    public Http(Configuration configuration, ClientAuthenticator authenticator) {
+    public Http(Configuration configuration, ClientCredentialsProvider authenticator) {
         this.configuration = configuration;
         this.authenticator = authenticator;
     }
@@ -54,9 +53,5 @@ public class Http {
 
     private <R> HttpMethod<R> method(RequestBuilder builder) {
         return new HttpMethod(this.configuration, authenticator, builder);
-    }
-
-    public void setServerConfiguration(ServerConfiguration serverConfiguration) {
-        this.serverConfiguration = serverConfiguration;
     }
 }

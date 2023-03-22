@@ -1,0 +1,7 @@
+.kc-form-panel__panel {
+  margin-top: var(--pf-global--spacer--lg);
+}
+
+.kc-form-panel__title {
+  margin-bottom: var(--pf-global--spacer--lg);
+}

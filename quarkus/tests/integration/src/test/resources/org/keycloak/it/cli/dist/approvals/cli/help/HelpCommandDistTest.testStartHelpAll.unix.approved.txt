@@ -93,6 +93,9 @@ Storage (Experimental):
                      Experimental: Sets the port of the Infinispan server.
 --storage-hotrod-username <username>
                      Experimental: Sets the username of the Infinispan user.
+--storage-jpa-db <type>
+                     Experimental: The database vendor for jpa map storage. Possible values are:
+                       postgres, cockroach. Default: postgres.
 
 Database:
 

@@ -90,12 +90,12 @@
             "headers": {
               "Content-Type": "application/x-www-form-urlencoded",
               "header-b": ["header-b-value1", "header-b-value2"],
-              "Authorization": "Bearer {keycloak.id_token}"
+              "Authorization": "Bearer {keycloak.access_token}"
             },
             "parameters": {
               "param-a": ["param-a-value1", "param-a-value2"],
-              "param-subject": "{keycloak.id_token['/sub']}",
-              "param-user-name": "{keycloak.id_token['/preferred_username']}"
+              "param-subject": "{keycloak.access_token['/sub']}",
+              "param-user-name": "{keycloak.access_token['/preferred_username']}"
             }
           }
         }

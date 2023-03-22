@@ -60,9 +60,10 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
          * Called when user cancelled authentication on the IDP side - for example user didn't approve consent page on the IDP side.
          * Assumption is that authenticationSession is set in the {@link org.keycloak.models.KeycloakContext} when this method is called
          *
+         * @param idpConfig identity provider config
          * @return see description
          */
-        Response cancelled();
+        Response cancelled(IdentityProviderModel idpConfig);
 
         /**
          * Called when error happened on the IDP side.

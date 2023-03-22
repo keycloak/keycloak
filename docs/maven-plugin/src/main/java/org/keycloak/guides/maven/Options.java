@@ -5,6 +5,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCas
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
@@ -15,6 +16,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -77,8 +79,10 @@ public class Options {
         }
     }
 
-    public OptionCategory[] getCategories() {
-        return OptionCategory.values();
+    public List<OptionCategory> getCategories() {
+        return Arrays.stream(OptionCategory.values())
+                .filter(c -> c.getSupportLevel() != ConfigSupportLevel.EXPERIMENTAL)
+                .collect(Collectors.toList());
     }
 
     public Collection<Option> getValues() {

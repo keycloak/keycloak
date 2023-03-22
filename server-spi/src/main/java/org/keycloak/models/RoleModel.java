@@ -36,12 +36,6 @@ public interface RoleModel {
         public static final SearchableModelField<RoleModel> CLIENT_ID           = new SearchableModelField<>("clientId", String.class);
         public static final SearchableModelField<RoleModel> NAME                = new SearchableModelField<>("name", String.class);
         public static final SearchableModelField<RoleModel> DESCRIPTION         = new SearchableModelField<>("description", String.class);
-        /**
-         * @deprecated Please use {@link #CLIENT_ID} SearchableField with operators EXISTS/NOT_EXISTS to replace
-         *             field IS_CLIENT_ROLE with operator EQ with value true/false.
-         */
-        @Deprecated
-        public static final SearchableModelField<RoleModel> IS_CLIENT_ROLE      = new SearchableModelField<>("isClientRole", Boolean.class);
         public static final SearchableModelField<RoleModel> COMPOSITE_ROLE      = new SearchableModelField<>("compositeRoles", Boolean.class);
     }
 
